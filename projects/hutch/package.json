@@ -10,7 +10,7 @@
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-integration": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000",
     "test-integration:sequential": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000 --runInBand",
-    "test-with-coverage": "pnpm compile && c8 node scripts/run-tests-with-coverage.js && node scripts/enforce-coverage.js",
+    "test-with-coverage": "pnpm compile && c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
     "compile": "tsc && node scripts/copy-static-assets.js",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",

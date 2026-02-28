@@ -1,11 +1,12 @@
 const baseConfig = require('../../enforce-coverage.config.base');
+const path = require('path')
 
 // Thresholds reflect current coverage.
 // branches: 94.44% — V8 coverage quirk on instanceof ternary in
 // in-memory-auth.ts whenLoggedIn error handling.
 // statements/lines: 97.46% — in-memory-auth.ts catch block (lines 29-33)
 // not exercised by current tests.
-module.exports = {
+const config = {
   ...baseConfig,
   thresholds: {
     statements: 97,
@@ -19,3 +20,9 @@ module.exports = {
     'src/popup/popup.ts',
   ],
 };
+
+config.enforceCoverage({
+  projectRoot: path.resolve(__dirname),
+  thresholds: config.thresholds,
+  extraExcludePatterns: config.extraExcludePatterns,
+})
