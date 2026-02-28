@@ -10,6 +10,18 @@ For HTML/CSS/SSR conventions, see the [web skill](./.claude/skills/web/SKILL.md)
 
 For testing conventions and designing testable code, see the [test-driven-design skill](./.claude/skills/test-driven-design/SKILL.md).
 
+### Filter and Query Testing Strategy
+
+Use integration tests for comprehensive filter/query functionality testing, not E2E tests. Filter logic tests should verify URL parameters produce correct HTML output using supertest + parseHTML.
+
+| Test concern | Test type | Location |
+|-------------|-----------|----------|
+| Domain Logic | Unit test | `*.test.ts` next to implementation |
+| Web Layer | Integration test | `*.route.test.ts` |
+
+
+E2E tests have ~11s startup overhead per test (browser, server, navigation). Integration tests avoid this overhead while still testing the full server-side flow.
+
 ## Coding Style
 
 ### Environment Variable Access
