@@ -48,4 +48,10 @@ declare namespace browser {
 			path: { [size: string]: string };
 		}): Promise<void>;
 	}
+
+	namespace commands {
+		const onCommand: {
+			addListener(callback: (command: string) => void): void;
+		};
+	}
 }

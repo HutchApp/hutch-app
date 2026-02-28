@@ -24,5 +24,13 @@
   },
   "background": {
     "scripts": ["background/background.js"]
+  },
+  "commands": {
+    "save-current-tab": {
+      "suggested_key": {
+        "default": "Alt+P"
+      },
+      "description": "Save current tab to reading list"
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
+import { initHandleSaveCommand } from "./handle-save-command";
 import type { PopupMessage } from "./messages.types";
 import { initSaveCurrentTab } from "./save-current-tab";
 
@@ -38,6 +39,19 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 	if ((changeInfo.url || changeInfo.status === "complete") && tab.url) {
 		await updateIconForTab(tabId, tab.url);
+	}
+});
+
+const handleSaveCommand = initHandleSaveCommand({
+	queryActiveTabs: () =>
+		browser.tabs.query({ active: true, currentWindow: true }),
+	whenLoggedIn: auth.whenLoggedIn,
+	saveCurrentTab,
+});
+
+browser.commands.onCommand.addListener((command) => {
+	if (command === "save-current-tab") {
+		handleSaveCommand().catch(console.error);
 	}
 });
 
