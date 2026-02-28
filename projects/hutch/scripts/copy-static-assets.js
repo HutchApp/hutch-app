@@ -2,7 +2,7 @@
  * Copy Static Assets Script
  *
  * Cross-platform replacement for rsync to copy non-TypeScript files from src/ to dist/.
- * Copies: *.css, *.html, *.json, *.png, *.client.js
+ * Copies: *.css, *.html, *.json, *.png, *.ico, *.webmanifest, *.xml, *.client.js
  *
  * This script exists because rsync is not available on all platforms (e.g., Windows,
  * some CI environments). Node.js fs operations work everywhere.
@@ -13,7 +13,7 @@ const path = require('path')
 const SRC_DIR = path.join(__dirname, '../src')
 const DIST_DIR = path.join(__dirname, '../dist')
 
-const EXTENSIONS = ['.css', '.html', '.json', '.png', '.client.js']
+const EXTENSIONS = ['.css', '.html', '.json', '.png', '.ico', '.webmanifest', '.xml', '.client.js']
 
 function shouldCopy(filePath) {
   return EXTENSIONS.some(ext => filePath.endsWith(ext))

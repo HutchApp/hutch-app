@@ -15,6 +15,7 @@ export interface SeoMetadata {
 	description: string;
 	canonicalUrl: string;
 	ogImage?: string;
+	twitterImage?: string;
 	ogType?: "website" | "article";
 	robots?: string;
 	structuredData?: object[];
@@ -156,8 +157,6 @@ const OFFLINE_INDICATOR_SCRIPT = `
 })();
 </script>`;
 
-const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#c8702a"/><path d="M9 8v16M23 8v16M9 16h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`;
-
 const BASE_TEMPLATE = `<!DOCTYPE html>
 <html lang="en-AU">
 <head>
@@ -167,21 +166,49 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
   <meta name="description" content="{{description}}">
   <meta name="robots" content="{{robots}}">
   <link rel="canonical" href="{{canonicalUrl}}">
-  <meta name="theme-color" content="#c8702a">
+  <meta name="theme-color" content="#2B3A55">
 
   <meta property="og:type" content="{{ogType}}">
   <meta property="og:site_name" content="Hutch">
   <meta property="og:title" content="{{title}}">
   <meta property="og:description" content="{{description}}">
   <meta property="og:url" content="{{canonicalUrl}}">
-  {{#if ogImage}}<meta property="og:image" content="{{ogImage}}">{{/if}}
+  {{#if ogImage}}
+  <meta property="og:image" content="{{ogImage}}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  {{/if}}
   <meta property="og:locale" content="en_AU">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{title}}">
   <meta name="twitter:description" content="{{description}}">
+  {{#if twitterImage}}<meta name="twitter:image" content="{{twitterImage}}">{{/if}}
+  <meta name="twitter:creator" content="@fagnerbrack">
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(FAVICON_SVG)}">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+
+  <link rel="manifest" href="/site.webmanifest">
+
+  <meta name="msapplication-TileColor" content="#2B3A55">
+  <meta name="msapplication-TileImage" content="/mstile-150x150.png">
+  <meta name="msapplication-config" content="/browserconfig.xml">
 
   {{{structuredDataScript}}}
 
@@ -234,6 +261,7 @@ function renderBaseTemplate(page: PageContent): string {
 		canonicalUrl: seo.canonicalUrl,
 		ogType,
 		ogImage: seo.ogImage,
+		twitterImage: seo.twitterImage ?? seo.ogImage,
 		robots,
 		structuredDataScript: renderStructuredData(seo.structuredData),
 		baseStyles: BASE_CSS_VARIABLES,

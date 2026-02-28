@@ -9,6 +9,8 @@ export function createLandingPageContent(): PageContent {
 				"Pocket is gone. Omnivore is gone. Hutch is the beautiful, affordable read-it-later app that works everywhere — with unlimited highlights, full-text search, and offline reading from A$3.99/mo.",
 			canonicalUrl: "https://hutchreader.com",
 			ogType: "website",
+			ogImage: "https://hutchreader.com/og-image-1200x630.png",
+			twitterImage: "https://hutchreader.com/twitter-card-1200x600.png",
 			structuredData: [
 				{
 					"@context": "https://schema.org",
