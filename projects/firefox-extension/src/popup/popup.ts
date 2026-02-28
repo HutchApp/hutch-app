@@ -63,7 +63,24 @@ function renderLinks(items: ReadingListItem[]) {
 		link.target = "_blank";
 		link.rel = "noopener noreferrer";
 
+		const deleteButton = document.createElement("button");
+		deleteButton.className = "list-view__delete";
+		deleteButton.textContent = "×";
+		deleteButton.title = "Remove from list";
+		deleteButton.addEventListener("click", async () => {
+			const result = (await send({
+				type: "remove-item",
+				id: item.id,
+			})) as GuardedResult<RemoveUrlResult>;
+
+			if (result.ok && result.value.ok) {
+				allItems = allItems.filter((i) => i.id !== item.id);
+				renderLinks(filterItems());
+			}
+		});
+
 		div.appendChild(link);
+		div.appendChild(deleteButton);
 		linkList.appendChild(div);
 	}
 }

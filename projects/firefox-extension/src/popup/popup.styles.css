@@ -104,6 +104,9 @@ p {
 .list-view__item {
   padding: 8px 0;
   border-bottom: 1px solid #e0e0e6;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .list-view__item:last-child {
@@ -116,11 +119,33 @@ p {
   text-decoration: none;
   word-break: break-all;
   line-height: 1.4;
+  flex: 1;
+  min-width: 0;
 }
 
 .list-view__url:hover {
   text-decoration: underline;
   color: #003eaa;
+}
+
+/**
+ * 1. Override the filled primary style — delete is a destructive utility action
+ */
+.list-view__delete {
+  background: transparent; /* 1 */
+  color: #5b5b66;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+  border: none;
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.list-view__delete:hover {
+  background: #ffe4e4;
+  color: #d70022;
 }
 /* purgecss-ignore-end */
 
