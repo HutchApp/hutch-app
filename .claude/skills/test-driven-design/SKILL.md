@@ -74,6 +74,22 @@ const targets = toCustomerEmail ? [toCustomerEmail] : [];
 const resendApiKey = requireEnv("RESEND_API_KEY");
 ```
 
+### Named Parameters Over Positional When Types Repeat
+
+When a function signature has 2 or more consecutive parameters of the same type (e.g., `(string, string)` or `(number, number)`), use a named parameter object instead. Positional arguments of the same type are easy to swap by accident (connascence of position is weaker than connascence of name).
+
+```typescript
+// ❌ BAD - Two consecutive strings are easy to swap
+type Login = (email: string, password: string) => Promise<LoginResult>;
+await auth.login("user@example.com", "password123");
+
+// ✅ GOOD - Named parameters prevent accidental swaps
+type Login = (credentials: { email: string; password: string }) => Promise<LoginResult>;
+await auth.login({ email: "user@example.com", password: "password123" });
+```
+
+This does NOT apply when the types differ (e.g., `(string, number)`) or when there is only one parameter.
+
 ### No Unnecessary Runtime Validation
 
 If TypeScript already enforces a constraint at compile time, do not add runtime validation for the same constraint.
