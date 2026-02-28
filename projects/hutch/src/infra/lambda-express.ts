@@ -8,8 +8,9 @@ import { logger } from "./logger";
 import { errorHandler } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
 import { localServer } from "./local-server";
+import { getEnv } from "../require-env";
 
-const lambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+const lambda = !!getEnv("AWS_LAMBDA_FUNCTION_NAME");
 
 export const lambdaExpress = ({
 	app,
