@@ -30,10 +30,12 @@ function renderLinks(items: ReadingListItem[]) {
 	const linkList = document.getElementById("link-list") as HTMLElement;
 	const emptyList = document.getElementById("empty-list") as HTMLElement;
 	const noMatches = document.getElementById("no-matches") as HTMLElement;
+	const listError = document.getElementById("list-error") as HTMLElement;
 
 	linkList.innerHTML = "";
 	emptyList.hidden = true;
 	noMatches.hidden = true;
+	listError.hidden = true;
 
 	if (allItems.length === 0) {
 		emptyList.hidden = false;
@@ -73,7 +75,11 @@ async function loadAllItems() {
 		type: "get-all-items",
 	})) as GuardedResult<ReadingListItem[]>;
 
-	if (!result.ok) return;
+	if (!result.ok) {
+		const listError = document.getElementById("list-error") as HTMLElement;
+		listError.hidden = false;
+		return;
+	}
 
 	allItems = result.value;
 	renderLinks(filterItems());
@@ -176,4 +182,9 @@ document.getElementById("filter-input")?.addEventListener("input", () => {
 	renderLinks(filterItems());
 });
 
-saveAndShowList();
+saveAndShowList().catch((error) => {
+	console.error("Failed to initialize popup:", error);
+	showView("list-view");
+	const listError = document.getElementById("list-error") as HTMLElement;
+	listError.hidden = false;
+});
