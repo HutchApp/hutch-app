@@ -27,10 +27,15 @@ let savedItemId: ReadingListItemId | null = null;
 let allItems: ReadingListItem[] = [];
 
 function renderLinks(items: ReadingListItem[]) {
-	const linkList = document.getElementById("link-list") as HTMLElement;
-	const emptyList = document.getElementById("empty-list") as HTMLElement;
-	const noMatches = document.getElementById("no-matches") as HTMLElement;
-	const listError = document.getElementById("list-error") as HTMLElement;
+	const linkList = document.getElementById("link-list");
+	const emptyList = document.getElementById("empty-list");
+	const noMatches = document.getElementById("no-matches");
+	const listError = document.getElementById("list-error");
+
+	if (!linkList) throw new Error("link-list element not found");
+	if (!emptyList) throw new Error("empty-list element not found");
+	if (!noMatches) throw new Error("no-matches element not found");
+	if (!listError) throw new Error("list-error element not found");
 
 	linkList.innerHTML = "";
 	emptyList.hidden = true;
@@ -56,7 +61,7 @@ function renderLinks(items: ReadingListItem[]) {
 		link.href = item.url;
 		link.textContent = item.url;
 		link.target = "_blank";
-		link.rel = "noopener";
+		link.rel = "noopener noreferrer";
 
 		div.appendChild(link);
 		linkList.appendChild(div);
@@ -64,10 +69,9 @@ function renderLinks(items: ReadingListItem[]) {
 }
 
 function filterItems(): ReadingListItem[] {
-	const filterInput = document.getElementById(
-		"filter-input",
-	) as HTMLInputElement;
-	return filterByUrl(allItems, filterInput.value);
+	const filterInput = document.getElementById("filter-input");
+	if (!filterInput) throw new Error("filter-input element not found");
+	return filterByUrl(allItems, (filterInput as HTMLInputElement).value);
 }
 
 async function loadAllItems() {
@@ -76,7 +80,8 @@ async function loadAllItems() {
 	})) as GuardedResult<ReadingListItem[]>;
 
 	if (!result.ok) {
-		const listError = document.getElementById("list-error") as HTMLElement;
+		const listError = document.getElementById("list-error");
+		if (!listError) throw new Error("list-error element not found");
 		listError.hidden = false;
 		return;
 	}
@@ -185,6 +190,6 @@ document.getElementById("filter-input")?.addEventListener("input", () => {
 saveAndShowList().catch((error) => {
 	console.error("Failed to initialize popup:", error);
 	showView("list-view");
-	const listError = document.getElementById("list-error") as HTMLElement;
-	listError.hidden = false;
+	const listError = document.getElementById("list-error");
+	if (listError) listError.hidden = false;
 });
