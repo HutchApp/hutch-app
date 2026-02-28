@@ -63,9 +63,9 @@ describe("GET /", () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.querySelector('[data-test-plan="free"]')).not.toBeNull();
-		expect(doc.querySelector('[data-test-plan="pro"]')).not.toBeNull();
-		expect(doc.querySelector('[data-test-plan="pro-plus"]')).not.toBeNull();
+		expect(doc.querySelector('[data-test-plan="free"] .pricing-card__name')?.textContent).toBe("Free");
+		expect(doc.querySelector('[data-test-plan="pro"] .pricing-card__name')?.textContent).toBe("Pro");
+		expect(doc.querySelector('[data-test-plan="pro-plus"] .pricing-card__name')?.textContent).toBe("Pro+");
 	});
 
 	it("should render the comparison table", async () => {
@@ -73,7 +73,6 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const table = doc.querySelector("[data-test-comparison-table]");
-		expect(table).not.toBeNull();
 		const rows = table?.querySelectorAll("tbody tr");
 		expect(rows?.length).toBe(7);
 	});

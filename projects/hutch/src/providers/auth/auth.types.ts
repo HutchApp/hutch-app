@@ -8,15 +8,15 @@ export type VerifyCredentialsResult =
 	| { ok: true; userId: UserId }
 	| { ok: false; reason: "invalid-credentials" };
 
-export type CreateUser = (
-	email: string,
-	password: string,
-) => Promise<CreateUserResult>;
+export type CreateUser = (credentials: {
+	email: string;
+	password: string;
+}) => Promise<CreateUserResult>;
 
-export type VerifyCredentials = (
-	email: string,
-	password: string,
-) => Promise<VerifyCredentialsResult>;
+export type VerifyCredentials = (credentials: {
+	email: string;
+	password: string;
+}) => Promise<VerifyCredentialsResult>;
 
 export type CreateSession = (userId: UserId) => Promise<string>;
 

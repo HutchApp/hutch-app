@@ -67,7 +67,6 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use(express.json());
 	app.use(cookieParser());
 
-	// Session resolution middleware
 	app.use(async (req: Request, _res: Response, next: NextFunction) => {
 		const sessionId = req.cookies?.[COOKIE_NAME];
 		if (sessionId) {
@@ -86,7 +85,6 @@ export function createApp(dependencies: AppDependencies): Express {
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
-	// Auth routes (login, signup, logout)
 	const authRouter = initAuthRoutes({
 		createUser: deps.createUser,
 		verifyCredentials: deps.verifyCredentials,
@@ -95,7 +93,6 @@ export function createApp(dependencies: AppDependencies): Express {
 	});
 	app.use(authRouter);
 
-	// Queue routes (protected)
 	const queueRouter = initQueueRoutes({
 		findArticlesByUser: deps.findArticlesByUser,
 		saveArticle: deps.saveArticle,

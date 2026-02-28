@@ -31,7 +31,6 @@ describe("initInMemoryArticleStore", () => {
 
 			const found = await store.findArticleById(saved.id);
 
-			expect(found).not.toBeNull();
 			expect(found?.url).toBe("https://example.com/article");
 			expect(found?.status).toBe("unread");
 			expect(found?.isStarred).toBe(false);
@@ -145,7 +144,7 @@ describe("initInMemoryArticleStore", () => {
 			const deleted = await store.deleteArticle(saved.id, USER_B);
 
 			expect(deleted).toBe(false);
-			expect(await store.findArticleById(saved.id)).not.toBeNull();
+			expect((await store.findArticleById(saved.id))?.url).toBe("https://example.com/article");
 		});
 	});
 

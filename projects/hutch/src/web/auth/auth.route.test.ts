@@ -10,16 +10,16 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector('[data-test-form="login"]')).not.toBeNull();
-			expect(doc.querySelector('input[name="email"]')).not.toBeNull();
-			expect(doc.querySelector('input[name="password"]')).not.toBeNull();
+			expect(doc.querySelector('[data-test-form="login"]')?.getAttribute("action")).toBe("/login");
+			expect(doc.querySelector('input[name="email"]')?.getAttribute("type")).toBe("email");
+			expect(doc.querySelector('input[name="password"]')?.getAttribute("type")).toBe("password");
 		});
 	});
 
 	describe("POST /login", () => {
 		it("should redirect to /queue on valid credentials", async () => {
 			const { app, auth } = createTestApp();
-			await auth.createUser("test@example.com", "password123");
+			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const agent = request.agent(app);
 			const response = await agent
@@ -57,7 +57,7 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector('[data-test-error="email"]')).not.toBeNull();
+			expect(doc.querySelector('[data-test-error="email"]')?.textContent).toBe("Please enter a valid email address");
 		});
 	});
 
@@ -68,8 +68,8 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector('[data-test-form="signup"]')).not.toBeNull();
-			expect(doc.querySelector('input[name="confirmPassword"]')).not.toBeNull();
+			expect(doc.querySelector('[data-test-form="signup"]')?.getAttribute("action")).toBe("/signup");
+			expect(doc.querySelector('input[name="confirmPassword"]')?.getAttribute("type")).toBe("password");
 		});
 	});
 
@@ -90,7 +90,7 @@ describe("Auth routes", () => {
 
 		it("should show error for duplicate email", async () => {
 			const { app, auth } = createTestApp();
-			await auth.createUser("existing@example.com", "password123");
+			await auth.createUser({ email: "existing@example.com", password: "password123" });
 
 			const response = await request(app).post("/signup").type("form").send({
 				email: "existing@example.com",
@@ -117,8 +117,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			expect(
-				doc.querySelector('[data-test-error="confirmPassword"]'),
-			).not.toBeNull();
+				doc.querySelector('[data-test-error="confirmPassword"]')?.textContent,
+			).toBe("Passwords do not match");
 		});
 
 		it("should show error for short password", async () => {
@@ -132,14 +132,14 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector('[data-test-error="password"]')).not.toBeNull();
+			expect(doc.querySelector('[data-test-error="password"]')?.textContent).toBe("Password must be at least 8 characters");
 		});
 	});
 
 	describe("POST /logout", () => {
 		it("should clear session and redirect to /", async () => {
 			const { app, auth } = createTestApp();
-			await auth.createUser("test@example.com", "password123");
+			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const agent = request.agent(app);
 			await agent

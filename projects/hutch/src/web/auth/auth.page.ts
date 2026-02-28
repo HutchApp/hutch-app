@@ -59,7 +59,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 
 		const { email, password } = parsed.data;
-		const credentials = await deps.verifyCredentials(email, password);
+		const credentials = await deps.verifyCredentials({ email, password });
 
 		if (!credentials.ok) {
 			const pageContent = createLoginPageContent({
@@ -99,7 +99,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 
 		const { email, password } = parsed.data;
-		const createResult = await deps.createUser(email, password);
+		const createResult = await deps.createUser({ email, password });
 
 		if (!createResult.ok) {
 			const pageContent = createSignupPageContent({

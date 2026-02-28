@@ -3,7 +3,7 @@ import request from "supertest";
 import { createTestApp } from "../../../test-app";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
-	await auth.createUser("test@example.com", "password123");
+	await auth.createUser({ email: "test@example.com", password: "password123" });
 	const agent = request.agent(app);
 	await agent
 		.post("/login")
@@ -32,8 +32,8 @@ describe("Queue routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-empty-queue]")).not.toBeNull();
-			expect(doc.querySelector('[data-test-form="save-article"]')).not.toBeNull();
+			expect(doc.querySelector("[data-test-empty-queue]")?.textContent).toContain("empty");
+			expect(doc.querySelector('[data-test-form="save-article"]')?.getAttribute("action")).toBe("/queue/save");
 		});
 
 		it("should show article count", async () => {
@@ -62,7 +62,7 @@ describe("Queue routes", () => {
 
 			const queueResponse = await agent.get("/queue");
 			const doc = new JSDOM(queueResponse.text).window.document;
-			expect(doc.querySelector("[data-test-article-list]")).not.toBeNull();
+			expect(doc.querySelectorAll(".queue-article").length).toBe(1);
 			expect(doc.querySelector("[data-test-empty-queue]")).toBeNull();
 		});
 
@@ -77,7 +77,7 @@ describe("Queue routes", () => {
 
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-save-error]")).not.toBeNull();
+			expect(doc.querySelector("[data-test-save-error]")?.textContent).toBe("Please enter a valid URL");
 		});
 	});
 
@@ -155,7 +155,7 @@ describe("Queue routes", () => {
 
 			const afterDeleteResponse = await agent.get("/queue");
 			const afterDoc = new JSDOM(afterDeleteResponse.text).window.document;
-			expect(afterDoc.querySelector("[data-test-empty-queue]")).not.toBeNull();
+			expect(afterDoc.querySelector("[data-test-empty-queue]")?.textContent).toContain("empty");
 		});
 	});
 
@@ -192,7 +192,7 @@ describe("Queue routes", () => {
 
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-sort]")).not.toBeNull();
+			expect(doc.querySelector("[data-test-sort]")?.textContent).toContain("first");
 		});
 	});
 });

@@ -43,7 +43,7 @@ export function initInMemoryAuth(): {
 	const users = new Map<string, StoredUser>();
 	const sessions = new Map<string, UserId>();
 
-	const createUser: CreateUser = async (email, password) => {
+	const createUser: CreateUser = async ({ email, password }) => {
 		const normalizedEmail = email.toLowerCase().trim();
 
 		if (users.has(normalizedEmail)) {
@@ -58,7 +58,7 @@ export function initInMemoryAuth(): {
 		return { ok: true, userId };
 	};
 
-	const verifyCredentials: VerifyCredentials = async (email, password) => {
+	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
 		const normalizedEmail = email.toLowerCase().trim();
 		const user = users.get(normalizedEmail);
 

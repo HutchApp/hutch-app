@@ -156,7 +156,6 @@ const OFFLINE_INDICATOR_SCRIPT = `
 })();
 </script>`;
 
-// Hutch favicon — a stylized "H" with warm amber color
 const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#c8702a"/><path d="M9 8v16M23 8v16M9 16h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`;
 
 const BASE_TEMPLATE = `<!DOCTYPE html>
@@ -170,7 +169,6 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
   <link rel="canonical" href="{{canonicalUrl}}">
   <meta name="theme-color" content="#c8702a">
 
-  <!-- Open Graph -->
   <meta property="og:type" content="{{ogType}}">
   <meta property="og:site_name" content="Hutch">
   <meta property="og:title" content="{{title}}">
@@ -179,15 +177,12 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
   {{#if ogImage}}<meta property="og:image" content="{{ogImage}}">{{/if}}
   <meta property="og:locale" content="en_AU">
 
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{title}}">
   <meta name="twitter:description" content="{{description}}">
 
-  <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(FAVICON_SVG)}">
 
-  <!-- Structured Data -->
   {{{structuredDataScript}}}
 
   <style>

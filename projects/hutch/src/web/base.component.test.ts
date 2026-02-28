@@ -75,7 +75,6 @@ describe("Base component", () => {
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector(".offline-banner");
-		expect(banner).not.toBeNull();
 		expect(banner?.getAttribute("aria-hidden")).toBe("true");
 	});
 
@@ -101,7 +100,6 @@ describe("Base component", () => {
 		const doc = new JSDOM(result.body).window.document;
 
 		const ldJson = doc.querySelector('script[type="application/ld+json"]');
-		expect(ldJson).not.toBeNull();
 		const data = JSON.parse(ldJson?.textContent || "{}");
 		expect(data.name).toBe("Hutch");
 	});
