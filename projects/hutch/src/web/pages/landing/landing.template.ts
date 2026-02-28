@@ -62,50 +62,65 @@ function renderHeroSection(): string {
     </section>`;
 }
 
+function renderFeatureCard(f: {
+	name: string;
+	description: string;
+	inDevelopment?: boolean;
+}): string {
+	const devClass = f.inDevelopment ? " feature-card--in-development" : "";
+	const badge = f.inDevelopment
+		? '<span class="feature-card__badge">In Development</span>'
+		: "";
+	return `
+        <div class="feature-card${devClass}" data-test-feature="${f.name}">
+          ${badge}
+          <div class="feature-card__icon" aria-hidden="true"></div>
+          <h3 class="feature-card__name">${f.name}</h3>
+          <p class="feature-card__description">${f.description}</p>
+        </div>`;
+}
+
 function renderCoreFeaturesSection(): string {
 	const features = [
 		{
 			name: "One-Click Save",
 			description:
 				"Browser extension and mobile share sheet. Save any article in under a second &mdash; no modals, no friction.",
+			inDevelopment: true,
 		},
 		{
 			name: "Beautiful Reader",
 			description:
 				"Distraction-free reading with custom fonts, themes (Light, Sepia, Dark, OLED), and adjustable typography.",
+			inDevelopment: true,
 		},
 		{
 			name: "Unlimited Highlights",
 			description:
 				"Highlight in 4 colours, add inline notes, export as Markdown. No monthly limits &mdash; ever.",
+			inDevelopment: true,
 		},
 		{
 			name: "Full-Text Search",
 			description:
 				"Search across titles AND article body text. Filter by tags, read status, date, or reading time.",
+			inDevelopment: true,
 		},
 		{
 			name: "Offline &amp; Archived",
 			description:
 				"Articles auto-download for offline reading. Your archive is permanent &mdash; even if the original page disappears.",
+			inDevelopment: true,
 		},
 		{
 			name: "Cross-Platform Sync",
 			description:
 				"Web, iOS, Android, and browser extensions. Reading position syncs in real-time across all devices.",
+			inDevelopment: true,
 		},
 	];
 
-	const featureCards = features
-		.map(
-			(f) => `
-        <div class="feature-card" data-test-feature="${f.name}">
-          <div class="feature-card__icon" aria-hidden="true"></div>
-          <h3 class="feature-card__name">${f.name}</h3>
-          <p class="feature-card__description">${f.description}</p>
-        </div>`,
-		)
-		.join("");
+	const featureCards = features.map(renderFeatureCard).join("");
 
 	return `
     <section id="features" class="landing-features" data-test-section="core-features">
@@ -126,44 +141,41 @@ function renderPowerFeaturesSection(): string {
 			name: "Daily Digest",
 			description:
 				"Morning email with articles matched to your available reading time.",
+			inDevelopment: true,
 		},
 		{
 			name: "Newsletter Inbox",
 			description:
 				"Unique email alias routes newsletters straight into your reading queue.",
+			inDevelopment: true,
 		},
 		{
 			name: "Text-to-Speech",
 			description:
 				"Listen to articles with natural TTS. Adjustable speed, background playback.",
+			inDevelopment: true,
 		},
 		{
 			name: "Full Data Export",
 			description:
 				"Export everything as JSON, CSV, or Markdown. Import from Pocket, Instapaper, Omnivore.",
+			inDevelopment: true,
 		},
 		{
 			name: "AI Auto-Tagging",
 			description:
 				"Articles auto-tagged on save using AI. Learns your patterns over time.",
+			inDevelopment: true,
 		},
 		{
 			name: "AI Summaries",
 			description:
 				"One-tap TL;DR with 3&ndash;5 key points. Scan your queue faster.",
+			inDevelopment: true,
 		},
 	];
 
-	const featureCards = features
-		.map(
-			(f) => `
-        <div class="feature-card" data-test-feature="${f.name}">
-          <div class="feature-card__icon" aria-hidden="true"></div>
-          <h3 class="feature-card__name">${f.name}</h3>
-          <p class="feature-card__description">${f.description}</p>
-        </div>`,
-		)
-		.join("");
+	const featureCards = features.map(renderFeatureCard).join("");
 
 	return `
     <section class="landing-features" data-test-section="power-features">

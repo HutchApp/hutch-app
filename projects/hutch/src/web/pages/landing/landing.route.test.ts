@@ -48,6 +48,17 @@ describe("GET /", () => {
 		expect(features?.length).toBe(6);
 	});
 
+	it("should render in-development features with grayed-out class and badge", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const devCards = doc.querySelectorAll(".feature-card--in-development");
+		expect(devCards.length).toBe(12);
+
+		const firstBadge = devCards[0].querySelector(".feature-card__badge");
+		expect(firstBadge?.textContent).toBe("In Development");
+	});
+
 	it("should render three pricing plans", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;

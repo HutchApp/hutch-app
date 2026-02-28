@@ -162,6 +162,25 @@ export const LANDING_PAGE_STYLES = `
     line-height: 1.5;
   }
 
+  .feature-card--in-development {
+    opacity: 0.5;
+    filter: grayscale(0.4);
+    position: relative;
+  }
+
+  .feature-card__badge {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+
   /* Comparison Section */
   .landing-comparison {
     padding: 80px 20px;
