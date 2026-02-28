@@ -79,17 +79,42 @@ describe("initInMemoryReadingList", () => {
 			expect(items).toEqual([]);
 		});
 
-		it("should return all saved items", async () => {
+		it("should return all saved items with their URLs", async () => {
 			const list = initInMemoryReadingList();
 			await list.saveUrl({ url: "https://example.com/a", title: "Article A" });
 			await list.saveUrl({ url: "https://example.com/b", title: "Article B" });
 
 			const items = await list.getAllItems();
 
-			expect(items.length).toBe(2);
 			const urls = items.map((item) => item.url);
-			expect(urls).toContain("https://example.com/a");
-			expect(urls).toContain("https://example.com/b");
+			expect(urls).toEqual([
+				"https://example.com/a",
+				"https://example.com/b",
+			]);
+		});
+
+		it("should reflect newly saved items on subsequent calls", async () => {
+			const list = initInMemoryReadingList();
+			await list.saveUrl({
+				url: "https://example.com/first",
+				title: "First",
+			});
+
+			const beforeReload = await list.getAllItems();
+			expect(beforeReload.map((i) => i.url)).toEqual([
+				"https://example.com/first",
+			]);
+
+			await list.saveUrl({
+				url: "https://example.com/second",
+				title: "Second",
+			});
+
+			const afterReload = await list.getAllItems();
+			expect(afterReload.map((i) => i.url)).toEqual([
+				"https://example.com/first",
+				"https://example.com/second",
+			]);
 		});
 	});
 });

@@ -1,5 +1,5 @@
 body {
-  width: 300px;
+  width: 350px;
   font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 16px;
@@ -55,4 +55,83 @@ button:hover {
 p {
   margin: 0;
   font-size: 14px;
+}
+
+/* --- List view (saved links) --- */
+
+.list-view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.list-view__title {
+  margin: 0;
+}
+
+/**
+ * 1. Override the filled primary style — reload is a utility action
+ */
+.list-view__reload {
+  background: transparent; /* 1 */
+  color: #0060df;
+  font-size: 18px;
+  padding: 4px 8px;
+  line-height: 1;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.list-view__reload:hover {
+  background: #f0f0f4;
+  color: #003eaa;
+}
+
+.list-view__filter {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.list-view__links {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* purgecss-ignore-start: applied dynamically in popup.ts when rendering saved links */
+.list-view__item {
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e6;
+}
+
+.list-view__item:last-child {
+  border-bottom: none;
+}
+
+.list-view__url {
+  color: #0060df;
+  font-size: 13px;
+  text-decoration: none;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.list-view__url:hover {
+  text-decoration: underline;
+  color: #003eaa;
+}
+/* purgecss-ignore-end */
+
+.list-view__empty {
+  color: #5b5b66;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.list-view__error {
+  color: #d70022;
+  text-align: center;
+  padding: 24px 0;
 }

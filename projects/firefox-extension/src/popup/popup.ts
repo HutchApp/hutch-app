@@ -1,7 +1,14 @@
-import type { ReadingListItem, ReadingListItemId } from "../domain/reading-list-item.types";
+import type {
+	ReadingListItem,
+	ReadingListItemId,
+} from "../domain/reading-list-item.types";
 import type { PopupMessage } from "../background/messages.types";
+import { filterByUrl } from "./filter-by-url";
 import type { GuardedResult } from "../providers/auth/auth.types";
-import type { SaveUrlResult, RemoveUrlResult } from "../providers/reading-list/reading-list.types";
+import type {
+	SaveUrlResult,
+	RemoveUrlResult,
+} from "../providers/reading-list/reading-list.types";
 import type { LoginResult } from "../providers/auth/auth.types";
 
 function showView(id: string) {
@@ -17,11 +24,87 @@ function send(message: PopupMessage): Promise<unknown> {
 }
 
 let savedItemId: ReadingListItemId | null = null;
+let allItems: ReadingListItem[] = [];
 
-async function init() {
-	const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+function renderLinks(items: ReadingListItem[]) {
+	const linkList = document.getElementById("link-list");
+	const emptyList = document.getElementById("empty-list");
+	const noMatches = document.getElementById("no-matches");
+	const listError = document.getElementById("list-error");
+
+	if (!linkList) throw new Error("link-list element not found");
+	if (!emptyList) throw new Error("empty-list element not found");
+	if (!noMatches) throw new Error("no-matches element not found");
+	if (!listError) throw new Error("list-error element not found");
+
+	linkList.innerHTML = "";
+	emptyList.hidden = true;
+	noMatches.hidden = true;
+	listError.hidden = true;
+
+	if (allItems.length === 0) {
+		emptyList.hidden = false;
+		return;
+	}
+
+	if (items.length === 0) {
+		noMatches.hidden = false;
+		return;
+	}
+
+	for (const item of items) {
+		const div = document.createElement("div");
+		div.className = "list-view__item";
+
+		const link = document.createElement("a");
+		link.className = "list-view__url";
+		link.href = item.url;
+		link.textContent = item.url;
+		link.target = "_blank";
+		link.rel = "noopener noreferrer";
+
+		div.appendChild(link);
+		linkList.appendChild(div);
+	}
+}
+
+function filterItems(): ReadingListItem[] {
+	const filterInput = document.getElementById("filter-input");
+	if (!filterInput) throw new Error("filter-input element not found");
+	return filterByUrl(allItems, (filterInput as HTMLInputElement).value);
+}
+
+async function loadAllItems() {
+	const result = (await send({
+		type: "get-all-items",
+	})) as GuardedResult<ReadingListItem[]>;
+
+	if (!result.ok) {
+		const listError = document.getElementById("list-error");
+		if (!listError) throw new Error("list-error element not found");
+		listError.hidden = false;
+		return;
+	}
+
+	allItems = result.value;
+	renderLinks(filterItems());
+}
+
+async function showListView() {
+	showView("list-view");
+	await loadAllItems();
+}
+
+async function saveAndShowList() {
+	const tabs = await browser.tabs.query({
+		active: true,
+		currentWindow: true,
+	});
 	const tab = tabs[0];
-	if (!tab?.url) return;
+	if (!tab?.url) {
+		await showListView();
+		return;
+	}
 
 	const checkResult = (await send({
 		type: "check-url",
@@ -37,7 +120,7 @@ async function init() {
 	}
 
 	if (checkResult.value) {
-		showView("already-saved-view");
+		await showListView();
 		return;
 	}
 
@@ -53,37 +136,60 @@ async function init() {
 	}
 }
 
-document.getElementById("login-form")?.addEventListener("submit", async (e) => {
-	e.preventDefault();
-	const email = (document.getElementById("email") as HTMLInputElement).value;
-	const password = (document.getElementById("password") as HTMLInputElement).value;
+document
+	.getElementById("login-form")
+	?.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const email = (document.getElementById("email") as HTMLInputElement)
+			.value;
+		const password = (
+			document.getElementById("password") as HTMLInputElement
+		).value;
 
-	const result = (await send({
-		type: "login",
-		email,
-		password,
-	})) as LoginResult;
+		const result = (await send({
+			type: "login",
+			email,
+			password,
+		})) as LoginResult;
 
-	if (result.ok) {
-		showView("loading-view");
-		await init();
-	} else {
-		const errorEl = document.getElementById("login-error");
-		if (errorEl) errorEl.hidden = false;
-	}
+		if (result.ok) {
+			showView("loading-view");
+			await saveAndShowList();
+		} else {
+			const errorEl = document.getElementById("login-error");
+			if (errorEl) errorEl.hidden = false;
+		}
+	});
+
+document
+	.getElementById("undo-button")
+	?.addEventListener("click", async () => {
+		if (!savedItemId) return;
+
+		const result = (await send({
+			type: "remove-item",
+			id: savedItemId,
+		})) as GuardedResult<RemoveUrlResult>;
+
+		if (result.ok && result.value.ok) {
+			savedItemId = null;
+			await showListView();
+		}
+	});
+
+document
+	.getElementById("reload-button")
+	?.addEventListener("click", async () => {
+		await loadAllItems();
+	});
+
+document.getElementById("filter-input")?.addEventListener("input", () => {
+	renderLinks(filterItems());
 });
 
-document.getElementById("undo-button")?.addEventListener("click", async () => {
-	if (!savedItemId) return;
-
-	const result = (await send({
-		type: "remove-item",
-		id: savedItemId,
-	})) as GuardedResult<RemoveUrlResult>;
-
-	if (result.ok && result.value.ok) {
-		showView("removed-view");
-	}
+saveAndShowList().catch((error) => {
+	console.error("Failed to initialize popup:", error);
+	showView("list-view");
+	const listError = document.getElementById("list-error");
+	if (listError) listError.hidden = false;
 });
-
-init();

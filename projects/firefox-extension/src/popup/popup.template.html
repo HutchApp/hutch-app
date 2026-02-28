@@ -30,6 +30,23 @@
     <p>Removed</p>
   </div>
 
+  <div id="list-view" class="view" hidden>
+    <div class="list-view__header">
+      <h2 class="list-view__title">My List</h2>
+      <button id="reload-button" class="list-view__reload" title="Reload">&#x21bb;</button>
+    </div>
+    <input
+      type="text"
+      id="filter-input"
+      class="list-view__filter"
+      placeholder="Filter by URL..."
+    >
+    <div id="link-list" class="list-view__links"></div>
+    <p id="empty-list" class="list-view__empty" hidden>No saved links</p>
+    <p id="no-matches" class="list-view__empty" hidden>No matching links</p>
+    <p id="list-error" class="list-view__error" hidden>Failed to load links</p>
+  </div>
+
   <div id="loading-view" class="view">
     <p>Loading...</p>
   </div>
