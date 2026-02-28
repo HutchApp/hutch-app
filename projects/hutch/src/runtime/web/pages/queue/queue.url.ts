@@ -6,6 +6,7 @@ export interface QueueUrlState {
 	starred?: boolean;
 	order: SortOrder;
 	page: number;
+	showUrl?: boolean;
 }
 
 const VALID_STATUSES: ArticleStatus[] = ["unread", "read", "archived"];
@@ -26,7 +27,9 @@ export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 	const rawPage = Number(query.page);
 	const page = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1;
 
-	return { status, starred, order, page };
+	const showUrl = query.showUrl === "true" ? true : undefined;
+
+	return { status, starred, order, page, showUrl };
 }
 
 export function buildQueueUrl(state: Partial<QueueUrlState>): string {
@@ -43,6 +46,9 @@ export function buildQueueUrl(state: Partial<QueueUrlState>): string {
 	}
 	if (state.page && state.page > 1) {
 		params.set("page", String(state.page));
+	}
+	if (state.showUrl) {
+		params.set("showUrl", "true");
 	}
 
 	const qs = params.toString();

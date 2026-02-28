@@ -155,6 +155,16 @@
   color: var(--primary);
 }
 
+.queue-article__url {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
 .queue-article__meta {
   font-size: 0.8125rem;
   color: var(--muted-foreground);

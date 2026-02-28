@@ -39,6 +39,19 @@ describe("parseQueueUrl", () => {
 		expect(parseQueueUrl({ page: "abc" }).page).toBe(1);
 		expect(parseQueueUrl({ page: "0" }).page).toBe(1);
 	});
+
+	it("should parse showUrl flag", () => {
+		expect(parseQueueUrl({ showUrl: "true" }).showUrl).toBe(true);
+	});
+
+	it("should default showUrl to undefined when not set", () => {
+		expect(parseQueueUrl({}).showUrl).toBeUndefined();
+	});
+
+	it("should ignore invalid showUrl values", () => {
+		expect(parseQueueUrl({ showUrl: "false" }).showUrl).toBeUndefined();
+		expect(parseQueueUrl({ showUrl: "yes" }).showUrl).toBeUndefined();
+	});
 });
 
 describe("buildQueueUrl", () => {
@@ -75,5 +88,13 @@ describe("buildQueueUrl", () => {
 		expect(url).toContain("status=unread");
 		expect(url).toContain("order=asc");
 		expect(url).toContain("page=3");
+	});
+
+	it("should include showUrl when true", () => {
+		expect(buildQueueUrl({ showUrl: true })).toBe("/queue?showUrl=true");
+	});
+
+	it("should omit showUrl when not set", () => {
+		expect(buildQueueUrl({})).toBe("/queue");
 	});
 });

@@ -2,7 +2,10 @@ import type { PageContent } from "../../base.component";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
 
-function renderArticle(article: QueueArticleViewModel): string {
+function renderArticle(
+	article: QueueArticleViewModel,
+	options: { showUrl: boolean },
+): string {
 	const starClass = article.isStarred
 		? " queue-article__action-btn--starred"
 		: "";
@@ -35,6 +38,7 @@ function renderArticle(article: QueueArticleViewModel): string {
     <div class="queue-article" data-test-article="${article.id}">
       <div class="queue-article__content">
         <a class="queue-article__title" href="${article.url}" target="_blank" rel="noopener">${article.title}</a>
+        ${options.showUrl ? `<span class="queue-article__url" data-test-article-url>${article.url}</span>` : ""}
         <div class="queue-article__meta">
           <span>${article.siteName}</span>
           <span>${article.readTimeLabel}</span>
@@ -80,6 +84,7 @@ function renderSortToggle(vm: QueueViewModel): string {
 
 	return `
     <div class="queue__sort">
+      <a class="queue__sort-link" href="${vm.showUrlToggle.url}" data-test-show-url>${vm.showUrlToggle.label}</a>
       <a class="queue__sort-link" href="${url}" data-test-sort>${label}</a>
     </div>`;
 }
@@ -117,7 +122,7 @@ export function createQueuePageContent(vm: QueueViewModel): PageContent {
       ${vm.saveError ? `<p class="queue__save-error" data-test-save-error>${vm.saveError}</p>` : ""}
       ${renderFilters(vm)}
       ${renderSortToggle(vm)}
-      ${vm.isEmpty ? renderEmpty() : `<div class="queue__list" data-test-article-list>${vm.articles.map(renderArticle).join("")}</div>`}
+      ${vm.isEmpty ? renderEmpty() : `<div class="queue__list" data-test-article-list>${vm.articles.map((a) => renderArticle(a, { showUrl: vm.filters.showUrl === true })).join("")}</div>`}
       ${renderPagination(vm)}
     </main>`;
 

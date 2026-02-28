@@ -159,6 +159,58 @@ describe("Queue routes", () => {
 		});
 	});
 
+	describe("Show URL toggle", () => {
+		it("should not show article URLs by default", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-article-url]")).toBeNull();
+		});
+
+		it("should show article URLs when showUrl=true", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue?showUrl=true");
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-article-url]")?.textContent).toBe("https://example.com/article");
+		});
+
+		it("should render Show URLs toggle link", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const toggle = doc.querySelector("[data-test-show-url]");
+			expect(toggle?.textContent).toBe("Show URLs");
+			expect(toggle?.getAttribute("href")).toContain("showUrl=true");
+		});
+
+		it("should render Hide URLs toggle link when URLs are shown", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue?showUrl=true");
+			const doc = new JSDOM(response.text).window.document;
+			const toggle = doc.querySelector("[data-test-show-url]");
+			expect(toggle?.textContent).toBe("Hide URLs");
+			expect(toggle?.getAttribute("href")).not.toContain("showUrl");
+		});
+	});
+
 	describe("Filter and sort", () => {
 		it("should filter by status", async () => {
 			const { app, auth } = createTestApp();
