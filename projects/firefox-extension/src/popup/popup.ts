@@ -3,6 +3,7 @@ import type {
 	ReadingListItemId,
 } from "../domain/reading-list-item.types";
 import type { PopupMessage } from "../background/messages.types";
+import { filterByUrl } from "./filter-by-url";
 import type { GuardedResult } from "../providers/auth/auth.types";
 import type {
 	SaveUrlResult,
@@ -64,10 +65,7 @@ function filterItems(): ReadingListItem[] {
 	const filterInput = document.getElementById(
 		"filter-input",
 	) as HTMLInputElement;
-	const query = filterInput.value.toLowerCase();
-
-	if (!query) return allItems;
-	return allItems.filter((item) => item.url.toLowerCase().includes(query));
+	return filterByUrl(allItems, filterInput.value);
 }
 
 async function loadAllItems() {

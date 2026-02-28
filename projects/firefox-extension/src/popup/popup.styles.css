@@ -100,6 +100,7 @@ p {
   flex-direction: column;
 }
 
+/* purgecss-ignore-start: applied dynamically in popup.ts when rendering saved links */
 .list-view__item {
   padding: 8px 0;
   border-bottom: 1px solid #e0e0e6;
@@ -121,6 +122,7 @@ p {
   text-decoration: underline;
   color: #003eaa;
 }
+/* purgecss-ignore-end */
 
 .list-view__empty {
   color: #5b5b66;
