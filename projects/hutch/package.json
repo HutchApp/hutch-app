@@ -11,7 +11,7 @@
     "test-integration": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000",
     "test-integration:sequential": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000 --runInBand",
     "compile": "tsc",
-    "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
+    "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\"",
     "check": "pnpm lint && pnpm compile && pnpm test"
   },
   "dependencies": {

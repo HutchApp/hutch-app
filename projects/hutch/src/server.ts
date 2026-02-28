@@ -32,7 +32,7 @@ export const PORT = requireEnv("PORT", "3000");
 
 const COOKIE_NAME = "hutch_sid";
 
-export interface AppDependencies {
+interface AppDependencies {
 	livereloadMiddleware?: ReturnType<typeof import("connect-livereload")>;
 	createUser: CreateUser;
 	verifyCredentials: VerifyCredentials;

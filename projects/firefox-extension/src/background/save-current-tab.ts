@@ -1,6 +1,6 @@
 import type { SaveUrl, SaveUrlResult } from "../providers/reading-list/reading-list.types";
 
-export interface TabInfo {
+interface TabInfo {
 	url: string;
 	title: string;
 }

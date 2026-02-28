@@ -1,4 +1,4 @@
-export interface ParsedArticle {
+interface ParsedArticle {
 	title: string;
 	siteName: string;
 	excerpt: string;
