@@ -1,13 +1,18 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const config = new pulumi.Config();
-const stage = config.get("stage") || "dev";
-const memorySize = config.getNumber("memorySize") || 512;
-const timeout = config.getNumber("timeout") || 30;
+const stage = config.require("stage");
+const memorySize = 512;
+const timeout = 30;
 
-const projectRoot = resolve(__dirname, "../../..");
+const currentDir =
+	typeof __dirname !== "undefined"
+		? __dirname
+		: dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(currentDir, "../../..");
 
 const lambdaRole = new aws.iam.Role("hutch-lambda-role", {
 	assumeRolePolicy: JSON.stringify({
@@ -43,8 +48,6 @@ const lambdaFunction = new aws.lambda.Function("hutch-api", {
 	},
 });
 
-// NOTE: For browser API access, add corsConfiguration here with allowOrigins,
-// allowMethods, and allowHeaders. Currently using server-side rendering only.
 const apiGateway = new aws.apigatewayv2.Api("hutch-api-gateway", {
 	protocolType: "HTTP",
 	description: `Hutch API Gateway (${stage})`,

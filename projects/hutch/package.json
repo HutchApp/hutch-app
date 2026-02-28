@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node dist/server.main.js",
     "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true ts-node-dev --respawn --transpile-only --watch src src/server.main.ts\"",
+    "dev:lambda": "ts-node-dev --respawn --transpile-only --watch src src/infra/lambda.ts",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-integration": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000",
