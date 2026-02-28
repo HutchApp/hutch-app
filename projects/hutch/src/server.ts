@@ -1,0 +1,125 @@
+import { join } from "node:path";
+import cookieParser from "cookie-parser";
+import { config } from "dotenv";
+import type { Express, NextFunction, Request, Response } from "express";
+import express from "express";
+import type {
+	CreateSession,
+	CreateUser,
+	DestroySession,
+	GetSessionUserId,
+	VerifyCredentials,
+} from "./providers/auth/auth.types";
+import type { ParseArticle } from "./providers/article-parser/article-parser.types";
+import type {
+	DeleteArticle,
+	FindArticlesByUser,
+	SaveArticle,
+	ToggleArticleStar,
+	UpdateArticleStatus,
+} from "./providers/article-store/article-store.types";
+import { Base } from "./web/base.component";
+import { initAuthRoutes } from "./web/auth/auth.page";
+import { initQueueRoutes } from "./web/pages/queue/queue.page";
+import { createLandingPageContent } from "./web/pages/landing";
+import { render } from "./web/render";
+import { requireEnv } from "./require-env";
+import "./web/session.types";
+
+config({ path: join(__dirname, "../.env") });
+
+export const PORT = requireEnv("PORT", "3000");
+
+const COOKIE_NAME = "hutch_sid";
+
+export interface AppDependencies {
+	livereloadMiddleware?: ReturnType<typeof import("connect-livereload")>;
+	createUser: CreateUser;
+	verifyCredentials: VerifyCredentials;
+	createSession: CreateSession;
+	getSessionUserId: GetSessionUserId;
+	destroySession: DestroySession;
+	parseArticle: ParseArticle;
+	findArticlesByUser: FindArticlesByUser;
+	saveArticle: SaveArticle;
+	deleteArticle: DeleteArticle;
+	updateArticleStatus: UpdateArticleStatus;
+	toggleArticleStar: ToggleArticleStar;
+}
+
+function requireAuth(req: Request, res: Response, next: NextFunction): void {
+	if (!req.userId) {
+		res.redirect(303, "/login");
+		return;
+	}
+	next();
+}
+
+export function createApp(dependencies: AppDependencies): Express {
+	const { livereloadMiddleware, getSessionUserId, ...deps } = dependencies;
+	const app: Express = express();
+
+	if (livereloadMiddleware) {
+		app.use(livereloadMiddleware);
+	}
+
+	app.use(express.urlencoded({ extended: true }));
+	app.use(express.json());
+	app.use(cookieParser());
+
+	// Session resolution middleware
+	app.use(async (req: Request, _res: Response, next: NextFunction) => {
+		const sessionId = req.cookies?.[COOKIE_NAME];
+		if (sessionId) {
+			const userId = await getSessionUserId(sessionId);
+			if (userId) {
+				req.userId = userId;
+			}
+		}
+		next();
+	});
+
+	app.get("/", (_req: Request, res: Response) => {
+		const pageContent = createLandingPageContent();
+		const component = Base(pageContent);
+		const result = component.to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
+	});
+
+	// Auth routes (login, signup, logout)
+	const authRouter = initAuthRoutes({
+		createUser: deps.createUser,
+		verifyCredentials: deps.verifyCredentials,
+		createSession: deps.createSession,
+		destroySession: deps.destroySession,
+	});
+	app.use(authRouter);
+
+	// Queue routes (protected)
+	const queueRouter = initQueueRoutes({
+		findArticlesByUser: deps.findArticlesByUser,
+		saveArticle: deps.saveArticle,
+		parseArticle: deps.parseArticle,
+		deleteArticle: deps.deleteArticle,
+		updateArticleStatus: deps.updateArticleStatus,
+		toggleArticleStar: deps.toggleArticleStar,
+	});
+	app.use("/queue", requireAuth, queueRouter);
+
+	const NOT_FOUND_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>404 - Not Found</title>
+</head>
+<body>
+  <h1>404 - Page Not Found</h1>
+</body>
+</html>`;
+
+	app.use((_req: Request, res: Response) => {
+		res.status(404).type("html").send(render(NOT_FOUND_TEMPLATE, {}));
+	});
+
+	return app;
+}

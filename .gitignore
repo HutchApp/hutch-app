@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.aider*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# nx
+.nx/
+
+# Test coverage
+coverage/
+
+# Playwright
+test-results/
+playwright-report/
+.last-run.json
+
+# Visual regression testing (baselines are committed, current/diffs are not)
+**/visual-current/
+**/visual-diffs/
+
+# Environment variables
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,41 @@
+{
+  "name": "hutch",
+  "version": "1.0.0",
+  "description": "Hutch — read-it-later web application",
+  "main": "dist/server.main.js",
+  "scripts": {
+    "start": "node dist/server.main.js",
+    "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true ts-node-dev --respawn --transpile-only --watch src src/server.main.ts\"",
+    "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
+    "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
+    "test-integration": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000",
+    "test-integration:sequential": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000 --runInBand",
+    "compile": "tsc",
+    "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
+    "check": "pnpm lint && pnpm compile && pnpm test"
+  },
+  "dependencies": {
+    "cookie-parser": "1.4.7",
+    "dotenv": "17.2.3",
+    "express": "4.22.1",
+    "handlebars": "4.7.8",
+    "zod": "4.1.13"
+  },
+  "devDependencies": {
+    "@types/connect-livereload": "0.6.3",
+    "@types/cookie-parser": "1.4.10",
+    "@types/express": "4.17.25",
+    "@types/jest": "29.5.14",
+    "@types/jsdom": "21.1.7",
+    "@types/node": "22.15.21",
+    "@types/supertest": "6.0.3",
+    "concurrently": "9.2.1",
+    "connect-livereload": "0.6.1",
+    "jest": "29.7.0",
+    "jsdom": "25.0.1",
+    "livereload": "0.10.3",
+    "supertest": "7.1.4",
+    "ts-node-dev": "2.0.0",
+    "typescript": "5.9.3"
+  }
+}

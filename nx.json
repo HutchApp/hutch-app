@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nrwl/nx/master/packages/nx/schemas/nx-schema.json",
+  "plugins": [
+    {
+      "plugin": "nx/plugins/package-json"
+    }
+  ],
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": ["{workspaceRoot}/*.config.base.*"],
+    "production": [
+      "default",
+      "!{projectRoot}/**/*.test.ts",
+      "!{projectRoot}/jest.config.js"
+    ]
+  },
+  "targetDefaults": {
+    "test": {
+      "inputs": ["default", "^production"],
+      "cache": true
+    },
+    "compile": {
+      "inputs": ["production", "^production"],
+      "outputs": ["{projectRoot}/dist"],
+      "dependsOn": ["^compile"],
+      "cache": true
+    },
+    "lint": {
+      "inputs": ["default"],
+      "cache": true
+    },
+    "check": {
+      "inputs": ["default", "^production"],
+      "cache": true
+    }
+  },
+  "defaultBase": "main"
+}

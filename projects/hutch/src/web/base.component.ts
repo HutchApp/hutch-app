@@ -1,0 +1,269 @@
+import {
+	BASE_CSS_VARIABLES,
+	BASE_RESET_STYLES,
+	FOOTER_STYLES,
+	HEADER_STYLES,
+	NAV_STYLES,
+	OFFLINE_BANNER_STYLES,
+	UTILITY_STYLES,
+} from "./base.styles";
+import type { Component } from "./component.types";
+import { render } from "./render";
+
+export interface SeoMetadata {
+	title: string;
+	description: string;
+	canonicalUrl: string;
+	ogImage?: string;
+	ogType?: "website" | "article";
+	robots?: string;
+	structuredData?: object[];
+}
+
+export interface PageContent {
+	seo: SeoMetadata;
+	styles: string;
+	headerVariant?: "default" | "transparent";
+	bodyClass?: string;
+	content: string;
+	scripts?: string;
+	isAuthenticated?: boolean;
+}
+
+const HEADER_TEMPLATE = `
+  <header class="header{{#if transparent}} header--transparent{{/if}}">
+    <div class="header__content">
+      <a href="/" class="header__brand">Hutch</a>
+      <nav class="nav">
+        <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-menu">
+          <span class="nav__toggle-bar"></span>
+          <span class="nav__toggle-bar"></span>
+          <span class="nav__toggle-bar"></span>
+        </button>
+        <div id="nav-menu" class="nav__menu">
+          <ul class="nav__list">
+            {{#if isAuthenticated}}
+            <li><a href="/queue" class="nav__link" data-test-nav-item="queue">Queue</a></li>
+            <li>
+              <form method="POST" action="/logout" style="display:inline">
+                <button type="submit" class="nav__link" style="background:none;border:none;cursor:pointer;font:inherit" data-test-nav-item="logout">Sign out</button>
+              </form>
+            </li>
+            {{else}}
+            <li><a href="/#features" class="nav__link" data-test-nav-item="features">Features</a></li>
+            <li><a href="/#pricing" class="nav__link" data-test-nav-item="pricing">Pricing</a></li>
+            <li><a href="/login" class="nav__link" data-test-nav-item="login">Sign in</a></li>
+            {{/if}}
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </header>`;
+
+function renderHeader(
+	variant: "default" | "transparent",
+	isAuthenticated: boolean,
+): string {
+	return render(HEADER_TEMPLATE, {
+		transparent: variant === "transparent",
+		isAuthenticated,
+	});
+}
+
+const FOOTER_TEMPLATE = `
+  <footer class="footer">
+    <div class="footer__content">
+      <ul class="footer__links">
+        <li><a href="/privacy" class="footer__link">Privacy</a></li>
+        <li><a href="/terms" class="footer__link">Terms</a></li>
+      </ul>
+      <p class="footer__copyright">&copy; {{year}} Hutch. Made in Australia.</p>
+    </div>
+  </footer>`;
+
+function renderFooter(): string {
+	return render(FOOTER_TEMPLATE, {
+		year: new Date().getFullYear(),
+	});
+}
+
+const NAV_SCRIPT = `
+<script>
+(function() {
+  var toggle = document.querySelector('.nav__toggle');
+  var menu = document.querySelector('.nav__menu');
+  if (!toggle || !menu) return;
+
+  toggle.addEventListener('click', function() {
+    var expanded = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', String(!expanded));
+    menu.classList.toggle('nav__menu--open', !expanded);
+  });
+
+  document.addEventListener('click', function(e) {
+    var isToggleVisible = window.getComputedStyle(toggle).display !== 'none';
+    if (isToggleVisible && !e.target.closest('.nav')) {
+      toggle.setAttribute('aria-expanded', 'false');
+      menu.classList.remove('nav__menu--open');
+    }
+  });
+})();
+</script>`;
+
+const OFFLINE_INDICATOR_SCRIPT = `
+<script>
+(function() {
+  var banner = document.querySelector('.offline-banner');
+  if (!banner) return;
+
+  var wasOffline = false;
+  var hideTimeout = null;
+
+  function updateOnlineStatus() {
+    if (hideTimeout) {
+      clearTimeout(hideTimeout);
+      hideTimeout = null;
+    }
+
+    if (navigator.onLine) {
+      if (wasOffline) {
+        banner.textContent = 'Back online';
+        banner.classList.add('offline-banner--visible');
+        banner.setAttribute('aria-hidden', 'false');
+        hideTimeout = setTimeout(function() {
+          banner.classList.remove('offline-banner--visible');
+          banner.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('is-offline');
+        }, 2000);
+      } else {
+        banner.classList.remove('offline-banner--visible');
+        banner.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('is-offline');
+      }
+      wasOffline = false;
+    } else {
+      wasOffline = true;
+      banner.textContent = "You're offline. Some features may be unavailable.";
+      banner.classList.add('offline-banner--visible');
+      banner.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-offline');
+    }
+  }
+
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+})();
+</script>`;
+
+// Hutch favicon — a stylized "H" with warm amber color
+const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#c8702a"/><path d="M9 8v16M23 8v16M9 16h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>`;
+
+const BASE_TEMPLATE = `<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <meta name="robots" content="{{robots}}">
+  <link rel="canonical" href="{{canonicalUrl}}">
+  <meta name="theme-color" content="#c8702a">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="{{ogType}}">
+  <meta property="og:site_name" content="Hutch">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:url" content="{{canonicalUrl}}">
+  {{#if ogImage}}<meta property="og:image" content="{{ogImage}}">{{/if}}
+  <meta property="og:locale" content="en_AU">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{title}}">
+  <meta name="twitter:description" content="{{description}}">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(FAVICON_SVG)}">
+
+  <!-- Structured Data -->
+  {{{structuredDataScript}}}
+
+  <style>
+    {{{baseStyles}}}
+    {{{resetStyles}}}
+    {{{utilityStyles}}}
+    {{{headerStyles}}}
+    {{{navStyles}}}
+    {{{footerStyles}}}
+    {{{offlineBannerStyles}}}
+    {{{pageStyles}}}
+  </style>
+</head>
+<body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
+  <div class="offline-banner" role="alert" aria-live="polite" aria-hidden="true">
+    You're offline. Some features may be unavailable.
+  </div>
+  {{{header}}}
+  {{{content}}}
+  {{{footer}}}
+  {{{navScript}}}
+  {{{offlineScript}}}
+  {{{scripts}}}
+</body>
+</html>`;
+
+function renderStructuredData(data: object[] | undefined): string {
+	if (!data || data.length === 0) return "";
+	// SECURITY: JSON.stringify is safe for server-controlled data.
+	// WARNING: Never interpolate user input into structured data objects.
+	return data
+		.map(
+			(item) =>
+				`<script type="application/ld+json">${JSON.stringify(item)}</script>`,
+		)
+		.join("\n  ");
+}
+
+function renderBaseTemplate(page: PageContent): string {
+	const headerVariant = page.headerVariant || "default";
+	const seo = page.seo;
+
+	const ogType = seo.ogType || "website";
+	const robots = seo.robots || "index, follow";
+
+	return render(BASE_TEMPLATE, {
+		title: seo.title,
+		description: seo.description,
+		canonicalUrl: seo.canonicalUrl,
+		ogType,
+		ogImage: seo.ogImage,
+		robots,
+		structuredDataScript: renderStructuredData(seo.structuredData),
+		baseStyles: BASE_CSS_VARIABLES,
+		resetStyles: BASE_RESET_STYLES,
+		utilityStyles: UTILITY_STYLES,
+		headerStyles: HEADER_STYLES,
+		navStyles: NAV_STYLES,
+		footerStyles: FOOTER_STYLES,
+		offlineBannerStyles: OFFLINE_BANNER_STYLES,
+		pageStyles: page.styles,
+		bodyClass: page.bodyClass,
+		header: renderHeader(headerVariant, page.isAuthenticated ?? false),
+		content: page.content,
+		footer: renderFooter(),
+		navScript: NAV_SCRIPT,
+		offlineScript: OFFLINE_INDICATOR_SCRIPT,
+		scripts: page.scripts,
+	});
+}
+
+export function Base(page: PageContent): Component {
+	return {
+		to: () => ({
+			statusCode: 200,
+			body: renderBaseTemplate(page),
+		}),
+	};
+}
