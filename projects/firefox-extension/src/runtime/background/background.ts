@@ -5,6 +5,11 @@ import type { PopupMessage } from "./messages.types";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initIconStatus } from "./icon-status";
 import { createBrowserSetIcon } from "./tinted-icon.browser";
+import {
+	MENU_ITEM_SAVE_LINK,
+	MENU_ITEM_SAVE_PAGE,
+	initSaveFromContextMenu,
+} from "./save-from-context-menu";
 
 const auth = initInMemoryAuth();
 const readingList = initInMemoryReadingList();
@@ -13,6 +18,32 @@ const { updateIconForTab } = initIconStatus({
 	findByUrl: readingList.findByUrl,
 	whenLoggedIn: auth.whenLoggedIn,
 	setIcon: createBrowserSetIcon(),
+});
+const saveFromContextMenu = initSaveFromContextMenu({
+	saveUrl: readingList.saveUrl,
+});
+
+browser.menus.create({
+	id: MENU_ITEM_SAVE_PAGE,
+	title: "Save Page to Hutch",
+	contexts: ["page"],
+});
+
+browser.menus.create({
+	id: MENU_ITEM_SAVE_LINK,
+	title: "Save Link to Hutch",
+	contexts: ["link"],
+});
+
+browser.menus.onClicked.addListener((info, tab) => {
+	const guarded = auth.whenLoggedIn(() => saveFromContextMenu(info, tab));
+	if (guarded.ok) {
+		guarded.value.then(async () => {
+			if (tab?.id && tab.url) {
+				await updateIconForTab(tab.id, tab.url);
+			}
+		});
+	}
 });
 
 async function updateActiveTabIcon() {
