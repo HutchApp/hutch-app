@@ -11,6 +11,9 @@ export default {
 		"@pulumi/pulumi",
 		"@pulumi/aws",
 		"@types/aws-lambda",
+		"helmet",
+		"compression",
+		"@types/compression",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

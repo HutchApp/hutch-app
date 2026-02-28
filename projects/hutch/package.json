@@ -18,10 +18,12 @@
     "deploy": "pnpm compile && cd src/infra/pulumi && pulumi up --yes"
   },
   "dependencies": {
+    "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "dotenv": "17.2.3",
     "express": "4.22.1",
     "handlebars": "4.7.8",
+    "helmet": "8.1.0",
     "serverless-http": "4.0.0",
     "zod": "4.1.13"
   },
@@ -29,6 +31,7 @@
     "@pulumi/aws": "7.20.0",
     "@pulumi/pulumi": "3.224.0",
     "@types/aws-lambda": "8.10.161",
+    "@types/compression": "1.8.1",
     "@types/connect-livereload": "0.6.3",
     "@types/cookie-parser": "1.4.10",
     "@types/express": "4.17.25",

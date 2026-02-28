@@ -1,0 +1,45 @@
+import type { Handler } from "aws-lambda";
+import type { Express, Request, Response } from "express";
+import express from "express";
+import helmet from "helmet";
+import compression from "compression";
+import serverless from "serverless-http";
+import { logger } from "./logger";
+import { errorHandler } from "./error-handler";
+import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
+import { localServer } from "./local-server";
+
+const lambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+export const lambdaExpress = ({
+	app,
+	binaryMimeTypes,
+}: { app: Express; binaryMimeTypes?: string[] }): Handler => {
+	const log = logger();
+
+	const application = express()
+		.disable("x-powered-by")
+		.use(helmet({ contentSecurityPolicy: false }))
+		.use(
+			compression({
+				filter: (req: Request, res: Response) =>
+					lambda ? compression.filter(req, res) : false,
+			}),
+		)
+		.use(log)
+		.use(app.disable("x-powered-by").use(helmet({ contentSecurityPolicy: false })))
+		.use(errorHandler());
+
+	// ---
+
+	if (lambda) {
+		return removeStageFromRawPath(
+			serverless(application, {
+				...(binaryMimeTypes ? { binary: binaryMimeTypes } : {}),
+			}),
+		);
+	}
+
+	localServer(application, log.logger);
+	return () => {}; // local noop handler
+};

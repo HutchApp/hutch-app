@@ -43,6 +43,8 @@ const lambdaFunction = new aws.lambda.Function("hutch-api", {
 	},
 });
 
+// NOTE: For browser API access, add corsConfiguration here with allowOrigins,
+// allowMethods, and allowHeaders. Currently using server-side rendering only.
 const apiGateway = new aws.apigatewayv2.Api("hutch-api-gateway", {
 	protocolType: "HTTP",
 	description: `Hutch API Gateway (${stage})`,
@@ -79,4 +81,6 @@ new aws.lambda.Permission("hutch-api-gateway-permission", {
 
 export const apiUrl = pulumi.interpolate`${apiGateway.apiEndpoint}/${apiStage.name}`;
 export const functionName = lambdaFunction.name;
+
+// Ensure defaultRoute is created before stack outputs are resolved
 export const _dependencies = [defaultRoute];

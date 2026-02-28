@@ -1,25 +1,16 @@
-import type { APIGatewayProxyEvent, Context } from "aws-lambda";
-import serverless from "serverless-http";
 import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "../providers/article-store/in-memory-article-store";
 import { initStaticParser } from "../providers/article-parser/static-parser";
 import { createApp } from "../server";
+import { lambdaExpress } from "./lambda-express";
 
-const auth = initInMemoryAuth();
-const articleStore = initInMemoryArticleStore();
-const parser = initStaticParser();
-
-const app = createApp({
-	...auth,
-	...articleStore,
-	...parser,
+// Provider factory for swapping implementations (e.g., DynamoDB, PostgreSQL)
+const createProviders = () => ({
+	...initInMemoryAuth(),
+	...initInMemoryArticleStore(),
+	...initStaticParser(),
 });
 
-const serverlessHandler = serverless(app);
+const app = createApp(createProviders());
 
-export const handler = async (
-	event: APIGatewayProxyEvent,
-	context: Context,
-) => {
-	return serverlessHandler(event, context);
-};
+export const handler = lambdaExpress({ app });
