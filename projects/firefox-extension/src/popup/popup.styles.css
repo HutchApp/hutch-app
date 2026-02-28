@@ -260,7 +260,7 @@ h2 {
 }
 
 .list-view__url {
-  color: #c8923c;
+  color: #996d1f;
   font-size: 13px;
   text-decoration: none;
   word-break: break-all;
@@ -271,7 +271,7 @@ h2 {
 
 .list-view__url:hover {
   text-decoration: underline;
-  color: #b5832f;
+  color: #7a5818;
 }
 
 /**
