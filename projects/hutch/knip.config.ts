@@ -3,7 +3,6 @@ import type { KnipConfig } from "knip";
 
 export default {
 	...baseConfig,
-	ignore: [...(baseConfig.ignore ?? []), "purgecss.config.js"],
 	// Jest runs pre-compiled JS from dist/ but test sources are in src/
 	jest: {
 		entry: ["src/**/*.test.ts"],

@@ -23,8 +23,8 @@ async function main() {
   });
 
   cpSync(join(srcDir, 'manifest.json'), join(outDir, 'manifest.json'));
-  cpSync(join(srcDir, 'popup', 'popup.html'), join(outDir, 'popup', 'popup.html'));
-  cpSync(join(srcDir, 'popup', 'popup.css'), join(outDir, 'popup', 'popup.css'));
+  cpSync(join(srcDir, 'popup', 'popup.template.html'), join(outDir, 'popup', 'popup.template.html'));
+  cpSync(join(srcDir, 'popup', 'popup.styles.css'), join(outDir, 'popup', 'popup.styles.css'));
 
   console.log('Extension built to dist-extension/');
 }

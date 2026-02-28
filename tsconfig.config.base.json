@@ -11,6 +11,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "inlineSources": true,
+    "incremental": true
   }
 }

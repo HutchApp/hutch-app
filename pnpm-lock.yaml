@@ -47,6 +47,9 @@ importers:
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.19.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
+      purgecss:
+        specifier: 8.0.0
+        version: 8.0.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3

@@ -7,6 +7,8 @@ module.exports = {
     '**/*.integration.ts',
     // Test utilities used by integration tests
     '**/test-utils.ts',
+    // PurgeCSS config loaded via CLI, not imported in source
+    'purgecss.config.js',
   ],
   ignoreDependencies: [
     // Used via CLI in dev script

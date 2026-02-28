@@ -3,10 +3,6 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    // Coverage needs inlineSources for accurate source mapping
-    "inlineSources": true,
-    // Incremental builds cache results for faster subsequent compilations
-    "incremental": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],

@@ -5,7 +5,7 @@ const { workspaces: _workspaces, ...base } = baseConfig;
 
 export default {
 	...base,
-	ignore: [],
+	ignore: [...(base.ignore ?? [])],
 	ignoreDependencies: [],
 	entry: [
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)

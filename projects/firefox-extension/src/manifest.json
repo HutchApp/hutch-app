@@ -5,7 +5,7 @@
   "description": "Save URLs to your reading list",
   "permissions": ["activeTab"],
   "browser_action": {
-    "default_popup": "popup/popup.html",
+    "default_popup": "popup/popup.template.html",
     "default_title": "Hutch"
   },
   "background": {

@@ -4,8 +4,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "inlineSources": true,
-    "incremental": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
