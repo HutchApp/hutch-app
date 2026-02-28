@@ -15,6 +15,7 @@ declare namespace browser {
 
 	namespace tabs {
 		interface Tab {
+			id?: number;
 			url?: string;
 			title?: string;
 		}
@@ -23,5 +24,28 @@ declare namespace browser {
 			active: boolean;
 			currentWindow: boolean;
 		}): Promise<Tab[]>;
+
+		function get(tabId: number): Promise<Tab>;
+
+		const onActivated: {
+			addListener(callback: (activeInfo: { tabId: number }) => void): void;
+		};
+
+		const onUpdated: {
+			addListener(
+				callback: (
+					tabId: number,
+					changeInfo: { url?: string; status?: string },
+					tab: Tab,
+				) => void,
+			): void;
+		};
+	}
+
+	namespace browserAction {
+		function setIcon(details: {
+			tabId?: number;
+			path: { [size: string]: string };
+		}): Promise<void>;
 	}
 }

@@ -1,13 +1,16 @@
 body {
   width: 350px;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: Inter, "Source Sans Pro", system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 16px;
+  background: #ffffff;
+  color: #1a202c;
 }
 
 h2 {
   font-size: 16px;
   margin: 0 0 12px;
+  color: #2b3a55;
 }
 
 .view {
@@ -20,41 +23,135 @@ h2 {
   display: none;
 }
 
-label {
+/* --- Login view --- */
+
+.login {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 8px 8px;
+}
+
+.login__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/**
+ * 1. Simplified H-mark referencing the Hutch icon
+ */
+.login__icon {
+  width: 48px;
+  height: 48px;
+  background: #2b3a55;
+  color: #c8923c;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, "Times New Roman", serif; /* 1 */
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.login__heading {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2b3a55;
+  margin: 0;
+  text-align: center;
+}
+
+.login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.login__label {
   font-size: 13px;
   font-weight: 500;
+  color: #5a6170;
 }
 
-input {
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.login__input {
+  padding: 10px 12px;
+  border: 1px solid #e2e5ea;
+  border-radius: 6px;
   font-size: 14px;
+  font-family: inherit;
+  color: #1a202c;
+  background: #f7f8fa;
+  transition: border-color 0.15s ease;
 }
 
-button {
-  padding: 8px 12px;
+.login__input:focus {
+  outline: none;
+  border-color: #c8923c;
+  background: #ffffff;
+}
+
+.login__input::placeholder {
+  color: #8c919d;
+}
+
+.login__submit {
+  padding: 10px 16px;
   border: none;
-  border-radius: 4px;
-  background: #0060df;
-  color: #fff;
+  border-radius: 6px;
+  background: #c8923c;
+  color: #1a202c;
   font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
+  margin-top: 4px;
+  transition: background-color 0.15s ease;
 }
 
-button:hover {
-  background: #003eaa;
+.login__submit:hover {
+  background: #b5832f;
 }
 
-#login-error {
-  color: #d70022;
+.login__error {
+  color: #c45c5c;
   font-size: 13px;
   margin: 0;
+  text-align: center;
 }
 
-p {
+/* --- Status views (saved, already-saved, removed) --- */
+
+.view > p {
   margin: 0;
   font-size: 14px;
+  color: #1a202c;
+}
+
+.button--secondary {
+  padding: 8px 12px;
+  border: 1px solid #2b3a55;
+  border-radius: 6px;
+  background: transparent;
+  color: #2b3a55;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.button--secondary:hover {
+  background: #f7f8fa;
 }
 
 /* --- List view (saved links) --- */
@@ -68,6 +165,15 @@ p {
 
 .list-view__title {
   margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  color: #2b3a55;
+}
+
+.list-view__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /**
@@ -75,22 +181,62 @@ p {
  */
 .list-view__reload {
   background: transparent; /* 1 */
-  color: #0060df;
+  color: #2b3a55;
   font-size: 18px;
   padding: 4px 8px;
   line-height: 1;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid #e2e5ea;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
 }
 
 .list-view__reload:hover {
-  background: #f0f0f4;
-  color: #003eaa;
+  background: #f7f8fa;
+  color: #2b3a55;
+}
+
+.list-view__logout {
+  background: transparent;
+  color: #5a6170;
+  font-size: 12px;
+  padding: 4px 8px;
+  line-height: 1;
+  border: 1px solid #e2e5ea;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.list-view__logout:hover {
+  background: #f7f8fa;
+  color: #c45c5c;
+  border-color: #c45c5c;
 }
 
 .list-view__filter {
   width: 100%;
   box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid #e2e5ea;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a202c;
+  background: #f7f8fa;
+  transition: border-color 0.15s ease;
+}
+
+.list-view__filter:focus {
+  outline: none;
+  border-color: #c8923c;
+  background: #ffffff;
+}
+
+.list-view__filter::placeholder {
+  color: #8c919d;
 }
 
 .list-view__links {
@@ -103,7 +249,7 @@ p {
 /* purgecss-ignore-start: applied dynamically in popup.ts when rendering saved links */
 .list-view__item {
   padding: 8px 0;
-  border-bottom: 1px solid #e0e0e6;
+  border-bottom: 1px solid #e2e5ea;
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -114,18 +260,18 @@ p {
 }
 
 .list-view__url {
-  color: #0060df;
+  color: #996d1f;
   font-size: 13px;
   text-decoration: none;
   word-break: break-all;
-  line-height: 1.4;
+  line-height: 1.5;
   flex: 1;
   min-width: 0;
 }
 
 .list-view__url:hover {
   text-decoration: underline;
-  color: #003eaa;
+  color: #7a5818;
 }
 
 /**
@@ -150,13 +296,13 @@ p {
 /* purgecss-ignore-end */
 
 .list-view__empty {
-  color: #5b5b66;
+  color: #5a6170;
   text-align: center;
   padding: 24px 0;
 }
 
 .list-view__error {
-  color: #d70022;
+  color: #c45c5c;
   text-align: center;
   padding: 24px 0;
 }

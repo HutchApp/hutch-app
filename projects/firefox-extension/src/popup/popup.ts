@@ -200,6 +200,13 @@ document
 		await loadAllItems();
 	});
 
+document
+	.getElementById("logout-button")
+	?.addEventListener("click", async () => {
+		await send({ type: "logout" });
+		showView("login-view");
+	});
+
 document.getElementById("filter-input")?.addEventListener("input", () => {
 	renderLinks(filterItems());
 });

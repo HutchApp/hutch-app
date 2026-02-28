@@ -6,20 +6,29 @@
 </head>
 <body>
   <div id="login-view" class="view" hidden>
-    <h2>Log in to Hutch</h2>
-    <form id="login-form">
-      <label for="email">Email</label>
-      <input type="email" id="email" required>
-      <label for="password">Password</label>
-      <input type="password" id="password" required>
-      <button type="submit">Log in</button>
-    </form>
-    <p id="login-error" hidden>Invalid credentials</p>
+    <div class="login">
+      <div class="login__brand">
+        <div class="login__icon" aria-hidden="true">H</div>
+        <h2 class="login__heading">Log in to Hutch</h2>
+      </div>
+      <form id="login-form" class="login__form">
+        <div class="login__field">
+          <label class="login__label" for="email">Email</label>
+          <input class="login__input" type="email" id="email" placeholder="you@example.com" required>
+        </div>
+        <div class="login__field">
+          <label class="login__label" for="password">Password</label>
+          <input class="login__input" type="password" id="password" required>
+        </div>
+        <button class="login__submit" type="submit">Log in</button>
+      </form>
+      <p id="login-error" class="login__error" hidden>Invalid credentials. Try again?</p>
+    </div>
   </div>
 
   <div id="saved-view" class="view" hidden>
     <p>Saved!</p>
-    <button id="undo-button">Undo</button>
+    <button id="undo-button" class="button--secondary">Undo</button>
   </div>
 
   <div id="already-saved-view" class="view" hidden>
@@ -33,7 +42,10 @@
   <div id="list-view" class="view" hidden>
     <div class="list-view__header">
       <h2 class="list-view__title">My List</h2>
-      <button id="reload-button" class="list-view__reload" title="Reload">&#x21bb;</button>
+      <div class="list-view__actions">
+        <button id="reload-button" class="list-view__reload" title="Reload">&#x21bb;</button>
+        <button id="logout-button" class="list-view__logout" title="Log out">Log out</button>
+      </div>
     </div>
     <input
       type="text"
