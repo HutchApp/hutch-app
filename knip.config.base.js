@@ -15,6 +15,8 @@ module.exports = {
     'livereload',
     // Used via CLI script, not imported in source
     'purgecss',
+    // Used via c8 CLI wrapper in test-with-coverage script
+    'c8',
   ],
   ignoreBinaries: [
     // Installed at root level in monorepo
