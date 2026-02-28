@@ -11,6 +11,8 @@ module.exports = {
   ignoreDependencies: [
     // Used via CLI in dev script
     'livereload',
+    // Used via CLI script, not imported in source
+    'purgecss',
   ],
   ignoreBinaries: [
     // Installed at root level in monorepo
