@@ -40,6 +40,11 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 				if (!guarded.ok) return guarded;
 				return { ok: true as const, value: await guarded.value };
 			}
+			case "get-all-items": {
+				const guarded = auth.whenLoggedIn(() => readingList.getAllItems());
+				if (!guarded.ok) return guarded;
+				return { ok: true as const, value: await guarded.value };
+			}
 		}
 	};
 
