@@ -27,7 +27,7 @@ export const lambdaExpress = ({
 			}),
 		)
 		.use(log)
-		.use(app.disable("x-powered-by").use(helmet({ contentSecurityPolicy: false })))
+		.use(app)
 		.use(errorHandler());
 
 	// ---
