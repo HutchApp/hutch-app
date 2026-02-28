@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "Hutch",
+  "version": "1.0.0",
+  "description": "Save URLs to your reading list",
+  "permissions": ["activeTab"],
+  "browser_action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Hutch"
+  },
+  "background": {
+    "scripts": ["background/background.js"]
+  }
+}

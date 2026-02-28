@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="login-view" class="view" hidden>
+    <h2>Log in to Hutch</h2>
+    <form id="login-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" required>
+      <label for="password">Password</label>
+      <input type="password" id="password" required>
+      <button type="submit">Log in</button>
+    </form>
+    <p id="login-error" hidden>Invalid credentials</p>
+  </div>
+
+  <div id="saved-view" class="view" hidden>
+    <p>Saved!</p>
+    <button id="undo-button">Undo</button>
+  </div>
+
+  <div id="already-saved-view" class="view" hidden>
+    <p>Already in your list</p>
+  </div>
+
+  <div id="removed-view" class="view" hidden>
+    <p>Removed</p>
+  </div>
+
+  <div id="loading-view" class="view">
+    <p>Loading...</p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
