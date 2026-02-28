@@ -1,0 +1,80 @@
+name: Claude Code Review
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+concurrency:
+  group: code-review-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  # ┌─────────────────────────────────────────────────────────────────┐
+  # │ CI PASSED: Post @claude comment requesting code review         │
+  # └─────────────────────────────────────────────────────────────────┘
+  request-review:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Post @claude code review request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const branch = context.payload.workflow_run.head_branch;
+            const headSha = context.payload.workflow_run.head_sha;
+
+            // Find the PR
+            const { data: pulls } = await github.rest.pulls.list({
+              owner, repo, state: 'open',
+              head: `${owner}:${branch}`
+            });
+
+            if (pulls.length === 0) {
+              console.log('No open PR found for this branch');
+              return;
+            }
+
+            const pr = pulls[0];
+
+            // Check if we already posted a review request for this commit
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: pr.number, per_page: 50
+            });
+
+            const existingReviewRequest = comments.find(c =>
+              c.body.includes('<!-- CLAUDE_REVIEW_REQUEST -->') &&
+              c.body.includes(headSha)
+            );
+
+            if (existingReviewRequest) {
+              console.log(`Review already requested for commit ${headSha}`);
+              return;
+            }
+
+            // Post @claude comment with minimal context - instructions are in .md file
+            const prompt = [
+              '<!-- CLAUDE_REVIEW_REQUEST -->',
+              `<!-- COMMIT: ${headSha} -->`,
+              '',
+              '@claude Review this PR. Use your Read tool to read the local file `.github/workflows/claude-PR-code-reviewer.md` for instructions. The file is in the checked-out repository.',
+              '',
+              '## Context',
+              `- **Repo**: ${owner}/${repo}`,
+              `- **PR**: #${pr.number}`,
+              `- **Commit**: ${headSha}`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: pr.number,
+              body: prompt
+            });
+
+            console.log(`Posted @claude review request for PR #${pr.number}`);

@@ -1,0 +1,102 @@
+name: Claude Conflict Detection
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+concurrency:
+  group: conflict-detection
+  cancel-in-progress: true
+
+jobs:
+  # ┌─────────────────────────────────────────────────────────────────┐
+  # │ CI PASSED ON MAIN: Check ALL open PRs for new conflicts        │
+  # └─────────────────────────────────────────────────────────────────┘
+  check-all-prs-for-conflicts:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Check all open PRs for conflicts
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+
+            // Get all open PRs targeting main
+            const { data: pulls } = await github.rest.pulls.list({
+              owner, repo,
+              state: 'open',
+              base: 'main',
+              per_page: 100
+            });
+
+            console.log(`Found ${pulls.length} open PRs targeting main`);
+
+            for (const pr of pulls) {
+              // Get detailed PR info to check mergeable state
+              let detail = await github.rest.pulls.get({
+                owner, repo,
+                pull_number: pr.number
+              }).then(r => r.data);
+
+              // Wait briefly for GitHub to compute mergeable state if needed
+              if (detail.mergeable === null) {
+                await new Promise(r => setTimeout(r, 2000));
+                detail = await github.rest.pulls.get({
+                  owner, repo,
+                  pull_number: pr.number
+                }).then(r => r.data);
+              }
+
+              // Skip if no conflicts
+              if (detail.mergeable !== false) {
+                console.log(`PR #${pr.number} has no conflicts`);
+                continue;
+              }
+
+              console.log(`PR #${pr.number} has conflicts, checking for existing fix request`);
+
+              // Check if we already posted a conflict fix request recently
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo,
+                issue_number: pr.number,
+                per_page: 20
+              });
+
+              const recentConflictFix = comments.find(c =>
+                c.body.includes('<!-- CLAUDE_CONFLICT_FIX -->') &&
+                new Date(c.created_at) > new Date(Date.now() - 1 * 60 * 60 * 1000) // Within last 1h
+              );
+
+              if (recentConflictFix) {
+                console.log(`PR #${pr.number} already has a conflict fix request within 1h, skipping`);
+                continue;
+              }
+
+              // Post @claude comment with minimal context - instructions are in .md file
+              const prompt = [
+                '<!-- CLAUDE_CONFLICT_FIX -->',
+                '',
+                '@claude Resolve conflicts. Use your Read tool to read the local file `.github/workflows/claude-PR-conflict-fixer.md` for instructions. The file is in the checked-out repository.',
+                '',
+                '## Context',
+                `- **Repo**: ${owner}/${repo}`,
+                `- **PR**: #${pr.number}`,
+                `- **Branch**: ${detail.head.ref}`,
+              ].join('\n');
+
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: pr.number,
+                body: prompt
+              });
+
+              console.log(`Posted @claude conflict fix request for PR #${pr.number}`);
+            }

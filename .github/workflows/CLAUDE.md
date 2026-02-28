@@ -1,0 +1,54 @@
+# GitHub Actions CI Architecture
+
+## Overview
+
+This repository uses a centralized Claude automation architecture where only `claude-listener.yml` executes Claude directly. All other workflows post `@claude` comments to PRs, which the listener picks up and processes.
+
+## Design Principles
+
+| Principle | Description |
+|-----------|-------------|
+| Single Execution Point | Only `claude-listener.yml` runs Claude directly |
+| Comment-Based Communication | All automation via `@claude` comments |
+| Fresh Context | Each comment = new Claude instance with clean context |
+| Auditable | All prompts visible in PR history |
+| Retry Limits | Max 5 attempts for automated fixes |
+| Separated Prompts | Instructions in `.md` files, comments contain only context |
+
+## Workflows
+
+Inspect the `.yml` files in this directory for implementation details. Summary:
+
+| Workflow | Purpose | Trigger |
+|----------|---------|---------|
+| `ci.yml` | Base CI pipeline | push/PR to main |
+| `claude-listener.yml` | Central hub - ONLY workflow that runs Claude | `@claude` comments |
+| `claude-PR-CI-failure-fixer.yml` | Auto-fix CI failures (max 5 attempts) | CI fails on PR |
+| `claude-PR-code-reviewer.yml` | Automated code review | CI succeeds on PR |
+| `claude-PR-code-review-auto-apply.yml` | Fix HIGH/MEDIUM priority issues | Claude review comment |
+| `claude-PR-conflict-fixer.yml` | Resolve merge conflicts | CI succeeds + conflicts detected |
+
+## Prompt Files
+
+Each workflow has a corresponding `.md` file containing detailed instructions for Claude. This separation prevents cascade issues where example markers in instructions trigger other workflows.
+
+| Workflow | Prompt File |
+|----------|-------------|
+| `claude-PR-CI-failure-fixer.yml` | `claude-PR-CI-failure-fixer.md` |
+| `claude-PR-code-reviewer.yml` | `claude-PR-code-reviewer.md` |
+| `claude-PR-code-review-auto-apply.yml` | `claude-PR-code-review-auto-apply.md` |
+| `claude-PR-conflict-fixer.yml` | `claude-PR-conflict-fixer.md` |
+
+## Labels and Markers
+
+| Label Pattern | Purpose |
+|---------------|---------|
+| `ci-fix-attempt-N` | Tracks CI fix attempts (1-5) |
+| `auto-fix-attempt-N` | Tracks review auto-fix attempts (1-5) |
+
+| HTML Marker | Purpose |
+|-------------|---------|
+| `<!-- CLAUDE_REVIEW_REQUEST -->` | Code review request |
+| `<!-- CLAUDE_REVIEW_START/END -->` | Review content boundaries |
+| `<!-- HIGH/MEDIUM_PRIORITY_COUNT: N -->` | Issue counts |
+| `<!-- CLAUDE_CONFLICT_FIX -->` | Conflict fix request |

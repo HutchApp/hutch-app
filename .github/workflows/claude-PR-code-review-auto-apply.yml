@@ -1,0 +1,144 @@
+name: Claude Auto Fix High Priority Issues
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+concurrency:
+  group: auto-fix-${{ github.event.issue.number || github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  # ┌─────────────────────────────────────────────────────────────────┐
+  # │ CI PASSED: Reset the auto-fix attempt counter                  │
+  # └─────────────────────────────────────────────────────────────────┘
+  reset-counter:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Remove auto-fix-attempt label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const branch = context.payload.workflow_run.head_branch;
+
+            const { data: pulls } = await github.rest.pulls.list({
+              owner, repo, state: 'open',
+              head: `${owner}:${branch}`
+            });
+
+            if (pulls.length === 0) return;
+
+            const label = pulls[0].labels.find(l => l.name.startsWith('auto-fix-attempt-'));
+            if (label) {
+              await github.rest.issues.removeLabel({
+                owner, repo,
+                issue_number: pulls[0].number,
+                name: label.name
+              }).catch(() => {});
+            }
+
+  # ┌─────────────────────────────────────────────────────────────────┐
+  # │ REVIEW COMMENT: Post @claude comment to fix issues (up to 5x)  │
+  # └─────────────────────────────────────────────────────────────────┘
+  request-fix:
+    # Only run on issue_comment events for PR comments with review issues
+    # Triggers when Claude posts a review with HIGH or MEDIUM priority issues
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '<!-- CLAUDE_REVIEW_START -->') &&
+      (
+        !contains(github.event.comment.body, '<!-- HIGH_PRIORITY_COUNT: 0 -->') ||
+        !contains(github.event.comment.body, '<!-- MEDIUM_PRIORITY_COUNT: 0 -->')
+      )
+
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Check iteration count and post @claude fix request
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const MAX_AUTO_FIX_ATTEMPTS = 5;
+            const { owner, repo } = context.repo;
+            const prNumber = context.issue.number;
+            const reviewComment = context.payload.comment.body;
+
+            const pr = await github.rest.pulls.get({
+              owner, repo,
+              pull_number: prNumber
+            });
+
+            if (pr.data.base.ref !== 'main') {
+              console.log('PR does not target main branch, skipping');
+              return;
+            }
+
+            const autoFixLabel = pr.data.labels.find(l => l.name.startsWith('auto-fix-attempt-'));
+            const currentAttempt = autoFixLabel
+              ? parseInt(autoFixLabel.name.replace('auto-fix-attempt-', ''), 10)
+              : 0;
+
+            if (currentAttempt >= MAX_AUTO_FIX_ATTEMPTS) {
+              // Check if we already posted the bail message to avoid duplicates
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: prNumber, per_page: 20
+              });
+
+              if (!comments.some(c => c.body.includes('Auto-fix limit reached'))) {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: prNumber,
+                  body: `⚠️ **Auto-fix limit reached**: Maximum of ${MAX_AUTO_FIX_ATTEMPTS} auto-fix attempts exceeded. Manual intervention required.`
+                });
+              }
+              return;
+            }
+
+            const newAttempt = currentAttempt + 1;
+
+            if (autoFixLabel) {
+              await github.rest.issues.removeLabel({
+                owner, repo, issue_number: prNumber,
+                name: autoFixLabel.name
+              }).catch(() => {});
+            }
+
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: prNumber,
+              labels: [`auto-fix-attempt-${newAttempt}`]
+            });
+
+            // Post @claude comment with minimal context - instructions are in .md file
+            const prompt = [
+              '@claude Fix the review issues. Use your Read tool to read the local file `.github/workflows/claude-PR-code-review-auto-apply.md` for instructions. The file is in the checked-out repository.',
+              '',
+              '## Context',
+              `- **Attempt**: ${newAttempt} of ${MAX_AUTO_FIX_ATTEMPTS}`,
+              `- **Repo**: ${owner}/${repo}`,
+              `- **PR**: #${prNumber}`,
+              `- **Branch**: ${pr.data.head.ref}`,
+              '',
+              '## Review to Address',
+              'See the review comment above this one for the issues to fix.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: prNumber,
+              body: prompt
+            });
+
+            console.log(`Posted @claude auto-fix request for PR #${prNumber} (attempt ${newAttempt})`);
