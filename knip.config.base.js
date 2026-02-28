@@ -17,4 +17,11 @@ module.exports = {
     'knip',
     'biome',
   ],
+  workspaces: {
+    // Pattern to match all workspaces in projects/
+    'projects/*': {
+      // Client-side scripts loaded via HTML script tags
+      entry: ['**/*.client.js'],
+    },
+  },
 };
