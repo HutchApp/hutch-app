@@ -1,0 +1,6 @@
+name: hutch
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: Hutch read-it-later app — AWS Lambda + API Gateway deployment

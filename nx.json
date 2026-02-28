@@ -32,6 +32,11 @@
     "check": {
       "inputs": ["default", "^production"],
       "cache": true
+    },
+    "deploy": {
+      "inputs": ["production", "^production"],
+      "dependsOn": ["compile"],
+      "cache": false
     }
   },
   "defaultBase": "main"

@@ -1,0 +1,4 @@
+config:
+  hutch:stage: dev
+  hutch:memorySize: "512"
+  hutch:timeout: "30"

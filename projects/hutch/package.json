@@ -14,16 +14,21 @@
     "compile": "tsc && node scripts/copy-static-assets.js",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
-    "check": "pnpm lint && pnpm test-with-coverage"
+    "check": "pnpm lint && pnpm test-with-coverage",
+    "deploy": "pnpm compile && cd src/infra/pulumi && pulumi up --yes"
   },
   "dependencies": {
     "cookie-parser": "1.4.7",
     "dotenv": "17.2.3",
     "express": "4.22.1",
     "handlebars": "4.7.8",
+    "serverless-http": "4.0.0",
     "zod": "4.1.13"
   },
   "devDependencies": {
+    "@pulumi/aws": "7.20.0",
+    "@pulumi/pulumi": "3.224.0",
+    "@types/aws-lambda": "8.10.161",
     "@types/connect-livereload": "0.6.3",
     "@types/cookie-parser": "1.4.10",
     "@types/express": "4.17.25",
