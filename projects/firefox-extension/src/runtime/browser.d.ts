@@ -1,6 +1,7 @@
 declare namespace browser {
 	namespace runtime {
 		function sendMessage(message: unknown): Promise<unknown>;
+		function getURL(path: string): string;
 
 		const onMessage: {
 			addListener(
@@ -28,7 +29,9 @@ declare namespace browser {
 		function get(tabId: number): Promise<Tab>;
 
 		const onActivated: {
-			addListener(callback: (activeInfo: { tabId: number }) => void): void;
+			addListener(
+				callback: (activeInfo: { tabId: number }) => void,
+			): void;
 		};
 
 		const onUpdated: {
@@ -45,7 +48,8 @@ declare namespace browser {
 	namespace browserAction {
 		function setIcon(details: {
 			tabId?: number;
-			path: { [size: string]: string };
+			path?: Record<number, string>;
+			imageData?: Record<number, ImageData>;
 		}): Promise<void>;
 	}
 }
