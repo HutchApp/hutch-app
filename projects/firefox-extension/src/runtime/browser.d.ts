@@ -60,4 +60,28 @@ declare namespace browser {
 			addListener(callback: (command: string) => void): void;
 		};
 	}
+
+	namespace menus {
+		type ContextType = "page" | "link";
+
+		interface CreateProperties {
+			id: string;
+			title: string;
+			contexts: ContextType[];
+		}
+
+		interface OnClickData {
+			menuItemId: string;
+			linkUrl?: string;
+			pageUrl?: string;
+		}
+
+		function create(createProperties: CreateProperties): void;
+
+		const onClicked: {
+			addListener(
+				callback: (info: OnClickData, tab?: tabs.Tab) => void,
+			): void;
+		};
+	}
 }
