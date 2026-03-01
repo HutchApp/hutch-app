@@ -4,6 +4,7 @@ import type {
 } from "../domain/reading-list-item.types";
 import type { PopupMessage } from "../background/messages.types";
 import { filterByUrl } from "./filter-by-url";
+import { paginateItems } from "./paginate-items";
 import type { GuardedResult } from "../providers/auth/auth.types";
 import type {
 	SaveUrlResult,
@@ -25,6 +26,57 @@ function send(message: PopupMessage): Promise<unknown> {
 
 let savedItemId: ReadingListItemId | null = null;
 let allItems: ReadingListItem[] = [];
+let currentPage = 1;
+
+function renderPagination(totalPages: number, visiblePages: number[]) {
+	const pagination = document.getElementById("pagination");
+	if (!pagination) throw new Error("pagination element not found");
+
+	pagination.innerHTML = "";
+
+	if (totalPages <= 1) {
+		pagination.hidden = true;
+		return;
+	}
+
+	pagination.hidden = false;
+
+	const prevButton = document.createElement("button");
+	prevButton.className = "pagination__button";
+	prevButton.textContent = "\u2039";
+	prevButton.title = "Previous page";
+	prevButton.disabled = currentPage <= 1;
+	prevButton.addEventListener("click", () => {
+		currentPage--;
+		renderLinks(filterItems());
+	});
+	pagination.appendChild(prevButton);
+
+	for (const page of visiblePages) {
+		const pageButton = document.createElement("button");
+		pageButton.className = "pagination__page";
+		if (page === currentPage) {
+			pageButton.classList.add("pagination__page--active");
+		}
+		pageButton.textContent = String(page);
+		pageButton.addEventListener("click", () => {
+			currentPage = page;
+			renderLinks(filterItems());
+		});
+		pagination.appendChild(pageButton);
+	}
+
+	const nextButton = document.createElement("button");
+	nextButton.className = "pagination__button";
+	nextButton.textContent = "\u203A";
+	nextButton.title = "Next page";
+	nextButton.disabled = currentPage >= totalPages;
+	nextButton.addEventListener("click", () => {
+		currentPage++;
+		renderLinks(filterItems());
+	});
+	pagination.appendChild(nextButton);
+}
 
 function renderLinks(items: ReadingListItem[]) {
 	const linkList = document.getElementById("link-list");
@@ -44,15 +96,24 @@ function renderLinks(items: ReadingListItem[]) {
 
 	if (allItems.length === 0) {
 		emptyList.hidden = false;
+		renderPagination(1, [1]);
 		return;
 	}
 
 	if (items.length === 0) {
 		noMatches.hidden = false;
+		renderPagination(1, [1]);
 		return;
 	}
 
-	for (const item of items) {
+	const sorted = [...items].sort(
+		(a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime(),
+	);
+
+	const paginated = paginateItems(sorted, currentPage);
+	currentPage = paginated.currentPage;
+
+	for (const item of paginated.items) {
 		const div = document.createElement("div");
 		div.className = "list-view__item";
 
@@ -83,6 +144,8 @@ function renderLinks(items: ReadingListItem[]) {
 		div.appendChild(deleteButton);
 		linkList.appendChild(div);
 	}
+
+	renderPagination(paginated.totalPages, paginated.visiblePages);
 }
 
 function filterItems(): ReadingListItem[] {
@@ -208,6 +271,7 @@ document
 	});
 
 document.getElementById("filter-input")?.addEventListener("input", () => {
+	currentPage = 1;
 	renderLinks(filterItems());
 });
 
