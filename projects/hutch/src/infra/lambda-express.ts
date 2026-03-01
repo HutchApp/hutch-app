@@ -7,7 +7,7 @@ import serverless from "serverless-http";
 import { logger } from "./logger";
 import { errorHandler } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
-import { localServer } from "./local-server";
+import { localServer } from "../runtime/app";
 import { getEnv } from "../runtime/require-env";
 
 // present in Lambda runtime, absent locally — https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime

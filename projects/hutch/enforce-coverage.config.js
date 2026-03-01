@@ -22,5 +22,7 @@ config.enforceCoverage({
   extraExcludePatterns: [
     ...(config.extraExcludePatterns || []),
     'src/infra/**',
+    // Composition and server start entry point — no logic to test
+    'src/runtime/app.ts',
   ],
 })
