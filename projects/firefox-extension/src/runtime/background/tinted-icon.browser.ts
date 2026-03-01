@@ -10,27 +10,24 @@ const DEFAULT_PATHS: Record<number, string> = {
 	64: "icons/icon-64.png",
 };
 
-function tintIcon(size: number, color: string): Promise<ImageData> {
-	return new Promise((resolve, reject) => {
-		const img = new Image();
-		img.onload = () => {
-			const canvas = document.createElement("canvas");
-			canvas.width = size;
-			canvas.height = size;
-			const ctx = canvas.getContext("2d");
-			if (!ctx) {
-				reject(new Error("Failed to get canvas context"));
-				return;
-			}
-			ctx.drawImage(img, 0, 0, size, size);
-			ctx.globalCompositeOperation = "source-in";
-			ctx.fillStyle = color;
-			ctx.fillRect(0, 0, size, size);
-			resolve(ctx.getImageData(0, 0, size, size));
-		};
-		img.onerror = () => reject(new Error(`Failed to load icon-${size}.png`));
-		img.src = browser.runtime.getURL(`icons/icon-${size}.png`);
-	});
+async function tintIcon(size: number, color: string): Promise<ImageData> {
+	const url = browser.runtime.getURL(`icons/icon-${size}.png`);
+	const response = await fetch(url);
+	const blob = await response.blob();
+	const bitmap = await createImageBitmap(blob);
+
+	const canvas = new OffscreenCanvas(size, size);
+	const ctx = canvas.getContext("2d");
+	if (!ctx) {
+		throw new Error("Failed to get canvas context");
+	}
+
+	ctx.drawImage(bitmap, 0, 0, size, size);
+	ctx.globalCompositeOperation = "source-in";
+	ctx.fillStyle = color;
+	ctx.fillRect(0, 0, size, size);
+
+	return ctx.getImageData(0, 0, size, size);
 }
 
 let savedIconCache: Record<number, ImageData> | null = null;
