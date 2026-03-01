@@ -220,7 +220,7 @@
 }
 
 .queue-article__action-btn--delete:hover {
-  background: hsl(0 84% 60% / 0.1);
+  background: var(--error-bg);
   color: var(--error);
   border-color: var(--error);
 }
