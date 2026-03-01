@@ -8,7 +8,6 @@ import type {
 	DeleteArticle,
 	FindArticlesByUser,
 	SaveArticle,
-	ToggleArticleStar,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
 import type { UserId } from "../../../domain/user/user.types";
@@ -23,7 +22,6 @@ interface QueueDependencies {
 	parseArticle: ParseArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
-	toggleArticleStar: ToggleArticleStar;
 }
 
 export function initQueueRoutes(deps: QueueDependencies): Router {
@@ -36,7 +34,6 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const result = await deps.findArticlesByUser({
 			userId,
 			status: urlState.status,
-			isStarred: urlState.starred,
 			order: urlState.order,
 			page: urlState.page,
 		});
@@ -103,14 +100,6 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const status = req.body.status as ArticleStatus;
 
 		await deps.updateArticleStatus(articleId, userId, status);
-		res.redirect(303, req.get("Referer") || "/queue");
-	});
-
-	router.post("/:id/star", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const articleId = req.params.id as unknown as import("../../../domain/article/article.types").ArticleId;
-
-		await deps.toggleArticleStar(articleId, userId);
 		res.redirect(303, req.get("Referer") || "/queue");
 	});
 

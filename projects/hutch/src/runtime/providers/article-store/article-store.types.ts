@@ -18,7 +18,6 @@ export type SortOrder = "asc" | "desc";
 export interface FindArticlesQuery {
 	userId: UserId;
 	status?: ArticleStatus;
-	isStarred?: boolean;
 	sort?: SortField;
 	order?: SortOrder;
 	page?: number;
@@ -53,7 +52,3 @@ export type UpdateArticleStatus = (
 	status: ArticleStatus,
 ) => Promise<boolean>;
 
-export type ToggleArticleStar = (
-	id: ArticleId,
-	userId: UserId,
-) => Promise<boolean>;

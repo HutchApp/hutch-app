@@ -20,7 +20,6 @@ export interface SavedArticle {
 	metadata: ArticleMetadata;
 	estimatedReadTime: Minutes;
 	status: ArticleStatus;
-	isStarred: boolean;
 	savedAt: Date;
 	readAt?: Date;
 }

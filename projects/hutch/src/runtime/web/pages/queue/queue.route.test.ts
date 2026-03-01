@@ -109,31 +109,6 @@ describe("Queue routes", () => {
 		});
 	});
 
-	describe("POST /queue/:id/star", () => {
-		it("should toggle star on article", async () => {
-			const { app, auth } = createTestApp();
-			const agent = await loginAgent(app, auth);
-
-			await agent
-				.post("/queue/save")
-				.type("form")
-				.send({ url: "https://example.com/article" });
-
-			const queueResponse = await agent.get("/queue");
-			const doc = new JSDOM(queueResponse.text).window.document;
-			const articleEl = doc.querySelector("[data-test-article-list] .queue-article");
-			const articleId = articleEl?.getAttribute("data-test-article");
-
-			const starResponse = await agent.post(`/queue/${articleId}/star`);
-
-			expect(starResponse.status).toBe(303);
-
-			const starredResponse = await agent.get("/queue?starred=true");
-			const starredDoc = new JSDOM(starredResponse.text).window.document;
-			expect(starredDoc.querySelectorAll(".queue-article").length).toBe(1);
-		});
-	});
-
 	describe("POST /queue/:id/delete", () => {
 		it("should delete article", async () => {
 			const { app, auth } = createTestApp();

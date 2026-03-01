@@ -33,7 +33,6 @@ describe("initInMemoryArticleStore", () => {
 
 			expect(found?.url).toBe("https://example.com/article");
 			expect(found?.status).toBe("unread");
-			expect(found?.isStarred).toBe(false);
 		});
 	});
 
@@ -173,18 +172,4 @@ describe("initInMemoryArticleStore", () => {
 		});
 	});
 
-	describe("toggleArticleStar", () => {
-		it("should toggle star on and off", async () => {
-			const store = initInMemoryArticleStore();
-			const saved = await store.saveArticle(makeArticleParams());
-
-			await store.toggleArticleStar(saved.id, USER_A);
-			let found = await store.findArticleById(saved.id);
-			expect(found?.isStarred).toBe(true);
-
-			await store.toggleArticleStar(saved.id, USER_A);
-			found = await store.findArticleById(saved.id);
-			expect(found?.isStarred).toBe(false);
-		});
-	});
 });

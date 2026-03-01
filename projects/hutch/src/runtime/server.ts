@@ -15,7 +15,6 @@ import type {
 	DeleteArticle,
 	FindArticlesByUser,
 	SaveArticle,
-	ToggleArticleStar,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
 import { Base } from "./web/base.component";
@@ -44,7 +43,6 @@ interface AppDependencies {
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
-	toggleArticleStar: ToggleArticleStar;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -100,7 +98,6 @@ export function createApp(dependencies: AppDependencies): Express {
 		parseArticle: deps.parseArticle,
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
-		toggleArticleStar: deps.toggleArticleStar,
 	});
 	app.use("/queue", requireAuth, queueRouter);
 
