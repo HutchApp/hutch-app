@@ -13,6 +13,7 @@ export interface QueueArticleViewModel {
 	status: string;
 	isStarred: boolean;
 	savedAgo: string;
+	imageUrl?: string;
 }
 
 export interface QueueViewModel {
@@ -72,6 +73,7 @@ function toArticleViewModel(
 		status: article.status,
 		isStarred: article.isStarred,
 		savedAgo: formatRelativeDate(article.savedAt, now),
+		imageUrl: article.metadata.imageUrl,
 	};
 }
 

@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "../../../test-app";
+import { createTestApp, createTestAppWithFetchHtml } from "../../../test-app";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -208,6 +208,42 @@ describe("Queue routes", () => {
 			const toggle = doc.querySelector("[data-test-show-url]");
 			expect(toggle?.textContent).toBe("Hide URLs");
 			expect(toggle?.getAttribute("href")).not.toContain("showUrl");
+		});
+	});
+
+	describe("Thumbnail", () => {
+		it("should render thumbnail when article has og:image", async () => {
+			const fetchHtml = async (_url: string) =>
+				`<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`;
+
+			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const thumbnail = doc.querySelector(".queue-article__thumbnail");
+			expect(thumbnail?.getAttribute("src")).toBe(
+				"https://example.com/thumb.jpg",
+			);
+		});
+
+		it("should not render thumbnail when page has no images", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".queue-article__thumbnail")).toBeNull();
 		});
 	});
 

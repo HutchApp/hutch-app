@@ -138,6 +138,14 @@
   background: var(--card);
 }
 
+.queue-article__thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
 .queue-article__content {
   flex: 1;
   min-width: 0;

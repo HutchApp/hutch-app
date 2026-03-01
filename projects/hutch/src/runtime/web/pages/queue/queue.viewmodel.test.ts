@@ -121,4 +121,31 @@ describe("toQueueViewModel", () => {
 		expect(vm.showUrlToggle.label).toBe("Hide URLs");
 		expect(vm.showUrlToggle.url).not.toContain("showUrl");
 	});
+
+	it("should pass imageUrl from article metadata to view model", () => {
+		const article = makeArticle({
+			metadata: {
+				title: "Test Article",
+				siteName: "example.com",
+				excerpt: "An excerpt",
+				wordCount: 500,
+				imageUrl: "https://example.com/thumbnail.jpg",
+			},
+		});
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].imageUrl).toBe(
+			"https://example.com/thumbnail.jpg",
+		);
+	});
+
+	it("should leave imageUrl undefined when article has no image", () => {
+		const vm = toQueueViewModel(makeResult([makeArticle()]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].imageUrl).toBeUndefined();
+	});
 });

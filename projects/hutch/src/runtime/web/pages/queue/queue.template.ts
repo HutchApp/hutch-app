@@ -34,8 +34,13 @@ function renderArticle(
       </form>`);
 	}
 
+	const thumbnail = article.imageUrl
+		? `<img class="queue-article__thumbnail" src="${article.imageUrl}" alt="" loading="lazy">`
+		: "";
+
 	return `
     <div class="queue-article" data-test-article="${article.id}">
+      ${thumbnail}
       <div class="queue-article__content">
         <a class="queue-article__title" href="${article.url}" target="_blank" rel="noopener">${article.title}</a>
         ${options.showUrl ? `<span class="queue-article__url" data-test-article-url>${article.url}</span>` : ""}
