@@ -1,6 +1,6 @@
 import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
-import { initHandleSaveCommand } from "./handle-save-command";
+import { initHandleToggleCommand } from "./handle-toggle-command";
 import type { PopupMessage } from "./messages.types";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initIconStatus } from "./icon-status";
@@ -26,40 +26,22 @@ async function updateActiveTabIcon() {
 	}
 }
 
-const handleSaveCommand = initHandleSaveCommand({
-	queryActiveTabs: () =>
-		browser.tabs.query({ active: true, currentWindow: true }),
+const queryActiveTabs = () =>
+	browser.tabs.query({ active: true, currentWindow: true });
+
+const handleToggleCommand = initHandleToggleCommand({
+	queryActiveTabs,
 	whenLoggedIn: auth.whenLoggedIn,
 	saveCurrentTab,
-});
-
-browser.commands.onCommand.addListener((command) => {
-	if (command === "save-current-tab") {
-		handleSaveCommand()
-			.then(async (result) => {
-				if (result?.ok) {
-					await updateActiveTabIcon();
-					const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-					const tabId = tabs[0]?.id;
-					if (tabId != null) {
-						browser.tabs.sendMessage(tabId, {
-							type: "shortcut-saved",
-							itemId: result.item.id,
-						}).catch(() => {});
-					}
-				}
-			})
-			.catch(console.error);
-	}
+	findByUrl: readingList.findByUrl,
+	removeUrl: readingList.removeUrl,
 });
 
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
-	if ((raw as { type: string }).type === "save-current-tab-shortcut") {
-		handleSaveCommand()
+	if ((raw as { type: string }).type === "toggle-current-tab") {
+		handleToggleCommand()
 			.then((result) => {
-				if (result?.ok) {
-					updateActiveTabIcon().catch(() => {});
-				}
+				updateActiveTabIcon().catch(() => {});
 				sendResponse(result);
 			})
 			.catch(console.error);
