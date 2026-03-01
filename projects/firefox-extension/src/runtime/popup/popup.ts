@@ -45,6 +45,7 @@ function renderPagination(totalPages: number, visiblePages: number[]) {
 	prevButton.className = "pagination__button";
 	prevButton.textContent = "\u2039";
 	prevButton.title = "Previous page";
+	prevButton.setAttribute("aria-label", "Previous page");
 	prevButton.disabled = currentPage <= 1;
 	prevButton.addEventListener("click", () => {
 		currentPage--;
@@ -70,6 +71,7 @@ function renderPagination(totalPages: number, visiblePages: number[]) {
 	nextButton.className = "pagination__button";
 	nextButton.textContent = "\u203A";
 	nextButton.title = "Next page";
+	nextButton.setAttribute("aria-label", "Next page");
 	nextButton.disabled = currentPage >= totalPages;
 	nextButton.addEventListener("click", () => {
 		currentPage++;
