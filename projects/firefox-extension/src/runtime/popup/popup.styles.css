@@ -130,6 +130,24 @@ h2 {
   text-align: center;
 }
 
+.login__signup {
+  font-size: 13px;
+  color: #5a6170;
+  margin: 0;
+  text-align: center;
+}
+
+.login__signup a {
+  color: #c8923c;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login__signup a:hover {
+  text-decoration: underline;
+  color: #b5832f;
+}
+
 /* --- Status views (saved, already-saved, removed) --- */
 
 .view > p {
