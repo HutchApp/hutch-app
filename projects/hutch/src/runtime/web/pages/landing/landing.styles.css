@@ -180,6 +180,36 @@
   margin-bottom: 12px;
 }
 
+/* Backstory Section */
+.landing-backstory {
+  padding: 80px 20px;
+  background: var(--muted);
+}
+
+.landing-backstory__container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.landing-backstory__title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--foreground);
+}
+
+.landing-backstory__content p {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  margin-bottom: 16px;
+}
+
+.landing-backstory__content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
 /* Comparison Section */
 .landing-comparison {
   padding: 80px 20px;
@@ -282,11 +312,6 @@
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 12px;
-}
-
-.landing-pricing__subtitle {
-  font-size: 1.0625rem;
-  color: var(--muted-foreground);
 }
 
 .pricing-grid {

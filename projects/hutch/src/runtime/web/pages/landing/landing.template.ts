@@ -4,9 +4,9 @@ import { LANDING_PAGE_STYLES } from "./landing.styles";
 export function createLandingPageContent(): PageContent {
 	return {
 		seo: {
-			title: "Hutch — Save now. Read later. Remember forever.",
+			title: "Hutch — A read-it-later app by the creator of js-cookie",
 			description:
-				"Pocket is gone. Omnivore is gone. Hutch is the beautiful, affordable read-it-later app that works everywhere — with unlimited highlights, full-text search, and offline reading from A$3.99/mo.",
+				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
 			canonicalUrl: "https://hutchreader.com",
 			ogType: "website",
 			ogImage: "https://hutchreader.com/og-image-1200x630.png",
@@ -17,7 +17,7 @@ export function createLandingPageContent(): PageContent {
 					"@type": "WebApplication",
 					name: "Hutch",
 					description:
-						"A cross-platform read-it-later app with unlimited highlights, full-text search, and offline reading.",
+						"A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
 					applicationCategory: "ProductivityApplication",
 					operatingSystem: "Web, iOS, Android",
 					offers: {
@@ -40,7 +40,8 @@ function renderLandingContent(): string {
   <main>
     ${renderHeroSection()}
     ${renderCoreFeaturesSection()}
-    ${renderPowerFeaturesSection()}
+    ${renderRoadmapSection()}
+    ${renderBackstorySection()}
     ${renderComparisonSection()}
     ${renderPricingSection()}
     ${renderTrustSection()}
@@ -52,14 +53,14 @@ function renderHeroSection(): string {
 	return `
     <section class="landing-hero" data-test-section="hero">
       <div class="landing-hero__container">
-        <p class="landing-hero__tagline">Read-it-later, reimagined</p>
-        <h1 class="landing-hero__title">Save now.<br>Read later.<br>Remember forever.</h1>
-        <p class="landing-hero__subtitle">Pocket is gone. Omnivore is gone. Hutch is the beautiful, affordable read-it-later app that works everywhere &mdash; with unlimited highlights, full-text search, and offline reading from A$3.99/mo.</p>
+        <p class="landing-hero__tagline">A read-it-later app by the creator of js-cookie</p>
+        <h1 class="landing-hero__title">Save now.<br>Read later.<br>That's it.</h1>
+        <p class="landing-hero__subtitle">Pocket is gone. Omnivore is gone. I built Hutch from a personal reading system I've maintained for 10 years &mdash; because I needed a replacement too.</p>
         <div class="landing-hero__actions">
-          <a href="/signup" class="btn btn--primary" data-test-cta="start-free">Start Reading Free</a>
-          <a href="#features" class="btn btn--secondary" data-test-cta="see-features">See How It Works</a>
+          <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install the Extension</a>
+          <a href="#what-works" class="btn btn--secondary" data-test-cta="see-features">See What Works Today</a>
         </div>
-        <p class="landing-hero__trust">No credit card required &middot; Import from Pocket, Instapaper &amp; more</p>
+        <p class="landing-hero__trust">Chrome &amp; Firefox &middot; Import from Pocket, Instapaper &amp; Omnivore</p>
       </div>
     </section>`;
 }
@@ -85,51 +86,30 @@ function renderFeatureCard(f: {
 function renderCoreFeaturesSection(): string {
 	const features = [
 		{
-			name: "One-Click Save",
+			name: "Browser Extension",
 			description:
-				"Browser extension and mobile share sheet. Save any article in under a second &mdash; no modals, no friction.",
-			inDevelopment: true,
+				"Save any page in one click from Chrome or Firefox. No modals, no friction.",
 		},
 		{
-			name: "Beautiful Reader",
+			name: "Web App",
 			description:
-				"Distraction-free reading with custom fonts, themes (Light, Sepia, Dark, OLED), and adjustable typography.",
-			inDevelopment: true,
+				"View and manage your saved articles from any browser. Clean, fast, no clutter.",
 		},
 		{
-			name: "Unlimited Highlights",
+			name: "Import Your Library",
 			description:
-				"Highlight in 4 colours, add inline notes, export as Markdown. No monthly limits &mdash; ever.",
-			inDevelopment: true,
-		},
-		{
-			name: "Full-Text Search",
-			description:
-				"Search across titles AND article body text. Filter by tags, read status, date, or reading time.",
-			inDevelopment: true,
-		},
-		{
-			name: "Offline &amp; Archived",
-			description:
-				"Articles auto-download for offline reading. Your archive is permanent &mdash; even if the original page disappears.",
-			inDevelopment: true,
-		},
-		{
-			name: "Cross-Platform Sync",
-			description:
-				"Web, iOS, Android, and browser extensions. Reading position syncs in real-time across all devices.",
-			inDevelopment: true,
+				"Bring your articles from Pocket, Instapaper, or Omnivore. One upload, everything transferred.",
 		},
 	];
 
 	const featureCards = features.map(renderFeatureCard).join("");
 
 	return `
-    <section id="features" class="landing-features" data-test-section="core-features">
+    <section id="what-works" class="landing-features" data-test-section="core-features">
       <div class="landing-features__header">
-        <p class="landing-features__label">Core Features</p>
-        <h2 class="landing-features__title">Everything you need.<br>Nothing you don't.</h2>
-        <p class="landing-features__subtitle">The six essentials that Pocket users loved &mdash; rebuilt from scratch, and included at every price point.</p>
+        <p class="landing-features__label">What Works Today</p>
+        <h2 class="landing-features__title">Save articles. Read them later.</h2>
+        <p class="landing-features__subtitle">These features are shipped and working right now. Install the extension and try them.</p>
       </div>
       <div class="landing-features__grid">
         ${featureCards}
@@ -137,57 +117,66 @@ function renderCoreFeaturesSection(): string {
     </section>`;
 }
 
-function renderPowerFeaturesSection(): string {
-	const features = [
+function renderRoadmapSection(): string {
+	const planned = [
 		{
-			name: "Daily Digest",
+			name: "Reader View",
 			description:
-				"Morning email with articles matched to your available reading time.",
-			inDevelopment: true,
+				"Distraction-free reading with custom fonts, themes, and adjustable typography.",
 		},
 		{
-			name: "Newsletter Inbox",
+			name: "Highlights &amp; Notes",
 			description:
-				"Unique email alias routes newsletters straight into your reading queue.",
-			inDevelopment: true,
+				"Highlight in multiple colours, add inline notes, export as Markdown.",
+		},
+		{
+			name: "Full-Text Search",
+			description:
+				"Search across titles and article body text. Filter by tags, read status, and date.",
+		},
+		{
+			name: "Offline Reading",
+			description:
+				"Articles auto-download for offline access. Your archive persists even if the original page disappears.",
 		},
 		{
 			name: "Text-to-Speech",
 			description:
 				"Listen to articles with natural TTS. Adjustable speed, background playback.",
-			inDevelopment: true,
 		},
 		{
-			name: "Full Data Export",
+			name: "Newsletter Inbox",
 			description:
-				"Export everything as JSON, CSV, or Markdown. Import from Pocket, Instapaper, Omnivore.",
-			inDevelopment: true,
-		},
-		{
-			name: "AI Auto-Tagging",
-			description:
-				"Articles auto-tagged on save using AI. Learns your patterns over time.",
-			inDevelopment: true,
-		},
-		{
-			name: "AI Summaries",
-			description:
-				"One-tap TL;DR with 3&ndash;5 key points. Scan your queue faster.",
-			inDevelopment: true,
+				"Unique email alias routes newsletters straight into your reading queue.",
 		},
 	];
 
-	const featureCards = features.map(renderFeatureCard).join("");
+	const roadmapCards = planned.map(renderFeatureCard).join("");
 
 	return `
-    <section class="landing-features" data-test-section="power-features">
+    <section class="landing-features" data-test-section="roadmap">
       <div class="landing-features__header">
-        <p class="landing-features__label">Power Features</p>
-        <h2 class="landing-features__title">Go further.</h2>
-        <p class="landing-features__subtitle">Digests, newsletters, TTS, AI &mdash; the features that make Hutch your complete reading companion.</p>
+        <p class="landing-features__label">What's Coming</p>
+        <h2 class="landing-features__title">Built in public. Shaped by users.</h2>
+        <p class="landing-features__subtitle">I'm building these next. Vote on what matters most to you on the <a href="/roadmap">feature board</a>.</p>
       </div>
       <div class="landing-features__grid">
-        ${featureCards}
+        ${roadmapCards}
+      </div>
+    </section>`;
+}
+
+function renderBackstorySection(): string {
+	return `
+    <section class="landing-backstory" data-test-section="backstory">
+      <div class="landing-backstory__container">
+        <h2 class="landing-backstory__title">Why I built this</h2>
+        <div class="landing-backstory__content">
+          <p>I'm Fagner Brack. You might know me as the creator of <a href="https://www.npmjs.com/package/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion npm downloads per year. I've been building for the web for a long time.</p>
+          <p>For the past 10 years, I've maintained a personal reading system &mdash; a pipeline of Gmail filters, DynamoDB tables, and Reddit automations that helped me save, organise, and actually read the articles I cared about. That system powered 300,000+ Reddit karma across technical communities.</p>
+          <p>When Pocket was acquired and then abandoned, and Omnivore shut down overnight, I realised the tool I needed didn't exist as a product anyone could use. So I'm turning my personal system into Hutch &mdash; built in Australia, on the Mornington Peninsula, one feature at a time.</p>
+          <p>This is a solo project. I'm building it in public, and I'd rather be honest about what works today than promise features that don't exist yet.</p>
+        </div>
       </div>
     </section>`;
 }
@@ -197,8 +186,8 @@ function renderComparisonSection(): string {
     <section class="landing-comparison" data-test-section="comparison">
       <div class="landing-comparison__container">
         <div class="landing-comparison__header">
-          <p class="landing-comparison__label">How we compare</p>
-          <h2 class="landing-comparison__title">More features. Less cost.</h2>
+          <p class="landing-comparison__label">Honest Comparison</p>
+          <h2 class="landing-comparison__title">Where Hutch stands today.</h2>
         </div>
         <table class="comparison-table" data-test-comparison-table>
           <thead>
@@ -213,52 +202,31 @@ function renderComparisonSection(): string {
           <tbody>
             <tr>
               <td>Price</td>
-              <td class="comparison-table__hutch">A$3.99/mo</td>
+              <td class="comparison-table__hutch">A$29/yr founding</td>
               <td>A$20/mo</td>
               <td>A$9/mo</td>
               <td>A$15 once</td>
             </tr>
             <tr>
-              <td>Highlights</td>
-              <td class="comparison-table__hutch">Unlimited</td>
-              <td>Unlimited</td>
-              <td>5/month free</td>
-              <td>None</td>
+              <td>Browser Extension</td>
+              <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
             </tr>
             <tr>
-              <td>Search</td>
-              <td class="comparison-table__hutch">Full-text</td>
-              <td>Full-text</td>
-              <td>Titles only (free)</td>
-              <td>Titles only</td>
+              <td>Import Library</td>
+              <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
+              <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
             </tr>
             <tr>
               <td>Platforms</td>
-              <td class="comparison-table__hutch">All</td>
+              <td class="comparison-table__hutch">Web + Extensions</td>
               <td>All</td>
               <td>All</td>
               <td>Apple only</td>
-            </tr>
-            <tr>
-              <td>Offline Reading</td>
-              <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-            </tr>
-            <tr>
-              <td>Text-to-Speech</td>
-              <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
-            </tr>
-            <tr>
-              <td>Newsletter Inbox</td>
-              <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
             </tr>
           </tbody>
         </table>
@@ -272,60 +240,52 @@ function renderPricingSection(): string {
       <div class="landing-pricing__container">
         <div class="landing-pricing__header">
           <p class="landing-pricing__label">Simple Pricing</p>
-          <h2 class="landing-pricing__title">Half the price of Pocket Premium.</h2>
-          <p class="landing-pricing__subtitle">Seriously. Every feature Pocket charged A$7.50/mo for, at A$3.99.</p>
+          <h2 class="landing-pricing__title">Try it free. Support the project if you like it.</h2>
         </div>
         <div class="pricing-grid">
           <div class="pricing-card" data-test-plan="free">
             <h3 class="pricing-card__name">Free</h3>
             <p class="pricing-card__price">A$0<span class="pricing-card__price-suffix"> forever</span></p>
-            <p class="pricing-card__description">Start reading, no strings attached.</p>
+            <p class="pricing-card__description">Try Hutch with no commitment.</p>
             <ul class="pricing-card__features">
               <li class="pricing-card__feature">Save unlimited articles</li>
-              <li class="pricing-card__feature">Reader view with all themes</li>
-              <li class="pricing-card__feature">3 highlights per article</li>
+              <li class="pricing-card__feature">Browser extension</li>
+              <li class="pricing-card__feature">Import from other apps</li>
               <li class="pricing-card__feature">Manual tags</li>
               <li class="pricing-card__feature">Search titles</li>
-              <li class="pricing-card__feature">Sync across 2 devices</li>
-              <li class="pricing-card__feature">30-day article retention</li>
             </ul>
             <a href="/signup" class="btn btn--outline pricing-card__cta" data-test-cta="free">Get Started</a>
           </div>
 
-          <div class="pricing-card pricing-card--featured" data-test-plan="pro">
-            <span class="pricing-card__badge">Most Popular</span>
+          <div class="pricing-card pricing-card--featured" data-test-plan="founding">
+            <span class="pricing-card__badge">First 100 Users</span>
+            <h3 class="pricing-card__name">Founding Member</h3>
+            <p class="pricing-card__price">A$29<span class="pricing-card__price-suffix">/yr</span></p>
+            <p class="pricing-card__description">Lock in this price permanently. Help shape the product.</p>
+            <ul class="pricing-card__features">
+              <li class="pricing-card__feature">Everything in Free</li>
+              <li class="pricing-card__feature">All Pro features as they ship</li>
+              <li class="pricing-card__feature">Direct access to the developer</li>
+              <li class="pricing-card__feature">Vote on feature priorities</li>
+              <li class="pricing-card__feature">Price locked for life</li>
+            </ul>
+            <a href="/signup?plan=founding" class="btn btn--brand pricing-card__cta" data-test-cta="founding">Become a Founding Member</a>
+          </div>
+
+          <div class="pricing-card" data-test-plan="pro">
             <h3 class="pricing-card__name">Pro</h3>
             <p class="pricing-card__price">A$3.99<span class="pricing-card__price-suffix">/mo</span></p>
             <p class="pricing-card__annual">A$39/yr (save ~17%)</p>
-            <p class="pricing-card__description">Everything serious readers need.</p>
+            <p class="pricing-card__description">Full access once all features ship.</p>
             <ul class="pricing-card__features">
               <li class="pricing-card__feature">Everything in Free</li>
               <li class="pricing-card__feature">Unlimited highlights &amp; notes</li>
               <li class="pricing-card__feature">Full-text search</li>
               <li class="pricing-card__feature">Permanent archive</li>
               <li class="pricing-card__feature">Offline reading</li>
-              <li class="pricing-card__feature">Newsletter delivery</li>
-              <li class="pricing-card__feature">Text-to-speech</li>
-              <li class="pricing-card__feature">Daily reading digest</li>
-              <li class="pricing-card__feature">Unlimited device sync</li>
-              <li class="pricing-card__feature">Data export &amp; API</li>
+              <li class="pricing-card__feature">Data export</li>
             </ul>
-            <a href="/signup?plan=pro" class="btn btn--brand pricing-card__cta" data-test-cta="pro">Start Free Trial</a>
-          </div>
-
-          <div class="pricing-card" data-test-plan="pro-plus">
-            <h3 class="pricing-card__name">Pro+</h3>
-            <p class="pricing-card__price">A$5.99<span class="pricing-card__price-suffix">/mo</span></p>
-            <p class="pricing-card__annual">A$59/yr (save ~17%)</p>
-            <p class="pricing-card__description">AI-powered reading intelligence.</p>
-            <ul class="pricing-card__features">
-              <li class="pricing-card__feature">Everything in Pro</li>
-              <li class="pricing-card__feature">AI auto-tagging</li>
-              <li class="pricing-card__feature">AI article summaries</li>
-              <li class="pricing-card__feature">Smart recommendations</li>
-              <li class="pricing-card__feature">Priority support</li>
-            </ul>
-            <a href="/signup?plan=pro-plus" class="btn btn--outline pricing-card__cta" data-test-cta="pro-plus">Start Free Trial</a>
+            <a href="/signup?plan=pro" class="btn btn--outline pricing-card__cta" data-test-cta="pro">Start Free Trial</a>
           </div>
         </div>
       </div>
@@ -337,7 +297,7 @@ function renderTrustSection(): string {
 		{
 			name: "Metadata-Only Architecture",
 			description:
-				"We're engineered to never read your private data. This isn't a policy &mdash; it's a technical decision you can verify.",
+				"I built Hutch to never read your private data. This isn't a policy &mdash; it's a technical decision you can verify.",
 		},
 		{
 			name: "\"Even If You Cancel\" Promise",
@@ -345,14 +305,14 @@ function renderTrustSection(): string {
 				"Export everything, anytime. Your data is yours. Cancel and your saved articles stay accessible for 90 days for export.",
 		},
 		{
-			name: "Australian Privacy Act Compliant",
+			name: "Self-Hosted Analytics",
 			description:
-				"Built in Australia, compliant with Australian Privacy Principles. Stronger protections than most US-based competitors.",
+				"Hutch uses self-hosted Plausible Analytics. No Google Analytics, no third-party trackers, no data sold to advertisers.",
 		},
 		{
-			name: "Open-Source Scanner",
+			name: "Australian Privacy Act Compliant",
 			description:
-				"Our article extraction and classification logic is open-source. Security researchers can verify our privacy claims.",
+				"Built in Australia, compliant with Australian Privacy Principles. Magic link auth &mdash; no passwords stored.",
 		},
 	];
 
@@ -372,7 +332,7 @@ function renderTrustSection(): string {
         <div class="landing-trust__header">
           <p class="landing-trust__label">Trust &amp; Privacy</p>
           <h2 class="landing-trust__title">Your reading list. Your data. Period.</h2>
-          <p class="landing-trust__subtitle">Every read-it-later app that shut down left users scrambling. We're built differently &mdash; starting with your right to leave.</p>
+          <p class="landing-trust__subtitle">Every read-it-later app that shut down left users scrambling. Hutch is built differently &mdash; starting with your right to leave.</p>
         </div>
         <div class="trust-grid">
           ${trustCards}
@@ -385,10 +345,10 @@ function renderFooterCTA(): string {
 	return `
     <section class="landing-cta" data-test-section="cta">
       <div class="landing-cta__container">
-        <h2 class="landing-cta__title">Your reading deserves<br>a better home.</h2>
-        <p class="landing-cta__subtitle">Join thousands of readers who switched to Hutch after Pocket and Omnivore shut down. Start free &mdash; upgrade when you're ready.</p>
+        <h2 class="landing-cta__title">I'm building this in public.</h2>
+        <p class="landing-cta__subtitle">Try the extension, tell me what to build next. Hutch gets better with every user who shows up and says what they need.</p>
         <div class="landing-cta__actions">
-          <a href="/signup" class="btn btn--brand" data-test-cta="bottom-start-free">Get Started Free</a>
+          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install the Extension</a>
           <a href="/import-export" class="btn btn--outline" data-test-cta="bottom-import">Import from Pocket</a>
         </div>
       </div>
