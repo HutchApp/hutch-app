@@ -55,6 +55,9 @@ const BASE_EXCLUDE_PATTERNS = [
   '**/*.test.ts',
   'src/**/*.integration.ts',
 
+  // Test utilities — support files for tests, not production code
+  '**/test-utils.ts',
+
   // Entry points — bootstrap code with no testable logic
   '**/*.main.ts',
 

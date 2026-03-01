@@ -1,5 +1,5 @@
 import type { APIGatewayProxyEventV2, Context, Handler } from "aws-lambda";
-import { getEnv } from "../require-env";
+import { getEnv } from "../runtime/require-env";
 
 export const removeStageFromRawPath = (
 	handler: Handler<APIGatewayProxyEventV2>,

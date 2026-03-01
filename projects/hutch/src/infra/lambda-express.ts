@@ -8,7 +8,7 @@ import { logger } from "./logger";
 import { errorHandler } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
 import { localServer } from "./local-server";
-import { getEnv } from "../require-env";
+import { getEnv } from "../runtime/require-env";
 
 // present in Lambda runtime, absent locally — https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
 const lambda = !!getEnv("AWS_LAMBDA_FUNCTION_NAME");

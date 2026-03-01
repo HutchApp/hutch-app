@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import type { Logger } from "./logger";
-import { getEnv } from "../require-env";
+import { getEnv } from "../runtime/require-env";
 
 export const localServer = (app: Express, logger: Logger): void => {
 	const port = getEnv("PORT") || "3000";

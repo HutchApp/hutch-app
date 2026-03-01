@@ -2,10 +2,10 @@
   "name": "hutch",
   "version": "1.0.0",
   "description": "Hutch — read-it-later web application",
-  "main": "src/infra/pulumi/index.ts",
+  "main": "src/infra/index.ts",
   "scripts": {
-    "start": "node dist/server.main.js",
-    "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true tsx watch src/server.main.ts\"",
+    "start": "node dist/runtime/server.main.js",
+    "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true tsx watch src/runtime/server.main.ts\"",
     "dev:lambda": "tsx watch src/infra/lambda.ts",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
@@ -15,7 +15,8 @@
     "compile": "tsc && node scripts/copy-static-assets.js",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
-    "check": "pnpm lint && pnpm test-with-coverage",
+    "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
+    "check": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
     "deploy": "pulumi up --yes --stack prod"
   },
   "dependencies": {
