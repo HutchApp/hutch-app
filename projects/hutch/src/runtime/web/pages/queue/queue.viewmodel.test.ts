@@ -106,4 +106,19 @@ describe("toQueueViewModel", () => {
 		expect(vm.filterUrls.unread).toBe("/queue?status=unread");
 		expect(vm.filterUrls.read).toBe("/queue?status=read");
 	});
+
+	it("should include show URL toggle with 'Show URLs' when showUrl is off", () => {
+		const vm = toQueueViewModel(makeResult([]), DEFAULT_FILTERS, { now: NOW });
+
+		expect(vm.showUrlToggle.label).toBe("Show URLs");
+		expect(vm.showUrlToggle.url).toContain("showUrl=true");
+	});
+
+	it("should include show URL toggle with 'Hide URLs' when showUrl is on", () => {
+		const filters = { ...DEFAULT_FILTERS, showUrl: true as const };
+		const vm = toQueueViewModel(makeResult([]), filters, { now: NOW });
+
+		expect(vm.showUrlToggle.label).toBe("Hide URLs");
+		expect(vm.showUrlToggle.url).not.toContain("showUrl");
+	});
 });
