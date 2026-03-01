@@ -57,5 +57,5 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm run deploy
+      - run: pnpm run deploy -- --yes
         working-directory: projects/hutch
