@@ -6,8 +6,6 @@ import { join } from "node:path";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
-const memorySize = 512;
-const timeout = 30;
 
 function copyCssFiles(srcDir: string, destDir: string) {
 	for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
@@ -20,94 +18,219 @@ function copyCssFiles(srcDir: string, destDir: string) {
 	}
 }
 
-const lambdaOutputDir = ".lib/hutch-api";
+class DomainRegistration {
+	public readonly certificateArn: pulumi.Output<string>;
+	public readonly zoneId: Promise<string>;
+	public readonly domains: string[];
+	public readonly primaryDomain: string;
 
-const lambdaCode = build({
-	entryPoints: ["./src/infra/lambda.ts"],
-	bundle: true,
-	sourcemap: true,
-	platform: "node",
-	format: "cjs",
-	minify: true,
-	outfile: `${lambdaOutputDir}/index.js`,
-	target: ["node22"],
-}).then(() => {
-	mkdirSync(lambdaOutputDir, { recursive: true });
-	copyCssFiles("./src/runtime", lambdaOutputDir);
-	return new pulumi.asset.AssetArchive({
-		".": new pulumi.asset.FileArchive(lambdaOutputDir),
-	});
-});
+	constructor(name: string, args: { domains: string[] }) {
+		const [primaryDomain, ...altDomains] = args.domains;
+		this.domains = args.domains;
+		this.primaryDomain = primaryDomain;
 
-const lambdaRole = new aws.iam.Role("hutch-lambda-role", {
-	assumeRolePolicy: JSON.stringify({
-		Version: "2012-10-17",
-		Statement: [
+		const zone = aws.route53.getZone({ name: primaryDomain });
+		this.zoneId = zone.then((z) => z.zoneId);
+
+		const cert = new aws.acm.Certificate(`${name}-cert`, {
+			domainName: primaryDomain,
+			subjectAlternativeNames:
+				altDomains.length > 0 ? altDomains : undefined,
+			validationMethod: "DNS",
+		});
+
+		const validationRecords = cert.domainValidationOptions.apply((opts) =>
+			opts.map(
+				(opt, i) =>
+					new aws.route53.Record(`${name}-cert-validation-${i}`, {
+						zoneId: this.zoneId,
+						name: opt.resourceRecordName,
+						type: opt.resourceRecordType,
+						records: [opt.resourceRecordValue],
+						ttl: 300,
+					}),
+			),
+		);
+
+		const validated = new aws.acm.CertificateValidation(
+			`${name}-cert-validated`,
 			{
-				Action: "sts:AssumeRole",
-				Principal: { Service: "lambda.amazonaws.com" },
-				Effect: "Allow",
+				certificateArn: cert.arn,
+				validationRecordFqdns: validationRecords.apply((records) =>
+					records.map((r) => r.fqdn),
+				),
 			},
-		],
+		);
+
+		this.certificateArn = validated.certificateArn;
+	}
+}
+
+class HutchLambda {
+	public readonly apiUrl: pulumi.Output<string> | string;
+	public readonly functionName: pulumi.Output<string>;
+	public readonly defaultRoute: aws.apigatewayv2.Route;
+
+	constructor(
+		name: string,
+		args: {
+			stage: string;
+			domainRegistration?: DomainRegistration;
+		},
+	) {
+		const memorySize = 512;
+		const timeout = 30;
+		const lambdaOutputDir = ".lib/hutch-api";
+
+		const lambdaCode = build({
+			entryPoints: ["./src/infra/lambda.ts"],
+			bundle: true,
+			sourcemap: true,
+			platform: "node",
+			format: "cjs",
+			minify: true,
+			outfile: `${lambdaOutputDir}/index.js`,
+			target: ["node22"],
+		}).then(() => {
+			mkdirSync(lambdaOutputDir, { recursive: true });
+			copyCssFiles("./src/runtime", lambdaOutputDir);
+			return new pulumi.asset.AssetArchive({
+				".": new pulumi.asset.FileArchive(lambdaOutputDir),
+			});
+		});
+
+		const lambdaRole = new aws.iam.Role(`${name}-lambda-role`, {
+			assumeRolePolicy: JSON.stringify({
+				Version: "2012-10-17",
+				Statement: [
+					{
+						Action: "sts:AssumeRole",
+						Principal: { Service: "lambda.amazonaws.com" },
+						Effect: "Allow",
+					},
+				],
+			}),
+		});
+
+		new aws.iam.RolePolicyAttachment(`${name}-lambda-basic-execution`, {
+			role: lambdaRole.name,
+			policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
+		});
+
+		const lambdaFunction = new aws.lambda.Function(`${name}-api`, {
+			runtime: aws.lambda.Runtime.NodeJS22dX,
+			handler: "index.handler",
+			role: lambdaRole.arn,
+			code: lambdaCode,
+			memorySize,
+			timeout,
+			environment: {
+				variables: {
+					NODE_ENV: "production",
+					STAGE: args.stage,
+				},
+			},
+		});
+
+		const apiGateway = new aws.apigatewayv2.Api(`${name}-api-gateway`, {
+			protocolType: "HTTP",
+			description: `Hutch API Gateway (${args.stage})`,
+		});
+
+		const lambdaIntegration = new aws.apigatewayv2.Integration(
+			`${name}-lambda-integration`,
+			{
+				apiId: apiGateway.id,
+				integrationType: "AWS_PROXY",
+				integrationUri: lambdaFunction.arn,
+				payloadFormatVersion: "2.0",
+			},
+		);
+
+		this.defaultRoute = new aws.apigatewayv2.Route(
+			`${name}-default-route`,
+			{
+				apiId: apiGateway.id,
+				routeKey: "$default",
+				target: pulumi.interpolate`integrations/${lambdaIntegration.id}`,
+			},
+		);
+
+		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
+			apiId: apiGateway.id,
+			name: args.stage,
+			autoDeploy: true,
+		});
+
+		new aws.lambda.Permission(`${name}-api-gateway-permission`, {
+			action: "lambda:InvokeFunction",
+			function: lambdaFunction.name,
+			principal: "apigateway.amazonaws.com",
+			sourceArn: pulumi.interpolate`${apiGateway.executionArn}/*/*`,
+		});
+
+		if (args.domainRegistration) {
+			const dr = args.domainRegistration;
+
+			for (const domain of dr.domains) {
+				const safeName = domain.replace(/\./g, "-");
+
+				const customDomain = new aws.apigatewayv2.DomainName(
+					`${name}-domain-${safeName}`,
+					{
+						domainName: domain,
+						domainNameConfiguration: {
+							certificateArn: dr.certificateArn,
+							endpointType: "REGIONAL",
+							securityPolicy: "TLS_1_2",
+						},
+					},
+				);
+
+				new aws.apigatewayv2.ApiMapping(
+					`${name}-mapping-${safeName}`,
+					{
+						apiId: apiGateway.id,
+						domainName: customDomain.domainName,
+						stage: apiStage.id,
+					},
+				);
+
+				new aws.route53.Record(`${name}-record-${safeName}`, {
+					zoneId: dr.zoneId,
+					name: domain,
+					type: "A",
+					aliases: [
+						{
+							name: customDomain.domainNameConfiguration.apply(
+								(c) => c.targetDomainName,
+							),
+							zoneId:
+								customDomain.domainNameConfiguration.apply(
+									(c) => c.hostedZoneId,
+								),
+							evaluateTargetHealth: false,
+						},
+					],
+				});
+			}
+
+			this.apiUrl = `https://${dr.primaryDomain}`;
+		} else {
+			this.apiUrl = pulumi.interpolate`${apiGateway.apiEndpoint}/${apiStage.name}`;
+		}
+
+		this.functionName = lambdaFunction.name;
+	}
+}
+
+const hutch = new HutchLambda("hutch", {
+	stage,
+	domainRegistration: new DomainRegistration("hutch-domain", {
+		domains: ["hutch-app.com"],
 	}),
 });
 
-new aws.iam.RolePolicyAttachment("hutch-lambda-basic-execution", {
-	role: lambdaRole.name,
-	policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
-});
-
-const lambdaFunction = new aws.lambda.Function("hutch-api", {
-	runtime: aws.lambda.Runtime.NodeJS22dX,
-	handler: "index.handler",
-	role: lambdaRole.arn,
-	code: lambdaCode,
-	memorySize,
-	timeout,
-	environment: {
-		variables: {
-			NODE_ENV: "production",
-			STAGE: stage,
-		},
-	},
-});
-
-const apiGateway = new aws.apigatewayv2.Api("hutch-api-gateway", {
-	protocolType: "HTTP",
-	description: `Hutch API Gateway (${stage})`,
-});
-
-const lambdaIntegration = new aws.apigatewayv2.Integration(
-	"hutch-lambda-integration",
-	{
-		apiId: apiGateway.id,
-		integrationType: "AWS_PROXY",
-		integrationUri: lambdaFunction.arn,
-		payloadFormatVersion: "2.0",
-	},
-);
-
-const defaultRoute = new aws.apigatewayv2.Route("hutch-default-route", {
-	apiId: apiGateway.id,
-	routeKey: "$default",
-	target: pulumi.interpolate`integrations/${lambdaIntegration.id}`,
-});
-
-const apiStage = new aws.apigatewayv2.Stage("hutch-api-stage", {
-	apiId: apiGateway.id,
-	name: stage,
-	autoDeploy: true,
-});
-
-new aws.lambda.Permission("hutch-api-gateway-permission", {
-	action: "lambda:InvokeFunction",
-	function: lambdaFunction.name,
-	principal: "apigateway.amazonaws.com",
-	sourceArn: pulumi.interpolate`${apiGateway.executionArn}/*/*`,
-});
-
-export const apiUrl = pulumi.interpolate`${apiGateway.apiEndpoint}/${apiStage.name}`;
-export const functionName = lambdaFunction.name;
-
-// Ensure defaultRoute is created before stack outputs are resolved
-export const _dependencies = [defaultRoute];
+export const apiUrl = hutch.apiUrl;
+export const functionName = hutch.functionName;
+export const _dependencies = [hutch.defaultRoute];
