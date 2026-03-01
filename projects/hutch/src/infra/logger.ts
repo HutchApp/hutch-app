@@ -13,12 +13,22 @@ export interface LoggerMiddleware {
 export const logger = (): LoggerMiddleware => {
 	const log: Logger = {
 		info: (message: string) => {
-			console.log(`[INFO] ${new Date().toISOString()} - ${message}`);
+			console.log(
+				JSON.stringify({
+					level: "INFO",
+					timestamp: new Date().toISOString(),
+					message,
+				}),
+			);
 		},
 		error: (message: string, error?: Error) => {
 			console.error(
-				`[ERROR] ${new Date().toISOString()} - ${message}`,
-				error?.stack || "",
+				JSON.stringify({
+					level: "ERROR",
+					timestamp: new Date().toISOString(),
+					message,
+					stack: error?.stack,
+				}),
 			);
 		},
 	};
