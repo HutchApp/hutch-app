@@ -2,44 +2,28 @@ import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
 import type { PopupMessage } from "./messages.types";
 import { initSaveCurrentTab } from "./save-current-tab";
+import { initIconStatus } from "./icon-status";
+import { createBrowserSetIcon } from "./tinted-icon.browser";
 
 const auth = initInMemoryAuth();
 const readingList = initInMemoryReadingList();
 const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
+const { updateIconForTab } = initIconStatus({
+	findByUrl: readingList.findByUrl,
+	whenLoggedIn: auth.whenLoggedIn,
+	setIcon: createBrowserSetIcon(),
+});
 
-const ICON_DEFAULT = {
-	"16": "icons/icon-16.png",
-	"32": "icons/icon-32.png",
-	"48": "icons/icon-48.png",
-	"64": "icons/icon-64.png",
-};
-
-const ICON_SAVED = {
-	"16": "icons-saved/icon-16.png",
-	"32": "icons-saved/icon-32.png",
-	"48": "icons-saved/icon-48.png",
-	"64": "icons-saved/icon-64.png",
-};
-
-async function updateIconForTab(tabId: number, url: string) {
-	const guarded = auth.whenLoggedIn(() => readingList.findByUrl(url));
-	const isSaved = guarded.ok && (await guarded.value) !== null;
-	await browser.browserAction.setIcon({
-		tabId,
-		path: isSaved ? ICON_SAVED : ICON_DEFAULT,
+async function updateActiveTabIcon() {
+	const tabs = await browser.tabs.query({
+		active: true,
+		currentWindow: true,
 	});
-}
-
-browser.tabs.onActivated.addListener(async ({ tabId }) => {
-	const tab = await browser.tabs.get(tabId);
-	if (tab.url) await updateIconForTab(tabId, tab.url);
-});
-
-browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-	if ((changeInfo.url || changeInfo.status === "complete") && tab.url) {
-		await updateIconForTab(tabId, tab.url);
+	const tab = tabs[0];
+	if (tab?.id != null && tab.url) {
+		await updateIconForTab(tab.id, tab.url);
 	}
-});
+}
 
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	const message = raw as PopupMessage;
@@ -47,17 +31,16 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	const handle = async () => {
 		switch (message.type) {
 			case "login": {
-				return auth.login({ email: message.email, password: message.password });
+				const result = await auth.login({
+					email: message.email,
+					password: message.password,
+				});
+				if (result.ok) updateActiveTabIcon().catch(() => {});
+				return result;
 			}
 			case "logout": {
 				await auth.logout();
-				const [activeTab] = await browser.tabs.query({
-					active: true,
-					currentWindow: true,
-				});
-				if (activeTab?.id && activeTab.url) {
-					await updateIconForTab(activeTab.id, activeTab.url);
-				}
+				updateActiveTabIcon().catch(() => {});
 				return { ok: true };
 			}
 			case "save-current-tab": {
@@ -65,30 +48,18 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 					saveCurrentTab({ url: message.url, title: message.title }),
 				);
 				if (!guarded.ok) return guarded;
-				const result = await guarded.value;
-				const [activeTab] = await browser.tabs.query({
-					active: true,
-					currentWindow: true,
-				});
-				if (activeTab?.id && activeTab.url) {
-					await updateIconForTab(activeTab.id, activeTab.url);
-				}
-				return { ok: true as const, value: result };
+				const value = await guarded.value;
+				if (value.ok) updateActiveTabIcon().catch(() => {});
+				return { ok: true as const, value };
 			}
 			case "remove-item": {
 				const guarded = auth.whenLoggedIn(() =>
 					readingList.removeUrl(message.id),
 				);
 				if (!guarded.ok) return guarded;
-				const result = await guarded.value;
-				const [activeTab] = await browser.tabs.query({
-					active: true,
-					currentWindow: true,
-				});
-				if (activeTab?.id && activeTab.url) {
-					await updateIconForTab(activeTab.id, activeTab.url);
-				}
-				return { ok: true as const, value: result };
+				const value = await guarded.value;
+				if (value.ok) updateActiveTabIcon().catch(() => {});
+				return { ok: true as const, value };
 			}
 			case "check-url": {
 				const guarded = auth.whenLoggedIn(() =>
@@ -107,4 +78,20 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 
 	handle().then(sendResponse);
 	return true;
+});
+
+browser.tabs.onActivated.addListener((activeInfo) => {
+	browser.tabs.get(activeInfo.tabId)
+		.then((tab) => {
+			if (tab.url) {
+				updateIconForTab(activeInfo.tabId, tab.url).catch(() => {});
+			}
+		})
+		.catch(() => {});
+});
+
+browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+	if (changeInfo.url) {
+		updateIconForTab(tabId, changeInfo.url).catch(() => {});
+	}
 });
