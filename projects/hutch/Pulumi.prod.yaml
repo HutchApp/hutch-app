@@ -1,0 +1,7 @@
+config:
+  aws:profile: hutch-production
+  aws:region: ap-southeast-2
+  aws:allowedAccountIds:
+    - '278728209435'
+  hutch:stage: production
+encryptionsalt: v1:l9Qbc2Rjk0w=:v1:atrW398hQVu5eMhu:NQ2XG9vAOXAa+XxkU2+ksKYFAJJLTA==

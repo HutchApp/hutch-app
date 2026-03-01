@@ -2,10 +2,11 @@
   "name": "hutch",
   "version": "1.0.0",
   "description": "Hutch — read-it-later web application",
-  "main": "dist/server.main.js",
+  "main": "src/infra/index.ts",
   "scripts": {
-    "start": "node dist/server.main.js",
-    "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true ts-node-dev --respawn --transpile-only --watch src src/server.main.ts\"",
+    "start": "node dist/runtime/server.main.js",
+    "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true tsx watch src/runtime/server.main.ts\"",
+    "dev:lambda": "tsx watch src/infra/lambda.ts",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-integration": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000",
@@ -14,16 +15,25 @@
     "compile": "tsc && node scripts/copy-static-assets.js",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
-    "check": "pnpm lint && pnpm test-with-coverage"
+    "check-infra": "[ -z \"$PULUMI_ACCESS_TOKEN\" ] && echo 'Skipping infra check: PULUMI_ACCESS_TOKEN not set' || PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
+    "check": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+    "deploy": "pulumi up --yes --stack prod"
   },
   "dependencies": {
+    "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "dotenv": "17.2.3",
     "express": "4.22.1",
     "handlebars": "4.7.8",
+    "helmet": "8.1.0",
+    "serverless-http": "4.0.0",
     "zod": "4.1.13"
   },
   "devDependencies": {
+    "@pulumi/aws": "7.20.0",
+    "@pulumi/pulumi": "3.224.0",
+    "@types/aws-lambda": "8.10.161",
+    "@types/compression": "1.8.1",
     "@types/connect-livereload": "0.6.3",
     "@types/cookie-parser": "1.4.10",
     "@types/express": "4.17.25",
@@ -34,12 +44,13 @@
     "c8": "10.1.3",
     "concurrently": "9.2.1",
     "connect-livereload": "0.6.1",
+    "esbuild": "0.25.4",
     "jest": "29.7.0",
     "jsdom": "25.0.1",
     "livereload": "0.10.3",
     "purgecss": "8.0.0",
     "supertest": "7.1.4",
-    "ts-node-dev": "2.0.0",
+    "tsx": "4.21.0",
     "typescript": "5.9.3"
   }
 }

@@ -26,7 +26,7 @@ import { render } from "./web/render";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
 
-config({ path: join(__dirname, "../.env") });
+config({ path: join(__dirname, "../../.env") });
 
 export const PORT = requireEnv("PORT", "3000");
 

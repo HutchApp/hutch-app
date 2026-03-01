@@ -9,6 +9,7 @@
     "lint": "nx run-many --target=lint --all",
     "dev": "nx run hutch:dev",
     "check": "nx run-many --target=check --all",
+    "deploy": "nx run hutch:deploy",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -14,19 +14,19 @@ async function main() {
 
   await build({
     entryPoints: [
-      join(srcDir, 'background', 'background.ts'),
-      join(srcDir, 'popup', 'popup.ts'),
+      join(srcDir, 'runtime', 'background', 'background.ts'),
+      join(srcDir, 'runtime', 'popup', 'popup.ts'),
     ],
     bundle: true,
     format: 'iife',
     outdir: outDir,
-    outbase: srcDir,
+    outbase: join(srcDir, 'runtime'),
     target: 'firefox91',
   });
 
-  cpSync(join(srcDir, 'manifest.json'), join(outDir, 'manifest.json'));
-  cpSync(join(srcDir, 'popup', 'popup.template.html'), join(outDir, 'popup', 'popup.template.html'));
-  cpSync(join(srcDir, 'popup', 'popup.styles.css'), join(outDir, 'popup', 'popup.styles.css'));
+  cpSync(join(srcDir, 'runtime', 'manifest.json'), join(outDir, 'manifest.json'));
+  cpSync(join(srcDir, 'runtime', 'popup', 'popup.template.html'), join(outDir, 'popup', 'popup.template.html'));
+  cpSync(join(srcDir, 'runtime', 'popup', 'popup.styles.css'), join(outDir, 'popup', 'popup.styles.css'));
   cpSync(join(srcDir, 'icons'), join(outDir, 'icons'), { recursive: true });
   cpSync(join(srcDir, 'icons-saved'), join(outDir, 'icons-saved'), { recursive: true });
 
