@@ -57,6 +57,11 @@ h2 {
   line-height: 1;
 }
 
+.login__logo-link {
+  text-decoration: none;
+  color: inherit;
+}
+
 .login__heading {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 18px;

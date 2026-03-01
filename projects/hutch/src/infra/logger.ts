@@ -38,7 +38,10 @@ export const logger = (): LoggerMiddleware => {
 		_res: Response,
 		next: NextFunction,
 	) => {
-		log.info(`${req.method} ${req.path}`);
+		const queryString = req.originalUrl.includes("?")
+			? req.originalUrl.slice(req.originalUrl.indexOf("?"))
+			: "";
+		log.info(`${req.method} ${req.path}${queryString}`);
 		next();
 	};
 
