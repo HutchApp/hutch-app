@@ -28,6 +28,8 @@ declare namespace browser {
 
 		function get(tabId: number): Promise<Tab>;
 
+		function sendMessage(tabId: number, message: unknown): Promise<unknown>;
+
 		const onActivated: {
 			addListener(
 				callback: (activeInfo: { tabId: number }) => void,

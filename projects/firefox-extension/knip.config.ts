@@ -14,5 +14,6 @@ export default {
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)
 		"src/runtime/background/background.ts",
 		"src/runtime/popup/popup.ts",
+		"src/runtime/content/shortcut.ts",
 	],
 } satisfies KnipConfig;

@@ -18,6 +18,7 @@ const config = {
     // esbuild entry points — bootstrap code for browser extension
     'src/runtime/background/background.ts',
     'src/runtime/popup/popup.ts',
+    'src/runtime/content/shortcut.ts',
   ],
 };
 

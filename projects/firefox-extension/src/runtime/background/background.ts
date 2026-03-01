@@ -35,11 +35,37 @@ const handleSaveCommand = initHandleSaveCommand({
 
 browser.commands.onCommand.addListener((command) => {
 	if (command === "save-current-tab") {
-		handleSaveCommand().catch(console.error);
+		handleSaveCommand()
+			.then(async (result) => {
+				if (result?.ok) {
+					await updateActiveTabIcon();
+					const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+					const tabId = tabs[0]?.id;
+					if (tabId != null) {
+						browser.tabs.sendMessage(tabId, {
+							type: "shortcut-saved",
+							itemId: result.item.id,
+						}).catch(() => {});
+					}
+				}
+			})
+			.catch(console.error);
 	}
 });
 
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
+	if ((raw as { type: string }).type === "save-current-tab-shortcut") {
+		handleSaveCommand()
+			.then((result) => {
+				if (result?.ok) {
+					updateActiveTabIcon().catch(() => {});
+				}
+				sendResponse(result);
+			})
+			.catch(console.error);
+		return true;
+	}
+
 	const message = raw as PopupMessage;
 
 	const handle = async () => {

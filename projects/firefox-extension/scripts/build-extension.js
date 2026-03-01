@@ -9,6 +9,7 @@ async function main() {
   mkdirSync(outDir, { recursive: true });
   mkdirSync(join(outDir, 'popup'), { recursive: true });
   mkdirSync(join(outDir, 'background'), { recursive: true });
+  mkdirSync(join(outDir, 'content'), { recursive: true });
   mkdirSync(join(outDir, 'icons'), { recursive: true });
   mkdirSync(join(outDir, 'icons-saved'), { recursive: true });
 
@@ -16,6 +17,7 @@ async function main() {
     entryPoints: [
       join(srcDir, 'runtime', 'background', 'background.ts'),
       join(srcDir, 'runtime', 'popup', 'popup.ts'),
+      join(srcDir, 'runtime', 'content', 'shortcut.ts'),
     ],
     bundle: true,
     format: 'iife',
