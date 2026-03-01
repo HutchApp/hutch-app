@@ -57,5 +57,5 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm run deploy -- --yes
+      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod --yes
         working-directory: projects/hutch
