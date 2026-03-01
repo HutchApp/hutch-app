@@ -313,6 +313,72 @@ h2 {
 }
 /* purgecss-ignore-end */
 
+/* --- Pagination --- */
+
+/* purgecss-ignore-start: applied dynamically in popup.ts when rendering pagination controls */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+}
+
+.pagination[hidden] {
+  display: none;
+}
+
+.pagination__button {
+  background: transparent;
+  border: 1px solid #e2e5ea;
+  border-radius: 4px;
+  color: #2b3a55;
+  font-size: 16px;
+  padding: 2px 8px;
+  cursor: pointer;
+  line-height: 1;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.pagination__button:hover:not(:disabled) {
+  background: #f7f8fa;
+}
+
+.pagination__button:disabled {
+  color: #c0c4cc;
+  cursor: default;
+}
+
+.pagination__page {
+  background: transparent;
+  border: 1px solid #e2e5ea;
+  border-radius: 4px;
+  color: #2b3a55;
+  font-size: 13px;
+  padding: 2px 8px;
+  min-width: 28px;
+  cursor: pointer;
+  line-height: 1.4;
+  font-family: inherit;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.pagination__page:hover {
+  background: #f7f8fa;
+}
+
+.pagination__page--active {
+  background: #2b3a55;
+  color: #ffffff;
+  border-color: #2b3a55;
+}
+
+.pagination__page--active:hover {
+  background: #3d4f6f;
+}
+/* purgecss-ignore-end */
+
 .list-view__empty {
   color: #5a6170;
   text-align: center;
