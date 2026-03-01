@@ -143,3 +143,24 @@ Never use `--no-verify` without explicit human approval. If hooks fail:
 3. Ask the human if you cannot fix it
 
 See the [git-commit skill](./.claude/skills/git-commit/SKILL.md) for pre-commit hook failure diagnostics.
+
+### AWS and Pulumi Commands
+
+Source `.envrc` before running AWS or Pulumi commands. It configures `AWS_PROFILE`, `AWS_REGION`, `PULUMI_BACKEND_URL`, and `PULUMI_CONFIG_PASSPHRASE`. Do NOT manually set `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` — the AWS profile has the credentials.
+
+```bash
+# Load environment (ignore the devbox eval warning)
+source .envrc
+
+# Then run Pulumi
+pulumi preview --stack prod
+```
+
+## Architecture
+
+### Project Structure
+
+Monorepo at the repository root. Main application lives in `projects/hutch/src/` with two top-level directories:
+
+- `src/runtime/` — Application code (Express SSR app)
+- `src/infra/` — Infrastructure as Code (Pulumi) and Lambda adapter
