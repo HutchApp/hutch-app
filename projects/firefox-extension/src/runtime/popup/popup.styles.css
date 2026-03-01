@@ -16,6 +16,7 @@
   --popup-disabled: #c0c4cc;
   --popup-icon-bg: #2b3a55;
   --popup-icon-text: #c8923c;
+  --popup-brand-text: #1a202c;
   --popup-active-bg: #2b3a55;
   --popup-active-hover: #3d4f6f;
 }
@@ -39,6 +40,7 @@
     --popup-disabled: #4a4d56;
     --popup-icon-bg: #2b3a55;
     --popup-icon-text: #d4a04a;
+    --popup-brand-text: #1a202c;
     --popup-active-bg: #3d4f6f;
     --popup-active-hover: #4a5f80;
   }
@@ -161,7 +163,7 @@ h2 {
   border: none;
   border-radius: 6px;
   background: var(--popup-brand);
-  color: #1a202c;
+  color: var(--popup-brand-text);
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
