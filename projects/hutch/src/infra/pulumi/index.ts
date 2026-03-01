@@ -1,18 +1,27 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
 const memorySize = 512;
 const timeout = 30;
 
-const currentDir =
-	typeof __dirname !== "undefined"
-		? __dirname
-		: dirname(fileURLToPath(import.meta.url));
-const projectRoot = resolve(currentDir, "../../..");
+const lambdaCode = build({
+	entryPoints: ["./src/infra/lambda.ts"],
+	bundle: true,
+	sourcemap: true,
+	platform: "node",
+	format: "cjs",
+	minify: true,
+	outfile: ".lib/hutch-api/index.js",
+	target: ["node22"],
+}).then(
+	() =>
+		new pulumi.asset.AssetArchive({
+			".": new pulumi.asset.FileArchive(".lib/hutch-api"),
+		}),
+);
 
 const lambdaRole = new aws.iam.Role("hutch-lambda-role", {
 	assumeRolePolicy: JSON.stringify({
@@ -34,15 +43,14 @@ new aws.iam.RolePolicyAttachment("hutch-lambda-basic-execution", {
 
 const lambdaFunction = new aws.lambda.Function("hutch-api", {
 	runtime: aws.lambda.Runtime.NodeJS22dX,
-	handler: "infra/lambda.handler",
+	handler: "index.handler",
 	role: lambdaRole.arn,
-	code: new pulumi.asset.FileArchive(resolve(projectRoot, "dist")),
+	code: lambdaCode,
 	memorySize,
 	timeout,
 	environment: {
 		variables: {
 			NODE_ENV: "production",
-			PORT: "3000",
 			STAGE: stage,
 		},
 	},

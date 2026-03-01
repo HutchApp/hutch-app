@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.2/.schema/devbox.schema.json",
-  "packages": ["nodejs_22", "nodePackages.pnpm"],
+  "packages": ["nodejs_22", "nodePackages.pnpm", "pulumi-bin", "awscli2"],
   "shell": {
     "init_hook": ["echo 'Welcome to hutch-app monorepo!' > /dev/null"],
     "scripts": {
