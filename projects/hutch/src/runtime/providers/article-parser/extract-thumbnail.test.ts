@@ -66,4 +66,44 @@ describe("extractThumbnail", () => {
 
 		expect(extractThumbnail(html)).toBe("https://example.com/og.jpg");
 	});
+
+	it("should reject file: URIs", () => {
+		const html = `<html><head>
+			<meta property="og:image" content="file:///etc/passwd">
+		</head><body></body></html>`;
+
+		expect(extractThumbnail(html)).toBeUndefined();
+	});
+
+	it("should reject javascript: URIs", () => {
+		const html = `<html><head>
+			<meta property="og:image" content="javascript:alert(1)">
+		</head><body></body></html>`;
+
+		expect(extractThumbnail(html)).toBeUndefined();
+	});
+
+	it("should reject data: URIs", () => {
+		const html = `<html><head>
+			<meta property="og:image" content="data:image/svg+xml,<svg onload=alert(1)>">
+		</head><body></body></html>`;
+
+		expect(extractThumbnail(html)).toBeUndefined();
+	});
+
+	it("should reject relative URLs", () => {
+		const html = `<html><body>
+			<img src="/images/photo.jpg" alt="Photo">
+		</body></html>`;
+
+		expect(extractThumbnail(html)).toBeUndefined();
+	});
+
+	it("should accept valid http URLs", () => {
+		const html = `<html><head>
+			<meta property="og:image" content="http://example.com/image.jpg">
+		</head><body></body></html>`;
+
+		expect(extractThumbnail(html)).toBe("http://example.com/image.jpg");
+	});
 });
