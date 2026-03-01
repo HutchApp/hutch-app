@@ -3,7 +3,7 @@ import { buildQueueUrl, parseQueueUrl } from "./queue.url";
 describe("parseQueueUrl", () => {
 	it("should return defaults for empty query", () => {
 		const state = parseQueueUrl({});
-		expect(state).toEqual({ status: undefined, starred: undefined, order: "desc", page: 1 });
+		expect(state).toEqual({ status: undefined, starred: undefined, order: "desc", page: 1, showUrl: undefined });
 	});
 
 	it("should parse valid status", () => {
