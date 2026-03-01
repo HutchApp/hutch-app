@@ -46,6 +46,7 @@ const HEADER_TEMPLATE = `
           <ul class="nav__list">
             {{#if isAuthenticated}}
             <li><a href="/queue" class="nav__link" data-test-nav-item="queue">Queue</a></li>
+            <li><a href="/export" class="nav__link" data-test-nav-item="export">Export</a></li>
             <li>
               <form method="POST" action="/logout" style="display:inline">
                 <button type="submit" class="nav__link" style="background:none;border:none;cursor:pointer;font:inherit" data-test-nav-item="logout">Sign out</button>

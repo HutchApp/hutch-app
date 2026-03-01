@@ -20,6 +20,7 @@ import type {
 import { Base } from "./web/base.component";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
+import { initExportRoutes } from "./web/pages/export/export.page";
 import { createLandingPageContent } from "./web/pages/landing";
 import { render } from "./web/render";
 import { requireEnv } from "./require-env";
@@ -100,6 +101,11 @@ export function createApp(dependencies: AppDependencies): Express {
 		updateArticleStatus: deps.updateArticleStatus,
 	});
 	app.use("/queue", requireAuth, queueRouter);
+
+	const exportRouter = initExportRoutes({
+		findArticlesByUser: deps.findArticlesByUser,
+	});
+	app.use("/export", requireAuth, exportRouter);
 
 	const NOT_FOUND_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">

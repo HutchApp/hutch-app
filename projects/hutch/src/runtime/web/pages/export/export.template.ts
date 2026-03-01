@@ -1,0 +1,44 @@
+import type { PageContent } from "../../base.component";
+import { EXPORT_STYLES } from "./export.styles";
+
+export function createExportPageContent(): PageContent {
+	const content = `
+    <main class="export">
+      <div class="export__header">
+        <h1 class="export__title">Export Your Data</h1>
+        <p class="export__subtitle">Your data belongs to you. Download everything anytime.</p>
+      </div>
+
+      <section class="export__section">
+        <h2 class="export__section-title">What's included</h2>
+        <ul class="export__list">
+          <li>All saved articles (unread, read, and archived)</li>
+          <li>Original URLs and article metadata</li>
+          <li>Starred status and read timestamps</li>
+          <li>Word counts and estimated read times</li>
+        </ul>
+      </section>
+
+      <section class="export__section">
+        <h2 class="export__section-title">Format</h2>
+        <p class="export__text">Your data is exported as a single <strong>JSON file</strong> — a standard, open format that can be read by any programming language or text editor.</p>
+      </section>
+
+      <div class="export__action">
+        <a href="/export/download" class="export__download-btn" data-test-export-download>Download My Data</a>
+      </div>
+    </main>`;
+
+	return {
+		seo: {
+			title: "Export Your Data — Hutch",
+			description: "Download all your saved articles and data from Hutch.",
+			canonicalUrl: "/export",
+			robots: "noindex, nofollow",
+		},
+		styles: EXPORT_STYLES,
+		bodyClass: "page-export",
+		content,
+		isAuthenticated: true,
+	};
+}
