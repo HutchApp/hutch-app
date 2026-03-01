@@ -1,5 +1,4 @@
 config:
-  aws:profile: hutch-production
   aws:region: ap-southeast-2
   aws:allowedAccountIds:
     - '278728209435'
