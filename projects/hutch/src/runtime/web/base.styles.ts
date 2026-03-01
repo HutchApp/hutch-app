@@ -307,6 +307,21 @@ export const NAV_STYLES = `
   }
 `;
 
+export const POC_BANNER_STYLES = `
+  .poc-banner {
+    background: var(--color-error);
+    color: #fff;
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    position: sticky;
+    top: 0;
+    z-index: 101;
+  }
+`;
+
 export const UTILITY_STYLES = `
   .sr-only {
     position: absolute;

@@ -7,9 +7,9 @@ document.addEventListener(
 			browser.runtime.sendMessage({ type: "toggle-current-tab" }).then((raw) => {
 				const result = raw as { action: "saved" | "removed" } | null;
 				if (result?.action === "saved") {
-					alert("Page saved to Hutch");
+					/* noop */
 				} else if (result?.action === "removed") {
-					alert("Page removed from Hutch");
+					/* noop */
 				}
 			});
 		}
