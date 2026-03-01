@@ -138,6 +138,10 @@
   background: var(--card);
 }
 
+.queue-article--unread {
+  border-left: 3px solid var(--primary);
+}
+
 .queue-article__thumbnail {
   width: 80px;
   height: 80px;
@@ -151,11 +155,25 @@
   min-width: 0;
 }
 
+.queue-article__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.queue-article__unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
 .queue-article__title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--foreground);
-  margin-bottom: 4px;
   display: block;
   text-decoration: none;
 }

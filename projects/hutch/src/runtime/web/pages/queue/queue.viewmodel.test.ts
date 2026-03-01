@@ -121,6 +121,33 @@ describe("toQueueViewModel", () => {
 		expect(vm.showUrlToggle.url).not.toContain("showUrl");
 	});
 
+	it("should set isUnread to true for unread articles", () => {
+		const article = makeArticle({ status: "unread" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].isUnread).toBe(true);
+	});
+
+	it("should set isUnread to false for read articles", () => {
+		const article = makeArticle({ status: "read" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].isUnread).toBe(false);
+	});
+
+	it("should set isUnread to false for archived articles", () => {
+		const article = makeArticle({ status: "archived" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].isUnread).toBe(false);
+	});
+
 	it("should pass imageUrl from article metadata to view model", () => {
 		const article = makeArticle({
 			metadata: {
