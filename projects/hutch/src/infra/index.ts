@@ -1,11 +1,26 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { build } from "esbuild";
+import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
 const memorySize = 512;
 const timeout = 30;
+
+function copyCssFiles(srcDir: string, destDir: string) {
+	for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
+		const srcPath = join(srcDir, entry.name);
+		if (entry.isDirectory()) {
+			copyCssFiles(srcPath, destDir);
+		} else if (entry.name.endsWith(".css")) {
+			copyFileSync(srcPath, join(destDir, entry.name));
+		}
+	}
+}
+
+const lambdaOutputDir = ".lib/hutch-api";
 
 const lambdaCode = build({
 	entryPoints: ["./src/infra/lambda.ts"],
@@ -14,14 +29,15 @@ const lambdaCode = build({
 	platform: "node",
 	format: "cjs",
 	minify: true,
-	outfile: ".lib/hutch-api/index.js",
+	outfile: `${lambdaOutputDir}/index.js`,
 	target: ["node22"],
-}).then(
-	() =>
-		new pulumi.asset.AssetArchive({
-			".": new pulumi.asset.FileArchive(".lib/hutch-api"),
-		}),
-);
+}).then(() => {
+	mkdirSync(lambdaOutputDir, { recursive: true });
+	copyCssFiles("./src/runtime", lambdaOutputDir);
+	return new pulumi.asset.AssetArchive({
+		".": new pulumi.asset.FileArchive(lambdaOutputDir),
+	});
+});
 
 const lambdaRole = new aws.iam.Role("hutch-lambda-role", {
 	assumeRolePolicy: JSON.stringify({

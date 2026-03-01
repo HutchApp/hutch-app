@@ -17,7 +17,7 @@
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
     "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
     "check": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
-    "deploy": "pulumi up --stack prod"
+    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod"
   },
   "dependencies": {
     "compression": "1.8.1",
