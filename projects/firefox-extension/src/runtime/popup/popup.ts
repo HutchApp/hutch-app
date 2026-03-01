@@ -56,12 +56,26 @@ function renderLinks(items: ReadingListItem[]) {
 		const div = document.createElement("div");
 		div.className = "list-view__item";
 
+		const textContainer = document.createElement("div");
+		textContainer.className = "list-view__text";
+
 		const link = document.createElement("a");
-		link.className = "list-view__url";
+		link.className = "list-view__item-title";
 		link.href = item.url;
-		link.textContent = item.url;
+		link.textContent = item.title;
 		link.target = "_blank";
 		link.rel = "noopener noreferrer";
+
+		const domain = document.createElement("span");
+		domain.className = "list-view__domain";
+		try {
+			domain.textContent = new URL(item.url).hostname;
+		} catch {
+			domain.textContent = item.url;
+		}
+
+		textContainer.appendChild(link);
+		textContainer.appendChild(domain);
 
 		const deleteButton = document.createElement("button");
 		deleteButton.className = "list-view__delete";
@@ -79,7 +93,7 @@ function renderLinks(items: ReadingListItem[]) {
 			}
 		});
 
-		div.appendChild(link);
+		div.appendChild(textContainer);
 		div.appendChild(deleteButton);
 		linkList.appendChild(div);
 	}
