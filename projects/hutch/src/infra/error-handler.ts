@@ -8,7 +8,14 @@ export interface ErrorResponse {
 
 export const errorHandler = () => {
 	return (err: Error, _req: Request, res: Response, _next: NextFunction) => {
-		console.error("[ERROR]", err.stack);
+		console.error(
+			JSON.stringify({
+				level: "ERROR",
+				timestamp: new Date().toISOString(),
+				message: "Unhandled error",
+				stack: err.stack,
+			}),
+		);
 		const response: ErrorResponse = {
 			error: "Internal Server Error",
 			statusCode: 500,
