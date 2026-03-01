@@ -52,4 +52,10 @@ declare namespace browser {
 			imageData?: Record<number, ImageData>;
 		}): Promise<void>;
 	}
+
+	namespace commands {
+		const onCommand: {
+			addListener(callback: (command: string) => void): void;
+		};
+	}
 }
