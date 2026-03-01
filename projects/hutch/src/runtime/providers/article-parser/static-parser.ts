@@ -1,12 +1,25 @@
 import type { ParseArticle } from "./article-parser.types";
+import { extractThumbnail } from "./extract-thumbnail";
 
-export function initStaticParser(): { parseArticle: ParseArticle } {
+export type FetchHtml = (url: string) => Promise<string | undefined>;
+
+export function initStaticParser(deps?: {
+	fetchHtml?: FetchHtml;
+}): { parseArticle: ParseArticle } {
 	const parseArticle: ParseArticle = async (url) => {
 		let hostname: string;
 		try {
 			hostname = new URL(url).hostname;
 		} catch {
 			return { ok: false, reason: "Invalid URL" };
+		}
+
+		let imageUrl: string | undefined;
+		if (deps?.fetchHtml) {
+			const html = await deps.fetchHtml(url);
+			if (html) {
+				imageUrl = extractThumbnail(html);
+			}
 		}
 
 		return {
@@ -17,6 +30,7 @@ export function initStaticParser(): { parseArticle: ParseArticle } {
 				excerpt: `Content saved from ${hostname}. Full article parsing will be available in a future update.`,
 				wordCount: 500,
 				content: `<p>Content saved from <a href="${url}">${hostname}</a>. Full article parsing will be available in a future update.</p>`,
+				imageUrl,
 			},
 		};
 	};
