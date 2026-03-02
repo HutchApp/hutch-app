@@ -187,8 +187,7 @@ describe("Export routes", () => {
 				.send({ url: "https://example.com/3" });
 
 			const queueResponse = await agent.get("/queue");
-			const { JSDOM: JSDOMClass } = await import("jsdom");
-			const doc = new JSDOMClass(queueResponse.text).window.document;
+			const doc = new JSDOM(queueResponse.text).window.document;
 			const articles = doc.querySelectorAll("[data-test-article]");
 			const id1 = articles[0]?.getAttribute("data-test-article");
 			const id2 = articles[1]?.getAttribute("data-test-article");

@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import type { Request, Response, Router } from "express";
 import express from "express";
 import type { FindArticlesByUser } from "../../../providers/article-store/article-store.types";
@@ -59,6 +60,7 @@ export function initExportRoutes(deps: ExportDependencies): Router {
 	});
 
 	router.get("/download", async (req: Request, res: Response) => {
+		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId as UserId;
 		const articles = await fetchAllArticles(
 			deps.findArticlesByUser,
