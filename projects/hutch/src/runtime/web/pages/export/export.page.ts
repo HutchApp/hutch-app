@@ -20,7 +20,6 @@ function toExportArticle(article: SavedArticle) {
 		wordCount: article.metadata.wordCount,
 		estimatedReadTimeMinutes: article.estimatedReadTime as number,
 		status: article.status,
-		isStarred: article.isStarred,
 		savedAt: article.savedAt.toISOString(),
 		readAt: article.readAt?.toISOString() ?? null,
 	};

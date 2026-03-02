@@ -14,7 +14,7 @@ export function createExportPageContent(): PageContent {
         <ul class="export__list">
           <li>All saved articles (unread, read, and archived)</li>
           <li>Original URLs and article metadata</li>
-          <li>Starred status and read timestamps</li>
+          <li>Read timestamps</li>
           <li>Word counts and estimated read times</li>
         </ul>
       </section>

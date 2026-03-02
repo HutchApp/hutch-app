@@ -121,7 +121,6 @@ describe("Export routes", () => {
 			expect(article.title).toBeDefined();
 			expect(article.siteName).toBeDefined();
 			expect(article.status).toBe("unread");
-			expect(article.isStarred).toBe(false);
 			expect(article.savedAt).toBeDefined();
 			expect(article.readAt).toBeNull();
 			expect(article.wordCount).toBeDefined();
