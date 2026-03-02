@@ -94,7 +94,7 @@
 }
 
 .auth-form__global-error {
-  background: hsl(0 84% 60% / 0.1);
+  background: var(--error-bg);
   border: 1px solid var(--error);
   border-radius: var(--input-border-radius);
   padding: 12px 16px;

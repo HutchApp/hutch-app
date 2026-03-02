@@ -167,7 +167,8 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
   <meta name="description" content="{{description}}">
   <meta name="robots" content="{{robots}}">
   <link rel="canonical" href="{{canonicalUrl}}">
-  <meta name="theme-color" content="#2B3A55">
+  <meta name="theme-color" content="#2B3A55" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
 
   <meta property="og:type" content="{{ogType}}">
   <meta property="og:site_name" content="Hutch">
