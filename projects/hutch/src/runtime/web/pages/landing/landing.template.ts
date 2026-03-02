@@ -65,18 +65,9 @@ function renderHeroSection(): string {
     </section>`;
 }
 
-function renderFeatureCard(f: {
-	name: string;
-	description: string;
-	inDevelopment?: boolean;
-}): string {
-	const devClass = f.inDevelopment ? " feature-card--in-development" : "";
-	const badge = f.inDevelopment
-		? '<span class="feature-card__badge">In Development</span>'
-		: "";
+function renderFeatureCard(f: { name: string; description: string }): string {
 	return `
-        <div class="feature-card${devClass}" data-test-feature="${f.name}">
-          ${badge}
+        <div class="feature-card" data-test-feature="${f.name}">
           <div class="feature-card__icon" aria-hidden="true"></div>
           <h3 class="feature-card__name">${f.name}</h3>
           <p class="feature-card__description">${f.description}</p>
@@ -154,11 +145,11 @@ function renderRoadmapSection(): string {
 	const roadmapCards = planned.map(renderFeatureCard).join("");
 
 	return `
-    <section class="landing-features" data-test-section="roadmap">
+    <section id="roadmap" class="landing-features" data-test-section="roadmap">
       <div class="landing-features__header">
         <p class="landing-features__label">What's Coming</p>
         <h2 class="landing-features__title">Built in public. Shaped by users.</h2>
-        <p class="landing-features__subtitle">I'm building these next. Vote on what matters most to you on the <a href="/roadmap">feature board</a>.</p>
+        <p class="landing-features__subtitle">I'm building these next. Vote on what matters most to you on the <a href="#roadmap">feature board</a>.</p>
       </div>
       <div class="landing-features__grid">
         ${roadmapCards}
