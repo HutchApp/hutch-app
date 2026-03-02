@@ -6,11 +6,6 @@ function renderArticle(
 	article: QueueArticleViewModel,
 	options: { showUrl: boolean },
 ): string {
-	const starClass = article.isStarred
-		? " queue-article__action-btn--starred"
-		: "";
-	const starLabel = article.isStarred ? "Unstar" : "Star";
-
 	const statusActions: string[] = [];
 	if (article.status !== "read") {
 		statusActions.push(`
@@ -52,9 +47,6 @@ function renderArticle(
         <p class="queue-article__excerpt">${article.excerpt}</p>
       </div>
       <div class="queue-article__actions">
-        <form method="POST" action="/queue/${article.id}/star" style="display:inline">
-          <button class="queue-article__action-btn${starClass}" type="submit" title="${starLabel}" data-test-action="star">${article.isStarred ? "★" : "☆"}</button>
-        </form>
         ${statusActions.join("")}
         <form method="POST" action="/queue/${article.id}/delete" style="display:inline">
           <button class="queue-article__action-btn queue-article__action-btn--delete" type="submit" title="Delete" data-test-action="delete">×</button>
@@ -65,7 +57,6 @@ function renderArticle(
 
 function renderFilters(vm: QueueViewModel): string {
 	const activeStatus = vm.filters.status;
-	const isStarred = vm.filters.starred;
 
 	function cls(isActive: boolean): string {
 		return `queue__filter-link${isActive ? " queue__filter-link--active" : ""}`;
@@ -73,11 +64,10 @@ function renderFilters(vm: QueueViewModel): string {
 
 	return `
     <nav class="queue__filters" data-test-filters>
-      <a class="${cls(!activeStatus && !isStarred)}" href="${vm.filterUrls.all}">All</a>
+      <a class="${cls(!activeStatus)}" href="${vm.filterUrls.all}">All</a>
       <a class="${cls(activeStatus === "unread")}" href="${vm.filterUrls.unread}">Unread</a>
       <a class="${cls(activeStatus === "read")}" href="${vm.filterUrls.read}">Read</a>
       <a class="${cls(activeStatus === "archived")}" href="${vm.filterUrls.archived}">Archived</a>
-      <a class="${cls(isStarred === true)}" href="${vm.filterUrls.starred}">Starred</a>
     </nav>`;
 }
 

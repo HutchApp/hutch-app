@@ -3,7 +3,6 @@ import type { SortOrder } from "../../../providers/article-store/article-store.t
 
 export interface QueueUrlState {
 	status?: ArticleStatus;
-	starred?: boolean;
 	order: SortOrder;
 	page: number;
 	showUrl?: boolean;
@@ -17,9 +16,6 @@ export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 		? (query.status as ArticleStatus)
 		: undefined;
 
-	const starred =
-		query.starred === "true" ? true : query.starred === "false" ? false : undefined;
-
 	const order = VALID_ORDERS.includes(query.order as SortOrder)
 		? (query.order as SortOrder)
 		: "desc";
@@ -29,7 +25,7 @@ export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 
 	const showUrl = query.showUrl === "true" ? true : undefined;
 
-	return { status, starred, order, page, showUrl };
+	return { status, order, page, showUrl };
 }
 
 export function buildQueueUrl(state: Partial<QueueUrlState>): string {
@@ -37,9 +33,6 @@ export function buildQueueUrl(state: Partial<QueueUrlState>): string {
 
 	if (state.status) {
 		params.set("status", state.status);
-	}
-	if (state.starred !== undefined) {
-		params.set("starred", String(state.starred));
 	}
 	if (state.order && state.order !== "desc") {
 		params.set("order", state.order);

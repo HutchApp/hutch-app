@@ -214,11 +214,6 @@
   color: var(--foreground);
 }
 
-.queue-article__action-btn--starred {
-  color: var(--color-warning);
-  border-color: var(--color-warning);
-}
-
 .queue-article__action-btn--delete:hover {
   background: hsl(0 84% 60% / 0.1);
   color: var(--error);

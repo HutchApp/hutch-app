@@ -3,7 +3,7 @@ import { buildQueueUrl, parseQueueUrl } from "./queue.url";
 describe("parseQueueUrl", () => {
 	it("should return defaults for empty query", () => {
 		const state = parseQueueUrl({});
-		expect(state).toEqual({ status: undefined, starred: undefined, order: "desc", page: 1, showUrl: undefined });
+		expect(state).toEqual({ status: undefined, order: "desc", page: 1, showUrl: undefined });
 	});
 
 	it("should parse valid status", () => {
@@ -14,11 +14,6 @@ describe("parseQueueUrl", () => {
 
 	it("should ignore invalid status", () => {
 		expect(parseQueueUrl({ status: "invalid" }).status).toBeUndefined();
-	});
-
-	it("should parse starred filter", () => {
-		expect(parseQueueUrl({ starred: "true" }).starred).toBe(true);
-		expect(parseQueueUrl({ starred: "false" }).starred).toBe(false);
 	});
 
 	it("should parse order", () => {
@@ -61,10 +56,6 @@ describe("buildQueueUrl", () => {
 
 	it("should include status", () => {
 		expect(buildQueueUrl({ status: "read" })).toBe("/queue?status=read");
-	});
-
-	it("should include starred", () => {
-		expect(buildQueueUrl({ starred: true })).toBe("/queue?starred=true");
 	});
 
 	it("should omit default order (desc)", () => {

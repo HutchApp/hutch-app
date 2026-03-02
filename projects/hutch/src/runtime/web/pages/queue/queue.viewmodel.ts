@@ -11,7 +11,6 @@ export interface QueueArticleViewModel {
 	url: string;
 	readTimeLabel: string;
 	status: string;
-	isStarred: boolean;
 	savedAgo: string;
 	imageUrl?: string;
 }
@@ -28,7 +27,6 @@ export interface QueueViewModel {
 		unread: string;
 		read: string;
 		archived: string;
-		starred: string;
 	};
 	paginationUrls: {
 		prev?: string;
@@ -71,7 +69,6 @@ function toArticleViewModel(
 		url: article.url,
 		readTimeLabel: `${readTime} min read`,
 		status: article.status,
-		isStarred: article.isStarred,
 		savedAgo: formatRelativeDate(article.savedAt, now),
 		imageUrl: article.metadata.imageUrl,
 	};
@@ -98,7 +95,6 @@ export function toQueueViewModel(
 			unread: buildQueueUrl({ ...baseFilters, status: "unread" }),
 			read: buildQueueUrl({ ...baseFilters, status: "read" }),
 			archived: buildQueueUrl({ ...baseFilters, status: "archived" }),
-			starred: buildQueueUrl({ ...baseFilters, starred: true }),
 		},
 		paginationUrls: {
 			prev:

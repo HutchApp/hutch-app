@@ -20,7 +20,6 @@ function makeArticle(overrides?: Partial<SavedArticle>): SavedArticle {
 		},
 		estimatedReadTime: 3 as Minutes,
 		status: "unread",
-		isStarred: false,
 		savedAt: new Date("2025-06-01T12:00:00Z"),
 		...overrides,
 	};

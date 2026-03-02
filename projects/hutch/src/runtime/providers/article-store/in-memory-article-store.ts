@@ -8,7 +8,6 @@ import type {
 	FindArticleById,
 	FindArticlesByUser,
 	SaveArticle,
-	ToggleArticleStar,
 	UpdateArticleStatus,
 } from "./article-store.types";
 
@@ -18,7 +17,6 @@ export function initInMemoryArticleStore(): {
 	findArticlesByUser: FindArticlesByUser;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
-	toggleArticleStar: ToggleArticleStar;
 } {
 	const articles = new Map<ArticleId, SavedArticle>();
 
@@ -31,7 +29,6 @@ export function initInMemoryArticleStore(): {
 			metadata: params.metadata,
 			estimatedReadTime: params.estimatedReadTime,
 			status: "unread",
-			isStarred: false,
 			savedAt: new Date(),
 		};
 		articles.set(id, article);
@@ -53,10 +50,6 @@ export function initInMemoryArticleStore(): {
 
 		if (query.status) {
 			filtered = filtered.filter((a) => a.status === query.status);
-		}
-
-		if (query.isStarred !== undefined) {
-			filtered = filtered.filter((a) => a.isStarred === query.isStarred);
 		}
 
 		filtered.sort((a, b) => {
@@ -95,22 +88,11 @@ export function initInMemoryArticleStore(): {
 		return true;
 	};
 
-	const toggleArticleStar: ToggleArticleStar = async (id, userId) => {
-		const article = articles.get(id);
-		if (!article || article.userId !== userId) {
-			return false;
-		}
-		article.isStarred = !article.isStarred;
-		articles.set(id, article);
-		return true;
-	};
-
 	return {
 		saveArticle,
 		findArticleById,
 		findArticlesByUser,
 		deleteArticle,
 		updateArticleStatus,
-		toggleArticleStar,
 	};
 }
