@@ -4,7 +4,7 @@ import { LANDING_PAGE_STYLES } from "./landing.styles";
 export function createLandingPageContent(): PageContent {
 	return {
 		seo: {
-			title: "Hutch — A read-it-later app by Fagner Brack",
+			title: "Hutch — A read-it-later app by Fayner Brack",
 			description:
 				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
 			canonicalUrl: "https://hutchreader.com",
@@ -163,7 +163,7 @@ function renderBackstorySection(): string {
       <div class="landing-backstory__container">
         <h2 class="landing-backstory__title">Why I built this</h2>
         <div class="landing-backstory__content">
-          <p>I'm Fagner Brack. You might know me as the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion downloads per year on jsDelivr. I've been building for the web for a long time.</p>
+          <p>I'm Fayner Brack. You might know me as the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion downloads per year on jsDelivr. I've been building for the web for a long time.</p>
           <p>For the past 10 years, I've maintained a personal reading system &mdash; a pipeline of Gmail filters, DynamoDB tables, and Reddit automations that helped me save, organise, and actually read the articles I cared about. That system generated 300,000+ Reddit karma across technical communities.</p>
           <p>When Pocket was acquired and then abandoned, and Omnivore shut down overnight, I realised the tool I needed didn't exist as a product anyone could use. So I'm turning my personal system into Hutch &mdash; built in Australia, one feature at a time.</p>
           <p>This is a solo project. I'm building it in public, and I'd rather be honest about what works today than promise features that don't exist yet.</p>
