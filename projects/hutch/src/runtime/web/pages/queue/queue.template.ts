@@ -6,10 +6,6 @@ function renderArticle(
 	article: QueueArticleViewModel,
 	options: { showUrl: boolean },
 ): string {
-	const starClass = article.isStarred
-		? " queue-article__action-btn--starred"
-		: "";
-	const starLabel = article.isStarred ? "Unstar" : "Star";
 	const unreadClass = article.isUnread ? " queue-article--unread" : "";
 	const unreadDot = article.isUnread
 		? '<span class="queue-article__unread-dot" aria-label="Unread"></span>'
