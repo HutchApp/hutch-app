@@ -1,16 +1,64 @@
+:root {
+  --popup-bg: #ffffff;
+  --popup-text: #1a202c;
+  --popup-heading: #2b3a55;
+  --popup-brand: #c8923c;
+  --popup-brand-hover: #b5832f;
+  --popup-label: #5a6170;
+  --popup-border: #e2e5ea;
+  --popup-surface: #f7f8fa;
+  --popup-placeholder: #8c919d;
+  --popup-error: #c45c5c;
+  --popup-link-hover: #996d1f;
+  --popup-delete: #5b5b66;
+  --popup-delete-hover-bg: #ffe4e4;
+  --popup-delete-hover-text: #d70022;
+  --popup-disabled: #c0c4cc;
+  --popup-icon-bg: #2b3a55;
+  --popup-icon-text: #c8923c;
+  --popup-brand-text: #1a202c;
+  --popup-active-bg: #2b3a55;
+  --popup-active-hover: #3d4f6f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --popup-bg: #1e2028;
+    --popup-text: #d8dae0;
+    --popup-heading: #c0c8d8;
+    --popup-brand: #d4a04a;
+    --popup-brand-hover: #c8923c;
+    --popup-label: #8c919d;
+    --popup-border: #33363f;
+    --popup-surface: #262830;
+    --popup-placeholder: #5a6170;
+    --popup-error: #e87070;
+    --popup-link-hover: #d4a04a;
+    --popup-delete: #8c8c96;
+    --popup-delete-hover-bg: #3d1f1f;
+    --popup-delete-hover-text: #ff4466;
+    --popup-disabled: #4a4d56;
+    --popup-icon-bg: #2b3a55;
+    --popup-icon-text: #d4a04a;
+    --popup-brand-text: #1a202c;
+    --popup-active-bg: #3d4f6f;
+    --popup-active-hover: #4a5f80;
+  }
+}
+
 body {
   width: 350px;
   font-family: Inter, "Source Sans Pro", system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 16px;
-  background: #ffffff;
-  color: #1a202c;
+  background: var(--popup-bg);
+  color: var(--popup-text);
 }
 
 h2 {
   font-size: 16px;
   margin: 0 0 12px;
-  color: #2b3a55;
+  color: var(--popup-heading);
 }
 
 .view {
@@ -45,8 +93,8 @@ h2 {
 .login__icon {
   width: 48px;
   height: 48px;
-  background: #2b3a55;
-  color: #c8923c;
+  background: var(--popup-icon-bg);
+  color: var(--popup-icon-text);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -66,7 +114,7 @@ h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 18px;
   font-weight: 600;
-  color: #2b3a55;
+  color: var(--popup-heading);
   margin: 0;
   text-align: center;
 }
@@ -86,36 +134,36 @@ h2 {
 .login__label {
   font-size: 13px;
   font-weight: 500;
-  color: #5a6170;
+  color: var(--popup-label);
 }
 
 .login__input {
   padding: 10px 12px;
-  border: 1px solid #e2e5ea;
+  border: 1px solid var(--popup-border);
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
-  color: #1a202c;
-  background: #f7f8fa;
+  color: var(--popup-text);
+  background: var(--popup-surface);
   transition: border-color 0.15s ease;
 }
 
 .login__input:focus {
   outline: none;
-  border-color: #c8923c;
-  background: #ffffff;
+  border-color: var(--popup-brand);
+  background: var(--popup-bg);
 }
 
 .login__input::placeholder {
-  color: #8c919d;
+  color: var(--popup-placeholder);
 }
 
 .login__submit {
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
-  background: #c8923c;
-  color: #1a202c;
+  background: var(--popup-brand);
+  color: var(--popup-brand-text);
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
@@ -125,11 +173,11 @@ h2 {
 }
 
 .login__submit:hover {
-  background: #b5832f;
+  background: var(--popup-brand-hover);
 }
 
 .login__error {
-  color: #c45c5c;
+  color: var(--popup-error);
   font-size: 13px;
   margin: 0;
   text-align: center;
@@ -140,15 +188,15 @@ h2 {
 .view > p {
   margin: 0;
   font-size: 14px;
-  color: #1a202c;
+  color: var(--popup-text);
 }
 
 .button--secondary {
   padding: 8px 12px;
-  border: 1px solid #2b3a55;
+  border: 1px solid var(--popup-heading);
   border-radius: 6px;
   background: transparent;
-  color: #2b3a55;
+  color: var(--popup-heading);
   font-size: 14px;
   font-family: inherit;
   cursor: pointer;
@@ -156,7 +204,7 @@ h2 {
 }
 
 .button--secondary:hover {
-  background: #f7f8fa;
+  background: var(--popup-surface);
 }
 
 /* --- List view (saved links) --- */
@@ -172,7 +220,7 @@ h2 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 16px;
-  color: #2b3a55;
+  color: var(--popup-heading);
 }
 
 .list-view__actions {
@@ -186,11 +234,11 @@ h2 {
  */
 .list-view__reload {
   background: transparent; /* 1 */
-  color: #2b3a55;
+  color: var(--popup-heading);
   font-size: 18px;
   padding: 4px 8px;
   line-height: 1;
-  border: 1px solid #e2e5ea;
+  border: 1px solid var(--popup-border);
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
@@ -198,17 +246,17 @@ h2 {
 }
 
 .list-view__reload:hover {
-  background: #f7f8fa;
-  color: #2b3a55;
+  background: var(--popup-surface);
+  color: var(--popup-heading);
 }
 
 .list-view__logout {
   background: transparent;
-  color: #5a6170;
+  color: var(--popup-label);
   font-size: 12px;
   padding: 4px 8px;
   line-height: 1;
-  border: 1px solid #e2e5ea;
+  border: 1px solid var(--popup-border);
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
@@ -216,32 +264,32 @@ h2 {
 }
 
 .list-view__logout:hover {
-  background: #f7f8fa;
-  color: #c45c5c;
-  border-color: #c45c5c;
+  background: var(--popup-surface);
+  color: var(--popup-error);
+  border-color: var(--popup-error);
 }
 
 .list-view__filter {
   width: 100%;
   box-sizing: border-box;
   padding: 8px 12px;
-  border: 1px solid #e2e5ea;
+  border: 1px solid var(--popup-border);
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
-  color: #1a202c;
-  background: #f7f8fa;
+  color: var(--popup-text);
+  background: var(--popup-surface);
   transition: border-color 0.15s ease;
 }
 
 .list-view__filter:focus {
   outline: none;
-  border-color: #c8923c;
-  background: #ffffff;
+  border-color: var(--popup-brand);
+  background: var(--popup-bg);
 }
 
 .list-view__filter::placeholder {
-  color: #8c919d;
+  color: var(--popup-placeholder);
 }
 
 .list-view__links {
@@ -254,7 +302,7 @@ h2 {
 /* purgecss-ignore-start: applied dynamically in popup.ts when rendering saved links */
 .list-view__item {
   padding: 8px 0;
-  border-bottom: 1px solid #e2e5ea;
+  border-bottom: 1px solid var(--popup-border);
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -273,7 +321,7 @@ h2 {
 }
 
 .list-view__item-title {
-  color: #1a202c;
+  color: var(--popup-text);
   font-size: 13px;
   font-weight: 500;
   text-decoration: none;
@@ -285,11 +333,11 @@ h2 {
 
 .list-view__item-title:hover {
   text-decoration: underline;
-  color: #996d1f;
+  color: var(--popup-link-hover);
 }
 
 .list-view__domain {
-  color: #8c919d;
+  color: var(--popup-placeholder);
   font-size: 11px;
   line-height: 1.3;
   overflow: hidden;
@@ -302,7 +350,7 @@ h2 {
  */
 .list-view__delete {
   background: transparent; /* 1 */
-  color: #5b5b66;
+  color: var(--popup-delete);
   font-size: 16px;
   padding: 0 4px;
   line-height: 1;
@@ -313,8 +361,8 @@ h2 {
 }
 
 .list-view__delete:hover {
-  background: #ffe4e4;
-  color: #d70022;
+  background: var(--popup-delete-hover-bg);
+  color: var(--popup-delete-hover-text);
 }
 /* purgecss-ignore-end */
 
@@ -335,9 +383,9 @@ h2 {
 
 .pagination__button {
   background: transparent;
-  border: 1px solid #e2e5ea;
+  border: 1px solid var(--popup-border);
   border-radius: 4px;
-  color: #2b3a55;
+  color: var(--popup-heading);
   font-size: 16px;
   padding: 2px 8px;
   cursor: pointer;
@@ -347,19 +395,19 @@ h2 {
 }
 
 .pagination__button:hover:not(:disabled) {
-  background: #f7f8fa;
+  background: var(--popup-surface);
 }
 
 .pagination__button:disabled {
-  color: #c0c4cc;
+  color: var(--popup-disabled);
   cursor: default;
 }
 
 .pagination__page {
   background: transparent;
-  border: 1px solid #e2e5ea;
+  border: 1px solid var(--popup-border);
   border-radius: 4px;
-  color: #2b3a55;
+  color: var(--popup-heading);
   font-size: 13px;
   padding: 2px 8px;
   min-width: 28px;
@@ -370,28 +418,28 @@ h2 {
 }
 
 .pagination__page:hover {
-  background: #f7f8fa;
+  background: var(--popup-surface);
 }
 
 .pagination__page--active {
-  background: #2b3a55;
+  background: var(--popup-active-bg);
   color: #ffffff;
-  border-color: #2b3a55;
+  border-color: var(--popup-active-bg);
 }
 
 .pagination__page--active:hover {
-  background: #3d4f6f;
+  background: var(--popup-active-hover);
 }
 /* purgecss-ignore-end */
 
 .list-view__empty {
-  color: #5a6170;
+  color: var(--popup-label);
   text-align: center;
   padding: 24px 0;
 }
 
 .list-view__error {
-  color: #c45c5c;
+  color: var(--popup-error);
   text-align: center;
   padding: 24px 0;
 }
