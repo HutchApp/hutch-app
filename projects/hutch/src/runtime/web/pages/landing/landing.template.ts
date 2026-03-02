@@ -53,7 +53,7 @@ function renderHeroSection(): string {
 	return `
     <section class="landing-hero" data-test-section="hero">
       <div class="landing-hero__container">
-        <p class="landing-hero__tagline">A read-it-later app by Fagner Brack</p>
+        <p class="landing-hero__tagline">A read-it-later app by Fayner Brack</p>
         <h1 class="landing-hero__title">Save now.<br>Read later.<br>That's it.</h1>
         <p class="landing-hero__subtitle">Pocket is gone. Omnivore is gone. I built Hutch from a personal reading system I've maintained for 10 years &mdash; because I needed a replacement too.</p>
         <div class="landing-hero__actions">
