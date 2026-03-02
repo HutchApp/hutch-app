@@ -4,7 +4,7 @@ import { LANDING_PAGE_STYLES } from "./landing.styles";
 export function createLandingPageContent(): PageContent {
 	return {
 		seo: {
-			title: "Hutch — A read-it-later app by the creator of js-cookie",
+			title: "Hutch — A read-it-later app by Fagner Brack",
 			description:
 				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
 			canonicalUrl: "https://hutchreader.com",
@@ -53,7 +53,7 @@ function renderHeroSection(): string {
 	return `
     <section class="landing-hero" data-test-section="hero">
       <div class="landing-hero__container">
-        <p class="landing-hero__tagline">A read-it-later app by the creator of js-cookie</p>
+        <p class="landing-hero__tagline">A read-it-later app by Fagner Brack</p>
         <h1 class="landing-hero__title">Save now.<br>Read later.<br>That's it.</h1>
         <p class="landing-hero__subtitle">Pocket is gone. Omnivore is gone. I built Hutch from a personal reading system I've maintained for 10 years &mdash; because I needed a replacement too.</p>
         <div class="landing-hero__actions">
@@ -172,9 +172,9 @@ function renderBackstorySection(): string {
       <div class="landing-backstory__container">
         <h2 class="landing-backstory__title">Why I built this</h2>
         <div class="landing-backstory__content">
-          <p>I'm Fagner Brack. You might know me as the creator of <a href="https://www.npmjs.com/package/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion npm downloads per year. I've been building for the web for a long time.</p>
-          <p>For the past 10 years, I've maintained a personal reading system &mdash; a pipeline of Gmail filters, DynamoDB tables, and Reddit automations that helped me save, organise, and actually read the articles I cared about. That system powered 300,000+ Reddit karma across technical communities.</p>
-          <p>When Pocket was acquired and then abandoned, and Omnivore shut down overnight, I realised the tool I needed didn't exist as a product anyone could use. So I'm turning my personal system into Hutch &mdash; built in Australia, on the Mornington Peninsula, one feature at a time.</p>
+          <p>I'm Fagner Brack. You might know me as the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion downloads per year on jsDelivr. I've been building for the web for a long time.</p>
+          <p>For the past 10 years, I've maintained a personal reading system &mdash; a pipeline of Gmail filters, DynamoDB tables, and Reddit automations that helped me save, organise, and actually read the articles I cared about. That system generated 300,000+ Reddit karma across technical communities.</p>
+          <p>When Pocket was acquired and then abandoned, and Omnivore shut down overnight, I realised the tool I needed didn't exist as a product anyone could use. So I'm turning my personal system into Hutch &mdash; built in Australia, one feature at a time.</p>
           <p>This is a solo project. I'm building it in public, and I'd rather be honest about what works today than promise features that don't exist yet.</p>
         </div>
       </div>

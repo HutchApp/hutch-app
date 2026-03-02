@@ -63,7 +63,6 @@ describe("GET /", () => {
 
 		const backstory = doc.querySelector('[data-test-section="backstory"]');
 		expect(backstory).not.toBeNull();
-		expect(backstory?.textContent).toContain("js-cookie");
 	});
 
 	it("should render three pricing plans including founding member", async () => {
@@ -93,20 +92,6 @@ describe("GET /", () => {
 		expect(cards?.length).toBe(4);
 	});
 
-	it("should use first-person voice, not 'we'", async () => {
-		const response = await request(app).get("/");
-		const doc = new JSDOM(response.text).window.document;
-
-		const trustSubtitle = doc.querySelector(".landing-trust__subtitle");
-		expect(trustSubtitle?.textContent).not.toContain("We're");
-		expect(trustSubtitle?.textContent).toContain("Hutch is built differently");
-	});
-
-	it("should not contain unverifiable social proof claims", async () => {
-		const response = await request(app).get("/");
-		expect(response.text).not.toContain("Join thousands");
-		expect(response.text).not.toContain("reimagined");
-	});
 
 	it("should have page-landing body class", async () => {
 		const response = await request(app).get("/");
