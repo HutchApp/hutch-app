@@ -127,7 +127,10 @@ export const HEADER_STYLES = `
   .header--transparent {
     background: transparent;
     border-bottom: none;
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
   }
   .header__content {
     max-width: 1000px;
