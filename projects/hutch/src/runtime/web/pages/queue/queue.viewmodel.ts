@@ -11,6 +11,7 @@ export interface QueueArticleViewModel {
 	url: string;
 	readTimeLabel: string;
 	status: string;
+	isUnread: boolean;
 	savedAgo: string;
 	imageUrl?: string;
 }
@@ -69,6 +70,7 @@ function toArticleViewModel(
 		url: article.url,
 		readTimeLabel: `${readTime} min read`,
 		status: article.status,
+		isUnread: article.status === "unread",
 		savedAgo: formatRelativeDate(article.savedAt, now),
 		imageUrl: article.metadata.imageUrl,
 	};

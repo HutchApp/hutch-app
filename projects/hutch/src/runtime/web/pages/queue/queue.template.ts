@@ -6,6 +6,11 @@ function renderArticle(
 	article: QueueArticleViewModel,
 	options: { showUrl: boolean },
 ): string {
+	const unreadClass = article.isUnread ? " queue-article--unread" : "";
+	const unreadDot = article.isUnread
+		? '<span class="queue-article__unread-dot" aria-label="Unread"></span>'
+		: "";
+
 	const statusActions: string[] = [];
 	if (article.status !== "read") {
 		statusActions.push(`
@@ -34,10 +39,13 @@ function renderArticle(
 		: "";
 
 	return `
-    <div class="queue-article" data-test-article="${article.id}">
+    <div class="queue-article${unreadClass}" data-test-article="${article.id}" data-article-id="${article.id}">
       ${thumbnail}
       <div class="queue-article__content">
-        <a class="queue-article__title" href="${article.url}" target="_blank" rel="noopener">${article.title}</a>
+        <div class="queue-article__title-row">
+          ${unreadDot}
+          <a class="queue-article__title" href="${article.url}" target="_blank" rel="noopener">${article.title}</a>
+        </div>
         ${options.showUrl ? `<span class="queue-article__url" data-test-article-url>${article.url}</span>` : ""}
         <div class="queue-article__meta">
           <span>${article.siteName}</span>
@@ -103,6 +111,36 @@ function renderEmpty(): string {
     </div>`;
 }
 
+const MARK_READ_ON_CLICK_SCRIPT = `
+<script>
+(function() {
+  var articles = document.querySelectorAll('.queue-article--unread');
+  for (var i = 0; i < articles.length; i++) {
+    (function(article) {
+      var link = article.querySelector('.queue-article__title');
+      if (!link) return;
+
+      link.addEventListener('click', function() {
+        var id = article.getAttribute('data-article-id');
+        if (!id) return;
+
+        fetch('/queue/' + id + '/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'status=read'
+        }).then(function() {
+          article.classList.remove('queue-article--unread');
+          var dot = article.querySelector('.queue-article__unread-dot');
+          if (dot) dot.remove();
+        }).catch(function() {
+          // Silently fail - user can use the Read button as fallback
+        });
+      });
+    })(articles[i]);
+  }
+})();
+</script>`;
+
 export function createQueuePageContent(vm: QueueViewModel): PageContent {
 	const content = `
     <main class="queue">
@@ -131,6 +169,7 @@ export function createQueuePageContent(vm: QueueViewModel): PageContent {
 		styles: QUEUE_STYLES,
 		bodyClass: "page-queue",
 		content,
+		scripts: MARK_READ_ON_CLICK_SCRIPT,
 		isAuthenticated: true,
 	};
 }

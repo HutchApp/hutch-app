@@ -134,6 +134,111 @@ describe("Queue routes", () => {
 		});
 	});
 
+	describe("Read status indicators", () => {
+		it("should show unread indicator on newly saved articles", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const article = doc.querySelector(".queue-article");
+			expect(article?.classList.contains("queue-article--unread")).toBe(true);
+			expect(article?.querySelector(".queue-article__unread-dot")?.getAttribute("aria-label")).toBe("Unread");
+		});
+
+		it("should remove unread indicator after marking as read", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+
+			await agent
+				.post(`/queue/${articleId}/status`)
+				.type("form")
+				.send({ status: "read" });
+
+			const afterResponse = await agent.get("/queue?status=read");
+			const afterDoc = new JSDOM(afterResponse.text).window.document;
+			const readArticle = afterDoc.querySelector(".queue-article");
+			expect(readArticle?.classList.contains("queue-article--unread")).toBe(false);
+			expect(readArticle?.querySelector(".queue-article__unread-dot")).toBeNull();
+		});
+
+		it("should restore unread indicator when marking back as unread", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+
+			await agent
+				.post(`/queue/${articleId}/status`)
+				.type("form")
+				.send({ status: "read" });
+
+			await agent
+				.post(`/queue/${articleId}/status`)
+				.type("form")
+				.send({ status: "unread" });
+
+			const afterResponse = await agent.get("/queue");
+			const afterDoc = new JSDOM(afterResponse.text).window.document;
+			const unreadArticle = afterDoc.querySelector(".queue-article");
+			expect(unreadArticle?.classList.contains("queue-article--unread")).toBe(true);
+			expect(unreadArticle?.querySelector(".queue-article__unread-dot")?.getAttribute("aria-label")).toBe("Unread");
+		});
+
+		it("should include data-article-id attribute for mark-as-read on click", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const article = doc.querySelector(".queue-article");
+			const articleId = article?.getAttribute("data-test-article");
+			expect(article?.getAttribute("data-article-id")).toBe(articleId);
+		});
+
+		it("should include mark-as-read script on queue page", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const scripts = Array.from(doc.querySelectorAll("script"));
+			const markReadScript = scripts.find(
+				(s) =>
+					s.textContent?.includes("queue-article--unread") &&
+					s.textContent?.includes("status=read") &&
+					s.textContent?.includes("data-article-id"),
+			);
+			expect(markReadScript).toBeTruthy();
+		});
+	});
+
 	describe("Show URL toggle", () => {
 		it("should not show article URLs by default", async () => {
 			const { app, auth } = createTestApp();
