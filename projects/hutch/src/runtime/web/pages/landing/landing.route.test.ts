@@ -18,54 +18,60 @@ describe("GET /", () => {
 		const heroTitle = doc.querySelector(".landing-hero__title");
 		expect(heroTitle?.textContent).toContain("Save now.");
 		expect(heroTitle?.textContent).toContain("Read later.");
-		expect(heroTitle?.textContent).toContain("Remember forever.");
+		expect(heroTitle?.textContent).toContain("That's it.");
 	});
 
-	it("should render the primary CTA linking to signup", async () => {
+	it("should render the primary CTA linking to extension install", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cta = doc.querySelector('[data-test-cta="start-free"]') as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe("/signup");
-		expect(cta.textContent).toBe("Start Reading Free");
+		const cta = doc.querySelector('[data-test-cta="install-extension"]') as HTMLAnchorElement;
+		expect(cta.getAttribute("href")).toBe("/install");
+		expect(cta.textContent).toBe("Install the Extension");
 	});
 
-	it("should render the core features section with six features", async () => {
+	it("should render the core features section with shipped features only", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
 		const coreSection = doc.querySelector('[data-test-section="core-features"]');
 		const features = coreSection?.querySelectorAll(".feature-card");
-		expect(features?.length).toBe(6);
+		expect(features?.length).toBe(3);
 	});
 
-	it("should render the power features section with six features", async () => {
+	it("should render the roadmap section with planned features", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const powerSection = doc.querySelector('[data-test-section="power-features"]');
-		const features = powerSection?.querySelectorAll(".feature-card");
+		const roadmapSection = doc.querySelector('[data-test-section="roadmap"]');
+		const features = roadmapSection?.querySelectorAll(".feature-card");
 		expect(features?.length).toBe(6);
 	});
 
-	it("should render in-development features with grayed-out class and badge", async () => {
+	it("should not render any in-development badges on shipped features", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const devCards = doc.querySelectorAll(".feature-card--in-development");
-		expect(devCards.length).toBe(12);
-
-		const firstBadge = devCards[0].querySelector(".feature-card__badge");
-		expect(firstBadge?.textContent).toBe("In Development");
+		const coreSection = doc.querySelector('[data-test-section="core-features"]');
+		const devCards = coreSection?.querySelectorAll(".feature-card--in-development");
+		expect(devCards?.length).toBe(0);
 	});
 
-	it("should render three pricing plans", async () => {
+	it("should render the backstory section", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const backstory = doc.querySelector('[data-test-section="backstory"]');
+		expect(backstory).not.toBeNull();
+	});
+
+	it("should render three pricing plans including founding member", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
 		expect(doc.querySelector('[data-test-plan="free"] .pricing-card__name')?.textContent).toBe("Free");
+		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__name')?.textContent).toBe("Founding Member");
 		expect(doc.querySelector('[data-test-plan="pro"] .pricing-card__name')?.textContent).toBe("Pro");
-		expect(doc.querySelector('[data-test-plan="pro-plus"] .pricing-card__name')?.textContent).toBe("Pro+");
 	});
 
 	it("should render the comparison table", async () => {
@@ -74,7 +80,7 @@ describe("GET /", () => {
 
 		const table = doc.querySelector("[data-test-comparison-table]");
 		const rows = table?.querySelectorAll("tbody tr");
-		expect(rows?.length).toBe(7);
+		expect(rows?.length).toBe(4);
 	});
 
 	it("should render the trust section with four trust items", async () => {
@@ -85,6 +91,7 @@ describe("GET /", () => {
 		const cards = trustSection?.querySelectorAll(".trust-card");
 		expect(cards?.length).toBe(4);
 	});
+
 
 	it("should have page-landing body class", async () => {
 		const response = await request(app).get("/");

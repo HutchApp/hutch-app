@@ -161,23 +161,34 @@
   line-height: 1.5;
 }
 
-.feature-card--in-development {
-  opacity: 0.5;
-  filter: grayscale(0.4);
-  position: relative;
+/* Backstory Section */
+.landing-backstory {
+  padding: 80px 20px;
+  background: var(--muted);
 }
 
-.feature-card__badge {
-  display: inline-block;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--muted);
+.landing-backstory__container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.landing-backstory__title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--foreground);
+}
+
+.landing-backstory__content p {
+  font-size: 1.0625rem;
+  line-height: 1.7;
   color: var(--muted-foreground);
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.landing-backstory__content a {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 /* Comparison Section */
@@ -282,11 +293,6 @@
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 12px;
-}
-
-.landing-pricing__subtitle {
-  font-size: 1.0625rem;
-  color: var(--muted-foreground);
 }
 
 .pricing-grid {
