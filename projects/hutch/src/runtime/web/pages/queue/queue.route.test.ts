@@ -227,8 +227,15 @@ describe("Queue routes", () => {
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");
-			expect(response.text).toContain("queue-article--unread");
-			expect(response.text).toContain("status=read");
+			const doc = new JSDOM(response.text).window.document;
+			const scripts = Array.from(doc.querySelectorAll("script"));
+			const markReadScript = scripts.find(
+				(s) =>
+					s.textContent?.includes("queue-article--unread") &&
+					s.textContent?.includes("status=read") &&
+					s.textContent?.includes("data-article-id"),
+			);
+			expect(markReadScript).toBeTruthy();
 		});
 	});
 

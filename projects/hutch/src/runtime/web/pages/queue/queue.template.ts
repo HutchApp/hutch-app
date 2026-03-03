@@ -132,6 +132,8 @@ const MARK_READ_ON_CLICK_SCRIPT = `
           article.classList.remove('queue-article--unread');
           var dot = article.querySelector('.queue-article__unread-dot');
           if (dot) dot.remove();
+        }).catch(function() {
+          // Silently fail - user can use the Read button as fallback
         });
       });
     })(articles[i]);
