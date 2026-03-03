@@ -112,6 +112,7 @@ export const BASE_RESET_STYLES = `
     line-height: 1.6;
     color: var(--foreground);
     min-height: 100vh;
+    padding-top: var(--banner-area-height, 38px);
   }
 `;
 
@@ -121,14 +122,14 @@ export const HEADER_STYLES = `
     border-bottom: 1px solid var(--border);
     padding: 16px 20px;
     position: sticky;
-    top: 0;
+    top: var(--banner-area-height, 38px);
     z-index: 100;
   }
   .header--transparent {
     background: transparent;
     border-bottom: none;
     position: absolute;
-    top: 0;
+    top: var(--banner-area-height, 38px);
     left: 0;
     right: 0;
   }
@@ -194,33 +195,26 @@ export const FOOTER_STYLES = `
 
 export const OFFLINE_BANNER_STYLES = `
   .offline-banner {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
     background: var(--color-warning);
     color: var(--foreground);
-    padding: 8px 16px;
     text-align: center;
     font-size: 14px;
     font-weight: 500;
-    z-index: 9999;
-    transform: translateY(-100%);
-    transition: transform 0.3s ease;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 16px;
   }
 
   .offline-banner--visible {
-    transform: translateY(0);
+    max-height: 50px;
+    padding: 8px 16px;
   }
 
   .offline-banner__icon {
     display: inline-block;
     vertical-align: middle;
     margin-right: 8px;
-  }
-
-  body.is-offline {
-    padding-top: 40px;
   }
 `;
 
@@ -347,6 +341,16 @@ export const NAV_STYLES = `
   }
 `;
 
+export const BANNER_AREA_STYLES = `
+  .banner-area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+  }
+`;
+
 export const POC_BANNER_STYLES = `
   .poc-banner {
     background: var(--color-error);
@@ -356,9 +360,6 @@ export const POC_BANNER_STYLES = `
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    position: sticky;
-    top: 0;
-    z-index: 101;
   }
 `;
 

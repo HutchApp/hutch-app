@@ -1,4 +1,5 @@
 import {
+	BANNER_AREA_STYLES,
 	BASE_CSS_VARIABLES,
 	BASE_RESET_STYLES,
 	FOOTER_STYLES,
@@ -117,10 +118,19 @@ const OFFLINE_INDICATOR_SCRIPT = `
 <script>
 (function() {
   var banner = document.querySelector('.offline-banner');
-  if (!banner) return;
+  var bannerArea = document.querySelector('.banner-area');
+  if (!banner || !bannerArea) return;
 
   var wasOffline = false;
   var hideTimeout = null;
+
+  function updateBannerAreaHeight() {
+    document.documentElement.style.setProperty(
+      '--banner-area-height', bannerArea.offsetHeight + 'px'
+    );
+  }
+
+  banner.addEventListener('transitionend', updateBannerAreaHeight);
 
   function updateOnlineStatus() {
     if (hideTimeout) {
@@ -133,15 +143,14 @@ const OFFLINE_INDICATOR_SCRIPT = `
         banner.textContent = 'Back online';
         banner.classList.add('offline-banner--visible');
         banner.setAttribute('aria-hidden', 'false');
+        updateBannerAreaHeight();
         hideTimeout = setTimeout(function() {
           banner.classList.remove('offline-banner--visible');
           banner.setAttribute('aria-hidden', 'true');
-          document.body.classList.remove('is-offline');
         }, 2000);
       } else {
         banner.classList.remove('offline-banner--visible');
         banner.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('is-offline');
       }
       wasOffline = false;
     } else {
@@ -149,7 +158,7 @@ const OFFLINE_INDICATOR_SCRIPT = `
       banner.textContent = "You're offline. Some features may be unavailable.";
       banner.classList.add('offline-banner--visible');
       banner.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('is-offline');
+      updateBannerAreaHeight();
     }
   }
 
@@ -219,6 +228,7 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
     {{{baseStyles}}}
     {{{resetStyles}}}
     {{{utilityStyles}}}
+    {{{bannerAreaStyles}}}
     {{{headerStyles}}}
     {{{navStyles}}}
     {{{footerStyles}}}
@@ -228,10 +238,18 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
   </style>
 </head>
 <body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
-  <div class="poc-banner" role="status">In Development</div>
-  <div class="offline-banner" role="alert" aria-live="polite" aria-hidden="true">
-    You're offline. Some features may be unavailable.
+  <div class="banner-area">
+    <div class="poc-banner" role="status">In Development</div>
+    <div class="offline-banner" role="alert" aria-live="polite" aria-hidden="true">
+      You're offline. Some features may be unavailable.
+    </div>
   </div>
+  <script>
+    (function() {
+      var ba = document.querySelector('.banner-area');
+      if (ba) document.documentElement.style.setProperty('--banner-area-height', ba.offsetHeight + 'px');
+    })();
+  </script>
   {{{header}}}
   {{{content}}}
   {{{footer}}}
@@ -272,6 +290,7 @@ function renderBaseTemplate(page: PageContent): string {
 		baseStyles: BASE_CSS_VARIABLES,
 		resetStyles: BASE_RESET_STYLES,
 		utilityStyles: UTILITY_STYLES,
+		bannerAreaStyles: BANNER_AREA_STYLES,
 		headerStyles: HEADER_STYLES,
 		navStyles: NAV_STYLES,
 		footerStyles: FOOTER_STYLES,
