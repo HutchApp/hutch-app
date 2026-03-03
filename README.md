@@ -2,6 +2,10 @@
 
 - [Devbox](https://www.jetify.com/devbox) (optional, provides Node.js + pnpm)
 
+## Check the Website
+
+https://hutch-app.com
+
 ## Setup
 
 ```bash
