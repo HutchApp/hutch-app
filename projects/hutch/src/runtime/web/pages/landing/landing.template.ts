@@ -60,7 +60,7 @@ function renderHeroSection(): string {
           <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install the Extension</a>
           <a href="#what-works" class="btn btn--secondary" data-test-cta="see-features">See What Works Today</a>
         </div>
-        <p class="landing-hero__trust">Chrome &amp; Firefox &middot; Import from Pocket, Instapaper &amp; Omnivore</p>
+        <p class="landing-hero__trust">Firefox</p>
       </div>
     </section>`;
 }
@@ -68,7 +68,6 @@ function renderHeroSection(): string {
 function renderFeatureCard(f: { name: string; description: string }): string {
 	return `
         <div class="feature-card" data-test-feature="${f.name}">
-          <div class="feature-card__icon" aria-hidden="true"></div>
           <h3 class="feature-card__name">${f.name}</h3>
           <p class="feature-card__description">${f.description}</p>
         </div>`;
@@ -85,11 +84,6 @@ function renderCoreFeaturesSection(): string {
 			name: "Web App",
 			description:
 				"View and manage your saved articles from any browser. Clean, fast, no clutter.",
-		},
-		{
-			name: "Import Your Library",
-			description:
-				"Bring your articles from Pocket, Instapaper, or Omnivore. One upload, everything transferred.",
 		},
 	];
 
@@ -149,7 +143,7 @@ function renderRoadmapSection(): string {
       <div class="landing-features__header">
         <p class="landing-features__label">What's Coming</p>
         <h2 class="landing-features__title">Built in public. Shaped by users.</h2>
-        <p class="landing-features__subtitle">I'm building these next. Vote on what matters most to you on the <a href="#roadmap">feature board</a>.</p>
+        <p class="landing-features__subtitle">I'm planning to build these. Vote on what matters most to you on the <a href="https://www.reddit.com/r/hutchapp">Reddit community</a>.</p>
       </div>
       <div class="landing-features__grid">
         ${roadmapCards}
@@ -163,7 +157,7 @@ function renderBackstorySection(): string {
       <div class="landing-backstory__container">
         <h2 class="landing-backstory__title">Why I built this</h2>
         <div class="landing-backstory__content">
-          <p>I'm Fayner Brack. You might know me as the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion downloads per year on jsDelivr. I've been building for the web for a long time.</p>
+          <p>I'm <a href="https://www.reddit.com/user/fagnerbrack/">Fayner Brack</a>. You might know me as the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion downloads per year on jsDelivr. I've been building for the web for a long time.</p>
           <p>For the past 10 years, I've maintained a personal reading system &mdash; a pipeline of Gmail filters, DynamoDB tables, and Reddit automations that helped me save, organise, and actually read the articles I cared about. That system generated 300,000+ Reddit karma across technical communities.</p>
           <p>When Pocket was acquired and then abandoned, and Omnivore shut down overnight, I realised the tool I needed didn't exist as a product anyone could use. So I'm turning my personal system into Hutch &mdash; built in Australia, one feature at a time.</p>
           <p>This is a solo project. I'm building it in public, and I'd rather be honest about what works today than promise features that don't exist yet.</p>
@@ -193,20 +187,13 @@ function renderComparisonSection(): string {
           <tbody>
             <tr>
               <td>Price</td>
-              <td class="comparison-table__hutch">A$29/yr founding</td>
+              <td class="comparison-table__hutch">Free (first 100)</td>
               <td>A$20/mo</td>
               <td>A$9/mo</td>
               <td>A$15 once</td>
             </tr>
             <tr>
               <td>Browser Extension</td>
-              <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
-            </tr>
-            <tr>
-              <td>Import Library</td>
               <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
               <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
               <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
@@ -231,52 +218,23 @@ function renderPricingSection(): string {
       <div class="landing-pricing__container">
         <div class="landing-pricing__header">
           <p class="landing-pricing__label">Simple Pricing</p>
-          <h2 class="landing-pricing__title">Try it free. Support the project if you like it.</h2>
+          <h2 class="landing-pricing__title">Free for the first 100 users.</h2>
         </div>
         <div class="pricing-grid">
-          <div class="pricing-card" data-test-plan="free">
-            <h3 class="pricing-card__name">Free</h3>
-            <p class="pricing-card__price">A$0<span class="pricing-card__price-suffix"> forever</span></p>
-            <p class="pricing-card__description">Try Hutch with no commitment.</p>
-            <ul class="pricing-card__features">
-              <li class="pricing-card__feature">Save unlimited articles</li>
-              <li class="pricing-card__feature">Browser extension</li>
-              <li class="pricing-card__feature">Import from other apps</li>
-              <li class="pricing-card__feature">Manual tags</li>
-              <li class="pricing-card__feature">Search titles</li>
-            </ul>
-            <a href="/signup" class="btn btn--outline pricing-card__cta" data-test-cta="free">Get Started</a>
-          </div>
-
           <div class="pricing-card pricing-card--featured" data-test-plan="founding">
             <span class="pricing-card__badge">First 100 Users</span>
             <h3 class="pricing-card__name">Founding Member</h3>
-            <p class="pricing-card__price">A$29<span class="pricing-card__price-suffix">/yr</span></p>
-            <p class="pricing-card__description">Lock in this price permanently. Help shape the product.</p>
+            <p class="pricing-card__price">A$0<span class="pricing-card__price-suffix"> forever</span></p>
+            <p class="pricing-card__description">Be one of the first 100 users. Get full access free, forever. Help shape the product.</p>
             <ul class="pricing-card__features">
-              <li class="pricing-card__feature">Everything in Free</li>
-              <li class="pricing-card__feature">All Pro features as they ship</li>
+              <li class="pricing-card__feature">Save unlimited articles</li>
+              <li class="pricing-card__feature">Browser extension</li>
+
+              <li class="pricing-card__feature">All features as they ship</li>
               <li class="pricing-card__feature">Direct access to the developer</li>
               <li class="pricing-card__feature">Vote on feature priorities</li>
-              <li class="pricing-card__feature">Price locked for life</li>
             </ul>
-            <a href="/signup?plan=founding" class="btn btn--brand pricing-card__cta" data-test-cta="founding">Become a Founding Member</a>
-          </div>
-
-          <div class="pricing-card" data-test-plan="pro">
-            <h3 class="pricing-card__name">Pro</h3>
-            <p class="pricing-card__price">A$3.99<span class="pricing-card__price-suffix">/mo</span></p>
-            <p class="pricing-card__annual">A$39/yr (save ~17%)</p>
-            <p class="pricing-card__description">Full access once all features ship.</p>
-            <ul class="pricing-card__features">
-              <li class="pricing-card__feature">Everything in Free</li>
-              <li class="pricing-card__feature">Unlimited highlights &amp; notes</li>
-              <li class="pricing-card__feature">Full-text search</li>
-              <li class="pricing-card__feature">Permanent archive</li>
-              <li class="pricing-card__feature">Offline reading</li>
-              <li class="pricing-card__feature">Data export</li>
-            </ul>
-            <a href="/signup?plan=pro" class="btn btn--outline pricing-card__cta" data-test-cta="pro">Start Free Trial</a>
+            <a href="/signup" class="btn btn--brand pricing-card__cta" data-test-cta="founding">Become a Founding Member</a>
           </div>
         </div>
       </div>
@@ -286,24 +244,9 @@ function renderPricingSection(): string {
 function renderTrustSection(): string {
 	const trustItems = [
 		{
-			name: "Metadata-Only Architecture",
-			description:
-				"I built Hutch to never read your private data. This isn't a policy &mdash; it's a technical decision you can verify.",
-		},
-		{
 			name: "\"Even If You Cancel\" Promise",
 			description:
-				"Export everything, anytime. Your data is yours. Cancel and your saved articles stay accessible for 90 days for export.",
-		},
-		{
-			name: "Self-Hosted Analytics",
-			description:
-				"Hutch uses self-hosted Plausible Analytics. No Google Analytics, no third-party trackers, no data sold to advertisers.",
-		},
-		{
-			name: "Australian Privacy Act Compliant",
-			description:
-				"Built in Australia, compliant with Australian Privacy Principles. Magic link auth &mdash; no passwords stored.",
+				"Export everything, anytime. Your data is yours. Cancel and your saved articles stay available for export.",
 		},
 	];
 
@@ -340,7 +283,6 @@ function renderFooterCTA(): string {
         <p class="landing-cta__subtitle">Try the extension, tell me what to build next. Hutch gets better with every user who shows up and says what they need.</p>
         <div class="landing-cta__actions">
           <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install the Extension</a>
-          <a href="/import-export" class="btn btn--outline" data-test-cta="bottom-import">Import from Pocket</a>
         </div>
       </div>
     </section>`;

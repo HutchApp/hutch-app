@@ -81,12 +81,6 @@
   color: var(--primary-foreground);
 }
 
-.btn--outline {
-  background: transparent;
-  color: var(--primary);
-  border: 2px solid var(--primary);
-}
-
 /* Features Section */
 .landing-features {
   padding: 80px 20px;
@@ -134,18 +128,6 @@
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--card);
-}
-
-.feature-card__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--color-brand-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  margin-bottom: 16px;
 }
 
 .feature-card__name {
@@ -345,12 +327,6 @@
   font-size: 1rem;
   font-weight: 400;
   color: var(--muted-foreground);
-}
-
-.pricing-card__annual {
-  font-size: 0.8125rem;
-  color: var(--muted-foreground);
-  margin-bottom: 8px;
 }
 
 .pricing-card__description {

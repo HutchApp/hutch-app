@@ -36,7 +36,7 @@ describe("GET /", () => {
 
 		const coreSection = doc.querySelector('[data-test-section="core-features"]');
 		const features = coreSection?.querySelectorAll(".feature-card");
-		expect(features?.length).toBe(3);
+		expect(features?.length).toBe(2);
 	});
 
 	it("should render the roadmap section with planned features", async () => {
@@ -65,13 +65,15 @@ describe("GET /", () => {
 		expect(backstory).not.toBeNull();
 	});
 
-	it("should render three pricing plans including founding member", async () => {
+	it("should render one pricing plan for founding members", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.querySelector('[data-test-plan="free"] .pricing-card__name')?.textContent).toBe("Free");
+		const pricingSection = doc.querySelector('[data-test-section="pricing"]');
+		const plans = pricingSection?.querySelectorAll(".pricing-card");
+		expect(plans?.length).toBe(1);
 		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__name')?.textContent).toBe("Founding Member");
-		expect(doc.querySelector('[data-test-plan="pro"] .pricing-card__name')?.textContent).toBe("Pro");
+		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("A$0");
 	});
 
 	it("should render the comparison table", async () => {
@@ -80,16 +82,16 @@ describe("GET /", () => {
 
 		const table = doc.querySelector("[data-test-comparison-table]");
 		const rows = table?.querySelectorAll("tbody tr");
-		expect(rows?.length).toBe(4);
+		expect(rows?.length).toBe(3);
 	});
 
-	it("should render the trust section with four trust items", async () => {
+	it("should render the trust section with two trust items", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
 		const trustSection = doc.querySelector('[data-test-section="trust"]');
 		const cards = trustSection?.querySelectorAll(".trust-card");
-		expect(cards?.length).toBe(4);
+		expect(cards?.length).toBe(1);
 	});
 
 
