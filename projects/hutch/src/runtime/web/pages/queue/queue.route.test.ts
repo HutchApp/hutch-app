@@ -327,6 +327,106 @@ describe("Queue routes", () => {
 		});
 	});
 
+	describe("Reader view", () => {
+		it("should render saved article content", async () => {
+			const articleHtml = `
+			<html><head><title>Saved Post</title></head>
+			<body><article>
+				<h1>Saved Post</h1>
+				<p>This is archived content that should survive the original site going down. Enough text for readability.</p>
+				<p>A second paragraph with more words for the parser to work with properly.</p>
+			</article></body></html>`;
+
+			const fetchHtml = async (_url: string) => articleHtml;
+			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/saved-post" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+
+			expect(readerResponse.status).toBe(200);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-reader-content]")?.textContent).toContain("archived content");
+			expect(doc.querySelector("[data-test-reader-title]")?.textContent).toBe("Saved Post");
+			expect(doc.querySelector("[data-test-back-link]")?.getAttribute("href")).toBe("/queue");
+			expect(doc.querySelector("[data-test-original-link]")?.getAttribute("href")).toBe("https://example.com/saved-post");
+		});
+
+		it("should redirect to queue for non-existent article", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue/nonexistent/read");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should redirect unauthenticated users to login", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app).get("/queue/someid/read");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/login");
+		});
+
+		it("should link article title to reader view in queue when content exists", async () => {
+			const articleHtml = `
+			<html><head><title>Content Article</title></head>
+			<body><article>
+				<h1>Content Article</h1>
+				<p>An article with enough content for readability to parse successfully.</p>
+				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
+			</article></body></html>`;
+
+			const fetchHtml = async (_url: string) => articleHtml;
+			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/content-article" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const titleLink = doc.querySelector("[data-test-article-title]");
+			expect(titleLink?.getAttribute("href")).toContain("/read");
+		});
+
+		it("should show no-content fallback when article has no extracted content", async () => {
+			const fetchHtml = async (_url: string) => "<html><body></body></html>";
+			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/empty-page" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-no-content]")?.textContent).toContain("not available");
+		});
+	});
+
 	describe("Filter and sort", () => {
 		it("should filter by status", async () => {
 			const { app, auth } = createTestApp();

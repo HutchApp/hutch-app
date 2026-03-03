@@ -18,6 +18,7 @@ export interface SavedArticle {
 	userId: UserId;
 	url: string;
 	metadata: ArticleMetadata;
+	content?: string;
 	estimatedReadTime: Minutes;
 	status: ArticleStatus;
 	savedAt: Date;

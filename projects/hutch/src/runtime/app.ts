@@ -2,8 +2,8 @@ import type { Express } from "express";
 import type { Logger } from "../infra/logger";
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
-import { initStaticParser } from "./providers/article-parser/static-parser";
-import type { FetchHtml } from "./providers/article-parser/static-parser";
+import { initReadabilityParser } from "./providers/article-parser/readability-parser";
+import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import { createApp } from "./server";
 import { getEnv } from "./require-env";
 
@@ -27,7 +27,7 @@ const fetchHtml: FetchHtml = async (url) => {
 export const app = createApp({
 	...initInMemoryAuth(),
 	...initInMemoryArticleStore(),
-	...initStaticParser({ fetchHtml }),
+	...initReadabilityParser({ fetchHtml }),
 });
 
 export const localServer = (expressApp: Express, logger: Logger): void => {

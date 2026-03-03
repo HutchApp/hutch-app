@@ -14,6 +14,7 @@ export interface QueueArticleViewModel {
 	isUnread: boolean;
 	savedAgo: string;
 	imageUrl?: string;
+	hasContent: boolean;
 }
 
 export interface QueueViewModel {
@@ -73,6 +74,7 @@ function toArticleViewModel(
 		isUnread: article.status === "unread",
 		savedAgo: formatRelativeDate(article.savedAt, now),
 		imageUrl: article.metadata.imageUrl,
+		hasContent: Boolean(article.content),
 	};
 }
 
