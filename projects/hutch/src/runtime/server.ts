@@ -22,6 +22,8 @@ import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { createLandingPageContent } from "./web/pages/landing";
+import { createPrivacyPageContent } from "./web/pages/privacy";
+import { createTermsPageContent } from "./web/pages/terms";
 import { render } from "./web/render";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
@@ -80,6 +82,20 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.get("/", (_req: Request, res: Response) => {
 		const pageContent = createLandingPageContent();
+		const component = Base(pageContent);
+		const result = component.to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
+	});
+
+	app.get("/privacy", (_req: Request, res: Response) => {
+		const pageContent = createPrivacyPageContent();
+		const component = Base(pageContent);
+		const result = component.to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
+	});
+
+	app.get("/terms", (_req: Request, res: Response) => {
+		const pageContent = createTermsPageContent();
 		const component = Base(pageContent);
 		const result = component.to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);

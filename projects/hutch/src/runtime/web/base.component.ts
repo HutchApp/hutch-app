@@ -54,7 +54,7 @@ const HEADER_TEMPLATE = `
               </form>
             </li>
             {{else}}
-            <li><a href="/#features" class="nav__link" data-test-nav-item="features">Features</a></li>
+            <li><a href="/#what-works" class="nav__link" data-test-nav-item="features">Features</a></li>
             <li><a href="/#pricing" class="nav__link" data-test-nav-item="pricing">Pricing</a></li>
             <li><a href="/login" class="nav__link" data-test-nav-item="login">Sign in</a></li>
             {{/if}}

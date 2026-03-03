@@ -6,7 +6,7 @@ function createTestPageContent(overrides: Partial<PageContent> = {}): PageConten
 		seo: {
 			title: "Test Page",
 			description: "Test description",
-			canonicalUrl: "https://hutchreader.com/test",
+			canonicalUrl: "https://hutch-app.com/test",
 		},
 		styles: "",
 		content: "<main><p>Test content</p></main>",
@@ -16,7 +16,7 @@ function createTestPageContent(overrides: Partial<PageContent> = {}): PageConten
 
 describe("Base component", () => {
 	it("should render a complete HTML page with the provided title", () => {
-		const page = createTestPageContent({ seo: { title: "My Title", description: "Desc", canonicalUrl: "https://hutchreader.com" } });
+		const page = createTestPageContent({ seo: { title: "My Title", description: "Desc", canonicalUrl: "https://hutch-app.com" } });
 		const result = Base(page).to("text/html");
 
 		expect(result.statusCode).toBe(200);
@@ -79,7 +79,7 @@ describe("Base component", () => {
 	});
 
 	it("should set meta description from seo", () => {
-		const page = createTestPageContent({ seo: { title: "T", description: "My desc", canonicalUrl: "https://hutchreader.com" } });
+		const page = createTestPageContent({ seo: { title: "T", description: "My desc", canonicalUrl: "https://hutch-app.com" } });
 		const result = Base(page).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
@@ -92,7 +92,7 @@ describe("Base component", () => {
 			seo: {
 				title: "T",
 				description: "D",
-				canonicalUrl: "https://hutchreader.com",
+				canonicalUrl: "https://hutch-app.com",
 				structuredData: [{ "@context": "https://schema.org", "@type": "WebSite", name: "Hutch" }],
 			},
 		});

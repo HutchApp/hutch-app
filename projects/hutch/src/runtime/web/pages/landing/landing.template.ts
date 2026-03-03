@@ -7,10 +7,10 @@ export function createLandingPageContent(): PageContent {
 			title: "Hutch — A read-it-later app by Fayner Brack",
 			description:
 				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
-			canonicalUrl: "https://hutchreader.com",
+			canonicalUrl: "https://hutch-app.com",
 			ogType: "website",
-			ogImage: "https://hutchreader.com/og-image-1200x630.png",
-			twitterImage: "https://hutchreader.com/twitter-card-1200x600.png",
+			ogImage: "https://hutch-app.com/og-image-1200x630.png",
+			twitterImage: "https://hutch-app.com/twitter-card-1200x600.png",
 			structuredData: [
 				{
 					"@context": "https://schema.org",
