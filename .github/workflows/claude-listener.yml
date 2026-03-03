@@ -13,8 +13,8 @@ on:
 jobs:
   claude:
     # Each event type checks only the author_association of the actual triggering user
+    # OWNER is included in author_association checks, so no separate owner check is needed
     if: |
-      github.event.sender.login == github.repository_owner ||
       (
         github.event_name == 'issue_comment' &&
         contains(github.event.comment.body, '@claude') &&
