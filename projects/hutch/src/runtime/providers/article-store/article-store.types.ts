@@ -51,4 +51,3 @@ export type UpdateArticleStatus = (
 	userId: UserId,
 	status: ArticleStatus,
 ) => Promise<boolean>;
-

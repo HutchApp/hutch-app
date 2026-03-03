@@ -1,0 +1,215 @@
+import { JSDOM } from "jsdom";
+import request from "supertest";
+import { createTestApp } from "../../../test-app";
+
+async function loginAgent(
+	app: ReturnType<typeof createTestApp>["app"],
+	auth: ReturnType<typeof createTestApp>["auth"],
+) {
+	await auth.createUser({ email: "test@example.com", password: "password123" });
+	const agent = request.agent(app);
+	await agent
+		.post("/login")
+		.type("form")
+		.send({ email: "test@example.com", password: "password123" });
+	return agent;
+}
+
+describe("Export routes", () => {
+	describe("GET /export (unauthenticated)", () => {
+		it("should redirect to /login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/export");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/login");
+		});
+	});
+
+	describe("GET /export (authenticated)", () => {
+		it("should render the export page", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/export");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("h1")?.textContent).toContain(
+				"Export Your Data",
+			);
+			expect(
+				doc
+					.querySelector("[data-test-export-download]")
+					?.getAttribute("href"),
+			).toBe("/export/download");
+		});
+	});
+
+	describe("GET /export/download (unauthenticated)", () => {
+		it("should redirect to /login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/export/download");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/login");
+		});
+	});
+
+	describe("GET /export/download (authenticated)", () => {
+		it("should return JSON file with content-disposition header", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/export/download");
+
+			expect(response.status).toBe(200);
+			expect(response.headers["content-type"]).toContain(
+				"application/json",
+			);
+			expect(response.headers["content-disposition"]).toMatch(
+				/^attachment; filename="hutch-export-\d{4}-\d{2}-\d{2}\.json"$/,
+			);
+		});
+
+		it("should return empty articles array when user has no articles", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/export/download");
+			const data = JSON.parse(response.text);
+
+			expect(data.articleCount).toBe(0);
+			expect(data.articles).toEqual([]);
+			expect(data.exportedAt).toBeDefined();
+		});
+
+		it("should include all saved articles in the export", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article-1" });
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article-2" });
+
+			const response = await agent.get("/export/download");
+			const data = JSON.parse(response.text);
+
+			expect(data.articleCount).toBe(2);
+			expect(data.articles).toHaveLength(2);
+		});
+
+		it("should export article fields correctly", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/export/download");
+			const data = JSON.parse(response.text);
+			const article = data.articles[0];
+
+			expect(article.url).toBe("https://example.com/article");
+			expect(article.title).toBeDefined();
+			expect(article.siteName).toBeDefined();
+			expect(article.status).toBe("unread");
+			expect(article.savedAt).toBeDefined();
+			expect(article.readAt).toBeNull();
+			expect(article.wordCount).toBeDefined();
+			expect(article.estimatedReadTimeMinutes).toBeDefined();
+		});
+
+		it("should not include articles from other users", async () => {
+			const { app, auth } = createTestApp();
+
+			await auth.createUser({
+				email: "user1@example.com",
+				password: "password123",
+			});
+			await auth.createUser({
+				email: "user2@example.com",
+				password: "password123",
+			});
+
+			const agent1 = request.agent(app);
+			await agent1
+				.post("/login")
+				.type("form")
+				.send({ email: "user1@example.com", password: "password123" });
+			await agent1
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/user1-article" });
+
+			const agent2 = request.agent(app);
+			await agent2
+				.post("/login")
+				.type("form")
+				.send({ email: "user2@example.com", password: "password123" });
+			await agent2
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/user2-article" });
+
+			const response = await agent1.get("/export/download");
+			const data = JSON.parse(response.text);
+
+			expect(data.articleCount).toBe(1);
+			expect(data.articles[0].url).toBe(
+				"https://example.com/user1-article",
+			);
+		});
+
+		it("should include articles of all statuses", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/1" });
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/2" });
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/3" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articles = doc.querySelectorAll("[data-test-article]");
+			const id1 = articles[0]?.getAttribute("data-test-article");
+			const id2 = articles[1]?.getAttribute("data-test-article");
+
+			await agent
+				.post(`/queue/${id1}/status`)
+				.type("form")
+				.send({ status: "read" });
+			await agent
+				.post(`/queue/${id2}/status`)
+				.type("form")
+				.send({ status: "archived" });
+
+			const response = await agent.get("/export/download");
+			const data = JSON.parse(response.text);
+
+			expect(data.articleCount).toBe(3);
+			const statuses = data.articles.map(
+				(a: { status: string }) => a.status,
+			);
+			expect(statuses).toContain("unread");
+			expect(statuses).toContain("read");
+			expect(statuses).toContain("archived");
+		});
+	});
+});

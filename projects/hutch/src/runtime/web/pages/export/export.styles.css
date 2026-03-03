@@ -1,0 +1,67 @@
+.export {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+.export__header {
+  margin-bottom: 32px;
+}
+
+.export__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0 0 4px;
+}
+
+.export__subtitle {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.export__section {
+  margin-bottom: 24px;
+}
+
+.export__section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 8px;
+}
+
+.export__list {
+  margin: 0;
+  padding-left: 24px;
+  color: var(--muted-foreground);
+  line-height: 1.8;
+}
+
+.export__text {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.export__action {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.export__download-btn {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--input-border-radius);
+  transition: opacity 0.15s ease;
+}
+
+.export__download-btn:hover {
+  opacity: 0.9;
+}
