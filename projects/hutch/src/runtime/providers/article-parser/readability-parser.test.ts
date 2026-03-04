@@ -121,4 +121,46 @@ describe("initReadabilityParser", () => {
 			expect(result.article.siteName).toBe("blog.example.com");
 		}
 	});
+
+	it("should strip script tags from content for XSS protection", async () => {
+		const htmlWithScript = `
+		<html><head><title>Article</title></head>
+		<body><article>
+			<h1>Article</h1>
+			<p>Safe content here with enough text for readability parsing.</p>
+			<script>alert('xss')</script>
+			<p>More safe content for the article body text.</p>
+		</article></body></html>`;
+		const fetchHtml = async (_url: string) => htmlWithScript;
+		const { parseArticle } = initReadabilityParser({ fetchHtml });
+
+		const result = await parseArticle("https://example.com/article");
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.article.content).not.toContain("<script>");
+			expect(result.article.content).not.toContain("alert('xss')");
+		}
+	});
+
+	it("should strip event handlers from elements for XSS protection", async () => {
+		const htmlWithEventHandler = `
+		<html><head><title>Article</title></head>
+		<body><article>
+			<h1>Article</h1>
+			<p>Content before image with enough text for parsing.</p>
+			<img src="x" onerror="alert('xss')">
+			<p>Content after image with more text for the parser.</p>
+		</article></body></html>`;
+		const fetchHtml = async (_url: string) => htmlWithEventHandler;
+		const { parseArticle } = initReadabilityParser({ fetchHtml });
+
+		const result = await parseArticle("https://example.com/article");
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.article.content).not.toContain("onerror");
+			expect(result.article.content).not.toContain("alert('xss')");
+		}
+	});
 });

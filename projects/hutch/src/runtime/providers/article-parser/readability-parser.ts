@@ -1,7 +1,12 @@
 import { Readability } from "@mozilla/readability";
+import DOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
 import { parseHTML } from "linkedom";
 import type { ParseArticle } from "./article-parser.types";
 import { extractThumbnail } from "./extract-thumbnail";
+
+const purifyWindow = new JSDOM("").window;
+const purify = DOMPurify(purifyWindow);
 
 export type FetchHtml = (url: string) => Promise<string | undefined>;
 
@@ -50,7 +55,7 @@ export function initReadabilityParser(deps: {
 				siteName: parsed.siteName || hostname,
 				excerpt: parsed.excerpt || `Content saved from ${hostname}.`,
 				wordCount,
-				content: parsed.content ?? "",
+				content: purify.sanitize(parsed.content ?? ""),
 				imageUrl,
 			},
 		};
