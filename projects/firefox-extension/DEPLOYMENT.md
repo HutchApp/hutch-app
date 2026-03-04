@@ -85,7 +85,7 @@ on:
       - 'extension-v*'  # Trigger on tags like extension-v1.2.0
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   deploy-extension:
