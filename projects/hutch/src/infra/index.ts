@@ -72,7 +72,7 @@ class HutchStorage {
 	public readonly sessionsTable: aws.dynamodb.Table;
 
 	constructor(name: string) {
-		this.articlesTable = new aws.dynamodb.Table(`${name}-articles`, {
+		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "id",
 			attributes: [
@@ -90,13 +90,13 @@ class HutchStorage {
 			],
 		});
 
-		this.usersTable = new aws.dynamodb.Table(`${name}-users`, {
+		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "email",
 			attributes: [{ name: "email", type: "S" }],
 		});
 
-		this.sessionsTable = new aws.dynamodb.Table(`${name}-sessions`, {
+		this.sessionsTable = new aws.dynamodb.Table(`hutch-sessions`, {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "sessionId",
 			attributes: [{ name: "sessionId", type: "S" }],

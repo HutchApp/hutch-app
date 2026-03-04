@@ -9,7 +9,7 @@ import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-art
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import { createApp } from "./server";
-import { getEnv } from "./require-env";
+import { getEnv, requireEnv } from "./require-env";
 
 const FETCH_TIMEOUT_MS = 5000;
 
@@ -29,11 +29,10 @@ const fetchHtml: FetchHtml = async (url) => {
 };
 
 function initProviders() {
-	const articlesTable = getEnv("DYNAMODB_ARTICLES_TABLE");
-	const usersTable = getEnv("DYNAMODB_USERS_TABLE");
-	const sessionsTable = getEnv("DYNAMODB_SESSIONS_TABLE");
-
-	if (articlesTable && usersTable && sessionsTable) {
+	if (getEnv("NODE_ENV") === "production") {
+		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
+		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
+		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 		return {
 			...initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable }),
