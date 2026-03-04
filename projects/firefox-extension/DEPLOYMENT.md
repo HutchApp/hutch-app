@@ -50,7 +50,7 @@ Update `package.json` to align with nx conventions. The standard `compile` targe
 
 Create infrastructure in `projects/firefox-extension/infra/` to manage the S3 bucket:
 
-**`projects/firefox-extension/Pulumi.yaml`:**
+**`projects/firefox-extension/infra/Pulumi.yaml`:**
 ```yaml
 name: firefox-extension
 runtime:
@@ -59,7 +59,7 @@ runtime:
     typescript: true
 ```
 
-**`projects/firefox-extension/Pulumi.prod.yaml`:**
+**`projects/firefox-extension/infra/Pulumi.prod.yaml`:**
 ```yaml
 config:
   firefox-extension:stage: prod
@@ -172,7 +172,7 @@ deploy-extension:
 
     - name: Deploy extension to S3
       run: pulumi up --stack prod --yes
-      working-directory: projects/firefox-extension
+      working-directory: projects/firefox-extension/infra
 ```
 
 ### 7. Website integration
