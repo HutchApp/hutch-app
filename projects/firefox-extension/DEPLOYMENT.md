@@ -121,10 +121,15 @@ jobs:
             --api-secret ${{ secrets.AMO_API_SECRET }}
         working-directory: projects/firefox-extension
 
+      - name: Create source archive for Mozilla review
+        run: git archive --format=zip --output=projects/firefox-extension/dist-artifacts/source.zip HEAD
+
       - name: Upload artifact to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: projects/firefox-extension/dist-artifacts/*.xpi
+          files: |
+            projects/firefox-extension/dist-artifacts/*.xpi
+            projects/firefox-extension/dist-artifacts/source.zip
 ```
 
 ### 5. Required secrets
