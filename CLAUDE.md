@@ -1,5 +1,11 @@
 # Development Guidelines
 
+## Setup
+
+1. Install devbox: https://www.jetify.com/docs/devbox/installing-devbox#linux
+  a) if unable to install devbox, check [devbox.json](./devbox.json) for required tools and install them manually (Node.js, AWS CLI, Pulumi, etc.), Check [.envrc](./.envrc) for required environment variables and set them in your shell profile (e.g., .bashrc, .zshrc)
+1. Run pnpm install to install dependencies
+
 ## Architecture Guidelines
 
 ### Web Adapter Conventions
