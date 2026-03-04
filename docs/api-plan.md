@@ -227,6 +227,18 @@ The `ExchangeAuthorizationCode` operation:
 5. Deletes the code (single-use)
 6. Returns the `userId`
 
+### 3.3 Token Rotation (Single-Use Refresh Tokens)
+
+The `RefreshAccessToken` operation enforces single-use refresh tokens as specified in section 10 (Security Considerations):
+
+1. Looks up the token record by `refreshToken` via the GSI
+2. Verifies the token has not expired and `clientId` matches
+3. **Deletes the existing token record** (invalidating both the old access token and old refresh token)
+4. Creates a **new token record** with a new access token AND a new refresh token
+5. Returns the new `accessToken`, new `refreshToken`, and `expiresIn`
+
+**Important:** The client MUST store the new `refreshToken` from each refresh response. The old refresh token is immediately invalidated after use. This prevents refresh token replay attacks — a stolen refresh token can only be used once before the legitimate client's next refresh invalidates it.
+
 ---
 
 ## 4. Hypermedia API (Siren)
@@ -1008,14 +1020,14 @@ Per CLAUDE.md guidelines: use integration tests for filter/query functionality, 
 
 ## 9. CORS Configuration
 
-The Firefox extension makes cross-origin requests to hutch-app.com. Add CORS headers for API routes only:
+Browser extensions make cross-origin requests to hutch-app.com. Add CORS headers for API routes only:
 
 ```typescript
 // Applied only to /api and /oauth/token routes
 const apiCors = cors({
   origin: (origin, callback) => {
-    // Browser extensions use moz-extension:// origin
-    if (!origin || origin.startsWith("moz-extension://")) {
+    // Browser extensions use moz-extension:// (Firefox) or chrome-extension:// (Chrome/Chromium) origins
+    if (!origin || /^(moz|chrome)-extension:\/\//.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
