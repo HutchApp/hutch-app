@@ -6,26 +6,26 @@
 - Manifest: v2, targeting Firefox 91+
 - Build: esbuild bundles to `dist-extension/` via `pnpm dist:extension`
 - Data: in-memory providers (no backend integration yet)
-- CI: `pnpm check` runs lint + tests, but no extension-specific build or distribution step
+- CI: `pnpm check` runs lint + tests, but no extension-specific distribution step
 
-## Distribution Channel
+## Distribution Channel (v1)
 
-### Recommended: AMO (addons.mozilla.org) — Listed
+### Self-Hosted via Website Download
 
-Publish publicly on the Firefox Add-ons store. This is the standard distribution path and provides:
+For v1, the extension is distributed directly from the Hutch website as an unsigned `.xpi` file. Users download and install manually via Firefox's developer mode.
 
-- Automatic updates for users
-- Discovery through AMO search
-- Trust signal (Mozilla review process)
-- No self-hosting infrastructure needed
+**Advantages:**
+- No external dependencies (Mozilla account, API credentials)
+- Immediate deployment on every release
+- Simple CI/CD pipeline
 
-**Alternative:** AMO Unlisted (self-hosted). Mozilla still signs the `.xpi`, but you host the update manifest yourself (e.g., on S3). Use this only if the extension should not be publicly discoverable.
+**Limitation:** Unsigned extensions require Firefox Developer Edition/Nightly, or setting `xpinstall.signatures.required` to `false` in `about:config`. This is acceptable for early adopters and internal testing.
 
 ## Implementation Plan
 
 ### 1. Add `web-ext` tooling
 
-Mozilla's [`web-ext`](https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/) CLI handles packaging, linting, running, and signing extensions.
+Mozilla's [`web-ext`](https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/) CLI handles packaging, linting, and running extensions.
 
 ```bash
 pnpm add --save-dev web-ext --filter firefox-extension
@@ -38,16 +38,11 @@ Add scripts to `package.json`:
   "scripts": {
     "ext:build": "node scripts/build-extension.js",
     "ext:lint": "web-ext lint --source-dir dist-extension",
-    "ext:package": "web-ext build --source-dir dist-extension --artifacts-dir dist-artifacts --overwrite-dest",
+    "ext:package": "web-ext build --source-dir dist-extension --artifacts-dir dist-artifacts --overwrite-dest --filename hutch.xpi",
     "ext:run": "web-ext run --source-dir dist-extension"
   }
 }
 ```
-
-- `ext:build` — compile TypeScript and copy assets to `dist-extension/`
-- `ext:lint` — validate the built extension against Mozilla's rules
-- `ext:package` — create a `.zip` artifact in `dist-artifacts/`
-- `ext:run` — launch Firefox with the extension loaded for local testing
 
 ### 2. Version management
 
@@ -58,125 +53,95 @@ Keep `manifest.json` version and `package.json` version in sync. Add a script to
 # Reads new version from CLI arg, updates both manifest.json and package.json
 ```
 
-AMO rejects re-uploads of the same version, so every submission needs a unique version string. Use semver: `MAJOR.MINOR.PATCH`.
+### 3. Serve extension via web app
 
-### 3. CI pipeline changes
+Add a static route to serve the extension from the Hutch website:
 
-Extend `.github/workflows/ci.yml` to include the extension build and lint:
+**Option A: Static file in `public/` directory**
 
-```yaml
-# Inside the existing `check` job, after pnpm install:
-- run: pnpm --filter firefox-extension ext:build
-- run: pnpm --filter firefox-extension ext:lint
+Copy the built `.xpi` to `projects/hutch/src/runtime/public/downloads/` during deployment:
+
+```bash
+cp projects/firefox-extension/dist-artifacts/hutch.xpi projects/hutch/src/runtime/public/downloads/
 ```
 
-This ensures every PR validates that the extension builds cleanly and passes Mozilla's lint rules.
+The file is then available at `https://hutch.app/downloads/hutch.xpi`.
 
-### 4. Deployment workflow
+**Option B: Dedicated route (if download tracking is needed)**
 
-Create `.github/workflows/deploy-extension.yml`:
+Add a route in `server.ts`:
 
-```yaml
-name: Deploy Firefox Extension
-
-on:
-  push:
-    tags:
-      - 'extension-v*'  # Trigger on tags like extension-v1.2.0
-
-permissions:
-  contents: write
-
-jobs:
-  deploy-extension:
-    runs-on: ubuntu-latest
-    environment: prod
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build extension
-        run: pnpm --filter firefox-extension ext:build
-
-      - name: Lint extension
-        run: pnpm --filter firefox-extension ext:lint
-
-      - name: Sign and upload to AMO
-        run: |
-          pnpm --filter firefox-extension web-ext sign \
-            --source-dir dist-extension \
-            --artifacts-dir dist-artifacts \
-            --channel listed \
-            --api-key ${{ secrets.AMO_API_KEY }} \
-            --api-secret ${{ secrets.AMO_API_SECRET }}
-        working-directory: projects/firefox-extension
-
-      - name: Create source archive for Mozilla review
-        run: git archive --format=zip --output=projects/firefox-extension/dist-artifacts/source.zip HEAD
-
-      - name: Upload artifact to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            projects/firefox-extension/dist-artifacts/*.xpi
-            projects/firefox-extension/dist-artifacts/source.zip
+```typescript
+app.get('/downloads/hutch.xpi', (req, res) => {
+  const xpiPath = join(__dirname, 'public/downloads/hutch.xpi');
+  res.download(xpiPath, 'hutch.xpi');
+});
 ```
 
-### 5. Required secrets
+### 4. CI pipeline changes
 
-Add these to the GitHub repository's `prod` environment:
+Extend `.github/workflows/ci.yml` to build, lint, and package the extension:
 
-| Secret | Source |
-|--------|--------|
-| `AMO_API_KEY` | [AMO API credentials](https://addons.mozilla.org/developers/addon/api/key/) — the JWT issuer |
-| `AMO_API_SECRET` | AMO API credentials — the JWT secret |
+```yaml
+# Inside the existing check job, after pnpm install:
+- name: Build extension
+  run: pnpm --filter firefox-extension ext:build
 
-Generate these at: https://addons.mozilla.org/developers/addon/api/key/
+- name: Lint extension
+  run: pnpm --filter firefox-extension ext:lint
+
+- name: Package extension
+  run: pnpm --filter firefox-extension ext:package
+```
+
+### 5. Deployment workflow
+
+Update the existing `deploy-to-prod` workflow to include extension deployment:
+
+```yaml
+# Add after web app deployment steps:
+- name: Build and package extension
+  run: |
+    pnpm --filter firefox-extension ext:build
+    pnpm --filter firefox-extension ext:package
+
+- name: Copy extension to public downloads
+  run: |
+    mkdir -p projects/hutch/src/runtime/public/downloads
+    cp projects/firefox-extension/dist-artifacts/hutch.xpi projects/hutch/src/runtime/public/downloads/
+```
+
+The extension is deployed alongside the web app on every push to `main`.
 
 ### 6. Release process
 
 ```
 1. Bump version     →  node scripts/bump-version.js 1.2.0
 2. Commit           →  git commit -m "chore(extension): bump to v1.2.0"
-3. Tag              →  git tag extension-v1.2.0
-4. Push             →  git push origin main --tags
-5. CI triggers      →  deploy-extension.yml runs
-6. Signed .xpi      →  uploaded to AMO + attached to GitHub Release
+3. Push to main     →  git push origin main
+4. CI triggers      →  deploy-to-prod.yml runs
+5. Extension live   →  available at /downloads/hutch.xpi
 ```
 
-Decoupled from the main app deployment: tagging `extension-v*` deploys only the extension, not the web app. The existing `deploy-to-prod` job continues to deploy the web app on push to `main`.
+### 7. Installation instructions
 
-### 7. Pre-submission checklist
+Document these steps on the website's download page:
 
-Before the first AMO submission:
+1. Download `hutch.xpi` from the website
+2. In Firefox, navigate to `about:config`
+3. Search for `xpinstall.signatures.required` and set to `false`
+4. Navigate to `about:addons` → Extensions
+5. Click the gear icon → "Install Add-on From File..."
+6. Select the downloaded `hutch.xpi`
 
-- [ ] Register a developer account at https://addons.mozilla.org/developers/
-- [ ] Generate API credentials (JWT issuer + secret)
-- [ ] Add `AMO_API_KEY` and `AMO_API_SECRET` to GitHub secrets
-- [ ] Add a privacy policy URL to `manifest.json` (required if using `<all_urls>` permission)
-- [ ] Write an AMO listing description (screenshots, feature summary)
-- [ ] Decide on extension slug (URL-friendly name, e.g., `hutch-reading-list`)
-- [ ] Review Mozilla's [add-on policies](https://extensionworkshop.com/documentation/publish/add-on-policies/)
+**Note:** Firefox Developer Edition and Nightly allow unsigned extension installation by default.
 
-### 8. Future considerations
+## Future Considerations (v2)
 
-**Manifest v3 migration.** Firefox now supports Manifest v3. While v2 still works, migrating gives access to newer APIs and aligns with Chrome's direction. Key changes: `browser_action` → `action`, background scripts → background service worker, `menus` → included by default.
+**AMO signing for mainstream Firefox.** To support regular Firefox users, submit to AMO (Mozilla Add-ons) for signing. This can be either:
+- **Listed:** Public on addons.mozilla.org with discovery and auto-updates
+- **Unlisted:** Signed by Mozilla but self-hosted, no public listing
 
-**Backend integration.** The extension currently uses in-memory providers. Once the Hutch web app has user auth and a reading list API, the extension should call those endpoints instead. This means:
-- Add `host_permissions` for the API domain
-- Replace `in-memory-auth.ts` / `in-memory-reading-list.ts` with HTTP providers
-- The extension version with API integration should be deployed after the API is live
+**Manifest v3 migration.** Firefox now supports Manifest v3. Key changes: `browser_action` → `action`, background scripts → background service worker.
 
-**Auto-update frequency.** AMO-listed extensions auto-update within 24 hours of a new version being approved. Mozilla reviews may take 1-5 days for the first submission, then are typically faster for updates.
-
-**Source code submission.** Because the extension uses esbuild bundling, Mozilla reviewers may request the source code for manual review. Keep the build reproducible — pin all dependency versions in the lockfile.
+**Backend integration.** Once the Hutch web app has user auth and a reading list API, replace in-memory providers with HTTP providers that call the backend.
