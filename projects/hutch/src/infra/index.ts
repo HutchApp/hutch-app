@@ -100,6 +100,10 @@ class HutchStorage {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "sessionId",
 			attributes: [{ name: "sessionId", type: "S" }],
+			ttl: {
+				attributeName: "expiresAt",
+				enabled: true,
+			},
 		});
 	}
 }

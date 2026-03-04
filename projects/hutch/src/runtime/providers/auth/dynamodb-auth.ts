@@ -96,11 +96,12 @@ export function initDynamoDbAuth(deps: {
 
 	const createSession: CreateSession = async (userId) => {
 		const sessionId = randomBytes(32).toString("hex");
+		const expiresAt = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60; // 7 days in seconds (TTL)
 
 		await client.send(
 			new PutCommand({
 				TableName: sessionsTableName,
-				Item: { sessionId, userId },
+				Item: { sessionId, userId, expiresAt },
 			}),
 		);
 

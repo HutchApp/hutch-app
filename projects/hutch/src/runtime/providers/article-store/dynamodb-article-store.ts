@@ -105,32 +105,61 @@ export function initDynamoDbArticleStore(deps: {
 			":userId": query.userId,
 		};
 		let filterExpression: string | undefined;
+		let expressionAttributeNames: Record<string, string> | undefined;
 
 		if (query.status) {
 			filterExpression = "#status = :status";
 			expressionValues[":status"] = query.status;
+			expressionAttributeNames = { "#status": "status" };
 		}
 
-		const result = await client.send(
-			new QueryCommand({
-				TableName: tableName,
-				IndexName: "userId-savedAt-index",
-				KeyConditionExpression: "userId = :userId",
-				FilterExpression: filterExpression,
-				ExpressionAttributeValues: expressionValues,
-				ExpressionAttributeNames: {
-					"#status": "status",
-				},
-				ScanIndexForward: order === "asc",
-			}),
+		const itemsToSkip = (page - 1) * pageSize;
+		const articles: SavedArticle[] = [];
+		let exclusiveStartKey: Record<string, unknown> | undefined;
+		let skippedCount = 0;
+		let total = 0;
+
+		// Paginate through results using DynamoDB's native pagination
+		do {
+			const result = await client.send(
+				new QueryCommand({
+					TableName: tableName,
+					IndexName: "userId-savedAt-index",
+					KeyConditionExpression: "userId = :userId",
+					FilterExpression: filterExpression,
+					ExpressionAttributeValues: expressionValues,
+					ExpressionAttributeNames: expressionAttributeNames,
+					ScanIndexForward: order === "asc",
+					Limit: pageSize,
+					ExclusiveStartKey: exclusiveStartKey,
+				}),
+			);
+
+			const items = result.Items ?? [];
+			total += items.length;
+
+			for (const item of items) {
+				if (skippedCount < itemsToSkip) {
+					skippedCount++;
+				} else if (articles.length < pageSize) {
+					articles.push(fromItem(item));
+				}
+			}
+
+			exclusiveStartKey = result.LastEvaluatedKey as
+				| Record<string, unknown>
+				| undefined;
+
+			// Stop if we have enough items for the requested page
+			if (articles.length >= pageSize && !exclusiveStartKey) {
+				break;
+			}
+		} while (
+			exclusiveStartKey &&
+			(skippedCount < itemsToSkip || articles.length < pageSize)
 		);
 
-		const articles = (result.Items ?? []).map(fromItem);
-		const total = articles.length;
-		const start = (page - 1) * pageSize;
-		const paginated = articles.slice(start, start + pageSize);
-
-		return { articles: paginated, total, page, pageSize };
+		return { articles, total, page, pageSize };
 	};
 
 	const deleteArticle: DeleteArticle = async (id, userId) => {
