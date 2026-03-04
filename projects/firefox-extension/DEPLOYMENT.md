@@ -96,10 +96,10 @@ Extend `.github/workflows/ci.yml` to build, lint, and package the extension:
 
 ### 5. Deployment workflow
 
-Update the existing `deploy-to-prod` workflow to include extension deployment:
+Update the existing `deploy-to-prod` workflow to include extension deployment. The extension must be built and copied to the public directory **before** `pulumi up` runs, since Pulumi deploys the application including static assets:
 
 ```yaml
-# Add after web app deployment steps:
+# Add BEFORE the pulumi up step:
 - name: Build and package extension
   run: |
     pnpm --filter firefox-extension ext:build
@@ -109,6 +109,10 @@ Update the existing `deploy-to-prod` workflow to include extension deployment:
   run: |
     mkdir -p projects/hutch/src/runtime/public/downloads
     cp projects/firefox-extension/dist-artifacts/hutch.xpi projects/hutch/src/runtime/public/downloads/
+
+# Existing step - extension is now included in deployed assets
+- run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod --yes
+  working-directory: projects/hutch
 ```
 
 The extension is deployed alongside the web app on every push to `main`.
