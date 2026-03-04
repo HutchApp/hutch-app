@@ -1,0 +1,8 @@
+{
+  "name": "firefox-extension",
+  "targets": {
+    "compile": {
+      "outputs": ["{projectRoot}/dist-extension", "{projectRoot}/dist-artifacts"]
+    }
+  }
+}

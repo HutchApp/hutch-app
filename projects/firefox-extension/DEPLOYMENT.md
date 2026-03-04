@@ -66,12 +66,13 @@ See the actual implementation in `infra/index.ts`.
 
 ### 4. Version management
 
-Keep `manifest.json` version and `package.json` version in sync. Add a script to bump both:
+Keep `manifest.json` version and `package.json` version in sync. Use the bump-version script:
 
 ```bash
-# scripts/bump-version.js
-# Reads new version from CLI arg, updates both manifest.json and package.json
+node scripts/bump-version.js 1.2.0
 ```
+
+The script (`scripts/bump-version.js`) validates the version format (MAJOR.MINOR.PATCH), then updates both `package.json` and `src/runtime/manifest.json` atomically.
 
 ### 5. CI pipeline changes
 
