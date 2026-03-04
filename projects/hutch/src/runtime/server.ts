@@ -13,6 +13,7 @@ import type {
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type {
 	DeleteArticle,
+	FindArticleById,
 	FindArticlesByUser,
 	SaveArticle,
 	UpdateArticleStatus,
@@ -42,6 +43,7 @@ interface AppDependencies {
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
 	parseArticle: ParseArticle;
+	findArticleById: FindArticleById;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
@@ -111,6 +113,7 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	const queueRouter = initQueueRoutes({
 		findArticlesByUser: deps.findArticlesByUser,
+		findArticleById: deps.findArticleById,
 		saveArticle: deps.saveArticle,
 		parseArticle: deps.parseArticle,
 		deleteArticle: deps.deleteArticle,

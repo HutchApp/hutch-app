@@ -44,7 +44,7 @@ function renderArticle(
       <div class="queue-article__content">
         <div class="queue-article__title-row">
           ${unreadDot}
-          <a class="queue-article__title" href="${article.url}" target="_blank" rel="noopener">${article.title}</a>
+          <a class="queue-article__title" href="${article.hasContent ? `/queue/${article.id}/read` : article.url}"${article.hasContent ? "" : ' target="_blank" rel="noopener"'} data-test-article-title>${article.title}</a>
         </div>
         ${options.showUrl ? `<span class="queue-article__url" data-test-article-url>${article.url}</span>` : ""}
         <div class="queue-article__meta">

@@ -6,6 +6,7 @@ import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import type {
 	DeleteArticle,
+	FindArticleById,
 	FindArticlesByUser,
 	SaveArticle,
 	UpdateArticleStatus,
@@ -15,9 +16,11 @@ import { Base } from "../../base.component";
 import { parseQueueUrl } from "./queue.url";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { createQueuePageContent } from "./queue.template";
+import { createReaderPageContent } from "../reader/reader.template";
 
 interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
+	findArticleById: FindArticleById;
 	saveArticle: SaveArticle;
 	parseArticle: ParseArticle;
 	deleteArticle: DeleteArticle;
@@ -88,10 +91,28 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				wordCount: article.wordCount,
 				imageUrl: article.imageUrl,
 			},
+			content: article.content || undefined,
 			estimatedReadTime: calculateReadTime(article.wordCount),
 		});
 
 		res.redirect(303, "/queue");
+	});
+
+	router.get("/:id/read", async (req: Request, res: Response) => {
+		const userId = req.userId as UserId;
+		const articleId = req.params.id as unknown as import("../../../domain/article/article.types").ArticleId;
+
+		const article = await deps.findArticleById(articleId);
+
+		if (!article || article.userId !== userId) {
+			res.redirect(303, "/queue");
+			return;
+		}
+
+		const pageContent = createReaderPageContent(article);
+		const component = Base(pageContent);
+		const html = component.to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
 	});
 
 	router.post("/:id/status", async (req: Request, res: Response) => {

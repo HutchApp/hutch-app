@@ -27,6 +27,7 @@ export function initInMemoryArticleStore(): {
 			userId: params.userId,
 			url: params.url,
 			metadata: params.metadata,
+			content: params.content,
 			estimatedReadTime: params.estimatedReadTime,
 			status: "unread",
 			savedAt: new Date(),

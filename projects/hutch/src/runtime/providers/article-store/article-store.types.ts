@@ -9,6 +9,7 @@ export interface SaveArticleParams {
 	userId: UserId;
 	url: string;
 	metadata: SavedArticle["metadata"];
+	content?: string;
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 }
 
