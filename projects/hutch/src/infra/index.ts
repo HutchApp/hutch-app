@@ -66,6 +66,48 @@ class DomainRegistration {
 	}
 }
 
+class HutchStorage {
+	public readonly articlesTable: aws.dynamodb.Table;
+	public readonly usersTable: aws.dynamodb.Table;
+	public readonly sessionsTable: aws.dynamodb.Table;
+
+	constructor(name: string) {
+		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
+			billingMode: "PAY_PER_REQUEST",
+			hashKey: "id",
+			attributes: [
+				{ name: "id", type: "S" },
+				{ name: "userId", type: "S" },
+				{ name: "savedAt", type: "S" },
+			],
+			globalSecondaryIndexes: [
+				{
+					name: "userId-savedAt-index",
+					hashKey: "userId",
+					rangeKey: "savedAt",
+					projectionType: "ALL",
+				},
+			],
+		});
+
+		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
+			billingMode: "PAY_PER_REQUEST",
+			hashKey: "email",
+			attributes: [{ name: "email", type: "S" }],
+		});
+
+		this.sessionsTable = new aws.dynamodb.Table(`hutch-sessions`, {
+			billingMode: "PAY_PER_REQUEST",
+			hashKey: "sessionId",
+			attributes: [{ name: "sessionId", type: "S" }],
+			ttl: {
+				attributeName: "expiresAt",
+				enabled: true,
+			},
+		});
+	}
+}
+
 class HutchLambda {
 	public readonly apiUrl: pulumi.Output<string> | string;
 	public readonly functionName: pulumi.Output<string>;
@@ -75,6 +117,7 @@ class HutchLambda {
 		name: string,
 		args: {
 			stage: string;
+			storage: HutchStorage;
 			domainRegistration?: DomainRegistration;
 		},
 	) {
@@ -117,6 +160,39 @@ class HutchLambda {
 			policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
 		});
 
+		new aws.iam.RolePolicy(`${name}-dynamodb-access`, {
+			role: lambdaRole.name,
+			policy: pulumi
+				.all([
+					args.storage.articlesTable.arn,
+					args.storage.usersTable.arn,
+					args.storage.sessionsTable.arn,
+				])
+				.apply(([articlesArn, usersArn, sessionsArn]) =>
+					JSON.stringify({
+						Version: "2012-10-17",
+						Statement: [
+							{
+								Effect: "Allow",
+								Action: [
+									"dynamodb:GetItem",
+									"dynamodb:PutItem",
+									"dynamodb:UpdateItem",
+									"dynamodb:DeleteItem",
+									"dynamodb:Query",
+								],
+								Resource: [
+									articlesArn,
+									`${articlesArn}/index/*`,
+									usersArn,
+									sessionsArn,
+								],
+							},
+						],
+					}),
+				),
+		});
+
 		const lambdaFunction = new aws.lambda.Function(`${name}-api`, {
 			runtime: aws.lambda.Runtime.NodeJS22dX,
 			handler: "index.handler",
@@ -128,6 +204,9 @@ class HutchLambda {
 				variables: {
 					NODE_ENV: "production",
 					STAGE: args.stage,
+					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
+					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,
+					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
 				},
 			},
 		});
@@ -224,8 +303,11 @@ class HutchLambda {
 	}
 }
 
+const storage = new HutchStorage("hutch");
+
 const hutch = new HutchLambda("hutch", {
 	stage,
+	storage,
 	domainRegistration: new DomainRegistration("hutch-domain", {
 		domains: ["hutch-app.com"],
 	}),
