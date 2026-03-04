@@ -1,5 +1,4 @@
-import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
+import { randomBytes } from "node:crypto";
 import type { UserId } from "../../domain/user/user.types";
 import type {
 	CreateSession,
@@ -8,24 +7,7 @@ import type {
 	GetSessionUserId,
 	VerifyCredentials,
 } from "./auth.types";
-
-const scryptAsync = promisify(scrypt);
-
-async function hashPassword(password: string): Promise<string> {
-	const salt = randomBytes(16).toString("hex");
-	const derived = (await scryptAsync(password, salt, 64)) as Buffer;
-	return `${salt}:${derived.toString("hex")}`;
-}
-
-async function verifyPassword(
-	password: string,
-	stored: string,
-): Promise<boolean> {
-	const [salt, hash] = stored.split(":");
-	const derived = (await scryptAsync(password, salt, 64)) as Buffer;
-	const storedBuffer = Buffer.from(hash, "hex");
-	return timingSafeEqual(derived, storedBuffer);
-}
+import { hashPassword, verifyPassword } from "./password";
 
 interface StoredUser {
 	id: UserId;

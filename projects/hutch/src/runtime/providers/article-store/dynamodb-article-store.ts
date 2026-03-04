@@ -207,18 +207,30 @@ export function initDynamoDbArticleStore(deps: {
 			return false;
 		}
 
-		const readAt = status === "read" ? new Date().toISOString() : null;
-
-		await client.send(
-			new UpdateCommand({
-				TableName: tableName,
-				Key: { id },
-				UpdateExpression:
-					"SET #status = :status, readAt = :readAt",
-				ExpressionAttributeNames: { "#status": "status" },
-				ExpressionAttributeValues: { ":status": status, ":readAt": readAt },
-			}),
-		);
+		if (status === "read") {
+			await client.send(
+				new UpdateCommand({
+					TableName: tableName,
+					Key: { id },
+					UpdateExpression: "SET #status = :status, readAt = :readAt",
+					ExpressionAttributeNames: { "#status": "status" },
+					ExpressionAttributeValues: {
+						":status": status,
+						":readAt": new Date().toISOString(),
+					},
+				}),
+			);
+		} else {
+			await client.send(
+				new UpdateCommand({
+					TableName: tableName,
+					Key: { id },
+					UpdateExpression: "SET #status = :status REMOVE readAt",
+					ExpressionAttributeNames: { "#status": "status" },
+					ExpressionAttributeValues: { ":status": status },
+				}),
+			);
+		}
 
 		return true;
 	};
