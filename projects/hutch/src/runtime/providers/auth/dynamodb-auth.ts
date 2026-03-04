@@ -117,6 +117,12 @@ export function initDynamoDbAuth(deps: {
 		);
 
 		if (!result.Item) return null;
+
+		const expiresAt = result.Item.expiresAt as number;
+		if (expiresAt < Math.floor(Date.now() / 1000)) {
+			return null;
+		}
+
 		return result.Item.userId as UserId;
 	};
 

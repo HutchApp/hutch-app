@@ -31,6 +31,7 @@ function toItem(article: SavedArticle): Record<string, unknown> {
 		excerpt: article.metadata.excerpt,
 		wordCount: article.metadata.wordCount,
 		imageUrl: article.metadata.imageUrl,
+		content: article.content,
 		estimatedReadTime: article.estimatedReadTime,
 		status: article.status,
 		savedAt: article.savedAt.toISOString(),
@@ -50,6 +51,7 @@ function fromItem(item: Record<string, unknown>): SavedArticle {
 			wordCount: item.wordCount as number,
 			imageUrl: item.imageUrl as string | undefined,
 		},
+		content: item.content as string | undefined,
 		estimatedReadTime: item.estimatedReadTime as Minutes,
 		status: item.status as ArticleStatus,
 		savedAt: new Date(item.savedAt as string),
@@ -76,6 +78,7 @@ export function initDynamoDbArticleStore(deps: {
 			userId: params.userId,
 			url: params.url,
 			metadata: params.metadata,
+			content: params.content,
 			estimatedReadTime: params.estimatedReadTime,
 			status: "unread",
 			savedAt: new Date(),
@@ -117,7 +120,28 @@ export function initDynamoDbArticleStore(deps: {
 		const articles: SavedArticle[] = [];
 		let exclusiveStartKey: Record<string, unknown> | undefined;
 		let skippedCount = 0;
+
+		// Get accurate total count with a separate COUNT query
 		let total = 0;
+		let countStartKey: Record<string, unknown> | undefined;
+		do {
+			const countResult = await client.send(
+				new QueryCommand({
+					TableName: tableName,
+					IndexName: "userId-savedAt-index",
+					KeyConditionExpression: "userId = :userId",
+					FilterExpression: filterExpression,
+					ExpressionAttributeValues: expressionValues,
+					ExpressionAttributeNames: expressionAttributeNames,
+					Select: "COUNT",
+					ExclusiveStartKey: countStartKey,
+				}),
+			);
+			total += countResult.Count ?? 0;
+			countStartKey = countResult.LastEvaluatedKey as
+				| Record<string, unknown>
+				| undefined;
+		} while (countStartKey);
 
 		// Paginate through results using DynamoDB's native pagination
 		do {
@@ -136,7 +160,6 @@ export function initDynamoDbArticleStore(deps: {
 			);
 
 			const items = result.Items ?? [];
-			total += items.length;
 
 			for (const item of items) {
 				if (skippedCount < itemsToSkip) {
