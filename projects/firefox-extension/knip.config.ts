@@ -24,6 +24,8 @@ export default {
 		...(base.ignoreBinaries ?? []),
 		// Used via check-infra script
 		"pulumi",
+		// Used via compile and ext:run scripts
+		"web-ext",
 	],
 	entry: [
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)
