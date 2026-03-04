@@ -6,7 +6,7 @@
 - Manifest: v2, targeting Firefox 91+
 - Build: esbuild bundles to `dist-extension/` via `pnpm dist:extension`
 - Data: in-memory providers (no backend integration yet)
-- CI: `pnpm check` runs lint + tests, but no extension-specific distribution step
+- CI: `pnpm check` runs lint, tests, and `check-infra` to validate Pulumi configuration
 
 ## Distribution Channel (v1)
 
@@ -46,77 +46,23 @@ Update `package.json` to align with nx conventions. The standard `compile` targe
 
 **Note:** The existing `lint` script already uses standard tooling (biome, tsc, knip) and is compatible with `nx lint` and `pnpm lint`. No changes needed.
 
-### 3. Create Pulumi infrastructure
+### 3. Pulumi infrastructure (already implemented)
 
-Create infrastructure in `projects/firefox-extension/infra/` to manage the S3 bucket:
+Infrastructure is in `projects/firefox-extension/infra/` to manage the S3 bucket. The following files are already in the repository:
 
-**`projects/firefox-extension/infra/Pulumi.yaml`:**
-```yaml
-name: firefox-extension
-runtime:
-  name: nodejs
-  options:
-    typescript: true
-```
+- **`Pulumi.yaml`** — Project configuration
+- **`Pulumi.prod.yaml`** — Production stack configuration (stage: prod)
+- **`index.ts`** — S3 bucket and object upload
+- **`tsconfig.json`** — TypeScript configuration for Pulumi
 
-**`projects/firefox-extension/infra/Pulumi.prod.yaml`:**
-```yaml
-config:
-  firefox-extension:stage: prod
-```
+**`projects/firefox-extension/infra/index.ts`** (already in repository):
 
-**`projects/firefox-extension/infra/index.ts`:**
-```typescript
-import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+The infra code creates an S3 bucket with public read access and uploads the extension `.xpi` file. Key features:
+- Conditionally uploads the xpi file only if it exists (allows `check-infra` to pass without compiled artifacts)
+- Uses `forceDestroy: true` on the bucket for easy cleanup during development
+- Exports `downloadUrl` for use in the website
 
-const config = new pulumi.Config();
-const stage = config.require("stage");
-
-const bucket = new aws.s3.Bucket("hutch-extension", {
-  bucket: `hutch-extension-${stage}`,
-  forceDestroy: true,
-});
-
-new aws.s3.BucketPublicAccessBlock("hutch-extension-public-access", {
-  bucket: bucket.id,
-  blockPublicAcls: false,
-  blockPublicPolicy: false,
-  ignorePublicAcls: false,
-  restrictPublicBuckets: false,
-});
-
-const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
-  bucket: bucket.id,
-  policy: bucket.arn.apply((arn) =>
-    JSON.stringify({
-      Version: "2012-10-17",
-      Statement: [
-        {
-          Sid: "PublicReadGetObject",
-          Effect: "Allow",
-          Principal: "*",
-          Action: "s3:GetObject",
-          Resource: `${arn}/*`,
-        },
-      ],
-    }),
-  ),
-});
-
-const xpiPath = join(__dirname, "..", "dist-artifacts", "hutch.xpi");
-const extensionObject = new aws.s3.BucketObject("hutch-xpi", {
-  bucket: bucket.id,
-  key: "hutch.xpi",
-  source: new pulumi.asset.FileAsset(xpiPath),
-  contentType: "application/x-xpinstall",
-});
-
-export const downloadUrl = pulumi.interpolate`https://${bucket.bucketRegionalDomainName}/hutch.xpi`;
-export const _dependencies = [bucketPolicy, extensionObject];
-```
+See the actual implementation in `infra/index.ts`.
 
 ### 4. Version management
 
@@ -129,7 +75,20 @@ Keep `manifest.json` version and `package.json` version in sync. Add a script to
 
 ### 5. CI pipeline changes
 
-The existing `pnpm check` already runs lint and tests via nx. Add extension compilation to the check job to validate builds:
+The `pnpm check` command validates all aspects of the extension, including infrastructure:
+
+```json
+{
+  "scripts": {
+    "check-infra": "cd infra && PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
+    "check": "pnpm lint && pnpm test-with-coverage && pnpm check-infra"
+  }
+}
+```
+
+This mirrors the pattern used in the hutch web app where `check` includes `check-infra` to verify Pulumi configuration is valid.
+
+The CI job can validate builds by running compile:
 
 ```yaml
 # Inside the existing check job, after pnpm check:

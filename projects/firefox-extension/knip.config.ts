@@ -5,10 +5,23 @@ const { workspaces: _workspaces, ...base } = baseConfig;
 
 export default {
 	...base,
-	ignore: [...(base.ignore ?? [])],
+	ignore: [
+		...(base.ignore ?? []),
+		// Pulumi infra is compiled separately with its own tsconfig
+		"infra/**",
+	],
 	ignoreDependencies: [
+		...(base.ignoreDependencies ?? []),
 		// Used via c8 CLI wrapper in test-with-coverage script
 		"c8",
+		// Used by Pulumi infra (compiled separately)
+		"@pulumi/aws",
+		"@pulumi/pulumi",
+	],
+	ignoreBinaries: [
+		...(base.ignoreBinaries ?? []),
+		// Used via check-infra script
+		"pulumi",
 	],
 	entry: [
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)
