@@ -2,7 +2,18 @@
 
 ## Goal
 
-Expose a JSON API from the hutch-app web application so the Firefox extension (and any future client) can read/write the same DynamoDB data as the website. Authentication uses a self-hosted OAuth 2.0 Authorization Code + PKCE flow — no third-party OAuth providers.
+Expose a **hypermedia API** from the hutch-app web application so the Firefox extension (and any future client) can read/write the same DynamoDB data as the website. The API uses **Siren** (`application/vnd.siren+json`) as its hypermedia format, enabling a generic client that navigates links and submits actions rather than hardcoding URLs or domain models.
+
+Authentication uses a self-hosted OAuth 2.0 Authorization Code + PKCE flow — no third-party OAuth providers.
+
+### Why Hypermedia / HATEOAS
+
+| Problem with traditional REST | Hypermedia solution |
+|-------------------------------|---------------------|
+| URL versioning (`/v1/`) couples clients to URL structure | No version in URLs. Server controls all URIs; clients follow `rel` names |
+| Domain model changes break clients | Clients read `properties`, `links`, `actions` — they don't import `SavedArticle` |
+| Adding a feature requires client update | New `actions` or `links` appear in responses; generic client renders them |
+| Client embeds business rules (which status transitions are valid) | Server advertises only valid `actions` for current state |
 
 ---
 
@@ -218,114 +229,453 @@ The `ExchangeAuthorizationCode` operation:
 
 ---
 
-## 4. JSON API Endpoints
+## 4. Hypermedia API (Siren)
 
-All API routes live under `/api/v1` and return JSON. They reuse the **same domain functions** injected into the web routes.
+### 4.1 Design Principles
+
+1. **The API root is the only URL the client knows.** Everything else is discovered via `links` and `actions` in Siren responses.
+2. **No URL versioning.** Evolvability comes from hypermedia affordances — adding new `links`/`actions` is non-breaking; removing them is a breaking change.
+3. **Domain models stay on the server.** The client never imports `SavedArticle` or `ArticleStatus`. It reads `properties` and submits `actions` with `fields` — a generic Siren client.
+4. **State-dependent actions.** The server only includes actions the user can perform on the current resource (e.g., an `"unread"` article has `mark-read` and `archive` actions; a `"read"` article has `mark-unread` and `archive`).
+
+### 4.2 Media Type
+
+All API responses use:
 
 ```
-src/runtime/web/api/api.routes.ts     — Express router
-src/runtime/web/api/api.schema.ts     — Zod request schemas
-src/runtime/web/api/api.middleware.ts  — Bearer token auth middleware
+Content-Type: application/vnd.siren+json
 ```
 
-### 4.1 Authentication Middleware
+The client sends:
 
-```typescript
-// Extracts Bearer token from Authorization header, validates via ValidateAccessToken
-function initApiAuth(deps: { validateAccessToken: ValidateAccessToken }) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const header = req.headers.authorization;
-    if (!header?.startsWith("Bearer ")) {
-      res.status(401).json({ error: "missing-token" });
-      return;
-    }
-    const token = header.slice(7) as AccessToken;
-    const userId = await deps.validateAccessToken(token);
-    if (!userId) {
-      res.status(401).json({ error: "invalid-token" });
-      return;
-    }
-    req.userId = userId;
-    next();
-  };
-}
+```
+Accept: application/vnd.siren+json
+Authorization: Bearer <access_token>
 ```
 
-### 4.2 API Routes
+### 4.3 API Root — The Single Entry Point
 
-| Method | Path | Description | Request body | Response |
-|--------|------|-------------|-------------|----------|
-| `GET` | `/api/v1/articles` | List user's saved articles | — | `{ articles, total, page, pageSize }` |
-| `GET` | `/api/v1/articles/:id` | Get single article | — | `{ article }` or `404` |
-| `POST` | `/api/v1/articles` | Save a new article (URL) | `{ url }` | `{ article }` (201) |
-| `PATCH` | `/api/v1/articles/:id/status` | Update article status | `{ status }` | `{ ok: true }` or `404` |
-| `DELETE` | `/api/v1/articles/:id` | Delete article | — | `204` or `404` |
-| `GET` | `/api/v1/me` | Current user info | — | `{ userId }` |
+```
+GET /api
+```
 
-Query parameters for `GET /api/v1/articles`:
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `status` | `"unread" \| "read" \| "archived"` | all | Filter by status |
-| `order` | `"asc" \| "desc"` | `"desc"` | Sort order by savedAt |
-| `page` | number | `1` | Page number |
-| `pageSize` | number | `20` | Items per page (max 100) |
-
-### 4.3 OAuth Routes
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/oauth/authorize` | Show authorization page (login + consent) |
-| `POST` | `/oauth/authorize` | Submit authorization (user approves) |
-| `POST` | `/oauth/token` | Exchange code for tokens / refresh tokens |
-| `POST` | `/oauth/revoke` | Revoke an access token |
-
-### 4.4 Error Response Format
-
-All API errors follow a consistent shape:
+The **only hardcoded URL** in the Firefox extension. Everything else is discovered.
 
 ```json
 {
-  "error": "error-code-slug",
-  "message": "Human-readable description"
+  "class": ["root"],
+  "properties": {},
+  "links": [
+    { "rel": ["self"], "href": "/api" },
+    { "rel": ["articles"], "href": "/api/articles" },
+    { "rel": ["current-user"], "href": "/api/me" }
+  ],
+  "actions": [
+    {
+      "name": "save-article",
+      "href": "/api/articles",
+      "method": "POST",
+      "type": "application/json",
+      "fields": [
+        { "name": "url", "type": "url" }
+      ]
+    }
+  ]
+}
+```
+
+The extension navigates by following `rel` names:
+- `"articles"` → article collection
+- `"current-user"` → user info
+- `"save-article"` action → POST a new article
+
+### 4.4 Article Collection
+
+```
+GET /api/articles
+GET /api/articles?status=unread&order=desc&page=2&pageSize=20
+```
+
+The collection URL is discovered from the root's `rel: ["articles"]` link. Query parameters are the only client-constructed part — and even these are discoverable via link templates (see 4.4.2).
+
+#### 4.4.1 Response
+
+```json
+{
+  "class": ["collection", "articles"],
+  "properties": {
+    "total": 42,
+    "page": 1,
+    "pageSize": 20
+  },
+  "entities": [
+    {
+      "class": ["article"],
+      "rel": ["item"],
+      "properties": {
+        "url": "https://example.com/article",
+        "title": "Article Title",
+        "siteName": "Example",
+        "excerpt": "First paragraph...",
+        "wordCount": 1200,
+        "estimatedReadTimeMinutes": 5,
+        "status": "unread",
+        "savedAt": "2026-03-04T10:00:00.000Z",
+        "readAt": null
+      },
+      "links": [
+        { "rel": ["self"], "href": "/api/articles/abc123" }
+      ]
+    }
+  ],
+  "links": [
+    { "rel": ["self"], "href": "/api/articles?page=1&pageSize=20&order=desc" },
+    { "rel": ["next"], "href": "/api/articles?page=2&pageSize=20&order=desc" },
+    { "rel": ["root"], "href": "/api" }
+  ],
+  "actions": [
+    {
+      "name": "save-article",
+      "href": "/api/articles",
+      "method": "POST",
+      "type": "application/json",
+      "fields": [
+        { "name": "url", "type": "url" }
+      ]
+    },
+    {
+      "name": "filter-by-status",
+      "href": "/api/articles",
+      "method": "GET",
+      "fields": [
+        { "name": "status", "type": "text" },
+        { "name": "order", "type": "text" },
+        { "name": "page", "type": "number" },
+        { "name": "pageSize", "type": "number" }
+      ]
+    }
+  ]
+}
+```
+
+Key behaviors:
+- **`entities`** are embedded sub-entities with `rel: ["item"]`. Each has a `self` link for the full representation (including `content`).
+- **`next`/`prev` links** only appear when there are more pages. The client never constructs pagination URLs — it follows links.
+- **`save-article` action** tells the client exactly how to create an article (method, fields, content type).
+- **`filter-by-status` action** makes query parameters discoverable. A generic Siren client can render this as a form.
+- **`content` is omitted** from embedded entities (bandwidth). Follow the `self` link for full content.
+
+#### 4.4.2 Pagination Links
+
+| Condition | Links present |
+|-----------|--------------|
+| First page, more pages exist | `self`, `next` |
+| Middle page | `self`, `prev`, `next` |
+| Last page | `self`, `prev` |
+| Only one page | `self` |
+
+### 4.5 Single Article
+
+Discovered by following an embedded entity's `rel: ["self"]` link.
+
+```
+GET /api/articles/:id
+```
+
+```json
+{
+  "class": ["article"],
+  "properties": {
+    "url": "https://example.com/article",
+    "title": "Article Title",
+    "siteName": "Example",
+    "excerpt": "First paragraph...",
+    "wordCount": 1200,
+    "estimatedReadTimeMinutes": 5,
+    "content": "<p>Full article HTML content...</p>",
+    "status": "unread",
+    "savedAt": "2026-03-04T10:00:00.000Z",
+    "readAt": null
+  },
+  "links": [
+    { "rel": ["self"], "href": "/api/articles/abc123" },
+    { "rel": ["collection"], "href": "/api/articles" },
+    { "rel": ["root"], "href": "/api" }
+  ],
+  "actions": [
+    {
+      "name": "mark-read",
+      "href": "/api/articles/abc123/status",
+      "method": "PUT",
+      "type": "application/json",
+      "fields": [
+        { "name": "status", "type": "hidden", "value": "read" }
+      ]
+    },
+    {
+      "name": "archive",
+      "href": "/api/articles/abc123/status",
+      "method": "PUT",
+      "type": "application/json",
+      "fields": [
+        { "name": "status", "type": "hidden", "value": "archived" }
+      ]
+    },
+    {
+      "name": "delete",
+      "href": "/api/articles/abc123",
+      "method": "DELETE"
+    }
+  ]
+}
+```
+
+Key behaviors:
+- **State-dependent actions**: An `"unread"` article shows `mark-read` + `archive`. A `"read"` article shows `mark-unread` + `archive`. An `"archived"` article shows `mark-unread` + `mark-read`. The client never decides which transitions are valid — the server controls this.
+- **`hidden` fields with `value`**: The `mark-read` action pre-fills `status: "read"`. The client just submits the action without knowing what status values exist.
+- **`content` is included** in the single-article representation (unlike the collection).
+
+#### 4.5.1 Status Transition Actions by Current State
+
+| Current status | Available actions |
+|----------------|-------------------|
+| `unread` | `mark-read`, `archive`, `delete` |
+| `read` | `mark-unread`, `archive`, `delete` |
+| `archived` | `mark-unread`, `mark-read`, `delete` |
+
+### 4.6 Current User
+
+```
+GET /api/me
+```
+
+```json
+{
+  "class": ["user"],
+  "properties": {
+    "userId": "a1b2c3..."
+  },
+  "links": [
+    { "rel": ["self"], "href": "/api/me" },
+    { "rel": ["articles"], "href": "/api/articles" },
+    { "rel": ["root"], "href": "/api" }
+  ]
+}
+```
+
+### 4.7 Action Responses
+
+When a client submits an action, the server returns the resulting Siren entity:
+
+| Action | HTTP | Response |
+|--------|------|----------|
+| `save-article` | `POST /api/articles` | `201` with the new article entity (same shape as 4.5) |
+| `mark-read` / `mark-unread` / `archive` | `PUT /api/articles/:id/status` | `200` with the updated article entity |
+| `delete` | `DELETE /api/articles/:id` | `204` No Content |
+
+Returning the full entity after mutations means the client always has up-to-date `links` and `actions` without a second GET request.
+
+### 4.8 Error Responses
+
+Errors use a Siren-compatible shape with `class: ["error"]`:
+
+```json
+{
+  "class": ["error"],
+  "properties": {
+    "code": "invalid-url",
+    "message": "The provided URL could not be parsed as an article"
+  }
 }
 ```
 
 HTTP status codes:
 - `400` — Validation error, bad request
-- `401` — Missing or invalid token
-- `403` — Token valid but not authorized for this resource
-- `404` — Resource not found (or not owned by user)
-- `422` — Validation passed but operation failed (e.g., URL could not be parsed)
+- `401` — Missing or invalid token (also returns `WWW-Authenticate: Bearer` header)
+- `404` — Resource not found or not owned by user
+- `422` — Action could not be completed (e.g., URL not parseable)
 
-### 4.5 Article JSON Representation
+### 4.9 OAuth Routes (Not Hypermedia)
 
-The API returns articles in a flat JSON shape (same as the export format):
+OAuth endpoints follow RFC 6749 conventions (form-encoded, not Siren). They are separate from the hypermedia API.
 
-```json
-{
-  "id": "abc123...",
-  "url": "https://example.com/article",
-  "title": "Article Title",
-  "siteName": "Example",
-  "excerpt": "First paragraph...",
-  "wordCount": 1200,
-  "estimatedReadTimeMinutes": 5,
-  "status": "unread",
-  "savedAt": "2026-03-04T10:00:00.000Z",
-  "readAt": null
-}
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/oauth/authorize` | Show authorization page (HTML, login + consent) |
+| `POST` | `/oauth/authorize` | Submit authorization (HTML form) |
+| `POST` | `/oauth/token` | Exchange code for tokens / refresh tokens (form-encoded) |
+| `POST` | `/oauth/revoke` | Revoke an access token (form-encoded) |
+
+### 4.10 Route Summary
+
+| Method | Path | Content-Type | Purpose |
+|--------|------|-------------|---------|
+| `GET` | `/api` | `application/vnd.siren+json` | API root (entry point) |
+| `GET` | `/api/articles` | `application/vnd.siren+json` | Article collection |
+| `POST` | `/api/articles` | `application/vnd.siren+json` | Save article (via action) |
+| `GET` | `/api/articles/:id` | `application/vnd.siren+json` | Single article |
+| `PUT` | `/api/articles/:id/status` | `application/vnd.siren+json` | Update status (via action) |
+| `DELETE` | `/api/articles/:id` | — | Delete article (via action) |
+| `GET` | `/api/me` | `application/vnd.siren+json` | Current user |
+
+### 4.11 How the Firefox Extension Uses This
+
+The extension is a **generic Siren client**, not a "hutch API client":
+
+```
+1. GET /api                          → discover links & actions
+2. Follow rel=["articles"]           → GET /api/articles
+3. Render entities as article list
+4. User clicks "Save" → find action "save-article" → submit it
+5. User clicks article → follow entity's self link → GET /api/articles/:id
+6. Render properties + available actions as buttons
+7. User clicks "Mark as Read" → find action "mark-read" → submit it
+8. Response has updated entity with new actions → re-render
 ```
 
-Note: `content` is intentionally omitted from list responses (bandwidth). It is included in `GET /api/v1/articles/:id`.
+The extension never constructs URLs. If the server changes `/api/articles` to `/api/saved-links` tomorrow, the extension keeps working because it follows `rel: ["articles"]`.
+
+### 4.12 Decoupling: Domain Model vs Interchange Format
+
+The server has rich domain types (`SavedArticle`, `ArticleMetadata`, `ArticleId`, `Minutes`). The Siren response is a **separate representation layer**:
+
+```
+Domain (server-side)              Siren (wire format)
+─────────────────────             ────────────────────
+SavedArticle.metadata.title   →  properties.title
+SavedArticle.metadata.siteName →  properties.siteName
+SavedArticle.estimatedReadTime →  properties.estimatedReadTimeMinutes
+SavedArticle.id (branded)      →  links[rel=self].href (opaque URL)
+ArticleStatus transitions      →  actions[] (server decides which appear)
+```
+
+The client never sees `ArticleId`, `UserId`, `Minutes`, or `ArticleMetadata`. It sees:
+- **Properties**: flat key/value pairs to display
+- **Links**: URLs to follow (opaque — the client doesn't parse them)
+- **Actions**: forms to submit (method, href, fields)
+
+This means:
+- Renaming `estimatedReadTime` to `readTimeMinutes` on the server? Just update the Siren serializer. Client unaffected.
+- Adding a new status like `"favorite"`? Add a new action to the response. Client shows it automatically.
+- Changing the article ID format? URLs change but `rel` names don't. Client unaffected.
 
 ---
 
 ## 5. Server Integration
 
-### 5.1 Updated `AppDependencies`
+### 5.1 Siren Serialization Layer
 
-The `createApp` function in `server.ts` gains new OAuth dependencies:
+A thin serialization layer converts domain objects to Siren entities. This layer is the **only place** that knows both the domain types and the Siren format.
+
+```
+src/runtime/web/api/siren.ts              — Siren type definitions
+src/runtime/web/api/article-siren.ts      — SavedArticle → Siren entity
+src/runtime/web/api/collection-siren.ts   — FindArticlesResult → Siren collection
+```
+
+```typescript
+// siren.ts — Generic Siren types (framework-agnostic)
+interface SirenEntity {
+  class?: string[];
+  properties?: Record<string, unknown>;
+  entities?: SirenSubEntity[];
+  links?: SirenLink[];
+  actions?: SirenAction[];
+}
+
+interface SirenLink {
+  rel: string[];
+  href: string;
+}
+
+interface SirenAction {
+  name: string;
+  href: string;
+  method: string;
+  type?: string;
+  fields?: SirenField[];
+}
+
+interface SirenField {
+  name: string;
+  type: string;
+  value?: string | number;
+}
+
+interface SirenSubEntity extends SirenEntity {
+  rel: string[];
+}
+```
+
+```typescript
+// article-siren.ts — Domain-to-Siren mapper
+// This is the boundary between domain types and wire format.
+// The client never sees SavedArticle — only SirenEntity.
+
+function toArticleEntity(article: SavedArticle): SirenEntity {
+  return {
+    class: ["article"],
+    properties: {
+      url: article.url,
+      title: article.metadata.title,
+      siteName: article.metadata.siteName,
+      excerpt: article.metadata.excerpt,
+      wordCount: article.metadata.wordCount,
+      estimatedReadTimeMinutes: article.estimatedReadTime as number,
+      status: article.status,
+      savedAt: article.savedAt.toISOString(),
+      readAt: article.readAt?.toISOString() ?? null,
+    },
+    links: [
+      { rel: ["self"], href: `/api/articles/${article.id}` },
+      { rel: ["collection"], href: "/api/articles" },
+      { rel: ["root"], href: "/api" },
+    ],
+    actions: actionsForStatus(article),
+  };
+}
+
+// Server controls valid transitions — not the client
+function actionsForStatus(article: SavedArticle): SirenAction[] {
+  const base = `/api/articles/${article.id}`;
+  const actions: SirenAction[] = [];
+
+  if (article.status !== "read") {
+    actions.push({
+      name: "mark-read",
+      href: `${base}/status`,
+      method: "PUT",
+      type: "application/json",
+      fields: [{ name: "status", type: "hidden", value: "read" }],
+    });
+  }
+  if (article.status !== "unread") {
+    actions.push({
+      name: "mark-unread",
+      href: `${base}/status`,
+      method: "PUT",
+      type: "application/json",
+      fields: [{ name: "status", type: "hidden", value: "unread" }],
+    });
+  }
+  if (article.status !== "archived") {
+    actions.push({
+      name: "archive",
+      href: `${base}/status`,
+      method: "PUT",
+      type: "application/json",
+      fields: [{ name: "status", type: "hidden", value: "archived" }],
+    });
+  }
+  actions.push({ name: "delete", href: base, method: "DELETE" });
+
+  return actions;
+}
+```
+
+### 5.2 Updated `AppDependencies`
+
+The `createApp` function in `server.ts` gains OAuth dependencies:
 
 ```typescript
 interface AppDependencies {
@@ -341,7 +691,7 @@ interface AppDependencies {
 }
 ```
 
-### 5.2 Route Mounting
+### 5.3 Route Mounting
 
 ```typescript
 // In createApp():
@@ -366,10 +716,46 @@ const apiRouter = initApiRoutes({
   deleteArticle: deps.deleteArticle,
   updateArticleStatus: deps.updateArticleStatus,
 });
-app.use("/api/v1", apiAuthMiddleware, apiRouter);
+app.use("/api", apiAuthMiddleware, apiRouter);
 ```
 
-### 5.3 Updated `app.ts` Provider Wiring
+Note: mounted at `/api` — no version segment.
+
+### 5.4 Authentication Middleware
+
+```typescript
+function initApiAuth(deps: { validateAccessToken: ValidateAccessToken }) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const header = req.headers.authorization;
+    if (!header?.startsWith("Bearer ")) {
+      res.status(401)
+        .set("WWW-Authenticate", "Bearer")
+        .type("application/vnd.siren+json")
+        .json({
+          class: ["error"],
+          properties: { code: "missing-token", message: "Bearer token required" },
+        });
+      return;
+    }
+    const token = header.slice(7) as AccessToken;
+    const userId = await deps.validateAccessToken(token);
+    if (!userId) {
+      res.status(401)
+        .set("WWW-Authenticate", "Bearer error=\"invalid_token\"")
+        .type("application/vnd.siren+json")
+        .json({
+          class: ["error"],
+          properties: { code: "invalid-token", message: "Token expired or invalid" },
+        });
+      return;
+    }
+    req.userId = userId;
+    next();
+  };
+}
+```
+
+### 5.5 Updated `app.ts` Provider Wiring
 
 ```typescript
 function initProviders() {
@@ -468,7 +854,13 @@ src/runtime/
 │
 ├── web/
 │   ├── api/
-│   │   ├── api.routes.ts                     # JSON API Express router
+│   │   ├── siren.ts                          # Generic Siren type definitions
+│   │   ├── siren.test.ts                     # Siren helper tests
+│   │   ├── article-siren.ts                  # SavedArticle → Siren entity mapper
+│   │   ├── article-siren.test.ts             # Tests: status-dependent actions, properties
+│   │   ├── collection-siren.ts               # FindArticlesResult → Siren collection mapper
+│   │   ├── collection-siren.test.ts          # Tests: pagination links, embedded entities
+│   │   ├── api.routes.ts                     # Hypermedia API Express router
 │   │   ├── api.routes.test.ts                # Integration tests (supertest)
 │   │   ├── api.schema.ts                     # Zod schemas for API input
 │   │   └── api.middleware.ts                 # Bearer token auth middleware
@@ -497,19 +889,27 @@ Following the project's test-driven design conventions.
 | PKCE S256 challenge/verify | `pkce.test.ts` | Pure function, no deps |
 | OAuth domain types | Compile-time only (branded types) | — |
 | Token generation | `in-memory-oauth.test.ts` | Test provider interface contract |
+| Article → Siren mapping | `article-siren.test.ts` | Pure function: verify properties, status-dependent actions |
+| Collection → Siren mapping | `collection-siren.test.ts` | Verify pagination links, embedded entities |
 
-### 8.2 Integration Tests (supertest + parseHTML)
+### 8.2 Integration Tests (supertest)
 
 | What | File | Approach |
 |------|------|----------|
-| API article CRUD | `api.routes.test.ts` | `createApp()` with in-memory providers, supertest, JSON assertions |
-| API auth (401/403) | `api.routes.test.ts` | Verify Bearer token validation |
+| API root discovery | `api.routes.test.ts` | GET /api returns Siren with correct links + actions |
+| Article CRUD via hypermedia | `api.routes.test.ts` | Follow links from root, submit actions, verify Siren responses |
+| Status-dependent actions | `api.routes.test.ts` | Verify actions change based on article status |
+| Pagination links | `api.routes.test.ts` | Verify `next`/`prev` links appear/disappear correctly |
+| Content-Type negotiation | `api.routes.test.ts` | Verify `application/vnd.siren+json` content type |
+| API auth (401) | `api.routes.test.ts` | Verify Bearer token + Siren error responses |
 | OAuth authorize flow | `oauth.routes.test.ts` | GET/POST authorize, verify redirect with code |
 | OAuth token exchange | `oauth.routes.test.ts` | POST /oauth/token, verify JSON response |
 | OAuth refresh flow | `oauth.routes.test.ts` | Exchange refresh_token for new access_token |
 | OAuth revoke | `oauth.routes.test.ts` | POST /oauth/revoke, verify token is invalidated |
 
-### 8.3 Test Pattern
+### 8.3 Test Pattern — Hypermedia-Aware
+
+Tests should verify the **Siren contract** (links, actions, properties), not hardcoded URLs. This mirrors how the real client will use the API.
 
 ```typescript
 // api.routes.test.ts — example structure
@@ -520,23 +920,89 @@ const app = createApp({
   ...initReadabilityParser({ fetchHtml: stubFetchHtml }),
 });
 
-test("GET /api/v1/articles returns 401 without token", async () => {
-  const res = await request(app).get("/api/v1/articles");
+test("GET /api returns 401 without token", async () => {
+  const res = await request(app)
+    .get("/api")
+    .set("Accept", "application/vnd.siren+json");
   expect(res.status).toBe(401);
-  expect(res.body.error).toBe("missing-token");
+  expect(res.body.class).toContain("error");
+  expect(res.body.properties.code).toBe("missing-token");
 });
 
-test("GET /api/v1/articles returns user articles", async () => {
-  // 1. Create user and get tokens via in-memory OAuth
-  // 2. Save an article
-  // 3. GET /api/v1/articles with Bearer token
-  // 4. Assert JSON response matches saved article
+test("API root exposes articles link and save-article action", async () => {
+  const res = await request(app)
+    .get("/api")
+    .set("Authorization", `Bearer ${token}`)
+    .set("Accept", "application/vnd.siren+json");
+
+  expect(res.status).toBe(200);
+  expect(res.body.class).toContain("root");
+
+  const articlesLink = res.body.links.find((l) =>
+    l.rel.includes("articles")
+  );
+  expect(articlesLink).toBeDefined();
+
+  const saveAction = res.body.actions.find((a) =>
+    a.name === "save-article"
+  );
+  expect(saveAction).toBeDefined();
+  expect(saveAction.method).toBe("POST");
+  expect(saveAction.fields.some((f) => f.name === "url")).toBe(true);
+});
+
+test("unread article has mark-read action but not mark-unread", async () => {
+  // 1. Save an article (status defaults to "unread")
+  // 2. GET the article via its self link
+  // 3. Verify mark-read action exists
+  // 4. Verify mark-unread action does NOT exist
+  // 5. Submit mark-read action
+  // 6. Verify response now has mark-unread but not mark-read
+});
+
+test("collection includes pagination links", async () => {
+  // 1. Save 25 articles (default pageSize = 20)
+  // 2. GET /api/articles
+  // 3. Verify "next" link exists
+  // 4. Follow "next" link
+  // 5. Verify "prev" link exists, "next" does not
 });
 ```
 
-### 8.4 No E2E Tests for API
+### 8.4 Siren Serializer Unit Tests
 
-Per CLAUDE.md guidelines: use integration tests for filter/query functionality, not E2E tests. The API routes are stateless JSON handlers — supertest covers the full server-side flow without browser overhead.
+The domain-to-Siren mappers are pure functions — tested in isolation without HTTP:
+
+```typescript
+// article-siren.test.ts
+test("unread article entity includes mark-read and archive actions", () => {
+  const article = makeArticle({ status: "unread" });
+  const entity = toArticleEntity(article);
+
+  const actionNames = entity.actions.map((a) => a.name);
+  expect(actionNames).toContain("mark-read");
+  expect(actionNames).toContain("archive");
+  expect(actionNames).not.toContain("mark-unread");
+});
+
+test("article entity omits content in embedded (sub-entity) form", () => {
+  const article = makeArticle({ content: "<p>Full text</p>" });
+  const subEntity = toArticleSubEntity(article);
+
+  expect(subEntity.properties.content).toBeUndefined();
+});
+
+test("article entity includes content in full form", () => {
+  const article = makeArticle({ content: "<p>Full text</p>" });
+  const entity = toArticleEntity(article);
+
+  expect(entity.properties.content).toBe("<p>Full text</p>");
+});
+```
+
+### 8.5 No E2E Tests for API
+
+Per CLAUDE.md guidelines: use integration tests for filter/query functionality, not E2E tests. The API routes are stateless Siren handlers — supertest covers the full server-side flow without browser overhead.
 
 ---
 
@@ -545,7 +1011,7 @@ Per CLAUDE.md guidelines: use integration tests for filter/query functionality, 
 The Firefox extension makes cross-origin requests to hutch-app.com. Add CORS headers for API routes only:
 
 ```typescript
-// Applied only to /api/v1 and /oauth/token routes
+// Applied only to /api and /oauth/token routes
 const apiCors = cors({
   origin: (origin, callback) => {
     // Browser extensions use moz-extension:// origin
@@ -574,7 +1040,7 @@ const apiCors = cors({
 | Token storage in extension | Extension stores tokens in `browser.storage.local` (encrypted by Firefox). |
 | Brute force on tokens | Tokens are 32-byte random hex (256 bits of entropy). |
 | Replay attacks | Authorization codes are single-use, deleted after exchange. |
-| Scope escalation | No scopes in v1 — tokens grant full access to the authenticated user's data only. |
+| Scope escalation | No scopes initially — tokens grant full access to the authenticated user's data only. Scopes can be added later as new Siren actions without breaking existing clients. |
 
 ---
 
@@ -582,32 +1048,37 @@ const apiCors = cors({
 
 Suggested phased approach:
 
-### Phase 1: OAuth Provider + Token Infrastructure
-1. `domain/oauth/oauth.types.ts` — branded types
-2. `providers/oauth/pkce.ts` + tests — PKCE helpers
-3. `providers/oauth/oauth.types.ts` — provider interface
-4. `providers/oauth/in-memory-oauth.ts` + tests
-5. `providers/oauth/oauth-clients.ts` — static client registry
+### Phase 1: Siren Serialization Layer (Test-First)
+1. `web/api/siren.ts` — Generic Siren type definitions
+2. `web/api/article-siren.ts` + tests — SavedArticle → Siren entity mapper with status-dependent actions
+3. `web/api/collection-siren.ts` + tests — FindArticlesResult → Siren collection with pagination links
 
-### Phase 2: OAuth Endpoints
-6. `web/oauth/oauth.schema.ts` — Zod validation
-7. `web/oauth/oauth.routes.ts` + tests — authorize + token endpoints
-8. `web/oauth/oauth-authorize.template.ts` + HTML — consent page
-9. Update `server.ts` — mount OAuth routes
+### Phase 2: OAuth Provider + Token Infrastructure
+4. `domain/oauth/oauth.types.ts` — branded types
+5. `providers/oauth/pkce.ts` + tests — PKCE helpers
+6. `providers/oauth/oauth.types.ts` — provider interface
+7. `providers/oauth/in-memory-oauth.ts` + tests
+8. `providers/oauth/oauth-clients.ts` — static client registry
 
-### Phase 3: JSON API
-10. `web/api/api.middleware.ts` — Bearer token middleware
-11. `web/api/api.schema.ts` — Zod schemas for API input
-12. `web/api/api.routes.ts` + tests — all CRUD endpoints
-13. Update `server.ts` — mount API routes with auth middleware
-14. CORS configuration
+### Phase 3: OAuth Endpoints
+9. `web/oauth/oauth.schema.ts` — Zod validation
+10. `web/oauth/oauth.routes.ts` + tests — authorize + token endpoints
+11. `web/oauth/oauth-authorize.template.ts` + HTML — consent page
+12. Update `server.ts` — mount OAuth routes
 
-### Phase 4: DynamoDB + Infrastructure
-15. `providers/oauth/dynamodb-oauth.ts` + tests
-16. Update `infra/index.ts` — new tables, IAM, env vars
-17. Update `app.ts` — wire DynamoDB OAuth provider in production
+### Phase 4: Hypermedia API Routes
+13. `web/api/api.middleware.ts` — Bearer token middleware (Siren error responses)
+14. `web/api/api.schema.ts` — Zod schemas for API input
+15. `web/api/api.routes.ts` + tests — root, collection, single entity, actions
+16. Update `server.ts` — mount `/api` routes with auth middleware
+17. CORS configuration
 
-### Phase 5: Integration & Hardening
-18. End-to-end manual test of full OAuth flow with Firefox extension
-19. Token rotation, revocation edge cases
-20. Rate limiting on `/oauth/token` (future consideration)
+### Phase 5: DynamoDB + Infrastructure
+18. `providers/oauth/dynamodb-oauth.ts` + tests
+19. Update `infra/index.ts` — new tables, IAM, env vars
+20. Update `app.ts` — wire DynamoDB OAuth provider in production
+
+### Phase 6: Integration & Hardening
+21. End-to-end manual test of full OAuth + hypermedia flow with Firefox extension
+22. Token rotation, revocation edge cases
+23. Rate limiting on `/oauth/token` (future consideration)
