@@ -1,7 +1,11 @@
 import type { Express } from "express";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import type { Logger } from "../infra/logger";
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
+import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
+import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import { createApp } from "./server";
@@ -24,9 +28,27 @@ const fetchHtml: FetchHtml = async (url) => {
 	}
 };
 
+function initProviders() {
+	const articlesTable = getEnv("DYNAMODB_ARTICLES_TABLE");
+	const usersTable = getEnv("DYNAMODB_USERS_TABLE");
+	const sessionsTable = getEnv("DYNAMODB_SESSIONS_TABLE");
+
+	if (articlesTable && usersTable && sessionsTable) {
+		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		return {
+			...initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable }),
+			...initDynamoDbArticleStore({ client, tableName: articlesTable }),
+		};
+	}
+
+	return {
+		...initInMemoryAuth(),
+		...initInMemoryArticleStore(),
+	};
+}
+
 export const app = createApp({
-	...initInMemoryAuth(),
-	...initInMemoryArticleStore(),
+	...initProviders(),
 	...initReadabilityParser({ fetchHtml }),
 });
 
