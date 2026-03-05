@@ -19,6 +19,8 @@ export default {
 		// Used by Pulumi infra (compiled separately)
 		"@pulumi/aws",
 		"@pulumi/pulumi",
+		// Used via compile and ext:run scripts
+		"web-ext",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),

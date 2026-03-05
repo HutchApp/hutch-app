@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { existsSync } from "node:fs";
+import * as assert from "node:assert";
 import { join } from "node:path";
 
 const config = new pulumi.Config();
@@ -38,16 +38,17 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 });
 
 const xpiPath = join(__dirname, "..", "dist-artifacts", "hutch.xpi");
-const xpiExists = existsSync(xpiPath);
+assert.ok(
+	require("node:fs").existsSync(xpiPath),
+	`Extension artifact not found: ${xpiPath}. Run 'pnpm compile' first.`,
+);
 
-const extensionObject = xpiExists
-	? new aws.s3.BucketObject("hutch-xpi", {
-			bucket: bucket.id,
-			key: "hutch.xpi",
-			source: new pulumi.asset.FileAsset(xpiPath),
-			contentType: "application/x-xpinstall",
-		})
-	: undefined;
+const extensionObject = new aws.s3.BucketObject("hutch-xpi", {
+	bucket: bucket.id,
+	key: "hutch.xpi",
+	source: new pulumi.asset.FileAsset(xpiPath),
+	contentType: "application/x-xpinstall",
+});
 
 export const downloadUrl = pulumi.interpolate`https://${bucket.bucketRegionalDomainName}/hutch.xpi`;
-export const _dependencies = [bucketPolicy, extensionObject].filter(Boolean);
+export const _dependencies = [bucketPolicy, extensionObject];
