@@ -27,6 +27,7 @@ import { createPrivacyPageContent } from "./web/pages/privacy";
 import { createTermsPageContent } from "./web/pages/terms";
 import { createInstallPageContent } from "./web/pages/install";
 import { render } from "./web/render";
+import { SERVICE_WORKER_SOURCE } from "./web/sw.source";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
 
@@ -68,6 +69,11 @@ export function createApp(dependencies: AppDependencies): Express {
 	}
 
 	app.use(express.static(join(__dirname, "public")));
+
+	app.get("/sw.js", (_req: Request, res: Response) => {
+		res.type("application/javascript").send(SERVICE_WORKER_SOURCE);
+	});
+
 	app.use(express.urlencoded({ extended: true }));
 	app.use(express.json());
 	app.use(cookieParser());

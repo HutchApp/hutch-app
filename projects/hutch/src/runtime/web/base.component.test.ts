@@ -69,6 +69,20 @@ describe("Base component", () => {
 		expect(footer?.textContent).toContain("Hutch");
 	});
 
+	it("should include service worker registration script", () => {
+		const page = createTestPageContent();
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		const scripts = Array.from(doc.querySelectorAll("script"));
+		const swScript = scripts.find(
+			(s) =>
+				s.textContent?.includes("serviceWorker") &&
+				s.textContent?.includes("/sw.js"),
+		);
+		expect(swScript).toBeTruthy();
+	});
+
 	it("should include the offline banner", () => {
 		const page = createTestPageContent();
 		const result = Base(page).to("text/html");

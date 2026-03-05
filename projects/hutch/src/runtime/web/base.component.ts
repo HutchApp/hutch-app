@@ -168,6 +168,15 @@ const OFFLINE_INDICATOR_SCRIPT = `
 })();
 </script>`;
 
+const SW_REGISTRATION_SCRIPT = `
+<script>
+(function() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function() {});
+  }
+})();
+</script>`;
+
 const BASE_TEMPLATE = `<!DOCTYPE html>
 <html lang="en-AU">
 <head>
@@ -255,6 +264,7 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
   {{{footer}}}
   {{{navScript}}}
   {{{offlineScript}}}
+  {{{swRegistrationScript}}}
   {{{scripts}}}
 </body>
 </html>`;
@@ -303,6 +313,7 @@ function renderBaseTemplate(page: PageContent): string {
 		footer: renderFooter(),
 		navScript: NAV_SCRIPT,
 		offlineScript: OFFLINE_INDICATOR_SCRIPT,
+		swRegistrationScript: SW_REGISTRATION_SCRIPT,
 		scripts: page.scripts,
 	});
 }
