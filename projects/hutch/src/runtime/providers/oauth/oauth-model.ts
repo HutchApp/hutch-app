@@ -79,12 +79,15 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 			client: Client,
 			user: User,
 		): Promise<AuthorizationCode> {
+			if (!code.codeChallenge) {
+				throw new Error("PKCE code_challenge is required for authorization_code grants");
+			}
 			const stored: StoredAuthorizationCode = {
 				code: code.authorizationCode as AuthorizationCodeBrand,
 				clientId: client.id as OAuthClientId,
 				userId: user.id as UserId,
 				redirectUri: code.redirectUri,
-				codeChallenge: code.codeChallenge ?? "",
+				codeChallenge: code.codeChallenge,
 				codeChallengeMethod: code.codeChallengeMethod ?? "S256",
 				expiresAt: code.expiresAt,
 				scope: code.scope,
@@ -234,6 +237,9 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 			return true;
 		},
 
+		// TODO: Update this function when scopes are added. Currently returns true
+		// because no scopes are implemented. Once scopes are added, this must
+		// validate that the token has the requested scope(s).
 		async verifyScope(_token: Token, _scope: string | string[]): Promise<boolean> {
 			return true;
 		},

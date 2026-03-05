@@ -121,6 +121,27 @@ describe("createOAuthModel", () => {
 			expect(revoked).toBe(true);
 			expect(await model.getAuthorizationCode("revoke-test-code")).toBeNull();
 		});
+
+		it("throws error when code_challenge is missing", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
+			const code: Partial<AuthorizationCode> = {
+				authorizationCode: "no-pkce-code",
+				expiresAt: new Date(Date.now() + 300000),
+				redirectUri: TEST_REDIRECT_URI,
+				scope: undefined,
+			};
+
+			await expect(
+				model.saveAuthorizationCode(
+					code as AuthorizationCode,
+					client,
+					{ id: TEST_USER_ID },
+				),
+			).rejects.toThrow("PKCE code_challenge is required for authorization_code grants");
+		});
 	});
 
 	describe("token flow", () => {
