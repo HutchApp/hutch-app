@@ -31,13 +31,5 @@
       "js": ["content/shortcut.js"],
       "run_at": "document_start"
     }
-  ],
-  "commands": {
-    "save-current-tab": {
-      "suggested_key": {
-        "default": "Ctrl+D"
-      },
-      "description": "Save current tab to reading list"
-    }
-  }
+  ]
 }

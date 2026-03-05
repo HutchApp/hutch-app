@@ -1,6 +1,5 @@
 import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
-import { initHandleToggleCommand } from "./handle-toggle-command";
 import type { PopupMessage } from "./messages.types";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initIconStatus } from "./icon-status";
@@ -57,30 +56,59 @@ async function updateActiveTabIcon() {
 	}
 }
 
-const queryActiveTabs = () =>
-	browser.tabs.query({ active: true, currentWindow: true });
+let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
 
-const handleToggleCommand = initHandleToggleCommand({
-	queryActiveTabs,
-	whenLoggedIn: auth.whenLoggedIn,
-	saveCurrentTab,
-	findByUrl: readingList.findByUrl,
-	removeUrl: readingList.removeUrl,
+browser.windows.onRemoved.addListener((windowId) => {
+	if (loginWindow && windowId === loginWindow.id) {
+		updateIconForTab(loginWindow.tabId, loginWindow.tabUrl).catch(() => {});
+		loginWindow = null;
+	}
 });
 
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
-	if ((raw as { type: string }).type === "toggle-current-tab") {
-		handleToggleCommand()
-			.then((result) => {
-				if (result?.action === "not-logged-in") {
-					browser.browserAction.openPopup();
-				} else {
-					updateActiveTabIcon().catch(() => {});
+	if ((raw as { type: string }).type === "shortcut-pressed") {
+		(async () => {
+			if (loginWindow != null) {
+				await browser.windows.update(loginWindow.id, { focused: true });
+				return;
+			}
+
+			const tabs = await browser.tabs.query({
+				active: true,
+				currentWindow: true,
+			});
+			const tab = tabs[0];
+			if (!tab?.url) return;
+
+			const url = tab.url;
+			const title = tab.title ?? url;
+
+			const guarded = auth.whenLoggedIn(() =>
+				saveCurrentTab({ url, title }),
+			);
+
+			if (!guarded.ok) {
+				const params = `?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+				const win = await browser.windows.create({
+					url: browser.runtime.getURL(
+						`popup/popup.template.html${params}`,
+					),
+					type: "popup",
+					width: 380,
+					height: 520,
+				});
+				if (win.id != null && tab.id != null) {
+					loginWindow = { id: win.id, tabId: tab.id, tabUrl: url };
 				}
-				sendResponse(result);
-			})
-			.catch(console.error);
-		return true;
+				return;
+			}
+
+			const result = await guarded.value;
+			if (result.ok && tab.id != null) {
+				await updateIconForTab(tab.id, tab.url);
+			}
+		})().catch(console.error);
+		return;
 	}
 
 	const message = raw as PopupMessage;
