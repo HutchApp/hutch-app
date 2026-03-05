@@ -164,6 +164,8 @@ Using static registration avoids a DynamoDB table for clients and keeps the trus
 
 ## 3. OAuth Provider (Persistence Layer)
 
+> **Note:** Section 11.1 recommends using `@node-oauth/express-oauth-server` instead of custom OAuth implementation. The interfaces below document the underlying concepts; during implementation, use the library's Model adapter pattern (see section 11.1) which provides these capabilities out of the box with RFC 6749 compliance.
+
 Following the existing `init*` partial-application pattern:
 
 ```
@@ -574,6 +576,8 @@ This means:
 ---
 
 ## 5. Server Integration
+
+> **Note:** Sections 5.2–5.5 describe OAuth wiring with custom provider functions. When implementing, use `@node-oauth/express-oauth-server` instead (see section 11.1). The Siren serialization layer (5.1) and API routes remain unchanged — only the OAuth middleware in 5.3–5.4 should use the library's built-in middleware (`oauthServer.token()`, `oauthServer.authenticate()`).
 
 ### 5.1 Siren Serialization Layer
 
