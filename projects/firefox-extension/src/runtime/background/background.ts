@@ -9,6 +9,7 @@ import {
 	MENU_ITEM_SAVE_PAGE,
 	initSaveFromContextMenu,
 } from "./save-from-context-menu";
+import { initHandleShortcutCommand } from "./handle-shortcut-command";
 
 const auth = initInMemoryAuth();
 const readingList = initInMemoryReadingList();
@@ -20,6 +21,16 @@ const { updateIconForTab } = initIconStatus({
 });
 const saveFromContextMenu = initSaveFromContextMenu({
 	saveUrl: readingList.saveUrl,
+});
+
+let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
+
+const handleShortcut = initHandleShortcutCommand({
+	queryActiveTabs: () =>
+		browser.tabs.query({ active: true, currentWindow: true }),
+	whenLoggedIn: auth.whenLoggedIn,
+	saveCurrentTab,
+	hasLoginWindow: () => loginWindow != null,
 });
 
 browser.menus.create({
@@ -56,8 +67,6 @@ async function updateActiveTabIcon() {
 	}
 }
 
-let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
-
 browser.windows.onRemoved.addListener((windowId) => {
 	if (loginWindow && windowId === loginWindow.id) {
 		updateIconForTab(loginWindow.tabId, loginWindow.tabUrl).catch(() => {});
@@ -68,27 +77,20 @@ browser.windows.onRemoved.addListener((windowId) => {
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	if ((raw as { type: string }).type === "shortcut-pressed") {
 		(async () => {
-			if (loginWindow != null) {
-				await browser.windows.update(loginWindow.id, { focused: true });
-				return;
-			}
-
 			const tabs = await browser.tabs.query({
 				active: true,
 				currentWindow: true,
 			});
 			const tab = tabs[0];
-			if (!tab?.url) return;
+			const result = await handleShortcut();
 
-			const url = tab.url;
-			const title = tab.title ?? url;
+			if (result?.action === "login-window-focused" && loginWindow) {
+				await browser.windows.update(loginWindow.id, { focused: true });
+				return;
+			}
 
-			const guarded = auth.whenLoggedIn(() =>
-				saveCurrentTab({ url, title }),
-			);
-
-			if (!guarded.ok) {
-				const params = `?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+			if (result?.action === "not-logged-in") {
+				const params = `?url=${encodeURIComponent(result.url)}&title=${encodeURIComponent(result.title)}`;
 				const win = await browser.windows.create({
 					url: browser.runtime.getURL(
 						`popup/popup.template.html${params}`,
@@ -97,14 +99,13 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 					width: 380,
 					height: 520,
 				});
-				if (win.id != null && tab.id != null) {
-					loginWindow = { id: win.id, tabId: tab.id, tabUrl: url };
+				if (win.id != null && tab?.id != null) {
+					loginWindow = { id: win.id, tabId: tab.id, tabUrl: result.url };
 				}
 				return;
 			}
 
-			const result = await guarded.value;
-			if (result.ok && tab.id != null) {
+			if (result?.action === "saved" && tab?.id != null && tab.url) {
 				await updateIconForTab(tab.id, tab.url);
 			}
 		})().catch(console.error);
