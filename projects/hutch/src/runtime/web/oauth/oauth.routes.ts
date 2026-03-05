@@ -93,7 +93,17 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 			}
 
 			if (req.body.action === "deny") {
+				const clientId = req.body.client_id;
 				const redirectUri = req.body.redirect_uri;
+
+				if (!validateRedirectUri(clientId, redirectUri)) {
+					res.status(400).json({
+						error: "invalid_request",
+						error_description: "Invalid redirect_uri",
+					});
+					return;
+				}
+
 				const state = req.body.state;
 				const errorUrl = `${redirectUri}?error=access_denied${state ? `&state=${encodeURIComponent(state)}` : ""}`;
 				res.redirect(302, errorUrl);

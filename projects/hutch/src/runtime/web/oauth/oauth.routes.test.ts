@@ -170,6 +170,31 @@ describe("OAuth routes", () => {
 			expect(response.headers.location).toContain("state=test-state-123");
 		});
 
+		it("returns 400 for deny with invalid redirect_uri (prevents open redirect)", async () => {
+			const testApp = createTestApp();
+			await testApp.auth.createUser({
+				email: "test@example.com",
+				password: "password123",
+			});
+
+			const agent = request.agent(testApp.app);
+			await agent.post("/login").type("form").send({
+				email: "test@example.com",
+				password: "password123",
+			});
+
+			const response = await agent
+				.post("/oauth/authorize")
+				.type("form")
+				.send({
+					client_id: TEST_CLIENT_ID,
+					redirect_uri: "https://evil.com/callback",
+					action: "deny",
+				});
+
+			expect(response.status).toBe(400);
+			expect(response.body.error).toBe("invalid_request");
+		});
 	});
 
 	describe("POST /oauth/revoke", () => {
