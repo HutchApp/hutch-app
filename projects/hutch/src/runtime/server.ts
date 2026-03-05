@@ -25,6 +25,7 @@ import { initExportRoutes } from "./web/pages/export/export.page";
 import { createLandingPageContent } from "./web/pages/landing";
 import { createPrivacyPageContent } from "./web/pages/privacy";
 import { createTermsPageContent } from "./web/pages/terms";
+import { createInstallPageContent } from "./web/pages/install";
 import { render } from "./web/render";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
@@ -98,6 +99,13 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.get("/terms", (_req: Request, res: Response) => {
 		const pageContent = createTermsPageContent();
+		const component = Base(pageContent);
+		const result = component.to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
+	});
+
+	app.get("/install", (_req: Request, res: Response) => {
+		const pageContent = createInstallPageContent();
 		const component = Base(pageContent);
 		const result = component.to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
