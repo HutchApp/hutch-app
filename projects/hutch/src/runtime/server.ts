@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { config } from "dotenv";
 import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
@@ -18,10 +19,14 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { Base } from "./web/base.component";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
+import { initApiRoutes } from "./web/api/api.routes";
+import { initApiAuth, type ValidateAccessToken } from "./web/api/api.middleware";
+import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { createLandingPageContent } from "./web/pages/landing";
 import { createPrivacyPageContent } from "./web/pages/privacy";
 import { createTermsPageContent } from "./web/pages/terms";
@@ -49,6 +54,8 @@ interface AppDependencies {
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
+	oauthModel: OAuthModel;
+	validateAccessToken: ValidateAccessToken;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -133,6 +140,38 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticlesByUser: deps.findArticlesByUser,
 	});
 	app.use("/export", requireAuth, exportRouter);
+
+	const oauthRouter = initOAuthRoutes({
+		model: deps.oauthModel,
+	});
+	app.use("/oauth", oauthRouter);
+
+	const apiCors = cors({
+		origin: (origin, callback) => {
+			if (!origin || /^(moz|chrome)-extension:\/\//.test(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS"));
+			}
+		},
+		methods: ["GET", "POST", "PUT", "DELETE"],
+		allowedHeaders: ["Authorization", "Content-Type"],
+		maxAge: 86400,
+	});
+
+	const apiAuthMiddleware = initApiAuth({
+		validateAccessToken: deps.validateAccessToken,
+	});
+
+	const apiRouter = initApiRoutes({
+		findArticlesByUser: deps.findArticlesByUser,
+		findArticleById: deps.findArticleById,
+		saveArticle: deps.saveArticle,
+		parseArticle: deps.parseArticle,
+		deleteArticle: deps.deleteArticle,
+		updateArticleStatus: deps.updateArticleStatus,
+	});
+	app.use("/api", apiCors, apiAuthMiddleware, apiRouter);
 
 	const NOT_FOUND_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
