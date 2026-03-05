@@ -34,5 +34,7 @@ export default {
 		"src/runtime/background/background.ts",
 		"src/runtime/popup/popup.ts",
 		"src/runtime/content/shortcut.ts",
+		// Exported for use by hutch web app (install page)
+		"s3-config.js",
 	],
 } satisfies KnipConfig;

@@ -14,6 +14,8 @@ export default {
 		"helmet",
 		"compression",
 		"@types/compression",
+		// Workspace dependency for S3 config (subpath import not detected by knip)
+		"firefox-extension",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

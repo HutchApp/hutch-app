@@ -1,8 +1,8 @@
 import type { PageContent } from "../../base.component";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
+import { getExtensionDownloadUrl } from "firefox-extension/s3-config";
 
-const EXTENSION_DOWNLOAD_URL =
-	"https://hutch-extension-prod.s3.ap-southeast-2.amazonaws.com/hutch.xpi";
+const EXTENSION_DOWNLOAD_URL = getExtensionDownloadUrl("prod");
 
 export function createInstallPageContent(): PageContent {
 	return {

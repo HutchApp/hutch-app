@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "description": "Hutch — Firefox browser extension for saving URLs to a reading list",
   "private": true,
+  "exports": {
+    "./s3-config": {
+      "types": "./s3-config.d.ts",
+      "default": "./s3-config.js"
+    }
+  },
   "scripts": {
     "compile": "node scripts/build-extension.js && web-ext build --source-dir dist-extension --artifacts-dir dist-artifacts --overwrite-dest --filename hutch.xpi",
     "check-unused-css": "node scripts/check-unused-css.js",

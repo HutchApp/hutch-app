@@ -5,7 +5,8 @@
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
-    "incremental": false
+    "incremental": false,
+    "allowJs": true
   },
-  "include": ["index.ts"]
+  "include": ["index.ts", "../s3-config.js"]
 }
