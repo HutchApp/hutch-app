@@ -5,6 +5,17 @@ import ExpressOAuthServer from "@node-oauth/express-oauth-server";
 import type { OAuthModel } from "../../providers/oauth/oauth-model";
 import { getClient, validateRedirectUri } from "../../providers/oauth/oauth-clients";
 
+function escapeHtml(str: string): string {
+	const htmlEscapes: Record<string, string> = {
+		"&": "&amp;",
+		"<": "&lt;",
+		">": "&gt;",
+		'"': "&quot;",
+		"'": "&#39;",
+	};
+	return str.replace(/[&<>"']/g, (c) => htmlEscapes[c] ?? c);
+}
+
 const authorizeQuerySchema = z.object({
 	client_id: z.string(),
 	redirect_uri: z.string().url(),
@@ -74,7 +85,7 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Authorize ${client.name}</title>
+	<title>Authorize ${escapeHtml(client.name)}</title>
 	<style>
 		body { font-family: system-ui, sans-serif; max-width: 400px; margin: 40px auto; padding: 20px; }
 		h1 { font-size: 1.5rem; margin-bottom: 1rem; }
@@ -86,15 +97,15 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 	</style>
 </head>
 <body>
-	<h1>Authorize ${client.name}</h1>
-	<p><strong>${client.name}</strong> wants to access your Hutch account.</p>
+	<h1>Authorize ${escapeHtml(client.name)}</h1>
+	<p><strong>${escapeHtml(client.name)}</strong> wants to access your Hutch account.</p>
 	<form method="POST" action="/oauth/authorize">
-		<input type="hidden" name="client_id" value="${client_id}">
-		<input type="hidden" name="redirect_uri" value="${redirect_uri}">
+		<input type="hidden" name="client_id" value="${escapeHtml(client_id)}">
+		<input type="hidden" name="redirect_uri" value="${escapeHtml(redirect_uri)}">
 		<input type="hidden" name="response_type" value="code">
-		<input type="hidden" name="code_challenge" value="${parsed.data.code_challenge}">
+		<input type="hidden" name="code_challenge" value="${escapeHtml(parsed.data.code_challenge)}">
 		<input type="hidden" name="code_challenge_method" value="S256">
-		${state ? `<input type="hidden" name="state" value="${state}">` : ""}
+		${state ? `<input type="hidden" name="state" value="${escapeHtml(state)}">` : ""}
 		<div class="buttons">
 			<button type="submit" name="action" value="approve" class="approve">Approve</button>
 			<button type="submit" name="action" value="deny" class="deny">Deny</button>
