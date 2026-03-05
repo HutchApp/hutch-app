@@ -847,6 +847,8 @@ DYNAMODB_OAUTH_TOKENS_TABLE: oauthTokensTable.name
 
 ## 7. File Structure (New Files)
 
+Updated to use `@node-oauth/express-oauth-server` (see section 11.1):
+
 ```
 src/runtime/
 ├── domain/
@@ -855,14 +857,11 @@ src/runtime/
 │
 ├── providers/
 │   └── oauth/
-│       ├── oauth.types.ts                    # Provider function types
 │       ├── oauth-clients.ts                  # Static client registry
-│       ├── pkce.ts                           # PKCE challenge/verify helpers
-│       ├── pkce.test.ts                      # Unit tests for PKCE
-│       ├── dynamodb-oauth.ts                 # DynamoDB implementation
-│       ├── dynamodb-oauth.test.ts            # Integration tests
-│       ├── in-memory-oauth.ts                # In-memory for dev/testing
-│       └── in-memory-oauth.test.ts           # Tests
+│       ├── oauth-model.ts                    # @node-oauth Model adapter (in-memory)
+│       ├── oauth-model.test.ts               # Model adapter tests
+│       ├── dynamodb-oauth-model.ts           # DynamoDB Model adapter
+│       └── dynamodb-oauth-model.test.ts      # Integration tests
 │
 ├── web/
 │   ├── api/
@@ -875,18 +874,19 @@ src/runtime/
 │   │   ├── api.routes.ts                     # Hypermedia API Express router
 │   │   ├── api.routes.test.ts                # Integration tests (supertest)
 │   │   ├── api.schema.ts                     # Zod schemas for API input
-│   │   └── api.middleware.ts                 # Bearer token auth middleware
+│   │   └── api.middleware.ts                 # Bearer token auth (uses oauthServer.authenticate())
 │   │
 │   └── oauth/
-│       ├── oauth.routes.ts                   # OAuth authorize/token endpoints
+│       ├── oauth.routes.ts                   # OAuth endpoints (wires ExpressOAuthServer)
 │       ├── oauth.routes.test.ts              # Integration tests
-│       ├── oauth.schema.ts                   # Zod schemas for OAuth params
 │       ├── oauth-authorize.template.ts       # Authorization consent page
 │       └── oauth-authorize.template.html     # HTML template
 │
 src/infra/
     └── index.ts                              # Updated: 2 new DynamoDB tables + IAM
 ```
+
+**Note:** The library handles PKCE verification, token generation, and refresh token rotation internally. Custom `pkce.ts` and provider type definitions are no longer needed — only the Model adapter that connects to DynamoDB.
 
 ---
 
@@ -898,11 +898,12 @@ Following the project's test-driven design conventions.
 
 | What | File | Approach |
 |------|------|----------|
-| PKCE S256 challenge/verify | `pkce.test.ts` | Pure function, no deps |
+| OAuth Model adapter | `oauth-model.test.ts` | Test Model interface methods (save/get/revoke) |
 | OAuth domain types | Compile-time only (branded types) | — |
-| Token generation | `in-memory-oauth.test.ts` | Test provider interface contract |
 | Article → Siren mapping | `article-siren.test.ts` | Pure function: verify properties, status-dependent actions |
 | Collection → Siren mapping | `collection-siren.test.ts` | Verify pagination links, embedded entities |
+
+**Note:** PKCE verification and token generation are handled by `@node-oauth/oauth2-server` — no custom unit tests needed for these. Focus tests on the Model adapter (DynamoDB read/write) and Siren serialization.
 
 ### 8.2 Integration Tests (supertest)
 
@@ -1056,41 +1057,190 @@ const apiCors = cors({
 
 ---
 
-## 11. Implementation Order
+## 11. Recommended Libraries
 
-Suggested phased approach:
+This section recommends off-the-shelf libraries to simplify implementation. Both are popular, actively maintained, and well-tested.
+
+### 11.1 OAuth 2.0: @node-oauth/express-oauth-server
+
+**Package:** [`@node-oauth/express-oauth-server`](https://github.com/node-oauth/express-oauth-server) (wraps `@node-oauth/oauth2-server`)
+
+**Why use it:**
+- RFC 6749 compliant, including Authorization Code + PKCE (RFC 7636)
+- Built-in token generation, validation, and refresh
+- Express middleware integration
+- Actively maintained (last update: January 2026)
+- Handles edge cases (token expiration, code replay, PKCE verification)
+
+**What it replaces:**
+- Custom PKCE verification logic (`pkce.ts`)
+- Token generation/validation (`CreateTokenPair`, `ValidateAccessToken`)
+- Authorization code exchange (`ExchangeAuthorizationCode`)
+- Refresh token rotation (`RefreshAccessToken`)
+
+**What you still implement:**
+- A "model" adapter that connects the library to DynamoDB
+- The authorization consent page (HTML)
+- Static client registry
+
+**Installation:**
+```bash
+pnpm add @node-oauth/express-oauth-server
+```
+
+**Integration pattern:**
+
+Instead of implementing `dynamodb-oauth.ts` with custom token logic, implement a model adapter:
+
+```typescript
+// oauth-model.ts — Adapter between @node-oauth and DynamoDB
+import OAuth2Server from "@node-oauth/oauth2-server";
+import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+
+interface ModelDeps {
+  client: DynamoDBDocumentClient;
+  codesTableName: string;
+  tokensTableName: string;
+}
+
+export function initOAuthModel(deps: ModelDeps): OAuth2Server.Model {
+  return {
+    // Required for authorization_code grant
+    async getClient(clientId: string, _clientSecret: string) {
+      return REGISTERED_CLIENTS[clientId] || null;
+    },
+
+    async saveAuthorizationCode(code, client, user) {
+      // Store in hutch-oauth-codes DynamoDB table
+      await deps.client.send(new PutCommand({
+        TableName: deps.codesTableName,
+        Item: {
+          code: code.authorizationCode,
+          clientId: client.id,
+          userId: user.id,
+          redirectUri: code.redirectUri,
+          codeChallenge: code.codeChallenge,
+          codeChallengeMethod: code.codeChallengeMethod,
+          expiresAt: Math.floor(code.expiresAt.getTime() / 1000),
+        },
+      }));
+      return { ...code, client, user };
+    },
+
+    async getAuthorizationCode(authorizationCode: string) {
+      // Retrieve from DynamoDB, return null if expired
+    },
+
+    async revokeAuthorizationCode(code) {
+      // Delete from DynamoDB (single-use)
+      return true;
+    },
+
+    async saveToken(token, client, user) {
+      // Store in hutch-oauth-tokens DynamoDB table
+    },
+
+    async getAccessToken(accessToken: string) {
+      // Retrieve from DynamoDB, return null if expired
+    },
+
+    async getRefreshToken(refreshToken: string) {
+      // Query GSI by refreshToken
+    },
+
+    async revokeToken(token) {
+      // Delete from DynamoDB (single-use refresh tokens)
+      return true;
+    },
+
+    // PKCE support (built into the library)
+    verifyScope: async () => true, // No scopes initially
+  };
+}
+```
+
+**Route setup:**
+
+```typescript
+import OAuth2Server from "@node-oauth/oauth2-server";
+import ExpressOAuthServer from "@node-oauth/express-oauth-server";
+
+const oauthServer = new ExpressOAuthServer({
+  model: initOAuthModel({ client, codesTableName, tokensTableName }),
+  allowExtendedTokenAttributes: true,
+});
+
+// Token endpoint — library handles PKCE verification, token generation
+app.post("/oauth/token", oauthServer.token());
+
+// Authorization endpoint — custom HTML page, then library generates code
+app.post("/oauth/authorize", oauthServer.authorize());
+```
+
+**Simplification summary:**
+- ~200 lines of custom PKCE/token logic → ~50 lines of model adapter
+- Library handles token entropy, expiration, PKCE S256 verification
+- Focus on DynamoDB storage, not OAuth protocol details
+
+### 11.2 Siren: Custom Types (Recommended)
+
+**Assessment:** The Siren ecosystem has limited library support. The most relevant package is [`siren-types`](https://github.com/xogeny/siren-types) (TypeScript definitions), but it was last updated in 2022.
+
+**Recommendation:** Keep the custom types defined in section 5.1 (`siren.ts`).
+
+**Rationale:**
+1. Siren is a simple format (~6 interfaces)
+2. The domain-to-Siren mapping (`article-siren.ts`) is inherently custom
+3. Custom types allow exact control over optional properties and naming
+4. No runtime dependency for a 50-line type definition file
+
+**Optional:** If you prefer a library, `siren-types` provides similar type definitions:
+
+```bash
+pnpm add siren-types
+```
+
+```typescript
+import type { Entity, Action, Link } from "siren-types";
+```
+
+However, the custom approach in section 5.1 is cleaner for this codebase since it integrates directly with the domain-to-wire mapping layer.
+
+---
+
+## 12. Implementation Order
+
+Suggested phased approach (updated to use `@node-oauth/express-oauth-server`):
 
 ### Phase 1: Siren Serialization Layer (Test-First)
 1. `web/api/siren.ts` — Generic Siren type definitions
 2. `web/api/article-siren.ts` + tests — SavedArticle → Siren entity mapper with status-dependent actions
 3. `web/api/collection-siren.ts` + tests — FindArticlesResult → Siren collection with pagination links
 
-### Phase 2: OAuth Provider + Token Infrastructure
-4. `domain/oauth/oauth.types.ts` — branded types
-5. `providers/oauth/pkce.ts` + tests — PKCE helpers
-6. `providers/oauth/oauth.types.ts` — provider interface
-7. `providers/oauth/in-memory-oauth.ts` + tests
-8. `providers/oauth/oauth-clients.ts` — static client registry
+### Phase 2: OAuth Model Adapter
+4. Install `@node-oauth/express-oauth-server`
+5. `domain/oauth/oauth.types.ts` — branded types
+6. `providers/oauth/oauth-clients.ts` — static client registry
+7. `providers/oauth/oauth-model.ts` + tests — Model adapter interface (in-memory for dev/test)
 
-### Phase 3: OAuth Endpoints
-9. `web/oauth/oauth.schema.ts` — Zod validation
-10. `web/oauth/oauth.routes.ts` + tests — authorize + token endpoints
-11. `web/oauth/oauth-authorize.template.ts` + HTML — consent page
-12. Update `server.ts` — mount OAuth routes
+### Phase 3: OAuth Endpoints (Library-Based)
+8. `web/oauth/oauth.routes.ts` + tests — Wire up `ExpressOAuthServer` middleware
+9. `web/oauth/oauth-authorize.template.ts` + HTML — consent page
+10. Update `server.ts` — mount OAuth routes
 
 ### Phase 4: Hypermedia API Routes
-13. `web/api/api.middleware.ts` — Bearer token middleware (Siren error responses)
-14. `web/api/api.schema.ts` — Zod schemas for API input
-15. `web/api/api.routes.ts` + tests — root, collection, single entity, actions
-16. Update `server.ts` — mount `/api` routes with auth middleware
-17. CORS configuration
+11. `web/api/api.middleware.ts` — Bearer token middleware (uses `oauthServer.authenticate()`)
+12. `web/api/api.schema.ts` — Zod schemas for API input
+13. `web/api/api.routes.ts` + tests — root, collection, single entity, actions
+14. Update `server.ts` — mount `/api` routes with auth middleware
+15. CORS configuration
 
 ### Phase 5: DynamoDB + Infrastructure
-18. `providers/oauth/dynamodb-oauth.ts` + tests
-19. Update `infra/index.ts` — new tables, IAM, env vars
-20. Update `app.ts` — wire DynamoDB OAuth provider in production
+16. `providers/oauth/dynamodb-oauth-model.ts` + tests — DynamoDB model adapter
+17. Update `infra/index.ts` — new tables, IAM, env vars
+18. Update `app.ts` — wire DynamoDB OAuth model in production
 
 ### Phase 6: Integration & Hardening
-21. End-to-end manual test of full OAuth + hypermedia flow with Firefox extension
-22. Token rotation, revocation edge cases
-23. Rate limiting on `/oauth/token` (future consideration)
+19. End-to-end manual test of full OAuth + hypermedia flow with Firefox extension
+20. Token rotation, revocation edge cases
+21. Rate limiting on `/oauth/token` (future consideration)
