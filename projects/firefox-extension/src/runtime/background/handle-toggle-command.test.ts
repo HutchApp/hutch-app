@@ -71,7 +71,7 @@ describe("initHandleToggleCommand", () => {
 		expect(result).toBeNull();
 	});
 
-	it("should return null when not logged in", async () => {
+	it("should return not-logged-in when not logged in", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
@@ -88,7 +88,7 @@ describe("initHandleToggleCommand", () => {
 
 		const result = await handleToggle();
 
-		expect(result).toBeNull();
+		expect(result).toEqual({ action: "not-logged-in" });
 	});
 
 	it("should use URL as title when tab has no title", async () => {

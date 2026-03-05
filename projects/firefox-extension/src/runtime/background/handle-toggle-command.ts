@@ -9,6 +9,7 @@ import type {
 type ToggleResult =
 	| { action: "saved"; item: ReadingListItem }
 	| { action: "removed" }
+	| { action: "not-logged-in" }
 	| null;
 
 export function initHandleToggleCommand(deps: {
@@ -27,7 +28,7 @@ export function initHandleToggleCommand(deps: {
 		const title = tab.title ?? url;
 
 		const findGuarded = deps.whenLoggedIn(() => deps.findByUrl(url));
-		if (!findGuarded.ok) return null;
+		if (!findGuarded.ok) return { action: "not-logged-in" };
 
 		const existing = await findGuarded.value;
 		if (existing) {

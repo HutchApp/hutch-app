@@ -72,7 +72,11 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	if ((raw as { type: string }).type === "toggle-current-tab") {
 		handleToggleCommand()
 			.then((result) => {
-				updateActiveTabIcon().catch(() => {});
+				if (result?.action === "not-logged-in") {
+					browser.browserAction.openPopup();
+				} else {
+					updateActiveTabIcon().catch(() => {});
+				}
 				sendResponse(result);
 			})
 			.catch(console.error);

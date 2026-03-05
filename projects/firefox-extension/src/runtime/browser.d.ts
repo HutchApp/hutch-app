@@ -53,6 +53,8 @@ declare namespace browser {
 			path?: Record<number, string>;
 			imageData?: Record<number, ImageData>;
 		}): Promise<void>;
+
+		function openPopup(): Promise<void>;
 	}
 
 	namespace commands {
