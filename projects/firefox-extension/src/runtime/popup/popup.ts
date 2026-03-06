@@ -1,16 +1,6 @@
-import type {
-	ReadingListItem,
-	ReadingListItemId,
-} from "../domain/reading-list-item.types";
-import type { PopupMessage } from "../background/messages.types";
-import { filterByUrl } from "./filter-by-url";
-import { paginateItems } from "./paginate-items";
-import type { GuardedResult } from "../providers/auth/auth.types";
-import type {
-	SaveUrlResult,
-	RemoveUrlResult,
-} from "../providers/reading-list/reading-list.types";
-import type { LoginResult } from "../providers/auth/auth.types";
+import type { ReadingListItem } from "extension-core/domain/reading-list-item.types";
+import type { PopupMessage } from "extension-core/background/messages.types";
+import { initPopupFlow, type PopupView } from "extension-core/popup/popup-flow";
 
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
@@ -24,11 +14,20 @@ function send(message: PopupMessage): Promise<unknown> {
 	return browser.runtime.sendMessage(message);
 }
 
-let savedItemId: ReadingListItemId | null = null;
-let allItems: ReadingListItem[] = [];
-let currentPage = 1;
+async function getActiveTab(): Promise<{ url: string; title: string } | null> {
+	const params = new URLSearchParams(window.location.search);
+	const paramUrl = params.get("url");
+	if (paramUrl) return { url: paramUrl, title: params.get("title") ?? paramUrl };
 
-function renderPagination(totalPages: number, visiblePages: number[]) {
+	const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+	const tab = tabs[0];
+	if (!tab?.url) return null;
+	return { url: tab.url, title: tab.title ?? tab.url };
+}
+
+const flow = initPopupFlow({ sendMessage: send, getActiveTab });
+
+function renderPagination(totalPages: number, visiblePages: number[], currentPage: number) {
 	const pagination = document.getElementById("pagination");
 	if (!pagination) throw new Error("pagination element not found");
 
@@ -48,8 +47,7 @@ function renderPagination(totalPages: number, visiblePages: number[]) {
 	prevButton.setAttribute("aria-label", "Previous page");
 	prevButton.disabled = currentPage <= 1;
 	prevButton.addEventListener("click", () => {
-		currentPage--;
-		renderLinks(filterItems());
+		renderView(flow.goToPage(currentPage - 1));
 	});
 	pagination.appendChild(prevButton);
 
@@ -61,8 +59,7 @@ function renderPagination(totalPages: number, visiblePages: number[]) {
 		}
 		pageButton.textContent = String(page);
 		pageButton.addEventListener("click", () => {
-			currentPage = page;
-			renderLinks(filterItems());
+			renderView(flow.goToPage(page));
 		});
 		pagination.appendChild(pageButton);
 	}
@@ -74,13 +71,12 @@ function renderPagination(totalPages: number, visiblePages: number[]) {
 	nextButton.setAttribute("aria-label", "Next page");
 	nextButton.disabled = currentPage >= totalPages;
 	nextButton.addEventListener("click", () => {
-		currentPage++;
-		renderLinks(filterItems());
+		renderView(flow.goToPage(currentPage + 1));
 	});
 	pagination.appendChild(nextButton);
 }
 
-function renderLinks(items: ReadingListItem[]) {
+function renderLinks(items: ReadingListItem[], totalPages: number, visiblePages: number[], currentPage: number, isEmpty: boolean) {
 	const linkList = document.getElementById("link-list");
 	const emptyList = document.getElementById("empty-list");
 	const noMatches = document.getElementById("no-matches");
@@ -96,26 +92,19 @@ function renderLinks(items: ReadingListItem[]) {
 	noMatches.hidden = true;
 	listError.hidden = true;
 
-	if (allItems.length === 0) {
+	if (isEmpty) {
 		emptyList.hidden = false;
-		renderPagination(1, [1]);
+		renderPagination(1, [1], 1);
 		return;
 	}
 
 	if (items.length === 0) {
 		noMatches.hidden = false;
-		renderPagination(1, [1]);
+		renderPagination(1, [1], 1);
 		return;
 	}
 
-	const sorted = [...items].sort(
-		(a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime(),
-	);
-
-	const paginated = paginateItems(sorted, currentPage);
-	currentPage = paginated.currentPage;
-
-	for (const item of paginated.items) {
+	for (const item of items) {
 		const div = document.createElement("div");
 		div.className = "list-view__item";
 
@@ -145,15 +134,7 @@ function renderLinks(items: ReadingListItem[]) {
 		deleteButton.textContent = "×";
 		deleteButton.title = "Remove from list";
 		deleteButton.addEventListener("click", async () => {
-			const result = (await send({
-				type: "remove-item",
-				id: item.id,
-			})) as GuardedResult<RemoveUrlResult>;
-
-			if (result.ok && result.value.ok) {
-				allItems = allItems.filter((i) => i.id !== item.id);
-				renderLinks(filterItems());
-			}
+			renderView(await flow.removeItem(item.id));
 		});
 
 		div.appendChild(textContainer);
@@ -161,81 +142,31 @@ function renderLinks(items: ReadingListItem[]) {
 		linkList.appendChild(div);
 	}
 
-	renderPagination(paginated.totalPages, paginated.visiblePages);
+	renderPagination(totalPages, visiblePages, currentPage);
 }
 
-function filterItems(): ReadingListItem[] {
-	const filterInput = document.getElementById("filter-input");
-	if (!filterInput) throw new Error("filter-input element not found");
-	return filterByUrl(allItems, (filterInput as HTMLInputElement).value);
-}
-
-async function loadAllItems() {
-	const result = (await send({
-		type: "get-all-items",
-	})) as GuardedResult<ReadingListItem[]>;
-
-	if (!result.ok) {
-		const listError = document.getElementById("list-error");
-		if (!listError) throw new Error("list-error element not found");
-		listError.hidden = false;
-		return;
-	}
-
-	allItems = result.value;
-	renderLinks(filterItems());
-}
-
-async function showListView() {
-	showView("list-view");
-	await loadAllItems();
-}
-
-async function getActiveTab(): Promise<{ url: string; title: string } | null> {
-	const params = new URLSearchParams(window.location.search);
-	const paramUrl = params.get("url");
-	if (paramUrl) return { url: paramUrl, title: params.get("title") ?? paramUrl };
-
-	const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-	const tab = tabs[0];
-	if (!tab?.url) return null;
-	return { url: tab.url, title: tab.title ?? tab.url };
-}
-
-async function saveAndShowList() {
-	const activeTab = await getActiveTab();
-	if (!activeTab) {
-		await showListView();
-		return;
-	}
-
-	const checkResult = (await send({
-		type: "check-url",
-		url: activeTab.url,
-	})) as GuardedResult<ReadingListItem | null>;
-
-	if (!checkResult.ok) {
-		if (checkResult.reason === "not-logged-in") {
+function renderView(view: PopupView) {
+	switch (view.view) {
+		case "loading":
+			showView("loading-view");
+			break;
+		case "login":
 			showView("login-view");
-			return;
-		}
-		return;
-	}
-
-	if (checkResult.value) {
-		await showListView();
-		return;
-	}
-
-	const saveResult = (await send({
-		type: "save-current-tab",
-		url: activeTab.url,
-		title: activeTab.title,
-	})) as GuardedResult<SaveUrlResult>;
-
-	if (saveResult.ok && saveResult.value.ok) {
-		savedItemId = saveResult.value.item.id;
-		showView("saved-view");
+			break;
+		case "saved":
+			showView("saved-view");
+			break;
+		case "list":
+			showView("list-view");
+			renderLinks(view.items, view.totalPages, view.visiblePages, view.page, view.totalPages === 1 && view.items.length === 0);
+			break;
+		case "error":
+			showView("list-view");
+			{
+				const listError = document.getElementById("list-error");
+				if (listError) listError.hidden = false;
+			}
+			break;
 	}
 }
 
@@ -249,58 +180,42 @@ document
 			document.getElementById("password") as HTMLInputElement
 		).value;
 
-		const result = (await send({
-			type: "login",
-			email,
-			password,
-		})) as LoginResult;
+		const result = await flow.login({ email, password });
 
-		if (result.ok) {
-			showView("loading-view");
-			await saveAndShowList();
-		} else {
+		if (result.view === "login") {
 			const errorEl = document.getElementById("login-error");
 			if (errorEl) errorEl.hidden = false;
+		} else {
+			renderView(result);
 		}
 	});
 
 document
 	.getElementById("undo-button")
 	?.addEventListener("click", async () => {
-		if (!savedItemId) return;
-
-		const result = (await send({
-			type: "remove-item",
-			id: savedItemId,
-		})) as GuardedResult<RemoveUrlResult>;
-
-		if (result.ok && result.value.ok) {
-			savedItemId = null;
-			await showListView();
-		}
+		renderView(await flow.undo());
 	});
 
 document
 	.getElementById("reload-button")
 	?.addEventListener("click", async () => {
-		await loadAllItems();
+		renderView(await flow.reload());
 	});
 
 document
 	.getElementById("logout-button")
 	?.addEventListener("click", async () => {
-		await send({ type: "logout" });
-		showView("login-view");
+		renderView(await flow.logout());
 	});
 
 document.getElementById("filter-input")?.addEventListener("input", () => {
-	currentPage = 1;
-	renderLinks(filterItems());
+	const filterInput = document.getElementById("filter-input") as HTMLInputElement;
+	renderView(flow.filter(filterInput.value));
 });
 
-saveAndShowList().catch((error) => {
-	console.error("Failed to initialize popup:", error);
-	showView("list-view");
-	const listError = document.getElementById("list-error");
-	if (listError) listError.hidden = false;
-});
+flow.start()
+	.then(renderView)
+	.catch((error) => {
+		console.error("Failed to initialize popup:", error);
+		renderView({ view: "error" });
+	});
