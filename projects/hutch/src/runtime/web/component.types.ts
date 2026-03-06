@@ -1,10 +1,11 @@
-interface ParsedComponent {
+export interface ParsedComponent {
   statusCode: number;
   body: string;
 }
 
-type SupportedMediaType = 'text/html';
+export type SupportedMediaType = 'text/html' | 'application/vnd.siren+json';
 
 export type Component = {
   to: (mediaType: SupportedMediaType) => ParsedComponent;
+  supports: (mediaType: SupportedMediaType) => boolean;
 };

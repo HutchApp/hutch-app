@@ -28,5 +28,9 @@ config.enforceCoverage({
     'src/runtime/providers/**/dynamodb-*.ts',
     // OAuth routes — thin wrapper around @node-oauth/express-oauth-server middleware
     'src/runtime/web/oauth/oauth.routes.ts',
+    // Dual-auth middleware — thin wrapper combining session and Bearer token auth
+    'src/runtime/web/dual-auth.middleware.ts',
+    // Content negotiation — trivial helper (wantsSiren checks Accept header)
+    'src/runtime/web/content-negotiation.ts',
   ],
 })
