@@ -1,5 +1,6 @@
+import assert from "node:assert";
 import request from "supertest";
-import type { Client, Token } from "@node-oauth/oauth2-server";
+import type { Token } from "@node-oauth/oauth2-server";
 import { createTestApp } from "../../test-app";
 import type { UserId } from "../../domain/user/user.types";
 
@@ -8,11 +9,10 @@ const TEST_USER_ID = "test-user-123" as UserId;
 async function createAccessToken(
 	testApp: ReturnType<typeof createTestApp>,
 ): Promise<string> {
-	const client = (await testApp.oauthModel.getClient(
-		"hutch-firefox-extension",
-		"",
-	)) as Client;
-	const token = (await testApp.oauthModel.saveToken(
+	const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
+	assert(client, "Test client must exist");
+
+	const token = await testApp.oauthModel.saveToken(
 		{
 			accessToken: "test-access-token",
 			accessTokenExpiresAt: new Date(Date.now() + 3600000),
@@ -21,7 +21,8 @@ async function createAccessToken(
 		} as Token,
 		client,
 		{ id: TEST_USER_ID },
-	)) as Token;
+	);
+	assert(token, "Token should be saved");
 	return token.accessToken;
 }
 
