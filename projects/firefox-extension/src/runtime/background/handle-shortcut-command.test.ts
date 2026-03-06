@@ -1,26 +1,25 @@
 import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
 import { initSaveCurrentTab } from "./save-current-tab";
-import { initHandleToggleCommand } from "./handle-toggle-command";
+import { initHandleShortcutCommand } from "./handle-shortcut-command";
 
-describe("initHandleToggleCommand", () => {
-	it("should save when URL is not in the reading list", async () => {
+describe("initHandleShortcutCommand", () => {
+	it("should save when logged in and tab has URL", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
 		await auth.login({ email: "user@example.com", password: "password123" });
 
-		const handleToggle = initHandleToggleCommand({
+		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [
 				{ url: "https://example.com/article", title: "Example Article" },
 			],
 			whenLoggedIn: auth.whenLoggedIn,
 			saveCurrentTab,
-			findByUrl: readingList.findByUrl,
-			removeUrl: readingList.removeUrl,
+			hasLoginWindow: () => false,
 		});
 
-		const result = await handleToggle();
+		const result = await handleShortcut();
 
 		expect(result).toEqual({
 			action: "saved",
@@ -30,26 +29,27 @@ describe("initHandleToggleCommand", () => {
 		});
 	});
 
-	it("should remove when URL is already in the reading list", async () => {
+	it("should return not-logged-in with URL info when not authenticated", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
-		await readingList.saveUrl({ url: "https://example.com/saved", title: "Saved" });
 
-		const handleToggle = initHandleToggleCommand({
+		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [
-				{ url: "https://example.com/saved", title: "Saved" },
+				{ url: "https://example.com/article", title: "Example Article" },
 			],
 			whenLoggedIn: auth.whenLoggedIn,
 			saveCurrentTab,
-			findByUrl: readingList.findByUrl,
-			removeUrl: readingList.removeUrl,
+			hasLoginWindow: () => false,
 		});
 
-		const result = await handleToggle();
+		const result = await handleShortcut();
 
-		expect(result).toEqual({ action: "removed" });
+		expect(result).toEqual({
+			action: "not-logged-in",
+			url: "https://example.com/article",
+			title: "Example Article",
+		});
 	});
 
 	it("should return null when no active tab exists", async () => {
@@ -58,37 +58,54 @@ describe("initHandleToggleCommand", () => {
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
 		await auth.login({ email: "user@example.com", password: "password123" });
 
-		const handleToggle = initHandleToggleCommand({
+		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [],
 			whenLoggedIn: auth.whenLoggedIn,
 			saveCurrentTab,
-			findByUrl: readingList.findByUrl,
-			removeUrl: readingList.removeUrl,
+			hasLoginWindow: () => false,
 		});
 
-		const result = await handleToggle();
+		const result = await handleShortcut();
 
 		expect(result).toBeNull();
 	});
 
-	it("should return null when not logged in", async () => {
+	it("should return null when tab has no URL", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
+		await auth.login({ email: "user@example.com", password: "password123" });
 
-		const handleToggle = initHandleToggleCommand({
+		const handleShortcut = initHandleShortcutCommand({
+			queryActiveTabs: async () => [{}],
+			whenLoggedIn: auth.whenLoggedIn,
+			saveCurrentTab,
+			hasLoginWindow: () => false,
+		});
+
+		const result = await handleShortcut();
+
+		expect(result).toBeNull();
+	});
+
+	it("should return login-window-focused when login window is already open", async () => {
+		const auth = initInMemoryAuth();
+		const readingList = initInMemoryReadingList();
+		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
+		await auth.login({ email: "user@example.com", password: "password123" });
+
+		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [
 				{ url: "https://example.com/article", title: "Example" },
 			],
 			whenLoggedIn: auth.whenLoggedIn,
 			saveCurrentTab,
-			findByUrl: readingList.findByUrl,
-			removeUrl: readingList.removeUrl,
+			hasLoginWindow: () => true,
 		});
 
-		const result = await handleToggle();
+		const result = await handleShortcut();
 
-		expect(result).toBeNull();
+		expect(result).toEqual({ action: "login-window-focused" });
 	});
 
 	it("should use URL as title when tab has no title", async () => {
@@ -97,17 +114,14 @@ describe("initHandleToggleCommand", () => {
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
 		await auth.login({ email: "user@example.com", password: "password123" });
 
-		const handleToggle = initHandleToggleCommand({
-			queryActiveTabs: async () => [
-				{ url: "https://example.com/no-title" },
-			],
+		const handleShortcut = initHandleShortcutCommand({
+			queryActiveTabs: async () => [{ url: "https://example.com/no-title" }],
 			whenLoggedIn: auth.whenLoggedIn,
 			saveCurrentTab,
-			findByUrl: readingList.findByUrl,
-			removeUrl: readingList.removeUrl,
+			hasLoginWindow: () => false,
 		});
 
-		const result = await handleToggle();
+		const result = await handleShortcut();
 
 		expect(result).toEqual({
 			action: "saved",
@@ -118,61 +132,45 @@ describe("initHandleToggleCommand", () => {
 		});
 	});
 
-	it("should return null when logged out before remove", async () => {
+	it("should return not-logged-in with URL as title when tab has no title", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
-		await readingList.saveUrl({ url: "https://example.com/page", title: "Page" });
 
-		let callCount = 0;
-		const handleToggle = initHandleToggleCommand({
-			queryActiveTabs: async () => [
-				{ url: "https://example.com/page", title: "Page" },
-			],
-			whenLoggedIn: (fn) => {
-				callCount++;
-				if (callCount === 2) {
-					return { ok: false as const, reason: "not-logged-in" as const };
-				}
-				return auth.whenLoggedIn(fn);
-			},
+		const handleShortcut = initHandleShortcutCommand({
+			queryActiveTabs: async () => [{ url: "https://example.com/no-title" }],
+			whenLoggedIn: auth.whenLoggedIn,
 			saveCurrentTab,
-			findByUrl: readingList.findByUrl,
-			removeUrl: readingList.removeUrl,
+			hasLoginWindow: () => false,
 		});
 
-		const result = await handleToggle();
+		const result = await handleShortcut();
 
-		expect(result).toBeNull();
+		expect(result).toEqual({
+			action: "not-logged-in",
+			url: "https://example.com/no-title",
+			title: "https://example.com/no-title",
+		});
 	});
 
-	it("should allow saving again after removing", async () => {
+	it("should return null when save fails due to already-saved", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
 		await auth.login({ email: "user@example.com", password: "password123" });
-		await readingList.saveUrl({ url: "https://example.com/toggle", title: "Toggle" });
+		await readingList.saveUrl({ url: "https://example.com/saved", title: "Saved" });
 
-		const handleToggle = initHandleToggleCommand({
+		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [
-				{ url: "https://example.com/toggle", title: "Toggle" },
+				{ url: "https://example.com/saved", title: "Saved" },
 			],
 			whenLoggedIn: auth.whenLoggedIn,
 			saveCurrentTab,
-			findByUrl: readingList.findByUrl,
-			removeUrl: readingList.removeUrl,
+			hasLoginWindow: () => false,
 		});
 
-		const removeResult = await handleToggle();
-		expect(removeResult).toEqual({ action: "removed" });
+		const result = await handleShortcut();
 
-		const saveResult = await handleToggle();
-		expect(saveResult).toEqual({
-			action: "saved",
-			item: expect.objectContaining({
-				url: "https://example.com/toggle",
-			}),
-		});
+		expect(result).toBeNull();
 	});
 });

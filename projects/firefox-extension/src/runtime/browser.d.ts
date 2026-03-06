@@ -53,11 +53,24 @@ declare namespace browser {
 			path?: Record<number, string>;
 			imageData?: Record<number, ImageData>;
 		}): Promise<void>;
+
 	}
 
-	namespace commands {
-		const onCommand: {
-			addListener(callback: (command: string) => void): void;
+	namespace windows {
+		function create(createData: {
+			url?: string;
+			type?: "normal" | "popup" | "panel" | "detached_panel";
+			width?: number;
+			height?: number;
+		}): Promise<{ id?: number }>;
+
+		function update(
+			windowId: number,
+			updateInfo: { focused?: boolean },
+		): Promise<{ id?: number }>;
+
+		const onRemoved: {
+			addListener(callback: (windowId: number) => void): void;
 		};
 	}
 

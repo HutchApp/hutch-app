@@ -1,6 +1,5 @@
 import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
-import { initHandleToggleCommand } from "./handle-toggle-command";
 import type { PopupMessage } from "./messages.types";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initIconStatus } from "./icon-status";
@@ -10,6 +9,7 @@ import {
 	MENU_ITEM_SAVE_PAGE,
 	initSaveFromContextMenu,
 } from "./save-from-context-menu";
+import { initHandleShortcutCommand } from "./handle-shortcut-command";
 
 const auth = initInMemoryAuth();
 const readingList = initInMemoryReadingList();
@@ -21,6 +21,16 @@ const { updateIconForTab } = initIconStatus({
 });
 const saveFromContextMenu = initSaveFromContextMenu({
 	saveUrl: readingList.saveUrl,
+});
+
+let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
+
+const handleShortcut = initHandleShortcutCommand({
+	queryActiveTabs: () =>
+		browser.tabs.query({ active: true, currentWindow: true }),
+	whenLoggedIn: auth.whenLoggedIn,
+	saveCurrentTab,
+	hasLoginWindow: () => loginWindow != null,
 });
 
 browser.menus.create({
@@ -57,26 +67,49 @@ async function updateActiveTabIcon() {
 	}
 }
 
-const queryActiveTabs = () =>
-	browser.tabs.query({ active: true, currentWindow: true });
-
-const handleToggleCommand = initHandleToggleCommand({
-	queryActiveTabs,
-	whenLoggedIn: auth.whenLoggedIn,
-	saveCurrentTab,
-	findByUrl: readingList.findByUrl,
-	removeUrl: readingList.removeUrl,
+browser.windows.onRemoved.addListener((windowId) => {
+	if (loginWindow && windowId === loginWindow.id) {
+		updateIconForTab(loginWindow.tabId, loginWindow.tabUrl).catch(() => {});
+		loginWindow = null;
+	}
 });
 
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
-	if ((raw as { type: string }).type === "toggle-current-tab") {
-		handleToggleCommand()
-			.then((result) => {
-				updateActiveTabIcon().catch(() => {});
-				sendResponse(result);
-			})
-			.catch(console.error);
-		return true;
+	if ((raw as { type: string }).type === "shortcut-pressed") {
+		(async () => {
+			const tabs = await browser.tabs.query({
+				active: true,
+				currentWindow: true,
+			});
+			const tab = tabs[0];
+			const result = await handleShortcut();
+
+			if (result?.action === "login-window-focused" && loginWindow) {
+				await browser.windows.update(loginWindow.id, { focused: true });
+				return;
+			}
+
+			if (result?.action === "not-logged-in") {
+				const params = `?url=${encodeURIComponent(result.url)}&title=${encodeURIComponent(result.title)}`;
+				const win = await browser.windows.create({
+					url: browser.runtime.getURL(
+						`popup/popup.template.html${params}`,
+					),
+					type: "popup",
+					width: 380,
+					height: 520,
+				});
+				if (win.id != null && tab?.id != null) {
+					loginWindow = { id: win.id, tabId: tab.id, tabUrl: result.url };
+				}
+				return;
+			}
+
+			if (result?.action === "saved" && tab?.id != null && tab.url) {
+				await updateIconForTab(tab.id, tab.url);
+			}
+		})().catch(console.error);
+		return;
 	}
 
 	const message = raw as PopupMessage;

@@ -191,20 +191,27 @@ async function showListView() {
 	await loadAllItems();
 }
 
-async function saveAndShowList() {
-	const tabs = await browser.tabs.query({
-		active: true,
-		currentWindow: true,
-	});
+async function getActiveTab(): Promise<{ url: string; title: string } | null> {
+	const params = new URLSearchParams(window.location.search);
+	const paramUrl = params.get("url");
+	if (paramUrl) return { url: paramUrl, title: params.get("title") ?? paramUrl };
+
+	const tabs = await browser.tabs.query({ active: true, currentWindow: true });
 	const tab = tabs[0];
-	if (!tab?.url) {
+	if (!tab?.url) return null;
+	return { url: tab.url, title: tab.title ?? tab.url };
+}
+
+async function saveAndShowList() {
+	const activeTab = await getActiveTab();
+	if (!activeTab) {
 		await showListView();
 		return;
 	}
 
 	const checkResult = (await send({
 		type: "check-url",
-		url: tab.url,
+		url: activeTab.url,
 	})) as GuardedResult<ReadingListItem | null>;
 
 	if (!checkResult.ok) {
@@ -222,8 +229,8 @@ async function saveAndShowList() {
 
 	const saveResult = (await send({
 		type: "save-current-tab",
-		url: tab.url,
-		title: tab.title ?? tab.url,
+		url: activeTab.url,
+		title: activeTab.title,
 	})) as GuardedResult<SaveUrlResult>;
 
 	if (saveResult.ok && saveResult.value.ok) {
