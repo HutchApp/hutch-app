@@ -5,8 +5,8 @@ const REGISTERED_CLIENTS: Record<string, OAuthClient> = {
 		id: "hutch-firefox-extension" as OAuthClientId,
 		name: "Hutch Firefox Extension",
 		redirectUris: [
-			"https://extensions.hutch-app.com/callback",
-			"http://localhost:3000/callback",
+			"https://hutch-app.com/oauth/callback",
+			"http://127.0.0.1:3000/oauth/callback",
 		],
 		grants: ["authorization_code", "refresh_token"],
 	},

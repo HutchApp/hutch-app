@@ -143,5 +143,28 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 		res.status(200).json({});
 	});
 
+	router.get("/callback", (_req: Request, res: Response) => {
+		res.type("html").send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Authorization Complete</title>
+	<style>
+		body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+		.message { text-align: center; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+		h1 { color: #333; margin: 0 0 1rem 0; font-size: 1.5rem; }
+		p { color: #666; margin: 0; }
+	</style>
+</head>
+<body>
+	<div class="message">
+		<h1>Authorization Complete</h1>
+		<p>You may close this window.</p>
+	</div>
+</body>
+</html>`);
+	});
+
 	return router;
 }

@@ -14,7 +14,7 @@ import {
 
 const TEST_CLIENT_ID = "hutch-firefox-extension" as OAuthClientId;
 const TEST_USER_ID = "user-123" as UserId;
-const TEST_REDIRECT_URI = "http://localhost:3000/callback";
+const TEST_REDIRECT_URI = "http://127.0.0.1:3000/oauth/callback";
 
 function createTestClient(): Client {
 	return {

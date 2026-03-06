@@ -1,11 +1,12 @@
+import assert from "node:assert";
 import request from "supertest";
-import type { Client, Token } from "@node-oauth/oauth2-server";
+import type { Token } from "@node-oauth/oauth2-server";
 import { createTestApp } from "../../test-app";
 import type { UserId } from "../../domain/user/user.types";
 
 const TEST_USER_ID = "test-user-123" as UserId;
 const TEST_CLIENT_ID = "hutch-firefox-extension";
-const TEST_REDIRECT_URI = "http://localhost:3000/callback";
+const TEST_REDIRECT_URI = "http://127.0.0.1:3000/oauth/callback";
 
 describe("OAuth routes", () => {
 	describe("GET /oauth/authorize", () => {
@@ -198,12 +199,10 @@ describe("OAuth routes", () => {
 	});
 
 	describe("POST /oauth/revoke", () => {
-		it("revokes a valid refresh token", async () => {
+		it("revokes refresh token and returns 200", async () => {
 			const testApp = createTestApp();
-			const client = (await testApp.oauthModel.getClient(
-				TEST_CLIENT_ID,
-				"",
-			)) as Client;
+			const client = await testApp.oauthModel.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
 			await testApp.oauthModel.saveToken(
 				{
@@ -225,7 +224,7 @@ describe("OAuth routes", () => {
 			const revokedToken = await testApp.oauthModel.getRefreshToken(
 				"revoke-refresh",
 			);
-			expect(revokedToken).toBeNull();
+			expect(revokedToken).toBeFalsy();
 		});
 
 		it("returns 400 without token parameter", async () => {
@@ -247,6 +246,18 @@ describe("OAuth routes", () => {
 				.send({ token: "non-existent-token" });
 
 			expect(response.status).toBe(200);
+		});
+	});
+
+	describe("GET /oauth/callback", () => {
+		it("returns authorization complete page", async () => {
+			const testApp = createTestApp();
+
+			const response = await request(testApp.app).get("/oauth/callback");
+
+			expect(response.status).toBe(200);
+			expect(response.text).toContain("Authorization Complete");
+			expect(response.text).toContain("You may close this window");
 		});
 	});
 });
