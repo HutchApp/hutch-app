@@ -20,6 +20,7 @@
     "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod"
   },
   "dependencies": {
+    "firefox-extension": "workspace:*",
     "@aws-sdk/client-dynamodb": "3.1001.0",
     "@aws-sdk/lib-dynamodb": "3.1001.0",
     "@mozilla/readability": "0.6.0",

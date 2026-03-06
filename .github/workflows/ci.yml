@@ -62,3 +62,35 @@ jobs:
 
       - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod --yes
         working-directory: projects/hutch
+
+  deploy-extension:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: check
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
+      PULUMI_CONFIG_PASSPHRASE: ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build and package extension
+        run: pnpm --filter firefox-extension compile
+
+      - name: Deploy extension to S3
+        run: pulumi up --stack prod --yes
+        working-directory: projects/firefox-extension
