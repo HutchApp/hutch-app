@@ -14,12 +14,15 @@
     "compile": "node scripts/build-extension.js && web-ext build --source-dir dist-extension --artifacts-dir dist-artifacts --overwrite-dest --filename hutch.xpi",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
-    "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
-    "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
+    "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --passWithNoTests",
+    "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand --passWithNoTests",
     "test-with-coverage": "tsc && c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
     "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
     "check": "pnpm compile && pnpm lint && pnpm test-with-coverage && pnpm check-infra",
     "ext:run": "web-ext run --source-dir dist-extension"
+  },
+  "dependencies": {
+    "extension-core": "workspace:*"
   },
   "devDependencies": {
     "@pulumi/aws": "7.20.0",

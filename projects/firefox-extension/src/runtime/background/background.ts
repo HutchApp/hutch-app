@@ -1,15 +1,16 @@
-import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
-import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
-import type { PopupMessage } from "./messages.types";
-import { initSaveCurrentTab } from "./save-current-tab";
-import { initIconStatus } from "./icon-status";
-import { createBrowserSetIcon } from "./tinted-icon.browser";
+import { initInMemoryAuth } from "extension-core/providers/auth/in-memory-auth";
+import { initInMemoryReadingList } from "extension-core/providers/reading-list/in-memory-reading-list";
+import { initSaveCurrentTab } from "extension-core/background/save-current-tab";
+import { initIconStatus } from "extension-core/background/icon-status";
 import {
 	MENU_ITEM_SAVE_LINK,
 	MENU_ITEM_SAVE_PAGE,
 	initSaveFromContextMenu,
-} from "./save-from-context-menu";
-import { initHandleShortcutCommand } from "./handle-shortcut-command";
+} from "extension-core/background/save-from-context-menu";
+import { initHandlePopupMessage } from "extension-core/background/handle-popup-message";
+import { initHandleShortcut } from "extension-core/background/handle-shortcut";
+import type { PopupMessage } from "extension-core/background/messages.types";
+import { createBrowserSetIcon } from "./tinted-icon.browser";
 
 const auth = initInMemoryAuth();
 const readingList = initInMemoryReadingList();
@@ -23,14 +24,33 @@ const saveFromContextMenu = initSaveFromContextMenu({
 	saveUrl: readingList.saveUrl,
 });
 
-let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
+const queryActiveTabs = () =>
+	browser.tabs.query({ active: true, currentWindow: true });
 
-const handleShortcut = initHandleShortcutCommand({
-	queryActiveTabs: () =>
-		browser.tabs.query({ active: true, currentWindow: true }),
+async function updateActiveTabIcon() {
+	const tabs = await queryActiveTabs();
+	const tab = tabs[0];
+	if (tab?.id != null && tab.url) {
+		await updateIconForTab(tab.id, tab.url);
+	}
+}
+
+const handlePopupMessage = initHandlePopupMessage({
+	login: auth.login,
+	logout: auth.logout,
 	whenLoggedIn: auth.whenLoggedIn,
 	saveCurrentTab,
-	hasLoginWindow: () => loginWindow != null,
+	removeUrl: readingList.removeUrl,
+	findByUrl: readingList.findByUrl,
+	getAllItems: readingList.getAllItems,
+	updateActiveTabIcon,
+});
+
+const shortcut = initHandleShortcut({
+	queryActiveTabs,
+	whenLoggedIn: auth.whenLoggedIn,
+	saveCurrentTab,
+	updateIconForTab,
 });
 
 browser.menus.create({
@@ -56,40 +76,17 @@ browser.menus.onClicked.addListener((info, tab) => {
 	}
 });
 
-async function updateActiveTabIcon() {
-	const tabs = await browser.tabs.query({
-		active: true,
-		currentWindow: true,
-	});
-	const tab = tabs[0];
-	if (tab?.id != null && tab.url) {
-		await updateIconForTab(tab.id, tab.url);
-	}
-}
-
-browser.windows.onRemoved.addListener((windowId) => {
-	if (loginWindow && windowId === loginWindow.id) {
-		updateIconForTab(loginWindow.tabId, loginWindow.tabUrl).catch(() => {});
-		loginWindow = null;
-	}
-});
-
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	if ((raw as { type: string }).type === "shortcut-pressed") {
 		(async () => {
-			const tabs = await browser.tabs.query({
-				active: true,
-				currentWindow: true,
-			});
-			const tab = tabs[0];
-			const result = await handleShortcut();
+			const result = await shortcut.onShortcutPressed();
 
-			if (result?.action === "login-window-focused" && loginWindow) {
-				await browser.windows.update(loginWindow.id, { focused: true });
+			if (result?.action === "focus-login-window") {
+				await browser.windows.update(result.windowId, { focused: true });
 				return;
 			}
 
-			if (result?.action === "not-logged-in") {
+			if (result?.action === "open-login") {
 				const params = `?url=${encodeURIComponent(result.url)}&title=${encodeURIComponent(result.title)}`;
 				const win = await browser.windows.create({
 					url: browser.runtime.getURL(
@@ -99,68 +96,21 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 					width: 380,
 					height: 520,
 				});
-				if (win.id != null && tab?.id != null) {
-					loginWindow = { id: win.id, tabId: tab.id, tabUrl: result.url };
+				if (win.id != null) {
+					shortcut.onLoginWindowOpened(win.id, result.tabId, result.tabUrl);
 				}
-				return;
-			}
-
-			if (result?.action === "saved" && tab?.id != null && tab.url) {
-				await updateIconForTab(tab.id, tab.url);
 			}
 		})().catch(console.error);
 		return;
 	}
 
 	const message = raw as PopupMessage;
-
-	const handle = async () => {
-		switch (message.type) {
-			case "login": {
-				const result = await auth.login();
-				if (result.ok) updateActiveTabIcon().catch(() => {});
-				return result;
-			}
-			case "logout": {
-				await auth.logout();
-				updateActiveTabIcon().catch(() => {});
-				return { ok: true };
-			}
-			case "save-current-tab": {
-				const guarded = auth.whenLoggedIn(() =>
-					saveCurrentTab({ url: message.url, title: message.title }),
-				);
-				if (!guarded.ok) return guarded;
-				const value = await guarded.value;
-				if (value.ok) updateActiveTabIcon().catch(() => {});
-				return { ok: true as const, value };
-			}
-			case "remove-item": {
-				const guarded = auth.whenLoggedIn(() =>
-					readingList.removeUrl(message.id),
-				);
-				if (!guarded.ok) return guarded;
-				const value = await guarded.value;
-				if (value.ok) updateActiveTabIcon().catch(() => {});
-				return { ok: true as const, value };
-			}
-			case "check-url": {
-				const guarded = auth.whenLoggedIn(() =>
-					readingList.findByUrl(message.url),
-				);
-				if (!guarded.ok) return guarded;
-				return { ok: true as const, value: await guarded.value };
-			}
-			case "get-all-items": {
-				const guarded = auth.whenLoggedIn(() => readingList.getAllItems());
-				if (!guarded.ok) return guarded;
-				return { ok: true as const, value: await guarded.value };
-			}
-		}
-	};
-
-	handle().then(sendResponse);
+	handlePopupMessage(message).then(sendResponse);
 	return true;
+});
+
+browser.windows.onRemoved.addListener((windowId) => {
+	shortcut.onWindowRemoved(windowId);
 });
 
 browser.tabs.onActivated.addListener((activeInfo) => {

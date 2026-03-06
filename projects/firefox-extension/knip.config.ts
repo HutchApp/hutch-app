@@ -21,6 +21,8 @@ export default {
 		"@pulumi/pulumi",
 		// Used via compile and ext:run scripts
 		"web-ext",
+		// Imported in source via esbuild bundling (knip can't resolve bundled workspace imports)
+		"extension-core",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),
