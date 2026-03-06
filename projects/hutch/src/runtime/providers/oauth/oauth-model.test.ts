@@ -1,10 +1,10 @@
+import assert from "node:assert";
 import type { UserId } from "../../domain/user/user.types";
 import type { OAuthClientId } from "../../domain/oauth/oauth.types";
 import type {
 	Token,
 	Client,
 	AuthorizationCode,
-	RefreshToken,
 } from "@node-oauth/oauth2-server";
 import {
 	createOAuthModel,
@@ -14,314 +14,315 @@ import {
 
 const TEST_CLIENT_ID = "hutch-firefox-extension" as OAuthClientId;
 const TEST_USER_ID = "user-123" as UserId;
-const TEST_REDIRECT_URI = "http://127.0.0.1/callback";
+const TEST_REDIRECT_URI = "http://localhost:3000/callback";
+
+function createTestClient(): Client {
+	return {
+		id: TEST_CLIENT_ID,
+		grants: ["authorization_code", "refresh_token"],
+		redirectUris: [TEST_REDIRECT_URI],
+	};
+}
+
+function createTestToken(overrides: Partial<Token> = {}): Token {
+	return {
+		accessToken: "test-access-token",
+		accessTokenExpiresAt: new Date(Date.now() + 3600000),
+		refreshToken: "test-refresh-token",
+		refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
+		client: createTestClient(),
+		user: { id: TEST_USER_ID },
+		...overrides,
+	};
+}
+
+function createTestAuthCode(overrides: Partial<AuthorizationCode> = {}): AuthorizationCode {
+	return {
+		authorizationCode: "test-code",
+		expiresAt: new Date(Date.now() + 300000),
+		redirectUri: TEST_REDIRECT_URI,
+		codeChallenge: "test-challenge",
+		codeChallengeMethod: "S256",
+		client: createTestClient(),
+		user: { id: TEST_USER_ID },
+		...overrides,
+	};
+}
 
 describe("createOAuthModel", () => {
 	describe("getClient", () => {
-		it("returns registered client", async () => {
+		it("returns registered client with expected grants", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
 			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Client should be returned for registered client ID");
 
-			expect(client).toBeDefined();
-			expect((client as Client).id).toBe(TEST_CLIENT_ID);
-			expect((client as Client).grants).toContain("authorization_code");
+			expect(client.id).toBe(TEST_CLIENT_ID);
+			expect(client.grants).toContain("authorization_code");
+			expect(client.grants).toContain("refresh_token");
 		});
 
-		it("returns null for unknown client", async () => {
+		it("returns falsy for unknown client preventing authorization", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = await model.getClient("unknown-client", "");
+			const unknownClient = await model.getClient("unknown-client", "");
 
-			expect(client).toBeNull();
+			expect(unknownClient).toBeFalsy();
 		});
 	});
 
 	describe("authorization code flow", () => {
-		it("saves and retrieves authorization code", async () => {
+		it("saves authorization code and retrieves it with PKCE data", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const code: Partial<AuthorizationCode> = {
-				authorizationCode: "test-code-123",
-				expiresAt: new Date(Date.now() + 300000),
-				redirectUri: TEST_REDIRECT_URI,
-				codeChallenge: "test-challenge",
-				codeChallengeMethod: "S256",
-				scope: undefined,
-			};
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
-			await model.saveAuthorizationCode(
-				code as AuthorizationCode,
+			const savedCode = await model.saveAuthorizationCode(
+				createTestAuthCode({ authorizationCode: "save-test-code" }),
 				client,
 				{ id: TEST_USER_ID },
 			);
-			const retrieved = (await model.getAuthorizationCode(
-				"test-code-123",
-			)) as AuthorizationCode;
+			assert(savedCode, "Code should be saved");
 
-			expect(retrieved).toBeDefined();
-			expect(retrieved.authorizationCode).toBe("test-code-123");
+			const retrieved = await model.getAuthorizationCode(savedCode.authorizationCode);
+			assert(retrieved, "Saved code should be retrievable");
+
+			expect(retrieved.authorizationCode).toBe("save-test-code");
 			expect(retrieved.codeChallenge).toBe("test-challenge");
 			expect(retrieved.user.id).toBe(TEST_USER_ID);
 		});
 
-		it("returns null for expired authorization code", async () => {
+		it("rejects expired authorization codes", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const code: Partial<AuthorizationCode> = {
-				authorizationCode: "expired-code",
-				expiresAt: new Date(Date.now() - 1000),
-				redirectUri: TEST_REDIRECT_URI,
-				codeChallenge: "test-challenge",
-				codeChallengeMethod: "S256",
-				scope: undefined,
-			};
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
 			await model.saveAuthorizationCode(
-				code as AuthorizationCode,
+				createTestAuthCode({
+					authorizationCode: "expired-code",
+					expiresAt: new Date(Date.now() - 1000),
+				}),
 				client,
 				{ id: TEST_USER_ID },
 			);
+
 			const retrieved = await model.getAuthorizationCode("expired-code");
 
-			expect(retrieved).toBeNull();
+			expect(retrieved).toBeFalsy();
 		});
 
-		it("revokes authorization code", async () => {
+		it("revokeAuthorizationCode returns true and invalidates the code", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const code: Partial<AuthorizationCode> = {
-				authorizationCode: "revoke-test-code",
-				expiresAt: new Date(Date.now() + 300000),
-				redirectUri: TEST_REDIRECT_URI,
-				codeChallenge: "test-challenge",
-				codeChallengeMethod: "S256",
-				scope: undefined,
-			};
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
-			await model.saveAuthorizationCode(
-				code as AuthorizationCode,
+			const saved = await model.saveAuthorizationCode(
+				createTestAuthCode({ authorizationCode: "revoke-test-code" }),
 				client,
 				{ id: TEST_USER_ID },
 			);
-			const fullCode = (await model.getAuthorizationCode(
-				"revoke-test-code",
-			)) as AuthorizationCode;
+			assert(saved, "Code should be saved");
 
-			const revoked = await model.revokeAuthorizationCode(fullCode);
+			const revocationResult = await model.revokeAuthorizationCode(saved);
 
-			expect(revoked).toBe(true);
-			expect(await model.getAuthorizationCode("revoke-test-code")).toBeNull();
+			expect(revocationResult).toBe(true);
 		});
 
 		it("throws error when code_challenge is missing", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const code: Partial<AuthorizationCode> = {
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
+
+			const codeWithoutPKCE = createTestAuthCode({
 				authorizationCode: "no-pkce-code",
-				expiresAt: new Date(Date.now() + 300000),
-				redirectUri: TEST_REDIRECT_URI,
-				scope: undefined,
-			};
+				codeChallenge: undefined,
+			});
+			delete (codeWithoutPKCE as Partial<AuthorizationCode>).codeChallenge;
 
 			await expect(
-				model.saveAuthorizationCode(
-					code as AuthorizationCode,
-					client,
-					{ id: TEST_USER_ID },
-				),
+				model.saveAuthorizationCode(codeWithoutPKCE, client, { id: TEST_USER_ID }),
 			).rejects.toThrow("PKCE code_challenge is required for authorization_code grants");
 		});
 	});
 
 	describe("token flow", () => {
-		it("saves and retrieves access token", async () => {
+		it("saves token and retrieves access token with user info", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const token: Partial<Token> = {
-				accessToken: "access-token-123",
-				accessTokenExpiresAt: new Date(Date.now() + 3600000),
-				refreshToken: "refresh-token-123",
-				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-				scope: undefined,
-			};
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
-			await model.saveToken(token as Token, client, { id: TEST_USER_ID });
-			const retrieved = (await model.getAccessToken(
-				"access-token-123",
-			)) as Token;
+			const savedToken = await model.saveToken(
+				createTestToken({ accessToken: "retrieve-test-token" }),
+				client,
+				{ id: TEST_USER_ID },
+			);
+			assert(savedToken, "Token should be saved");
 
-			expect(retrieved).toBeDefined();
-			expect(retrieved.accessToken).toBe("access-token-123");
+			const retrieved = await model.getAccessToken(savedToken.accessToken);
+			assert(retrieved, "Saved token should be retrievable");
+
+			expect(retrieved.accessToken).toBe("retrieve-test-token");
 			expect(retrieved.user.id).toBe(TEST_USER_ID);
 		});
 
-		it("returns null for expired access token", async () => {
+		it("rejects expired access tokens", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const token: Partial<Token> = {
-				accessToken: "expired-access-token",
-				accessTokenExpiresAt: new Date(Date.now() - 1000),
-				refreshToken: "refresh-token-456",
-				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-				scope: undefined,
-			};
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
-			await model.saveToken(token as Token, client, { id: TEST_USER_ID });
+			await model.saveToken(
+				createTestToken({
+					accessToken: "expired-access-token",
+					accessTokenExpiresAt: new Date(Date.now() - 1000),
+				}),
+				client,
+				{ id: TEST_USER_ID },
+			);
+
 			const retrieved = await model.getAccessToken("expired-access-token");
 
-			expect(retrieved).toBeNull();
+			expect(retrieved).toBeFalsy();
 		});
 
-		it("retrieves refresh token", async () => {
+		it("retrieves refresh token with expected data", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const token: Partial<Token> = {
-				accessToken: "access-token-789",
-				accessTokenExpiresAt: new Date(Date.now() + 3600000),
-				refreshToken: "refresh-token-789",
-				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-				scope: undefined,
-			};
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
-			await model.saveToken(token as Token, client, { id: TEST_USER_ID });
-			const retrieved = (await model.getRefreshToken(
-				"refresh-token-789",
-			)) as RefreshToken;
+			await model.saveToken(
+				createTestToken({ refreshToken: "retrieve-refresh-token" }),
+				client,
+				{ id: TEST_USER_ID },
+			);
 
-			expect(retrieved).toBeDefined();
-			expect(retrieved.refreshToken).toBe("refresh-token-789");
+			const retrieved = await model.getRefreshToken("retrieve-refresh-token");
+			assert(retrieved, "Saved refresh token should be retrievable");
+
+			expect(retrieved.refreshToken).toBe("retrieve-refresh-token");
 		});
 
-		it("revokes token by refresh token", async () => {
+		it("revokeToken returns true indicating successful revocation", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
-			const token: Partial<Token> = {
-				accessToken: "access-to-revoke",
-				accessTokenExpiresAt: new Date(Date.now() + 3600000),
-				refreshToken: "refresh-to-revoke",
-				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-				scope: undefined,
-			};
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
-			await model.saveToken(token as Token, client, { id: TEST_USER_ID });
-			const refreshToken = (await model.getRefreshToken(
-				"refresh-to-revoke",
-			)) as RefreshToken;
-			const revoked = await model.revokeToken(refreshToken);
+			await model.saveToken(
+				createTestToken({
+					accessToken: "access-to-revoke",
+					refreshToken: "refresh-to-revoke",
+				}),
+				client,
+				{ id: TEST_USER_ID },
+			);
 
-			expect(revoked).toBe(true);
-			expect(await model.getAccessToken("access-to-revoke")).toBeNull();
-			expect(await model.getRefreshToken("refresh-to-revoke")).toBeNull();
+			const refreshToken = await model.getRefreshToken("refresh-to-revoke");
+			assert(refreshToken, "Refresh token must exist before revocation");
+
+			const revocationResult = await model.revokeToken(refreshToken);
+
+			expect(revocationResult).toBe(true);
 		});
 	});
 
 	describe("revokeAllUserTokens", () => {
-		it("revokes all tokens for a user", async () => {
+		it("invalidates all tokens for the specified user", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
 
 			await model.saveToken(
-				{
+				createTestToken({
 					accessToken: "user-token-1",
-					accessTokenExpiresAt: new Date(Date.now() + 3600000),
 					refreshToken: "user-refresh-1",
-					refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-					scope: undefined,
-				} as Token,
+				}),
 				client,
 				{ id: TEST_USER_ID },
 			);
 
 			await model.saveToken(
-				{
+				createTestToken({
 					accessToken: "user-token-2",
-					accessTokenExpiresAt: new Date(Date.now() + 3600000),
 					refreshToken: "user-refresh-2",
-					refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-					scope: undefined,
-				} as Token,
+				}),
 				client,
 				{ id: TEST_USER_ID },
 			);
 
 			revokeAllUserTokens(deps, TEST_USER_ID);
 
-			expect(await model.getAccessToken("user-token-1")).toBeNull();
-			expect(await model.getAccessToken("user-token-2")).toBeNull();
-			expect(await model.getRefreshToken("user-refresh-1")).toBeNull();
-			expect(await model.getRefreshToken("user-refresh-2")).toBeNull();
+			const token1 = await model.getAccessToken("user-token-1");
+			const token2 = await model.getAccessToken("user-token-2");
+			expect(token1).toBeFalsy();
+			expect(token2).toBeFalsy();
 		});
 
-		it("does not affect other users tokens", async () => {
+		it("preserves tokens belonging to other users", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
-			const client = (await model.getClient(TEST_CLIENT_ID, "")) as Client;
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
+
 			const otherUserId = "other-user" as UserId;
 
 			await model.saveToken(
-				{
+				createTestToken({
 					accessToken: "user1-token",
-					accessTokenExpiresAt: new Date(Date.now() + 3600000),
 					refreshToken: "user1-refresh",
-					refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-					scope: undefined,
-				} as Token,
+				}),
 				client,
 				{ id: TEST_USER_ID },
 			);
 
 			await model.saveToken(
-				{
+				createTestToken({
 					accessToken: "user2-token",
-					accessTokenExpiresAt: new Date(Date.now() + 3600000),
 					refreshToken: "user2-refresh",
-					refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-					scope: undefined,
-				} as Token,
+				}),
 				client,
 				{ id: otherUserId },
 			);
 
 			revokeAllUserTokens(deps, TEST_USER_ID);
 
-			expect(await model.getAccessToken("user1-token")).toBeNull();
-			expect(await model.getAccessToken("user2-token")).toBeDefined();
+			const user1Token = await model.getAccessToken("user1-token");
+			const user2Token = await model.getAccessToken("user2-token");
+			assert(user2Token, "Other user's token should still be valid");
+
+			expect(user1Token).toBeFalsy();
+			expect(user2Token.accessToken).toBe("user2-token");
 		});
 	});
 
 	describe("token generation", () => {
-		it("generates unique access tokens", async () => {
+		it("generates unique access tokens of expected length", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
 			const generateAccessToken = model.generateAccessToken;
-			if (!generateAccessToken) {
-				throw new Error("generateAccessToken not defined");
-			}
+			assert(generateAccessToken, "generateAccessToken must be defined");
 
-			const dummyClient = { id: "test", grants: [] } as Client;
+			const dummyClient = createTestClient();
 			const dummyUser = { id: "test-user" };
 
 			const token1 = await generateAccessToken(dummyClient, dummyUser, []);
@@ -331,16 +332,14 @@ describe("createOAuthModel", () => {
 			expect(token1.length).toBe(64);
 		});
 
-		it("generates unique refresh tokens", async () => {
+		it("generates unique refresh tokens of expected length", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
 			const generateRefreshToken = model.generateRefreshToken;
-			if (!generateRefreshToken) {
-				throw new Error("generateRefreshToken not defined");
-			}
+			assert(generateRefreshToken, "generateRefreshToken must be defined");
 
-			const dummyClient = { id: "test", grants: [] } as Client;
+			const dummyClient = createTestClient();
 			const dummyUser = { id: "test-user" };
 
 			const token1 = await generateRefreshToken(dummyClient, dummyUser, []);

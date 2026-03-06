@@ -5,7 +5,7 @@ import type { UserId } from "../../domain/user/user.types";
 
 const TEST_USER_ID = "test-user-123" as UserId;
 const TEST_CLIENT_ID = "hutch-firefox-extension";
-const TEST_REDIRECT_URI = "http://127.0.0.1/callback";
+const TEST_REDIRECT_URI = "http://localhost:3000/callback";
 
 describe("OAuth routes", () => {
 	describe("GET /oauth/authorize", () => {
