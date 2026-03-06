@@ -26,9 +26,10 @@ export function initHandleShortcut(deps: {
 				return { action: "focus-login-window", windowId: loginWindow.id };
 			}
 
-			if (!tab?.url) return null;
+			if (!tab?.url || tab.id == null) return null;
 
 			const url = tab.url;
+			const tabId = tab.id;
 			const title = tab.title ?? url;
 
 			const guarded = deps.whenLoggedIn(() =>
@@ -40,7 +41,7 @@ export function initHandleShortcut(deps: {
 					action: "open-login",
 					url,
 					title,
-					tabId: tab.id ?? 0,
+					tabId,
 					tabUrl: url,
 				};
 			}

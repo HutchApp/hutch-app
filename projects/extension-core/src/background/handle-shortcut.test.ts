@@ -72,6 +72,14 @@ describe("initHandleShortcut", () => {
 		expect(result).toBeNull();
 	});
 
+	it("should return null when tab has no ID", async () => {
+		const { shortcut } = createDeps([{ url: "https://example.com" }]);
+
+		const result = await shortcut.onShortcutPressed();
+
+		expect(result).toBeNull();
+	});
+
 	it("should focus login window when one is already open", async () => {
 		const { shortcut } = createDeps([
 			{ id: 1, url: "https://example.com", title: "Example" },
