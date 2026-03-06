@@ -338,7 +338,7 @@ const hutch = new HutchLambda("hutch", {
 	stage,
 	storage,
 	domainRegistration: new DomainRegistration("hutch-domain", {
-		domains: ["hutch-app.com"],
+		domains: ["hutch-app.com", "extensions.hutch-app.com"],
 	}),
 });
 
