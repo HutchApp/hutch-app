@@ -313,5 +313,6 @@ export function Base(page: PageContent): Component {
 			statusCode: 200,
 			body: renderBaseTemplate(page),
 		}),
+		supports: (mediaType) => mediaType === "text/html",
 	};
 }

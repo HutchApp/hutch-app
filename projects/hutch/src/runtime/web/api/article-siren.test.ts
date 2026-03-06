@@ -63,13 +63,13 @@ describe("toArticleEntity", () => {
 
 		expect(entity.links).toContainEqual({
 			rel: ["self"],
-			href: "/api/articles/test-article-id",
+			href: "/queue/test-article-id",
 		});
 		expect(entity.links).toContainEqual({
 			rel: ["collection"],
-			href: "/api/articles",
+			href: "/queue",
 		});
-		expect(entity.links).toContainEqual({ rel: ["root"], href: "/api" });
+		expect(entity.links).toContainEqual({ rel: ["root"], href: "/queue" });
 	});
 
 	it("unread article has mark-read and archive actions but not mark-unread", () => {
@@ -153,7 +153,7 @@ describe("toArticleSubEntity", () => {
 		expect(subEntity.links).toHaveLength(1);
 		expect(subEntity.links).toContainEqual({
 			rel: ["self"],
-			href: "/api/articles/test-article-id",
+			href: "/queue/test-article-id",
 		});
 	});
 

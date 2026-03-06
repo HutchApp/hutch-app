@@ -2,7 +2,7 @@ import type { SavedArticle } from "../../domain/article/article.types";
 import type { SirenAction, SirenEntity, SirenSubEntity } from "./siren";
 
 function actionsForStatus(article: SavedArticle): SirenAction[] {
-	const base = `/api/articles/${article.id}`;
+	const base = `/queue/${article.id}`;
 	const actions: SirenAction[] = [];
 
 	if (article.status !== "read") {
@@ -55,9 +55,9 @@ export function toArticleEntity(article: SavedArticle): SirenEntity {
 			readAt: article.readAt?.toISOString() ?? null,
 		},
 		links: [
-			{ rel: ["self"], href: `/api/articles/${article.id}` },
-			{ rel: ["collection"], href: "/api/articles" },
-			{ rel: ["root"], href: "/api" },
+			{ rel: ["self"], href: `/queue/${article.id}` },
+			{ rel: ["collection"], href: "/queue" },
+			{ rel: ["root"], href: "/queue" },
 		],
 		actions: actionsForStatus(article),
 	};
@@ -80,6 +80,6 @@ export function toArticleSubEntity(article: SavedArticle): SirenSubEntity {
 			savedAt: article.savedAt.toISOString(),
 			readAt: article.readAt?.toISOString() ?? null,
 		},
-		links: [{ rel: ["self"], href: `/api/articles/${article.id}` }],
+		links: [{ rel: ["self"], href: `/queue/${article.id}` }],
 	};
 }

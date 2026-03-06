@@ -95,8 +95,8 @@ describe("toArticleCollectionEntity", () => {
 
 		const entity = toArticleCollectionEntity(result, {});
 
-		expect(entity.links).toContainEqual({ rel: ["self"], href: "/api/articles" });
-		expect(entity.links).toContainEqual({ rel: ["root"], href: "/api" });
+		expect(entity.links).toContainEqual({ rel: ["self"], href: "/queue" });
+		expect(entity.links).toContainEqual({ rel: ["root"], href: "/queue" });
 	});
 
 	it("includes next link when more pages exist", () => {

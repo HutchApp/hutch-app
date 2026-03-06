@@ -30,21 +30,21 @@ export function toArticleCollectionEntity(
 	const totalPages = Math.ceil(total / pageSize);
 
 	const links: SirenLink[] = [
-		{ rel: ["self"], href: `/api/articles${buildQueryString(queryParams)}` },
-		{ rel: ["root"], href: "/api" },
+		{ rel: ["self"], href: `/queue${buildQueryString(queryParams)}` },
+		{ rel: ["root"], href: "/queue" },
 	];
 
 	if (page > 1) {
 		links.push({
 			rel: ["prev"],
-			href: `/api/articles${buildQueryString({ ...queryParams, page: page - 1 })}`,
+			href: `/queue${buildQueryString({ ...queryParams, page: page - 1 })}`,
 		});
 	}
 
 	if (page < totalPages) {
 		links.push({
 			rel: ["next"],
-			href: `/api/articles${buildQueryString({ ...queryParams, page: page + 1 })}`,
+			href: `/queue${buildQueryString({ ...queryParams, page: page + 1 })}`,
 		});
 	}
 
@@ -60,14 +60,14 @@ export function toArticleCollectionEntity(
 		actions: [
 			{
 				name: "save-article",
-				href: "/api/articles",
+				href: "/queue",
 				method: "POST",
 				type: "application/json",
 				fields: [{ name: "url", type: "url" }],
 			},
 			{
 				name: "filter-by-status",
-				href: "/api/articles",
+				href: "/queue",
 				method: "GET",
 				fields: [
 					{ name: "status", type: "text" },
