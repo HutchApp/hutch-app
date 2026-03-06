@@ -27,14 +27,15 @@ function extractConstants(): string {
 		.join("\n");
 }
 
-function evalFunction(name: string): Function {
+function evalFunction(name: string, deps: string[] = []): Function {
 	const constants = extractConstants();
+	const depCode = deps.map((d) => extractFunction(d)).join("\n");
 	const code = extractFunction(name);
-	return new Function(`${constants}\n${code}\nreturn ${name};`)();
+	return new Function(`${constants}\n${depCode}\n${code}\nreturn ${name};`)();
 }
 
 describe("Service worker: isArticleRoute", () => {
-	const isArticleRoute = evalFunction("isArticleRoute") as (
+	const isArticleRoute = evalFunction("isArticleRoute", ["isQueueList", "isReaderPage"]) as (
 		url: string,
 	) => boolean;
 
@@ -60,6 +61,61 @@ describe("Service worker: isArticleRoute", () => {
 
 	it("should not match the root path", () => {
 		expect(isArticleRoute("https://hutch.app/")).toBe(false);
+	});
+});
+
+describe("Service worker: isQueueList", () => {
+	const isQueueList = evalFunction("isQueueList") as (url: string) => boolean;
+
+	it("should match /queue", () => {
+		expect(isQueueList("https://hutch.app/queue")).toBe(true);
+	});
+
+	it("should not match /queue/:id/read", () => {
+		expect(isQueueList("https://hutch.app/queue/abc/read")).toBe(false);
+	});
+});
+
+describe("Service worker: isReaderPage", () => {
+	const isReaderPage = evalFunction("isReaderPage") as (url: string) => boolean;
+
+	it("should match /queue/:id/read", () => {
+		expect(isReaderPage("https://hutch.app/queue/abc-123/read")).toBe(true);
+	});
+
+	it("should not match /queue", () => {
+		expect(isReaderPage("https://hutch.app/queue")).toBe(false);
+	});
+});
+
+describe("Service worker: extractReaderLinks", () => {
+	const extractReaderLinks = evalFunction("extractReaderLinks") as (
+		html: string,
+		baseUrl: string,
+	) => string[];
+
+	it("should extract reader links from HTML", () => {
+		const html = '<a href="/queue/abc123/read">Read</a><a href="/queue/def456/read">Read</a>';
+		const links = extractReaderLinks(html, "https://hutch.app/queue");
+
+		expect(links).toEqual([
+			"https://hutch.app/queue/abc123/read",
+			"https://hutch.app/queue/def456/read",
+		]);
+	});
+
+	it("should return empty array when no reader links", () => {
+		const html = '<a href="/login">Login</a>';
+		const links = extractReaderLinks(html, "https://hutch.app/queue");
+
+		expect(links).toEqual([]);
+	});
+
+	it("should not extract non-reader queue links", () => {
+		const html = '<a href="/queue/abc/status">Status</a>';
+		const links = extractReaderLinks(html, "https://hutch.app/queue");
+
+		expect(links).toEqual([]);
 	});
 });
 
@@ -173,6 +229,16 @@ describe("Service worker: MAX_AGE_MS", () => {
 	});
 });
 
+describe("Service worker: lifecycle", () => {
+	it("should skip waiting on install", () => {
+		expect(swSource).toContain("self.skipWaiting()");
+	});
+
+	it("should claim clients on activate", () => {
+		expect(swSource).toContain("self.clients.claim()");
+	});
+});
+
 describe("Service worker: fetch handler", () => {
 	it("should only intercept GET requests", () => {
 		expect(swSource).toContain("event.request.method !== 'GET'");
@@ -188,5 +254,31 @@ describe("Service worker: fetch handler", () => {
 
 	it("should serve offline fallback when network fails and no cache", () => {
 		expect(swSource).toContain("You are offline");
+	});
+
+	it("should use network-first for queue list", () => {
+		expect(swSource).toContain("isQueueList(event.request.url)");
+		expect(swSource).toContain("networkFirst(event, cache)");
+	});
+
+	it("should use stale-while-revalidate for reader pages", () => {
+		expect(swSource).toContain("staleWhileRevalidate(event, cache)");
+	});
+});
+
+describe("Service worker: pre-caching", () => {
+	it("should pre-cache reader pages when queue list is fetched", () => {
+		expect(swSource).toContain("precacheReaderPages(cache, html");
+	});
+});
+
+describe("Service worker: message handler", () => {
+	it("should handle REVALIDATE_QUEUE messages", () => {
+		expect(swSource).toContain("REVALIDATE_QUEUE");
+	});
+
+	it("should revalidate queue and pre-cache reader pages on revalidate", () => {
+		expect(swSource).toContain("fetch('/queue'");
+		expect(swSource).toContain("precacheReaderPages");
 	});
 });

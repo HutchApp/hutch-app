@@ -1,10 +1,19 @@
 export const SERVICE_WORKER_SOURCE = `\
-var CACHE_NAME = 'hutch-offline-v1';
+var CACHE_NAME = 'hutch-offline-v2';
 var MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-function isArticleRoute(url) {
+function isQueueList(url) {
   var path = new URL(url).pathname;
-  return path === '/queue' || /^\\/queue\\/[^/]+\\/read$/.test(path);
+  return path === '/queue';
+}
+
+function isReaderPage(url) {
+  var path = new URL(url).pathname;
+  return /^\\/queue\\/[^/]+\\/read$/.test(path);
+}
+
+function isArticleRoute(url) {
+  return isQueueList(url) || isReaderPage(url);
 }
 
 function isStaleConnection() {
@@ -33,17 +42,89 @@ function addCacheTimestamp(response) {
   });
 }
 
-function revalidateCache(request, cache) {
-  return fetch(request).then(function(networkResponse) {
-    if (networkResponse.ok) {
-      return addCacheTimestamp(networkResponse).then(function(stamped) {
-        cache.put(request, stamped);
-        return networkResponse;
-      });
-    }
-    return networkResponse;
+function cacheResponse(cache, request, response) {
+  return addCacheTimestamp(response.clone()).then(function(stamped) {
+    cache.put(request, stamped);
   });
 }
+
+function extractReaderLinks(html, baseUrl) {
+  var pattern = /href="(\\/queue\\/[^"]+\\/read)"/g;
+  var links = [];
+  var match;
+  while ((match = pattern.exec(html)) !== null) {
+    links.push(new URL(match[1], baseUrl).href);
+  }
+  return links;
+}
+
+function precacheReaderPages(cache, html, baseUrl) {
+  var links = extractReaderLinks(html, baseUrl);
+  links.forEach(function(link) {
+    cache.match(link).then(function(existing) {
+      if (existing) return;
+      fetch(link, { credentials: 'same-origin' }).then(function(res) {
+        if (res.ok) cacheResponse(cache, new Request(link), res);
+      }).catch(function() {});
+    });
+  });
+}
+
+function networkFirst(event, cache) {
+  return fetch(event.request).then(function(networkResponse) {
+    if (networkResponse.ok) {
+      cacheResponse(cache, event.request, networkResponse);
+      if (isQueueList(event.request.url)) {
+        networkResponse.clone().text().then(function(html) {
+          precacheReaderPages(cache, html, event.request.url);
+        });
+      }
+    }
+    return networkResponse;
+  }).catch(function() {
+    return cache.match(event.request).then(function(cached) {
+      if (cached) return cached;
+      return new Response(
+        '<!DOCTYPE html><html><head><title>Offline</title></head>' +
+        '<body><h1>You are offline</h1><p>This page is not available offline yet. ' +
+        'Visit it once while online to make it available offline.</p></body></html>',
+        { status: 503, headers: { 'Content-Type': 'text/html' } }
+      );
+    });
+  });
+}
+
+function staleWhileRevalidate(event, cache) {
+  return cache.match(event.request).then(function(cachedResponse) {
+    if (cachedResponse) {
+      var expired = isCacheExpired(cachedResponse);
+      var stale = isStaleConnection();
+      if (expired && !stale) {
+        fetch(event.request).then(function(res) {
+          if (res.ok) cacheResponse(cache, event.request, res);
+        }).catch(function() {});
+      }
+      return cachedResponse;
+    }
+    return fetch(event.request).then(function(networkResponse) {
+      if (networkResponse.ok) {
+        cacheResponse(cache, event.request, networkResponse);
+      }
+      return networkResponse;
+    }).catch(function() {
+      return new Response(
+        '<!DOCTYPE html><html><head><title>Offline</title></head>' +
+        '<body><h1>You are offline</h1><p>This page is not available offline yet. ' +
+        'Visit it once while online to make it available offline.</p></body></html>',
+        { status: 503, headers: { 'Content-Type': 'text/html' } }
+      );
+    });
+  });
+}
+
+self.addEventListener('install', function() {
+  self.skipWaiting();
+});
 
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
@@ -53,40 +134,10 @@ self.addEventListener('fetch', function(event) {
 
   event.respondWith(
     caches.open(CACHE_NAME).then(function(cache) {
-      return cache.match(event.request).then(function(cachedResponse) {
-        if (cachedResponse) {
-          var expired = isCacheExpired(cachedResponse);
-          var stale = isStaleConnection();
-
-          if (expired && !stale) {
-            return revalidateCache(event.request, cache).catch(function() {
-              return cachedResponse;
-            });
-          }
-
-          if (!stale) {
-            revalidateCache(event.request, cache).catch(function() {});
-          }
-
-          return cachedResponse;
-        }
-
-        return fetch(event.request).then(function(networkResponse) {
-          if (networkResponse.ok) {
-            addCacheTimestamp(networkResponse.clone()).then(function(stamped) {
-              cache.put(event.request, stamped);
-            });
-          }
-          return networkResponse;
-        }).catch(function() {
-          return new Response(
-            '<!DOCTYPE html><html><head><title>Offline</title></head>' +
-            '<body><h1>You are offline</h1><p>This page is not available offline yet. ' +
-            'Visit it once while online to make it available offline.</p></body></html>',
-            { status: 503, headers: { 'Content-Type': 'text/html' } }
-          );
-        });
-      });
+      if (isQueueList(event.request.url)) {
+        return networkFirst(event, cache);
+      }
+      return staleWhileRevalidate(event, cache);
     })
   );
 });
@@ -101,7 +152,24 @@ self.addEventListener('activate', function(event) {
           return caches.delete(name);
         })
       );
+    }).then(function() {
+      return self.clients.claim();
     })
   );
+});
+
+self.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'REVALIDATE_QUEUE') {
+    caches.open(CACHE_NAME).then(function(cache) {
+      fetch('/queue', { credentials: 'same-origin' }).then(function(res) {
+        if (res.ok) {
+          cacheResponse(cache, new Request('/queue'), res);
+          res.clone().text().then(function(html) {
+            precacheReaderPages(cache, html, self.registration.scope);
+          });
+        }
+      }).catch(function() {});
+    });
+  }
 });
 `;

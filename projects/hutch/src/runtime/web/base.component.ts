@@ -171,9 +171,14 @@ const OFFLINE_INDICATOR_SCRIPT = `
 const SW_REGISTRATION_SCRIPT = `
 <script>
 (function() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(function() {});
-  }
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js').catch(function() {});
+
+  window.addEventListener('online', function() {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'REVALIDATE_QUEUE' });
+    }
+  });
 })();
 </script>`;
 

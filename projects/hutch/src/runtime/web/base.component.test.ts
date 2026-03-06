@@ -83,6 +83,20 @@ describe("Base component", () => {
 		expect(swScript).toBeTruthy();
 	});
 
+	it("should send REVALIDATE_QUEUE message when coming back online", () => {
+		const page = createTestPageContent();
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		const scripts = Array.from(doc.querySelectorAll("script"));
+		const swScript = scripts.find(
+			(s) =>
+				s.textContent?.includes("REVALIDATE_QUEUE") &&
+				s.textContent?.includes("online"),
+		);
+		expect(swScript).toBeTruthy();
+	});
+
 	it("should include the offline banner", () => {
 		const page = createTestPageContent();
 		const result = Base(page).to("text/html");
