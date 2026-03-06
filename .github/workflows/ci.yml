@@ -93,4 +93,4 @@ jobs:
 
       - name: Deploy extension to S3
         run: pulumi up --stack prod --yes
-        working-directory: projects/firefox-extension/infra
+        working-directory: projects/firefox-extension
