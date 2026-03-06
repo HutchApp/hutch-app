@@ -1,3 +1,4 @@
+import { getExtensionDownloadUrl } from "firefox-extension/s3-config";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
@@ -25,9 +26,7 @@ describe("GET /install", () => {
 		const cta = doc.querySelector(
 			'[data-test-cta="download-extension"]',
 		) as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe(
-			"https://hutch-extension-prod.s3.ap-southeast-2.amazonaws.com/hutch.xpi",
-		);
+		expect(cta.getAttribute("href")).toBe(getExtensionDownloadUrl("prod"));
 		expect(cta.textContent).toBe("Download Hutch for Firefox");
 	});
 

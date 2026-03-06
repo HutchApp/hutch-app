@@ -2,6 +2,7 @@
   "name": "firefox-extension",
   "version": "1.0.0",
   "description": "Hutch — Firefox browser extension for saving URLs to a reading list",
+  "main": "src/infra/index.ts",
   "private": true,
   "exports": {
     "./s3-config": {
@@ -16,7 +17,7 @@
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-with-coverage": "tsc && c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
-    "check-infra": "cd infra && PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
+    "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
     "check": "pnpm lint && pnpm test-with-coverage && pnpm compile && pnpm check-infra",
     "ext:run": "web-ext run --source-dir dist-extension"
   },

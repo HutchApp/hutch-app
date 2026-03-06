@@ -3,7 +3,7 @@ import * as aws from "@pulumi/aws";
 import * as assert from "node:assert";
 import * as fs from "node:fs";
 import { join } from "node:path";
-import { S3_CONFIG, getBucketName } from "../s3-config";
+import { S3_CONFIG, getBucketName } from "../../s3-config";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
@@ -39,7 +39,7 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 	),
 });
 
-const xpiPath = join(__dirname, "..", "dist-artifacts", S3_CONFIG.key);
+const xpiPath = join(__dirname, "..", "..", "dist-artifacts", S3_CONFIG.key);
 assert.ok(
 	fs.existsSync(xpiPath),
 	`Extension artifact not found: ${xpiPath}. Run 'pnpm compile' first.`,

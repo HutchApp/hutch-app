@@ -8,7 +8,7 @@ export default {
 	ignore: [
 		...(base.ignore ?? []),
 		// Pulumi infra is compiled separately with its own tsconfig
-		"infra/**",
+		"src/infra/**",
 		// CLI script for version management (not an entry point)
 		"scripts/bump-version.js",
 	],
