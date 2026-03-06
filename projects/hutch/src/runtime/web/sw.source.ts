@@ -65,7 +65,9 @@ function precacheReaderPages(cache, html, baseUrl) {
       if (existing) return;
       fetch(link, { credentials: 'same-origin' }).then(function(res) {
         if (res.ok) cacheResponse(cache, new Request(link), res);
-      }).catch(function() {});
+      }).catch(function(err) {
+        console.warn('Pre-cache fetch failed for ' + link + ':', err);
+      });
     });
   });
 }
@@ -102,7 +104,9 @@ function staleWhileRevalidate(event, cache) {
       if (expired && !stale) {
         fetch(event.request).then(function(res) {
           if (res.ok) cacheResponse(cache, event.request, res);
-        }).catch(function() {});
+        }).catch(function(err) {
+          console.warn('Background revalidation failed:', err);
+        });
       }
       return cachedResponse;
     }
@@ -168,7 +172,9 @@ self.addEventListener('message', function(event) {
             precacheReaderPages(cache, html, self.registration.scope);
           });
         }
-      }).catch(function() {});
+      }).catch(function(err) {
+        console.warn('REVALIDATE_QUEUE fetch failed:', err);
+      });
     });
   }
 });

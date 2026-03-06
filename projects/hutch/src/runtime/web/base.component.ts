@@ -172,7 +172,9 @@ const SW_REGISTRATION_SCRIPT = `
 <script>
 (function() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('/sw.js').catch(function() {});
+  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+    console.warn('Service worker registration failed:', err);
+  });
 
   window.addEventListener('online', function() {
     if (navigator.serviceWorker.controller) {
