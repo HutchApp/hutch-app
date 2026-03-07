@@ -11,8 +11,11 @@ import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
+	type OAuthModel,
 } from "./providers/oauth/oauth-model";
 import { initDynamoDbOAuthModel } from "./providers/oauth/dynamodb-oauth-model";
+import type { AccessToken } from "./domain/oauth/oauth.types";
+import type { UserId } from "./domain/user/user.types";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -33,6 +36,14 @@ const fetchHtml: FetchHtml = async (url) => {
 	}
 };
 
+function createValidateAccessToken(model: OAuthModel) {
+	return async (accessToken: AccessToken): Promise<UserId | null> => {
+		const token = await model.getAccessToken(accessToken);
+		if (!token) return null;
+		return token.user.id as UserId;
+	};
+}
+
 function initProviders() {
 	if (getEnv("NODE_ENV") === "production") {
 		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
@@ -41,17 +52,23 @@ function initProviders() {
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
+		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
+
 		return {
 			...initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable }),
 			...initDynamoDbArticleStore({ client, tableName: articlesTable }),
-			oauthModel: initDynamoDbOAuthModel({ client, tableName: oauthTable }),
+			oauthModel,
+			validateAccessToken: createValidateAccessToken(oauthModel),
 		};
 	}
+
+	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 
 	return {
 		...initInMemoryAuth(),
 		...initInMemoryArticleStore(),
-		oauthModel: createOAuthModel(initInMemoryOAuthModel()),
+		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 	};
 }
 

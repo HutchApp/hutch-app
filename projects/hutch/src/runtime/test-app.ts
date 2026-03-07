@@ -5,8 +5,19 @@ import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
+	type OAuthModel,
 } from "./providers/oauth/oauth-model";
+import type { AccessToken } from "./domain/oauth/oauth.types";
+import type { UserId } from "./domain/user/user.types";
 import { createApp } from "./server";
+
+function createValidateAccessToken(model: OAuthModel) {
+	return async (accessToken: AccessToken): Promise<UserId | null> => {
+		const token = await model.getAccessToken(accessToken);
+		if (!token) return null;
+		return token.user.id as UserId;
+	};
+}
 
 const stubFetchHtml: FetchHtml = async (url) => {
 	const hostname = new URL(url).hostname;
@@ -24,6 +35,7 @@ export function createTestApp() {
 		...articleStore,
 		...parser,
 		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
 
 	return { app, auth, articleStore, parser, oauthModel };
@@ -40,6 +52,7 @@ export function createTestAppWithFetchHtml(fetchHtml: FetchHtml) {
 		...articleStore,
 		...parser,
 		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
 
 	return { app, auth, articleStore, parser, oauthModel };
