@@ -64,7 +64,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 
-	router.post("/save", async (req: Request, res: Response) => {
+	async function saveArticleHandler(req: Request, res: Response) {
 		const userId = req.userId as UserId;
 		const parsed = SaveArticleInputSchema.safeParse(req.body);
 
@@ -134,50 +134,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		res.redirect(303, "/queue");
-	});
+	}
 
-	router.post("/", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const parsed = SaveArticleInputSchema.safeParse(req.body);
-
-		if (!parsed.success) {
-			res.status(400).type(SIREN_MEDIA_TYPE).json({
-				class: ["error"],
-				properties: { code: "invalid-url", message: "A valid URL is required" },
-			});
-			return;
-		}
-
-		const parseResult = await deps.parseArticle(parsed.data.url);
-
-		if (!parseResult.ok) {
-			res.status(422).type(SIREN_MEDIA_TYPE).json({
-				class: ["error"],
-				properties: {
-					code: "invalid-url",
-					message: "The provided URL could not be parsed as an article",
-				},
-			});
-			return;
-		}
-
-		const { article: parsedArticle } = parseResult;
-		const article = await deps.saveArticle({
-			userId,
-			url: parsed.data.url,
-			metadata: {
-				title: parsedArticle.title,
-				siteName: parsedArticle.siteName,
-				excerpt: parsedArticle.excerpt,
-				wordCount: parsedArticle.wordCount,
-				imageUrl: parsedArticle.imageUrl,
-			},
-			content: parsedArticle.content || undefined,
-			estimatedReadTime: calculateReadTime(parsedArticle.wordCount),
-		});
-
-		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(article));
-	});
+	router.post("/save", saveArticleHandler);
+	router.post("/", saveArticleHandler);
 
 	router.get("/:id/read", async (req: Request, res: Response) => {
 		const userId = req.userId as UserId;
@@ -225,7 +185,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		res.type(SIREN_MEDIA_TYPE).json(toArticleEntity(article));
 	});
 
-	router.post("/:id/status", async (req: Request, res: Response) => {
+	async function updateStatusHandler(req: Request, res: Response) {
 		const userId = req.userId as UserId;
 		const articleId = req.params.id as ArticleId;
 		const parsed = UpdateStatusSchema.safeParse(req.body);
@@ -259,37 +219,12 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		res.redirect(303, req.get("Referer") || "/queue");
-	});
+	}
 
-	router.put("/:id/status", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const articleId = req.params.id as ArticleId;
-		const parsed = UpdateStatusSchema.safeParse(req.body);
+	router.post("/:id/status", updateStatusHandler);
+	router.put("/:id/status", updateStatusHandler);
 
-		if (!parsed.success) {
-			res.status(400).type(SIREN_MEDIA_TYPE).json({
-				class: ["error"],
-				properties: { code: "invalid-status", message: "Invalid status value" },
-			});
-			return;
-		}
-
-		const success = await deps.updateArticleStatus(articleId, userId, parsed.data.status);
-
-		if (!success) {
-			res.status(404).type(SIREN_MEDIA_TYPE).json({
-				class: ["error"],
-				properties: { code: "not-found", message: "Article not found" },
-			});
-			return;
-		}
-
-		const article = await deps.findArticleById(articleId);
-		assert(article, "Article must exist after successful status update");
-		res.type(SIREN_MEDIA_TYPE).json(toArticleEntity(article));
-	});
-
-	router.post("/:id/delete", async (req: Request, res: Response) => {
+	async function deleteArticleHandler(req: Request, res: Response) {
 		const userId = req.userId as UserId;
 		const articleId = req.params.id as ArticleId;
 
@@ -308,24 +243,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		res.redirect(303, req.get("Referer") || "/queue");
-	});
+	}
 
-	router.delete("/:id", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const articleId = req.params.id as ArticleId;
-
-		const success = await deps.deleteArticle(articleId, userId);
-
-		if (!success) {
-			res.status(404).type(SIREN_MEDIA_TYPE).json({
-				class: ["error"],
-				properties: { code: "not-found", message: "Article not found" },
-			});
-			return;
-		}
-
-		res.status(204).send();
-	});
+	router.post("/:id/delete", deleteArticleHandler);
+	router.delete("/:id", deleteArticleHandler);
 
 	return router;
 }
