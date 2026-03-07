@@ -8,6 +8,11 @@ import { initInMemoryArticleStore } from "./providers/article-store/in-memory-ar
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
+import {
+	createOAuthModel,
+	initInMemoryOAuthModel,
+} from "./providers/oauth/oauth-model";
+import { initDynamoDbOAuthModel } from "./providers/oauth/dynamodb-oauth-model";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -33,16 +38,20 @@ function initProviders() {
 		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
+		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+
 		return {
 			...initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable }),
 			...initDynamoDbArticleStore({ client, tableName: articlesTable }),
+			oauthModel: initDynamoDbOAuthModel({ client, tableName: oauthTable }),
 		};
 	}
 
 	return {
 		...initInMemoryAuth(),
 		...initInMemoryArticleStore(),
+		oauthModel: createOAuthModel(initInMemoryOAuthModel()),
 	};
 }
 

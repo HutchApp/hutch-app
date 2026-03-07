@@ -70,6 +70,7 @@ class HutchStorage {
 	public readonly articlesTable: aws.dynamodb.Table;
 	public readonly usersTable: aws.dynamodb.Table;
 	public readonly sessionsTable: aws.dynamodb.Table;
+	public readonly oauthTable: aws.dynamodb.Table;
 
 	constructor(name: string) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
@@ -83,8 +84,10 @@ class HutchStorage {
 			globalSecondaryIndexes: [
 				{
 					name: "userId-savedAt-index",
-					hashKey: "userId",
-					rangeKey: "savedAt",
+					keySchemas: [
+						{ attributeName: "userId", keyType: "HASH" },
+						{ attributeName: "savedAt", keyType: "RANGE" },
+					],
 					projectionType: "ALL",
 				},
 			],
@@ -100,6 +103,28 @@ class HutchStorage {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "sessionId",
 			attributes: [{ name: "sessionId", type: "S" }],
+			ttl: {
+				attributeName: "expiresAt",
+				enabled: true,
+			},
+		});
+
+		this.oauthTable = new aws.dynamodb.Table(`hutch-oauth`, {
+			billingMode: "PAY_PER_REQUEST",
+			hashKey: "pk",
+			attributes: [
+				{ name: "pk", type: "S" },
+				{ name: "userId", type: "S" },
+			],
+			globalSecondaryIndexes: [
+				{
+					name: "userId-index",
+					keySchemas: [
+						{ attributeName: "userId", keyType: "HASH" },
+					],
+					projectionType: "ALL",
+				},
+			],
 			ttl: {
 				attributeName: "expiresAt",
 				enabled: true,
@@ -167,8 +192,9 @@ class HutchLambda {
 					args.storage.articlesTable.arn,
 					args.storage.usersTable.arn,
 					args.storage.sessionsTable.arn,
+					args.storage.oauthTable.arn,
 				])
-				.apply(([articlesArn, usersArn, sessionsArn]) =>
+				.apply(([articlesArn, usersArn, sessionsArn, oauthArn]) =>
 					JSON.stringify({
 						Version: "2012-10-17",
 						Statement: [
@@ -186,6 +212,8 @@ class HutchLambda {
 									`${articlesArn}/index/*`,
 									usersArn,
 									sessionsArn,
+									oauthArn,
+									`${oauthArn}/index/*`,
 								],
 							},
 						],
@@ -207,6 +235,7 @@ class HutchLambda {
 					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
 					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
+					DYNAMODB_OAUTH_TABLE: args.storage.oauthTable.name,
 				},
 			},
 		});

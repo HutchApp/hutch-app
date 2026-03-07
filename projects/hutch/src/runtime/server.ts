@@ -18,10 +18,12 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { Base } from "./web/base.component";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
+import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { createLandingPageContent } from "./web/pages/landing";
 import { createPrivacyPageContent } from "./web/pages/privacy";
 import { createTermsPageContent } from "./web/pages/terms";
@@ -49,6 +51,7 @@ interface AppDependencies {
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
+	oauthModel: OAuthModel;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -133,6 +136,11 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticlesByUser: deps.findArticlesByUser,
 	});
 	app.use("/export", requireAuth, exportRouter);
+
+	const oauthRouter = initOAuthRoutes({
+		model: deps.oauthModel,
+	});
+	app.use("/oauth", oauthRouter);
 
 	const NOT_FOUND_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">

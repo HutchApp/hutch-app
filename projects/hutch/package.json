@@ -20,14 +20,16 @@
     "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod"
   },
   "dependencies": {
-    "firefox-extension": "workspace:*",
     "@aws-sdk/client-dynamodb": "3.1001.0",
     "@aws-sdk/lib-dynamodb": "3.1001.0",
     "@mozilla/readability": "0.6.0",
+    "@node-oauth/express-oauth-server": "4.1.5",
+    "@node-oauth/oauth2-server": "5.2.1",
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "dotenv": "17.2.3",
     "express": "4.22.1",
+    "firefox-extension": "workspace:*",
     "handlebars": "4.7.8",
     "helmet": "8.1.0",
     "linkedom": "0.18.12",
