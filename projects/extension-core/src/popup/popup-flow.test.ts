@@ -2,6 +2,7 @@ import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
 import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
 import { initSaveCurrentTab } from "../background/save-current-tab";
 import { initHandlePopupMessage } from "../background/handle-popup-message";
+import type { SendPopupMessage } from "../background/messages.types";
 import { initPopupFlow } from "./popup-flow";
 
 function createSetup(activeTab: { url: string; title: string } | null = null) {
@@ -21,7 +22,7 @@ function createSetup(activeTab: { url: string; title: string } | null = null) {
 	});
 
 	const flow = initPopupFlow({
-		sendMessage: (message) => handlePopupMessage(message) as Promise<unknown>,
+		sendMessage: handlePopupMessage as SendPopupMessage,
 		getActiveTab: async () => activeTab,
 	});
 
