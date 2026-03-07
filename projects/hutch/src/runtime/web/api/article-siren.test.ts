@@ -72,37 +72,28 @@ describe("toArticleEntity", () => {
 		expect(entity.links).toContainEqual({ rel: ["root"], href: "/queue" });
 	});
 
-	it("unread article has mark-read and archive actions but not mark-unread", () => {
+	it("unread article has mark-read, archive, and delete actions", () => {
 		const article = makeArticle({ status: "unread" });
 		const entity = toArticleEntity(article);
 
 		const actionNames = entity.actions?.map((a) => a.name) ?? [];
-		expect(actionNames).toContain("mark-read");
-		expect(actionNames).toContain("archive");
-		expect(actionNames).toContain("delete");
-		expect(actionNames).not.toContain("mark-unread");
+		expect(actionNames).toEqual(["mark-read", "archive", "delete"]);
 	});
 
-	it("read article has mark-unread and archive actions but not mark-read", () => {
+	it("read article has mark-unread, archive, and delete actions", () => {
 		const article = makeArticle({ status: "read" });
 		const entity = toArticleEntity(article);
 
 		const actionNames = entity.actions?.map((a) => a.name) ?? [];
-		expect(actionNames).toContain("mark-unread");
-		expect(actionNames).toContain("archive");
-		expect(actionNames).toContain("delete");
-		expect(actionNames).not.toContain("mark-read");
+		expect(actionNames).toEqual(["mark-unread", "archive", "delete"]);
 	});
 
-	it("archived article has mark-unread and mark-read actions but not archive", () => {
+	it("archived article has mark-unread, mark-read, and delete actions", () => {
 		const article = makeArticle({ status: "archived" });
 		const entity = toArticleEntity(article);
 
 		const actionNames = entity.actions?.map((a) => a.name) ?? [];
-		expect(actionNames).toContain("mark-unread");
-		expect(actionNames).toContain("mark-read");
-		expect(actionNames).toContain("delete");
-		expect(actionNames).not.toContain("archive");
+		expect(actionNames).toEqual(["mark-read", "mark-unread", "delete"]);
 	});
 
 	it("mark-read action has correct fields with hidden status value", () => {

@@ -50,6 +50,8 @@ function initProviders() {
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
+		// TODO: Replace with DynamoDB-backed OAuth storage. In-memory storage
+		// means tokens won't persist across Lambda cold starts.
 		const oauthModelDeps = initInMemoryOAuthModel();
 		const oauthModel = createOAuthModel(oauthModelDeps);
 

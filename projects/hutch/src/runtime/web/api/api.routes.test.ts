@@ -1,11 +1,26 @@
 import assert from "node:assert";
 import request from "supertest";
-import type { Token } from "@node-oauth/oauth2-server";
+import type { Token, Client } from "@node-oauth/oauth2-server";
 import { createTestApp, createTestAppWithFetchHtml } from "../../test-app";
 import type { UserId } from "../../domain/user/user.types";
 import { SIREN_MEDIA_TYPE } from "./siren";
 
 const TEST_USER_ID = "test-user-123" as UserId;
+
+function createTestToken(): Token {
+	return {
+		accessToken: "test-access-token",
+		accessTokenExpiresAt: new Date(Date.now() + 3600000),
+		refreshToken: "test-refresh-token",
+		refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
+		client: {
+			id: "hutch-firefox-extension",
+			grants: ["authorization_code", "refresh_token"],
+			redirectUris: ["http://127.0.0.1:3000/oauth/callback"],
+		} as Client,
+		user: { id: TEST_USER_ID },
+	};
+}
 
 async function createAccessToken(
 	testApp: ReturnType<typeof createTestApp>,
@@ -13,16 +28,8 @@ async function createAccessToken(
 	const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
 	assert(client, "Test client must exist");
 
-	const token = await testApp.oauthModel.saveToken(
-		{
-			accessToken: "test-access-token",
-			accessTokenExpiresAt: new Date(Date.now() + 3600000),
-			refreshToken: "test-refresh-token",
-			refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
-		} as Token,
-		client,
-		{ id: TEST_USER_ID },
-	);
+	const testToken = createTestToken();
+	const token = await testApp.oauthModel.saveToken(testToken, client, { id: TEST_USER_ID });
 	assert(token, "Token should be saved");
 	return token.accessToken;
 }
