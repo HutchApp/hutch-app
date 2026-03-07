@@ -1,7 +1,8 @@
+import assert from "node:assert";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import type { ArticleId, ArticleStatus } from "../../../domain/article/article.types";
-import { SaveArticleInputSchema } from "../../../domain/article/article.schema";
+import type { ArticleId } from "../../../domain/article/article.types";
+import { SaveArticleInputSchema, UpdateStatusSchema } from "../../../domain/article/article.schema";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import type {
@@ -227,9 +228,21 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	router.post("/:id/status", async (req: Request, res: Response) => {
 		const userId = req.userId as UserId;
 		const articleId = req.params.id as ArticleId;
-		const status = req.body.status as ArticleStatus;
+		const parsed = UpdateStatusSchema.safeParse(req.body);
 
-		const success = await deps.updateArticleStatus(articleId, userId, status);
+		if (!parsed.success) {
+			if (wantsSiren(req)) {
+				res.status(400).type(SIREN_MEDIA_TYPE).json({
+					class: ["error"],
+					properties: { code: "invalid-status", message: "Invalid status value" },
+				});
+				return;
+			}
+			res.redirect(303, req.get("Referer") || "/queue");
+			return;
+		}
+
+		const success = await deps.updateArticleStatus(articleId, userId, parsed.data.status);
 
 		if (wantsSiren(req)) {
 			if (!success) {
@@ -239,7 +252,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				});
 				return;
 			}
-			const article = (await deps.findArticleById(articleId))!;
+			const article = await deps.findArticleById(articleId);
+			assert(article, "Article must exist after successful status update");
 			res.type(SIREN_MEDIA_TYPE).json(toArticleEntity(article));
 			return;
 		}
@@ -250,9 +264,17 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	router.put("/:id/status", async (req: Request, res: Response) => {
 		const userId = req.userId as UserId;
 		const articleId = req.params.id as ArticleId;
-		const status = req.body.status as ArticleStatus;
+		const parsed = UpdateStatusSchema.safeParse(req.body);
 
-		const success = await deps.updateArticleStatus(articleId, userId, status);
+		if (!parsed.success) {
+			res.status(400).type(SIREN_MEDIA_TYPE).json({
+				class: ["error"],
+				properties: { code: "invalid-status", message: "Invalid status value" },
+			});
+			return;
+		}
+
+		const success = await deps.updateArticleStatus(articleId, userId, parsed.data.status);
 
 		if (!success) {
 			res.status(404).type(SIREN_MEDIA_TYPE).json({
@@ -262,7 +284,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const article = (await deps.findArticleById(articleId))!;
+		const article = await deps.findArticleById(articleId);
+		assert(article, "Article must exist after successful status update");
 		res.type(SIREN_MEDIA_TYPE).json(toArticleEntity(article));
 	});
 

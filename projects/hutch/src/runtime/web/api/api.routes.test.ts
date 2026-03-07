@@ -213,6 +213,20 @@ describe("Queue routes with Siren content negotiation", () => {
 	});
 
 	describe("PUT /queue/:id/status (Siren)", () => {
+		it("returns 400 for invalid status value", async () => {
+			const testApp = createTestApp();
+			const accessToken = await createAccessToken(testApp);
+
+			const response = await request(testApp.app)
+				.put("/queue/some-id/status")
+				.set("Accept", SIREN_MEDIA_TYPE)
+				.set("Authorization", `Bearer ${accessToken}`)
+				.send({ status: "invalid" });
+
+			expect(response.status).toBe(400);
+			expect(response.body.properties.code).toBe("invalid-status");
+		});
+
 		it("updates article status to read", async () => {
 			const testApp = createTestApp();
 			const accessToken = await createAccessToken(testApp);
@@ -329,6 +343,20 @@ describe("Queue routes with Siren content negotiation", () => {
 	});
 
 	describe("POST /queue/:id/status (Siren content negotiation)", () => {
+		it("returns 400 for invalid status value", async () => {
+			const testApp = createTestApp();
+			const accessToken = await createAccessToken(testApp);
+
+			const response = await request(testApp.app)
+				.post("/queue/some-id/status")
+				.set("Accept", SIREN_MEDIA_TYPE)
+				.set("Authorization", `Bearer ${accessToken}`)
+				.send({ status: "invalid" });
+
+			expect(response.status).toBe(400);
+			expect(response.body.properties.code).toBe("invalid-status");
+		});
+
 		it("returns 404 for non-existent article", async () => {
 			const testApp = createTestApp();
 			const accessToken = await createAccessToken(testApp);
