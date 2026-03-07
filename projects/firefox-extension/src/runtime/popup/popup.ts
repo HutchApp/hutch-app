@@ -12,6 +12,8 @@ import type {
 } from "../providers/reading-list/reading-list.types";
 import type { LoginResult } from "../providers/auth/auth.types";
 
+declare const AUTH_MODE: "oauth" | "credentials";
+
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
 		(view as HTMLElement).hidden = true;
@@ -239,30 +241,52 @@ async function saveAndShowList() {
 	}
 }
 
-document
-	.getElementById("login-form")
-	?.addEventListener("submit", async (e) => {
-		e.preventDefault();
-		const email = (document.getElementById("email") as HTMLInputElement)
-			.value;
-		const password = (
-			document.getElementById("password") as HTMLInputElement
-		).value;
+async function handleLoginResult(result: LoginResult) {
+	if (result.ok) {
+		showView("loading-view");
+		await saveAndShowList();
+	} else {
+		const errorEl = document.getElementById("login-error");
+		if (errorEl) errorEl.hidden = false;
+	}
+}
 
-		const result = (await send({
-			type: "login",
-			email,
-			password,
-		})) as LoginResult;
+if (AUTH_MODE === "oauth") {
+	const loginForm = document.getElementById("login-form");
+	const oauthLogin = document.getElementById("oauth-login");
+	if (loginForm) loginForm.hidden = true;
+	if (oauthLogin) oauthLogin.hidden = false;
 
-		if (result.ok) {
-			showView("loading-view");
-			await saveAndShowList();
-		} else {
-			const errorEl = document.getElementById("login-error");
-			if (errorEl) errorEl.hidden = false;
-		}
-	});
+	document
+		.getElementById("oauth-login-button")
+		?.addEventListener("click", async () => {
+			const result = (await send({
+				type: "login",
+				email: "",
+				password: "",
+			})) as LoginResult;
+			await handleLoginResult(result);
+		});
+} else {
+	document
+		.getElementById("login-form")
+		?.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			const email = (
+				document.getElementById("email") as HTMLInputElement
+			).value;
+			const password = (
+				document.getElementById("password") as HTMLInputElement
+			).value;
+
+			const result = (await send({
+				type: "login",
+				email,
+				password,
+			})) as LoginResult;
+			await handleLoginResult(result);
+		});
+}
 
 document
 	.getElementById("undo-button")

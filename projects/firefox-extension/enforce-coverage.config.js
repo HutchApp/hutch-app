@@ -17,6 +17,8 @@ const config = {
   extraExcludePatterns: [
     // esbuild entry points — bootstrap code for browser extension
     'src/runtime/background/background.ts',
+    'src/runtime/background/background-dev.ts',
+    'src/runtime/background/init-background.ts',
     'src/runtime/popup/popup.ts',
     'src/runtime/content/shortcut.ts',
   ],
