@@ -6,9 +6,8 @@ import type {
 	DestroySession,
 	VerifyCredentials,
 } from "../../providers/auth/auth.types";
-import { Base } from "../base.component";
 import { LoginSchema, SignupSchema } from "./auth.schema";
-import { createLoginPageContent, createSignupPageContent } from "./auth.template";
+import { LoginPage, SignupPage } from "./auth.template";
 
 const COOKIE_NAME = "hutch_sid";
 
@@ -38,9 +37,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 	const router = express.Router();
 
 	router.get("/login", (_req: Request, res: Response) => {
-		const pageContent = createLoginPageContent();
-		const component = Base(pageContent);
-		const result = component.to("text/html");
+		const result = LoginPage().to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
@@ -48,12 +45,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
-			const pageContent = createLoginPageContent({
+			const result = LoginPage({
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
-			});
-			const component = Base(pageContent);
-			const result = component.to("text/html");
+			}).to("text/html");
 			res.status(422).type("html").send(result.body);
 			return;
 		}
@@ -62,12 +57,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const credentials = await deps.verifyCredentials({ email, password });
 
 		if (!credentials.ok) {
-			const pageContent = createLoginPageContent({
+			const result = LoginPage({
 				email,
 				globalError: "Invalid email or password",
-			});
-			const component = Base(pageContent);
-			const result = component.to("text/html");
+			}).to("text/html");
 			res.status(422).type("html").send(result.body);
 			return;
 		}
@@ -78,9 +71,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 	});
 
 	router.get("/signup", (_req: Request, res: Response) => {
-		const pageContent = createSignupPageContent();
-		const component = Base(pageContent);
-		const result = component.to("text/html");
+		const result = SignupPage().to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
@@ -88,12 +79,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const parsed = SignupSchema.safeParse(req.body);
 
 		if (!parsed.success) {
-			const pageContent = createSignupPageContent({
+			const result = SignupPage({
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
-			});
-			const component = Base(pageContent);
-			const result = component.to("text/html");
+			}).to("text/html");
 			res.status(422).type("html").send(result.body);
 			return;
 		}
@@ -102,12 +91,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const createResult = await deps.createUser({ email, password });
 
 		if (!createResult.ok) {
-			const pageContent = createSignupPageContent({
+			const result = SignupPage({
 				email,
 				globalError: "An account with this email already exists",
-			});
-			const component = Base(pageContent);
-			const result = component.to("text/html");
+			}).to("text/html");
 			res.status(422).type("html").send(result.body);
 			return;
 		}

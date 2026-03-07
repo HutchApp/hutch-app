@@ -1,4 +1,5 @@
-import type { PageContent } from "../../base.component";
+import { Base } from "../../base.component";
+import type { Component } from "../../component.types";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
 
@@ -141,7 +142,7 @@ const MARK_READ_ON_CLICK_SCRIPT = `
 })();
 </script>`;
 
-export function createQueuePageContent(vm: QueueViewModel): PageContent {
+export function QueuePage(vm: QueueViewModel): Component {
 	const content = `
     <main class="queue">
       <div class="queue__header">
@@ -159,7 +160,7 @@ export function createQueuePageContent(vm: QueueViewModel): PageContent {
       ${renderPagination(vm)}
     </main>`;
 
-	return {
+	return Base({
 		seo: {
 			title: "My Queue — Hutch",
 			description: "Your saved articles reading queue.",
@@ -171,5 +172,5 @@ export function createQueuePageContent(vm: QueueViewModel): PageContent {
 		content,
 		scripts: MARK_READ_ON_CLICK_SCRIPT,
 		isAuthenticated: true,
-	};
+	});
 }

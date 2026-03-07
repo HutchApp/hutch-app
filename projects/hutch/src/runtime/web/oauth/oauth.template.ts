@@ -1,4 +1,5 @@
 import Handlebars from "handlebars";
+import type { Component } from "../component.types";
 
 interface AuthorizePageParams {
 	clientName: string;
@@ -10,10 +11,10 @@ interface AuthorizePageParams {
 
 const escapeHtml = Handlebars.Utils.escapeExpression;
 
-export function renderAuthorizePage(params: AuthorizePageParams): string {
+export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
 	const { clientName, clientId, redirectUri, codeChallenge, state } = params;
 
-	return `<!DOCTYPE html>
+	const body = `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -46,10 +47,19 @@ export function renderAuthorizePage(params: AuthorizePageParams): string {
 	</form>
 </body>
 </html>`;
+
+	return {
+		to: (mediaType) => {
+			if (mediaType !== "text/html") {
+				return { statusCode: 415, body: "" };
+			}
+			return { statusCode: 200, body };
+		},
+	};
 }
 
-export function renderCallbackPage(): string {
-	return `<!DOCTYPE html>
+export function OAuthCallbackPage(): Component {
+	const body = `<!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -69,4 +79,13 @@ export function renderCallbackPage(): string {
 	</div>
 </body>
 </html>`;
+
+	return {
+		to: (mediaType) => {
+			if (mediaType !== "text/html") {
+				return { statusCode: 415, body: "" };
+			}
+			return { statusCode: 200, body };
+		},
+	};
 }

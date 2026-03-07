@@ -1,7 +1,8 @@
-import type { PageContent } from "../../base.component";
+import { Base } from "../../base.component";
+import type { Component } from "../../component.types";
 import { EXPORT_STYLES } from "./export.styles";
 
-export function createExportPageContent(): PageContent {
+export function ExportPage(): Component {
 	const content = `
     <main class="export">
       <div class="export__header">
@@ -29,7 +30,7 @@ export function createExportPageContent(): PageContent {
       </div>
     </main>`;
 
-	return {
+	return Base({
 		seo: {
 			title: "Export Your Data — Hutch",
 			description: "Download all your saved articles and data from Hutch.",
@@ -40,5 +41,5 @@ export function createExportPageContent(): PageContent {
 		bodyClass: "page-export",
 		content,
 		isAuthenticated: true,
-	};
+	});
 }
