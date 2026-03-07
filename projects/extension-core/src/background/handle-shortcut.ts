@@ -1,7 +1,6 @@
 import type { WhenLoggedIn } from "../providers/auth/auth.types";
 import type { SaveUrlResult } from "../providers/reading-list/reading-list.types";
-
-type QueryActiveTabs = () => Promise<Array<{ id?: number; url?: string; title?: string }>>;
+import type { QueryActiveTabs } from "../shell.types";
 
 type ShortcutAction =
 	| { action: "saved"; tabId: number; url: string }
@@ -47,9 +46,9 @@ export function initHandleShortcut(deps: {
 			}
 
 			const result = await guarded.value;
-			if (result.ok && tab.id != null) {
-				await deps.updateIconForTab(tab.id, url);
-				return { action: "saved", tabId: tab.id, url };
+			if (result.ok) {
+				await deps.updateIconForTab(tabId, url);
+				return { action: "saved", tabId, url };
 			}
 
 			return null;
