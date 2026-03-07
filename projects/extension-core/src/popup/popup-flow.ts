@@ -2,16 +2,9 @@ import type {
 	ReadingListItem,
 	ReadingListItemId,
 } from "../domain/reading-list-item.types";
-import type { GuardedResult, LoginResult } from "../providers/auth/auth.types";
-import type {
-	RemoveUrlResult,
-	SaveUrlResult,
-} from "../providers/reading-list/reading-list.types";
-import type { PopupMessage } from "../background/messages.types";
+import type { SendPopupMessage } from "../background/messages.types";
 import { filterByUrl } from "./filter-by-url";
 import { paginateItems } from "./paginate-items";
-
-type SendMessage = (message: PopupMessage) => Promise<unknown>;
 
 export type PopupView =
 	| { view: "loading" }
@@ -21,7 +14,7 @@ export type PopupView =
 	| { view: "error" };
 
 export function initPopupFlow(deps: {
-	sendMessage: SendMessage;
+	sendMessage: SendPopupMessage;
 	getActiveTab: () => Promise<{ url: string; title: string } | null>;
 }) {
 	let savedItemId: ReadingListItemId | null = null;
@@ -47,9 +40,9 @@ export function initPopupFlow(deps: {
 	}
 
 	async function loadAllItems(): Promise<PopupView> {
-		const result = (await deps.sendMessage({
+		const result = await deps.sendMessage({
 			type: "get-all-items",
-		})) as GuardedResult<ReadingListItem[]>;
+		});
 
 		if (!result.ok) {
 			return { view: "error" };
@@ -66,10 +59,10 @@ export function initPopupFlow(deps: {
 				return loadAllItems();
 			}
 
-			const checkResult = (await deps.sendMessage({
+			const checkResult = await deps.sendMessage({
 				type: "check-url",
 				url: activeTab.url,
-			})) as GuardedResult<ReadingListItem | null>;
+			});
 
 			if (!checkResult.ok) {
 				if (checkResult.reason === "not-logged-in") {
@@ -82,11 +75,11 @@ export function initPopupFlow(deps: {
 				return loadAllItems();
 			}
 
-			const saveResult = (await deps.sendMessage({
+			const saveResult = await deps.sendMessage({
 				type: "save-current-tab",
 				url: activeTab.url,
 				title: activeTab.title,
-			})) as GuardedResult<SaveUrlResult>;
+			});
 
 			if (saveResult.ok && saveResult.value.ok) {
 				savedItemId = saveResult.value.item.id;
@@ -97,11 +90,11 @@ export function initPopupFlow(deps: {
 		},
 
 		login: async (credentials: { email: string; password: string }): Promise<PopupView> => {
-			const result = (await deps.sendMessage({
+			const result = await deps.sendMessage({
 				type: "login",
 				email: credentials.email,
 				password: credentials.password,
-			})) as LoginResult;
+			});
 
 			if (!result.ok) {
 				return { view: "login" };
@@ -112,11 +105,11 @@ export function initPopupFlow(deps: {
 				return loadAllItems();
 			}
 
-			const saveResult = (await deps.sendMessage({
+			const saveResult = await deps.sendMessage({
 				type: "save-current-tab",
 				url: activeTab.url,
 				title: activeTab.title,
-			})) as GuardedResult<SaveUrlResult>;
+			});
 
 			if (saveResult.ok && saveResult.value.ok) {
 				savedItemId = saveResult.value.item.id;
@@ -129,10 +122,10 @@ export function initPopupFlow(deps: {
 		undo: async (): Promise<PopupView> => {
 			if (!savedItemId) return loadAllItems();
 
-			const result = (await deps.sendMessage({
+			const result = await deps.sendMessage({
 				type: "remove-item",
 				id: savedItemId,
-			})) as GuardedResult<RemoveUrlResult>;
+			});
 
 			if (result.ok && result.value.ok) {
 				savedItemId = null;
@@ -142,10 +135,10 @@ export function initPopupFlow(deps: {
 		},
 
 		removeItem: async (id: ReadingListItemId): Promise<PopupView> => {
-			const result = (await deps.sendMessage({
+			const result = await deps.sendMessage({
 				type: "remove-item",
 				id,
-			})) as GuardedResult<RemoveUrlResult>;
+			});
 
 			if (result.ok && result.value.ok) {
 				allItems = allItems.filter((i) => i.id !== id);

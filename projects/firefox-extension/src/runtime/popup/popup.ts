@@ -1,5 +1,5 @@
 import type { ReadingListItem } from "extension-core/domain/reading-list-item.types";
-import type { PopupMessage } from "extension-core/background/messages.types";
+import type { SendPopupMessage } from "extension-core/background/messages.types";
 import { initPopupFlow, type PopupView } from "extension-core/popup/popup-flow";
 
 function showView(id: string) {
@@ -10,9 +10,8 @@ function showView(id: string) {
 	if (target) target.hidden = false;
 }
 
-function send(message: PopupMessage): Promise<unknown> {
-	return browser.runtime.sendMessage(message);
-}
+// browser.runtime.sendMessage returns Promise<unknown> per WebExtension API
+const send = ((message) => browser.runtime.sendMessage(message)) as SendPopupMessage;
 
 async function getActiveTab(): Promise<{ url: string; title: string } | null> {
 	const params = new URLSearchParams(window.location.search);

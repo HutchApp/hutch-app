@@ -1,4 +1,5 @@
 import type { SetIcon } from "./background/icon-status";
+import type { SendPopupMessage } from "./background/messages.types";
 
 export type QueryActiveTabs = () => Promise<Array<{ id?: number; url?: string; title?: string }>>;
 
@@ -12,7 +13,7 @@ export type OpenLoginWindow = (params: {
 
 export type FocusWindow = (windowId: number) => Promise<void>;
 
-export type SendMessageToBackground = (message: unknown) => Promise<unknown>;
+export type SendMessageToBackground = SendPopupMessage;
 
 export type OnTabActivated = (callback: (tabId: number) => void) => void;
 export type OnTabUrlChanged = (callback: (tabId: number, url: string) => void) => void;
