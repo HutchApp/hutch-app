@@ -1,5 +1,6 @@
 import type { SavedArticle } from "../../../domain/article/article.types";
-import type { PageContent } from "../../base.component";
+import { Base } from "../../base.component";
+import type { Component } from "../../component.types";
 import { READER_STYLES } from "./reader.styles";
 
 function renderReaderContent(article: SavedArticle): string {
@@ -27,13 +28,13 @@ function renderReaderContent(article: SavedArticle): string {
     </div>`;
 }
 
-export function createReaderPageContent(article: SavedArticle): PageContent {
+export function ReaderPage(article: SavedArticle): Component {
 	const content = `
     <main class="reader">
       ${renderReaderContent(article)}
     </main>`;
 
-	return {
+	return Base({
 		seo: {
 			title: `${article.metadata.title} — Hutch Reader`,
 			description: article.metadata.excerpt,
@@ -44,5 +45,5 @@ export function createReaderPageContent(article: SavedArticle): PageContent {
 		bodyClass: "page-reader",
 		content,
 		isAuthenticated: true,
-	};
+	});
 }

@@ -1,1 +1,1 @@
-export { createLandingPageContent } from "./landing.template";
+export { LandingPage } from "./landing.template";

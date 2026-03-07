@@ -1,8 +1,9 @@
-import type { PageContent } from "../../base.component";
+import { Base } from "../../base.component";
+import type { Component } from "../../component.types";
 import { LEGAL_PAGE_STYLES } from "../privacy/privacy.styles";
 
-export function createTermsPageContent(): PageContent {
-	return {
+export function TermsPage(): Component {
+	return Base({
 		seo: {
 			title: "Terms of Service — Hutch",
 			description:
@@ -13,7 +14,7 @@ export function createTermsPageContent(): PageContent {
 		styles: LEGAL_PAGE_STYLES,
 		bodyClass: "page-terms",
 		content: renderTermsContent(),
-	};
+	});
 }
 
 function renderTermsContent(): string {

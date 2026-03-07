@@ -309,9 +309,14 @@ function renderBaseTemplate(page: PageContent): string {
 
 export function Base(page: PageContent): Component {
 	return {
-		to: () => ({
-			statusCode: 200,
-			body: renderBaseTemplate(page),
-		}),
+		to: (mediaType) => {
+			if (mediaType !== "text/html") {
+				return { statusCode: 415, body: "" };
+			}
+			return {
+				statusCode: 200,
+				body: renderBaseTemplate(page),
+			};
+		},
 	};
 }

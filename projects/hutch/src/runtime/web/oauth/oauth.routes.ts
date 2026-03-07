@@ -4,7 +4,7 @@ import { z } from "zod";
 import ExpressOAuthServer from "@node-oauth/express-oauth-server";
 import type { OAuthModel } from "../../providers/oauth/oauth-model";
 import { getClient, validateRedirectUri } from "../../providers/oauth/oauth-clients";
-import { renderAuthorizePage, renderCallbackPage } from "./oauth.template";
+import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.template";
 
 const authorizeQuerySchema = z.object({
 	client_id: z.string(),
@@ -72,15 +72,14 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 			return;
 		}
 
-		res.type("html").send(
-			renderAuthorizePage({
-				clientName: client.name,
-				clientId: client_id,
-				redirectUri: redirect_uri,
-				codeChallenge: parsed.data.code_challenge,
-				state,
-			}),
-		);
+		const result = OAuthAuthorizePage({
+			clientName: client.name,
+			clientId: client_id,
+			redirectUri: redirect_uri,
+			codeChallenge: parsed.data.code_challenge,
+			state,
+		}).to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post(
@@ -159,7 +158,8 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 	});
 
 	router.get("/callback", (_req: Request, res: Response) => {
-		res.type("html").send(renderCallbackPage());
+		const result = OAuthCallbackPage().to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	return router;

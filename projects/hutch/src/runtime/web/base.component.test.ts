@@ -1,5 +1,6 @@
 import { JSDOM } from "jsdom";
 import { Base, type PageContent } from "./base.component";
+import type { SupportedMediaType } from "./component.types";
 
 function createTestPageContent(overrides: Partial<PageContent> = {}): PageContent {
 	return {
@@ -85,6 +86,14 @@ describe("Base component", () => {
 
 		const meta = doc.querySelector('meta[name="description"]');
 		expect(meta?.getAttribute("content")).toBe("My desc");
+	});
+
+	it("should return 415 for unsupported media type", () => {
+		const page = createTestPageContent();
+		const result = Base(page).to("application/vnd.siren+json" as SupportedMediaType);
+
+		expect(result.statusCode).toBe(415);
+		expect(result.body).toBe("");
 	});
 
 	it("should render structured data when provided", () => {

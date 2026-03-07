@@ -4,8 +4,7 @@ import express from "express";
 import type { FindArticlesByUser } from "../../../providers/article-store/article-store.types";
 import type { UserId } from "../../../domain/user/user.types";
 import type { SavedArticle } from "../../../domain/article/article.types";
-import { Base } from "../../base.component";
-import { createExportPageContent } from "./export.template";
+import { ExportPage } from "./export.template";
 
 interface ExportDependencies {
 	findArticlesByUser: FindArticlesByUser;
@@ -52,9 +51,7 @@ export function initExportRoutes(deps: ExportDependencies): Router {
 	const router = express.Router();
 
 	router.get("/", (_req: Request, res: Response) => {
-		const pageContent = createExportPageContent();
-		const component = Base(pageContent);
-		const html = component.to("text/html");
+		const html = ExportPage().to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

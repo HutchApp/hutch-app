@@ -1,1 +1,1 @@
-export { createPrivacyPageContent } from "./privacy.page";
+export { PrivacyPage } from "./privacy.page";

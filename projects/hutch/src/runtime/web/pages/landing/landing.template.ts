@@ -1,8 +1,9 @@
-import type { PageContent } from "../../base.component";
+import { Base } from "../../base.component";
+import type { Component } from "../../component.types";
 import { LANDING_PAGE_STYLES } from "./landing.styles";
 
-export function createLandingPageContent(): PageContent {
-	return {
+export function LandingPage(): Component {
+	return Base({
 		seo: {
 			title: "Hutch — A read-it-later app by Fayner Brack",
 			description:
@@ -32,7 +33,7 @@ export function createLandingPageContent(): PageContent {
 		headerVariant: "transparent",
 		bodyClass: "page-landing",
 		content: renderLandingContent(),
-	};
+	});
 }
 
 function renderLandingContent(): string {

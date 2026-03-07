@@ -1,11 +1,12 @@
-import type { PageContent } from "../../base.component";
+import { Base } from "../../base.component";
+import type { Component } from "../../component.types";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
 import { getExtensionDownloadUrl } from "firefox-extension/s3-config";
 
 const EXTENSION_DOWNLOAD_URL = getExtensionDownloadUrl("prod");
 
-export function createInstallPageContent(): PageContent {
-	return {
+export function InstallPage(): Component {
+	return Base({
 		seo: {
 			title: "Install Hutch for Firefox",
 			description:
@@ -15,7 +16,7 @@ export function createInstallPageContent(): PageContent {
 		styles: INSTALL_PAGE_STYLES,
 		bodyClass: "page-install",
 		content: renderInstallContent(),
-	};
+	});
 }
 
 function renderInstallContent(): string {
