@@ -16,7 +16,7 @@
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
     "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
-    "check": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+    "check": "pnpm compile && pnpm lint && pnpm test-with-coverage && pnpm check-infra",
     "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod"
   },
   "dependencies": {
