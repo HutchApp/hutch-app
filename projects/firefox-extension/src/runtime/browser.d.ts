@@ -1,4 +1,13 @@
 declare namespace browser {
+	namespace storage {
+		namespace local {
+			// biome-ignore lint/suspicious/noExplicitAny: browser API returns dynamic values
+			function get(key: string): Promise<Record<string, any>>;
+			function set(items: Record<string, unknown>): Promise<void>;
+			function remove(key: string): Promise<void>;
+		}
+	}
+
 	namespace runtime {
 		function sendMessage(message: unknown): Promise<unknown>;
 		function getURL(path: string): string;
@@ -28,6 +37,10 @@ declare namespace browser {
 
 		function get(tabId: number): Promise<Tab>;
 
+		function create(createProperties: { url?: string }): Promise<Tab>;
+
+		function remove(tabId: number): Promise<void>;
+
 		function sendMessage(tabId: number, message: unknown): Promise<unknown>;
 
 		const onActivated: {
@@ -44,6 +57,18 @@ declare namespace browser {
 					tab: Tab,
 				) => void,
 			): void;
+			removeListener(
+				callback: (
+					tabId: number,
+					changeInfo: { url?: string; status?: string },
+					tab: Tab,
+				) => void,
+			): void;
+		};
+
+		const onRemoved: {
+			addListener(callback: (tabId: number) => void): void;
+			removeListener(callback: (tabId: number) => void): void;
 		};
 	}
 
