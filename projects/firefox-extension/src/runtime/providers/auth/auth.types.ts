@@ -1,6 +1,4 @@
-export type LoginResult =
-	| { ok: true }
-	| { ok: false; reason: "invalid-credentials" };
+export type LoginResult = { ok: true };
 
 export type GuardedResult<T> =
 	| { ok: true; value: T }
