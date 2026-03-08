@@ -89,7 +89,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build and package extension
-        run: pnpm --filter firefox-extension compile
+        run: pnpm --filter browser-extension-core compile && pnpm --filter firefox-extension compile
 
       - name: Deploy extension to S3
         run: pulumi up --stack prod --yes
