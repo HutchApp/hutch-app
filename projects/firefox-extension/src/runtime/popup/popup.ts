@@ -240,27 +240,13 @@ async function saveAndShowList() {
 }
 
 document
-	.getElementById("login-form")
-	?.addEventListener("submit", async (e) => {
-		e.preventDefault();
-		const email = (document.getElementById("email") as HTMLInputElement)
-			.value;
-		const password = (
-			document.getElementById("password") as HTMLInputElement
-		).value;
-
-		const result = (await send({
-			type: "login",
-			email,
-			password,
-		})) as LoginResult;
+	.getElementById("login-button")
+	?.addEventListener("click", async () => {
+		const result = (await send({ type: "login" })) as LoginResult;
 
 		if (result.ok) {
 			showView("loading-view");
 			await saveAndShowList();
-		} else {
-			const errorEl = document.getElementById("login-error");
-			if (errorEl) errorEl.hidden = false;
 		}
 	});
 

@@ -110,77 +110,22 @@ h2 {
   color: inherit;
 }
 
-.login__heading {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--popup-heading);
-  margin: 0;
-  text-align: center;
-}
-
-.login__form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.login__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.login__label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--popup-label);
-}
-
-.login__input {
-  padding: 10px 12px;
-  border: 1px solid var(--popup-border);
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  color: var(--popup-text);
-  background: var(--popup-surface);
-  transition: border-color 0.15s ease;
-}
-
-.login__input:focus {
-  outline: none;
-  border-color: var(--popup-brand);
-  background: var(--popup-bg);
-}
-
-.login__input::placeholder {
-  color: var(--popup-placeholder);
-}
-
 .login__submit {
-  padding: 10px 16px;
+  padding: 16px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--popup-brand);
   color: var(--popup-brand-text);
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  margin-top: 4px;
   transition: background-color 0.15s ease;
+  width: 100%;
 }
 
 .login__submit:hover {
   background: var(--popup-brand-hover);
-}
-
-.login__error {
-  color: var(--popup-error);
-  font-size: 13px;
-  margin: 0;
-  text-align: center;
 }
 
 /* --- Status views (saved, already-saved, removed) --- */

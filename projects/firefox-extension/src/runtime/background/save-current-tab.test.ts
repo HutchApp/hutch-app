@@ -7,7 +7,7 @@ describe("initSaveCurrentTab", () => {
 		it("should produce a GuardedResult-shaped response when checking an unsaved URL", async () => {
 			const auth = initInMemoryAuth();
 			const readingList = initInMemoryReadingList();
-			await auth.login({ email: "user@example.com", password: "password123" });
+			await auth.login();
 
 			const guarded = auth.whenLoggedIn(() =>
 				readingList.findByUrl("https://example.com/new-article"),
