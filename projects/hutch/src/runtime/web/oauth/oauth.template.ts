@@ -1,6 +1,6 @@
-import Handlebars from "handlebars";
 import { Base } from "../base.component";
 import type { Component } from "../component.types";
+import { render } from "../render";
 
 interface AuthorizePageParams {
 	clientName: string;
@@ -9,8 +9,6 @@ interface AuthorizePageParams {
 	codeChallenge: string;
 	state?: string;
 }
-
-const escapeHtml = Handlebars.Utils.escapeExpression;
 
 const OAUTH_AUTHORIZE_STYLES = `
 .oauth-authorize {
@@ -83,21 +81,18 @@ const OAUTH_CALLBACK_STYLES = `
 }
 `;
 
-export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
-	const { clientName, clientId, redirectUri, codeChallenge, state } = params;
-
-	const content = `
+const OAUTH_AUTHORIZE_TEMPLATE = `
     <main class="oauth-authorize">
       <div class="oauth-authorize__container">
-        <h1 class="oauth-authorize__title">Authorize ${escapeHtml(clientName)}</h1>
-        <p class="oauth-authorize__text"><strong>${escapeHtml(clientName)}</strong> wants to access your Hutch account.</p>
+        <h1 class="oauth-authorize__title">Authorize {{clientName}}</h1>
+        <p class="oauth-authorize__text"><strong>{{clientName}}</strong> wants to access your Hutch account.</p>
         <form method="POST" action="/oauth/authorize">
-          <input type="hidden" name="client_id" value="${escapeHtml(clientId)}">
-          <input type="hidden" name="redirect_uri" value="${escapeHtml(redirectUri)}">
+          <input type="hidden" name="client_id" value="{{clientId}}">
+          <input type="hidden" name="redirect_uri" value="{{redirectUri}}">
           <input type="hidden" name="response_type" value="code">
-          <input type="hidden" name="code_challenge" value="${escapeHtml(codeChallenge)}">
+          <input type="hidden" name="code_challenge" value="{{codeChallenge}}">
           <input type="hidden" name="code_challenge_method" value="S256">
-          ${state ? `<input type="hidden" name="state" value="${escapeHtml(state)}">` : ""}
+          {{#if state}}<input type="hidden" name="state" value="{{state}}">{{/if}}
           <div class="oauth-authorize__buttons">
             <button type="submit" name="action" value="approve" class="oauth-authorize__btn oauth-authorize__btn--approve">Approve</button>
             <button type="submit" name="action" value="deny" class="oauth-authorize__btn oauth-authorize__btn--deny">Deny</button>
@@ -106,10 +101,13 @@ export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
       </div>
     </main>`;
 
+export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
+	const content = render(OAUTH_AUTHORIZE_TEMPLATE, params);
+
 	return Base({
 		seo: {
-			title: `Authorize ${clientName} — Hutch`,
-			description: `${clientName} is requesting access to your Hutch account.`,
+			title: `Authorize ${params.clientName} — Hutch`,
+			description: `${params.clientName} is requesting access to your Hutch account.`,
 			canonicalUrl: "/oauth/authorize",
 			robots: "noindex, nofollow",
 		},
