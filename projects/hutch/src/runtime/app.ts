@@ -13,6 +13,7 @@ import {
 	initInMemoryOAuthModel,
 } from "./providers/oauth/oauth-model";
 import { initDynamoDbOAuthModel } from "./providers/oauth/dynamodb-oauth-model";
+import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -41,17 +42,21 @@ function initProviders() {
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
+		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		return {
 			...initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable }),
 			...initDynamoDbArticleStore({ client, tableName: articlesTable }),
-			oauthModel: initDynamoDbOAuthModel({ client, tableName: oauthTable }),
+			oauthModel,
+			validateAccessToken: createValidateAccessToken(oauthModel),
 		};
 	}
 
+	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	return {
 		...initInMemoryAuth(),
 		...initInMemoryArticleStore(),
-		oauthModel: createOAuthModel(initInMemoryOAuthModel()),
+		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 	};
 }
 

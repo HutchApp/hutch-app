@@ -1,0 +1,82 @@
+import type {
+	FindArticlesResult,
+	SortOrder,
+} from "../../providers/article-store/article-store.types";
+import type { ArticleStatus } from "../../domain/article/article.types";
+import type { SirenEntity, SirenLink } from "./siren";
+import { toArticleSubEntity } from "./article-siren";
+
+interface CollectionQueryParams {
+	status?: ArticleStatus;
+	order?: SortOrder;
+	page?: number;
+	pageSize?: number;
+}
+
+function buildQueryString(params: CollectionQueryParams): string {
+	const search = new URLSearchParams();
+	if (params.status) search.set("status", params.status);
+	if (params.order) search.set("order", params.order);
+	if (params.page) search.set("page", String(params.page));
+	if (params.pageSize) search.set("pageSize", String(params.pageSize));
+	const qs = search.toString();
+	return qs ? `?${qs}` : "";
+}
+
+export function toArticleCollectionEntity(
+	result: FindArticlesResult,
+	queryParams: CollectionQueryParams,
+): SirenEntity {
+	const { articles, total, page, pageSize } = result;
+	const totalPages = Math.ceil(total / pageSize);
+
+	const links: SirenLink[] = [
+		{ rel: ["self"], href: `/queue${buildQueryString(queryParams)}` },
+		{ rel: ["root"], href: "/queue" },
+	];
+
+	if (page > 1) {
+		links.push({
+			rel: ["prev"],
+			href: `/queue${buildQueryString({ ...queryParams, page: page - 1 })}`,
+		});
+	}
+
+	if (page < totalPages) {
+		links.push({
+			rel: ["next"],
+			href: `/queue${buildQueryString({ ...queryParams, page: page + 1 })}`,
+		});
+	}
+
+	return {
+		class: ["collection", "articles"],
+		properties: {
+			total,
+			page,
+			pageSize,
+		},
+		entities: articles.map(toArticleSubEntity),
+		links,
+		actions: [
+			{
+				name: "save-article",
+				href: "/queue",
+				method: "POST",
+				type: "application/json",
+				fields: [{ name: "url", type: "url" }],
+			},
+			{
+				name: "filter-by-status",
+				href: "/queue",
+				method: "GET",
+				fields: [
+					{ name: "status", type: "text" },
+					{ name: "order", type: "text" },
+					{ name: "page", type: "number" },
+					{ name: "pageSize", type: "number" },
+				],
+			},
+		],
+	};
+}

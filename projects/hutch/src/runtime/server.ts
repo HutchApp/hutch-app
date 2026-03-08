@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import { config } from "dotenv";
 import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
@@ -23,6 +24,7 @@ import { Base } from "./web/base.component";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
+import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { createLandingPageContent } from "./web/pages/landing";
 import { createPrivacyPageContent } from "./web/pages/privacy";
@@ -52,6 +54,7 @@ interface AppDependencies {
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
 	oauthModel: OAuthModel;
+	validateAccessToken: ValidateAccessToken;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -122,6 +125,23 @@ export function createApp(dependencies: AppDependencies): Express {
 	});
 	app.use(authRouter);
 
+	const extensionCors = cors({
+		origin: (origin, callback) => {
+			if (!origin || /^(moz|chrome)-extension:\/\//.test(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS"));
+			}
+		},
+		methods: ["GET", "POST", "PUT", "DELETE"],
+		allowedHeaders: ["Authorization", "Content-Type", "Accept"],
+		maxAge: 86400,
+	});
+
+	const dualAuthMiddleware = initDualAuth({
+		validateAccessToken: deps.validateAccessToken,
+	});
+
 	const queueRouter = initQueueRoutes({
 		findArticlesByUser: deps.findArticlesByUser,
 		findArticleById: deps.findArticleById,
@@ -130,7 +150,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
 	});
-	app.use("/queue", requireAuth, queueRouter);
+	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 
 	const exportRouter = initExportRoutes({
 		findArticlesByUser: deps.findArticlesByUser,

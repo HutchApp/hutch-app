@@ -6,6 +6,7 @@ import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
 } from "./providers/oauth/oauth-model";
+import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
 import { createApp } from "./server";
 
 const stubFetchHtml: FetchHtml = async (url) => {
@@ -24,6 +25,7 @@ export function createTestApp() {
 		...articleStore,
 		...parser,
 		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
 
 	return { app, auth, articleStore, parser, oauthModel };
@@ -40,6 +42,7 @@ export function createTestAppWithFetchHtml(fetchHtml: FetchHtml) {
 		...articleStore,
 		...parser,
 		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
 
 	return { app, auth, articleStore, parser, oauthModel };

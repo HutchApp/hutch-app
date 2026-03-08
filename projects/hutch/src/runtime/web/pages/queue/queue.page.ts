@@ -13,6 +13,9 @@ import type {
 } from "../../../providers/article-store/article-store.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { Base } from "../../base.component";
+import { wantsSiren } from "../../content-negotiation";
+import { SIREN_MEDIA_TYPE } from "../../api/siren";
+import { toArticleCollectionEntity } from "../../api/collection-siren";
 import { parseQueueUrl } from "./queue.url";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { createQueuePageContent } from "./queue.template";
@@ -40,6 +43,18 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			order: urlState.order,
 			page: urlState.page,
 		});
+
+		if (wantsSiren(req)) {
+			res.type(SIREN_MEDIA_TYPE).json(
+				toArticleCollectionEntity(result, {
+					status: urlState.status,
+					order: urlState.order,
+					page: urlState.page,
+					pageSize: result.pageSize,
+				}),
+			);
+			return;
+		}
 
 		const vm = toQueueViewModel(result, urlState);
 		const pageContent = createQueuePageContent(vm);

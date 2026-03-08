@@ -72,7 +72,7 @@ class HutchStorage {
 	public readonly sessionsTable: aws.dynamodb.Table;
 	public readonly oauthTable: aws.dynamodb.Table;
 
-	constructor(name: string) {
+	constructor(_name: string) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "id",

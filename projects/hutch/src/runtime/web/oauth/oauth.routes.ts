@@ -146,9 +146,9 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 		if (refreshToken) {
 			await deps.model.revokeToken(refreshToken);
 		} else {
-			const accessToken = await deps.model.getAccessToken(token);
-			if (accessToken && accessToken.refreshToken) {
-				const associatedRefresh = await deps.model.getRefreshToken(accessToken.refreshToken);
+			const accessTokenResult = await deps.model.getAccessToken(token);
+			if (accessTokenResult && accessTokenResult.refreshToken) {
+				const associatedRefresh = await deps.model.getRefreshToken(accessTokenResult.refreshToken);
 				if (associatedRefresh) {
 					await deps.model.revokeToken(associatedRefresh);
 				}
