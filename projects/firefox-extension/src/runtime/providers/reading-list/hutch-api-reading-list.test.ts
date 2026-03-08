@@ -40,7 +40,7 @@ describe("initHutchApiReadingList", () => {
 			});
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -76,7 +76,7 @@ describe("initHutchApiReadingList", () => {
 			});
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -98,7 +98,7 @@ describe("initHutchApiReadingList", () => {
 			})) as unknown as typeof fetch;
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mockFetch,
 			});
 
@@ -118,7 +118,7 @@ describe("initHutchApiReadingList", () => {
 			});
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -137,7 +137,7 @@ describe("initHutchApiReadingList", () => {
 			mock.setResponse({ status: 200, body: {} });
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -163,7 +163,7 @@ describe("initHutchApiReadingList", () => {
 			});
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -182,7 +182,7 @@ describe("initHutchApiReadingList", () => {
 			})) as unknown as typeof fetch;
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mockFetch,
 			});
 
@@ -199,7 +199,7 @@ describe("initHutchApiReadingList", () => {
 			});
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -225,7 +225,7 @@ describe("initHutchApiReadingList", () => {
 			});
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -246,7 +246,7 @@ describe("initHutchApiReadingList", () => {
 			mock.setResponse({ status: 200, body: null as unknown as object });
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -262,7 +262,7 @@ describe("initHutchApiReadingList", () => {
 			mock.setResponse({ status: 404, body: null });
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -296,7 +296,7 @@ describe("initHutchApiReadingList", () => {
 			});
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -318,7 +318,7 @@ describe("initHutchApiReadingList", () => {
 			mock.setResponse({ status: 500, body: {} });
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -332,7 +332,7 @@ describe("initHutchApiReadingList", () => {
 			mock.setResponse({ status: 200, body: [] });
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => validToken,
+				getAccessToken: async () => validToken,
 				fetchFn: mock.fetchFn,
 			});
 
@@ -348,7 +348,7 @@ describe("initHutchApiReadingList", () => {
 			mock.setResponse({ status: 200, body: [] });
 			const list = initHutchApiReadingList({
 				serverUrl,
-				getAccessToken: () => null,
+				getAccessToken: async () => null,
 				fetchFn: mock.fetchFn,
 			});
 

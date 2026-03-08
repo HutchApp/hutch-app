@@ -37,6 +37,10 @@ importers:
         version: 5.9.3
 
   projects/firefox-extension:
+    dependencies:
+      zod:
+        specifier: 4.1.13
+        version: 4.1.13
     devDependencies:
       '@pulumi/aws':
         specifier: 7.20.0

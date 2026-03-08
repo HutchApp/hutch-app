@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type {
 	ReadingListItem,
 	ReadingListItemId,
@@ -9,9 +10,18 @@ import type {
 	SaveUrl,
 } from "./reading-list.types";
 
+const ArticleSchema = z.object({
+	id: z.string(),
+	url: z.string(),
+	title: z.string(),
+	savedAt: z.string(),
+});
+
+const ArticleListSchema = z.array(ArticleSchema);
+
 interface HutchApiReadingListDeps {
 	serverUrl: string;
-	getAccessToken: () => string | null;
+	getAccessToken: () => Promise<string | null>;
 	fetchFn: typeof fetch;
 }
 
@@ -23,8 +33,8 @@ export function initHutchApiReadingList(deps: HutchApiReadingListDeps): {
 } {
 	const { serverUrl, getAccessToken, fetchFn } = deps;
 
-	function authHeaders(): Record<string, string> {
-		const token = getAccessToken();
+	async function authHeaders(): Promise<Record<string, string>> {
+		const token = await getAccessToken();
 		if (!token) return {};
 		return { Authorization: `Bearer ${token}` };
 	}
@@ -34,7 +44,7 @@ export function initHutchApiReadingList(deps: HutchApiReadingListDeps): {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				...authHeaders(),
+				...(await authHeaders()),
 			},
 			body: JSON.stringify({ url, title }),
 		});
@@ -47,7 +57,7 @@ export function initHutchApiReadingList(deps: HutchApiReadingListDeps): {
 			throw new Error(`Save failed: ${response.status}`);
 		}
 
-		const body = await response.json();
+		const body = ArticleSchema.parse(await response.json());
 		return {
 			ok: true,
 			item: {
@@ -62,7 +72,7 @@ export function initHutchApiReadingList(deps: HutchApiReadingListDeps): {
 	const removeUrl: RemoveUrl = async (id) => {
 		const response = await fetchFn(`${serverUrl}/api/articles/${id}`, {
 			method: "DELETE",
-			headers: authHeaders(),
+			headers: await authHeaders(),
 		});
 
 		if (!response.ok) {
@@ -80,7 +90,7 @@ export function initHutchApiReadingList(deps: HutchApiReadingListDeps): {
 		const params = new URLSearchParams({ url });
 		const response = await fetchFn(
 			`${serverUrl}/api/articles/find?${params.toString()}`,
-			{ headers: authHeaders() },
+			{ headers: await authHeaders() },
 		);
 
 		if (!response.ok) return null;
@@ -88,29 +98,25 @@ export function initHutchApiReadingList(deps: HutchApiReadingListDeps): {
 		const body = await response.json();
 		if (!body) return null;
 
+		const article = ArticleSchema.parse(body);
 		return {
-			id: body.id as ReadingListItemId,
-			url: body.url,
-			title: body.title,
-			savedAt: new Date(body.savedAt),
+			id: article.id as ReadingListItemId,
+			url: article.url,
+			title: article.title,
+			savedAt: new Date(article.savedAt),
 		};
 	};
 
 	const getAllItems: GetAllItems = async () => {
 		const response = await fetchFn(`${serverUrl}/api/articles`, {
-			headers: authHeaders(),
+			headers: await authHeaders(),
 		});
 
 		if (!response.ok) {
 			throw new Error(`Get all items failed: ${response.status}`);
 		}
 
-		const body: Array<{
-			id: string;
-			url: string;
-			title: string;
-			savedAt: string;
-		}> = await response.json();
+		const body = ArticleListSchema.parse(await response.json());
 
 		return body.map(
 			(item): ReadingListItem => ({

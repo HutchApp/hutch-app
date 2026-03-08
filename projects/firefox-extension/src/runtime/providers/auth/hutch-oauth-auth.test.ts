@@ -597,10 +597,10 @@ describe("initHutchOAuthAuth", () => {
 			);
 			await loginPromise;
 
-			expect(auth.getAccessToken()).toBe("test-access-token");
+			expect(await auth.getAccessToken()).toBe("test-access-token");
 		});
 
-		it("should return null when not logged in", () => {
+		it("should return null when not logged in", async () => {
 			const deps = createTestDeps();
 			const auth = initHutchOAuthAuth({
 				serverUrl,
@@ -608,7 +608,123 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			expect(auth.getAccessToken()).toBeNull();
+			expect(await auth.getAccessToken()).toBeNull();
+		});
+	});
+
+	describe("token refresh", () => {
+		it("should refresh the access token when expired but refresh token exists", async () => {
+			const deps = createTestDeps();
+			deps.setFetchResponse({
+				ok: true,
+				body: {
+					access_token: "initial-token",
+					refresh_token: "test-refresh-token",
+					expires_in: 0,
+				},
+			});
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+			await loginPromise;
+
+			deps.setFetchResponse({
+				ok: true,
+				body: {
+					access_token: "refreshed-token",
+					refresh_token: "new-refresh-token",
+					expires_in: 3600,
+				},
+			});
+
+			const token = await auth.getAccessToken();
+			expect(token).toBe("refreshed-token");
+
+			const [refreshUrl, refreshOptions] = (deps.fetchFn as jest.Mock)
+				.mock.calls[1];
+			expect(refreshUrl).toBe(`${serverUrl}/oauth/token`);
+			expect(refreshOptions.method).toBe("POST");
+			const body = new URLSearchParams(refreshOptions.body);
+			expect(body.get("grant_type")).toBe("refresh_token");
+			expect(body.get("refresh_token")).toBe("test-refresh-token");
+			expect(body.get("client_id")).toBe("hutch-firefox-extension");
+		});
+
+		it("should return null when refresh fails", async () => {
+			const deps = createTestDeps();
+			deps.setFetchResponse({
+				ok: true,
+				body: {
+					access_token: "initial-token",
+					refresh_token: "test-refresh-token",
+					expires_in: 0,
+				},
+			});
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+			await loginPromise;
+
+			deps.setFetchResponse({ ok: false, body: {} });
+
+			const token = await auth.getAccessToken();
+			expect(token).toBeNull();
+		});
+
+		it("should return null when no refresh token and access token expired", async () => {
+			const deps = createTestDeps();
+			deps.setFetchResponse({
+				ok: true,
+				body: {
+					access_token: "initial-token",
+					expires_in: 0,
+				},
+			});
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+			await loginPromise;
+
+			const token = await auth.getAccessToken();
+			expect(token).toBeNull();
+
+			expect(deps.fetchFn).toHaveBeenCalledTimes(1);
 		});
 	});
 });

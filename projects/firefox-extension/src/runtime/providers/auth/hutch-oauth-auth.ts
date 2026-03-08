@@ -1,5 +1,12 @@
+import { z } from "zod";
 import type { Login, Logout, WhenLoggedIn } from "./auth.types";
 import { generateCodeVerifier, generateCodeChallenge } from "./pkce";
+
+const TokenResponseSchema = z.object({
+	access_token: z.string(),
+	refresh_token: z.string().optional(),
+	expires_in: z.number().optional(),
+});
 
 const CLIENT_ID = "hutch-firefox-extension";
 
@@ -50,7 +57,7 @@ export function initHutchOAuthAuth(deps: HutchOAuthDeps): {
 	login: Login;
 	logout: Logout;
 	whenLoggedIn: WhenLoggedIn;
-	getAccessToken: () => string | null;
+	getAccessToken: () => Promise<string | null>;
 } {
 	const { serverUrl, windowApi, fetchFn } = deps;
 	const redirectUri = `${serverUrl}/oauth/callback`;
@@ -125,9 +132,34 @@ export function initHutchOAuthAuth(deps: HutchOAuthDeps): {
 
 		if (!response.ok) return false;
 
-		const body = await response.json();
+		const body = TokenResponseSchema.parse(await response.json());
 		accessToken = body.access_token;
 		refreshToken = body.refresh_token ?? null;
+		accessTokenExpiresAt = new Date(
+			Date.now() + (body.expires_in ?? 3600) * 1000,
+		);
+
+		return true;
+	}
+
+	async function refreshAccessToken(): Promise<boolean> {
+		if (!refreshToken) return false;
+
+		const response = await fetchFn(`${serverUrl}/oauth/token`, {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: new URLSearchParams({
+				grant_type: "refresh_token",
+				refresh_token: refreshToken,
+				client_id: CLIENT_ID,
+			}),
+		});
+
+		if (!response.ok) return false;
+
+		const body = TokenResponseSchema.parse(await response.json());
+		accessToken = body.access_token;
+		refreshToken = body.refresh_token ?? refreshToken;
 		accessTokenExpiresAt = new Date(
 			Date.now() + (body.expires_in ?? 3600) * 1000,
 		);
@@ -211,9 +243,13 @@ export function initHutchOAuthAuth(deps: HutchOAuthDeps): {
 		}
 	};
 
-	const getAccessToken = (): string | null => {
-		if (!isTokenValid()) return null;
-		return accessToken;
+	const getAccessToken = async (): Promise<string | null> => {
+		if (isTokenValid()) return accessToken;
+		if (refreshToken) {
+			const refreshed = await refreshAccessToken();
+			if (refreshed) return accessToken;
+		}
+		return null;
 	};
 
 	return {
