@@ -145,7 +145,7 @@ const shell: BrowserShell = {
 async function initCore() {
 	const serverUrl = await getServerUrl();
 
-	const auth = initOAuthAuth({
+	const auth = await initOAuthAuth({
 		serverUrl,
 		clientId: CLIENT_ID,
 		async openTab(url: string): Promise<number> {

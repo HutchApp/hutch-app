@@ -17,6 +17,7 @@ export interface Auth {
 	whenLoggedIn: WhenLoggedIn;
 }
 
+// refreshToken is stored for future token renewal but not yet used — expired access tokens currently require re-login
 export interface OAuthTokens {
 	accessToken: string;
 	refreshToken: string;

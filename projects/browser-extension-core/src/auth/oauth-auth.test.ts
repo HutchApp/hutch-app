@@ -54,9 +54,9 @@ function createMockDeps(overrides?: Partial<OAuthAuthDeps>): OAuthAuthDeps {
 
 describe("initOAuthAuth", () => {
 	describe("whenLoggedIn before login", () => {
-		it("should return not-logged-in", () => {
+		it("should return not-logged-in", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			const result = auth.whenLoggedIn(() => "value");
 			expect(result).toEqual({ ok: false, reason: "not-logged-in" });
@@ -66,7 +66,7 @@ describe("initOAuthAuth", () => {
 	describe("login", () => {
 		it("should open a tab with the authorize URL", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 
@@ -82,7 +82,7 @@ describe("initOAuthAuth", () => {
 
 		it("should wait for redirect to callback URL", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 
@@ -94,7 +94,7 @@ describe("initOAuthAuth", () => {
 
 		it("should close the tab after redirect", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 
@@ -103,7 +103,7 @@ describe("initOAuthAuth", () => {
 
 		it("should exchange code for tokens", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 
@@ -120,7 +120,7 @@ describe("initOAuthAuth", () => {
 		it("should store tokens after successful exchange", async () => {
 			const tokenStorage = createMockTokenStorage();
 			const deps = createMockDeps({ tokenStorage });
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 
@@ -132,7 +132,7 @@ describe("initOAuthAuth", () => {
 
 		it("should be logged in after login", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 
@@ -146,7 +146,7 @@ describe("initOAuthAuth", () => {
 					"http://localhost:3000/oauth/callback?error=access_denied",
 				),
 			});
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await expect(auth.login()).rejects.toThrow("OAuth authorization denied");
 		});
@@ -157,7 +157,7 @@ describe("initOAuthAuth", () => {
 					"http://localhost:3000/oauth/callback?state=anything",
 				),
 			});
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await expect(auth.login()).rejects.toThrow("No authorization code");
 		});
@@ -168,7 +168,7 @@ describe("initOAuthAuth", () => {
 					"http://localhost:3000/oauth/callback?code=test-code&state=wrong-state",
 				),
 			});
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await expect(auth.login()).rejects.toThrow("state mismatch");
 		});
@@ -177,7 +177,7 @@ describe("initOAuthAuth", () => {
 			const deps = createMockDeps({
 				fetchFn: jest.fn().mockResolvedValue({ ok: false, status: 400 }),
 			});
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await expect(auth.login()).rejects.toThrow("Token exchange failed");
 		});
@@ -187,7 +187,7 @@ describe("initOAuthAuth", () => {
 		it("should revoke tokens on the server", async () => {
 			const tokenStorage = createMockTokenStorage();
 			const deps = createMockDeps({ tokenStorage });
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 			(deps.fetchFn as jest.Mock).mockClear();
@@ -206,7 +206,7 @@ describe("initOAuthAuth", () => {
 		it("should clear stored tokens", async () => {
 			const tokenStorage = createMockTokenStorage();
 			const deps = createMockDeps({ tokenStorage });
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 			expect(tokenStorage.stored).not.toBeNull();
@@ -217,7 +217,7 @@ describe("initOAuthAuth", () => {
 
 		it("should be logged out after logout", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 			await auth.logout();
@@ -230,7 +230,7 @@ describe("initOAuthAuth", () => {
 	describe("whenLoggedIn callback throws", () => {
 		it("should catch the error and return it", async () => {
 			const deps = createMockDeps();
-			const auth = initOAuthAuth(deps);
+			const auth = await initOAuthAuth(deps);
 			await auth.login();
 			const thrownError = new Error("something broke");
 
@@ -254,10 +254,7 @@ describe("initOAuthAuth", () => {
 			});
 
 			const deps = createMockDeps({ tokenStorage });
-			const auth = initOAuthAuth(deps);
-
-			// Allow the async restoreSession to complete
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			const auth = await initOAuthAuth(deps);
 
 			const result = auth.whenLoggedIn(() => "restored");
 			expect(result).toEqual({ ok: true, value: "restored" });

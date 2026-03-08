@@ -1,17 +1,13 @@
 import type { Auth, LoginResult, OAuthAuthDeps, WhenLoggedIn } from "./auth.types";
 import { generateCodeVerifier, generateCodeChallenge } from "./pkce";
 
-export function initOAuthAuth(deps: OAuthAuthDeps): Auth {
+export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	let loggedIn = false;
 
-	async function restoreSession(): Promise<void> {
-		const tokens = await deps.tokenStorage.getTokens();
-		if (tokens) {
-			loggedIn = true;
-		}
+	const tokens = await deps.tokenStorage.getTokens();
+	if (tokens) {
+		loggedIn = true;
 	}
-
-	restoreSession().catch(() => {});
 
 	const login = async (): Promise<LoginResult> => {
 		const codeVerifier = generateCodeVerifier();
