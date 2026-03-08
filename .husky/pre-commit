@@ -1,1 +1,1 @@
-pnpm check
+pnpm check || { echo "Ensure you read Claude.md for instructions to setup the dev environment"; exit 1; }
