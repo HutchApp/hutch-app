@@ -1,5 +1,7 @@
 import {
 	BrowserExtensionCore,
+	MENU_ITEM_SAVE_PAGE,
+	MENU_ITEM_SAVE_LINK,
 	type BrowserShell,
 	type PopupMessage,
 	type ReadingListItem,
@@ -66,12 +68,12 @@ const shell: BrowserShell = {
 
 	createContextMenus() {
 		browser.menus.create({
-			id: "save-page-to-hutch",
+			id: MENU_ITEM_SAVE_PAGE,
 			title: "Save Page to Hutch",
 			contexts: ["page"],
 		});
 		browser.menus.create({
-			id: "save-link-to-hutch",
+			id: MENU_ITEM_SAVE_LINK,
 			title: "Save Link to Hutch",
 			contexts: ["link"],
 		});
