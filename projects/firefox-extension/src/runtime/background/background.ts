@@ -1,14 +1,40 @@
 import {
 	BrowserExtensionCore,
+	initOAuthAuth,
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,
 	type BrowserShell,
+	type OAuthTokens,
 	type PopupMessage,
 	type ReadingListItem,
 	type SaveUrlResult,
 	type RemoveUrlResult,
+	type TokenStorage,
 } from "browser-extension-core";
 import { createBrowserSetIcon } from "./tinted-icon.browser";
+
+const STORAGE_KEY = "hutch_oauth_tokens";
+const SERVER_URL_KEY = "hutch_server_url";
+const DEFAULT_SERVER_URL = "http://127.0.0.1:3000";
+const CLIENT_ID = "hutch-firefox-extension";
+
+const tokenStorage: TokenStorage = {
+	async getTokens(): Promise<OAuthTokens | null> {
+		const result = await browser.storage.local.get(STORAGE_KEY);
+		return result[STORAGE_KEY] ?? null;
+	},
+	async setTokens(tokens: OAuthTokens): Promise<void> {
+		await browser.storage.local.set({ [STORAGE_KEY]: tokens });
+	},
+	async clearTokens(): Promise<void> {
+		await browser.storage.local.remove(STORAGE_KEY);
+	},
+};
+
+async function getServerUrl(): Promise<string> {
+	const result = await browser.storage.local.get(SERVER_URL_KEY);
+	return result[SERVER_URL_KEY] ?? DEFAULT_SERVER_URL;
+}
 
 let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
 
@@ -116,13 +142,61 @@ const shell: BrowserShell = {
 	},
 };
 
-const core = BrowserExtensionCore(shell);
+async function initCore() {
+	const serverUrl = await getServerUrl();
 
-core.on("pre-init", () => {
-	shell.createContextMenus();
-});
+	const auth = initOAuthAuth({
+		serverUrl,
+		clientId: CLIENT_ID,
+		async openTab(url: string): Promise<number> {
+			const tab = await browser.tabs.create({ url });
+			if (tab.id == null) {
+				throw new Error("Failed to create tab: no tab ID returned");
+			}
+			return tab.id;
+		},
+		waitForRedirect({ tabId, urlPrefix }): Promise<string> {
+			return new Promise((resolve, reject) => {
+				const listener = (
+					updatedTabId: number,
+					changeInfo: { url?: string },
+				) => {
+					if (updatedTabId === tabId && changeInfo.url?.startsWith(urlPrefix)) {
+						browser.tabs.onUpdated.removeListener(listener);
+						browser.tabs.onRemoved.removeListener(removedListener);
+						resolve(changeInfo.url);
+					}
+				};
+				const removedListener = (removedTabId: number) => {
+					if (removedTabId === tabId) {
+						browser.tabs.onUpdated.removeListener(listener);
+						browser.tabs.onRemoved.removeListener(removedListener);
+						reject(new Error("Login tab was closed before completing authentication"));
+					}
+				};
+				browser.tabs.onUpdated.addListener(listener);
+				browser.tabs.onRemoved.addListener(removedListener);
+			});
+		},
+		async closeTab(tabId: number): Promise<void> {
+			await browser.tabs.remove(tabId);
+		},
+		fetchFn: fetch,
+		tokenStorage,
+	});
 
-core.init();
+	const core = BrowserExtensionCore(shell, { auth });
+
+	core.on("pre-init", () => {
+		shell.createContextMenus();
+	});
+
+	core.init();
+
+	return core;
+}
+
+const corePromise = initCore();
 
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	if ((raw as { type: string }).type === "shortcut-pressed") {
@@ -131,73 +205,81 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 
 	const message = raw as PopupMessage;
 
-	switch (message.type) {
-		case "login": {
-			const pending = new Promise<unknown>((resolve) => {
-				core.once("logged-in", {
-					success: () => resolve({ ok: true }),
-					failure: (err) => resolve({ ok: false, ...err }),
-				});
-			});
-			core.login();
-			pending.then(sendResponse);
-			return true;
-		}
-		case "logout": {
-			core.logout();
-			sendResponse({ ok: true });
-			return;
-		}
-		case "save-current-tab": {
-			const pending = new Promise<unknown>((resolve) => {
-				core.once("saved-current-tab", {
-					success: (value: SaveUrlResult) =>
-						resolve({ ok: true, value }),
-					failure: (err) => resolve({ ok: false, ...err }),
-				});
-			});
-			core.save("current-tab", {
-				url: message.url,
-				title: message.title,
-			});
-			pending.then(sendResponse);
-			return true;
-		}
-		case "remove-item": {
-			const pending = new Promise<unknown>((resolve) => {
-				core.once("removed-item", {
-					success: (value: RemoveUrlResult) =>
-						resolve({ ok: true, value }),
-					failure: (err) => resolve({ ok: false, ...err }),
-				});
-			});
-			core.remove("item", { id: message.id });
-			pending.then(sendResponse);
-			return true;
-		}
-		case "check-url": {
-			const pending = new Promise<unknown>((resolve) => {
-				core.once("checked-url", {
-					success: (value: ReadingListItem | null) =>
-						resolve({ ok: true, value }),
-					failure: (err) => resolve({ ok: false, ...err }),
-				});
-			});
-			core.check("url", { url: message.url });
-			pending.then(sendResponse);
-			return true;
-		}
-		case "get-all-items": {
-			const pending = new Promise<unknown>((resolve) => {
-				core.once("fetched-reading-list", {
-					success: (value: ReadingListItem[]) =>
-						resolve({ ok: true, value }),
-					failure: (err) => resolve({ ok: false, ...err }),
-				});
-			});
-			core.fetch("reading-list");
-			pending.then(sendResponse);
-			return true;
-		}
-	}
+	corePromise
+		.then((core) => {
+			switch (message.type) {
+				case "login": {
+					const pending = new Promise<unknown>((resolve) => {
+						core.once("logged-in", {
+							success: () => resolve({ ok: true }),
+							failure: (err) => resolve({ ok: false, ...err }),
+						});
+					});
+					core.login();
+					pending.then(sendResponse);
+					break;
+				}
+				case "logout": {
+					core.logout();
+					sendResponse({ ok: true });
+					break;
+				}
+				case "save-current-tab": {
+					const pending = new Promise<unknown>((resolve) => {
+						core.once("saved-current-tab", {
+							success: (value: SaveUrlResult) =>
+								resolve({ ok: true, value }),
+							failure: (err) => resolve({ ok: false, ...err }),
+						});
+					});
+					core.save("current-tab", {
+						url: message.url,
+						title: message.title,
+					});
+					pending.then(sendResponse);
+					break;
+				}
+				case "remove-item": {
+					const pending = new Promise<unknown>((resolve) => {
+						core.once("removed-item", {
+							success: (value: RemoveUrlResult) =>
+								resolve({ ok: true, value }),
+							failure: (err) => resolve({ ok: false, ...err }),
+						});
+					});
+					core.remove("item", { id: message.id });
+					pending.then(sendResponse);
+					break;
+				}
+				case "check-url": {
+					const pending = new Promise<unknown>((resolve) => {
+						core.once("checked-url", {
+							success: (value: ReadingListItem | null) =>
+								resolve({ ok: true, value }),
+							failure: (err) => resolve({ ok: false, ...err }),
+						});
+					});
+					core.check("url", { url: message.url });
+					pending.then(sendResponse);
+					break;
+				}
+				case "get-all-items": {
+					const pending = new Promise<unknown>((resolve) => {
+						core.once("fetched-reading-list", {
+							success: (value: ReadingListItem[]) =>
+								resolve({ ok: true, value }),
+							failure: (err) => resolve({ ok: false, ...err }),
+						});
+					});
+					core.fetch("reading-list");
+					pending.then(sendResponse);
+					break;
+				}
+			}
+		})
+		.catch((err) => {
+			sendResponse({ ok: false, reason: "error", error: String(err) });
+		});
+
+	return true;
 });

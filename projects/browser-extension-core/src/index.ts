@@ -1,5 +1,5 @@
 export { BrowserExtensionCore } from "./core";
-export type { Core, CoreError, ResultHandler } from "./core";
+export type { Core, CoreDeps, CoreError, ResultHandler } from "./core";
 export type { BrowserShell } from "./shell.types";
 export type { SetIcon } from "./icon-status";
 export type {
@@ -11,9 +11,14 @@ export type {
 	RemoveUrlResult,
 } from "./reading-list/reading-list.types";
 export type {
+	Auth,
 	GuardedResult,
 	LoginResult,
+	OAuthAuthDeps,
+	OAuthTokens,
+	TokenStorage,
 } from "./auth/auth.types";
+export { initOAuthAuth } from "./auth/oauth-auth";
 export type { PopupMessage } from "./popup-message.types";
 export { filterByUrl } from "./popup/filter-by-url";
 export { paginateItems } from "./popup/paginate-items";
