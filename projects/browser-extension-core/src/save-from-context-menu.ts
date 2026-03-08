@@ -1,4 +1,4 @@
-import type { SaveUrl, SaveUrlResult } from "../providers/reading-list/reading-list.types";
+import type { SaveUrl, SaveUrlResult } from "./reading-list/reading-list.types";
 
 export const MENU_ITEM_SAVE_PAGE = "save-page-to-hutch";
 export const MENU_ITEM_SAVE_LINK = "save-link-to-hutch";

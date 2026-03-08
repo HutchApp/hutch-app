@@ -1,6 +1,6 @@
-import type { ReadingListItem } from "../domain/reading-list-item.types";
-import type { WhenLoggedIn } from "../providers/auth/auth.types";
-import type { SaveUrlResult } from "../providers/reading-list/reading-list.types";
+import type { ReadingListItem } from "./domain/reading-list-item.types";
+import type { WhenLoggedIn } from "./auth/auth.types";
+import type { SaveUrlResult } from "./reading-list/reading-list.types";
 
 type TabInfo = { url: string; title: string };
 
@@ -11,7 +11,7 @@ type ShortcutResult =
 	| null;
 
 export function initHandleShortcutCommand(deps: {
-	queryActiveTabs: () => Promise<Array<{ url?: string; title?: string }>>;
+	queryActiveTabs: () => Promise<Array<{ id?: number; url?: string; title?: string }>>;
 	whenLoggedIn: WhenLoggedIn;
 	saveCurrentTab: (tab: TabInfo) => Promise<SaveUrlResult>;
 	hasLoginWindow: () => boolean;

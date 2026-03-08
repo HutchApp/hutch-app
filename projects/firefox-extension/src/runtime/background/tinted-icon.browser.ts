@@ -1,4 +1,4 @@
-import type { SetIcon } from "./icon-status";
+import type { SetIcon } from "browser-extension-core";
 
 const SAVED_COLOR = "#22c55e";
 const ICON_SIZES = [16, 32, 48, 64] as const;

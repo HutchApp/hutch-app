@@ -21,6 +21,8 @@ export default {
 		"@pulumi/pulumi",
 		// Used via compile and ext:run scripts
 		"web-ext",
+		// Workspace dependency — knip can't trace through esbuild-bundled entry points
+		"browser-extension-core",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),

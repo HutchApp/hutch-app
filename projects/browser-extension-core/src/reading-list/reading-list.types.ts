@@ -1,7 +1,7 @@
 import type {
 	ReadingListItem,
 	ReadingListItemId,
-} from "../../domain/reading-list-item.types";
+} from "../domain/reading-list-item.types";
 
 export type SaveUrlResult =
 	| { ok: true; item: ReadingListItem }

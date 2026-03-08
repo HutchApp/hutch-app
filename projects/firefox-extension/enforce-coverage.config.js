@@ -1,18 +1,16 @@
 const baseConfig = require('../../enforce-coverage.config.base');
 const path = require('path')
 
-// Thresholds reflect current coverage.
-// branches: 94.44% — V8 coverage quirk on instanceof ternary in
-// in-memory-auth.ts whenLoggedIn error handling.
-// statements/lines: 97.46% — in-memory-auth.ts catch block (lines 29-33)
-// not exercised by current tests.
+// All testable business logic moved to browser-extension-core.
+// Firefox-extension only contains browser-specific bootstrap code
+// (entry points excluded below) and *.browser.ts files (excluded by base config).
 const config = {
   ...baseConfig,
   thresholds: {
-    statements: 97,
-    branches: 94,
+    statements: 100,
+    branches: 100,
     functions: 100,
-    lines: 97,
+    lines: 100,
   },
   extraExcludePatterns: [
     // esbuild entry points — bootstrap code for browser extension

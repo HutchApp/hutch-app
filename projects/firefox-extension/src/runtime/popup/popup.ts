@@ -1,15 +1,12 @@
 import type {
 	ReadingListItem,
 	ReadingListItemId,
-} from "../domain/reading-list-item.types";
-import type { PopupMessage } from "../background/messages.types";
-import { filterByUrl } from "./filter-by-url";
-import { paginateItems } from "./paginate-items";
-import type { GuardedResult } from "../providers/auth/auth.types";
-import type {
+	PopupMessage,
+	GuardedResult,
 	SaveUrlResult,
 	RemoveUrlResult,
-} from "../providers/reading-list/reading-list.types";
+} from "browser-extension-core";
+import { filterByUrl, paginateItems } from "browser-extension-core";
 
 
 function showView(id: string) {

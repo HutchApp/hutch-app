@@ -1,5 +1,5 @@
-import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
-import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
+import { initInMemoryAuth } from "./auth/in-memory-auth";
+import { initInMemoryReadingList } from "./reading-list/in-memory-reading-list";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initHandleShortcutCommand } from "./handle-shortcut-command";
 

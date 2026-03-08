@@ -21,6 +21,9 @@
     "check": "pnpm compile && pnpm lint && pnpm test-with-coverage && pnpm check-infra",
     "ext:run": "web-ext run --source-dir dist-extension"
   },
+  "dependencies": {
+    "browser-extension-core": "workspace:*"
+  },
   "devDependencies": {
     "@pulumi/aws": "7.20.0",
     "@pulumi/pulumi": "3.224.0",

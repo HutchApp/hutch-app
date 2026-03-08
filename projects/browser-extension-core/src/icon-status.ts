@@ -1,5 +1,5 @@
-import type { FindByUrl } from "../providers/reading-list/reading-list.types";
-import type { WhenLoggedIn } from "../providers/auth/auth.types";
+import type { FindByUrl } from "./reading-list/reading-list.types";
+import type { WhenLoggedIn } from "./auth/auth.types";
 
 export interface SetIcon {
 	showSaved: (tabId: number) => Promise<void>;

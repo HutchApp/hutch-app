@@ -1,4 +1,4 @@
-import type { SaveUrl, SaveUrlResult } from "../providers/reading-list/reading-list.types";
+import type { SaveUrl, SaveUrlResult } from "./reading-list/reading-list.types";
 
 interface TabInfo {
 	url: string;

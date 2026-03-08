@@ -1,4 +1,4 @@
-import type { ReadingListItemId } from "../domain/reading-list-item.types";
+import type { ReadingListItemId } from "./domain/reading-list-item.types";
 
 export type PopupMessage =
 	| { type: "save-current-tab"; url: string; title: string }

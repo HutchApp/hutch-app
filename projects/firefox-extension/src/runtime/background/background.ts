@@ -1,96 +1,31 @@
-import { initInMemoryAuth } from "../providers/auth/in-memory-auth";
-import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
-import type { PopupMessage } from "./messages.types";
-import { initSaveCurrentTab } from "./save-current-tab";
-import { initIconStatus } from "./icon-status";
-import { createBrowserSetIcon } from "./tinted-icon.browser";
 import {
-	MENU_ITEM_SAVE_LINK,
-	MENU_ITEM_SAVE_PAGE,
-	initSaveFromContextMenu,
-} from "./save-from-context-menu";
-import { initHandleShortcutCommand } from "./handle-shortcut-command";
-
-const auth = initInMemoryAuth();
-const readingList = initInMemoryReadingList();
-const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-const { updateIconForTab } = initIconStatus({
-	findByUrl: readingList.findByUrl,
-	whenLoggedIn: auth.whenLoggedIn,
-	setIcon: createBrowserSetIcon(),
-});
-const saveFromContextMenu = initSaveFromContextMenu({
-	saveUrl: readingList.saveUrl,
-});
+	BrowserExtensionCore,
+	type BrowserShell,
+	type PopupMessage,
+	type ReadingListItem,
+	type SaveUrlResult,
+	type RemoveUrlResult,
+} from "browser-extension-core";
+import { createBrowserSetIcon } from "./tinted-icon.browser";
 
 let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
 
-const handleShortcut = initHandleShortcutCommand({
-	queryActiveTabs: () =>
-		browser.tabs.query({ active: true, currentWindow: true }),
-	whenLoggedIn: auth.whenLoggedIn,
-	saveCurrentTab,
-	hasLoginWindow: () => loginWindow != null,
-});
-
-browser.menus.create({
-	id: MENU_ITEM_SAVE_PAGE,
-	title: "Save Page to Hutch",
-	contexts: ["page"],
-});
-
-browser.menus.create({
-	id: MENU_ITEM_SAVE_LINK,
-	title: "Save Link to Hutch",
-	contexts: ["link"],
-});
-
-browser.menus.onClicked.addListener((info, tab) => {
-	const guarded = auth.whenLoggedIn(() => saveFromContextMenu(info, tab));
-	if (guarded.ok) {
-		guarded.value.then(async () => {
-			if (tab?.id && tab.url) {
-				await updateIconForTab(tab.id, tab.url);
+const shell: BrowserShell = {
+	onShortcutPressed(handler) {
+		browser.runtime.onMessage.addListener((raw, _sender, _sendResponse) => {
+			if ((raw as { type: string }).type === "shortcut-pressed") {
+				handler();
 			}
+			return undefined;
 		});
-	}
-});
+	},
 
-async function updateActiveTabIcon() {
-	const tabs = await browser.tabs.query({
-		active: true,
-		currentWindow: true,
-	});
-	const tab = tabs[0];
-	if (tab?.id != null && tab.url) {
-		await updateIconForTab(tab.id, tab.url);
-	}
-}
-
-browser.windows.onRemoved.addListener((windowId) => {
-	if (loginWindow && windowId === loginWindow.id) {
-		updateIconForTab(loginWindow.tabId, loginWindow.tabUrl).catch(() => {});
-		loginWindow = null;
-	}
-});
-
-browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
-	if ((raw as { type: string }).type === "shortcut-pressed") {
-		(async () => {
-			const tabs = await browser.tabs.query({
-				active: true,
-				currentWindow: true,
-			});
-			const tab = tabs[0];
-			const result = await handleShortcut();
-
-			if (result?.action === "login-window-focused" && loginWindow) {
-				await browser.windows.update(loginWindow.id, { focused: true });
-				return;
-			}
-
-			if (result?.action === "not-logged-in") {
-				const params = `?url=${encodeURIComponent(result.url)}&title=${encodeURIComponent(result.title)}`;
+	openLoginScreen({ url, title }) {
+		const params = `?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+		browser.tabs
+			.query({ active: true, currentWindow: true })
+			.then(async (tabs) => {
+				const tab = tabs[0];
 				const win = await browser.windows.create({
 					url: browser.runtime.getURL(
 						`popup/popup.template.html${params}`,
@@ -100,81 +35,167 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 					height: 520,
 				});
 				if (win.id != null && tab?.id != null) {
-					loginWindow = { id: win.id, tabId: tab.id, tabUrl: result.url };
+					loginWindow = { id: win.id, tabId: tab.id, tabUrl: url };
 				}
-				return;
-			}
+			})
+			.catch(console.error);
+	},
 
-			if (result?.action === "saved" && tab?.id != null && tab.url) {
-				await updateIconForTab(tab.id, tab.url);
+	focusLoginWindow() {
+		if (loginWindow) {
+			browser.windows
+				.update(loginWindow.id, { focused: true })
+				.catch(console.error);
+		}
+	},
+
+	getActiveTab: async () => {
+		const tabs = await browser.tabs.query({
+			active: true,
+			currentWindow: true,
+		});
+		const tab = tabs[0];
+		if (!tab?.url) return null;
+		return { id: tab.id, url: tab.url, title: tab.title ?? tab.url };
+	},
+
+	queryActiveTabs: () =>
+		browser.tabs.query({ active: true, currentWindow: true }),
+
+	setIcon: createBrowserSetIcon(),
+
+	createContextMenus() {
+		browser.menus.create({
+			id: "save-page-to-hutch",
+			title: "Save Page to Hutch",
+			contexts: ["page"],
+		});
+		browser.menus.create({
+			id: "save-link-to-hutch",
+			title: "Save Link to Hutch",
+			contexts: ["link"],
+		});
+	},
+
+	onContextMenuClicked(handler) {
+		browser.menus.onClicked.addListener((info, tab) => {
+			handler(info, tab);
+		});
+	},
+
+	onTabActivated(handler) {
+		browser.tabs.onActivated.addListener((activeInfo) => {
+			browser.tabs
+				.get(activeInfo.tabId)
+				.then((tab) => {
+					if (tab.url) {
+						handler(activeInfo.tabId, tab.url);
+					}
+				})
+				.catch(() => {});
+		});
+	},
+
+	onTabUpdated(handler) {
+		browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+			if (changeInfo.url) {
+				handler(tabId, changeInfo.url);
 			}
-		})().catch(console.error);
+		});
+	},
+
+	onLoginWindowClosed(handler) {
+		browser.windows.onRemoved.addListener((windowId) => {
+			if (loginWindow && windowId === loginWindow.id) {
+				loginWindow = null;
+				handler();
+			}
+		});
+	},
+};
+
+const core = BrowserExtensionCore(shell);
+
+core.on("pre-init", () => {
+	shell.createContextMenus();
+});
+
+core.init();
+
+browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
+	if ((raw as { type: string }).type === "shortcut-pressed") {
 		return;
 	}
 
 	const message = raw as PopupMessage;
 
-	const handle = async () => {
-		switch (message.type) {
-			case "login": {
-				const result = await auth.login();
-				if (result.ok) updateActiveTabIcon().catch(() => {});
-				return result;
-			}
-			case "logout": {
-				await auth.logout();
-				updateActiveTabIcon().catch(() => {});
-				return { ok: true };
-			}
-			case "save-current-tab": {
-				const guarded = auth.whenLoggedIn(() =>
-					saveCurrentTab({ url: message.url, title: message.title }),
-				);
-				if (!guarded.ok) return guarded;
-				const value = await guarded.value;
-				if (value.ok) updateActiveTabIcon().catch(() => {});
-				return { ok: true as const, value };
-			}
-			case "remove-item": {
-				const guarded = auth.whenLoggedIn(() =>
-					readingList.removeUrl(message.id),
-				);
-				if (!guarded.ok) return guarded;
-				const value = await guarded.value;
-				if (value.ok) updateActiveTabIcon().catch(() => {});
-				return { ok: true as const, value };
-			}
-			case "check-url": {
-				const guarded = auth.whenLoggedIn(() =>
-					readingList.findByUrl(message.url),
-				);
-				if (!guarded.ok) return guarded;
-				return { ok: true as const, value: await guarded.value };
-			}
-			case "get-all-items": {
-				const guarded = auth.whenLoggedIn(() => readingList.getAllItems());
-				if (!guarded.ok) return guarded;
-				return { ok: true as const, value: await guarded.value };
-			}
+	switch (message.type) {
+		case "login": {
+			const pending = new Promise<unknown>((resolve) => {
+				core.once("logged-in", {
+					success: () => resolve({ ok: true }),
+					failure: (err) => resolve({ ok: false, ...err }),
+				});
+			});
+			core.login();
+			pending.then(sendResponse);
+			return true;
 		}
-	};
-
-	handle().then(sendResponse);
-	return true;
-});
-
-browser.tabs.onActivated.addListener((activeInfo) => {
-	browser.tabs.get(activeInfo.tabId)
-		.then((tab) => {
-			if (tab.url) {
-				updateIconForTab(activeInfo.tabId, tab.url).catch(() => {});
-			}
-		})
-		.catch(() => {});
-});
-
-browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
-	if (changeInfo.url) {
-		updateIconForTab(tabId, changeInfo.url).catch(() => {});
+		case "logout": {
+			core.logout();
+			sendResponse({ ok: true });
+			return;
+		}
+		case "save-current-tab": {
+			const pending = new Promise<unknown>((resolve) => {
+				core.once("saved-current-tab", {
+					success: (value: SaveUrlResult) =>
+						resolve({ ok: true, value }),
+					failure: (err) => resolve({ ok: false, ...err }),
+				});
+			});
+			core.save("current-tab", {
+				url: message.url,
+				title: message.title,
+			});
+			pending.then(sendResponse);
+			return true;
+		}
+		case "remove-item": {
+			const pending = new Promise<unknown>((resolve) => {
+				core.once("removed-item", {
+					success: (value: RemoveUrlResult) =>
+						resolve({ ok: true, value }),
+					failure: (err) => resolve({ ok: false, ...err }),
+				});
+			});
+			core.remove("item", { id: message.id });
+			pending.then(sendResponse);
+			return true;
+		}
+		case "check-url": {
+			const pending = new Promise<unknown>((resolve) => {
+				core.once("checked-url", {
+					success: (value: ReadingListItem | null) =>
+						resolve({ ok: true, value }),
+					failure: (err) => resolve({ ok: false, ...err }),
+				});
+			});
+			core.check("url", { url: message.url });
+			pending.then(sendResponse);
+			return true;
+		}
+		case "get-all-items": {
+			const pending = new Promise<unknown>((resolve) => {
+				core.once("fetched-reading-list", {
+					success: (value: ReadingListItem[]) =>
+						resolve({ ok: true, value }),
+					failure: (err) => resolve({ ok: false, ...err }),
+				});
+			});
+			core.fetch("reading-list");
+			pending.then(sendResponse);
+			return true;
+		}
 	}
 });

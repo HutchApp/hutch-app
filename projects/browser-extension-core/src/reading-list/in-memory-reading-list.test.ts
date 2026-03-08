@@ -1,4 +1,4 @@
-import type { ReadingListItemId } from "../../domain/reading-list-item.types";
+import type { ReadingListItemId } from "../domain/reading-list-item.types";
 import { initInMemoryReadingList } from "./in-memory-reading-list";
 
 describe("initInMemoryReadingList", () => {

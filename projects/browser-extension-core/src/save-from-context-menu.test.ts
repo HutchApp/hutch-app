@@ -1,4 +1,4 @@
-import { initInMemoryReadingList } from "../providers/reading-list/in-memory-reading-list";
+import { initInMemoryReadingList } from "./reading-list/in-memory-reading-list";
 import {
 	MENU_ITEM_SAVE_LINK,
 	MENU_ITEM_SAVE_PAGE,

@@ -1,8 +1,8 @@
-import type { WhenLoggedIn } from "../providers/auth/auth.types";
-import type { SaveUrlResult } from "../providers/reading-list/reading-list.types";
+import type { WhenLoggedIn } from "./auth/auth.types";
+import type { SaveUrlResult } from "./reading-list/reading-list.types";
 
 export function initHandleSaveCommand(deps: {
-	queryActiveTabs: () => Promise<browser.tabs.Tab[]>;
+	queryActiveTabs: () => Promise<Array<{ id?: number; url?: string; title?: string }>>;
 	whenLoggedIn: WhenLoggedIn;
 	saveCurrentTab: (tab: { url: string; title: string }) => Promise<SaveUrlResult>;
 }): () => Promise<SaveUrlResult | null> {
