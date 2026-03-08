@@ -58,7 +58,7 @@ function renderHeroSection(): string {
         <h1 class="landing-hero__title">Save now.<br>Read later.<br>That's it.</h1>
         <p class="landing-hero__subtitle">Pocket is gone. Omnivore is gone. I built Hutch from a personal reading system I've maintained for 10 years &mdash; because I needed a replacement too.</p>
         <div class="landing-hero__actions">
-          <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install the Extension</a>
+          <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install the Firefox Extension</a>
           <a href="#what-works" class="btn btn--secondary" data-test-cta="see-features">See What Works Today</a>
         </div>
         <p class="landing-hero__trust">Firefox</p>
@@ -77,9 +77,9 @@ function renderFeatureCard(f: { name: string; description: string }): string {
 function renderCoreFeaturesSection(): string {
 	const features = [
 		{
-			name: "Browser Extension",
+			name: "Firefox Browser Extension",
 			description:
-				"Save any page in one click from Chrome or Firefox. No modals, no friction.",
+				"Save any page in one click from Firefox. No friction.",
 		},
 		{
 			name: "Web App",
@@ -283,7 +283,7 @@ function renderFooterCTA(): string {
         <h2 class="landing-cta__title">I'm building this in public.</h2>
         <p class="landing-cta__subtitle">Try the extension, tell me what to build next. Hutch gets better with every user who shows up and says what they need.</p>
         <div class="landing-cta__actions">
-          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install the Extension</a>
+          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install the Firefox Extension</a>
         </div>
       </div>
     </section>`;
