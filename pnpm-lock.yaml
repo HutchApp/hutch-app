@@ -37,6 +37,10 @@ importers:
         version: 5.9.3
 
   projects/browser-extension-core:
+    dependencies:
+      zod:
+        specifier: 4.1.13
+        version: 4.1.13
     devDependencies:
       c8:
         specifier: 10.1.3

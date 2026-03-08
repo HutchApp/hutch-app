@@ -1,5 +1,11 @@
+import { z } from "zod";
 import type { Auth, LoginResult, OAuthAuthDeps, WhenLoggedIn } from "./auth.types";
 import { generateCodeVerifier, generateCodeChallenge } from "./pkce";
+
+const TokenResponse = z.object({
+	access_token: z.string(),
+	refresh_token: z.string(),
+});
 
 export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	let loggedIn = false;
@@ -64,7 +70,7 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 			throw new Error(`Token exchange failed: ${tokenResponse.status}`);
 		}
 
-		const tokenData = await tokenResponse.json();
+		const tokenData = TokenResponse.parse(await tokenResponse.json());
 
 		await deps.tokenStorage.setTokens({
 			accessToken: tokenData.access_token,

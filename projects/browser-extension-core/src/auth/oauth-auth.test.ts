@@ -181,6 +181,18 @@ describe("initOAuthAuth", () => {
 
 			await expect(auth.login()).rejects.toThrow("Token exchange failed");
 		});
+
+		it("should throw when token response has invalid shape", async () => {
+			const deps = createMockDeps({
+				fetchFn: jest.fn().mockResolvedValue({
+					ok: true,
+					json: async () => ({ unexpected: "shape" }),
+				}),
+			});
+			const auth = await initOAuthAuth(deps);
+
+			await expect(auth.login()).rejects.toThrow();
+		});
 	});
 
 	describe("logout", () => {
