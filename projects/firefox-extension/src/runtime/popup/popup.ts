@@ -10,7 +10,7 @@ import type {
 	SaveUrlResult,
 	RemoveUrlResult,
 } from "../providers/reading-list/reading-list.types";
-import type { LoginResult } from "../providers/auth/auth.types";
+
 
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
@@ -242,12 +242,9 @@ async function saveAndShowList() {
 document
 	.getElementById("login-button")
 	?.addEventListener("click", async () => {
-		const result = (await send({ type: "login" })) as LoginResult;
-
-		if (result.ok) {
-			showView("loading-view");
-			await saveAndShowList();
-		}
+		await send({ type: "login" });
+		showView("loading-view");
+		await saveAndShowList();
 	});
 
 document
