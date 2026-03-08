@@ -86,6 +86,11 @@ function renderCoreFeaturesSection(): string {
 			description:
 				"View and manage your saved articles from any browser. Clean, fast, no clutter.",
 		},
+		{
+			name: "Reader View",
+			description:
+				"Distraction-free reading with custom fonts, themes, and adjustable typography.",
+		},
 	];
 
 	const featureCards = features.map(renderFeatureCard).join("");
@@ -105,11 +110,6 @@ function renderCoreFeaturesSection(): string {
 
 function renderRoadmapSection(): string {
 	const planned = [
-		{
-			name: "Reader View",
-			description:
-				"Distraction-free reading with custom fonts, themes, and adjustable typography.",
-		},
 		{
 			name: "Highlights &amp; Notes",
 			description:

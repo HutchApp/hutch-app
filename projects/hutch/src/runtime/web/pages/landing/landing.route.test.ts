@@ -36,7 +36,7 @@ describe("GET /", () => {
 
 		const coreSection = doc.querySelector('[data-test-section="core-features"]');
 		const features = coreSection?.querySelectorAll(".feature-card");
-		expect(features?.length).toBe(2);
+		expect(features?.length).toBe(3);
 	});
 
 	it("should render the roadmap section with planned features", async () => {
@@ -45,7 +45,7 @@ describe("GET /", () => {
 
 		const roadmapSection = doc.querySelector('[data-test-section="roadmap"]');
 		const features = roadmapSection?.querySelectorAll(".feature-card");
-		expect(features?.length).toBe(6);
+		expect(features?.length).toBe(5);
 	});
 
 	it("should not render any in-development badges on shipped features", async () => {
