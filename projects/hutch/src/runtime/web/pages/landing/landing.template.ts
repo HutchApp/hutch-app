@@ -89,7 +89,7 @@ function renderCoreFeaturesSection(): string {
 		{
 			name: "Reader View",
 			description:
-				"Distraction-free reading with custom fonts, themes, and adjustable typography.",
+				"Distraction-free reading with clean fonts, themes, and typography.",
 		},
 	];
 
