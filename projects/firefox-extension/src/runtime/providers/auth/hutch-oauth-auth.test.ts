@@ -1,4 +1,7 @@
-import { initHutchOAuthAuth } from "./hutch-oauth-auth";
+import {
+	initHutchOAuthAuth,
+	createBrowserWindowApi,
+} from "./hutch-oauth-auth";
 
 type TabUpdatedCallback = (
 	tabId: number,
@@ -24,9 +27,11 @@ function createTestDeps() {
 		resolveListenersReady = resolve;
 	});
 
-	const createWindow = jest.fn(async (_params: Record<string, unknown>) => {
-		return { id: windowIdCounter++ };
-	});
+	const createWindow = jest.fn(
+		async (_params: Record<string, unknown>): Promise<{ id?: number }> => {
+			return { id: windowIdCounter++ };
+		},
+	);
 	const removeWindow = jest.fn(async () => {});
 	const fetchFn = jest.fn(async () => ({
 		ok: fetchResponse.ok,
@@ -80,6 +85,55 @@ function createTestDeps() {
 		},
 	};
 }
+
+describe("createBrowserWindowApi", () => {
+	it("should delegate to browser APIs", () => {
+		const mockCreate = jest.fn();
+		const mockRemove = jest.fn();
+		const mockOnUpdated = {
+			addListener: jest.fn(),
+			removeListener: jest.fn(),
+		};
+		const mockOnRemoved = {
+			addListener: jest.fn(),
+			removeListener: jest.fn(),
+		};
+
+		(globalThis as Record<string, unknown>).browser = {
+			windows: {
+				create: mockCreate,
+				remove: mockRemove,
+				onRemoved: mockOnRemoved,
+			},
+			tabs: {
+				onUpdated: mockOnUpdated,
+			},
+		};
+
+		const api = createBrowserWindowApi();
+
+		api.createWindow({
+			url: "https://example.com",
+			type: "popup",
+			width: 500,
+			height: 700,
+		});
+		expect(mockCreate).toHaveBeenCalledWith({
+			url: "https://example.com",
+			type: "popup",
+			width: 500,
+			height: 700,
+		});
+
+		api.removeWindow(42);
+		expect(mockRemove).toHaveBeenCalledWith(42);
+
+		expect(api.onTabUpdated).toBe(mockOnUpdated);
+		expect(api.onWindowRemoved).toBe(mockOnRemoved);
+
+		delete (globalThis as Record<string, unknown>).browser;
+	});
+});
 
 describe("initHutchOAuthAuth", () => {
 	const serverUrl = "https://hutch-app.com";
@@ -351,6 +405,175 @@ describe("initHutchOAuthAuth", () => {
 			expect(revokeOptions.method).toBe("POST");
 			const body = new URLSearchParams(revokeOptions.body);
 			expect(body.get("token")).toBe("test-refresh-token");
+		});
+	});
+
+	describe("login fails when window has no id", () => {
+		it("should return invalid-credentials when createWindow returns no id", async () => {
+			const deps = createTestDeps();
+			deps.createWindow.mockResolvedValueOnce({ id: undefined });
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const result = await auth.login({ email: "", password: "" });
+
+			expect(result).toEqual({
+				ok: false,
+				reason: "invalid-credentials",
+			});
+		});
+	});
+
+	describe("whenLoggedIn callback throws non-Error value", () => {
+		it("should wrap non-Error thrown values", async () => {
+			const deps = createTestDeps();
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+			await loginPromise;
+
+			const result = auth.whenLoggedIn(() => {
+				throw "string-error";
+			});
+
+			expect(result.ok).toBe(false);
+			if (!result.ok && result.reason === "error") {
+				expect(result.error).toBeInstanceOf(Error);
+				expect(result.error.message).toBe("string-error");
+			}
+		});
+	});
+
+	describe("logout without refresh token", () => {
+		it("should clear tokens without calling revoke endpoint", async () => {
+			const deps = createTestDeps();
+			deps.setFetchResponse({
+				ok: true,
+				body: {
+					access_token: "test-access-token",
+					expires_in: 3600,
+				},
+			});
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+			await loginPromise;
+
+			await auth.logout();
+
+			expect(deps.fetchFn).toHaveBeenCalledTimes(1);
+			const guarded = auth.whenLoggedIn(() => "value");
+			expect(guarded).toEqual({ ok: false, reason: "not-logged-in" });
+		});
+	});
+
+	describe("waitForOAuthCallback ignores unrelated events", () => {
+		it("should ignore tab updates for different URLs", async () => {
+			const deps = createTestDeps();
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+
+			deps.simulateCallback("https://other-site.com/page");
+			deps.simulateCallback("");
+
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=wrong-state`,
+			);
+
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+
+			const result = await loginPromise;
+			expect(result).toEqual({ ok: true });
+		});
+
+		it("should ignore window removal for different window ids", async () => {
+			const deps = createTestDeps();
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+
+			deps.simulateWindowClosed(999);
+
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+
+			const result = await loginPromise;
+			expect(result).toEqual({ ok: true });
+		});
+
+		it("should ignore tab updates without url", async () => {
+			const deps = createTestDeps();
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+
+			deps.simulateCallback(undefined as unknown as string);
+
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+
+			const result = await loginPromise;
+			expect(result).toEqual({ ok: true });
 		});
 	});
 

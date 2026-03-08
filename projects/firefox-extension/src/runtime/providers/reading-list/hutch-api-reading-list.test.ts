@@ -68,6 +68,48 @@ describe("initHutchApiReadingList", () => {
 			});
 		});
 
+		it("should throw when server returns a generic error", async () => {
+			const mock = createFetchMock();
+			mock.setResponse({
+				status: 500,
+				body: { message: "Internal Server Error" },
+			});
+			const list = initHutchApiReadingList({
+				serverUrl,
+				getAccessToken: () => validToken,
+				fetchFn: mock.fetchFn,
+			});
+
+			await expect(
+				list.saveUrl({
+					url: "https://example.com/fail",
+					title: "Fail",
+				}),
+			).rejects.toThrow("Save failed: 500");
+		});
+
+		it("should throw when server returns error and json parsing fails", async () => {
+			const mockFetch = jest.fn(async () => ({
+				ok: false,
+				status: 502,
+				json: async () => {
+					throw new Error("invalid json");
+				},
+			})) as unknown as typeof fetch;
+			const list = initHutchApiReadingList({
+				serverUrl,
+				getAccessToken: () => validToken,
+				fetchFn: mockFetch,
+			});
+
+			await expect(
+				list.saveUrl({
+					url: "https://example.com/fail",
+					title: "Fail",
+				}),
+			).rejects.toThrow("Save failed: 502");
+		});
+
 		it("should return already-saved when server responds with that reason", async () => {
 			const mock = createFetchMock();
 			mock.setResponse({
@@ -111,6 +153,42 @@ describe("initHutchApiReadingList", () => {
 			expect(fetchOptions.headers.Authorization).toBe(
 				`Bearer ${validToken}`,
 			);
+		});
+
+		it("should throw when server returns a generic error", async () => {
+			const mock = createFetchMock();
+			mock.setResponse({
+				status: 500,
+				body: { message: "Internal Server Error" },
+			});
+			const list = initHutchApiReadingList({
+				serverUrl,
+				getAccessToken: () => validToken,
+				fetchFn: mock.fetchFn,
+			});
+
+			await expect(
+				list.removeUrl("article-1" as ReadingListItemId),
+			).rejects.toThrow("Remove failed: 500");
+		});
+
+		it("should throw when server error json parsing fails", async () => {
+			const mockFetch = jest.fn(async () => ({
+				ok: false,
+				status: 502,
+				json: async () => {
+					throw new Error("invalid json");
+				},
+			})) as unknown as typeof fetch;
+			const list = initHutchApiReadingList({
+				serverUrl,
+				getAccessToken: () => validToken,
+				fetchFn: mockFetch,
+			});
+
+			await expect(
+				list.removeUrl("article-1" as ReadingListItemId),
+			).rejects.toThrow("Remove failed: 502");
 		});
 
 		it("should return not-found when article does not exist", async () => {
@@ -161,6 +239,22 @@ describe("initHutchApiReadingList", () => {
 			expect(fetchUrl).toContain(
 				`url=${encodeURIComponent("https://example.com/found")}`,
 			);
+		});
+
+		it("should return null when response body is falsy", async () => {
+			const mock = createFetchMock();
+			mock.setResponse({ status: 200, body: null as unknown as object });
+			const list = initHutchApiReadingList({
+				serverUrl,
+				getAccessToken: () => validToken,
+				fetchFn: mock.fetchFn,
+			});
+
+			const found = await list.findByUrl(
+				"https://example.com/empty",
+			);
+
+			expect(found).toBeNull();
 		});
 
 		it("should return null when article is not found", async () => {
@@ -216,6 +310,20 @@ describe("initHutchApiReadingList", () => {
 			expect(fetchUrl).toBe(`${serverUrl}/api/articles`);
 			expect(fetchOptions.headers.Authorization).toBe(
 				`Bearer ${validToken}`,
+			);
+		});
+
+		it("should throw when server returns an error", async () => {
+			const mock = createFetchMock();
+			mock.setResponse({ status: 500, body: {} });
+			const list = initHutchApiReadingList({
+				serverUrl,
+				getAccessToken: () => validToken,
+				fetchFn: mock.fetchFn,
+			});
+
+			await expect(list.getAllItems()).rejects.toThrow(
+				"Get all items failed: 500",
 			);
 		});
 
