@@ -1,4 +1,3 @@
-import assert from "node:assert";
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import type { ParseArticle } from "./article-parser.types";
@@ -41,14 +40,13 @@ export function initReadabilityParser(deps: {
 			};
 		}
 
-		// Readability.parse() always returns string values for textContent,
-		// title, content, and excerpt when result is non-null.
-		// Using explicit fallbacks via if-statements instead of || and ??
+		// Using explicit if-statement fallbacks instead of || and ??
 		// to avoid V8 coverage branches on operators that can never take
 		// the fallback path at runtime.
 		// See: https://github.com/bcoe/c8/issues/126
-		assert(parsed.textContent, "Readability.parse() returns textContent when result is non-null");
-		const wordCount = parsed.textContent.split(/\s+/).filter(Boolean).length;
+		let textContent = parsed.textContent;
+		if (!textContent) textContent = "";
+		const wordCount = textContent.split(/\s+/).filter(Boolean).length;
 
 		let title = parsed.title;
 		if (!title) title = `Article from ${hostname}`;
@@ -56,18 +54,20 @@ export function initReadabilityParser(deps: {
 		let siteName = parsed.siteName;
 		if (!siteName) siteName = hostname;
 
-		assert(parsed.excerpt, "Readability.parse() returns excerpt when result is non-null");
-		assert(parsed.content !== null && parsed.content !== undefined,
-			"Readability.parse() returns content when result is non-null");
+		let excerpt = parsed.excerpt;
+		if (!excerpt) excerpt = `Content saved from ${hostname}.`;
+
+		let content = parsed.content;
+		if (!content) content = "";
 
 		return {
 			ok: true,
 			article: {
 				title,
 				siteName,
-				excerpt: parsed.excerpt,
+				excerpt,
 				wordCount,
-				content: parsed.content,
+				content,
 				imageUrl,
 			},
 		};

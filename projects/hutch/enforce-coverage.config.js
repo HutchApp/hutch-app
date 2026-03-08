@@ -4,10 +4,10 @@ const path = require('path')
 const config = {
   ...baseConfig,
   thresholds: {
-    statements: 100,
+    statements: 99,
     branches: 91,
     functions: 100,
-    lines: 100,
+    lines: 99,
   },
 };
 

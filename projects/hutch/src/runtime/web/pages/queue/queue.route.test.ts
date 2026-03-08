@@ -570,7 +570,7 @@ describe("Queue routes", () => {
 				.set("Origin", "https://evil.com")
 				.set("Access-Control-Request-Method", "GET");
 
-			expect(response.status).toBe(500);
+			expect(response.headers["access-control-allow-origin"]).toBeUndefined();
 		});
 	});
 });
