@@ -9,6 +9,7 @@ import {
 	POC_BANNER_STYLES,
 	UTILITY_STYLES,
 } from "./base.styles";
+import { HtmlPage } from "./component.types";
 import type { Component } from "./component.types";
 import { render } from "./render";
 
@@ -308,15 +309,5 @@ function renderBaseTemplate(page: PageContent): string {
 }
 
 export function Base(page: PageContent): Component {
-	return {
-		to: (mediaType) => {
-			if (mediaType !== "text/html") {
-				return { statusCode: 415, body: "" };
-			}
-			return {
-				statusCode: 200,
-				body: renderBaseTemplate(page),
-			};
-		},
-	};
+	return HtmlPage(renderBaseTemplate(page));
 }

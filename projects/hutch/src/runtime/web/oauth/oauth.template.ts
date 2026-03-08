@@ -1,4 +1,5 @@
 import Handlebars from "handlebars";
+import { HtmlPage } from "../component.types";
 import type { Component } from "../component.types";
 
 interface AuthorizePageParams {
@@ -48,14 +49,7 @@ export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
 </body>
 </html>`;
 
-	return {
-		to: (mediaType) => {
-			if (mediaType !== "text/html") {
-				return { statusCode: 415, body: "" };
-			}
-			return { statusCode: 200, body };
-		},
-	};
+	return HtmlPage(body);
 }
 
 export function OAuthCallbackPage(): Component {
@@ -80,12 +74,5 @@ export function OAuthCallbackPage(): Component {
 </body>
 </html>`;
 
-	return {
-		to: (mediaType) => {
-			if (mediaType !== "text/html") {
-				return { statusCode: 415, body: "" };
-			}
-			return { statusCode: 200, body };
-		},
-	};
+	return HtmlPage(body);
 }
