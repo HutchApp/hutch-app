@@ -23,7 +23,8 @@
     "ext:run": "web-ext run --source-dir dist-extension-compiled"
   },
   "dependencies": {
-    "browser-extension-core": "workspace:*"
+    "browser-extension-core": "workspace:*",
+    "zod": "3.24.4"
   },
   "devDependencies": {
     "@pulumi/aws": "7.20.0",
