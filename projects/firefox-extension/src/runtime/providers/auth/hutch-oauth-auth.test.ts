@@ -326,6 +326,39 @@ describe("initHutchOAuthAuth", () => {
 		});
 	});
 
+	describe("whenLoggedIn allows calls when access token expired but refresh token exists", () => {
+		it("should pass the guard when refresh token is available", async () => {
+			const deps = createTestDeps();
+			deps.setFetchResponse({
+				ok: true,
+				body: {
+					access_token: "initial-token",
+					refresh_token: "test-refresh-token",
+					expires_in: 0,
+				},
+			});
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login({ email: "", password: "" });
+			await deps.listenersReady;
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+			await loginPromise;
+
+			const guarded = auth.whenLoggedIn(() => "protected-value");
+			expect(guarded).toEqual({ ok: true, value: "protected-value" });
+		});
+	});
+
 	describe("whenLoggedIn without login", () => {
 		it("should return not-logged-in", () => {
 			const deps = createTestDeps();

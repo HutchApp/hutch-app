@@ -71,6 +71,10 @@ export function initHutchOAuthAuth(deps: HutchOAuthDeps): {
 		return accessTokenExpiresAt > new Date();
 	}
 
+	function hasValidSession(): boolean {
+		return isTokenValid() || refreshToken != null;
+	}
+
 	function waitForOAuthCallback(params: {
 		windowId: number;
 		state: string;
@@ -230,7 +234,7 @@ export function initHutchOAuthAuth(deps: HutchOAuthDeps): {
 	};
 
 	const whenLoggedIn: WhenLoggedIn = (fn) => {
-		if (!isTokenValid()) {
+		if (!hasValidSession()) {
 			return { ok: false, reason: "not-logged-in" };
 		}
 		try {
