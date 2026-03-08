@@ -145,14 +145,6 @@ export function initBackground(deps: BackgroundDeps): void {
 
 		const handle = async () => {
 			switch (message.type) {
-				case "login": {
-					const result = await auth.login({
-						email: message.email,
-						password: message.password,
-					});
-					if (result.ok) updateActiveTabIcon().catch(() => {});
-					return result;
-				}
 				case "oauth-login": {
 					const result = await auth.login();
 					if (result.ok) updateActiveTabIcon().catch(() => {});
@@ -201,7 +193,7 @@ export function initBackground(deps: BackgroundDeps): void {
 			}
 		};
 
-		handle().then(sendResponse);
+		handle().then(sendResponse).catch(() => {});
 		return true;
 	});
 

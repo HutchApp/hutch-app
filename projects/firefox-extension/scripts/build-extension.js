@@ -32,9 +32,7 @@ async function main() {
     outdir: outDir,
     outbase: join(srcDir, 'runtime'),
     target: 'firefox91',
-    define: {
-      AUTH_MODE: JSON.stringify(isDev ? 'credentials' : 'oauth'),
-    },
+    define: {},
   });
 
   await build({

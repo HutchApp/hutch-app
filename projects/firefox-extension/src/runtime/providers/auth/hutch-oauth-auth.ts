@@ -18,17 +18,18 @@ interface OAuthWindowApi {
 		height: number;
 	}) => Promise<{ id?: number }>;
 	removeWindow: (windowId: number) => Promise<void>;
+	getTabUrl: (tabId: number) => Promise<string | undefined>;
 	onTabUpdated: {
 		addListener: (
 			cb: (
 				tabId: number,
-				changeInfo: { url?: string },
+				changeInfo: { url?: string; status?: string },
 			) => void,
 		) => void;
 		removeListener: (
 			cb: (
 				tabId: number,
-				changeInfo: { url?: string },
+				changeInfo: { url?: string; status?: string },
 			) => void,
 		) => void;
 	};
@@ -48,6 +49,10 @@ export function createBrowserWindowApi(): OAuthWindowApi {
 	return {
 		createWindow: (params) => browser.windows.create(params),
 		removeWindow: (windowId) => browser.windows.remove(windowId),
+		getTabUrl: async (tabId) => {
+			const tab = await browser.tabs.get(tabId);
+			return tab.url;
+		},
 		onTabUpdated: browser.tabs.onUpdated,
 		onWindowRemoved: browser.windows.onRemoved,
 	};
@@ -75,6 +80,20 @@ export function initHutchOAuthAuth(deps: HutchOAuthDeps): {
 		return isTokenValid() || refreshToken != null;
 	}
 
+	function handleCallbackUrl(
+		urlString: string,
+		params: { state: string },
+	): { code: string | null; matched: boolean } {
+		if (!urlString.startsWith(redirectUri)) return { code: null, matched: false };
+
+		const url = new URL(urlString);
+		if (url.searchParams.get("state") !== params.state) return { code: null, matched: false };
+
+		if (url.searchParams.get("error")) return { code: null, matched: true };
+
+		return { code: url.searchParams.get("code"), matched: true };
+	}
+
 	function waitForOAuthCallback(params: {
 		windowId: number;
 		state: string;
@@ -82,35 +101,42 @@ export function initHutchOAuthAuth(deps: HutchOAuthDeps): {
 		return new Promise((resolve) => {
 			let settled = false;
 
-			const onUpdated = (
-				_tabId: number,
-				changeInfo: { url?: string },
-			) => {
-				if (settled || !changeInfo.url?.startsWith(redirectUri)) return;
-
-				const url = new URL(changeInfo.url);
-				if (url.searchParams.get("state") !== params.state) return;
-
+			function settle(code: string | null) {
 				settled = true;
 				windowApi.onTabUpdated.removeListener(onUpdated);
 				windowApi.onWindowRemoved.removeListener(onRemoved);
 				windowApi.removeWindow(params.windowId).catch(() => {});
+				resolve(code);
+			}
 
-				if (url.searchParams.get("error")) {
-					resolve(null);
-					return;
+			const onUpdated = (
+				tabId: number,
+				changeInfo: { url?: string; status?: string },
+			) => {
+				if (settled) return;
+
+				if (changeInfo.url) {
+					const result = handleCallbackUrl(changeInfo.url, params);
+					if (result.matched) {
+						settle(result.code);
+						return;
+					}
 				}
 
-				resolve(url.searchParams.get("code"));
+				if (changeInfo.status === "complete" && !changeInfo.url) {
+					windowApi.getTabUrl(tabId).then((tabUrl) => {
+						if (settled || !tabUrl) return;
+						const result = handleCallbackUrl(tabUrl, params);
+						if (result.matched) {
+							settle(result.code);
+						}
+					}).catch(() => {});
+				}
 			};
 
 			const onRemoved = (windowId: number) => {
 				if (settled || windowId !== params.windowId) return;
-
-				settled = true;
-				windowApi.onTabUpdated.removeListener(onUpdated);
-				windowApi.onWindowRemoved.removeListener(onRemoved);
-				resolve(null);
+				settle(null);
 			};
 
 			windowApi.onTabUpdated.addListener(onUpdated);

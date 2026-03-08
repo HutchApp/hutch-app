@@ -5,14 +5,11 @@ import type {
 import type { PopupMessage } from "../background/messages.types";
 import { filterByUrl } from "./filter-by-url";
 import { paginateItems } from "./paginate-items";
-import type { GuardedResult } from "../providers/auth/auth.types";
+import type { GuardedResult, LoginResult } from "../providers/auth/auth.types";
 import type {
 	SaveUrlResult,
 	RemoveUrlResult,
 } from "../providers/reading-list/reading-list.types";
-import type { LoginResult } from "../providers/auth/auth.types";
-
-declare const AUTH_MODE: "oauth" | "credentials";
 
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
@@ -246,45 +243,26 @@ async function handleLoginResult(result: LoginResult) {
 		showView("loading-view");
 		await saveAndShowList();
 	} else {
-		const errorEl = document.getElementById("login-error");
-		if (errorEl) errorEl.hidden = false;
+		showView("login-view");
 	}
 }
 
-if (AUTH_MODE === "oauth") {
-	const loginForm = document.getElementById("login-form");
-	const oauthLogin = document.getElementById("oauth-login");
-	if (loginForm) loginForm.hidden = true;
-	if (oauthLogin) oauthLogin.hidden = false;
+document
+	.getElementById("oauth-login-button")
+	?.addEventListener("click", async () => {
+		showView("loading-view");
+		const result = (await send({
+			type: "oauth-login",
+		})) as LoginResult;
+		await handleLoginResult(result);
+	});
 
-	document
-		.getElementById("oauth-login-button")
-		?.addEventListener("click", async () => {
-			const result = (await send({
-				type: "oauth-login",
-			})) as LoginResult;
-			await handleLoginResult(result);
-		});
-} else {
-	document
-		.getElementById("login-form")
-		?.addEventListener("submit", async (e) => {
-			e.preventDefault();
-			const email = (
-				document.getElementById("email") as HTMLInputElement
-			).value;
-			const password = (
-				document.getElementById("password") as HTMLInputElement
-			).value;
-
-			const result = (await send({
-				type: "login",
-				email,
-				password,
-			})) as LoginResult;
-			await handleLoginResult(result);
-		});
-}
+window.addEventListener("focus", () => {
+	const loginView = document.getElementById("login-view");
+	if (loginView && !loginView.hidden) {
+		saveAndShowList().catch(() => {});
+	}
+});
 
 document
 	.getElementById("undo-button")

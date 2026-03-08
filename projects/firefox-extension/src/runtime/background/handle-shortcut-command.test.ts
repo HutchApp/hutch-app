@@ -8,7 +8,7 @@ describe("initHandleShortcutCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [
@@ -56,7 +56,7 @@ describe("initHandleShortcutCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [],
@@ -74,7 +74,7 @@ describe("initHandleShortcutCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [{}],
@@ -92,7 +92,7 @@ describe("initHandleShortcutCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [
@@ -112,7 +112,7 @@ describe("initHandleShortcutCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleShortcut = initHandleShortcutCommand({
 			queryActiveTabs: async () => [{ url: "https://example.com/no-title" }],
@@ -157,7 +157,7 @@ describe("initHandleShortcutCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 		await readingList.saveUrl({ url: "https://example.com/saved", title: "Saved" });
 
 		const handleShortcut = initHandleShortcutCommand({

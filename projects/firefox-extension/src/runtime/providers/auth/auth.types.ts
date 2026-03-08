@@ -7,10 +7,7 @@ export type GuardedResult<T> =
 	| { ok: false; reason: "not-logged-in" }
 	| { ok: false; reason: "error"; error: Error };
 
-export type Login = (credentials?: {
-	email: string;
-	password: string;
-}) => Promise<LoginResult>;
+export type Login = () => Promise<LoginResult>;
 
 export type Logout = () => Promise<void>;
 

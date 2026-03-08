@@ -8,7 +8,7 @@ describe("initHandleSaveCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleSaveCommand = initHandleSaveCommand({
 			queryActiveTabs: async () => [
@@ -33,7 +33,7 @@ describe("initHandleSaveCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleSaveCommand = initHandleSaveCommand({
 			queryActiveTabs: async () => [
@@ -58,7 +58,7 @@ describe("initHandleSaveCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleSaveCommand = initHandleSaveCommand({
 			queryActiveTabs: async () => [],
@@ -75,7 +75,7 @@ describe("initHandleSaveCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleSaveCommand = initHandleSaveCommand({
 			queryActiveTabs: async () => [{}],
@@ -110,7 +110,7 @@ describe("initHandleSaveCommand", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
-		await auth.login({ email: "user@example.com", password: "password123" });
+		await auth.login();
 
 		const handleSaveCommand = initHandleSaveCommand({
 			queryActiveTabs: async () => [

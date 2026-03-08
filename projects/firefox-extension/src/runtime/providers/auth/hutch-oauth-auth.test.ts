@@ -5,7 +5,7 @@ import {
 
 type TabUpdatedCallback = (
 	tabId: number,
-	changeInfo: { url?: string },
+	changeInfo: { url?: string; status?: string },
 ) => void;
 type WindowRemovedCallback = (windowId: number) => void;
 
@@ -38,9 +38,13 @@ function createTestDeps() {
 		json: async () => fetchResponse.body,
 	})) as unknown as typeof fetch;
 
+	const tabUrls: Record<number, string> = {};
+	const getTabUrl = jest.fn(async (tabId: number) => tabUrls[tabId]);
+
 	const windowApi = {
 		createWindow,
 		removeWindow,
+		getTabUrl,
 		onTabUpdated: {
 			addListener: jest.fn((cb: TabUpdatedCallback) => {
 				tabListeners.push(cb);
@@ -83,11 +87,17 @@ function createTestDeps() {
 				cb(windowId);
 			}
 		},
+		simulateStatusComplete(tabId: number, tabUrl: string) {
+			tabUrls[tabId] = tabUrl;
+			for (const cb of [...tabListeners]) {
+				cb(tabId, { status: "complete" });
+			}
+		},
 	};
 }
 
 describe("createBrowserWindowApi", () => {
-	it("should delegate to browser APIs", () => {
+	it("should delegate to browser APIs", async () => {
 		const mockCreate = jest.fn();
 		const mockRemove = jest.fn();
 		const mockOnUpdated = {
@@ -99,6 +109,8 @@ describe("createBrowserWindowApi", () => {
 			removeListener: jest.fn(),
 		};
 
+		const mockGet = jest.fn(async () => ({ url: "https://example.com" }));
+
 		(globalThis as Record<string, unknown>).browser = {
 			windows: {
 				create: mockCreate,
@@ -107,6 +119,7 @@ describe("createBrowserWindowApi", () => {
 			},
 			tabs: {
 				onUpdated: mockOnUpdated,
+				get: mockGet,
 			},
 		};
 
@@ -127,6 +140,10 @@ describe("createBrowserWindowApi", () => {
 
 		api.removeWindow(42);
 		expect(mockRemove).toHaveBeenCalledWith(42);
+
+		const tabUrl = await api.getTabUrl(5);
+		expect(mockGet).toHaveBeenCalledWith(5);
+		expect(tabUrl).toBe("https://example.com");
 
 		expect(api.onTabUpdated).toBe(mockOnUpdated);
 		expect(api.onWindowRemoved).toBe(mockOnRemoved);
@@ -602,6 +619,88 @@ describe("initHutchOAuthAuth", () => {
 			);
 			const state = authUrl.searchParams.get("state");
 			deps.simulateCallback(
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+
+			const result = await loginPromise;
+			expect(result).toEqual({ ok: true });
+		});
+	});
+
+	describe("waitForOAuthCallback falls back to getTabUrl when changeInfo has no url", () => {
+		it("should complete OAuth flow via status-based fallback", async () => {
+			const deps = createTestDeps();
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login();
+			await deps.listenersReady;
+
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+
+			deps.simulateStatusComplete(
+				1,
+				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
+			);
+
+			const result = await loginPromise;
+			expect(result).toEqual({ ok: true });
+
+			const guarded = auth.whenLoggedIn(() => "protected-value");
+			expect(guarded).toEqual({ ok: true, value: "protected-value" });
+		});
+
+		it("should return null when status-based fallback detects error", async () => {
+			const deps = createTestDeps();
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login();
+			await deps.listenersReady;
+
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+
+			deps.simulateStatusComplete(
+				1,
+				`${serverUrl}/oauth/callback?error=access_denied&state=${state}`,
+			);
+
+			const result = await loginPromise;
+			expect(result).toEqual({ ok: false, reason: "invalid-credentials" });
+		});
+
+		it("should ignore status-based fallback when tab URL does not match", async () => {
+			const deps = createTestDeps();
+			const auth = initHutchOAuthAuth({
+				serverUrl,
+				windowApi: deps.windowApi,
+				fetchFn: deps.fetchFn,
+			});
+
+			const loginPromise = auth.login();
+			await deps.listenersReady;
+
+			const authUrl = new URL(
+				deps.createWindow.mock.calls[0]?.[0]?.url as string,
+			);
+			const state = authUrl.searchParams.get("state");
+
+			deps.simulateStatusComplete(1, "https://other-site.com/page");
+
+			deps.simulateStatusComplete(
+				1,
 				`${serverUrl}/oauth/callback?code=test-code&state=${state}`,
 			);
 
