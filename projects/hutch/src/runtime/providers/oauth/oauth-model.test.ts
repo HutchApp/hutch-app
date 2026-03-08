@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import type { UserId } from "../../domain/user/user.types";
-import type { OAuthClientId } from "../../domain/oauth/oauth.types";
+import type { OAuthClientId, AuthorizationCode as AuthorizationCodeId, AccessToken as AccessTokenId, RefreshToken as RefreshTokenId } from "../../domain/oauth/oauth.types";
 import type {
 	Token,
 	Client,
@@ -362,7 +362,7 @@ describe("createOAuthModel", () => {
 			const model = createOAuthModel(deps);
 
 			deps.codes.set("orphaned-code", {
-				code: "orphaned-code" as import("../../domain/oauth/oauth.types").AuthorizationCode,
+				code: "orphaned-code" as AuthorizationCodeId,
 				clientId: "nonexistent-client" as OAuthClientId,
 				userId: TEST_USER_ID,
 				redirectUri: TEST_REDIRECT_URI,
@@ -381,9 +381,9 @@ describe("createOAuthModel", () => {
 			const model = createOAuthModel(deps);
 
 			deps.tokens.set("orphaned-access", {
-				accessToken: "orphaned-access" as import("../../domain/oauth/oauth.types").AccessToken,
+				accessToken: "orphaned-access" as AccessTokenId,
 				accessTokenExpiresAt: new Date(Date.now() + 3600000),
-				refreshToken: "orphaned-refresh" as import("../../domain/oauth/oauth.types").RefreshToken,
+				refreshToken: "orphaned-refresh" as RefreshTokenId,
 				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
 				clientId: "nonexistent-client" as OAuthClientId,
 				userId: TEST_USER_ID,
@@ -399,9 +399,9 @@ describe("createOAuthModel", () => {
 			const model = createOAuthModel(deps);
 
 			deps.tokens.set("orphaned-access-2", {
-				accessToken: "orphaned-access-2" as import("../../domain/oauth/oauth.types").AccessToken,
+				accessToken: "orphaned-access-2" as AccessTokenId,
 				accessTokenExpiresAt: new Date(Date.now() + 3600000),
-				refreshToken: "orphaned-refresh-2" as import("../../domain/oauth/oauth.types").RefreshToken,
+				refreshToken: "orphaned-refresh-2" as RefreshTokenId,
 				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
 				clientId: "nonexistent-client" as OAuthClientId,
 				userId: TEST_USER_ID,

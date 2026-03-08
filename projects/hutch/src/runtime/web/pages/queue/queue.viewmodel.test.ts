@@ -118,7 +118,7 @@ describe("toQueueViewModel", () => {
 		const vm = toQueueViewModel(makeResult([]), filters, { now: NOW });
 
 		expect(vm.showUrlToggle.label).toBe("Hide URLs");
-		expect(vm.showUrlToggle.url).not.toContain("showUrl");
+		expect(vm.showUrlToggle.url).toBe("/queue");
 	});
 
 	it("should set isUnread to true for unread articles", () => {

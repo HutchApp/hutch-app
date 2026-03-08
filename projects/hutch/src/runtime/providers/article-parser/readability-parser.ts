@@ -40,10 +40,6 @@ export function initReadabilityParser(deps: {
 			};
 		}
 
-		// Using explicit if-statement fallbacks instead of || and ??
-		// to avoid V8 coverage branches on operators that can never take
-		// the fallback path at runtime.
-		// See: https://github.com/bcoe/c8/issues/126
 		let textContent = parsed.textContent;
 		if (!textContent) textContent = "";
 		const wordCount = textContent.split(/\s+/).filter(Boolean).length;

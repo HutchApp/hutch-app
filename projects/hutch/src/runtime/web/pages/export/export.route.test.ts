@@ -1,5 +1,9 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
+import type { Minutes } from "../../../domain/article/article.types";
+import type { UserId } from "../../../domain/user/user.types";
+import { fetchAllArticles } from "./export.page";
+import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
 import { createTestApp } from "../../../test-app";
 
 async function loginAgent(
@@ -216,10 +220,8 @@ describe("Export routes", () => {
 
 describe("fetchAllArticles", () => {
 	it("should paginate through all articles when total exceeds page size", async () => {
-		const { fetchAllArticles } = await import("./export.page");
-		const { initInMemoryArticleStore } = await import("../../../providers/article-store/in-memory-article-store");
 		const store = initInMemoryArticleStore();
-		const userId = "test-user" as import("../../../domain/user/user.types").UserId;
+		const userId = "test-user" as UserId;
 
 		for (let i = 0; i < 3; i++) {
 			await store.saveArticle({
@@ -231,7 +233,7 @@ describe("fetchAllArticles", () => {
 					excerpt: "An excerpt",
 					wordCount: 100,
 				},
-				estimatedReadTime: 1 as import("../../../domain/article/article.types").Minutes,
+				estimatedReadTime: 1 as Minutes,
 			});
 		}
 
