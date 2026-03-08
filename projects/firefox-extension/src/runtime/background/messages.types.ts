@@ -6,4 +6,5 @@ export type PopupMessage =
 	| { type: "check-url"; url: string }
 	| { type: "get-all-items" }
 	| { type: "login"; email: string; password: string }
+	| { type: "oauth-login" }
 	| { type: "logout" };

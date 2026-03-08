@@ -153,6 +153,11 @@ export function initBackground(deps: BackgroundDeps): void {
 					if (result.ok) updateActiveTabIcon().catch(() => {});
 					return result;
 				}
+				case "oauth-login": {
+					const result = await auth.login();
+					if (result.ok) updateActiveTabIcon().catch(() => {});
+					return result;
+				}
 				case "logout": {
 					await auth.logout();
 					updateActiveTabIcon().catch(() => {});

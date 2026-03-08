@@ -261,9 +261,7 @@ if (AUTH_MODE === "oauth") {
 		.getElementById("oauth-login-button")
 		?.addEventListener("click", async () => {
 			const result = (await send({
-				type: "login",
-				email: "",
-				password: "",
+				type: "oauth-login",
 			})) as LoginResult;
 			await handleLoginResult(result);
 		});

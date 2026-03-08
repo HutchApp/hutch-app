@@ -7,8 +7,8 @@ export function initInMemoryAuth(): {
 } {
 	let loggedIn = false;
 
-	const login: Login = async ({ email }) => {
-		if (!email) {
+	const login: Login = async (credentials) => {
+		if (!credentials?.email) {
 			return { ok: false, reason: "invalid-credentials" };
 		}
 		loggedIn = true;
