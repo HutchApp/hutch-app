@@ -1,8 +1,9 @@
-import type { PageContent } from "../../base.component";
+import { Base } from "../../base.component";
+import type { Component } from "../../component.types";
 import { LEGAL_PAGE_STYLES } from "./privacy.styles";
 
-export function createPrivacyPageContent(): PageContent {
-	return {
+export function PrivacyPage(): Component {
+	return Base({
 		seo: {
 			title: "Privacy Policy — Hutch",
 			description:
@@ -13,7 +14,7 @@ export function createPrivacyPageContent(): PageContent {
 		styles: LEGAL_PAGE_STYLES,
 		bodyClass: "page-privacy",
 		content: renderPrivacyContent(),
-	};
+	});
 }
 
 function renderPrivacyContent(): string {

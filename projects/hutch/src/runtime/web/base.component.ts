@@ -10,6 +10,7 @@ import {
 	UTILITY_STYLES,
 } from "./base.styles";
 import type { Component } from "./component.types";
+import { HtmlPage } from "./html-page";
 import { render } from "./render";
 
 export interface SeoMetadata {
@@ -308,10 +309,5 @@ function renderBaseTemplate(page: PageContent): string {
 }
 
 export function Base(page: PageContent): Component {
-	return {
-		to: () => ({
-			statusCode: 200,
-			body: renderBaseTemplate(page),
-		}),
-	};
+	return HtmlPage(renderBaseTemplate(page));
 }

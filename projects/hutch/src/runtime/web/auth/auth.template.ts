@@ -1,4 +1,5 @@
-import type { PageContent } from "../base.component";
+import { Base } from "../base.component";
+import type { Component } from "../component.types";
 import { AUTH_STYLES } from "./auth.styles";
 
 interface FieldError {
@@ -29,7 +30,7 @@ function fieldErrorClass(
 	return hasError ? " auth-form__input--error" : "";
 }
 
-export function createLoginPageContent(data?: AuthFormData): PageContent {
+export function LoginPage(data?: AuthFormData): Component {
 	const email = data?.email ?? "";
 	const errors = data?.errors;
 	const globalError = data?.globalError;
@@ -59,7 +60,7 @@ export function createLoginPageContent(data?: AuthFormData): PageContent {
       </div>
     </main>`;
 
-	return {
+	return Base({
 		seo: {
 			title: "Sign in — Hutch",
 			description: "Sign in to your Hutch read-it-later account.",
@@ -68,10 +69,10 @@ export function createLoginPageContent(data?: AuthFormData): PageContent {
 		styles: AUTH_STYLES,
 		bodyClass: "page-login",
 		content,
-	};
+	});
 }
 
-export function createSignupPageContent(data?: AuthFormData): PageContent {
+export function SignupPage(data?: AuthFormData): Component {
 	const email = data?.email ?? "";
 	const errors = data?.errors;
 	const globalError = data?.globalError;
@@ -106,7 +107,7 @@ export function createSignupPageContent(data?: AuthFormData): PageContent {
       </div>
     </main>`;
 
-	return {
+	return Base({
 		seo: {
 			title: "Sign up — Hutch",
 			description:
@@ -116,5 +117,5 @@ export function createSignupPageContent(data?: AuthFormData): PageContent {
 		styles: AUTH_STYLES,
 		bodyClass: "page-signup",
 		content,
-	};
+	});
 }

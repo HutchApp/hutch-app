@@ -12,14 +12,13 @@ import type {
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
 import type { UserId } from "../../../domain/user/user.types";
-import { Base } from "../../base.component";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
 import { parseQueueUrl } from "./queue.url";
 import { toQueueViewModel } from "./queue.viewmodel";
-import { createQueuePageContent } from "./queue.template";
-import { createReaderPageContent } from "../reader/reader.template";
+import { QueuePage } from "./queue.template";
+import { ReaderPage } from "../reader/reader.template";
 
 interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
@@ -57,9 +56,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		const vm = toQueueViewModel(result, urlState);
-		const pageContent = createQueuePageContent(vm);
-		const component = Base(pageContent);
-		const html = component.to("text/html");
+		const html = QueuePage(vm).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 
@@ -73,9 +70,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			const vm = toQueueViewModel(result, urlState, {
 				saveError: "Please enter a valid URL",
 			});
-			const pageContent = createQueuePageContent(vm);
-			const component = Base(pageContent);
-			const html = component.to("text/html");
+			const html = QueuePage(vm).to("text/html");
 			res.status(422).type("html").send(html.body);
 			return;
 		}
@@ -88,9 +83,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			const vm = toQueueViewModel(result, urlState, {
 				saveError: `Could not parse article: ${parseResult.reason}`,
 			});
-			const pageContent = createQueuePageContent(vm);
-			const component = Base(pageContent);
-			const html = component.to("text/html");
+			const html = QueuePage(vm).to("text/html");
 			res.status(422).type("html").send(html.body);
 			return;
 		}
@@ -124,9 +117,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const pageContent = createReaderPageContent(article);
-		const component = Base(pageContent);
-		const html = component.to("text/html");
+		const html = ReaderPage(article).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

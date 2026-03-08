@@ -4,6 +4,7 @@ import request from "supertest";
 import type { Token } from "@node-oauth/oauth2-server";
 import { createTestApp } from "../../test-app";
 import type { UserId } from "../../domain/user/user.types";
+import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.template";
 
 function generatePKCE() {
 	const verifier = randomBytes(32).toString("base64url");
@@ -14,6 +15,30 @@ function generatePKCE() {
 const TEST_USER_ID = "test-user-123" as UserId;
 const TEST_CLIENT_ID = "hutch-firefox-extension";
 const TEST_REDIRECT_URI = "http://127.0.0.1:3000/oauth/callback";
+
+describe("OAuthAuthorizePage", () => {
+	it("returns 415 for unsupported media type", () => {
+		const component = OAuthAuthorizePage({
+			clientName: "Test App",
+			clientId: "test-client",
+			redirectUri: "http://localhost/callback",
+			codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+		});
+		const result = component.to("application/vnd.siren+json");
+
+		expect(result.statusCode).toBe(415);
+		expect(result.body).toBe("");
+	});
+});
+
+describe("OAuthCallbackPage", () => {
+	it("returns 415 for unsupported media type", () => {
+		const result = OAuthCallbackPage().to("application/vnd.siren+json");
+
+		expect(result.statusCode).toBe(415);
+		expect(result.body).toBe("");
+	});
+});
 
 describe("OAuth routes", () => {
 	describe("GET /oauth/authorize", () => {
