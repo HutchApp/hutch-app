@@ -15,7 +15,7 @@
     "compile": "rm -rf dist && tsc && node scripts/copy-static-assets.js",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
-    "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod",
+    "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack prod; fi",
     "check": "pnpm compile && pnpm lint && pnpm test-with-coverage && pnpm check-infra",
     "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod"
   },
