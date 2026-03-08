@@ -29,7 +29,7 @@ import { LandingPage } from "./web/pages/landing";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage } from "./web/pages/install";
-import { render } from "./web/render";
+import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
 
@@ -153,19 +153,9 @@ export function createApp(dependencies: AppDependencies): Express {
 	});
 	app.use("/oauth", oauthRouter);
 
-	const NOT_FOUND_TEMPLATE = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>404 - Not Found</title>
-</head>
-<body>
-  <h1>404 - Page Not Found</h1>
-</body>
-</html>`;
-
 	app.use((_req: Request, res: Response) => {
-		res.status(404).type("html").send(render(NOT_FOUND_TEMPLATE, {}));
+		const result = NotFoundPage().to("text/html");
+		res.status(404).type("html").send(result.body);
 	});
 
 	return app;
