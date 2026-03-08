@@ -170,23 +170,10 @@ function renderView(view: PopupView) {
 }
 
 document
-	.getElementById("login-form")
-	?.addEventListener("submit", async (e) => {
-		e.preventDefault();
-		const email = (document.getElementById("email") as HTMLInputElement)
-			.value;
-		const password = (
-			document.getElementById("password") as HTMLInputElement
-		).value;
-
-		const result = await flow.login({ email, password });
-
-		if (result.view === "login") {
-			const errorEl = document.getElementById("login-error");
-			if (errorEl) errorEl.hidden = false;
-		} else {
-			renderView(result);
-		}
+	.getElementById("login-button")
+	?.addEventListener("click", async () => {
+		showView("loading-view");
+		renderView(await flow.login());
 	});
 
 document

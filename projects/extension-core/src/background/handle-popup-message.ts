@@ -20,10 +20,7 @@ export function initHandlePopupMessage(deps: {
 	return async (message: PopupMessage) => {
 		switch (message.type) {
 			case "login": {
-				const result = await deps.login({
-					email: message.email,
-					password: message.password,
-				});
+				const result = await deps.login();
 				if (result.ok) deps.updateActiveTabIcon().catch(() => {});
 				return result;
 			}

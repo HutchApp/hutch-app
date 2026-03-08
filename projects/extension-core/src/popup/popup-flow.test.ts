@@ -41,7 +41,7 @@ describe("initPopupFlow", () => {
 
 		it("should save current tab and show saved view when logged in", async () => {
 			const { auth, flow } = createSetup({ url: "https://example.com", title: "Example" });
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 
 			const view = await flow.start();
 
@@ -53,7 +53,7 @@ describe("initPopupFlow", () => {
 
 		it("should show list view when no active tab", async () => {
 			const { auth, flow } = createSetup(null);
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 
 			const view = await flow.start();
 
@@ -65,7 +65,7 @@ describe("initPopupFlow", () => {
 				url: "https://example.com",
 				title: "Example",
 			});
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			await readingList.saveUrl({ url: "https://example.com", title: "Example" });
 
 			const view = await flow.start();
@@ -78,23 +78,15 @@ describe("initPopupFlow", () => {
 		it("should login and save tab, showing saved view", async () => {
 			const { flow } = createSetup({ url: "https://example.com", title: "Example" });
 
-			const view = await flow.login({ email: "user@example.com", password: "pass" });
+			const view = await flow.login();
 
 			expect(view.view).toBe("saved");
-		});
-
-		it("should return login view on failed login", async () => {
-			const { flow } = createSetup({ url: "https://example.com", title: "Example" });
-
-			const view = await flow.login({ email: "", password: "pass" });
-
-			expect(view).toEqual({ view: "login" });
 		});
 
 		it("should show list view after login when no active tab", async () => {
 			const flow = createSetup(null).flow;
 
-			const view = await flow.login({ email: "user@example.com", password: "pass" });
+			const view = await flow.login();
 
 			expect(view.view).toBe("list");
 		});
@@ -103,7 +95,7 @@ describe("initPopupFlow", () => {
 	describe("undo", () => {
 		it("should undo the save and show list view", async () => {
 			const { auth, flow } = createSetup({ url: "https://example.com", title: "Example" });
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 
 			await flow.start();
 			const view = await flow.undo();
@@ -118,7 +110,7 @@ describe("initPopupFlow", () => {
 	describe("filter", () => {
 		it("should filter items by query", async () => {
 			const { auth, readingList, flow } = createSetup(null);
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			await readingList.saveUrl({ url: "https://github.com/repo", title: "GitHub" });
 			await readingList.saveUrl({ url: "https://example.com", title: "Example" });
 
@@ -136,7 +128,7 @@ describe("initPopupFlow", () => {
 	describe("goToPage", () => {
 		it("should navigate to specified page", async () => {
 			const { auth, readingList, flow } = createSetup(null);
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			for (let i = 0; i < 15; i++) {
 				await readingList.saveUrl({
 					url: `https://example.com/${i}`,
@@ -158,7 +150,7 @@ describe("initPopupFlow", () => {
 	describe("removeItem", () => {
 		it("should remove item and refresh list", async () => {
 			const { auth, readingList, flow } = createSetup(null);
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			const saveResult = await readingList.saveUrl({
 				url: "https://example.com",
 				title: "Example",
@@ -178,7 +170,7 @@ describe("initPopupFlow", () => {
 	describe("logout", () => {
 		it("should show login view after logout", async () => {
 			const { auth, flow } = createSetup(null);
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 
 			const view = await flow.logout();
 
@@ -189,7 +181,7 @@ describe("initPopupFlow", () => {
 	describe("reload", () => {
 		it("should reload items from background", async () => {
 			const { auth, readingList, flow } = createSetup(null);
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			await readingList.saveUrl({ url: "https://example.com", title: "Example" });
 
 			const view = await flow.reload();

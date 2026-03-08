@@ -42,7 +42,7 @@ describe("initHandleShortcut", () => {
 		const { auth, shortcut, iconUpdates } = createDeps([
 			{ id: 42, url: "https://example.com/page", title: "Page" },
 		]);
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 
 		const result = await shortcut.onShortcutPressed();
 
@@ -56,7 +56,7 @@ describe("initHandleShortcut", () => {
 
 	it("should return null when no active tab", async () => {
 		const { auth, shortcut } = createDeps([]);
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 
 		const result = await shortcut.onShortcutPressed();
 
@@ -65,7 +65,7 @@ describe("initHandleShortcut", () => {
 
 	it("should return null when tab has no URL", async () => {
 		const { auth, shortcut } = createDeps([{ id: 1 }]);
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 
 		const result = await shortcut.onShortcutPressed();
 
@@ -99,7 +99,7 @@ describe("initHandleShortcut", () => {
 		const { auth, shortcut } = createDeps([
 			{ id: 1, url: "https://example.com", title: "Example" },
 		]);
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 
 		shortcut.onLoginWindowOpened(99, 1, "https://example.com");
 		shortcut.onWindowRemoved(99);
@@ -149,7 +149,7 @@ describe("initHandleShortcut", () => {
 		const { auth, readingList, shortcut } = createDeps([
 			{ id: 1, url: "https://example.com/saved", title: "Saved" },
 		]);
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 		await readingList.saveUrl({ url: "https://example.com/saved", title: "Saved" });
 
 		const result = await shortcut.onShortcutPressed();

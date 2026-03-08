@@ -32,34 +32,18 @@ describe("initHandlePopupMessage", () => {
 
 			const result = await handlePopupMessage({
 				type: "login",
-				email: "user@example.com",
-				password: "pass",
 			});
 
 			expect(result).toEqual({ ok: true });
 			await new Promise((r) => setTimeout(r, 0));
 			expect(iconUpdates).toEqual(["updated"]);
 		});
-
-		it("should return invalid-credentials for empty email", async () => {
-			const { handlePopupMessage, iconUpdates } = createDeps();
-
-			const result = await handlePopupMessage({
-				type: "login",
-				email: "",
-				password: "pass",
-			});
-
-			expect(result).toEqual({ ok: false, reason: "invalid-credentials" });
-			await new Promise((r) => setTimeout(r, 0));
-			expect(iconUpdates).toEqual([]);
-		});
 	});
 
 	describe("logout", () => {
 		it("should return ok and update icon", async () => {
 			const { auth, handlePopupMessage, iconUpdates } = createDeps();
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 
 			const result = await handlePopupMessage({ type: "logout" });
 
@@ -72,7 +56,7 @@ describe("initHandlePopupMessage", () => {
 	describe("save-current-tab", () => {
 		it("should save and return guarded result when logged in", async () => {
 			const { auth, handlePopupMessage } = createDeps();
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 
 			const result = await handlePopupMessage({
 				type: "save-current-tab",
@@ -108,7 +92,7 @@ describe("initHandlePopupMessage", () => {
 	describe("remove-item", () => {
 		it("should remove item and update icon", async () => {
 			const { auth, readingList, handlePopupMessage, iconUpdates } = createDeps();
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			const saveResult = await readingList.saveUrl({
 				url: "https://example.com",
 				title: "Example",
@@ -129,7 +113,7 @@ describe("initHandlePopupMessage", () => {
 	describe("check-url", () => {
 		it("should return null when URL is not saved", async () => {
 			const { auth, handlePopupMessage } = createDeps();
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 
 			const result = await handlePopupMessage({
 				type: "check-url",
@@ -141,7 +125,7 @@ describe("initHandlePopupMessage", () => {
 
 		it("should return the item when URL is saved", async () => {
 			const { auth, readingList, handlePopupMessage } = createDeps();
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			await readingList.saveUrl({ url: "https://example.com", title: "Example" });
 
 			const result = await handlePopupMessage({
@@ -159,7 +143,7 @@ describe("initHandlePopupMessage", () => {
 	describe("get-all-items", () => {
 		it("should return all items when logged in", async () => {
 			const { auth, readingList, handlePopupMessage } = createDeps();
-			await auth.login({ email: "user@example.com", password: "pass" });
+			await auth.login();
 			await readingList.saveUrl({ url: "https://a.com", title: "A" });
 			await readingList.saveUrl({ url: "https://b.com", title: "B" });
 

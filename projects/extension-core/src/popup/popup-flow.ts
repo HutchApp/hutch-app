@@ -89,11 +89,9 @@ export function initPopupFlow(deps: {
 			return loadAllItems();
 		},
 
-		login: async (credentials: { email: string; password: string }): Promise<PopupView> => {
+		login: async (): Promise<PopupView> => {
 			const result = await deps.sendMessage({
 				type: "login",
-				email: credentials.email,
-				password: credentials.password,
 			});
 
 			if (!result.ok) {
