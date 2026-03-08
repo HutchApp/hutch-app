@@ -147,7 +147,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			const authUrl =
@@ -175,7 +175,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			const createCall = deps.createWindow.mock.calls[0]?.[0];
@@ -216,7 +216,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			const authUrl = new URL(
@@ -254,7 +254,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			const authUrl = new URL(
@@ -283,7 +283,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			deps.simulateWindowClosed(1);
 
@@ -306,7 +306,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			const authUrl = new URL(
@@ -343,7 +343,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -383,7 +383,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -415,7 +415,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -451,7 +451,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const result = await auth.login({ email: "", password: "" });
+			const result = await auth.login();
 
 			expect(result).toEqual({
 				ok: false,
@@ -469,7 +469,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -508,7 +508,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -536,7 +536,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			deps.simulateCallback("https://other-site.com/page");
@@ -567,7 +567,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			deps.simulateWindowClosed(999);
@@ -592,7 +592,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 
 			deps.simulateCallback(undefined as unknown as string);
@@ -619,7 +619,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -662,7 +662,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -711,7 +711,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
@@ -743,7 +743,7 @@ describe("initHutchOAuthAuth", () => {
 				fetchFn: deps.fetchFn,
 			});
 
-			const loginPromise = auth.login({ email: "", password: "" });
+			const loginPromise = auth.login();
 			await deps.listenersReady;
 			const authUrl = new URL(
 				deps.createWindow.mock.calls[0]?.[0]?.url as string,
