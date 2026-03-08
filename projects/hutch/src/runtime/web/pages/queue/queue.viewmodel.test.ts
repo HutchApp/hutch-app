@@ -174,4 +174,100 @@ describe("toQueueViewModel", () => {
 
 		expect(vm.articles[0].imageUrl).toBeUndefined();
 	});
+
+	it("should format relative date as days ago", () => {
+		const article = makeArticle({
+			savedAt: new Date("2025-05-29T12:00:00Z"),
+		});
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].savedAgo).toBe("3d ago");
+	});
+
+	it("should format date older than 30 days as full date", () => {
+		const article = makeArticle({
+			savedAt: new Date("2025-04-01T12:00:00Z"),
+		});
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].savedAgo).toBe("1 Apr 2025");
+	});
+
+	it("should format very recent date as just now", () => {
+		const article = makeArticle({
+			savedAt: new Date("2025-06-01T12:59:50Z"),
+		});
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].savedAgo).toBe("just now");
+	});
+
+	it("should generate next pagination URL when more pages exist", () => {
+		const result: FindArticlesResult = {
+			articles: [],
+			total: 45,
+			page: 1,
+			pageSize: 20,
+		};
+		const vm = toQueueViewModel(result, DEFAULT_FILTERS, { now: NOW });
+
+		expect(vm.paginationUrls.next).toBe("/queue?page=2");
+	});
+
+	it("should generate prev pagination URL on page 2", () => {
+		const result: FindArticlesResult = {
+			articles: [],
+			total: 45,
+			page: 2,
+			pageSize: 20,
+		};
+		const vm = toQueueViewModel(result, { ...DEFAULT_FILTERS, page: 2 }, { now: NOW });
+
+		expect(vm.paginationUrls.prev).toBe("/queue");
+	});
+
+	it("should not generate next pagination URL on last page", () => {
+		const result: FindArticlesResult = {
+			articles: [],
+			total: 45,
+			page: 3,
+			pageSize: 20,
+		};
+		const vm = toQueueViewModel(result, { ...DEFAULT_FILTERS, page: 3 }, { now: NOW });
+
+		expect(vm.paginationUrls.next).toBeUndefined();
+	});
+
+	it("should pass saveError through to view model", () => {
+		const vm = toQueueViewModel(makeResult([]), DEFAULT_FILTERS, {
+			now: NOW,
+			saveError: "Could not parse article: Invalid URL",
+		});
+
+		expect(vm.saveError).toBe("Could not parse article: Invalid URL");
+	});
+
+	it("should set hasContent to true when article has content", () => {
+		const article = makeArticle({ content: "<p>Some content</p>" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].hasContent).toBe(true);
+	});
+
+	it("should set hasContent to false when article has no content", () => {
+		const article = makeArticle({ content: undefined });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+		});
+
+		expect(vm.articles[0].hasContent).toBe(false);
+	});
 });

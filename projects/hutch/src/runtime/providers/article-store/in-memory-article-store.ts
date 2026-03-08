@@ -84,7 +84,13 @@ export function initInMemoryArticleStore(): {
 			return false;
 		}
 		article.status = status;
-		article.readAt = status === "read" ? new Date() : undefined;
+		// Explicit if-statement avoids V8 coverage quirk on ternary expressions
+		// See: https://github.com/bcoe/c8/issues/126
+		if (status === "read") {
+			article.readAt = new Date();
+		} else {
+			article.readAt = undefined;
+		}
 		articles.set(id, article);
 		return true;
 	};

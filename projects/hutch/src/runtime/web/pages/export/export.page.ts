@@ -24,13 +24,13 @@ function toExportArticle(article: SavedArticle) {
 	};
 }
 
-async function fetchAllArticles(
+export async function fetchAllArticles(
 	findArticlesByUser: FindArticlesByUser,
 	userId: UserId,
+	pageSize = 100,
 ): Promise<SavedArticle[]> {
 	const allArticles: SavedArticle[] = [];
 	let page = 1;
-	const pageSize = 100;
 
 	while (true) {
 		const result = await findArticlesByUser({

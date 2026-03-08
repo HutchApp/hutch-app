@@ -170,6 +170,16 @@ describe("initInMemoryArticleStore", () => {
 			expect(found?.status).toBe("unread");
 			expect(found?.readAt).toBeUndefined();
 		});
+
+		it("should not update another user's article", async () => {
+			const store = initInMemoryArticleStore();
+			const saved = await store.saveArticle(makeArticleParams({ userId: USER_A }));
+
+			const updated = await store.updateArticleStatus(saved.id, USER_B, "read");
+
+			expect(updated).toBe(false);
+			expect((await store.findArticleById(saved.id))?.status).toBe("unread");
+		});
 	});
 
 });

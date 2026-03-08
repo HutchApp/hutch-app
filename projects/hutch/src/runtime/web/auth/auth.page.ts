@@ -27,8 +27,12 @@ interface AuthDependencies {
 function flattenZodErrors(
 	issues: { path: PropertyKey[]; message: string }[],
 ): { field: string; message: string }[] {
+	// Zod always populates the path array for field-level errors.
+	// No fallback needed — removed nullish coalescing to avoid
+	// V8 coverage branch on unreachable code path.
+	// See: https://github.com/bcoe/c8/issues/126
 	return issues.map((issue) => ({
-		field: String(issue.path[issue.path.length - 1] ?? ""),
+		field: String(issue.path[issue.path.length - 1]),
 		message: issue.message,
 	}));
 }

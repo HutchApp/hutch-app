@@ -213,3 +213,30 @@ describe("Export routes", () => {
 		});
 	});
 });
+
+describe("fetchAllArticles", () => {
+	it("should paginate through all articles when total exceeds page size", async () => {
+		const { fetchAllArticles } = await import("./export.page");
+		const { initInMemoryArticleStore } = await import("../../../providers/article-store/in-memory-article-store");
+		const store = initInMemoryArticleStore();
+		const userId = "test-user" as import("../../../domain/user/user.types").UserId;
+
+		for (let i = 0; i < 3; i++) {
+			await store.saveArticle({
+				userId,
+				url: `https://example.com/article-${i}`,
+				metadata: {
+					title: `Article ${i}`,
+					siteName: "example.com",
+					excerpt: "An excerpt",
+					wordCount: 100,
+				},
+				estimatedReadTime: 1 as import("../../../domain/article/article.types").Minutes,
+			});
+		}
+
+		const articles = await fetchAllArticles(store.findArticlesByUser, userId, 1);
+
+		expect(articles).toHaveLength(3);
+	});
+});
