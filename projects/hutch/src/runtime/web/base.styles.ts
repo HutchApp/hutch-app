@@ -351,17 +351,6 @@ export const BANNER_AREA_STYLES = `
   }
 `;
 
-export const POC_BANNER_STYLES = `
-  .poc-banner {
-    background: var(--color-error);
-    color: #fff;
-    text-align: center;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-  }
-`;
 
 export const UTILITY_STYLES = `
   .sr-only {

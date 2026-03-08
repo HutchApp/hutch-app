@@ -6,7 +6,7 @@ import {
 	HEADER_STYLES,
 	NAV_STYLES,
 	OFFLINE_BANNER_STYLES,
-	POC_BANNER_STYLES,
+
 	UTILITY_STYLES,
 } from "./base.styles";
 import type { Component } from "./component.types";
@@ -234,13 +234,12 @@ const BASE_TEMPLATE = `<!DOCTYPE html>
     {{{navStyles}}}
     {{{footerStyles}}}
     {{{offlineBannerStyles}}}
-    {{{pocBannerStyles}}}
+
     {{{pageStyles}}}
   </style>
 </head>
 <body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
   <div class="banner-area">
-    <div class="poc-banner" role="status">In Development</div>
     <div class="offline-banner" role="alert" aria-live="polite" aria-hidden="true">
       You're offline. Some features may be unavailable.
     </div>
@@ -296,7 +295,7 @@ function renderBaseTemplate(page: PageContent): string {
 		navStyles: NAV_STYLES,
 		footerStyles: FOOTER_STYLES,
 		offlineBannerStyles: OFFLINE_BANNER_STYLES,
-		pocBannerStyles: POC_BANNER_STYLES,
+
 		pageStyles: page.styles,
 		bodyClass: page.bodyClass,
 		header: renderHeader(headerVariant, page.isAuthenticated ?? false),

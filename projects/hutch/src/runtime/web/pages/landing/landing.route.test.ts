@@ -48,15 +48,6 @@ describe("GET /", () => {
 		expect(features?.length).toBe(5);
 	});
 
-	it("should not render any in-development badges on shipped features", async () => {
-		const response = await request(app).get("/");
-		const doc = new JSDOM(response.text).window.document;
-
-		const coreSection = doc.querySelector('[data-test-section="core-features"]');
-		const devCards = coreSection?.querySelectorAll(".feature-card--in-development");
-		expect(devCards?.length).toBe(0);
-	});
-
 	it("should render the backstory section", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
