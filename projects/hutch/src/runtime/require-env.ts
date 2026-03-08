@@ -9,8 +9,8 @@ export const requireEnv = (name: string, defaultValue?: string): string => {
   return value;
 };
 
-export function getEnv(name: string): string | undefined {
+export const getEnv = (name: string): string | undefined => {
   const value = process.env[name];
   // Single-line return for accurate V8 coverage - see https://github.com/jestjs/jest/issues/11188
   return (value === undefined || value === '') ? undefined : value;
-}
+};
