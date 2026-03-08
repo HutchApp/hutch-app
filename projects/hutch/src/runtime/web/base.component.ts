@@ -9,8 +9,8 @@ import {
 	POC_BANNER_STYLES,
 	UTILITY_STYLES,
 } from "./base.styles";
-import { HtmlPage } from "./component.types";
 import type { Component } from "./component.types";
+import { HtmlPage } from "./html-page";
 import { render } from "./render";
 
 export interface SeoMetadata {

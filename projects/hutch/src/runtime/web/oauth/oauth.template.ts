@@ -1,6 +1,6 @@
 import Handlebars from "handlebars";
-import { HtmlPage } from "../component.types";
 import type { Component } from "../component.types";
+import { HtmlPage } from "../html-page";
 
 interface AuthorizePageParams {
 	clientName: string;
