@@ -117,10 +117,7 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	const handle = async () => {
 		switch (message.type) {
 			case "login": {
-				const result = await auth.login({
-					email: message.email,
-					password: message.password,
-				});
+				const result = await auth.login();
 				if (result.ok) updateActiveTabIcon().catch(() => {});
 				return result;
 			}

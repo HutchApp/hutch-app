@@ -4,7 +4,7 @@ describe("initInMemoryAuth", () => {
 	describe("login + whenLoggedIn", () => {
 		it("should return ok true and execute callback after login", async () => {
 			const auth = initInMemoryAuth();
-			await auth.login({ email: "user@example.com", password: "password123" });
+			await auth.login();
 
 			const result = auth.whenLoggedIn(() => "hello");
 
@@ -30,7 +30,7 @@ describe("initInMemoryAuth", () => {
 	describe("whenLoggedIn callback throws", () => {
 		it("should catch the error and return it", async () => {
 			const auth = initInMemoryAuth();
-			await auth.login({ email: "user@example.com", password: "password123" });
+			await auth.login();
 			const thrownError = new Error("something broke");
 
 			const result = auth.whenLoggedIn(() => {
@@ -44,23 +44,10 @@ describe("initInMemoryAuth", () => {
 		});
 	});
 
-	describe("login with invalid credentials", () => {
-		it("should return invalid-credentials for empty email", async () => {
-			const auth = initInMemoryAuth();
-
-			const result = await auth.login({ email: "", password: "password123" });
-
-			expect(result).toEqual({
-				ok: false,
-				reason: "invalid-credentials",
-			});
-		});
-	});
-
 	describe("logout", () => {
 		it("should return not-logged-in after logout", async () => {
 			const auth = initInMemoryAuth();
-			await auth.login({ email: "user@example.com", password: "password123" });
+			await auth.login();
 
 			const beforeLogout = auth.whenLoggedIn(() => "still here");
 			expect(beforeLogout).toEqual({ ok: true, value: "still here" });

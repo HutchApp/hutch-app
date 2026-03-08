@@ -39,7 +39,7 @@ describe("initIconStatus", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const setIcon = createMockSetIcon();
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 
 		const { updateIconForTab } = initIconStatus({
 			findByUrl: readingList.findByUrl,
@@ -56,7 +56,7 @@ describe("initIconStatus", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const setIcon = createMockSetIcon();
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 		await readingList.saveUrl({
 			url: "https://example.com/saved",
 			title: "Saved Page",
@@ -77,7 +77,7 @@ describe("initIconStatus", () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
 		const setIcon = createMockSetIcon();
-		await auth.login({ email: "user@example.com", password: "pass" });
+		await auth.login();
 		await readingList.saveUrl({
 			url: "https://example.com/saved",
 			title: "Saved",
