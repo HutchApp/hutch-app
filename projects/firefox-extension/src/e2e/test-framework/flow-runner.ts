@@ -9,7 +9,7 @@ export class FlowRunner {
 
 	async run(
 		startUrl: string,
-		config: { maxSteps: number; actionDelayMs?: number },
+		config: { maxSteps: number; actionDelayMs: number },
 	): Promise<{ success: boolean; currentState: FlowState; error?: string }> {
 		await this.driver.get(startUrl);
 
