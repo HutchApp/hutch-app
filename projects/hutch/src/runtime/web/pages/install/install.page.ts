@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
+import { render } from "../../render";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
 import { getExtensionDownloadUrl } from "firefox-extension/s3-config";
 
+const INSTALL_TEMPLATE = readFileSync(join(__dirname, "install.template.html"), "utf-8");
 const EXTENSION_DOWNLOAD_URL = getExtensionDownloadUrl("prod");
 
 export function InstallPage(): Component {
@@ -15,34 +19,8 @@ export function InstallPage(): Component {
 		},
 		styles: INSTALL_PAGE_STYLES,
 		bodyClass: "page-install",
-		content: renderInstallContent(),
+		content: render(INSTALL_TEMPLATE, {
+			extensionDownloadUrl: EXTENSION_DOWNLOAD_URL,
+		}),
 	});
-}
-
-function renderInstallContent(): string {
-	return `
-  <main class="install-page">
-    <div class="install-page__container">
-      <h1 class="install-page__title">Install Hutch for Firefox</h1>
-      <p class="install-page__subtitle">Save articles to your reading list with a single click or keyboard shortcut.</p>
-
-      <a href="${EXTENSION_DOWNLOAD_URL}" class="install-page__download" data-test-cta="download-extension">Download Hutch for Firefox (test mode)</a>
-
-      <section class="install-page__steps" data-test-section="install-steps">
-        <h2>Installation steps</h2>
-        <ol>
-          <li>Download <code>hutch.xpi</code> using the button above</li>
-          <li>In Firefox, navigate to <code>about:config</code></li>
-          <li>Search for <code>xpinstall.signatures.required</code> and set it to <code>false</code></li>
-          <li>Navigate to <code>about:addons</code> and click Extensions</li>
-          <li>Click the gear icon and select "Install Add-on From File..."</li>
-          <li>Select the downloaded <code>hutch.xpi</code> file</li>
-        </ol>
-      </section>
-
-      <div class="install-page__note">
-        Firefox Developer Edition and Firefox Nightly allow unsigned extension installation by default — no configuration change needed. This version is TEST MODE, which means it connects to a local test database and not your real account, saved links will disappear when you reload the extension.
-      </div>
-    </div>
-  </main>`;
 }

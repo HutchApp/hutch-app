@@ -17,8 +17,8 @@ import { SIREN_MEDIA_TYPE } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
 import { parseQueueUrl } from "./queue.url";
 import { toQueueViewModel } from "./queue.viewmodel";
-import { QueuePage } from "./queue.template";
-import { ReaderPage } from "../reader/reader.template";
+import { QueuePage } from "./queue.component";
+import { ReaderPage } from "../reader/reader.component";
 
 interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;

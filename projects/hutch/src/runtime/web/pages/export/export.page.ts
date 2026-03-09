@@ -4,7 +4,7 @@ import express from "express";
 import type { FindArticlesByUser } from "../../../providers/article-store/article-store.types";
 import type { UserId } from "../../../domain/user/user.types";
 import type { SavedArticle } from "../../../domain/article/article.types";
-import { ExportPage } from "./export.template";
+import { ExportPage } from "./export.component";
 
 interface ExportDependencies {
 	findArticlesByUser: FindArticlesByUser;

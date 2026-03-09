@@ -1,0 +1,18 @@
+    <main class="oauth-authorize">
+      <div class="oauth-authorize__container">
+        <h1 class="oauth-authorize__title">Authorize {{clientName}}</h1>
+        <p class="oauth-authorize__text"><strong>{{clientName}}</strong> wants to access your Hutch account.</p>
+        <form method="POST" action="/oauth/authorize">
+          <input type="hidden" name="client_id" value="{{clientId}}">
+          <input type="hidden" name="redirect_uri" value="{{redirectUri}}">
+          <input type="hidden" name="response_type" value="code">
+          <input type="hidden" name="code_challenge" value="{{codeChallenge}}">
+          <input type="hidden" name="code_challenge_method" value="S256">
+          {{#if state}}<input type="hidden" name="state" value="{{state}}">{{/if}}
+          <div class="oauth-authorize__buttons">
+            <button type="submit" name="action" value="approve" class="oauth-authorize__btn oauth-authorize__btn--approve">Approve</button>
+            <button type="submit" name="action" value="deny" class="oauth-authorize__btn oauth-authorize__btn--deny">Deny</button>
+          </div>
+        </form>
+      </div>
+    </main>

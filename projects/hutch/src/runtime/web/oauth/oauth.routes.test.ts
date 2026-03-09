@@ -4,7 +4,7 @@ import request from "supertest";
 import type { Token } from "@node-oauth/oauth2-server";
 import { createTestApp } from "../../test-app";
 import type { UserId } from "../../domain/user/user.types";
-import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.template";
+import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.component";
 
 function generatePKCE() {
 	const verifier = randomBytes(32).toString("base64url");
