@@ -39,17 +39,23 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 	),
 });
 
-const xpiPath = join(__dirname, "..", "..", "dist-extension-files", S3_CONFIG.key);
+const distFilesDir = join(__dirname, "..", "..", "dist-extension-files");
+const xpiFiles = fs
+	.readdirSync(distFilesDir)
+	.filter((f) => f.startsWith("hutch-") && f.endsWith(".xpi"));
 assert.ok(
-	fs.existsSync(xpiPath),
-	`Extension artifact not found: ${xpiPath}. Run 'pnpm compile' first.`,
+	xpiFiles.length === 1,
+	`Expected exactly one xpi file in ${distFilesDir}, found: ${xpiFiles.length}. Run 'pnpm compile' first.`,
 );
+const xpiFilename = xpiFiles[0];
+const xpiPath = join(distFilesDir, xpiFilename);
 
 const extensionObject = new aws.s3.BucketObject("hutch-xpi", {
 	bucket: bucket.id,
 	key: S3_CONFIG.key,
 	source: new pulumi.asset.FileAsset(xpiPath),
 	contentType: "application/x-xpinstall",
+	contentDisposition: `attachment; filename="${xpiFilename}"`,
 });
 
 export const downloadUrl = pulumi.interpolate`https://${bucket.bucketRegionalDomainName}/${S3_CONFIG.key}`;
