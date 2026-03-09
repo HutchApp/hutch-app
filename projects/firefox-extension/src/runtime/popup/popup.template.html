@@ -13,6 +13,7 @@
         </a>
       </div>
       <button id="login-button" class="login__submit" type="button">Log in to Hutch</button>
+      <p id="login-error" class="login__error" hidden>Login failed. Please try again.</p>
     </div>
   </div>
 
@@ -50,9 +51,16 @@
     <p id="list-error" class="list-view__error" hidden>Failed to load links</p>
   </div>
 
+  <div id="error-view" class="view" hidden>
+    <p>Something went wrong</p>
+    <button id="retry-button" class="button--secondary">Try again</button>
+  </div>
+
   <div id="loading-view" class="view">
     <p>Loading...</p>
   </div>
+
+  <div id="error-toast" class="error-toast" hidden></div>
 
   <script src="popup.js"></script>
 </body>
