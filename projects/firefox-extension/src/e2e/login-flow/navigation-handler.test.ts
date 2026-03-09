@@ -55,4 +55,41 @@ describe("LoginFlowStateHandler", () => {
 		const state = await handler.detectCurrentState();
 		assert.deepEqual(state.availableActions, []);
 	});
+
+	it("includes available actions in state", async () => {
+		const driver = createTestDriver(null);
+		const availableAction: FlowAction = {
+			isAvailable: async () => true,
+			execute: async () => {},
+		};
+
+		const handler = new LoginFlowStateHandler(
+			driver,
+			async () => false,
+			new Map([["click-login", availableAction]]),
+		);
+
+		const state = await handler.detectCurrentState();
+		assert.deepEqual(state.availableActions, ["click-login"]);
+	});
+
+	it("executes a known action", async () => {
+		const driver = createTestDriver(null);
+		let executed = false;
+		const action: FlowAction = {
+			isAvailable: async () => true,
+			execute: async () => {
+				executed = true;
+			},
+		};
+
+		const handler = new LoginFlowStateHandler(
+			driver,
+			async () => false,
+			new Map([["click-login", action]]),
+		);
+
+		await handler.executeAction("click-login");
+		assert.equal(executed, true);
+	});
 });

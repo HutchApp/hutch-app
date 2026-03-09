@@ -13,6 +13,7 @@ const VIEW_IDS = [
 	"removed-view",
 	"list-view",
 	"loading-view",
+	"error-view",
 ];
 
 type SuccessDetector = (driver: WebDriver) => Promise<boolean>;

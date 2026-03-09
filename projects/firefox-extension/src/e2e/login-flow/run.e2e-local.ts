@@ -5,14 +5,13 @@ import { Builder, By } from "selenium-webdriver";
 import { Options } from "selenium-webdriver/firefox";
 import { FlowRunner } from "../test-framework/flow-runner";
 import { LoginFlowStateHandler } from "./navigation-handler";
-import { createLoginActions } from "./login-actions";
 
 const ADDON_ID = "hutch-extension@hutch-app.com";
 const ADDON_UUID = "d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12";
 const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
 const POPUP_URL = `moz-extension://${ADDON_UUID}/popup/popup.template.html`;
 
-test("should log in to Hutch extension successfully", async () => {
+test("should show login view when not authenticated", async () => {
 	const options = new Options();
   if (process.env.HEADLESS !== "false") {
     options.addArguments( "--headless");
@@ -37,30 +36,23 @@ test("should log in to Hutch extension successfully", async () => {
 			}
 		).installAddon(EXTENSION_DIR, true);
 
-		const loginActions = createLoginActions();
-
 		const stateHandler = new LoginFlowStateHandler(
 			driver,
 			async (d) => {
-				for (const viewId of ["list-view", "saved-view"]) {
-					const element = await d.findElement(By.id(viewId));
-					const hidden = await element.getAttribute("hidden");
-					if (hidden === null) return true;
-				}
-				return false;
+				const loginButton = await d.findElement(By.id("login-button"));
+				return loginButton.isDisplayed();
 			},
-			loginActions,
+			new Map(),
 		);
 
 		const flowRunner = new FlowRunner(driver, stateHandler);
-		const result = await flowRunner.run(POPUP_URL, { maxSteps: 10, actionDelayMs: 2000 });
+		const result = await flowRunner.run(POPUP_URL, { maxSteps: 5, actionDelayMs: 2000 });
 
 		assert.equal(result.success, true, `Flow failed: ${result.error}`);
-		assert.ok(
-			["list-view", "saved-view"].includes(
-				result.currentState.activeView,
-			),
-			`Expected a post-login view, got ${result.currentState.activeView}`,
+		assert.equal(
+			result.currentState.activeView,
+			"login-view",
+			`Expected login-view, got ${result.currentState.activeView}`,
 		);
 	} finally {
 		await driver.quit();

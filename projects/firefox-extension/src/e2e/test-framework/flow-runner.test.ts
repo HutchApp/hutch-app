@@ -29,7 +29,7 @@ describe("FlowRunner", () => {
 		const runner = new FlowRunner(driver, stateHandler);
 		const result = await runner.run("moz-extension://test/popup.html", {
 			maxSteps: 10,
-      actionDelayMs: 0
+			actionDelayMs: 0,
 		});
 
 		assert.equal(result.success, false);
@@ -50,7 +50,7 @@ describe("FlowRunner", () => {
 		const runner = new FlowRunner(driver, stateHandler);
 		const result = await runner.run("moz-extension://test/popup.html", {
 			maxSteps: 2,
-      actionDelayMs: 0
+			actionDelayMs: 1,
 		});
 
 		assert.equal(result.success, false);
