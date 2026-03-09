@@ -7,12 +7,14 @@ import { join } from "node:path";
 const config = new pulumi.Config();
 const stage = config.require("stage");
 
-function copyCssFiles(srcDir: string, destDir: string) {
+const ASSET_EXTENSIONS = [".css", ".html"];
+
+function copyAssetFiles(srcDir: string, destDir: string) {
 	for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
 		const srcPath = join(srcDir, entry.name);
 		if (entry.isDirectory()) {
-			copyCssFiles(srcPath, destDir);
-		} else if (entry.name.endsWith(".css")) {
+			copyAssetFiles(srcPath, destDir);
+		} else if (ASSET_EXTENSIONS.some((ext) => entry.name.endsWith(ext))) {
 			copyFileSync(srcPath, join(destDir, entry.name));
 		}
 	}
@@ -161,7 +163,7 @@ class HutchLambda {
 			target: ["node22"],
 		}).then(() => {
 			mkdirSync(lambdaOutputDir, { recursive: true });
-			copyCssFiles("./src/runtime", lambdaOutputDir);
+			copyAssetFiles("./src/runtime", lambdaOutputDir);
 			return new pulumi.asset.AssetArchive({
 				".": new pulumi.asset.FileArchive(lambdaOutputDir),
 			});
