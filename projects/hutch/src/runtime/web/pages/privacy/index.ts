@@ -1,1 +1,1 @@
-export { PrivacyPage } from "./privacy.page";
+export { PrivacyPage } from "./privacy.component";

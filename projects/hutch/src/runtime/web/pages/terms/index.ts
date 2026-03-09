@@ -1,1 +1,1 @@
-export { TermsPage } from "./terms.page";
+export { TermsPage } from "./terms.component";

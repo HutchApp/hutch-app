@@ -1,1 +1,1 @@
-export { InstallPage } from "./install.page";
+export { InstallPage } from "./install.component";
