@@ -121,4 +121,34 @@ describe("initReadabilityParser", () => {
 			expect(result.article.siteName).toBe("blog.example.com");
 		}
 	});
+
+	it("should use hostname as title when parsed title is empty string", async () => {
+		const htmlWithEmptyTitle = `
+		<html><head><title></title></head>
+		<body><article>
+			<p>Enough content to be parsed by readability as a real article with several words in this paragraph.</p>
+			<p>Another paragraph for good measure with additional text to satisfy the parser minimum.</p>
+		</article></body></html>`;
+		const fetchHtml = async (_url: string) => htmlWithEmptyTitle;
+		const { parseArticle } = initReadabilityParser({ fetchHtml });
+
+		const result = await parseArticle("https://blog.example.com/post");
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.article.title).toContain("blog.example.com");
+		}
+	});
+
+	it("should return content string from parsed article", async () => {
+		const fetchHtml = async (_url: string) => ARTICLE_HTML;
+		const { parseArticle } = initReadabilityParser({ fetchHtml });
+
+		const result = await parseArticle("https://example.com/article");
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(typeof result.article.content).toBe("string");
+		}
+	});
 });

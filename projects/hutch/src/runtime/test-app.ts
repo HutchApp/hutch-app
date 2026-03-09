@@ -14,7 +14,9 @@ const stubFetchHtml: FetchHtml = async (url) => {
 	return `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content saved from ${hostname}.</p></article></body></html>`;
 };
 
-export function createTestApp() {
+export function createTestApp(options?: {
+	livereloadMiddleware?: Parameters<typeof createApp>[0]["livereloadMiddleware"];
+}) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const parser = initReadabilityParser({ fetchHtml: stubFetchHtml });
@@ -26,6 +28,7 @@ export function createTestApp() {
 		...parser,
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
+		livereloadMiddleware: options?.livereloadMiddleware,
 	});
 
 	return { app, auth, articleStore, parser, oauthModel };

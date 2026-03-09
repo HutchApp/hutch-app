@@ -111,3 +111,19 @@ describe("GET /nonexistent", () => {
 		expect(response.status).toBe(404);
 	});
 });
+
+describe("livereload middleware", () => {
+	it("should apply livereload middleware when provided", async () => {
+		let livereloadInvoked = false;
+		const { app } = createTestApp({
+			livereloadMiddleware: (_req: unknown, _res: unknown, next: () => void) => {
+				livereloadInvoked = true;
+				next();
+			},
+		});
+
+		await request(app).get("/");
+
+		expect(livereloadInvoked).toBe(true);
+	});
+});

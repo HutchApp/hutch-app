@@ -84,7 +84,11 @@ export function initInMemoryArticleStore(): {
 			return false;
 		}
 		article.status = status;
-		article.readAt = status === "read" ? new Date() : undefined;
+		if (status === "read") {
+			article.readAt = new Date();
+		} else {
+			article.readAt = undefined;
+		}
 		articles.set(id, article);
 		return true;
 	};

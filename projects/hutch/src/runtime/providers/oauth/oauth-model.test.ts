@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import type { UserId } from "../../domain/user/user.types";
-import type { OAuthClientId } from "../../domain/oauth/oauth.types";
+import type { OAuthClientId, AuthorizationCode as AuthorizationCodeId, AccessToken as AccessTokenId, RefreshToken as RefreshTokenId } from "../../domain/oauth/oauth.types";
 import type {
 	Token,
 	Client,
@@ -356,7 +356,76 @@ describe("createOAuthModel", () => {
 		});
 	});
 
+	describe("orphaned data with unknown client", () => {
+		it("getAuthorizationCode returns falsy when stored code references unknown client", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			deps.codes.set("orphaned-code", {
+				code: "orphaned-code" as AuthorizationCodeId,
+				clientId: "nonexistent-client" as OAuthClientId,
+				userId: TEST_USER_ID,
+				redirectUri: TEST_REDIRECT_URI,
+				codeChallenge: "test-challenge",
+				codeChallengeMethod: "S256",
+				expiresAt: new Date(Date.now() + 300000),
+			});
+
+			const retrieved = await model.getAuthorizationCode("orphaned-code");
+
+			expect(retrieved).toBeNull();
+		});
+
+		it("getAccessToken returns falsy when stored token references unknown client", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			deps.tokens.set("orphaned-access", {
+				accessToken: "orphaned-access" as AccessTokenId,
+				accessTokenExpiresAt: new Date(Date.now() + 3600000),
+				refreshToken: "orphaned-refresh" as RefreshTokenId,
+				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
+				clientId: "nonexistent-client" as OAuthClientId,
+				userId: TEST_USER_ID,
+			});
+
+			const retrieved = await model.getAccessToken("orphaned-access");
+
+			expect(retrieved).toBeNull();
+		});
+
+		it("getRefreshToken returns falsy when stored token references unknown client", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			deps.tokens.set("orphaned-access-2", {
+				accessToken: "orphaned-access-2" as AccessTokenId,
+				accessTokenExpiresAt: new Date(Date.now() + 3600000),
+				refreshToken: "orphaned-refresh-2" as RefreshTokenId,
+				refreshTokenExpiresAt: new Date(Date.now() + 30 * 24 * 3600000),
+				clientId: "nonexistent-client" as OAuthClientId,
+				userId: TEST_USER_ID,
+			});
+			deps.refreshTokenIndex.set("orphaned-refresh-2", "orphaned-access-2");
+
+			const retrieved = await model.getRefreshToken("orphaned-refresh-2");
+
+			expect(retrieved).toBeNull();
+		});
+	});
+
 	describe("edge cases", () => {
+		it("getRefreshToken returns falsy when refresh index points to missing token", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			deps.refreshTokenIndex.set("dangling-refresh", "missing-access");
+
+			const retrieved = await model.getRefreshToken("dangling-refresh");
+
+			expect(retrieved).toBeNull();
+		});
+
 		it("getRefreshToken returns falsy for expired refresh tokens", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
@@ -376,6 +445,60 @@ describe("createOAuthModel", () => {
 			const retrieved = await model.getRefreshToken("expired-refresh");
 
 			expect(retrieved).toBeNull();
+		});
+	});
+
+	describe("revokeToken edge cases", () => {
+		it("returns false when refresh token is not found in index", async () => {
+			const model = createOAuthModel(initInMemoryOAuthModel());
+
+			const result = await model.revokeToken({
+				refreshToken: "nonexistent-refresh",
+				client: createTestClient(),
+				user: { id: TEST_USER_ID },
+			});
+
+			expect(result).toBe(false);
+		});
+
+		it("cleans up index when token is in refresh index but not in tokens map", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			deps.refreshTokenIndex.set("orphaned-refresh", "missing-access-token");
+
+			const result = await model.revokeToken({
+				refreshToken: "orphaned-refresh",
+				client: createTestClient(),
+				user: { id: TEST_USER_ID },
+			});
+
+			expect(result).toBe(true);
+			expect(deps.refreshTokenIndex.has("orphaned-refresh")).toBe(false);
+		});
+	});
+
+	describe("saveToken defaults", () => {
+		it("uses default expiry dates when not provided", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
+
+			const tokenWithoutExpiry: Token = {
+				accessToken: "no-expiry-token",
+				client: createTestClient(),
+				user: { id: TEST_USER_ID },
+			};
+
+			const saved = await model.saveToken(tokenWithoutExpiry, client, { id: TEST_USER_ID });
+			assert(saved, "Token should be saved");
+
+			const retrieved = await model.getAccessToken("no-expiry-token");
+			assert(retrieved, "Token should be retrievable");
+
+			expect(retrieved.accessTokenExpiresAt).toBeInstanceOf(Date);
 		});
 	});
 

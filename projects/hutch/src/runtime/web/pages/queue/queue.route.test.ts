@@ -427,6 +427,59 @@ describe("Queue routes", () => {
 		});
 	});
 
+	describe("Parse failure", () => {
+		it("should show error when article parsing fails", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-save-error]")?.textContent).toContain("Could not parse article");
+		});
+	});
+
+	describe("Pagination", () => {
+		it("should render pagination links when articles span multiple pages", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			for (let i = 0; i < 21; i++) {
+				await agent
+					.post("/queue/save")
+					.type("form")
+					.send({ url: `https://example.com/article-${i}` });
+			}
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const pagination = doc.querySelector("[data-test-pagination]");
+			expect(pagination?.querySelector(".queue__pagination-link")?.textContent).toContain("Next");
+		});
+
+		it("should render previous link on page 2", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			for (let i = 0; i < 21; i++) {
+				await agent
+					.post("/queue/save")
+					.type("form")
+					.send({ url: `https://example.com/p-${i}` });
+			}
+
+			const response = await agent.get("/queue?page=2");
+			const doc = new JSDOM(response.text).window.document;
+			const pagination = doc.querySelector("[data-test-pagination]");
+			expect(pagination?.querySelector(".queue__pagination-link")?.textContent).toContain("Previous");
+		});
+	});
+
 	describe("Filter and sort", () => {
 		it("should filter by status", async () => {
 			const { app, auth } = createTestApp();
@@ -461,6 +514,63 @@ describe("Queue routes", () => {
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector("[data-test-sort]")?.textContent).toContain("first");
+		});
+
+		it("should include status in sort toggle URL when filter is active", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue?status=unread");
+			const doc = new JSDOM(response.text).window.document;
+			const sortLink = doc.querySelector("[data-test-sort]");
+			expect(sortLink?.getAttribute("href")).toContain("status=unread");
+		});
+
+		it("should toggle sort order from desc to asc", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const sortLink = doc.querySelector("[data-test-sort]");
+			expect(sortLink?.getAttribute("href")).toContain("order=asc");
+			expect(sortLink?.textContent).toContain("Newest first");
+		});
+
+		it("should toggle sort order from asc to desc", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue?order=asc");
+			const doc = new JSDOM(response.text).window.document;
+			const sortLink = doc.querySelector("[data-test-sort]");
+			expect(sortLink?.getAttribute("href")).toContain("order=desc");
+			expect(sortLink?.textContent).toContain("Oldest first");
+		});
+	});
+
+	describe("CORS for browser extensions", () => {
+		it("should allow requests from browser extensions", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/queue")
+				.set("Origin", "moz-extension://abc123");
+
+			expect(response.status).toBe(200);
+			expect(response.headers["access-control-allow-origin"]).toBe("moz-extension://abc123");
+		});
+
+		it("should reject requests from non-extension origins", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.options("/queue")
+				.set("Origin", "https://evil.com")
+				.set("Access-Control-Request-Method", "GET");
+
+			expect(response.headers["access-control-allow-origin"]).toBeUndefined();
 		});
 	});
 });

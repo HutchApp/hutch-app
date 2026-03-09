@@ -40,17 +40,30 @@ export function initReadabilityParser(deps: {
 			};
 		}
 
-		const textContent = parsed.textContent ?? "";
+		let textContent = parsed.textContent;
+		if (!textContent) textContent = "";
 		const wordCount = textContent.split(/\s+/).filter(Boolean).length;
+
+		let title = parsed.title;
+		if (!title) title = `Article from ${hostname}`;
+
+		let siteName = parsed.siteName;
+		if (!siteName) siteName = hostname;
+
+		let excerpt = parsed.excerpt;
+		if (!excerpt) excerpt = `Content saved from ${hostname}.`;
+
+		let content = parsed.content;
+		if (!content) content = "";
 
 		return {
 			ok: true,
 			article: {
-				title: parsed.title || `Article from ${hostname}`,
-				siteName: parsed.siteName || hostname,
-				excerpt: parsed.excerpt || `Content saved from ${hostname}.`,
+				title,
+				siteName,
+				excerpt,
 				wordCount,
-				content: parsed.content ?? "",
+				content,
 				imageUrl,
 			},
 		};
