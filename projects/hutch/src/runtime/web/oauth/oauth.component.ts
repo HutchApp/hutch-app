@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Base } from "../base.component";
 import type { Component } from "../component.types";
 import { render } from "../render";
+
+const OAUTH_AUTHORIZE_TEMPLATE = readFileSync(join(__dirname, "oauth-authorize.template.html"), "utf-8");
+const OAUTH_CALLBACK_TEMPLATE = readFileSync(join(__dirname, "oauth-callback.template.html"), "utf-8");
 
 interface AuthorizePageParams {
 	clientName: string;
@@ -81,26 +86,6 @@ const OAUTH_CALLBACK_STYLES = `
 }
 `;
 
-const OAUTH_AUTHORIZE_TEMPLATE = `
-    <main class="oauth-authorize">
-      <div class="oauth-authorize__container">
-        <h1 class="oauth-authorize__title">Authorize {{clientName}}</h1>
-        <p class="oauth-authorize__text"><strong>{{clientName}}</strong> wants to access your Hutch account.</p>
-        <form method="POST" action="/oauth/authorize">
-          <input type="hidden" name="client_id" value="{{clientId}}">
-          <input type="hidden" name="redirect_uri" value="{{redirectUri}}">
-          <input type="hidden" name="response_type" value="code">
-          <input type="hidden" name="code_challenge" value="{{codeChallenge}}">
-          <input type="hidden" name="code_challenge_method" value="S256">
-          {{#if state}}<input type="hidden" name="state" value="{{state}}">{{/if}}
-          <div class="oauth-authorize__buttons">
-            <button type="submit" name="action" value="approve" class="oauth-authorize__btn oauth-authorize__btn--approve">Approve</button>
-            <button type="submit" name="action" value="deny" class="oauth-authorize__btn oauth-authorize__btn--deny">Deny</button>
-          </div>
-        </form>
-      </div>
-    </main>`;
-
 export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
 	const content = render(OAUTH_AUTHORIZE_TEMPLATE, params);
 
@@ -128,13 +113,7 @@ export function OAuthCallbackPage(): Component {
 		},
 		styles: OAUTH_CALLBACK_STYLES,
 		bodyClass: "page-oauth-callback",
-		content: `
-    <main class="oauth-callback">
-      <div class="oauth-callback__container">
-        <h1 class="oauth-callback__title">Authorization Complete</h1>
-        <p class="oauth-callback__text">You may close this window.</p>
-      </div>
-    </main>`,
+		content: render(OAUTH_CALLBACK_TEMPLATE, {}),
 		isAuthenticated: true,
 	});
 }

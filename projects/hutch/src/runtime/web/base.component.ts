@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
 	BANNER_AREA_STYLES,
 	BASE_CSS_VARIABLES,
@@ -12,6 +14,10 @@ import {
 import type { Component } from "./component.types";
 import { HtmlPage } from "./html-page";
 import { render } from "./render";
+
+const HEADER_TEMPLATE = readFileSync(join(__dirname, "header.template.html"), "utf-8");
+const FOOTER_TEMPLATE = readFileSync(join(__dirname, "footer.template.html"), "utf-8");
+const BASE_TEMPLATE = readFileSync(join(__dirname, "base.template.html"), "utf-8");
 
 export interface SeoMetadata {
 	title: string;
@@ -34,37 +40,6 @@ export interface PageContent {
 	isAuthenticated?: boolean;
 }
 
-const HEADER_TEMPLATE = `
-  <header class="header{{#if transparent}} header--transparent{{/if}}">
-    <div class="header__content">
-      <a href="/" class="header__brand">Hutch</a>
-      <nav class="nav">
-        <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-menu">
-          <span class="nav__toggle-bar"></span>
-          <span class="nav__toggle-bar"></span>
-          <span class="nav__toggle-bar"></span>
-        </button>
-        <div id="nav-menu" class="nav__menu">
-          <ul class="nav__list">
-            {{#if isAuthenticated}}
-            <li><a href="/queue" class="nav__link" data-test-nav-item="queue">Queue</a></li>
-            <li><a href="/export" class="nav__link" data-test-nav-item="export">Export</a></li>
-            <li>
-              <form method="POST" action="/logout" style="display:inline">
-                <button type="submit" class="nav__link" style="background:none;border:none;cursor:pointer;font:inherit" data-test-nav-item="logout">Sign out</button>
-              </form>
-            </li>
-            {{else}}
-            <li><a href="/#what-works" class="nav__link" data-test-nav-item="features">Features</a></li>
-            <li><a href="/#pricing" class="nav__link" data-test-nav-item="pricing">Pricing</a></li>
-            <li><a href="/login" class="nav__link" data-test-nav-item="login">Sign in</a></li>
-            {{/if}}
-          </ul>
-        </div>
-      </nav>
-    </div>
-  </header>`;
-
 function renderHeader(
 	variant: "default" | "transparent",
 	isAuthenticated: boolean,
@@ -74,17 +49,6 @@ function renderHeader(
 		isAuthenticated,
 	});
 }
-
-const FOOTER_TEMPLATE = `
-  <footer class="footer">
-    <div class="footer__content">
-      <ul class="footer__links">
-        <li><a href="/privacy" class="footer__link">Privacy</a></li>
-        <li><a href="/terms" class="footer__link">Terms</a></li>
-      </ul>
-      <p class="footer__copyright">&copy; {{year}} Hutch. Made in Australia.</p>
-    </div>
-  </footer>`;
 
 function renderFooter(): string {
 	return render(FOOTER_TEMPLATE, {
@@ -168,96 +132,6 @@ const OFFLINE_INDICATOR_SCRIPT = `
   updateOnlineStatus();
 })();
 </script>`;
-
-const BASE_TEMPLATE = `<!DOCTYPE html>
-<html lang="en-AU">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{title}}</title>
-  <meta name="description" content="{{description}}">
-  <meta name="robots" content="{{robots}}">
-  <link rel="canonical" href="{{canonicalUrl}}">
-  <meta name="theme-color" content="#2B3A55" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-
-  <meta property="og:type" content="{{ogType}}">
-  <meta property="og:site_name" content="Hutch">
-  <meta property="og:title" content="{{title}}">
-  <meta property="og:description" content="{{description}}">
-  <meta property="og:url" content="{{canonicalUrl}}">
-  {{#if ogImage}}
-  <meta property="og:image" content="{{ogImage}}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  {{/if}}
-  <meta property="og:locale" content="en_AU">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{{title}}">
-  <meta name="twitter:description" content="{{description}}">
-  {{#if twitterImage}}<meta name="twitter:image" content="{{twitterImage}}">{{/if}}
-  <meta name="twitter:creator" content="@fagnerbrack">
-
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
-  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
-  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
-  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
-  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
-  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
-  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
-  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167x167.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
-
-  <link rel="manifest" href="/site.webmanifest">
-
-  <meta name="msapplication-TileColor" content="#2B3A55">
-  <meta name="msapplication-TileImage" content="/mstile-150x150.png">
-  <meta name="msapplication-config" content="/browserconfig.xml">
-
-  {{{structuredDataScript}}}
-
-  <style>
-    {{{baseStyles}}}
-    {{{resetStyles}}}
-    {{{utilityStyles}}}
-    {{{bannerAreaStyles}}}
-    {{{headerStyles}}}
-    {{{navStyles}}}
-    {{{footerStyles}}}
-    {{{offlineBannerStyles}}}
-
-    {{{pageStyles}}}
-  </style>
-</head>
-<body{{#if bodyClass}} class="{{bodyClass}}"{{/if}}>
-  <div class="banner-area">
-    <div class="offline-banner" role="alert" aria-live="polite" aria-hidden="true">
-      You're offline. Some features may be unavailable.
-    </div>
-  </div>
-  <script>
-    (function() {
-      var ba = document.querySelector('.banner-area');
-      if (ba) document.documentElement.style.setProperty('--banner-area-height', ba.offsetHeight + 'px');
-    })();
-  </script>
-  {{{header}}}
-  {{{content}}}
-  {{{footer}}}
-  {{{navScript}}}
-  {{{offlineScript}}}
-  {{{scripts}}}
-</body>
-</html>`;
 
 function renderStructuredData(data: object[] | undefined): string {
 	if (!data || data.length === 0) return "";

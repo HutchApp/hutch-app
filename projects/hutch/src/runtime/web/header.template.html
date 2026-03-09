@@ -1,0 +1,29 @@
+  <header class="header{{#if transparent}} header--transparent{{/if}}">
+    <div class="header__content">
+      <a href="/" class="header__brand">Hutch</a>
+      <nav class="nav">
+        <button class="nav__toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-menu">
+          <span class="nav__toggle-bar"></span>
+          <span class="nav__toggle-bar"></span>
+          <span class="nav__toggle-bar"></span>
+        </button>
+        <div id="nav-menu" class="nav__menu">
+          <ul class="nav__list">
+            {{#if isAuthenticated}}
+            <li><a href="/queue" class="nav__link" data-test-nav-item="queue">Queue</a></li>
+            <li><a href="/export" class="nav__link" data-test-nav-item="export">Export</a></li>
+            <li>
+              <form method="POST" action="/logout" style="display:inline">
+                <button type="submit" class="nav__link" style="background:none;border:none;cursor:pointer;font:inherit" data-test-nav-item="logout">Sign out</button>
+              </form>
+            </li>
+            {{else}}
+            <li><a href="/#what-works" class="nav__link" data-test-nav-item="features">Features</a></li>
+            <li><a href="/#pricing" class="nav__link" data-test-nav-item="pricing">Pricing</a></li>
+            <li><a href="/login" class="nav__link" data-test-nav-item="login">Sign in</a></li>
+            {{/if}}
+          </ul>
+        </div>
+      </nav>
+    </div>
+  </header>

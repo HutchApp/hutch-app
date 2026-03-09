@@ -7,7 +7,7 @@ import type {
 	VerifyCredentials,
 } from "../../providers/auth/auth.types";
 import { LoginSchema, SignupSchema } from "./auth.schema";
-import { LoginPage, SignupPage } from "./auth.template";
+import { LoginPage, SignupPage } from "./auth.component";
 
 const COOKIE_NAME = "hutch_sid";
 

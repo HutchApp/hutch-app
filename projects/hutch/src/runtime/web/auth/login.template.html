@@ -1,0 +1,23 @@
+    <main class="auth-page">
+      <div class="auth-card">
+        <h1 class="auth-card__title">Welcome back</h1>
+        <p class="auth-card__subtitle">Sign in to your Hutch account</p>
+        {{#if globalError}}<div class="auth-form__global-error" data-test-global-error>{{globalError}}</div>{{/if}}
+        <form class="auth-form" method="POST" action="/login" data-test-form="login">
+          <div class="auth-form__field">
+            <label class="auth-form__label" for="email">Email</label>
+            <input class="auth-form__input{{emailField.errorClass}}" type="email" id="email" name="email" value="{{email}}" required autocomplete="email">
+            {{#if emailField.error}}<p class="auth-form__error" data-test-error="email">{{emailField.error}}</p>{{/if}}
+          </div>
+          <div class="auth-form__field">
+            <label class="auth-form__label" for="password">Password</label>
+            <input class="auth-form__input{{passwordField.errorClass}}" type="password" id="password" name="password" required autocomplete="current-password">
+            {{#if passwordField.error}}<p class="auth-form__error" data-test-error="password">{{passwordField.error}}</p>{{/if}}
+          </div>
+          <button class="auth-form__submit" type="submit">Sign in</button>
+        </form>
+        <p class="auth-card__footer">
+          Don't have an account? <a href="/signup">Create one</a>
+        </p>
+      </div>
+    </main>

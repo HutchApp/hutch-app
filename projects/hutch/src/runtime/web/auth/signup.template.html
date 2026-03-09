@@ -1,0 +1,28 @@
+    <main class="auth-page">
+      <div class="auth-card">
+        <h1 class="auth-card__title">Create your account</h1>
+        <p class="auth-card__subtitle">Start saving articles to read later</p>
+        {{#if globalError}}<div class="auth-form__global-error" data-test-global-error>{{globalError}}</div>{{/if}}
+        <form class="auth-form" method="POST" action="/signup" data-test-form="signup">
+          <div class="auth-form__field">
+            <label class="auth-form__label" for="email">Email</label>
+            <input class="auth-form__input{{emailField.errorClass}}" type="email" id="email" name="email" value="{{email}}" required autocomplete="email">
+            {{#if emailField.error}}<p class="auth-form__error" data-test-error="email">{{emailField.error}}</p>{{/if}}
+          </div>
+          <div class="auth-form__field">
+            <label class="auth-form__label" for="password">Password</label>
+            <input class="auth-form__input{{passwordField.errorClass}}" type="password" id="password" name="password" required autocomplete="new-password" minlength="8">
+            {{#if passwordField.error}}<p class="auth-form__error" data-test-error="password">{{passwordField.error}}</p>{{/if}}
+          </div>
+          <div class="auth-form__field">
+            <label class="auth-form__label" for="confirmPassword">Confirm password</label>
+            <input class="auth-form__input{{confirmPasswordField.errorClass}}" type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password">
+            {{#if confirmPasswordField.error}}<p class="auth-form__error" data-test-error="confirmPassword">{{confirmPasswordField.error}}</p>{{/if}}
+          </div>
+          <button class="auth-form__submit" type="submit">Create account</button>
+        </form>
+        <p class="auth-card__footer">
+          Already have an account? <a href="/login">Sign in</a>
+        </p>
+      </div>
+    </main>

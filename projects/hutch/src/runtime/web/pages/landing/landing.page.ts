@@ -1,1 +1,1 @@
-export { LandingPage } from "./landing.template";
+export { LandingPage } from "./landing.component";

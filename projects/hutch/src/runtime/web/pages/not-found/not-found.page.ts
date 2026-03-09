@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
+import { render } from "../../render";
 import { NOT_FOUND_STYLES } from "./not-found.styles";
+
+const NOT_FOUND_TEMPLATE = readFileSync(join(__dirname, "not-found.template.html"), "utf-8");
 
 export function NotFoundPage(): Component {
 	return Base({
@@ -12,13 +17,6 @@ export function NotFoundPage(): Component {
 		},
 		styles: NOT_FOUND_STYLES,
 		bodyClass: "page-not-found",
-		content: `
-    <main class="not-found">
-      <div class="not-found__container">
-        <h1 class="not-found__title">Page not found</h1>
-        <p class="not-found__text">The page you are looking for does not exist or has been moved.</p>
-        <a href="/" class="not-found__link">Go to homepage</a>
-      </div>
-    </main>`,
+		content: render(NOT_FOUND_TEMPLATE, {}),
 	});
 }

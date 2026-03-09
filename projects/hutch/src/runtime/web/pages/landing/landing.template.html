@@ -1,57 +1,4 @@
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
-import { LANDING_PAGE_STYLES } from "./landing.styles";
-
-export function LandingPage(): Component {
-	return Base({
-		seo: {
-			title: "Hutch — A read-it-later app by Fayner Brack",
-			description:
-				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
-			canonicalUrl: "https://hutch-app.com",
-			ogType: "website",
-			ogImage: "https://hutch-app.com/og-image-1200x630.png",
-			twitterImage: "https://hutch-app.com/twitter-card-1200x600.png",
-			structuredData: [
-				{
-					"@context": "https://schema.org",
-					"@type": "WebApplication",
-					name: "Hutch",
-					description:
-						"A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
-					applicationCategory: "ProductivityApplication",
-					operatingSystem: "Web, iOS, Android",
-					offers: {
-						"@type": "Offer",
-						price: "0",
-						priceCurrency: "AUD",
-					},
-				},
-			],
-		},
-		styles: LANDING_PAGE_STYLES,
-		headerVariant: "transparent",
-		bodyClass: "page-landing",
-		content: renderLandingContent(),
-	});
-}
-
-function renderLandingContent(): string {
-	return `
   <main>
-    ${renderHeroSection()}
-    ${renderCoreFeaturesSection()}
-    ${renderRoadmapSection()}
-    ${renderBackstorySection()}
-    ${renderComparisonSection()}
-    ${renderPricingSection()}
-    ${renderTrustSection()}
-    ${renderFooterCTA()}
-  </main>`;
-}
-
-function renderHeroSection(): string {
-	return `
     <section class="landing-hero" data-test-section="hero">
       <div class="landing-hero__container">
         <p class="landing-hero__tagline">A read-it-later app by Fayner Brack</p>
@@ -63,39 +10,8 @@ function renderHeroSection(): string {
         </div>
         <p class="landing-hero__trust">Firefox</p>
       </div>
-    </section>`;
-}
+    </section>
 
-function renderFeatureCard(f: { name: string; description: string }): string {
-	return `
-        <div class="feature-card" data-test-feature="${f.name}">
-          <h3 class="feature-card__name">${f.name}</h3>
-          <p class="feature-card__description">${f.description}</p>
-        </div>`;
-}
-
-function renderCoreFeaturesSection(): string {
-	const features = [
-		{
-			name: "Firefox Browser Extension",
-			description:
-				"Save any page in one click from Firefox. No friction.",
-		},
-		{
-			name: "Web App",
-			description:
-				"View and manage your saved articles from any browser. Clean, fast, no clutter.",
-		},
-		{
-			name: "Reader View",
-			description:
-				"Distraction-free reading with clean fonts, themes, and typography.",
-		},
-	];
-
-	const featureCards = features.map(renderFeatureCard).join("");
-
-	return `
     <section id="what-works" class="landing-features" data-test-section="core-features">
       <div class="landing-features__header">
         <p class="landing-features__label">What Works Today</p>
@@ -103,43 +19,15 @@ function renderCoreFeaturesSection(): string {
         <p class="landing-features__subtitle">These features are shipped and working right now. Install the extension and try them.</p>
       </div>
       <div class="landing-features__grid">
-        ${featureCards}
+        {{#each coreFeatures}}
+        <div class="feature-card" data-test-feature="{{name}}">
+          <h3 class="feature-card__name">{{name}}</h3>
+          <p class="feature-card__description">{{description}}</p>
+        </div>
+        {{/each}}
       </div>
-    </section>`;
-}
+    </section>
 
-function renderRoadmapSection(): string {
-	const planned = [
-		{
-			name: "Highlights &amp; Notes",
-			description:
-				"Highlight in multiple colours, add inline notes, export as Markdown.",
-		},
-		{
-			name: "Full-Text Search",
-			description:
-				"Search across titles and article body text. Filter by tags, read status, and date.",
-		},
-		{
-			name: "Offline Reading",
-			description:
-				"Articles auto-download for offline access. Your archive persists even if the original page disappears.",
-		},
-		{
-			name: "Text-to-Speech",
-			description:
-				"Listen to articles with natural TTS. Adjustable speed, background playback.",
-		},
-		{
-			name: "Newsletter Inbox",
-			description:
-				"Unique email alias routes newsletters straight into your reading queue.",
-		},
-	];
-
-	const roadmapCards = planned.map(renderFeatureCard).join("");
-
-	return `
     <section id="roadmap" class="landing-features" data-test-section="roadmap">
       <div class="landing-features__header">
         <p class="landing-features__label">What's Coming</p>
@@ -147,13 +35,15 @@ function renderRoadmapSection(): string {
         <p class="landing-features__subtitle">I'm planning to build these. Vote on what matters most to you on the <a href="https://www.reddit.com/r/hutchapp">Reddit community</a>.</p>
       </div>
       <div class="landing-features__grid">
-        ${roadmapCards}
+        {{#each plannedFeatures}}
+        <div class="feature-card" data-test-feature="{{name}}">
+          <h3 class="feature-card__name">{{name}}</h3>
+          <p class="feature-card__description">{{description}}</p>
+        </div>
+        {{/each}}
       </div>
-    </section>`;
-}
+    </section>
 
-function renderBackstorySection(): string {
-	return `
     <section class="landing-backstory" data-test-section="backstory">
       <div class="landing-backstory__container">
         <h2 class="landing-backstory__title">Why I built this</h2>
@@ -164,11 +54,8 @@ function renderBackstorySection(): string {
           <p>This is a solo project. I'm building it in public, and I'd rather be honest about what works today than promise features that don't exist yet.</p>
         </div>
       </div>
-    </section>`;
-}
+    </section>
 
-function renderComparisonSection(): string {
-	return `
     <section class="landing-comparison" data-test-section="comparison">
       <div class="landing-comparison__container">
         <div class="landing-comparison__header">
@@ -210,11 +97,8 @@ function renderComparisonSection(): string {
           </tbody>
         </table>
       </div>
-    </section>`;
-}
+    </section>
 
-function renderPricingSection(): string {
-	return `
     <section id="pricing" class="landing-pricing" data-test-section="pricing">
       <div class="landing-pricing__container">
         <div class="landing-pricing__header">
@@ -239,29 +123,8 @@ function renderPricingSection(): string {
           </div>
         </div>
       </div>
-    </section>`;
-}
+    </section>
 
-function renderTrustSection(): string {
-	const trustItems = [
-		{
-			name: "\"Even If You Cancel\" Promise",
-			description:
-				"Export everything, anytime. Your data is yours. Cancel and your saved articles stay available for export.",
-		},
-	];
-
-	const trustCards = trustItems
-		.map(
-			(t) => `
-        <div class="trust-card" data-test-trust="${t.name}">
-          <h3 class="trust-card__name">${t.name}</h3>
-          <p class="trust-card__description">${t.description}</p>
-        </div>`,
-		)
-		.join("");
-
-	return `
     <section id="trust" class="landing-trust" data-test-section="trust">
       <div class="landing-trust__container">
         <div class="landing-trust__header">
@@ -270,14 +133,16 @@ function renderTrustSection(): string {
           <p class="landing-trust__subtitle">Every read-it-later app that shut down left users scrambling. Hutch is built differently &mdash; starting with your right to leave.</p>
         </div>
         <div class="trust-grid">
-          ${trustCards}
+          {{#each trustItems}}
+          <div class="trust-card" data-test-trust="{{name}}">
+            <h3 class="trust-card__name">{{name}}</h3>
+            <p class="trust-card__description">{{description}}</p>
+          </div>
+          {{/each}}
         </div>
       </div>
-    </section>`;
-}
+    </section>
 
-function renderFooterCTA(): string {
-	return `
     <section class="landing-cta" data-test-section="cta">
       <div class="landing-cta__container">
         <h2 class="landing-cta__title">I'm building this in public.</h2>
@@ -286,5 +151,5 @@ function renderFooterCTA(): string {
           <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install the Firefox Extension</a>
         </div>
       </div>
-    </section>`;
-}
+    </section>
+  </main>

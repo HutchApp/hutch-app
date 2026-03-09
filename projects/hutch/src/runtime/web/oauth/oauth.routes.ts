@@ -4,7 +4,7 @@ import { z } from "zod";
 import ExpressOAuthServer from "@node-oauth/express-oauth-server";
 import type { OAuthModel } from "../../providers/oauth/oauth-model";
 import { getClient, validateRedirectUri } from "../../providers/oauth/oauth-clients";
-import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.template";
+import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.component";
 
 const authorizeQuerySchema = z.object({
 	client_id: z.string(),
