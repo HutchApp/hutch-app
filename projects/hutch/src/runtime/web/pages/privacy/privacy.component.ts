@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
+import { render } from "../../render";
 import { LEGAL_PAGE_STYLES } from "./privacy.styles";
 
 const PRIVACY_TEMPLATE = readFileSync(join(__dirname, "privacy.template.html"), "utf-8");
@@ -17,6 +18,6 @@ export function PrivacyPage(): Component {
 		},
 		styles: LEGAL_PAGE_STYLES,
 		bodyClass: "page-privacy",
-		content: PRIVACY_TEMPLATE,
+		content: render(PRIVACY_TEMPLATE, {}),
 	});
 }

@@ -113,7 +113,7 @@ export function OAuthCallbackPage(): Component {
 		},
 		styles: OAUTH_CALLBACK_STYLES,
 		bodyClass: "page-oauth-callback",
-		content: OAUTH_CALLBACK_TEMPLATE,
+		content: render(OAUTH_CALLBACK_TEMPLATE, {}),
 		isAuthenticated: true,
 	});
 }
