@@ -17,6 +17,7 @@ interface AuthFormData {
 	email?: string;
 	errors?: FieldError[];
 	globalError?: string;
+	returnUrl?: string;
 }
 
 interface FieldViewModel {
@@ -42,6 +43,7 @@ export function LoginPage(data?: AuthFormData): Component {
 	const content = render(LOGIN_TEMPLATE, {
 		email,
 		globalError: data?.globalError,
+		returnUrl: data?.returnUrl,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 	});

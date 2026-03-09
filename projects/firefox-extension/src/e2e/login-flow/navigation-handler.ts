@@ -50,6 +50,11 @@ export class LoginFlowStateHandler implements FlowStateHandler {
 	}
 
 	private async getActiveView(): Promise<string> {
+		const url = await this.driver.getCurrentUrl();
+		if (url.includes("/login")) return "server-login";
+		if (url.includes("/oauth/authorize")) return "oauth-authorize";
+		if (url.includes("/oauth/callback")) return "oauth-callback";
+
 		for (const viewId of VIEW_IDS) {
 			const element = await this.driver.findElement(By.id(viewId));
 			const hidden = await element.getAttribute("hidden");

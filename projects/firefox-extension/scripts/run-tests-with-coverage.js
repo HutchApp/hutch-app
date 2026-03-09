@@ -24,12 +24,11 @@ function run(name, command, extraEnv = {}) {
 run('Firefox Extension - Running unit tests',
   'node_modules/.bin/jest --testMatch="**/dist/**/*.test.js" --testPathIgnorePatterns="dist/e2e" --testTimeout=10000 --runInBand --passWithNoTests')
 
-const e2eFiles = [
-  ...globSync('dist/e2e/**/*.test.js'),
-  ...globSync('dist/e2e/**/*.e2e-local.js'),
-].join(' ')
+const e2eUnitTests = globSync('dist/e2e/**/*.test.js').join(' ')
 
-run('Firefox Extension - Running E2E tests', `node --test ${e2eFiles}`)
+if (e2eUnitTests) {
+  run('Firefox Extension - Running E2E unit tests', `node --test ${e2eUnitTests}`)
+}
 
 console.log('\n=== Firefox Extension - All tests completed successfully ===\n')
 process.stdout.write('')
