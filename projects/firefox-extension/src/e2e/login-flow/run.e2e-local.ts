@@ -9,7 +9,7 @@ import { createLoginActions } from "./login-actions";
 
 const ADDON_ID = "hutch-extension@hutch-app.com";
 const ADDON_UUID = "d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12";
-const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension");
+const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
 const POPUP_URL = `moz-extension://${ADDON_UUID}/popup/popup.template.html`;
 
 test("should log in to Hutch extension successfully", async () => {

@@ -3,7 +3,7 @@ const { cpSync, mkdirSync } = require('node:fs');
 const { join } = require('node:path');
 
 const srcDir = join(__dirname, '..', 'src');
-const outDir = join(__dirname, '..', 'dist-extension');
+const outDir = join(__dirname, '..', 'dist-extension-compiled');
 
 async function main() {
   mkdirSync(outDir, { recursive: true });
@@ -32,7 +32,7 @@ async function main() {
   cpSync(join(srcDir, 'icons'), join(outDir, 'icons'), { recursive: true });
   cpSync(join(srcDir, 'icons-saved'), join(outDir, 'icons-saved'), { recursive: true });
 
-  console.log('Extension built to dist-extension/');
+  console.log('Extension built to dist-extension-compiled/');
 }
 
 main().catch((err) => {

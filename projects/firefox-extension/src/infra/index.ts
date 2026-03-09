@@ -39,7 +39,7 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 	),
 });
 
-const xpiPath = join(__dirname, "..", "..", "dist-artifacts", S3_CONFIG.key);
+const xpiPath = join(__dirname, "..", "..", "dist-extension-files", S3_CONFIG.key);
 assert.ok(
 	fs.existsSync(xpiPath),
 	`Extension artifact not found: ${xpiPath}. Run 'pnpm compile' first.`,

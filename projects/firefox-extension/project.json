@@ -2,7 +2,7 @@
   "name": "firefox-extension",
   "targets": {
     "compile": {
-      "outputs": ["{projectRoot}/dist-extension", "{projectRoot}/dist-artifacts"]
+      "outputs": ["{projectRoot}/dist-extension-compiled", "{projectRoot}/dist-extension-files"]
     },
     "check": {
       "dependsOn": ["^compile"]
