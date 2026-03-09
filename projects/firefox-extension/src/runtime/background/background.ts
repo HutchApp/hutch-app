@@ -164,24 +164,32 @@ async function initCore() {
 			return tab.id;
 		},
 		waitForRedirect({ tabId, urlPrefix }): Promise<string> {
+			const TIMEOUT_MS = 5 * 60 * 1000;
 			return new Promise((resolve, reject) => {
+				const cleanup = () => {
+					clearTimeout(timer);
+					browser.tabs.onUpdated.removeListener(listener);
+					browser.tabs.onRemoved.removeListener(removedListener);
+				};
 				const listener = (
 					updatedTabId: number,
 					changeInfo: { url?: string },
 				) => {
 					if (updatedTabId === tabId && changeInfo.url?.startsWith(urlPrefix)) {
-						browser.tabs.onUpdated.removeListener(listener);
-						browser.tabs.onRemoved.removeListener(removedListener);
+						cleanup();
 						resolve(changeInfo.url);
 					}
 				};
 				const removedListener = (removedTabId: number) => {
 					if (removedTabId === tabId) {
-						browser.tabs.onUpdated.removeListener(listener);
-						browser.tabs.onRemoved.removeListener(removedListener);
+						cleanup();
 						reject(new Error("Login tab was closed before completing authentication"));
 					}
 				};
+				const timer = setTimeout(() => {
+					cleanup();
+					reject(new Error("OAuth login timed out after 5 minutes"));
+				}, TIMEOUT_MS);
 				browser.tabs.onUpdated.addListener(listener);
 				browser.tabs.onRemoved.addListener(removedListener);
 			});

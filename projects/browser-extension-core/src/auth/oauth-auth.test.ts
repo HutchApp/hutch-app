@@ -19,35 +19,55 @@ function createMockTokenStorage(): TokenStorage & { stored: OAuthTokens | null }
 	};
 }
 
-function createMockDeps(overrides?: Partial<OAuthAuthDeps>): OAuthAuthDeps {
+function createMockDeps(overrides?: Partial<OAuthAuthDeps>) {
 	let capturedState = "";
+	let capturedAuthorizeUrl = "";
+	let capturedTokenUrl = "";
+	let capturedTokenOptions: { method: string; headers: Record<string, string>; body: string } | undefined;
+	let capturedCloseTabId: number | undefined;
 
-	const openTab = jest.fn().mockImplementation((url: string) => {
+	const openTab = async (url: string) => {
+		capturedAuthorizeUrl = url;
 		const parsed = new URL(url);
 		capturedState = parsed.searchParams.get("state") ?? "";
-		return Promise.resolve(42);
-	});
+		return 42;
+	};
 
-	const waitForRedirect = jest.fn().mockImplementation(() => {
-		return Promise.resolve(
-			`http://localhost:3000/oauth/callback?code=test-code&state=${capturedState}`,
-		);
-	});
+	const waitForRedirect = async () => {
+		return `http://localhost:3000/oauth/callback?code=test-code&state=${capturedState}`;
+	};
+
+	const closeTab = async (tabId: number) => {
+		capturedCloseTabId = tabId;
+	};
+
+	const fetchFn = async (url: string, init: { method: string; headers: Record<string, string>; body: string }) => {
+		capturedTokenUrl = url;
+		capturedTokenOptions = init;
+		return {
+			ok: true as boolean,
+			status: 200,
+			json: async () => ({
+				access_token: "access-123",
+				refresh_token: "refresh-456",
+			}),
+		};
+	};
 
 	return {
 		serverUrl: "http://localhost:3000",
 		clientId: "test-client",
 		openTab,
 		waitForRedirect,
-		closeTab: jest.fn().mockResolvedValue(undefined),
-		fetchFn: jest.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({
-				access_token: "access-123",
-				refresh_token: "refresh-456",
-			}),
-		}),
+		closeTab,
+		fetchFn,
 		tokenStorage: createMockTokenStorage(),
+		captured: {
+			get authorizeUrl() { return capturedAuthorizeUrl; },
+			get tokenUrl() { return capturedTokenUrl; },
+			get tokenOptions() { return capturedTokenOptions; },
+			get closeTabId() { return capturedCloseTabId; },
+		},
 		...overrides,
 	};
 }
@@ -70,8 +90,7 @@ describe("initOAuthAuth", () => {
 
 			await auth.login();
 
-			expect(deps.openTab).toHaveBeenCalledTimes(1);
-			const url = (deps.openTab as jest.Mock).mock.calls[0][0] as string;
+			const url = deps.captured.authorizeUrl;
 			expect(url).toContain("http://localhost:3000/oauth/authorize");
 			expect(url).toContain("client_id=test-client");
 			expect(url).toContain("response_type=code");
@@ -81,12 +100,18 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should wait for redirect to callback URL", async () => {
-			const deps = createMockDeps();
+			let capturedRedirectParams: { tabId: number; urlPrefix: string } | undefined;
+			const deps = createMockDeps({
+				waitForRedirect: async (params) => {
+					capturedRedirectParams = params;
+					return `http://localhost:3000/oauth/callback?code=test-code&state=${new URL(deps.captured.authorizeUrl).searchParams.get("state")}`;
+				},
+			});
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
 
-			expect(deps.waitForRedirect).toHaveBeenCalledWith({
+			expect(capturedRedirectParams).toEqual({
 				tabId: 42,
 				urlPrefix: "http://localhost:3000/oauth/callback",
 			});
@@ -98,7 +123,7 @@ describe("initOAuthAuth", () => {
 
 			await auth.login();
 
-			expect(deps.closeTab).toHaveBeenCalledWith(42);
+			expect(deps.captured.closeTabId).toBe(42);
 		});
 
 		it("should exchange code for tokens", async () => {
@@ -107,14 +132,12 @@ describe("initOAuthAuth", () => {
 
 			await auth.login();
 
-			expect(deps.fetchFn).toHaveBeenCalledTimes(1);
-			const [url, options] = (deps.fetchFn as jest.Mock).mock.calls[0];
-			expect(url).toBe("http://localhost:3000/oauth/token");
-			expect(options.method).toBe("POST");
-			expect(options.body).toContain("grant_type=authorization_code");
-			expect(options.body).toContain("code=test-code");
-			expect(options.body).toContain("client_id=test-client");
-			expect(options.body).toContain("code_verifier=");
+			expect(deps.captured.tokenUrl).toBe("http://localhost:3000/oauth/token");
+			expect(deps.captured.tokenOptions?.method).toBe("POST");
+			expect(deps.captured.tokenOptions?.body).toContain("grant_type=authorization_code");
+			expect(deps.captured.tokenOptions?.body).toContain("code=test-code");
+			expect(deps.captured.tokenOptions?.body).toContain("client_id=test-client");
+			expect(deps.captured.tokenOptions?.body).toContain("code_verifier=");
 		});
 
 		it("should store tokens after successful exchange", async () => {
@@ -142,9 +165,8 @@ describe("initOAuthAuth", () => {
 
 		it("should throw when OAuth returns an error", async () => {
 			const deps = createMockDeps({
-				waitForRedirect: jest.fn().mockResolvedValue(
+				waitForRedirect: async () =>
 					"http://localhost:3000/oauth/callback?error=access_denied",
-				),
 			});
 			const auth = await initOAuthAuth(deps);
 
@@ -153,9 +175,8 @@ describe("initOAuthAuth", () => {
 
 		it("should throw when callback has no code", async () => {
 			const deps = createMockDeps({
-				waitForRedirect: jest.fn().mockResolvedValue(
+				waitForRedirect: async () =>
 					"http://localhost:3000/oauth/callback?state=anything",
-				),
 			});
 			const auth = await initOAuthAuth(deps);
 
@@ -164,9 +185,8 @@ describe("initOAuthAuth", () => {
 
 		it("should throw on state mismatch", async () => {
 			const deps = createMockDeps({
-				waitForRedirect: jest.fn().mockResolvedValue(
+				waitForRedirect: async () =>
 					"http://localhost:3000/oauth/callback?code=test-code&state=wrong-state",
-				),
 			});
 			const auth = await initOAuthAuth(deps);
 
@@ -175,7 +195,7 @@ describe("initOAuthAuth", () => {
 
 		it("should throw when token exchange fails", async () => {
 			const deps = createMockDeps({
-				fetchFn: jest.fn().mockResolvedValue({ ok: false, status: 400 }),
+				fetchFn: async () => ({ ok: false as boolean, status: 400, json: async () => ({}) }),
 			});
 			const auth = await initOAuthAuth(deps);
 
@@ -184,8 +204,9 @@ describe("initOAuthAuth", () => {
 
 		it("should throw when token response has invalid shape", async () => {
 			const deps = createMockDeps({
-				fetchFn: jest.fn().mockResolvedValue({
-					ok: true,
+				fetchFn: async () => ({
+					ok: true as boolean,
+					status: 200,
 					json: async () => ({ unexpected: "shape" }),
 				}),
 			});
@@ -198,21 +219,30 @@ describe("initOAuthAuth", () => {
 	describe("logout", () => {
 		it("should revoke tokens on the server", async () => {
 			const tokenStorage = createMockTokenStorage();
-			const deps = createMockDeps({ tokenStorage });
+			let revokeUrl = "";
+			let revokeOptions: { method: string; headers: Record<string, string>; body: string } | undefined;
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (url, init) => {
+					revokeUrl = url;
+					revokeOptions = init;
+					return { ok: true, status: 200, json: async () => ({ access_token: "access-123", refresh_token: "refresh-456" }) };
+				},
+			});
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
-			(deps.fetchFn as jest.Mock).mockClear();
+
+			revokeUrl = "";
+			revokeOptions = undefined;
 
 			await auth.logout();
 
-			expect(deps.fetchFn).toHaveBeenCalledWith(
-				"http://localhost:3000/oauth/revoke",
-				expect.objectContaining({
-					method: "POST",
-					body: JSON.stringify({ token: "refresh-456" }),
-				}),
-			);
+			expect(revokeUrl).toBe("http://localhost:3000/oauth/revoke");
+			expect(revokeOptions).toEqual(expect.objectContaining({
+				method: "POST",
+				body: JSON.stringify({ token: "refresh-456" }),
+			}));
 		});
 
 		it("should clear stored tokens", async () => {
