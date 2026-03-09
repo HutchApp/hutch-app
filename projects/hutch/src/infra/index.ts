@@ -90,10 +90,8 @@ class HutchStorage {
 			globalSecondaryIndexes: [
 				{
 					name: "userId-savedAt-index",
-					keySchemas: [
-						{ attributeName: "userId", keyType: "HASH" },
-						{ attributeName: "savedAt", keyType: "RANGE" },
-					],
+					hashKey: "userId",
+					rangeKey: "savedAt",
 					projectionType: "ALL",
 				},
 			],
@@ -125,9 +123,7 @@ class HutchStorage {
 			globalSecondaryIndexes: [
 				{
 					name: "userId-index",
-					keySchemas: [
-						{ attributeName: "userId", keyType: "HASH" },
-					],
+					hashKey: "userId",
 					projectionType: "ALL",
 				},
 			],
