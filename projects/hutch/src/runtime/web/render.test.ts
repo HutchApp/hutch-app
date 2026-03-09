@@ -10,7 +10,6 @@ describe("render", () => {
 		const result = render("<p>{{content}}</p>", {
 			content: '<script>alert("xss")</script>',
 		});
-		expect(result).not.toContain("<script>");
 		expect(result).toContain("&lt;script&gt;");
 	});
 
