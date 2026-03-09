@@ -57,7 +57,7 @@ export function LandingPage(): Component {
 			],
 			plannedFeatures: [
 				{
-					name: "Highlights &amp; Notes",
+					name: "Highlights & Notes",
 					description:
 						"Highlight in multiple colours, add inline notes, export as Markdown.",
 				},
