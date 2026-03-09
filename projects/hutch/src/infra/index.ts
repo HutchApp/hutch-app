@@ -1,20 +1,24 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { build } from "esbuild";
+import { build, type Loader } from "esbuild";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
 
-const ASSET_EXTENSIONS = [".css", ".html"];
+const esbuildLoaders: Record<string, Loader> = {
+	".ts": "ts",
+};
+
+const bundledExtensions = Object.keys(esbuildLoaders);
 
 function copyAssetFiles(srcDir: string, destDir: string) {
 	for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
 		const srcPath = join(srcDir, entry.name);
 		if (entry.isDirectory()) {
 			copyAssetFiles(srcPath, destDir);
-		} else if (ASSET_EXTENSIONS.some((ext) => entry.name.endsWith(ext))) {
+		} else if (!bundledExtensions.some((ext) => entry.name.endsWith(ext))) {
 			copyFileSync(srcPath, join(destDir, entry.name));
 		}
 	}
@@ -161,6 +165,7 @@ class HutchLambda {
 			minify: true,
 			outfile: `${lambdaOutputDir}/index.js`,
 			target: ["node22"],
+			loader: esbuildLoaders,
 		}).then(() => {
 			mkdirSync(lambdaOutputDir, { recursive: true });
 			copyAssetFiles("./src/runtime", lambdaOutputDir);
