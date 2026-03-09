@@ -1,116 +1,179 @@
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
+import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
 
-function renderArticle(
-	article: QueueArticleViewModel,
-	options: { showUrl: boolean },
-): string {
-	const unreadClass = article.isUnread ? " queue-article--unread" : "";
-	const unreadDot = article.isUnread
-		? '<span class="queue-article__unread-dot" aria-label="Unread"></span>'
-		: "";
-
-	const statusActions: string[] = [];
-	if (article.status !== "read") {
-		statusActions.push(`
-      <form method="POST" action="/queue/${article.id}/status" style="display:inline">
-        <input type="hidden" name="status" value="read">
-        <button class="queue-article__action-btn" type="submit" title="Mark as read">Read</button>
-      </form>`);
-	}
-	if (article.status !== "unread") {
-		statusActions.push(`
-      <form method="POST" action="/queue/${article.id}/status" style="display:inline">
-        <input type="hidden" name="status" value="unread">
-        <button class="queue-article__action-btn" type="submit" title="Mark as unread">Unread</button>
-      </form>`);
-	}
-	if (article.status !== "archived") {
-		statusActions.push(`
-      <form method="POST" action="/queue/${article.id}/status" style="display:inline">
-        <input type="hidden" name="status" value="archived">
-        <button class="queue-article__action-btn" type="submit" title="Archive">Archive</button>
-      </form>`);
-	}
-
-	const thumbnail = article.imageUrl
-		? `<img class="queue-article__thumbnail" src="${article.imageUrl}" alt="" loading="lazy">`
-		: "";
-
-	return `
-    <div class="queue-article${unreadClass}" data-test-article="${article.id}" data-article-id="${article.id}">
-      ${thumbnail}
-      <div class="queue-article__content">
-        <div class="queue-article__title-row">
-          ${unreadDot}
-          <a class="queue-article__title" href="${article.hasContent ? `/queue/${article.id}/read` : article.url}"${article.hasContent ? "" : ' target="_blank" rel="noopener"'} data-test-article-title>${article.title}</a>
-        </div>
-        ${options.showUrl ? `<span class="queue-article__url" data-test-article-url>${article.url}</span>` : ""}
-        <div class="queue-article__meta">
-          <span>${article.siteName}</span>
-          <span>${article.readTimeLabel}</span>
-          <span>${article.savedAgo}</span>
-        </div>
-        <p class="queue-article__excerpt">${article.excerpt}</p>
-      </div>
-      <div class="queue-article__actions">
-        ${statusActions.join("")}
-        <form method="POST" action="/queue/${article.id}/delete" style="display:inline">
-          <button class="queue-article__action-btn queue-article__action-btn--delete" type="submit" title="Delete" data-test-action="delete">×</button>
-        </form>
-      </div>
-    </div>`;
+interface ArticleDisplayModel extends QueueArticleViewModel {
+	showMarkRead: boolean;
+	showMarkUnread: boolean;
+	showArchive: boolean;
+	linkUrl: string;
+	isExternalLink: boolean;
+	unreadClass: string;
 }
 
-function renderFilters(vm: QueueViewModel): string {
+function toArticleDisplayModel(article: QueueArticleViewModel): ArticleDisplayModel {
+	return {
+		...article,
+		showMarkRead: article.status !== "read",
+		showMarkUnread: article.status !== "unread",
+		showArchive: article.status !== "archived",
+		linkUrl: article.hasContent ? `/queue/${article.id}/read` : article.url,
+		isExternalLink: !article.hasContent,
+		unreadClass: article.isUnread ? " queue-article--unread" : "",
+	};
+}
+
+interface QueueDisplayModel {
+	total: number;
+	pluralSuffix: string;
+	saveError?: string;
+	showUrl: boolean;
+	isEmpty: boolean;
+	hasArticles: boolean;
+	articles: ArticleDisplayModel[];
+	filterAllClass: string;
+	filterUnreadClass: string;
+	filterReadClass: string;
+	filterArchivedClass: string;
+	filterAllUrl: string;
+	filterUnreadUrl: string;
+	filterReadUrl: string;
+	filterArchivedUrl: string;
+	showUrlToggleUrl: string;
+	showUrlToggleLabel: string;
+	sortUrl: string;
+	sortLabel: string;
+	showPagination: boolean;
+	hasPrev: boolean;
+	hasNext: boolean;
+	prevUrl?: string;
+	nextUrl?: string;
+	currentPage: number;
+	totalPages: number;
+}
+
+function filterLinkClass(isActive: boolean): string {
+	return `queue__filter-link${isActive ? " queue__filter-link--active" : ""}`;
+}
+
+function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	const activeStatus = vm.filters.status;
-
-	function cls(isActive: boolean): string {
-		return `queue__filter-link${isActive ? " queue__filter-link--active" : ""}`;
-	}
-
-	return `
-    <nav class="queue__filters" data-test-filters>
-      <a class="${cls(!activeStatus)}" href="${vm.filterUrls.all}">All</a>
-      <a class="${cls(activeStatus === "unread")}" href="${vm.filterUrls.unread}">Unread</a>
-      <a class="${cls(activeStatus === "read")}" href="${vm.filterUrls.read}">Read</a>
-      <a class="${cls(activeStatus === "archived")}" href="${vm.filterUrls.archived}">Archived</a>
-    </nav>`;
-}
-
-function renderSortToggle(vm: QueueViewModel): string {
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
-	const label =
-		vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
-	const url = `/queue?order=${nextOrder}${vm.filters.status ? `&status=${vm.filters.status}` : ""}`;
+	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
+	const sortUrl = `/queue?order=${nextOrder}${activeStatus ? `&status=${activeStatus}` : ""}`;
 
-	return `
-    <div class="queue__sort">
-      <a class="queue__sort-link" href="${vm.showUrlToggle.url}" data-test-show-url>${vm.showUrlToggle.label}</a>
-      <a class="queue__sort-link" href="${url}" data-test-sort>${label}</a>
-    </div>`;
+	return {
+		total: vm.total,
+		pluralSuffix: vm.total !== 1 ? "s" : "",
+		saveError: vm.saveError,
+		showUrl: vm.filters.showUrl === true,
+		isEmpty: vm.isEmpty,
+		hasArticles: !vm.isEmpty,
+		articles: vm.articles.map(toArticleDisplayModel),
+		filterAllClass: filterLinkClass(!activeStatus),
+		filterUnreadClass: filterLinkClass(activeStatus === "unread"),
+		filterReadClass: filterLinkClass(activeStatus === "read"),
+		filterArchivedClass: filterLinkClass(activeStatus === "archived"),
+		filterAllUrl: vm.filterUrls.all,
+		filterUnreadUrl: vm.filterUrls.unread,
+		filterReadUrl: vm.filterUrls.read,
+		filterArchivedUrl: vm.filterUrls.archived,
+		showUrlToggleUrl: vm.showUrlToggle.url,
+		showUrlToggleLabel: vm.showUrlToggle.label,
+		sortUrl,
+		sortLabel,
+		showPagination: vm.totalPages > 1,
+		hasPrev: Boolean(vm.paginationUrls.prev),
+		hasNext: Boolean(vm.paginationUrls.next),
+		prevUrl: vm.paginationUrls.prev,
+		nextUrl: vm.paginationUrls.next,
+		currentPage: vm.currentPage,
+		totalPages: vm.totalPages,
+	};
 }
 
-function renderPagination(vm: QueueViewModel): string {
-	if (vm.totalPages <= 1) return "";
-
-	return `
-    <nav class="queue__pagination" data-test-pagination>
-      ${vm.paginationUrls.prev ? `<a class="queue__pagination-link" href="${vm.paginationUrls.prev}">← Previous</a>` : ""}
-      <span class="queue__pagination-info">Page ${vm.currentPage} of ${vm.totalPages}</span>
-      ${vm.paginationUrls.next ? `<a class="queue__pagination-link" href="${vm.paginationUrls.next}">Next →</a>` : ""}
-    </nav>`;
-}
-
-function renderEmpty(): string {
-	return `
-    <div class="queue__empty" data-test-empty-queue>
-      <h2 class="queue__empty-title">Your queue is empty</h2>
-      <p class="queue__empty-text">Paste a URL above to save your first article.</p>
-    </div>`;
-}
+const QUEUE_TEMPLATE = `
+    <main class="queue">
+      <div class="queue__header">
+        <h1 class="queue__title">My Queue</h1>
+        <span class="queue__count" data-test-article-count>{{total}} article{{pluralSuffix}}</span>
+      </div>
+      <form class="queue__save-form" method="POST" action="/queue/save" data-test-form="save-article">
+        <input class="queue__save-input" type="url" name="url" placeholder="Paste a URL to save an article…" required>
+        <button class="queue__save-btn" type="submit">Save</button>
+      </form>
+      {{#if saveError}}<p class="queue__save-error" data-test-save-error>{{saveError}}</p>{{/if}}
+      <nav class="queue__filters" data-test-filters>
+        <a class="{{filterAllClass}}" href="{{filterAllUrl}}">All</a>
+        <a class="{{filterUnreadClass}}" href="{{filterUnreadUrl}}">Unread</a>
+        <a class="{{filterReadClass}}" href="{{filterReadUrl}}">Read</a>
+        <a class="{{filterArchivedClass}}" href="{{filterArchivedUrl}}">Archived</a>
+      </nav>
+      <div class="queue__sort">
+        <a class="queue__sort-link" href="{{showUrlToggleUrl}}" data-test-show-url>{{showUrlToggleLabel}}</a>
+        <a class="queue__sort-link" href="{{sortUrl}}" data-test-sort>{{sortLabel}}</a>
+      </div>
+      {{#if isEmpty}}
+      <div class="queue__empty" data-test-empty-queue>
+        <h2 class="queue__empty-title">Your queue is empty</h2>
+        <p class="queue__empty-text">Paste a URL above to save your first article.</p>
+      </div>
+      {{/if}}
+      {{#if hasArticles}}
+      <div class="queue__list" data-test-article-list>
+        {{#each articles}}
+        <div class="queue-article{{unreadClass}}" data-test-article="{{id}}" data-article-id="{{id}}">
+          {{#if imageUrl}}<img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy">{{/if}}
+          <div class="queue-article__content">
+            <div class="queue-article__title-row">
+              {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
+              <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} data-test-article-title>{{title}}</a>
+            </div>
+            {{#if ../showUrl}}<span class="queue-article__url" data-test-article-url>{{url}}</span>{{/if}}
+            <div class="queue-article__meta">
+              <span>{{siteName}}</span>
+              <span>{{readTimeLabel}}</span>
+              <span>{{savedAgo}}</span>
+            </div>
+            <p class="queue-article__excerpt">{{excerpt}}</p>
+          </div>
+          <div class="queue-article__actions">
+            {{#if showMarkRead}}
+            <form method="POST" action="/queue/{{id}}/status" style="display:inline">
+              <input type="hidden" name="status" value="read">
+              <button class="queue-article__action-btn" type="submit" title="Mark as read">Read</button>
+            </form>
+            {{/if}}
+            {{#if showMarkUnread}}
+            <form method="POST" action="/queue/{{id}}/status" style="display:inline">
+              <input type="hidden" name="status" value="unread">
+              <button class="queue-article__action-btn" type="submit" title="Mark as unread">Unread</button>
+            </form>
+            {{/if}}
+            {{#if showArchive}}
+            <form method="POST" action="/queue/{{id}}/status" style="display:inline">
+              <input type="hidden" name="status" value="archived">
+              <button class="queue-article__action-btn" type="submit" title="Archive">Archive</button>
+            </form>
+            {{/if}}
+            <form method="POST" action="/queue/{{id}}/delete" style="display:inline">
+              <button class="queue-article__action-btn queue-article__action-btn--delete" type="submit" title="Delete" data-test-action="delete">×</button>
+            </form>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{#if showPagination}}
+      <nav class="queue__pagination" data-test-pagination>
+        {{#if hasPrev}}<a class="queue__pagination-link" href="{{prevUrl}}">← Previous</a>{{/if}}
+        <span class="queue__pagination-info">Page {{currentPage}} of {{totalPages}}</span>
+        {{#if hasNext}}<a class="queue__pagination-link" href="{{nextUrl}}">Next →</a>{{/if}}
+      </nav>
+      {{/if}}
+    </main>`;
 
 const MARK_READ_ON_CLICK_SCRIPT = `
 <script>
@@ -143,22 +206,8 @@ const MARK_READ_ON_CLICK_SCRIPT = `
 </script>`;
 
 export function QueuePage(vm: QueueViewModel): Component {
-	const content = `
-    <main class="queue">
-      <div class="queue__header">
-        <h1 class="queue__title">My Queue</h1>
-        <span class="queue__count" data-test-article-count>${vm.total} article${vm.total !== 1 ? "s" : ""}</span>
-      </div>
-      <form class="queue__save-form" method="POST" action="/queue/save" data-test-form="save-article">
-        <input class="queue__save-input" type="url" name="url" placeholder="Paste a URL to save an article…" required>
-        <button class="queue__save-btn" type="submit">Save</button>
-      </form>
-      ${vm.saveError ? `<p class="queue__save-error" data-test-save-error>${vm.saveError}</p>` : ""}
-      ${renderFilters(vm)}
-      ${renderSortToggle(vm)}
-      ${vm.isEmpty ? renderEmpty() : `<div class="queue__list" data-test-article-list>${vm.articles.map((a) => renderArticle(a, { showUrl: vm.filters.showUrl === true })).join("")}</div>`}
-      ${renderPagination(vm)}
-    </main>`;
+	const displayModel = toQueueDisplayModel(vm);
+	const content = render(QUEUE_TEMPLATE, displayModel);
 
 	return Base({
 		seo: {
