@@ -2,7 +2,9 @@ import express from 'express'
 import type { Request, Response, NextFunction } from 'express'
 import { createApp } from '../runtime/server'
 import { initInMemoryAuth } from '../runtime/providers/auth/in-memory-auth'
+import { initInMemoryPasswordReset } from '../runtime/providers/auth/in-memory-password-reset'
 import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
+import type { SendEmail } from '../runtime/providers/email/email.types'
 import { createOAuthModel, initInMemoryOAuthModel } from '../runtime/providers/oauth/oauth-model'
 import { createValidateAccessToken } from '../runtime/providers/oauth/validate-access-token'
 import type { ParseArticle } from '../runtime/providers/article-parser/article-parser.types'
@@ -47,13 +49,23 @@ const parseArticle: ParseArticle = async (url) => {
 }
 
 const oauthModel = createOAuthModel(initInMemoryOAuthModel())
+const auth = initInMemoryAuth()
+const passwordReset = initInMemoryPasswordReset({
+  userExists: auth.userExists,
+  updatePasswordHash: auth.updatePasswordHash,
+})
+const sendEmail: SendEmail = async (message) => {
+  console.log('[E2E] Email sent:', message.to, message.subject)
+}
 
 const innerApp = createApp({
-  ...initInMemoryAuth(),
+  ...auth,
+  ...passwordReset,
   ...initInMemoryArticleStore(),
   parseArticle,
   oauthModel,
   validateAccessToken: createValidateAccessToken(oauthModel),
+  sendEmail,
 })
 
 // Wrap the app to strip the Origin header for same-origin requests.

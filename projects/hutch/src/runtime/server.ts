@@ -20,7 +20,13 @@ import type {
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
+import type { SendEmail } from "./providers/email/email.types";
+import type {
+	CreatePasswordResetToken,
+	ResetPassword,
+} from "./providers/auth/password-reset.types";
 import { initAuthRoutes } from "./web/auth/auth.page";
+import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
@@ -54,6 +60,9 @@ interface AppDependencies {
 	updateArticleStatus: UpdateArticleStatus;
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
+	sendEmail: SendEmail;
+	createPasswordResetToken: CreatePasswordResetToken;
+	resetPassword: ResetPassword;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -115,6 +124,13 @@ export function createApp(dependencies: AppDependencies): Express {
 		destroySession: deps.destroySession,
 	});
 	app.use(authRouter);
+
+	const forgotPasswordRouter = initForgotPasswordRoutes({
+		sendEmail: deps.sendEmail,
+		createPasswordResetToken: deps.createPasswordResetToken,
+		resetPassword: deps.resetPassword,
+	});
+	app.use(forgotPasswordRouter);
 
 	const extensionCors = cors({
 		origin: (origin, callback) => {

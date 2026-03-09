@@ -21,6 +21,8 @@ export function initInMemoryAuth(): {
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
+	userExists: (email: string) => boolean;
+	updatePasswordHash: (email: string, hash: string) => void;
 } {
 	const users = new Map<string, StoredUser>();
 	const sessions = new Map<string, UserId>();
@@ -70,11 +72,22 @@ export function initInMemoryAuth(): {
 		sessions.delete(sessionId);
 	};
 
+	const userExists = (email: string): boolean => users.has(email);
+
+	const updatePasswordHash = (email: string, hash: string): void => {
+		const user = users.get(email);
+		if (user) {
+			users.set(email, { ...user, passwordHash: hash });
+		}
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,
 		destroySession,
+		userExists,
+		updatePasswordHash,
 	};
 }

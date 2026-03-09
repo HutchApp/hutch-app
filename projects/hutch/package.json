@@ -34,6 +34,7 @@
     "handlebars": "4.7.8",
     "helmet": "8.1.0",
     "linkedom": "0.18.12",
+    "resend": "6.9.3",
     "serverless-http": "4.0.0",
     "zod": "4.1.13"
   },

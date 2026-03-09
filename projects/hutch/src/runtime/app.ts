@@ -4,6 +4,10 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import type { Logger } from "../infra/logger";
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
+import { initInMemoryPasswordReset } from "./providers/auth/in-memory-password-reset";
+import { initDynamoDbPasswordReset } from "./providers/auth/dynamodb-password-reset";
+import { initLogEmail } from "./providers/email/log-email";
+import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
@@ -40,23 +44,37 @@ function initProviders() {
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
+		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
+		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
+		const passwordReset = initDynamoDbPasswordReset({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
+		const { sendEmail } = initResendEmail({ apiKey: resendApiKey, fromAddress: "Hutch <noreply@hutch.sh>" });
 		return {
-			...initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable }),
+			...auth,
+			...passwordReset,
 			...initDynamoDbArticleStore({ client, tableName: articlesTable }),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
+			sendEmail,
 		};
 	}
 
+	const auth = initInMemoryAuth();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const passwordReset = initInMemoryPasswordReset({
+		userExists: auth.userExists,
+		updatePasswordHash: auth.updatePasswordHash,
+	});
+	const { sendEmail } = initLogEmail();
 	return {
-		...initInMemoryAuth(),
+		...auth,
 		...initInMemoryArticleStore(),
+		...passwordReset,
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
+		sendEmail,
 	};
 }
 
