@@ -3,6 +3,11 @@
   "name": "Hutch",
   "version": "1.0.0",
   "description": "Save URLs to your reading list",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "hutch-extension@hutch-app.com"
+    }
+  },
   "permissions": ["activeTab", "tabs", "menus"],
   "icons": {
     "16": "icons/icon-16.png",

@@ -36,6 +36,8 @@ export default {
 		"src/runtime/background/background.ts",
 		"src/runtime/popup/popup.ts",
 		"src/runtime/content/shortcut.ts",
+		// E2E test entry points (run via node --test)
+		"src/e2e/**/run.e2e-local.ts",
 		// Exported for use by hutch web app (install page)
 		"s3-config.js",
 	],

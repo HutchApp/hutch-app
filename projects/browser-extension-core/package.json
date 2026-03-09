@@ -10,7 +10,7 @@
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\"",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
-    "test-with-coverage": "tsc && c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
+    "test-with-coverage": "pnpm compile && c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
     "check": "pnpm compile && pnpm lint && pnpm test-with-coverage"
   },
   "devDependencies": {
