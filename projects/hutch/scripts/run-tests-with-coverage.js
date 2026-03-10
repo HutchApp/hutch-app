@@ -42,9 +42,18 @@ function waitForServer(url, timeoutMs = 15000) {
   })
 }
 
+function ensurePlaywrightBrowsers() {
+  execSync('node_modules/.bin/playwright install --with-deps chromium', {
+    cwd: projectRoot,
+    stdio: 'inherit',
+  })
+}
+
 async function runE2ETests() {
   console.log('\n=== Hutch - Running E2E tests ===\n')
   process.stdout.write('')
+
+  ensurePlaywrightBrowsers()
 
   // Strip NODE_V8_COVERAGE for the e2e server and playwright using `env -u`.
   // Node.js 22 propagates V8 coverage to child processes regardless of the
