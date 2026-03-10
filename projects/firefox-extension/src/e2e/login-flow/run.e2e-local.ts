@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
-import http from "node:http";
+import type http from "node:http";
 import { Builder, By } from "selenium-webdriver";
 import { Options } from "selenium-webdriver/firefox";
 import { FlowRunner } from "../test-framework/flow-runner";
