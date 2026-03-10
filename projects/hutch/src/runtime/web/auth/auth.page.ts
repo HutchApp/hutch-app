@@ -71,7 +71,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const sessionId = await deps.createSession(credentials.userId);
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
-		const redirectTo = returnUrl?.startsWith("/") ? returnUrl : "/queue";
+		const redirectTo = returnUrl?.startsWith("/") && !returnUrl.startsWith("//") ? returnUrl : "/queue";
 		res.redirect(303, redirectTo);
 	});
 

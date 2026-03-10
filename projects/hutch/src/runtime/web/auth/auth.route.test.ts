@@ -70,6 +70,19 @@ describe("Auth routes", () => {
 			expect(response.headers.location).toBe("/oauth/authorize?client_id=test");
 		});
 
+		it("should ignore protocol-relative return URLs", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+
+			const response = await request(app)
+				.post("/login?return=%2F%2Fevil.com")
+				.type("form")
+				.send({ email: "test@example.com", password: "password123" });
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
 		it("should ignore non-relative return URLs", async () => {
 			const { app, auth } = createTestApp();
 			await auth.createUser({ email: "test@example.com", password: "password123" });
