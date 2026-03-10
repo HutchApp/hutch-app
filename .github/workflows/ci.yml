@@ -88,11 +88,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build and package extension
-        run: pnpm --filter browser-extension-core compile && pnpm --filter firefox-extension compile
-
       - name: Bump extension version
         run: node projects/firefox-extension/scripts/bump-version.js ${{ github.run_number }}
+
+      - name: Build and package extension
+        run: pnpm --filter browser-extension-core compile && pnpm --filter firefox-extension compile
 
       - name: Sign extension via AMO (unlisted)
         id: sign
