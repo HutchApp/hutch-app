@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import type { Logger } from "../infra/logger";
+import type { HutchLogger } from "hutch-logger";
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
@@ -65,7 +65,7 @@ export const app = createApp({
 	...initReadabilityParser({ fetchHtml }),
 });
 
-export const localServer = (expressApp: Express, logger: Logger): void => {
+export const localServer = (expressApp: Express, logger: HutchLogger): void => {
 	const port = getEnv("PORT") || "3000";
 	expressApp.listen(Number.parseInt(port, 10), () => {
 		logger.info(`Local server running on http://localhost:${port}`);

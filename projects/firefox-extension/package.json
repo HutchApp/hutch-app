@@ -24,7 +24,8 @@
     "ext:run": "HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js && web-ext run --source-dir dist-extension-compiled"
   },
   "dependencies": {
-    "browser-extension-core": "workspace:*"
+    "browser-extension-core": "workspace:*",
+    "hutch-logger": "workspace:*"
   },
   "devDependencies": {
     "@pulumi/aws": "7.20.0",

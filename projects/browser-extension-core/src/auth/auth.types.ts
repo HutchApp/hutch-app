@@ -36,4 +36,5 @@ export interface OAuthAuthDeps {
 	closeTab(tabId: number): Promise<void>;
 	fetchFn(url: string, init: { method: string; headers: Record<string, string>; body: string }): Promise<{ ok: boolean; status: number; json(): Promise<Record<string, string>> }>;
 	tokenStorage: TokenStorage;
+	logger?: { warn: (...args: unknown[]) => void };
 }

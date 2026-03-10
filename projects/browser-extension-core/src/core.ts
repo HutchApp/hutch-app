@@ -2,6 +2,7 @@ import type { ReadingListItem, ReadingListItemId } from "./domain/reading-list-i
 import type { Auth, GuardedResult } from "./auth/auth.types";
 import type { SaveUrlResult, RemoveUrlResult } from "./reading-list/reading-list.types";
 import type { BrowserShell } from "./shell.types";
+import type { HutchLogger } from "hutch-logger";
 import { createEventBus } from "./event-bus";
 import { initInMemoryAuth } from "./auth/in-memory-auth";
 import { initInMemoryReadingList } from "./reading-list/in-memory-reading-list";
@@ -45,8 +46,10 @@ export interface Core {
 	once(event: "checked-url", handler: ResultHandler<ReadingListItem | null>): void;
 }
 
-export function BrowserExtensionCore(shell: BrowserShell, deps?: { auth?: Auth }): Core {
+export function BrowserExtensionCore(shell: BrowserShell, deps?: { auth?: Auth; logger?: HutchLogger }): Core {
 	const eventBus = createEventBus();
+	const noopLog = () => {};
+	const logger = deps?.logger ?? { info: noopLog, error: noopLog, warn: noopLog, debug: noopLog };
 	const auth = deps?.auth ?? initInMemoryAuth();
 	const readingList = initInMemoryReadingList();
 	const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
@@ -133,7 +136,7 @@ export function BrowserExtensionCore(shell: BrowserShell, deps?: { auth?: Auth }
 							updateActiveTabIcon().catch(() => {});
 						}
 					})
-					.catch(console.error);
+					.catch((...args) => logger.error(...args));
 			});
 
 			shell.onLoginWindowClosed(() => {

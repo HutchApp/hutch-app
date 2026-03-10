@@ -7,7 +7,14 @@ import type {
 	RemoveUrlResult,
 } from "browser-extension-core";
 import { filterByUrl, paginateItems } from "browser-extension-core";
+import { createHutchLogger } from "hutch-logger";
 
+const hutchLogger = createHutchLogger({
+	info: console.log,
+	error: console.error,
+	warn: console.warn,
+	debug: console.debug,
+})({});
 
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
@@ -300,7 +307,7 @@ document.getElementById("filter-input")?.addEventListener("input", () => {
 });
 
 saveAndShowList().catch((error) => {
-	console.error("Failed to initialize popup:", error);
+	hutchLogger.error("Failed to initialize popup:", error);
 	showView("list-view");
 	const listError = document.getElementById("list-error");
 	if (listError) listError.hidden = false;

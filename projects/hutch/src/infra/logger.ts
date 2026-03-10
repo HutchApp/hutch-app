@@ -1,19 +1,15 @@
 import type { NextFunction, Request, Response } from "express";
-
-export interface Logger {
-	info: (message: string) => void;
-	error: (message: string, error?: Error) => void;
-}
+import type { HutchLogger } from "hutch-logger";
 
 export interface LoggerMiddleware {
 	(req: Request, res: Response, next: NextFunction): void;
-	logger: Logger;
+	logger: HutchLogger;
 }
 
-export const logger = (): LoggerMiddleware => {
-	const log: Logger = {
-		info: (message: string) => {
-			console.log(
+export const logger = (hutchLogger: HutchLogger): LoggerMiddleware => {
+	const log: HutchLogger = {
+		info: (message: unknown) => {
+			hutchLogger.info(
 				JSON.stringify({
 					level: "INFO",
 					timestamp: new Date().toISOString(),
@@ -21,13 +17,33 @@ export const logger = (): LoggerMiddleware => {
 				}),
 			);
 		},
-		error: (message: string, error?: Error) => {
-			console.error(
+		error: (message: unknown, error?: unknown) => {
+			const stack =
+				error instanceof Error ? error.stack : undefined;
+			hutchLogger.error(
 				JSON.stringify({
 					level: "ERROR",
 					timestamp: new Date().toISOString(),
 					message,
-					stack: error?.stack,
+					stack,
+				}),
+			);
+		},
+		warn: (message: unknown) => {
+			hutchLogger.warn(
+				JSON.stringify({
+					level: "WARN",
+					timestamp: new Date().toISOString(),
+					message,
+				}),
+			);
+		},
+		debug: (message: unknown) => {
+			hutchLogger.debug(
+				JSON.stringify({
+					level: "DEBUG",
+					timestamp: new Date().toISOString(),
+					message,
 				}),
 			);
 		},

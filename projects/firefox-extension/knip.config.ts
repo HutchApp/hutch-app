@@ -23,6 +23,7 @@ export default {
 		"web-ext",
 		// Workspace dependency — knip can't trace through esbuild-bundled entry points
 		"browser-extension-core",
+		"hutch-logger",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),
