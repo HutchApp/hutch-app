@@ -52,8 +52,8 @@ describe("GET /", () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const backstory = doc.querySelector('[data-test-section="backstory"]');
-		expect(backstory).not.toBeNull();
+		const backstoryTitle = doc.querySelector('[data-test-section="backstory"] .home-backstory__title');
+		expect(backstoryTitle?.textContent).toContain("Why I built this");
 	});
 
 	it("should render one pricing plan for founding members", async () => {

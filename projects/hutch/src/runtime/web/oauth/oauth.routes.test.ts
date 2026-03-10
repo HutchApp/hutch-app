@@ -329,8 +329,8 @@ describe("OAuth routes", () => {
 				});
 
 			expect(tokenResponse.status).toBe(200);
-			expect(tokenResponse.body.access_token).toBeDefined();
-			expect(tokenResponse.body.refresh_token).toBeDefined();
+			expect(typeof tokenResponse.body.access_token).toBe("string");
+			expect(typeof tokenResponse.body.refresh_token).toBe("string");
 			expect(tokenResponse.body.token_type).toBe("Bearer");
 		});
 	});

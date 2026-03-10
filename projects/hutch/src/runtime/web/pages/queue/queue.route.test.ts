@@ -235,7 +235,7 @@ describe("Queue routes", () => {
 					s.textContent?.includes("status=read") &&
 					s.textContent?.includes("data-article-id"),
 			);
-			expect(markReadScript).toBeTruthy();
+			expect(markReadScript?.textContent).toContain("data-article-id");
 		});
 	});
 
@@ -287,7 +287,7 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			const toggle = doc.querySelector("[data-test-show-url]");
 			expect(toggle?.textContent).toBe("Hide URLs");
-			expect(toggle?.getAttribute("href")).not.toContain("showUrl");
+			expect(toggle?.getAttribute("href")).toBe("/queue");
 		});
 	});
 
