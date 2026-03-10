@@ -14,8 +14,8 @@ import {
 import { createBrowserSetIcon } from "./tinted-icon.browser";
 
 const STORAGE_KEY = "hutch_oauth_tokens";
-const SERVER_URL_KEY = "hutch_server_url";
-const DEFAULT_SERVER_URL = "https://hutch-app.com";
+declare const __SERVER_URL__: string;
+const SERVER_URL = __SERVER_URL__;
 const CLIENT_ID = "hutch-firefox-extension";
 
 const tokenStorage: TokenStorage = {
@@ -32,11 +32,6 @@ const tokenStorage: TokenStorage = {
 		await browser.storage.local.remove(STORAGE_KEY);
 	},
 };
-
-async function getServerUrl(): Promise<string> {
-	const result = await browser.storage.local.get(SERVER_URL_KEY);
-	return result[SERVER_URL_KEY] ?? DEFAULT_SERVER_URL;
-}
 
 let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
 
@@ -146,7 +141,7 @@ const shell: BrowserShell = {
 
 async function initCore() {
 	const auth = await initOAuthAuth({
-		serverUrl: getServerUrl,
+		serverUrl: SERVER_URL,
 		clientId: CLIENT_ID,
 		async openTab(url: string): Promise<number> {
 			const tab = await browser.tabs.create({ url });

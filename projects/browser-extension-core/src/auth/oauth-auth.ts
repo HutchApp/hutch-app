@@ -16,7 +16,7 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	}
 
 	const login = async (): Promise<LoginResult> => {
-		const serverUrl = await deps.serverUrl();
+		const serverUrl = deps.serverUrl;
 		const codeVerifier = generateCodeVerifier();
 		const codeChallenge = await generateCodeChallenge(codeVerifier);
 		const state = generateCodeVerifier();
@@ -83,7 +83,7 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	};
 
 	const logout = async (): Promise<void> => {
-		const serverUrl = await deps.serverUrl();
+		const serverUrl = deps.serverUrl;
 		const tokens = await deps.tokenStorage.getTokens();
 		if (tokens) {
 			await deps.fetchFn(`${serverUrl}/oauth/revoke`, {

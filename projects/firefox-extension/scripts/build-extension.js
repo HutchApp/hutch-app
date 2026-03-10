@@ -7,6 +7,12 @@ const coreDir = dirname(require.resolve('browser-extension-core/package.json'));
 const srcDir = join(__dirname, '..', 'src');
 const outDir = join(__dirname, '..', 'dist-extension-compiled');
 
+const serverUrl = process.env.HUTCH_SERVER_URL;
+if (!serverUrl) {
+  console.error('Error: HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)');
+  process.exit(1);
+}
+
 async function main() {
   mkdirSync(outDir, { recursive: true });
   mkdirSync(join(outDir, 'popup'), { recursive: true });
@@ -28,6 +34,9 @@ async function main() {
     target: 'firefox91',
     alias: {
       'browser-extension-core': join(coreDir, 'src', 'index.ts'),
+    },
+    define: {
+      '__SERVER_URL__': JSON.stringify(serverUrl),
     },
   });
 

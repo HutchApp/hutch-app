@@ -29,7 +29,7 @@ export interface TokenStorage {
 }
 
 export interface OAuthAuthDeps {
-	serverUrl: () => Promise<string>;
+	serverUrl: string;
 	clientId: string;
 	openTab(url: string): Promise<number>;
 	waitForRedirect(params: { tabId: number; urlPrefix: string }): Promise<string>;

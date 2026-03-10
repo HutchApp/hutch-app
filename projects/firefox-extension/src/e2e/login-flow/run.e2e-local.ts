@@ -35,7 +35,6 @@ async function startTestServer(): Promise<http.Server> {
 
 test("should complete OAuth login flow", async () => {
 	const server = await startTestServer();
-	const serverUrl = `http://127.0.0.1:${TEST_PORT}`;
 
 	const options = new Options();
 	if (process.env.HEADLESS !== "false") {
@@ -60,12 +59,6 @@ test("should complete OAuth login flow", async () => {
 				) => Promise<void>;
 			}
 		).installAddon(EXTENSION_DIR, true);
-
-		// Configure the extension to use our test server
-		await driver.get(POPUP_URL);
-		await driver.executeScript(
-			`browser.storage.local.set({ hutch_server_url: "${serverUrl}" });`,
-		);
 
 		await driver.get(POPUP_URL);
 

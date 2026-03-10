@@ -30,6 +30,10 @@ if (e2eUnitTests) {
   run('Firefox Extension - Running E2E unit tests', `node --test ${e2eUnitTests}`)
 }
 
+run('Firefox Extension - Building extension for E2E tests',
+  'node scripts/build-extension.js',
+  { HUTCH_SERVER_URL: 'http://127.0.0.1:3000' })
+
 run('Firefox Extension - Running E2E tests',
   'node --test dist/e2e/login-flow/run.e2e-local.js',
   { HEADLESS: 'true' })
