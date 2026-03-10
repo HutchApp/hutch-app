@@ -38,6 +38,9 @@ importers:
 
   projects/browser-extension-core:
     dependencies:
+      js-base64:
+        specifier: 3.7.8
+        version: 3.7.8
       zod:
         specifier: 4.1.13
         version: 4.1.13
@@ -3490,6 +3493,9 @@ packages:
 
   jose@5.9.6:
     resolution: {integrity: sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ==}
+
+  js-base64@3.7.8:
+    resolution: {integrity: sha512-hNngCeKxIUQiEUN3GPJOkz4wF/YvdUdbNL9hsBcMQTkKzboD7T/q3OYOuuPZLUE6dBxSGpwhk5mwuDud7JVAow==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -9137,6 +9143,8 @@ snapshots:
   jiti@2.6.1: {}
 
   jose@5.9.6: {}
+
+  js-base64@3.7.8: {}
 
   js-tokens@4.0.0: {}
 
