@@ -29,7 +29,7 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/queue");
-			expect(response.headers["set-cookie"]).toBeDefined();
+			expect(response.headers["set-cookie"].length).toBeGreaterThan(0);
 		});
 
 		it("should show error on invalid credentials", async () => {
@@ -85,7 +85,7 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/queue");
-			expect(response.headers["set-cookie"]).toBeDefined();
+			expect(response.headers["set-cookie"].length).toBeGreaterThan(0);
 		});
 
 		it("should show error for duplicate email", async () => {

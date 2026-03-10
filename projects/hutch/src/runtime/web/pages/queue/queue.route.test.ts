@@ -287,7 +287,7 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			const toggle = doc.querySelector("[data-test-show-url]");
 			expect(toggle?.textContent).toBe("Hide URLs");
-			expect(toggle?.getAttribute("href")).not.toContain("showUrl");
+			expect(toggle?.getAttribute("href")).toBe("/queue");
 		});
 	});
 

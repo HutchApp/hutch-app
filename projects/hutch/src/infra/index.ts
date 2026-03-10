@@ -13,13 +13,13 @@ const esbuildLoaders: Record<string, Loader> = {
 
 const bundledExtensions = Object.keys(esbuildLoaders);
 
-function copyAssetFiles(srcDir: string, destDir: string) {
-	for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
-		const srcPath = join(srcDir, entry.name);
+function copyAssetFiles(dirs: { src: string; dest: string }) {
+	for (const entry of readdirSync(dirs.src, { withFileTypes: true })) {
+		const srcPath = join(dirs.src, entry.name);
 		if (entry.isDirectory()) {
-			copyAssetFiles(srcPath, destDir);
+			copyAssetFiles({ src: srcPath, dest: dirs.dest });
 		} else if (!bundledExtensions.some((ext) => entry.name.endsWith(ext))) {
-			copyFileSync(srcPath, join(destDir, entry.name));
+			copyFileSync(srcPath, join(dirs.dest, entry.name));
 		}
 	}
 }
@@ -164,7 +164,7 @@ class HutchLambda {
 			loader: esbuildLoaders,
 		}).then(() => {
 			mkdirSync(lambdaOutputDir, { recursive: true });
-			copyAssetFiles("./src/runtime", lambdaOutputDir);
+			copyAssetFiles({ src: "./src/runtime", dest: lambdaOutputDir });
 			return new pulumi.asset.AssetArchive({
 				".": new pulumi.asset.FileArchive(lambdaOutputDir),
 			});
