@@ -4,8 +4,7 @@ import { Base } from "../base.component";
 import type { Component } from "../component.types";
 import { render } from "../render";
 import { AUTH_STYLES } from "./auth.styles";
-import { toFieldViewModel } from "./form-errors";
-import type { FieldError } from "./form-errors";
+import { type FieldError, toFieldViewModel } from "./form-errors";
 
 const FORGOT_PASSWORD_TEMPLATE = readFileSync(join(__dirname, "forgot-password.template.html"), "utf-8");
 const RESET_PASSWORD_TEMPLATE = readFileSync(join(__dirname, "reset-password.template.html"), "utf-8");

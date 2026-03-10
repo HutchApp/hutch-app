@@ -45,6 +45,7 @@ function initProviders() {
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
+		const baseUrl = requireEnv("BASE_URL");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
@@ -58,9 +59,11 @@ function initProviders() {
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			sendEmail,
+			baseUrl,
 		};
 	}
 
+	const port = getEnv("PORT") || "3000";
 	const auth = initInMemoryAuth();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const passwordReset = initInMemoryPasswordReset({
@@ -75,6 +78,7 @@ function initProviders() {
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		sendEmail,
+		baseUrl: `http://localhost:${port}`,
 	};
 }
 

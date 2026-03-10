@@ -4,8 +4,7 @@ import { Base } from "../base.component";
 import type { Component } from "../component.types";
 import { render } from "../render";
 import { AUTH_STYLES } from "./auth.styles";
-import { toFieldViewModel } from "./form-errors";
-import type { FieldError } from "./form-errors";
+import { type FieldError, toFieldViewModel } from "./form-errors";
 
 const LOGIN_TEMPLATE = readFileSync(join(__dirname, "login.template.html"), "utf-8");
 const SIGNUP_TEMPLATE = readFileSync(join(__dirname, "signup.template.html"), "utf-8");
