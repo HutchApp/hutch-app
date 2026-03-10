@@ -15,7 +15,7 @@ import { createBrowserSetIcon } from "./tinted-icon.browser";
 
 const STORAGE_KEY = "hutch_oauth_tokens";
 const SERVER_URL_KEY = "hutch_server_url";
-const DEFAULT_SERVER_URL = "http://127.0.0.1:3000";
+const DEFAULT_SERVER_URL = "https://hutch-app.com";
 const CLIENT_ID = "hutch-firefox-extension";
 
 const tokenStorage: TokenStorage = {
