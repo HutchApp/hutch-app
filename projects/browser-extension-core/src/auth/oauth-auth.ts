@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Auth, LoginResult, OAuthAuthDeps, WhenLoggedIn } from "./auth.types";
+import type { Auth, LoginResult, OAuthAuthDeps, RefreshResult, WhenLoggedIn } from "./auth.types";
 import { generateCodeVerifier, generateCodeChallenge } from "./pkce";
 
 const TokenResponse = z.object({
@@ -82,7 +82,7 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 		return { ok: true };
 	};
 
-	const refreshTokens = async (): Promise<{ ok: true } | { ok: false; reason: "no-refresh-token" } | { ok: false; reason: "refresh-failed" }> => {
+	const refreshTokens = async (): Promise<RefreshResult> => {
 		const storedTokens = await deps.tokenStorage.getTokens();
 		if (!storedTokens?.refreshToken) {
 			await deps.tokenStorage.clearTokens();

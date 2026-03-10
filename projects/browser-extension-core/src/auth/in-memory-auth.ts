@@ -1,12 +1,6 @@
-import type { Login, Logout, RefreshTokens, GetAccessToken, WhenLoggedIn } from "./auth.types";
+import type { Auth, GetAccessToken, Login, Logout, RefreshTokens, WhenLoggedIn } from "./auth.types";
 
-export function initInMemoryAuth(): {
-	login: Login;
-	logout: Logout;
-	refreshTokens: RefreshTokens;
-	getAccessToken: GetAccessToken;
-	whenLoggedIn: WhenLoggedIn;
-} {
+export function initInMemoryAuth(): Auth {
 	let loggedIn = false;
 
 	const login: Login = async () => {
