@@ -301,6 +301,76 @@ describe("initOAuthAuth", () => {
 			const result = auth.whenLoggedIn(() => "restored");
 			expect(result).toEqual({ ok: true, value: "restored" });
 		});
+
+		it("should refresh tokens on init when stored tokens exist", async () => {
+			const tokenStorage = createMockTokenStorage();
+			await tokenStorage.setTokens({
+				accessToken: "old-access",
+				refreshToken: "old-refresh",
+			});
+
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					if (init.body.includes("grant_type=refresh_token")) {
+						return {
+							ok: true as boolean,
+							status: 200,
+							json: async () => ({
+								access_token: "fresh-access",
+								refresh_token: "fresh-refresh",
+							}),
+						};
+					}
+					return { ok: true as boolean, status: 200, json: async () => ({}) };
+				},
+			});
+			await initOAuthAuth(deps);
+
+			expect(tokenStorage.stored).toEqual({
+				accessToken: "fresh-access",
+				refreshToken: "fresh-refresh",
+			});
+		});
+
+		it("should log out when refresh token is rejected on init", async () => {
+			const tokenStorage = createMockTokenStorage();
+			await tokenStorage.setTokens({
+				accessToken: "expired-access",
+				refreshToken: "expired-refresh",
+			});
+
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async () => ({ ok: false as boolean, status: 400, json: async () => ({}) }),
+			});
+			const auth = await initOAuthAuth(deps);
+
+			const result = auth.whenLoggedIn(() => "value");
+			expect(result).toEqual({ ok: false, reason: "not-logged-in" });
+			expect(tokenStorage.stored).toBeNull();
+		});
+
+		it("should stay logged in when refresh fails due to network error on init", async () => {
+			const tokenStorage = createMockTokenStorage();
+			await tokenStorage.setTokens({
+				accessToken: "existing-access",
+				refreshToken: "existing-refresh",
+			});
+
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async () => { throw new Error("Network error"); },
+			});
+			const auth = await initOAuthAuth(deps);
+
+			const result = auth.whenLoggedIn(() => "still-here");
+			expect(result).toEqual({ ok: true, value: "still-here" });
+			expect(tokenStorage.stored).toEqual({
+				accessToken: "existing-access",
+				refreshToken: "existing-refresh",
+			});
+		});
 	});
 
 	describe("refreshTokens", () => {

@@ -138,9 +138,9 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 		async saveToken(token: Token, client: Client, user: User): Promise<Token> {
 			const refreshToken = token.refreshToken ?? "";
 			const accessTokenExpiresAt =
-				token.accessTokenExpiresAt ?? new Date(Date.now() + 3600000);
+				token.accessTokenExpiresAt ?? new Date(Date.now() + 24 * 3600000);
 			const refreshTokenExpiresAt =
-				token.refreshTokenExpiresAt ?? new Date(Date.now() + 30 * 24 * 3600000);
+				token.refreshTokenExpiresAt ?? new Date(Date.now() + 180 * 24 * 3600000);
 
 			const stored: StoredToken = {
 				accessToken: token.accessToken as AccessTokenBrand,

@@ -10,11 +10,6 @@ const TokenResponse = z.object({
 export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	let loggedIn = false;
 
-	const tokens = await deps.tokenStorage.getTokens();
-	if (tokens) {
-		loggedIn = true;
-	}
-
 	const login = async (): Promise<LoginResult> => {
 		const serverUrl = deps.serverUrl;
 		const codeVerifier = generateCodeVerifier();
@@ -155,6 +150,12 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 			return { ok: false, reason: "error", error };
 		}
 	};
+
+	const storedTokens = await deps.tokenStorage.getTokens();
+	if (storedTokens) {
+		loggedIn = true;
+		await refreshTokens().catch(() => {});
+	}
 
 	return { login, logout, refreshTokens, getAccessToken, whenLoggedIn };
 }
