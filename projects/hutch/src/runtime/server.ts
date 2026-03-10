@@ -28,7 +28,7 @@ import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
-import { InstallPage } from "./web/pages/install";
+import { InstallPage, fetchExtensionDownloadUrl } from "./web/pages/install";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
@@ -103,8 +103,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
-	app.get("/install", (_req: Request, res: Response) => {
-		const result = InstallPage().to("text/html");
+	app.get("/install", async (_req: Request, res: Response) => {
+		const downloadUrl = await fetchExtensionDownloadUrl();
+		const result = InstallPage(downloadUrl).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 

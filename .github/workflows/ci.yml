@@ -91,6 +91,12 @@ jobs:
       - name: Build and package extension
         run: pnpm --filter browser-extension-core compile && pnpm --filter firefox-extension compile
 
-      - name: Deploy extension to S3
+      - name: Sign extension via AMO (unlisted)
+        run: pnpm --filter firefox-extension sign
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+
+      - name: Deploy signed extension to S3
         run: pulumi up --stack prod --yes
         working-directory: projects/firefox-extension

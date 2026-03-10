@@ -1,6 +1,6 @@
 {
   "name": "firefox-extension",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Hutch — Firefox browser extension for saving URLs to a reading list",
   "main": "src/infra/index.ts",
   "private": true,
@@ -12,6 +12,7 @@
   },
   "scripts": {
     "compile": "tsc && HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js && web-ext build --source-dir dist-extension-compiled --artifacts-dir dist-extension-files --overwrite-dest --filename hutch-$(git rev-parse --short=6 HEAD).xpi",
+    "sign": "rm -rf dist-extension-files && web-ext sign --channel=unlisted --source-dir dist-extension-compiled --artifacts-dir dist-extension-files --api-key=\"$AMO_JWT_ISSUER\" --api-secret=\"$AMO_JWT_SECRET\"",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --passWithNoTests",

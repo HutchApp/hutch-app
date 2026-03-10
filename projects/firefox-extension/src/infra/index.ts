@@ -3,7 +3,7 @@ import * as aws from "@pulumi/aws";
 import * as assert from "node:assert";
 import * as fs from "node:fs";
 import { join } from "node:path";
-import { S3_CONFIG, getBucketName } from "../../s3-config";
+import { getBucketName } from "../../s3-config";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
@@ -42,7 +42,7 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 const distFilesDir = join(__dirname, "..", "..", "dist-extension-files");
 const xpiFiles = fs
 	.readdirSync(distFilesDir)
-	.filter((f) => f.startsWith("hutch-") && f.endsWith(".xpi"));
+	.filter((f) => f.endsWith(".xpi"));
 assert.ok(
 	xpiFiles.length === 1,
 	`Expected exactly one xpi file in ${distFilesDir}, found: ${xpiFiles.length}. Run 'pnpm compile' first.`,
@@ -52,11 +52,18 @@ const xpiPath = join(distFilesDir, xpiFilename);
 
 const extensionObject = new aws.s3.BucketObject("hutch-xpi", {
 	bucket: bucket.id,
-	key: S3_CONFIG.key,
+	key: xpiFilename,
 	source: new pulumi.asset.FileAsset(xpiPath),
 	contentType: "application/x-xpinstall",
 	contentDisposition: `attachment; filename="${xpiFilename}"`,
 });
 
-export const downloadUrl = pulumi.interpolate`https://${bucket.bucketRegionalDomainName}/${S3_CONFIG.key}`;
-export const _dependencies = [bucketPolicy, extensionObject];
+const latestPointer = new aws.s3.BucketObject("hutch-xpi-latest", {
+	bucket: bucket.id,
+	key: "latest.txt",
+	content: xpiFilename,
+	contentType: "text/plain",
+});
+
+export const downloadUrl = pulumi.interpolate`https://${bucket.bucketRegionalDomainName}/${xpiFilename}`;
+export const _dependencies = [bucketPolicy, extensionObject, latestPointer];

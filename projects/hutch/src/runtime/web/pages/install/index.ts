@@ -1,1 +1,1 @@
-export { InstallPage } from "./install.component";
+export { InstallPage, fetchExtensionDownloadUrl } from "./install.component";

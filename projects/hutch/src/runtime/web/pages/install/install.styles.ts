@@ -69,13 +69,4 @@ export const INSTALL_PAGE_STYLES = `
   font-size: 0.875rem;
 }
 
-.install-page__note {
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: var(--muted-foreground);
-  margin-top: 32px;
-  padding: 16px;
-  background: var(--muted);
-  border-radius: var(--radius);
-}
 `;

@@ -7,7 +7,6 @@
 
 const S3_CONFIG = {
 	bucketNamePrefix: "hutch-extension",
-	key: "hutch.xpi",
 	region: "ap-southeast-2",
 };
 
@@ -15,9 +14,17 @@ function getBucketName(stage) {
 	return `${S3_CONFIG.bucketNamePrefix}-${stage}`;
 }
 
-function getExtensionDownloadUrl(stage) {
+function getBucketBaseUrl(stage) {
 	const bucketName = getBucketName(stage);
-	return `https://${bucketName}.s3.${S3_CONFIG.region}.amazonaws.com/${S3_CONFIG.key}`;
+	return `https://${bucketName}.s3.${S3_CONFIG.region}.amazonaws.com`;
 }
 
-module.exports = { S3_CONFIG, getBucketName, getExtensionDownloadUrl };
+function getExtensionDownloadUrl(stage, xpiFilename) {
+	return `${getBucketBaseUrl(stage)}/${xpiFilename}`;
+}
+
+function getLatestPointerUrl(stage) {
+	return `${getBucketBaseUrl(stage)}/latest.txt`;
+}
+
+module.exports = { S3_CONFIG, getBucketName, getBucketBaseUrl, getExtensionDownloadUrl, getLatestPointerUrl };

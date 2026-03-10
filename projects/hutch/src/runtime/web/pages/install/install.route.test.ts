@@ -3,6 +3,18 @@ import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
 
+const TEST_XPI_FILENAME = "abc123-1.0.0.xpi";
+
+beforeEach(() => {
+	jest.spyOn(globalThis, "fetch").mockResolvedValue(
+		new Response(TEST_XPI_FILENAME, { status: 200 }),
+	);
+});
+
+afterEach(() => {
+	jest.restoreAllMocks();
+});
+
 describe("GET /install", () => {
 	const { app } = createTestApp();
 
@@ -26,7 +38,7 @@ describe("GET /install", () => {
 		const cta = doc.querySelector(
 			'[data-test-cta="download-extension"]',
 		) as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe(getExtensionDownloadUrl("prod"));
+		expect(cta.getAttribute("href")).toBe(getExtensionDownloadUrl("prod", TEST_XPI_FILENAME));
 		expect(cta.textContent).toBe("Download Hutch for Firefox (test mode)");
 	});
 
@@ -36,7 +48,7 @@ describe("GET /install", () => {
 
 		const steps = doc.querySelector('[data-test-section="install-steps"]');
 		const items = steps?.querySelectorAll("li");
-		expect(items?.length).toBe(6);
+		expect(items?.length).toBe(3);
 	});
 
 	it("should set appropriate SEO metadata", async () => {

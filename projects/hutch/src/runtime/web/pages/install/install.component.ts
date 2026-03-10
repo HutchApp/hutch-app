@@ -4,12 +4,18 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
-import { getExtensionDownloadUrl } from "firefox-extension/s3-config";
+import { getExtensionDownloadUrl, getLatestPointerUrl } from "firefox-extension/s3-config";
 
 const INSTALL_TEMPLATE = readFileSync(join(__dirname, "install.template.html"), "utf-8");
-const EXTENSION_DOWNLOAD_URL = getExtensionDownloadUrl("prod");
+const LATEST_POINTER_URL = getLatestPointerUrl("prod");
 
-export function InstallPage(): Component {
+export async function fetchExtensionDownloadUrl(): Promise<string> {
+	const response = await fetch(LATEST_POINTER_URL);
+	const xpiFilename = (await response.text()).trim();
+	return getExtensionDownloadUrl("prod", xpiFilename);
+}
+
+export function InstallPage(extensionDownloadUrl: string): Component {
 	return Base({
 		seo: {
 			title: "Install Hutch for Firefox",
@@ -20,7 +26,7 @@ export function InstallPage(): Component {
 		styles: INSTALL_PAGE_STYLES,
 		bodyClass: "page-install",
 		content: render(INSTALL_TEMPLATE, {
-			extensionDownloadUrl: EXTENSION_DOWNLOAD_URL,
+			extensionDownloadUrl,
 		}),
 	});
 }
