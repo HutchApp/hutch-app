@@ -38,6 +38,7 @@
     "zod": "4.1.13"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
     "@pulumi/aws": "7.20.0",
     "@pulumi/pulumi": "3.224.0",
     "@types/aws-lambda": "8.10.161",

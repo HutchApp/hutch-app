@@ -45,6 +45,8 @@ const apiKey = requireEnv('API_KEY');
 const proxyUrl = getEnv('HTTPS_PROXY');
 ```
 
+**Exception:** Playwright config files (`playwright.config.*.ts`) must use `process.env` directly. Importing `getEnv`/`requireEnv` causes the playwright process to load `require-env.ts` outside V8 coverage instrumentation, creating uncovered function entries that break the 100% function coverage threshold.
+
 ### Comments Document Why, Not What
 
 Do not add comments that explain what code does. Only add comments to explain **why** when the reasoning isn't obvious.
@@ -137,6 +139,18 @@ livereload src --exts html,css,ts --wait 500
 
 # Avoid - Requires API knowledge
 livereload src -e html,css,ts -w 500
+```
+
+## Test Runner Logging
+
+When logging test phase transitions (e.g., "Running unit tests", "Running E2E tests"), prefix with the project name so it's clear which project is running when multiple projects run together.
+
+```javascript
+// BAD - Ambiguous in monorepo output
+console.log('\n=== Running E2E tests ===\n')
+
+// GOOD - Clear which project is running
+console.log('\n=== Hutch - Running E2E tests ===\n')
 ```
 
 ## CI/CD Guidelines

@@ -17,8 +17,9 @@ config.enforceCoverage({
   extraExcludePatterns: [
     ...(config.extraExcludePatterns || []),
     'src/infra/**',
-    // Composition and server start entry point — no logic to test
+    // Composition roots — no logic to test, only wiring
     'src/runtime/app.ts',
+    'src/e2e/e2e-server.ts',
     // DynamoDB adapters — thin AWS SDK wrappers tested via integration against real DynamoDB
     'src/runtime/providers/**/dynamodb-*.ts',
   ],
