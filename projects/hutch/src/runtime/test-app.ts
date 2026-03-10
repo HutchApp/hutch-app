@@ -1,6 +1,16 @@
+import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
+import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
-import { createHutchApp } from "./app";
+import type { ParseArticle } from "./providers/article-parser/article-parser.types";
+import { initInMemoryEmail } from "./providers/email/in-memory-email";
+import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
+import {
+	createOAuthModel,
+	initInMemoryOAuthModel,
+} from "./providers/oauth/oauth-model";
+import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
+import { createApp } from "./server";
 
 const stubFetchHtml: FetchHtml = async (url) => {
 	const hostname = new URL(url).hostname;
@@ -8,17 +18,49 @@ const stubFetchHtml: FetchHtml = async (url) => {
 };
 
 export function createTestApp(options?: {
-	livereloadMiddleware?: NonNullable<Parameters<typeof createHutchApp>[0]>["livereloadMiddleware"];
-	parseArticle?: NonNullable<Parameters<typeof createHutchApp>[0]>["parseArticle"];
+	livereloadMiddleware?: Parameters<typeof createApp>[0]["livereloadMiddleware"];
+	parseArticle?: ParseArticle;
 }) {
-	return createHutchApp({
-		parseArticle: options?.parseArticle ?? initReadabilityParser({ fetchHtml: stubFetchHtml }).parseArticle,
+	const auth = initInMemoryAuth();
+	const articleStore = initInMemoryArticleStore();
+	const parser = initReadabilityParser({ fetchHtml: options?.parseArticle ? stubFetchHtml : stubFetchHtml });
+	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const email = initInMemoryEmail();
+	const emailVerification = initInMemoryEmailVerification();
+
+	const app = createApp({
+		...auth,
+		...articleStore,
+		parseArticle: options?.parseArticle ?? parser.parseArticle,
+		...email,
+		...emailVerification,
+		baseUrl: "http://localhost:3000",
+		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 		livereloadMiddleware: options?.livereloadMiddleware,
 	});
+
+	return { app, auth, articleStore, parser, oauthModel, email, emailVerification };
 }
 
 export function createTestAppWithFetchHtml(fetchHtml: FetchHtml) {
-	return createHutchApp({
-		parseArticle: initReadabilityParser({ fetchHtml }).parseArticle,
+	const auth = initInMemoryAuth();
+	const articleStore = initInMemoryArticleStore();
+	const parser = initReadabilityParser({ fetchHtml });
+	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const email = initInMemoryEmail();
+	const emailVerification = initInMemoryEmailVerification();
+
+	const app = createApp({
+		...auth,
+		...articleStore,
+		...parser,
+		...email,
+		...emailVerification,
+		baseUrl: "http://localhost:3000",
+		oauthModel,
+		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
+
+	return { app, auth, articleStore, parser, oauthModel, email, emailVerification };
 }

@@ -6,8 +6,15 @@ import type {
 	DestroySession,
 	VerifyCredentials,
 } from "../../providers/auth/auth.types";
+import type { SendEmail } from "../../providers/email/email.types";
+import type {
+	CreateVerificationToken,
+	VerificationToken,
+	VerifyEmailToken,
+} from "../../providers/email-verification/email-verification.types";
 import { LoginSchema, SignupSchema } from "./auth.schema";
-import { LoginPage, SignupPage } from "./auth.component";
+import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
+import { buildVerificationEmailHtml } from "./verification-email";
 
 const COOKIE_NAME = "hutch_sid";
 
@@ -17,11 +24,17 @@ const COOKIE_OPTIONS = {
 	path: "/",
 };
 
+const EMAIL_FROM = "Hutch <noreply@hutch.sh>";
+
 interface AuthDependencies {
 	createUser: CreateUser;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	destroySession: DestroySession;
+	sendEmail: SendEmail;
+	createVerificationToken: CreateVerificationToken;
+	verifyEmailToken: VerifyEmailToken;
+	baseUrl: string;
 }
 
 function flattenZodErrors(
@@ -104,9 +117,47 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 
+		const token = await deps.createVerificationToken(createResult.userId);
+		const verifyUrl = `${deps.baseUrl}/verify-email?token=${token}`;
+		const html = buildVerificationEmailHtml(verifyUrl);
+
+		await deps.sendEmail({
+			from: EMAIL_FROM,
+			to: email,
+			subject: "Verify your email — Hutch",
+			html,
+		});
+
 		const sessionId = await deps.createSession(createResult.userId);
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
 		res.redirect(303, "/queue");
+	});
+
+	router.get("/verify-email", async (req: Request, res: Response) => {
+		const token = typeof req.query.token === "string" ? req.query.token : "";
+
+		if (!token) {
+			const result = VerifyEmailPage({
+				success: false,
+				error: "No verification token provided.",
+			}).to("text/html");
+			res.status(400).type("html").send(result.body);
+			return;
+		}
+
+		const verifyResult = await deps.verifyEmailToken(token as VerificationToken);
+
+		if (!verifyResult.ok) {
+			const result = VerifyEmailPage({
+				success: false,
+				error: "This verification link is invalid or has already been used.",
+			}).to("text/html");
+			res.status(400).type("html").send(result.body);
+			return;
+		}
+
+		const result = VerifyEmailPage({ success: true }).to("text/html");
+		res.status(200).type("html").send(result.body);
 	});
 
 	router.post("/logout", async (req: Request, res: Response) => {

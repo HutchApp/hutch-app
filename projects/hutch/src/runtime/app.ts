@@ -15,6 +15,9 @@ import {
 } from "./providers/oauth/oauth-model";
 import { initDynamoDbOAuthModel } from "./providers/oauth/dynamodb-oauth-model";
 import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
+import { initLogEmail } from "./providers/email/log-email";
+import { initResendEmail } from "./providers/email/resend-email";
+import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -43,6 +46,7 @@ function initProviders() {
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
+		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
@@ -51,6 +55,9 @@ function initProviders() {
 		return {
 			auth,
 			articleStore,
+			...initResendEmail(resendApiKey),
+			// TODO: replace with DynamoDB-backed verification store — tokens are lost on restart
+			...initInMemoryEmailVerification(),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 		};
@@ -62,6 +69,8 @@ function initProviders() {
 	return {
 		auth,
 		articleStore,
+		...initLogEmail(),
+		...initInMemoryEmailVerification(),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	};
@@ -72,7 +81,7 @@ export function createHutchApp(options?: {
 	parseArticle?: ParseArticle;
 	livereloadMiddleware?: Parameters<typeof createApp>[0]["livereloadMiddleware"];
 }) {
-	const { auth, articleStore, oauthModel, validateAccessToken } = initProviders();
+	const { auth, articleStore, oauthModel, validateAccessToken, ...providers } = initProviders();
 	const parser = options?.parseArticle
 		? { parseArticle: options.parseArticle }
 		: initReadabilityParser({ fetchHtml });
@@ -84,6 +93,8 @@ export function createHutchApp(options?: {
 		...auth,
 		...articleStore,
 		...parser,
+		...providers,
+		baseUrl: appOrigin,
 		oauthModel,
 		validateAccessToken,
 		livereloadMiddleware: options?.livereloadMiddleware,

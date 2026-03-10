@@ -18,6 +18,11 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { SendEmail } from "./providers/email/email.types";
+import type {
+	CreateVerificationToken,
+	VerifyEmailToken,
+} from "./providers/email-verification/email-verification.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
@@ -50,6 +55,10 @@ interface AppDependencies {
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
+	sendEmail: SendEmail;
+	createVerificationToken: CreateVerificationToken;
+	verifyEmailToken: VerifyEmailToken;
+	baseUrl: string;
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
 }
@@ -112,6 +121,10 @@ export function createApp(dependencies: AppDependencies): Express {
 		verifyCredentials: deps.verifyCredentials,
 		createSession: deps.createSession,
 		destroySession: deps.destroySession,
+		sendEmail: deps.sendEmail,
+		createVerificationToken: deps.createVerificationToken,
+		verifyEmailToken: deps.verifyEmailToken,
+		baseUrl: deps.baseUrl,
 	});
 	app.use(authRouter);
 
