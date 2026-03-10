@@ -203,7 +203,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
-      await clickAndWaitForPageReload(page, page.locator('[data-test-filters] a:text-is("Read")'))
+      await clickAndWaitForPageReload(page, page.locator('[data-test-filter="read"]'))
 
       const count = await getArticleCount(page)
       expect(count).toBe(1)
@@ -222,7 +222,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
-      await clickAndWaitForPageReload(page, page.locator('[data-test-filters] a:has-text("Unread")'))
+      await clickAndWaitForPageReload(page, page.locator('[data-test-filter="unread"]'))
 
       const count = await getArticleCount(page)
       expect(count).toBe(1)
@@ -241,7 +241,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
-      await clickAndWaitForPageReload(page, page.locator('[data-test-filters] a:has-text("Archived")'))
+      await clickAndWaitForPageReload(page, page.locator('[data-test-filter="archived"]'))
 
       const count = await getArticleCount(page)
       expect(count).toBe(1)
