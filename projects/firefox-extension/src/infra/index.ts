@@ -55,7 +55,6 @@ const extensionObject = new aws.s3.BucketObject("hutch-xpi", {
 	key: xpiFilename,
 	source: new pulumi.asset.FileAsset(xpiPath),
 	contentType: "application/x-xpinstall",
-	contentDisposition: `attachment; filename="${xpiFilename}"`,
 });
 
 const latestPointer = new aws.s3.BucketObject("hutch-xpi-latest", {
