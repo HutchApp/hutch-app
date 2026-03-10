@@ -236,13 +236,34 @@ async function saveAndShowList() {
 	}
 }
 
-document
-	.getElementById("login-button")
-	?.addEventListener("click", async () => {
-		await send({ type: "login" });
-		showView("loading-view");
-		await saveAndShowList();
-	});
+document.getElementById("login-button")?.addEventListener("click", async () => {
+	const loginError = document.getElementById("login-error");
+	if (loginError) loginError.hidden = true;
+
+	try {
+		const result = (await send({ type: "login" })) as {
+			ok: boolean;
+			reason?: string;
+			error?: { message?: string };
+		};
+		if (!result.ok) {
+			if (loginError) {
+				loginError.textContent = `Login failed: ${result.reason ?? "unknown"} — ${result.error?.message ?? ""}`;
+				loginError.hidden = false;
+			}
+			return;
+		}
+	} catch (err) {
+		if (loginError) {
+			loginError.textContent = `Login error: ${err instanceof Error ? err.message : String(err)}`;
+			loginError.hidden = false;
+		}
+		return;
+	}
+
+	showView("loading-view");
+	await saveAndShowList();
+});
 
 document
 	.getElementById("undo-button")

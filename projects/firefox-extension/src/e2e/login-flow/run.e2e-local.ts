@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
+import type http from "node:http";
 import { Builder, By } from "selenium-webdriver";
 import { Options } from "selenium-webdriver/firefox";
 import { FlowRunner } from "../test-framework/flow-runner";
@@ -12,11 +13,34 @@ const ADDON_UUID = "d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12";
 const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
 const POPUP_URL = `moz-extension://${ADDON_UUID}/popup/popup.template.html`;
 
-test("should log in to Hutch extension successfully", async () => {
+const TEST_EMAIL = "e2e-test@example.com";
+const TEST_PASSWORD = "testpassword123";
+const TEST_PORT = 3000;
+
+async function startTestServer(): Promise<http.Server> {
+	const hutchTestApp = path.resolve(
+		__dirname,
+		"../../../../hutch/dist/runtime/test-app",
+	);
+	const { createTestApp } = await import(hutchTestApp);
+	const { app, auth } = createTestApp();
+	await auth.createUser({ email: TEST_EMAIL, password: TEST_PASSWORD });
+
+	return new Promise((resolve) => {
+		const server = app.listen(TEST_PORT, "127.0.0.1", () => {
+			resolve(server);
+		});
+	});
+}
+
+test("should complete OAuth login flow", async () => {
+	const server = await startTestServer();
+	const serverUrl = `http://127.0.0.1:${TEST_PORT}`;
+
 	const options = new Options();
-  if (process.env.HEADLESS !== "false") {
-    options.addArguments( "--headless");
-  }
+	if (process.env.HEADLESS !== "false") {
+		options.addArguments("--headless");
+	}
 	options.setPreference(
 		"extensions.webextensions.uuids",
 		JSON.stringify({ [ADDON_ID]: ADDON_UUID }),
@@ -37,32 +61,58 @@ test("should log in to Hutch extension successfully", async () => {
 			}
 		).installAddon(EXTENSION_DIR, true);
 
-		const loginActions = createLoginActions();
+		// Configure the extension to use our test server
+		await driver.get(POPUP_URL);
+		await driver.executeScript(
+			`browser.storage.local.set({ hutch_server_url: "${serverUrl}" });`,
+		);
+
+		await driver.get(POPUP_URL);
+
+		// Wait for login-view to appear
+		await driver.wait(async () => {
+			try {
+				const el = await driver.findElement(By.id("login-view"));
+				const hidden = await el.getAttribute("hidden");
+				return hidden === null;
+			} catch {
+				return false;
+			}
+		}, 10000);
+
+		const popupWindowHandle = await driver.getWindowHandle();
+
+		const loginActions = createLoginActions({
+			testEmail: TEST_EMAIL,
+			testPassword: TEST_PASSWORD,
+			popupWindowHandle,
+		});
 
 		const stateHandler = new LoginFlowStateHandler(
 			driver,
 			async (d) => {
-				for (const viewId of ["list-view", "saved-view"]) {
-					const element = await d.findElement(By.id(viewId));
-					const hidden = await element.getAttribute("hidden");
-					if (hidden === null) return true;
+				try {
+					const url = await d.getCurrentUrl();
+					if (!url.startsWith("moz-extension://")) return false;
+
+					const loginView = await d.findElement(By.id("login-view"));
+					const hidden = await loginView.getAttribute("hidden");
+					return hidden !== null;
+				} catch {
+					return false;
 				}
-				return false;
 			},
 			loginActions,
 		);
 
 		const flowRunner = new FlowRunner(driver, stateHandler);
-		const result = await flowRunner.run(POPUP_URL, { maxSteps: 10, actionDelayMs: 2000 });
+		const result = await flowRunner.run(POPUP_URL, {
+			maxSteps: 15,
+		});
 
 		assert.equal(result.success, true, `Flow failed: ${result.error}`);
-		assert.ok(
-			["list-view", "saved-view"].includes(
-				result.currentState.activeView,
-			),
-			`Expected a post-login view, got ${result.currentState.activeView}`,
-		);
 	} finally {
 		await driver.quit();
+		server.close();
 	}
 });

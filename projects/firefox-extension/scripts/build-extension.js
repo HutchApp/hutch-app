@@ -1,6 +1,8 @@
 const { build } = require('esbuild');
 const { cpSync, mkdirSync } = require('node:fs');
-const { join } = require('node:path');
+const { join, dirname } = require('node:path');
+
+const coreDir = dirname(require.resolve('browser-extension-core/package.json'));
 
 const srcDir = join(__dirname, '..', 'src');
 const outDir = join(__dirname, '..', 'dist-extension-compiled');
@@ -24,6 +26,9 @@ async function main() {
     outdir: outDir,
     outbase: join(srcDir, 'runtime'),
     target: 'firefox91',
+    alias: {
+      'browser-extension-core': join(coreDir, 'src', 'index.ts'),
+    },
   });
 
   cpSync(join(srcDir, 'runtime', 'manifest.json'), join(outDir, 'manifest.json'));

@@ -49,13 +49,27 @@ export class LoginFlowStateHandler implements FlowStateHandler {
 	}
 
 	private async getActiveView(): Promise<string> {
-		for (const viewId of VIEW_IDS) {
-			const element = await this.driver.findElement(By.id(viewId));
-			const hidden = await element.getAttribute("hidden");
-			if (hidden === null) {
-				return viewId;
+		try {
+			const url = await this.driver.getCurrentUrl();
+			if (url.includes("/login")) return "server-login";
+			if (url.includes("/oauth/authorize")) return "oauth-authorize";
+
+			for (const viewId of VIEW_IDS) {
+				const element = await this.driver.findElement(By.id(viewId));
+				const hidden = await element.getAttribute("hidden");
+				if (hidden === null) {
+					return viewId;
+				}
 			}
+			throw new Error("No visible view found");
+		} catch (error) {
+			if (
+				error instanceof Error &&
+				error.name === "NoSuchWindowError"
+			) {
+				return "tab-closed";
+			}
+			throw error;
 		}
-		throw new Error("No visible view found");
 	}
 }

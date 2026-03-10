@@ -17,6 +17,8 @@ const config = {
     'src/runtime/background/background.ts',
     'src/runtime/popup/popup.ts',
     'src/runtime/content/shortcut.ts',
+    // E2E tests run with selenium, not covered by c8
+    'src/e2e/**',
   ],
 };
 

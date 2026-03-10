@@ -11,9 +11,14 @@ export type {
 	RemoveUrlResult,
 } from "./reading-list/reading-list.types";
 export type {
+	Auth,
 	GuardedResult,
 	LoginResult,
+	OAuthAuthDeps,
+	OAuthTokens,
+	TokenStorage,
 } from "./auth/auth.types";
+export { initOAuthAuth } from "./auth/oauth-auth";
 export type { PopupMessage } from "./popup-message.types";
 export { filterByUrl } from "./popup/filter-by-url";
 export { paginateItems } from "./popup/paginate-items";

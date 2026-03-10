@@ -151,6 +151,8 @@ export function createApp(dependencies: AppDependencies): Express {
 	const oauthRouter = initOAuthRoutes({
 		model: deps.oauthModel,
 	});
+	app.use("/oauth/token", extensionCors);
+	app.use("/oauth/revoke", extensionCors);
 	app.use("/oauth", oauthRouter);
 
 	app.use((_req: Request, res: Response) => {

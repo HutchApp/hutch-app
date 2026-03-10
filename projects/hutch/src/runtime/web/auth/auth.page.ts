@@ -36,16 +36,19 @@ function flattenZodErrors(
 export function initAuthRoutes(deps: AuthDependencies): Router {
 	const router = express.Router();
 
-	router.get("/login", (_req: Request, res: Response) => {
-		const result = LoginPage().to("text/html");
+	router.get("/login", (req: Request, res: Response) => {
+		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
+		const result = LoginPage({ returnUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
+		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
 			const result = LoginPage({
+				returnUrl,
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
 			}).to("text/html");
@@ -58,6 +61,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!credentials.ok) {
 			const result = LoginPage({
+				returnUrl,
 				email,
 				globalError: "Invalid email or password",
 			}).to("text/html");
@@ -67,7 +71,8 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const sessionId = await deps.createSession(credentials.userId);
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
-		res.redirect(303, "/queue");
+		const redirectTo = returnUrl?.startsWith("/") && !returnUrl.startsWith("//") ? returnUrl : "/queue";
+		res.redirect(303, redirectTo);
 	});
 
 	router.get("/signup", (_req: Request, res: Response) => {

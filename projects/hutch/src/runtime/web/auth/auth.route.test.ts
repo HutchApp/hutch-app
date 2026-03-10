@@ -14,6 +14,16 @@ describe("Auth routes", () => {
 			expect(doc.querySelector('input[name="email"]')?.getAttribute("type")).toBe("email");
 			expect(doc.querySelector('input[name="password"]')?.getAttribute("type")).toBe("password");
 		});
+
+		it("should include return URL in form action when provided", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const action = doc.querySelector('[data-test-form="login"]')?.getAttribute("action");
+			expect(action).toContain("/login?return=");
+		});
 	});
 
 	describe("POST /login", () => {
@@ -45,6 +55,45 @@ describe("Auth routes", () => {
 			expect(doc.querySelector("[data-test-global-error]")?.textContent).toContain(
 				"Invalid email or password",
 			);
+		});
+
+		it("should redirect to return URL after successful login", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+
+			const response = await request(app)
+				.post("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
+				.type("form")
+				.send({ email: "test@example.com", password: "password123" });
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/oauth/authorize?client_id=test");
+		});
+
+		it("should ignore protocol-relative return URLs", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+
+			const response = await request(app)
+				.post("/login?return=%2F%2Fevil.com")
+				.type("form")
+				.send({ email: "test@example.com", password: "password123" });
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should ignore non-relative return URLs", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+
+			const response = await request(app)
+				.post("/login?return=https%3A%2F%2Fevil.com")
+				.type("form")
+				.send({ email: "test@example.com", password: "password123" });
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
 		});
 
 		it("should show validation error for empty email", async () => {
