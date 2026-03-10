@@ -20,8 +20,8 @@ function run(name, command, extraEnv = {}) {
   process.stdout.write('')
 }
 
-run('Running unit tests',
+run('Browser Extension Core - Running unit tests',
   'node_modules/.bin/jest --testMatch="**/dist/**/*.test.js" --testTimeout=10000 --runInBand')
 
-console.log('\n=== All tests completed successfully ===\n')
+console.log('\n=== Browser Extension Core - All tests completed successfully ===\n')
 process.stdout.write('')
