@@ -39,7 +39,9 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 	),
 });
 
-const distFilesDir = join(__dirname, "..", "..", "dist-extension-files");
+const signedDir = join(__dirname, "..", "..", "dist-extension-signed");
+const unsignedDir = join(__dirname, "..", "..", "dist-extension-files");
+const distFilesDir = fs.existsSync(signedDir) ? signedDir : unsignedDir;
 const xpiFiles = fs
 	.readdirSync(distFilesDir)
 	.filter((f) => f.endsWith(".xpi"));

@@ -68,11 +68,4 @@ export const INSTALL_PAGE_STYLES = `
   border-radius: 4px;
   font-size: 0.875rem;
 }
-
-.install-page__footnote {
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: var(--muted-foreground);
-  margin-top: 16px;
-}
 `;

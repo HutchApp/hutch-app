@@ -39,7 +39,7 @@ describe("GET /install", () => {
 			'[data-test-cta="download-extension"]',
 		) as HTMLAnchorElement;
 		expect(cta.getAttribute("href")).toBe(getExtensionDownloadUrl("prod", TEST_XPI_FILENAME));
-		expect(cta.textContent).toBe("Download Hutch for Firefox (test mode)");
+		expect(cta.textContent).toBe("Download Hutch for Firefox");
 	});
 
 	it("should render installation steps", async () => {
