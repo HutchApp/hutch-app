@@ -85,7 +85,7 @@ describe("Export routes", () => {
 
 			expect(data.articleCount).toBe(0);
 			expect(data.articles).toEqual([]);
-			expect(new Date(data.exportedAt).getTime()).not.toBeNaN();
+			expect(Number.isFinite(new Date(data.exportedAt).getTime())).toBe(true);
 		});
 
 		it("should include all saved articles in the export", async () => {
@@ -125,7 +125,7 @@ describe("Export routes", () => {
 			expect(typeof article.title).toBe("string");
 			expect(typeof article.siteName).toBe("string");
 			expect(article.status).toBe("unread");
-			expect(new Date(article.savedAt).getTime()).not.toBeNaN();
+			expect(Number.isFinite(new Date(article.savedAt).getTime())).toBe(true);
 			expect(article.readAt).toBeNull();
 			expect(typeof article.wordCount).toBe("number");
 			expect(typeof article.estimatedReadTimeMinutes).toBe("number");
