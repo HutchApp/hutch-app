@@ -18,7 +18,7 @@ export function createAuthActions(data: AuthData, progress: AuthProgress): Map<s
   actions.set('navigate-to-signup', {
     isAvailable: async (page) => {
       if (progress.accountCreated) return false
-      return isOnPage(page, 'page-landing')
+      return isOnPage(page, 'page-home')
     },
     execute: async (page) => {
       await page.locator('a[href="/signup"]').first().click()
@@ -54,7 +54,7 @@ export function createAuthActions(data: AuthData, progress: AuthProgress): Map<s
         page,
         page.locator('[data-test-nav-item="logout"]'),
       )
-      await page.waitForSelector('body.page-landing')
+      await page.waitForSelector('body.page-home')
       progress.loggedOut = true
     },
   })
@@ -63,7 +63,7 @@ export function createAuthActions(data: AuthData, progress: AuthProgress): Map<s
     isAvailable: async (page) => {
       if (!progress.loggedOut) return false
       if (progress.loggedIn) return false
-      return isOnPage(page, 'page-landing')
+      return isOnPage(page, 'page-home')
     },
     execute: async (page) => {
       await page.locator('[data-test-nav-item="login"]').click()

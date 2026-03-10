@@ -3,11 +3,11 @@ import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
-import { LANDING_PAGE_STYLES } from "./landing.styles";
+import { HOME_PAGE_STYLES } from "./home.styles";
 
-const LANDING_TEMPLATE = readFileSync(join(__dirname, "landing.template.html"), "utf-8");
+const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8");
 
-export function LandingPage(): Component {
+export function HomePage(): Component {
 	return Base({
 		seo: {
 			title: "Hutch — A read-it-later app by Fayner Brack",
@@ -34,10 +34,10 @@ export function LandingPage(): Component {
 				},
 			],
 		},
-		styles: LANDING_PAGE_STYLES,
+		styles: HOME_PAGE_STYLES,
 		headerVariant: "transparent",
-		bodyClass: "page-landing",
-		content: render(LANDING_TEMPLATE, {
+		bodyClass: "page-home",
+		content: render(HOME_TEMPLATE, {
 			coreFeatures: [
 				{
 					name: "Firefox Browser Extension",

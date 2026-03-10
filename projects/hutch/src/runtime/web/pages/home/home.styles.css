@@ -1,16 +1,16 @@
-.landing-hero {
+.home-hero {
   background: linear-gradient(135deg, hsl(27 65% 47%) 0%, hsl(27 50% 35%) 100%);
   color: #fff;
   padding: 80px 20px 60px;
   text-align: center;
 }
 
-.landing-hero__container {
+.home-hero__container {
   max-width: 720px;
   margin: 0 auto;
 }
 
-.landing-hero__tagline {
+.home-hero__tagline {
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -18,7 +18,7 @@
   margin-bottom: 16px;
 }
 
-.landing-hero__title {
+.home-hero__title {
   font-size: 2.5rem;
   font-weight: 800;
   line-height: 1.15;
@@ -26,7 +26,7 @@
   letter-spacing: -0.02em;
 }
 
-.landing-hero__subtitle {
+.home-hero__subtitle {
   font-size: 1.125rem;
   line-height: 1.6;
   opacity: 0.9;
@@ -36,7 +36,7 @@
   margin-right: auto;
 }
 
-.landing-hero__actions {
+.home-hero__actions {
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -44,7 +44,7 @@
   margin-bottom: 16px;
 }
 
-.landing-hero__trust {
+.home-hero__trust {
   font-size: 0.8125rem;
   opacity: 0.7;
 }
@@ -82,18 +82,18 @@
 }
 
 /* Features Section */
-.landing-features {
+.home-features {
   padding: 80px 20px;
   max-width: 1000px;
   margin: 0 auto;
 }
 
-.landing-features__header {
+.home-features__header {
   text-align: center;
   margin-bottom: 48px;
 }
 
-.landing-features__label {
+.home-features__label {
   font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -102,7 +102,7 @@
   margin-bottom: 8px;
 }
 
-.landing-features__title {
+.home-features__title {
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.2;
@@ -110,14 +110,14 @@
   color: var(--foreground);
 }
 
-.landing-features__subtitle {
+.home-features__subtitle {
   font-size: 1.0625rem;
   color: var(--muted-foreground);
   max-width: 560px;
   margin: 0 auto;
 }
 
-.landing-features__grid {
+.home-features__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 32px;
@@ -144,52 +144,52 @@
 }
 
 /* Backstory Section */
-.landing-backstory {
+.home-backstory {
   padding: 80px 20px;
   background: var(--muted);
 }
 
-.landing-backstory__container {
+.home-backstory__container {
   max-width: 680px;
   margin: 0 auto;
 }
 
-.landing-backstory__title {
+.home-backstory__title {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 24px;
   color: var(--foreground);
 }
 
-.landing-backstory__content p {
+.home-backstory__content p {
   font-size: 1.0625rem;
   line-height: 1.7;
   color: var(--muted-foreground);
   margin-bottom: 16px;
 }
 
-.landing-backstory__content a {
+.home-backstory__content a {
   color: var(--primary);
   text-decoration: underline;
 }
 
 /* Comparison Section */
-.landing-comparison {
+.home-comparison {
   padding: 80px 20px;
   background: var(--muted);
 }
 
-.landing-comparison__container {
+.home-comparison__container {
   max-width: 900px;
   margin: 0 auto;
 }
 
-.landing-comparison__header {
+.home-comparison__header {
   text-align: center;
   margin-bottom: 48px;
 }
 
-.landing-comparison__label {
+.home-comparison__label {
   font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -198,7 +198,7 @@
   margin-bottom: 8px;
 }
 
-.landing-comparison__title {
+.home-comparison__title {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 12px;
@@ -248,21 +248,21 @@
 }
 
 /* Pricing Section */
-.landing-pricing {
+.home-pricing {
   padding: 80px 20px;
 }
 
-.landing-pricing__container {
+.home-pricing__container {
   max-width: 1000px;
   margin: 0 auto;
 }
 
-.landing-pricing__header {
+.home-pricing__header {
   text-align: center;
   margin-bottom: 48px;
 }
 
-.landing-pricing__label {
+.home-pricing__label {
   font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -271,7 +271,7 @@
   margin-bottom: 8px;
 }
 
-.landing-pricing__title {
+.home-pricing__title {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 12px;
@@ -361,22 +361,22 @@
 }
 
 /* Trust Section */
-.landing-trust {
+.home-trust {
   padding: 80px 20px;
   background: var(--muted);
 }
 
-.landing-trust__container {
+.home-trust__container {
   max-width: 800px;
   margin: 0 auto;
 }
 
-.landing-trust__header {
+.home-trust__header {
   text-align: center;
   margin-bottom: 48px;
 }
 
-.landing-trust__label {
+.home-trust__label {
   font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -385,13 +385,13 @@
   margin-bottom: 8px;
 }
 
-.landing-trust__title {
+.home-trust__title {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 12px;
 }
 
-.landing-trust__subtitle {
+.home-trust__subtitle {
   font-size: 1.0625rem;
   color: var(--muted-foreground);
 }
@@ -422,29 +422,29 @@
 }
 
 /* Footer CTA Section */
-.landing-cta {
+.home-cta {
   padding: 80px 20px;
   text-align: center;
 }
 
-.landing-cta__container {
+.home-cta__container {
   max-width: 600px;
   margin: 0 auto;
 }
 
-.landing-cta__title {
+.home-cta__title {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 16px;
 }
 
-.landing-cta__subtitle {
+.home-cta__subtitle {
   font-size: 1.0625rem;
   color: var(--muted-foreground);
   margin-bottom: 32px;
 }
 
-.landing-cta__actions {
+.home-cta__actions {
   display: flex;
   gap: 12px;
   justify-content: center;
@@ -453,11 +453,11 @@
 
 /* Responsive */
 @media (min-width: 768px) {
-  .landing-hero__title {
+  .home-hero__title {
     font-size: 3.5rem;
   }
 
-  .landing-hero__subtitle {
+  .home-hero__subtitle {
     font-size: 1.25rem;
   }
 }

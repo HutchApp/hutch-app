@@ -1,24 +1,24 @@
   <main>
-    <section class="landing-hero" data-test-section="hero">
-      <div class="landing-hero__container">
-        <p class="landing-hero__tagline">A read-it-later app by Fayner Brack</p>
-        <h1 class="landing-hero__title">Save now.<br>Read later.<br>That's it.</h1>
-        <p class="landing-hero__subtitle">Pocket is gone. Omnivore is gone. I built Hutch from a personal reading system I've maintained for 10 years &mdash; because I needed a replacement too.</p>
-        <div class="landing-hero__actions">
+    <section class="home-hero" data-test-section="hero">
+      <div class="home-hero__container">
+        <p class="home-hero__tagline">A read-it-later app by Fayner Brack</p>
+        <h1 class="home-hero__title">Save now.<br>Read later.<br>That's it.</h1>
+        <p class="home-hero__subtitle">Pocket is gone. Omnivore is gone. I built Hutch from a personal reading system I've maintained for 10 years &mdash; because I needed a replacement too.</p>
+        <div class="home-hero__actions">
           <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install the Firefox Extension</a>
           <a href="#what-works" class="btn btn--secondary" data-test-cta="see-features">See What Works Today</a>
         </div>
-        <p class="landing-hero__trust">Firefox</p>
+        <p class="home-hero__trust">Firefox</p>
       </div>
     </section>
 
-    <section id="what-works" class="landing-features" data-test-section="core-features">
-      <div class="landing-features__header">
-        <p class="landing-features__label">What Works Today</p>
-        <h2 class="landing-features__title">Save articles. Read them later.</h2>
-        <p class="landing-features__subtitle">These features are shipped and working right now. Install the extension and try them.</p>
+    <section id="what-works" class="home-features" data-test-section="core-features">
+      <div class="home-features__header">
+        <p class="home-features__label">What Works Today</p>
+        <h2 class="home-features__title">Save articles. Read them later.</h2>
+        <p class="home-features__subtitle">These features are shipped and working right now. Install the extension and try them.</p>
       </div>
-      <div class="landing-features__grid">
+      <div class="home-features__grid">
         {{#each coreFeatures}}
         <div class="feature-card" data-test-feature="{{name}}">
           <h3 class="feature-card__name">{{name}}</h3>
@@ -28,13 +28,13 @@
       </div>
     </section>
 
-    <section id="roadmap" class="landing-features" data-test-section="roadmap">
-      <div class="landing-features__header">
-        <p class="landing-features__label">What's Coming</p>
-        <h2 class="landing-features__title">Built in public. Shaped by users.</h2>
-        <p class="landing-features__subtitle">I'm planning to build these. Vote on what matters most to you on the <a href="https://www.reddit.com/r/hutchapp">Reddit community</a>.</p>
+    <section id="roadmap" class="home-features" data-test-section="roadmap">
+      <div class="home-features__header">
+        <p class="home-features__label">What's Coming</p>
+        <h2 class="home-features__title">Built in public. Shaped by users.</h2>
+        <p class="home-features__subtitle">I'm planning to build these. Vote on what matters most to you on the <a href="https://www.reddit.com/r/hutchapp">Reddit community</a>.</p>
       </div>
-      <div class="landing-features__grid">
+      <div class="home-features__grid">
         {{#each plannedFeatures}}
         <div class="feature-card" data-test-feature="{{name}}">
           <h3 class="feature-card__name">{{name}}</h3>
@@ -44,10 +44,10 @@
       </div>
     </section>
 
-    <section class="landing-backstory" data-test-section="backstory">
-      <div class="landing-backstory__container">
-        <h2 class="landing-backstory__title">Why I built this</h2>
-        <div class="landing-backstory__content">
+    <section class="home-backstory" data-test-section="backstory">
+      <div class="home-backstory__container">
+        <h2 class="home-backstory__title">Why I built this</h2>
+        <div class="home-backstory__content">
           <p>I'm <a href="https://www.reddit.com/user/fagnerbrack/">Fayner Brack</a>. You might know me as the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a>, a JavaScript library with over 22 billion downloads per year on jsDelivr. I've been building for the web for a long time.</p>
           <p>For the past 10 years, I've maintained a personal reading system &mdash; a pipeline of Gmail filters, DynamoDB tables, and Reddit automations that helped me save, organise, and actually read the articles I cared about. That system generated 300,000+ Reddit karma across technical communities.</p>
           <p>When Pocket was acquired and then abandoned, and Omnivore shut down overnight, I realised the tool I needed didn't exist as a product anyone could use. So I'm turning my personal system into Hutch &mdash; built in Australia, one feature at a time.</p>
@@ -56,11 +56,11 @@
       </div>
     </section>
 
-    <section class="landing-comparison" data-test-section="comparison">
-      <div class="landing-comparison__container">
-        <div class="landing-comparison__header">
-          <p class="landing-comparison__label">Honest Comparison</p>
-          <h2 class="landing-comparison__title">Where Hutch stands today.</h2>
+    <section class="home-comparison" data-test-section="comparison">
+      <div class="home-comparison__container">
+        <div class="home-comparison__header">
+          <p class="home-comparison__label">Honest Comparison</p>
+          <h2 class="home-comparison__title">Where Hutch stands today.</h2>
         </div>
         <table class="comparison-table" data-test-comparison-table>
           <thead>
@@ -99,11 +99,11 @@
       </div>
     </section>
 
-    <section id="pricing" class="landing-pricing" data-test-section="pricing">
-      <div class="landing-pricing__container">
-        <div class="landing-pricing__header">
-          <p class="landing-pricing__label">Simple Pricing</p>
-          <h2 class="landing-pricing__title">Free for the first 100 users.</h2>
+    <section id="pricing" class="home-pricing" data-test-section="pricing">
+      <div class="home-pricing__container">
+        <div class="home-pricing__header">
+          <p class="home-pricing__label">Simple Pricing</p>
+          <h2 class="home-pricing__title">Free for the first 100 users.</h2>
         </div>
         <div class="pricing-grid">
           <div class="pricing-card pricing-card--featured" data-test-plan="founding">
@@ -125,12 +125,12 @@
       </div>
     </section>
 
-    <section id="trust" class="landing-trust" data-test-section="trust">
-      <div class="landing-trust__container">
-        <div class="landing-trust__header">
-          <p class="landing-trust__label">Trust &amp; Privacy</p>
-          <h2 class="landing-trust__title">Your reading list. Your data. Period.</h2>
-          <p class="landing-trust__subtitle">Every read-it-later app that shut down left users scrambling. Hutch is built differently &mdash; starting with your right to leave.</p>
+    <section id="trust" class="home-trust" data-test-section="trust">
+      <div class="home-trust__container">
+        <div class="home-trust__header">
+          <p class="home-trust__label">Trust &amp; Privacy</p>
+          <h2 class="home-trust__title">Your reading list. Your data. Period.</h2>
+          <p class="home-trust__subtitle">Every read-it-later app that shut down left users scrambling. Hutch is built differently &mdash; starting with your right to leave.</p>
         </div>
         <div class="trust-grid">
           {{#each trustItems}}
@@ -143,11 +143,11 @@
       </div>
     </section>
 
-    <section class="landing-cta" data-test-section="cta">
-      <div class="landing-cta__container">
-        <h2 class="landing-cta__title">I'm building this in public.</h2>
-        <p class="landing-cta__subtitle">Try the extension, tell me what to build next. Hutch gets better with every user who shows up and says what they need.</p>
-        <div class="landing-cta__actions">
+    <section class="home-cta" data-test-section="cta">
+      <div class="home-cta__container">
+        <h2 class="home-cta__title">I'm building this in public.</h2>
+        <p class="home-cta__subtitle">Try the extension, tell me what to build next. Hutch gets better with every user who shows up and says what they need.</p>
+        <div class="home-cta__actions">
           <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install the Firefox Extension</a>
         </div>
       </div>

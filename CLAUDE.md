@@ -54,7 +54,7 @@ Do not add comments that explain what code does. Only add comments to explain **
 ```typescript
 // BAD - Explains what (obvious from code)
 // Re-export template function
-export { createLandingPageContent } from './landing.template';
+export { createHomePageContent } from './home.template';
 
 // GOOD - Explains why (not obvious)
 // Robots noindex because this page contains personal data

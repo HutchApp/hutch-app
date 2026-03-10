@@ -45,11 +45,11 @@ describe("Base component", () => {
 	});
 
 	it("should apply bodyClass when provided", () => {
-		const page = createTestPageContent({ bodyClass: "page-landing" });
+		const page = createTestPageContent({ bodyClass: "page-home" });
 		const result = Base(page).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.body.classList.contains("page-landing")).toBe(true);
+		expect(doc.body.classList.contains("page-home")).toBe(true);
 	});
 
 	it("should include navigation links", () => {

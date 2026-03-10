@@ -25,7 +25,7 @@ import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
-import { LandingPage } from "./web/pages/landing";
+import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage } from "./web/pages/install";
@@ -89,7 +89,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	});
 
 	app.get("/", (_req: Request, res: Response) => {
-		const result = LandingPage().to("text/html");
+		const result = HomePage().to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 

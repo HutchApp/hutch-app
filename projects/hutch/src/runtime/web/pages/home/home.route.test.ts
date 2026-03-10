@@ -15,7 +15,7 @@ describe("GET /", () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const heroTitle = doc.querySelector(".landing-hero__title");
+		const heroTitle = doc.querySelector(".home-hero__title");
 		expect(heroTitle?.textContent).toContain("Save now.");
 		expect(heroTitle?.textContent).toContain("Read later.");
 		expect(heroTitle?.textContent).toContain("That's it.");
@@ -86,11 +86,11 @@ describe("GET /", () => {
 	});
 
 
-	it("should have page-landing body class", async () => {
+	it("should have page-home body class", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.body.classList.contains("page-landing")).toBe(true);
+		expect(doc.body.classList.contains("page-home")).toBe(true);
 	});
 
 	it("should set appropriate SEO metadata", async () => {
