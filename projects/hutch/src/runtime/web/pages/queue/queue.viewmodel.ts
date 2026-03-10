@@ -41,8 +41,8 @@ export interface QueueViewModel {
 	saveError?: string;
 }
 
-function formatRelativeDate(range: { date: Date; now: Date }): string {
-	const diffMs = range.now.getTime() - range.date.getTime();
+function formatRelativeDate(date: Date, now: Date): string {
+	const diffMs = now.getTime() - date.getTime();
 	const diffMinutes = Math.floor(diffMs / 60000);
 	const diffHours = Math.floor(diffMs / 3600000);
 	const diffDays = Math.floor(diffMs / 86400000);
@@ -51,7 +51,7 @@ function formatRelativeDate(range: { date: Date; now: Date }): string {
 	if (diffMinutes < 60) return `${diffMinutes}m ago`;
 	if (diffHours < 24) return `${diffHours}h ago`;
 	if (diffDays < 30) return `${diffDays}d ago`;
-	return range.date.toLocaleDateString("en-AU", {
+	return date.toLocaleDateString("en-AU", {
 		day: "numeric",
 		month: "short",
 		year: "numeric",
@@ -72,7 +72,7 @@ function toArticleViewModel(
 		readTimeLabel: `${readTime} min read`,
 		status: article.status,
 		isUnread: article.status === "unread",
-		savedAgo: formatRelativeDate({ date: article.savedAt, now }),
+		savedAgo: formatRelativeDate(article.savedAt, now),
 		imageUrl: article.metadata.imageUrl,
 		hasContent: Boolean(article.content),
 	};

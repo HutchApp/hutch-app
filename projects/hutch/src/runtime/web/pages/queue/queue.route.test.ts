@@ -235,7 +235,7 @@ describe("Queue routes", () => {
 					s.textContent?.includes("status=read") &&
 					s.textContent?.includes("data-article-id"),
 			);
-			expect(markReadScript?.textContent).toContain("data-article-id");
+			expect(markReadScript).toBeTruthy();
 		});
 	});
 
