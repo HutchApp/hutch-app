@@ -82,8 +82,12 @@ export function createLoginActions(config: {
 
 	actions.set("switch-to-popup", {
 		async isAvailable(driver: WebDriver): Promise<boolean> {
-			const url = await driver.getCurrentUrl();
-			return url.includes("/oauth/callback");
+			try {
+				const url = await driver.getCurrentUrl();
+				return url.includes("/oauth/callback");
+			} catch {
+				return true;
+			}
 		},
 		async execute(driver: WebDriver): Promise<void> {
 			await driver.switchTo().window(config.popupWindowHandle);

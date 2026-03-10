@@ -55,7 +55,7 @@ function createMockDeps(overrides?: Partial<OAuthAuthDeps>) {
 	};
 
 	return {
-		serverUrl: "http://localhost:3000",
+		serverUrl: async () => "http://localhost:3000",
 		clientId: "test-client",
 		openTab,
 		waitForRedirect,

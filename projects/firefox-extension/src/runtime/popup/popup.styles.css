@@ -395,20 +395,3 @@ h2 {
   text-align: center;
   margin: 0;
 }
-
-.error-toast {
-  position: fixed;
-  bottom: 16px;
-  left: 16px;
-  right: 16px;
-  padding: 8px 12px;
-  background: var(--popup-error);
-  color: #ffffff;
-  font-size: 13px;
-  border-radius: 6px;
-  text-align: center;
-}
-
-.error-toast[hidden] {
-  display: none;
-}

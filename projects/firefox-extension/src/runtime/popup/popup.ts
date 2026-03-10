@@ -1,12 +1,13 @@
 import type {
-	GuardedResult,
-	PopupMessage,
 	ReadingListItem,
 	ReadingListItemId,
-	RemoveUrlResult,
+	PopupMessage,
+	GuardedResult,
 	SaveUrlResult,
+	RemoveUrlResult,
 } from "browser-extension-core";
 import { filterByUrl, paginateItems } from "browser-extension-core";
+
 
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
@@ -18,16 +19,6 @@ function showView(id: string) {
 
 function send(message: PopupMessage): Promise<unknown> {
 	return browser.runtime.sendMessage(message);
-}
-
-function showErrorToast(message: string) {
-	const toast = document.getElementById("error-toast");
-	if (!toast) return;
-	toast.textContent = message;
-	toast.hidden = false;
-	setTimeout(() => {
-		toast.hidden = true;
-	}, 3000);
 }
 
 let savedItemId: ReadingListItemId | null = null;
@@ -151,20 +142,14 @@ function renderLinks(items: ReadingListItem[]) {
 		deleteButton.textContent = "×";
 		deleteButton.title = "Remove from list";
 		deleteButton.addEventListener("click", async () => {
-			try {
-				const result = (await send({
-					type: "remove-item",
-					id: item.id,
-				})) as GuardedResult<RemoveUrlResult>;
+			const result = (await send({
+				type: "remove-item",
+				id: item.id,
+			})) as GuardedResult<RemoveUrlResult>;
 
-				if (result.ok && result.value.ok) {
-					allItems = allItems.filter((i) => i.id !== item.id);
-					renderLinks(filterItems());
-				} else {
-					showErrorToast("Failed to remove");
-				}
-			} catch {
-				showErrorToast("Failed to remove");
+			if (result.ok && result.value.ok) {
+				allItems = allItems.filter((i) => i.id !== item.id);
+				renderLinks(filterItems());
 			}
 		});
 
@@ -183,24 +168,19 @@ function filterItems(): ReadingListItem[] {
 }
 
 async function loadAllItems() {
-	try {
-		const result = (await send({
-			type: "get-all-items",
-		})) as GuardedResult<ReadingListItem[]>;
+	const result = (await send({
+		type: "get-all-items",
+	})) as GuardedResult<ReadingListItem[]>;
 
-		if (!result.ok) {
-			const listError = document.getElementById("list-error");
-			if (!listError) throw new Error("list-error element not found");
-			listError.hidden = false;
-			return;
-		}
-
-		allItems = result.value;
-		renderLinks(filterItems());
-	} catch {
+	if (!result.ok) {
 		const listError = document.getElementById("list-error");
-		if (listError) listError.hidden = false;
+		if (!listError) throw new Error("list-error element not found");
+		listError.hidden = false;
+		return;
 	}
+
+	allItems = result.value;
+	renderLinks(filterItems());
 }
 
 async function showListView() {
@@ -211,8 +191,7 @@ async function showListView() {
 async function getActiveTab(): Promise<{ url: string; title: string } | null> {
 	const params = new URLSearchParams(window.location.search);
 	const paramUrl = params.get("url");
-	if (paramUrl)
-		return { url: paramUrl, title: params.get("title") ?? paramUrl };
+	if (paramUrl) return { url: paramUrl, title: params.get("title") ?? paramUrl };
 
 	const tabs = await browser.tabs.query({ active: true, currentWindow: true });
 	const tab = tabs[0];
@@ -237,7 +216,6 @@ async function saveAndShowList() {
 			showView("login-view");
 			return;
 		}
-		showView("error-view");
 		return;
 	}
 
@@ -255,11 +233,7 @@ async function saveAndShowList() {
 	if (saveResult.ok && saveResult.value.ok) {
 		savedItemId = saveResult.value.item.id;
 		showView("saved-view");
-		return;
 	}
-
-	await showListView();
-	showErrorToast("Failed to save");
 }
 
 document.getElementById("login-button")?.addEventListener("click", async () => {
@@ -267,29 +241,35 @@ document.getElementById("login-button")?.addEventListener("click", async () => {
 	if (loginError) loginError.hidden = true;
 
 	try {
-		const result = (await send({ type: "login" })) as { ok: boolean };
+		const result = (await send({ type: "login" })) as {
+			ok: boolean;
+			reason?: string;
+			error?: { message?: string };
+		};
 		if (!result.ok) {
-			if (loginError) loginError.hidden = false;
+			if (loginError) {
+				loginError.textContent = `Login failed: ${result.reason ?? "unknown"} — ${result.error?.message ?? ""}`;
+				loginError.hidden = false;
+			}
 			return;
 		}
-	} catch {
-		if (loginError) loginError.hidden = false;
+	} catch (err) {
+		if (loginError) {
+			loginError.textContent = `Login error: ${err instanceof Error ? err.message : String(err)}`;
+			loginError.hidden = false;
+		}
 		return;
 	}
 
 	showView("loading-view");
-	try {
-		await saveAndShowList();
-	} catch (error) {
-		console.error("Failed to load after login:", error);
-		showView("error-view");
-	}
+	await saveAndShowList();
 });
 
-document.getElementById("undo-button")?.addEventListener("click", async () => {
-	if (!savedItemId) return;
+document
+	.getElementById("undo-button")
+	?.addEventListener("click", async () => {
+		if (!savedItemId) return;
 
-	try {
 		const result = (await send({
 			type: "remove-item",
 			id: savedItemId,
@@ -298,13 +278,8 @@ document.getElementById("undo-button")?.addEventListener("click", async () => {
 		if (result.ok && result.value.ok) {
 			savedItemId = null;
 			await showListView();
-		} else {
-			showErrorToast("Failed to undo");
 		}
-	} catch {
-		showErrorToast("Failed to undo");
-	}
-});
+	});
 
 document
 	.getElementById("reload-button")
@@ -315,12 +290,8 @@ document
 document
 	.getElementById("logout-button")
 	?.addEventListener("click", async () => {
-		try {
-			await send({ type: "logout" });
-			showView("login-view");
-		} catch {
-			showErrorToast("Failed to log out");
-		}
+		await send({ type: "logout" });
+		showView("login-view");
 	});
 
 document.getElementById("filter-input")?.addEventListener("input", () => {
@@ -328,15 +299,9 @@ document.getElementById("filter-input")?.addEventListener("input", () => {
 	renderLinks(filterItems());
 });
 
-document.getElementById("retry-button")?.addEventListener("click", () => {
-	showView("loading-view");
-	saveAndShowList().catch((error) => {
-		console.error("Failed to retry:", error);
-		showView("error-view");
-	});
-});
-
 saveAndShowList().catch((error) => {
 	console.error("Failed to initialize popup:", error);
-	showView("error-view");
+	showView("list-view");
+	const listError = document.getElementById("list-error");
+	if (listError) listError.hidden = false;
 });

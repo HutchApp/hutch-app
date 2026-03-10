@@ -15,8 +15,9 @@ const POPUP_URL = `moz-extension://${ADDON_UUID}/popup/popup.template.html`;
 
 const TEST_EMAIL = "e2e-test@example.com";
 const TEST_PASSWORD = "testpassword123";
+const TEST_PORT = 3000;
 
-async function startTestServer(): Promise<{ server: http.Server; port: number }> {
+async function startTestServer(): Promise<http.Server> {
 	const hutchTestApp = path.resolve(
 		__dirname,
 		"../../../../hutch/dist/runtime/test-app",
@@ -26,16 +27,15 @@ async function startTestServer(): Promise<{ server: http.Server; port: number }>
 	await auth.createUser({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
 	return new Promise((resolve) => {
-		const server = app.listen(0, "127.0.0.1", () => {
-			const addr = server.address() as { port: number };
-			resolve({ server, port: addr.port });
+		const server = app.listen(TEST_PORT, "127.0.0.1", () => {
+			resolve(server);
 		});
 	});
 }
 
 test("should complete OAuth login flow", async () => {
-	const { server, port } = await startTestServer();
-	const serverUrl = `http://127.0.0.1:${port}`;
+	const server = await startTestServer();
+	const serverUrl = `http://127.0.0.1:${TEST_PORT}`;
 
 	const options = new Options();
 	if (process.env.HEADLESS !== "false") {
@@ -67,8 +67,6 @@ test("should complete OAuth login flow", async () => {
 			`browser.storage.local.set({ hutch_server_url: "${serverUrl}" });`,
 		);
 
-		// Wait for storage to be set, then reload the popup
-		await driver.sleep(500);
 		await driver.get(POPUP_URL);
 
 		// Wait for login-view to appear
@@ -93,11 +91,10 @@ test("should complete OAuth login flow", async () => {
 		const stateHandler = new LoginFlowStateHandler(
 			driver,
 			async (d) => {
-				// After switching back to popup, check that we're no longer on login-view
-				const url = await d.getCurrentUrl();
-				if (!url.startsWith("moz-extension://")) return false;
-
 				try {
+					const url = await d.getCurrentUrl();
+					if (!url.startsWith("moz-extension://")) return false;
+
 					const loginView = await d.findElement(By.id("login-view"));
 					const hidden = await loginView.getAttribute("hidden");
 					return hidden !== null;
@@ -111,7 +108,6 @@ test("should complete OAuth login flow", async () => {
 		const flowRunner = new FlowRunner(driver, stateHandler);
 		const result = await flowRunner.run(POPUP_URL, {
 			maxSteps: 15,
-			actionDelayMs: 1000,
 		});
 
 		assert.equal(result.success, true, `Flow failed: ${result.error}`);

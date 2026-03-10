@@ -16,12 +16,13 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	}
 
 	const login = async (): Promise<LoginResult> => {
+		const serverUrl = await deps.serverUrl();
 		const codeVerifier = generateCodeVerifier();
 		const codeChallenge = await generateCodeChallenge(codeVerifier);
 		const state = generateCodeVerifier();
-		const redirectUri = `${deps.serverUrl}/oauth/callback`;
+		const redirectUri = `${serverUrl}/oauth/callback`;
 
-		const authorizeUrl = new URL(`${deps.serverUrl}/oauth/authorize`);
+		const authorizeUrl = new URL(`${serverUrl}/oauth/authorize`);
 		authorizeUrl.searchParams.set("client_id", deps.clientId);
 		authorizeUrl.searchParams.set("redirect_uri", redirectUri);
 		authorizeUrl.searchParams.set("response_type", "code");
@@ -54,7 +55,7 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 			throw new Error("OAuth state mismatch");
 		}
 
-		const tokenResponse = await deps.fetchFn(`${deps.serverUrl}/oauth/token`, {
+		const tokenResponse = await deps.fetchFn(`${serverUrl}/oauth/token`, {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: new URLSearchParams({
@@ -82,9 +83,10 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	};
 
 	const logout = async (): Promise<void> => {
+		const serverUrl = await deps.serverUrl();
 		const tokens = await deps.tokenStorage.getTokens();
 		if (tokens) {
-			await deps.fetchFn(`${deps.serverUrl}/oauth/revoke`, {
+			await deps.fetchFn(`${serverUrl}/oauth/revoke`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ token: tokens.refreshToken }),

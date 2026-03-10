@@ -17,7 +17,6 @@ export interface Auth {
 	whenLoggedIn: WhenLoggedIn;
 }
 
-// refreshToken is stored for future token renewal but not yet used — expired access tokens currently require re-login
 export interface OAuthTokens {
 	accessToken: string;
 	refreshToken: string;
@@ -30,7 +29,7 @@ export interface TokenStorage {
 }
 
 export interface OAuthAuthDeps {
-	serverUrl: string;
+	serverUrl: () => Promise<string>;
 	clientId: string;
 	openTab(url: string): Promise<number>;
 	waitForRedirect(params: { tabId: number; urlPrefix: string }): Promise<string>;

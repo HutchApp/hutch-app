@@ -12,24 +12,18 @@ import {
 	type TokenStorage,
 } from "browser-extension-core";
 import { createBrowserSetIcon } from "./tinted-icon.browser";
-import { z } from "zod";
 
 const STORAGE_KEY = "hutch_oauth_tokens";
 const SERVER_URL_KEY = "hutch_server_url";
 const DEFAULT_SERVER_URL = "http://127.0.0.1:3000";
 const CLIENT_ID = "hutch-firefox-extension";
 
-const StoredTokens = z.object({
-	accessToken: z.string(),
-	refreshToken: z.string(),
-});
-
 const tokenStorage: TokenStorage = {
 	async getTokens(): Promise<OAuthTokens | null> {
 		const result = await browser.storage.local.get(STORAGE_KEY);
 		const raw = result[STORAGE_KEY];
 		if (!raw) return null;
-		return StoredTokens.parse(raw);
+		return raw as OAuthTokens;
 	},
 	async setTokens(tokens: OAuthTokens): Promise<void> {
 		await browser.storage.local.set({ [STORAGE_KEY]: tokens });
@@ -151,25 +145,18 @@ const shell: BrowserShell = {
 };
 
 async function initCore() {
-	const serverUrl = await getServerUrl();
-
 	const auth = await initOAuthAuth({
-		serverUrl,
+		serverUrl: getServerUrl,
 		clientId: CLIENT_ID,
 		async openTab(url: string): Promise<number> {
 			const tab = await browser.tabs.create({ url });
-			if (tab.id == null) {
-				throw new Error("Failed to create tab: no tab ID returned");
-			}
-			return tab.id;
+			return tab.id!;
 		},
 		waitForRedirect({ tabId, urlPrefix }): Promise<string> {
-			const TIMEOUT_MS = 5 * 60 * 1000;
 			return new Promise((resolve, reject) => {
 				const cleanup = () => {
 					clearTimeout(timer);
 					browser.tabs.onUpdated.removeListener(listener);
-					browser.tabs.onRemoved.removeListener(removedListener);
 				};
 				const listener = (
 					updatedTabId: number,
@@ -180,24 +167,17 @@ async function initCore() {
 						resolve(changeInfo.url);
 					}
 				};
-				const removedListener = (removedTabId: number) => {
-					if (removedTabId === tabId) {
-						cleanup();
-						reject(new Error("Login tab was closed before completing authentication"));
-					}
-				};
 				const timer = setTimeout(() => {
 					cleanup();
 					reject(new Error("OAuth login timed out after 5 minutes"));
-				}, TIMEOUT_MS);
+				}, 5 * 60 * 1000);
 				browser.tabs.onUpdated.addListener(listener);
-				browser.tabs.onRemoved.addListener(removedListener);
 			});
 		},
 		async closeTab(tabId: number): Promise<void> {
 			await browser.tabs.remove(tabId);
 		},
-		fetchFn: fetch,
+		fetchFn: (...args) => fetch(...args),
 		tokenStorage,
 	});
 
@@ -292,9 +272,6 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 					break;
 				}
 			}
-		})
-		.catch((err) => {
-			sendResponse({ ok: false, reason: "error", error: String(err) });
 		});
 
 	return true;

@@ -13,7 +13,6 @@ const VIEW_IDS = [
 	"removed-view",
 	"list-view",
 	"loading-view",
-	"error-view",
 ];
 
 type SuccessDetector = (driver: WebDriver) => Promise<boolean>;
@@ -50,18 +49,27 @@ export class LoginFlowStateHandler implements FlowStateHandler {
 	}
 
 	private async getActiveView(): Promise<string> {
-		const url = await this.driver.getCurrentUrl();
-		if (url.includes("/login")) return "server-login";
-		if (url.includes("/oauth/authorize")) return "oauth-authorize";
-		if (url.includes("/oauth/callback")) return "oauth-callback";
+		try {
+			const url = await this.driver.getCurrentUrl();
+			if (url.includes("/login")) return "server-login";
+			if (url.includes("/oauth/authorize")) return "oauth-authorize";
 
-		for (const viewId of VIEW_IDS) {
-			const element = await this.driver.findElement(By.id(viewId));
-			const hidden = await element.getAttribute("hidden");
-			if (hidden === null) {
-				return viewId;
+			for (const viewId of VIEW_IDS) {
+				const element = await this.driver.findElement(By.id(viewId));
+				const hidden = await element.getAttribute("hidden");
+				if (hidden === null) {
+					return viewId;
+				}
 			}
+			throw new Error("No visible view found");
+		} catch (error) {
+			if (
+				error instanceof Error &&
+				error.name === "NoSuchWindowError"
+			) {
+				return "tab-closed";
+			}
+			throw error;
 		}
-		throw new Error("No visible view found");
 	}
 }

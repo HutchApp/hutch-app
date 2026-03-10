@@ -43,7 +43,7 @@ export function LoginPage(data?: AuthFormData): Component {
 	const content = render(LOGIN_TEMPLATE, {
 		email,
 		globalError: data?.globalError,
-		returnUrl: data?.returnUrl,
+		returnUrl: data?.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 	});

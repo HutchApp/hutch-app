@@ -66,10 +66,6 @@ declare namespace browser {
 			): void;
 		};
 
-		const onRemoved: {
-			addListener(callback: (tabId: number) => void): void;
-			removeListener(callback: (tabId: number) => void): void;
-		};
 	}
 
 	namespace browserAction {

@@ -45,11 +45,7 @@ export interface Core {
 	once(event: "checked-url", handler: ResultHandler<ReadingListItem | null>): void;
 }
 
-export interface CoreDeps {
-	auth?: Auth;
-}
-
-export function BrowserExtensionCore(shell: BrowserShell, deps?: CoreDeps): Core {
+export function BrowserExtensionCore(shell: BrowserShell, deps?: { auth?: Auth }): Core {
 	const eventBus = createEventBus();
 	const auth = deps?.auth ?? initInMemoryAuth();
 	const readingList = initInMemoryReadingList();

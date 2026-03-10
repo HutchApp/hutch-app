@@ -30,5 +30,9 @@ if (e2eUnitTests) {
   run('Firefox Extension - Running E2E unit tests', `node --test ${e2eUnitTests}`)
 }
 
+run('Firefox Extension - Running E2E tests',
+  'node --test dist/e2e/login-flow/run.e2e-local.js',
+  { HEADLESS: 'true' })
+
 console.log('\n=== Firefox Extension - All tests completed successfully ===\n')
 process.stdout.write('')

@@ -1,5 +1,5 @@
 export { BrowserExtensionCore } from "./core";
-export type { Core, CoreDeps, CoreError, ResultHandler } from "./core";
+export type { Core, CoreError, ResultHandler } from "./core";
 export type { BrowserShell } from "./shell.types";
 export type { SetIcon } from "./icon-status";
 export type {
