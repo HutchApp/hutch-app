@@ -11,26 +11,13 @@ import {
 	ForgotPasswordPage,
 	ResetPasswordPage,
 } from "./forgot-password.component";
+import { flattenZodErrors } from "./form-errors";
 
 interface ForgotPasswordDependencies {
+	baseUrl: string;
 	sendEmail: SendEmail;
 	createPasswordResetToken: CreatePasswordResetToken;
 	resetPassword: ResetPassword;
-}
-
-function flattenZodErrors(
-	issues: { path: PropertyKey[]; message: string }[],
-): { field: string; message: string }[] {
-	return issues.map((issue) => ({
-		field: String(issue.path[issue.path.length - 1]),
-		message: issue.message,
-	}));
-}
-
-function buildResetUrl(req: Request, token: string): string {
-	const protocol = req.protocol;
-	const host = req.get("host");
-	return `${protocol}://${host}/reset-password?token=${token}`;
 }
 
 export function initForgotPasswordRoutes(
@@ -59,12 +46,16 @@ export function initForgotPasswordRoutes(
 		const tokenResult = await deps.createPasswordResetToken(email);
 
 		if (tokenResult.ok) {
-			const resetUrl = buildResetUrl(req, tokenResult.token);
-			await deps.sendEmail({
-				to: email,
-				subject: "Reset your Hutch password",
-				html: `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
-			});
+			const resetUrl = `${deps.baseUrl}/reset-password?token=${tokenResult.token}`;
+			try {
+				await deps.sendEmail({
+					to: email,
+					subject: "Reset your Hutch password",
+					html: `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you did not request this, you can safely ignore this email.</p>`,
+				});
+			} catch (error) {
+				console.error("Failed to send password reset email:", error);
+			}
 		}
 
 		// Always show success to avoid leaking whether an email exists

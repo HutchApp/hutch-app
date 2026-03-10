@@ -78,9 +78,12 @@ function initProviders() {
 	};
 }
 
+const baseUrl = getEnv("BASE_URL") ?? `http://localhost:${getEnv("PORT") || "3000"}`;
+
 export const app = createApp({
 	...initProviders(),
 	...initReadabilityParser({ fetchHtml }),
+	baseUrl,
 });
 
 export const localServer = (expressApp: Express, logger: Logger): void => {

@@ -66,6 +66,7 @@
   box-shadow: 0 0 0 3px var(--ring-shadow);
 }
 
+/* purgecss-ignore: applied dynamically via form-errors.ts toFieldViewModel() */
 .auth-form__input--error {
   border-color: var(--error);
 }

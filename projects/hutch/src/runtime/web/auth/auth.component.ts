@@ -4,35 +4,16 @@ import { Base } from "../base.component";
 import type { Component } from "../component.types";
 import { render } from "../render";
 import { AUTH_STYLES } from "./auth.styles";
+import { toFieldViewModel } from "./form-errors";
+import type { FieldError } from "./form-errors";
 
 const LOGIN_TEMPLATE = readFileSync(join(__dirname, "login.template.html"), "utf-8");
 const SIGNUP_TEMPLATE = readFileSync(join(__dirname, "signup.template.html"), "utf-8");
-
-interface FieldError {
-	field: string;
-	message: string;
-}
 
 interface AuthFormData {
 	email?: string;
 	errors?: FieldError[];
 	globalError?: string;
-}
-
-interface FieldViewModel {
-	errorClass: string;
-	error?: string;
-}
-
-function toFieldViewModel(
-	errors: FieldError[] | undefined,
-	field: string,
-): FieldViewModel {
-	const error = errors?.find((e) => e.field === field);
-	return {
-		errorClass: error ? " auth-form__input--error" : "",
-		error: error?.message,
-	};
 }
 
 export function LoginPage(data?: AuthFormData): Component {

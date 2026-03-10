@@ -66,6 +66,7 @@ const innerApp = createApp({
   oauthModel,
   validateAccessToken: createValidateAccessToken(oauthModel),
   sendEmail,
+  baseUrl: `http://localhost:${PORT}`,
 })
 
 // Wrap the app to strip the Origin header for same-origin requests.

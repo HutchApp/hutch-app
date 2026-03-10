@@ -4,14 +4,11 @@ import { Base } from "../base.component";
 import type { Component } from "../component.types";
 import { render } from "../render";
 import { AUTH_STYLES } from "./auth.styles";
+import { toFieldViewModel } from "./form-errors";
+import type { FieldError } from "./form-errors";
 
 const FORGOT_PASSWORD_TEMPLATE = readFileSync(join(__dirname, "forgot-password.template.html"), "utf-8");
 const RESET_PASSWORD_TEMPLATE = readFileSync(join(__dirname, "reset-password.template.html"), "utf-8");
-
-interface FieldError {
-	field: string;
-	message: string;
-}
 
 interface ForgotPasswordData {
 	email?: string;
@@ -24,17 +21,6 @@ interface ResetPasswordData {
 	token: string;
 	errors?: FieldError[];
 	globalError?: string;
-}
-
-function toFieldViewModel(
-	errors: FieldError[] | undefined,
-	field: string,
-): { errorClass: string; error?: string } {
-	const error = errors?.find((e) => e.field === field);
-	return {
-		errorClass: error ? " auth-form__input--error" : "",
-		error: error?.message,
-	};
 }
 
 export function ForgotPasswordPage(data?: ForgotPasswordData): Component {

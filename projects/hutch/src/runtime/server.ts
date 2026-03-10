@@ -60,6 +60,7 @@ interface AppDependencies {
 	updateArticleStatus: UpdateArticleStatus;
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
+	baseUrl: string;
 	sendEmail: SendEmail;
 	createPasswordResetToken: CreatePasswordResetToken;
 	resetPassword: ResetPassword;
@@ -126,6 +127,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use(authRouter);
 
 	const forgotPasswordRouter = initForgotPasswordRoutes({
+		baseUrl: deps.baseUrl,
 		sendEmail: deps.sendEmail,
 		createPasswordResetToken: deps.createPasswordResetToken,
 		resetPassword: deps.resetPassword,

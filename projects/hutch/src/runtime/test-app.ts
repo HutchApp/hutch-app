@@ -45,6 +45,7 @@ export function createTestApp(options?: {
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		sendEmail: email.sendEmail,
+		baseUrl: "http://localhost:3000",
 		livereloadMiddleware: options?.livereloadMiddleware,
 	});
 
@@ -70,6 +71,7 @@ export function createTestAppWithFetchHtml(fetchHtml: FetchHtml) {
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		sendEmail: email.sendEmail,
+		baseUrl: "http://localhost:3000",
 	});
 
 	return { app, auth, passwordReset, articleStore, parser, oauthModel, email };

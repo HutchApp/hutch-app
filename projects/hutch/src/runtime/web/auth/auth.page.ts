@@ -8,6 +8,7 @@ import type {
 } from "../../providers/auth/auth.types";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage } from "./auth.component";
+import { flattenZodErrors } from "./form-errors";
 
 const COOKIE_NAME = "hutch_sid";
 
@@ -22,15 +23,6 @@ interface AuthDependencies {
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	destroySession: DestroySession;
-}
-
-function flattenZodErrors(
-	issues: { path: PropertyKey[]; message: string }[],
-): { field: string; message: string }[] {
-	return issues.map((issue) => ({
-		field: String(issue.path[issue.path.length - 1]),
-		message: issue.message,
-	}));
 }
 
 export function initAuthRoutes(deps: AuthDependencies): Router {
