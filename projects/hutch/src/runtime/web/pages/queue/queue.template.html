@@ -9,10 +9,10 @@
       </form>
       {{#if saveError}}<p class="queue__save-error" data-test-save-error>{{saveError}}</p>{{/if}}
       <nav class="queue__filters" data-test-filters>
-        <a class="{{filterAllClass}}" href="{{filterAllUrl}}">All</a>
-        <a class="{{filterUnreadClass}}" href="{{filterUnreadUrl}}">Unread</a>
-        <a class="{{filterReadClass}}" href="{{filterReadUrl}}">Read</a>
-        <a class="{{filterArchivedClass}}" href="{{filterArchivedUrl}}">Archived</a>
+        <a class="{{filterAllClass}}" href="{{filterAllUrl}}" data-test-filter="all">All</a>
+        <a class="{{filterUnreadClass}}" href="{{filterUnreadUrl}}" data-test-filter="unread">Unread</a>
+        <a class="{{filterReadClass}}" href="{{filterReadUrl}}" data-test-filter="read">Read</a>
+        <a class="{{filterArchivedClass}}" href="{{filterArchivedUrl}}" data-test-filter="archived">Archived</a>
       </nav>
       <div class="queue__sort">
         <a class="queue__sort-link" href="{{showUrlToggleUrl}}" data-test-show-url>{{showUrlToggleLabel}}</a>
