@@ -210,6 +210,10 @@
   overflow: hidden;
 }
 
+.queue-article__action-form {
+  display: inline;
+}
+
 .queue-article__actions {
   display: flex;
   gap: 4px;

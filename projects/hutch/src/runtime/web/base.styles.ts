@@ -295,6 +295,15 @@ export const NAV_STYLES = `
     background: var(--muted);
   }
 
+  button.nav__link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    width: 100%;
+    text-align: left;
+  }
+
   @media (max-width: 767px) {
     .header--transparent .nav__menu {
       background: var(--background);
