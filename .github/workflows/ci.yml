@@ -95,11 +95,17 @@ jobs:
         run: node projects/firefox-extension/scripts/bump-version.js ${{ github.run_number }}
 
       - name: Sign extension via AMO (unlisted)
+        id: sign
+        continue-on-error: true
         run: pnpm --filter firefox-extension sign
         env:
           AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
           AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
 
-      - name: Deploy signed extension to S3
+      - name: Warn if signing was skipped
+        if: steps.sign.outcome == 'failure'
+        run: echo "::warning::AMO signing timed out or failed. Deploying unsigned extension."
+
+      - name: Deploy extension to S3
         run: pulumi up --stack prod --yes
         working-directory: projects/firefox-extension
