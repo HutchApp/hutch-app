@@ -14,6 +14,7 @@ export type {
 	Auth,
 	GuardedResult,
 	LoginResult,
+	RefreshResult,
 	OAuthAuthDeps,
 	OAuthTokens,
 	TokenStorage,

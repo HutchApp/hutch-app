@@ -302,4 +302,302 @@ describe("initOAuthAuth", () => {
 			expect(result).toEqual({ ok: true, value: "restored" });
 		});
 	});
+
+	describe("refreshTokens", () => {
+		it("should exchange refresh token for new tokens", async () => {
+			const tokenStorage = createMockTokenStorage();
+			let capturedUrl = "";
+			let capturedBody = "";
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (url, init) => {
+					capturedUrl = url;
+					capturedBody = init.body;
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "new-access-token",
+							refresh_token: "new-refresh-token",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			const result = await auth.refreshTokens();
+
+			expect(result).toEqual({ ok: true });
+			expect(capturedUrl).toBe("http://localhost:3000/oauth/token");
+			expect(capturedBody).toContain("grant_type=refresh_token");
+			expect(capturedBody).toContain("client_id=test-client");
+		});
+
+		it("should store new tokens after successful refresh", async () => {
+			const tokenStorage = createMockTokenStorage();
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					if (init.body.includes("grant_type=refresh_token")) {
+						return {
+							ok: true as boolean,
+							status: 200,
+							json: async () => ({
+								access_token: "refreshed-access",
+								refresh_token: "refreshed-refresh",
+							}),
+						};
+					}
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "access-123",
+							refresh_token: "refresh-456",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			await auth.refreshTokens();
+
+			expect(tokenStorage.stored).toEqual({
+				accessToken: "refreshed-access",
+				refreshToken: "refreshed-refresh",
+			});
+		});
+
+		it("should remain logged in after successful refresh", async () => {
+			const tokenStorage = createMockTokenStorage();
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					if (init.body.includes("grant_type=refresh_token")) {
+						return {
+							ok: true as boolean,
+							status: 200,
+							json: async () => ({
+								access_token: "new-access",
+								refresh_token: "new-refresh",
+							}),
+						};
+					}
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "access-123",
+							refresh_token: "refresh-456",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			await auth.refreshTokens();
+
+			const guarded = auth.whenLoggedIn(() => "still-here");
+			expect(guarded).toEqual({ ok: true, value: "still-here" });
+		});
+
+		it("should return no-refresh-token when no tokens are stored", async () => {
+			const deps = createMockDeps();
+			const auth = await initOAuthAuth(deps);
+
+			const result = await auth.refreshTokens();
+
+			expect(result).toEqual({ ok: false, reason: "no-refresh-token" });
+		});
+
+		it("should log out when no refresh token is available", async () => {
+			const tokenStorage = createMockTokenStorage();
+			await tokenStorage.setTokens({ accessToken: "access", refreshToken: "" });
+			const deps = createMockDeps({ tokenStorage });
+			const auth = await initOAuthAuth(deps);
+
+			await auth.refreshTokens();
+
+			const guarded = auth.whenLoggedIn(() => "value");
+			expect(guarded).toEqual({ ok: false, reason: "not-logged-in" });
+		});
+
+		it("should return refresh-failed when server rejects the refresh token", async () => {
+			const tokenStorage = createMockTokenStorage();
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					if (init.body.includes("grant_type=refresh_token")) {
+						return { ok: false as boolean, status: 400, json: async () => ({}) };
+					}
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "access-123",
+							refresh_token: "refresh-456",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			const result = await auth.refreshTokens();
+
+			expect(result).toEqual({ ok: false, reason: "refresh-failed" });
+		});
+
+		it("should clear tokens and log out on failed refresh", async () => {
+			const tokenStorage = createMockTokenStorage();
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					if (init.body.includes("grant_type=refresh_token")) {
+						return { ok: false as boolean, status: 400, json: async () => ({}) };
+					}
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "access-123",
+							refresh_token: "refresh-456",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			await auth.refreshTokens();
+
+			expect(tokenStorage.stored).toBeNull();
+			const guarded = auth.whenLoggedIn(() => "value");
+			expect(guarded).toEqual({ ok: false, reason: "not-logged-in" });
+		});
+
+		it("should return refresh-failed when response has invalid shape", async () => {
+			const tokenStorage = createMockTokenStorage();
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					if (init.body.includes("grant_type=refresh_token")) {
+						return {
+							ok: true as boolean,
+							status: 200,
+							json: async () => ({ unexpected: "shape" }),
+						};
+					}
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "access-123",
+							refresh_token: "refresh-456",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			const result = await auth.refreshTokens();
+
+			expect(result).toEqual({ ok: false, reason: "refresh-failed" });
+			expect(tokenStorage.stored).toBeNull();
+		});
+
+		it("should send the stored refresh token in the request body", async () => {
+			const tokenStorage = createMockTokenStorage();
+			let capturedBody = "";
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					capturedBody = init.body;
+					if (init.body.includes("grant_type=refresh_token")) {
+						return {
+							ok: true as boolean,
+							status: 200,
+							json: async () => ({
+								access_token: "new-access",
+								refresh_token: "new-refresh",
+							}),
+						};
+					}
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "access-123",
+							refresh_token: "refresh-456",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			await auth.refreshTokens();
+
+			expect(capturedBody).toContain("refresh_token=refresh-456");
+		});
+	});
+
+	describe("getAccessToken", () => {
+		it("should return null when no tokens are stored", async () => {
+			const deps = createMockDeps();
+			const auth = await initOAuthAuth(deps);
+
+			const token = await auth.getAccessToken();
+
+			expect(token).toBeNull();
+		});
+
+		it("should return the stored access token", async () => {
+			const deps = createMockDeps();
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			const token = await auth.getAccessToken();
+
+			expect(token).toBe("access-123");
+		});
+
+		it("should return updated token after refresh", async () => {
+			const tokenStorage = createMockTokenStorage();
+			const deps = createMockDeps({
+				tokenStorage,
+				fetchFn: async (_url, init) => {
+					if (init.body.includes("grant_type=refresh_token")) {
+						return {
+							ok: true as boolean,
+							status: 200,
+							json: async () => ({
+								access_token: "refreshed-access",
+								refresh_token: "refreshed-refresh",
+							}),
+						};
+					}
+					return {
+						ok: true as boolean,
+						status: 200,
+						json: async () => ({
+							access_token: "access-123",
+							refresh_token: "refresh-456",
+						}),
+					};
+				},
+			});
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			await auth.refreshTokens();
+			const token = await auth.getAccessToken();
+
+			expect(token).toBe("refreshed-access");
+		});
+	});
 });
