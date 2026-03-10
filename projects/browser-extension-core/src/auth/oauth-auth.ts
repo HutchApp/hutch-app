@@ -85,6 +85,7 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	const refreshTokens = async (): Promise<{ ok: true } | { ok: false; reason: "no-refresh-token" } | { ok: false; reason: "refresh-failed" }> => {
 		const storedTokens = await deps.tokenStorage.getTokens();
 		if (!storedTokens?.refreshToken) {
+			await deps.tokenStorage.clearTokens();
 			loggedIn = false;
 			return { ok: false, reason: "no-refresh-token" };
 		}

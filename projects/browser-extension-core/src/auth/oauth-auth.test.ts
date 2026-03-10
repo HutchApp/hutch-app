@@ -425,6 +425,17 @@ describe("initOAuthAuth", () => {
 			expect(guarded).toEqual({ ok: false, reason: "not-logged-in" });
 		});
 
+		it("should clear tokens when no refresh token is available", async () => {
+			const tokenStorage = createMockTokenStorage();
+			await tokenStorage.setTokens({ accessToken: "access", refreshToken: "" });
+			const deps = createMockDeps({ tokenStorage });
+			const auth = await initOAuthAuth(deps);
+
+			await auth.refreshTokens();
+
+			expect(tokenStorage.stored).toBeNull();
+		});
+
 		it("should return refresh-failed when server rejects the refresh token", async () => {
 			const tokenStorage = createMockTokenStorage();
 			const deps = createMockDeps({
