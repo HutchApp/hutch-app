@@ -27,4 +27,8 @@ function getLatestPointerUrl(stage) {
 	return `${getBucketBaseUrl(stage)}/latest.txt`;
 }
 
-module.exports = { S3_CONFIG, getBucketName, getBucketBaseUrl, getExtensionDownloadUrl, getLatestPointerUrl };
+function getUpdateManifestUrl(stage) {
+	return `${getBucketBaseUrl(stage)}/updates.json`;
+}
+
+module.exports = { S3_CONFIG, getBucketName, getBucketBaseUrl, getExtensionDownloadUrl, getLatestPointerUrl, getUpdateManifestUrl };
