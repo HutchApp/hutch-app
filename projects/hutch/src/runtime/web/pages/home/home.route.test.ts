@@ -67,6 +67,26 @@ describe("GET /", () => {
 		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("A$0");
 	});
 
+	it("should render the founding members progress bar with zero users", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const progress = doc.querySelector("[data-test-founding-progress]");
+		const label = progress?.querySelector(".founding-progress__label");
+		expect(label?.textContent).toBe("0 / 100 founding members");
+
+		const fill = progress?.querySelector(".founding-progress__fill") as HTMLElement;
+		expect(fill.getAttribute("style")).toBe("width: 0%");
+	});
+
+	it("should not render the exhausted message when under the limit", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
+		expect(exhausted).toBeNull();
+	});
+
 	it("should render the comparison table", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
@@ -100,6 +120,28 @@ describe("GET /", () => {
 		expect(doc.title).toContain("Hutch");
 		const description = doc.querySelector('meta[name="description"]');
 		expect(description?.getAttribute("content")).toContain("read-it-later");
+	});
+});
+
+describe("GET / with exhausted founding allocation", () => {
+	it("should render the exhausted message and cap progress at 100% when users exceed the limit", async () => {
+		const { app, auth } = createTestApp();
+
+		for (let i = 0; i < 101; i++) {
+			await auth.createUser({ email: `user${i}@test.com`, password: "password123" });
+		}
+
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
+		expect(exhausted?.textContent).toBe("The free allocation has exhausted! You might still be able to create an account for free while we develop the pricing system but it may require payment in a few months.");
+
+		const fill = doc.querySelector(".founding-progress__fill") as HTMLElement;
+		expect(fill.getAttribute("style")).toBe("width: 100%");
+
+		const label = doc.querySelector(".founding-progress__label");
+		expect(label?.textContent).toBe("101 / 100 founding members");
 	});
 });
 

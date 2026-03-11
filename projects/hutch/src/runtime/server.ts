@@ -4,6 +4,7 @@ import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
 import type {
+	CountUsers,
 	CreateSession,
 	CreateUser,
 	DestroySession,
@@ -44,6 +45,7 @@ interface AppDependencies {
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
+	countUsers: CountUsers;
 	parseArticle: ParseArticle;
 	findArticleById: FindArticleById;
 	findArticlesByUser: FindArticlesByUser;
@@ -63,7 +65,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 }
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { appOrigin, livereloadMiddleware, getSessionUserId, ...deps } = dependencies;
+	const { appOrigin, livereloadMiddleware, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
 
 	if (livereloadMiddleware) {
@@ -86,8 +88,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		next();
 	});
 
-	app.get("/", (_req: Request, res: Response) => {
-		const result = HomePage().to("text/html");
+	app.get("/", async (_req: Request, res: Response) => {
+		const userCount = await countUsers();
+		const result = HomePage({ userCount }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 

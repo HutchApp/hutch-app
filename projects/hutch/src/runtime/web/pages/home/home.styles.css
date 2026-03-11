@@ -247,6 +247,41 @@
   color: var(--color-text-muted);
 }
 
+/* Founding Progress Bar */
+.founding-progress {
+  max-width: 480px;
+  margin: 0 auto 32px;
+  text-align: center;
+}
+
+.founding-progress__bar {
+  height: 24px;
+  background: var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.founding-progress__fill {
+  height: 100%;
+  background: hsl(142 71% 45%);
+  border-radius: 12px;
+  transition: width 0.3s ease;
+}
+
+.founding-progress__label {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.founding-progress__exhausted {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
 /* Pricing Section */
 .home-pricing {
   padding: 80px 20px;
