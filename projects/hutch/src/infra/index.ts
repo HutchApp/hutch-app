@@ -234,6 +234,7 @@ class HutchLambda {
 			environment: {
 				variables: {
 					NODE_ENV: "production",
+					PERSISTENCE: "prod",
 					STAGE: args.stage,
 					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
 					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,

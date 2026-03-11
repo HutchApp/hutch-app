@@ -118,6 +118,20 @@ await auth.login({ email: "user@example.com", password: "password123" });
 
 This does NOT apply when the types differ (e.g., `(string, number)`) or when there is only one parameter.
 
+### Prefer Compile-Time Constraints Over Runtime Validation
+
+When a value has a known finite set of valid options, use TypeScript's type system to make invalid states unrepresentable at compile time. Only fall back to runtime validation when the value comes from outside the type system (user input, external APIs).
+
+```typescript
+// BAD - Runtime assert for something the type system can enforce
+const mode = requireEnv("PERSISTENCE");
+assert(mode === "prod" || mode === "development");
+
+// GOOD - Constrained at compile time via generic
+const mode = requireEnv<"prod" | "development">("PERSISTENCE");
+// mode is typed as "prod" | "development" — no assert needed
+```
+
 ### Branded Types for Domain IDs
 
 Use branded types to prevent mixing up identifiers.

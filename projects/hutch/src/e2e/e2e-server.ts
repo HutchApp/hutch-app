@@ -1,10 +1,6 @@
 import express from 'express'
 import type { Request, Response, NextFunction } from 'express'
-import { createApp } from '../runtime/server'
-import { initInMemoryAuth } from '../runtime/providers/auth/in-memory-auth'
-import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
-import { createOAuthModel, initInMemoryOAuthModel } from '../runtime/providers/oauth/oauth-model'
-import { createValidateAccessToken } from '../runtime/providers/oauth/validate-access-token'
+import { createTestApp } from '../runtime/test-app'
 import type { ParseArticle } from '../runtime/providers/article-parser/article-parser.types'
 
 const PORT = 3100
@@ -46,15 +42,7 @@ const parseArticle: ParseArticle = async (url) => {
   return { ok: true, article: stub }
 }
 
-const oauthModel = createOAuthModel(initInMemoryOAuthModel())
-
-const innerApp = createApp({
-  ...initInMemoryAuth(),
-  ...initInMemoryArticleStore(),
-  parseArticle,
-  oauthModel,
-  validateAccessToken: createValidateAccessToken(oauthModel),
-})
+const { app: innerApp } = createTestApp({ parseArticle })
 
 // Wrap the app to strip the Origin header for same-origin requests.
 // The production CORS middleware only allows browser extension origins,

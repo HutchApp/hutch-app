@@ -8,6 +8,7 @@ import { initInMemoryArticleStore } from "./providers/article-store/in-memory-ar
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
+import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -35,35 +36,57 @@ const fetchHtml: FetchHtml = async (url) => {
 };
 
 function initProviders() {
-	if (getEnv("NODE_ENV") === "production") {
+	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
+
+	if (persistence === "prod") {
 		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
+		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
+		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		return {
-			...initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable }),
-			...initDynamoDbArticleStore({ client, tableName: articlesTable }),
+			auth,
+			articleStore,
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 		};
 	}
 
+	const auth = initInMemoryAuth();
+	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	return {
-		...initInMemoryAuth(),
-		...initInMemoryArticleStore(),
+		auth,
+		articleStore,
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	};
 }
 
-export const app = createApp({
-	...initProviders(),
-	...initReadabilityParser({ fetchHtml }),
-});
+export function createHutchApp(options?: {
+	parseArticle?: ParseArticle;
+	livereloadMiddleware?: Parameters<typeof createApp>[0]["livereloadMiddleware"];
+}) {
+	const { auth, articleStore, oauthModel, validateAccessToken } = initProviders();
+	const parser = options?.parseArticle
+		? { parseArticle: options.parseArticle }
+		: initReadabilityParser({ fetchHtml });
+
+	const app = createApp({
+		...auth,
+		...articleStore,
+		...parser,
+		oauthModel,
+		validateAccessToken,
+		livereloadMiddleware: options?.livereloadMiddleware,
+	});
+
+	return { app, auth, articleStore, parser, oauthModel };
+}
 
 export const localServer = (expressApp: Express, logger: Logger): void => {
 	const port = getEnv("PORT") || "3000";

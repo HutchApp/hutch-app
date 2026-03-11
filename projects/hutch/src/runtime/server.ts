@@ -35,7 +35,7 @@ import "./web/session.types";
 
 config({ path: join(__dirname, "../../.env") });
 
-export const PORT = requireEnv("PORT", "3000");
+export const PORT = requireEnv("PORT", { defaultValue: "3000" });
 
 const COOKIE_NAME = "hutch_sid";
 

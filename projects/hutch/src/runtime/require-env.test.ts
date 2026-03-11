@@ -18,7 +18,7 @@ describe("requireEnv", () => {
 
 	it("should return the default value when the environment variable is not set", () => {
 		delete process.env.MISSING_VAR;
-		expect(requireEnv("MISSING_VAR", "fallback")).toBe("fallback");
+		expect(requireEnv("MISSING_VAR", { defaultValue: "fallback" })).toBe("fallback");
 	});
 
 	it("should throw when the environment variable is not set and no default provided", () => {
@@ -37,8 +37,9 @@ describe("requireEnv", () => {
 
 	it("should return default when the environment variable is empty string", () => {
 		process.env.EMPTY_VAR = "";
-		expect(requireEnv("EMPTY_VAR", "fallback")).toBe("fallback");
+		expect(requireEnv("EMPTY_VAR", { defaultValue: "fallback" })).toBe("fallback");
 	});
+
 });
 
 describe("getEnv", () => {
