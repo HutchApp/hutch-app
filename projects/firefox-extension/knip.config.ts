@@ -9,8 +9,9 @@ export default {
 		...(base.ignore ?? []),
 		// Pulumi infra is compiled separately with its own tsconfig
 		"src/infra/**",
-		// CLI script for version management (not an entry point)
+		// CLI scripts (not entry points)
 		"scripts/bump-version.js",
+		"scripts/sync-signed-extension.js",
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),

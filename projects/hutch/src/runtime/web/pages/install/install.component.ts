@@ -9,13 +9,15 @@ import { getExtensionDownloadUrl, getLatestPointerUrl } from "firefox-extension/
 const INSTALL_TEMPLATE = readFileSync(join(__dirname, "install.template.html"), "utf-8");
 const LATEST_POINTER_URL = getLatestPointerUrl("prod");
 
-export async function fetchExtensionDownloadUrl(): Promise<string> {
+export async function fetchExtensionDownloadUrl(): Promise<string | null> {
 	const response = await fetch(LATEST_POINTER_URL);
+	if (!response.ok) return null;
 	const xpiFilename = (await response.text()).trim();
+	if (!xpiFilename) return null;
 	return getExtensionDownloadUrl("prod", xpiFilename);
 }
 
-export function InstallPage(extensionDownloadUrl: string): Component {
+export function InstallPage(extensionDownloadUrl: string | null): Component {
 	return Base({
 		seo: {
 			title: "Install Hutch for Firefox",

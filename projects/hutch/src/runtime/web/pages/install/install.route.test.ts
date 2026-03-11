@@ -59,4 +59,20 @@ describe("GET /install", () => {
 		const description = doc.querySelector('meta[name="description"]');
 		expect(description?.getAttribute("content")).toContain("extension");
 	});
+
+	it("should show unavailable message when latest.txt returns 404", async () => {
+		jest.restoreAllMocks();
+		jest.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response("Not Found", { status: 404 }),
+		);
+
+		const response = await request(app).get("/install");
+		const doc = new JSDOM(response.text).window.document;
+
+		expect(doc.querySelector('[data-test-cta="download-extension"]')).toBeNull();
+		const unavailable = doc.querySelector('[data-test-section="download-unavailable"]');
+		expect(unavailable?.textContent).toBe(
+			"The extension is not available for download yet. Please check back soon.",
+		);
+	});
 });
