@@ -5,7 +5,7 @@
       "outputs": ["{projectRoot}/dist-extension-compiled", "{projectRoot}/dist-extension-files"]
     },
     "check": {
-      "dependsOn": ["^compile"]
+      "dependsOn": ["^compile", "hutch:check"]
     }
   }
 }

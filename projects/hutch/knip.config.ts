@@ -16,6 +16,8 @@ export default {
 		"@types/compression",
 		// Workspace dependency for S3 config (subpath import not detected by knip)
 		"firefox-extension",
+		// Used in infra code (compiled separately)
+		"hutch-logger",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

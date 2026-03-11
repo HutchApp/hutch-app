@@ -130,7 +130,7 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ token: tokens.refreshToken }),
-			}).catch((err) => console.warn("Token revocation failed:", err));
+			}).catch((err) => deps.logger.warn("Token revocation failed:", err));
 		}
 
 		await deps.tokenStorage.clearTokens();

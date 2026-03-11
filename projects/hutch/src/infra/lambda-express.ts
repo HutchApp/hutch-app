@@ -4,6 +4,7 @@ import express from "express";
 import helmet from "helmet";
 import compression from "compression";
 import serverless from "serverless-http";
+import { consoleLogger } from "hutch-logger";
 import { logger } from "./logger";
 import { errorHandler } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
@@ -30,7 +31,7 @@ export const lambdaExpress = ({
 		)
 		.use(log)
 		.use(app)
-		.use(errorHandler());
+		.use(errorHandler(consoleLogger));
 
 	// ---
 

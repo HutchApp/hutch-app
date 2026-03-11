@@ -1,3 +1,4 @@
+import { consoleLogger } from 'hutch-logger'
 import { createHutchApp } from '../runtime/app'
 
 const PORT = 3100
@@ -9,5 +10,5 @@ process.on('SIGTERM', () => process.exit(0))
 process.on('SIGINT', () => process.exit(0))
 
 app.listen(PORT, () => {
-  console.log(`E2E server running on http://localhost:${PORT}`)
+  consoleLogger.info(`E2E server running on http://localhost:${PORT}`)
 })

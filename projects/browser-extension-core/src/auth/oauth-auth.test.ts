@@ -62,6 +62,7 @@ function createMockDeps(overrides?: Partial<OAuthAuthDeps>) {
 		closeTab,
 		fetchFn,
 		tokenStorage: createMockTokenStorage(),
+		logger: { warn: () => {} },
 		captured: {
 			get authorizeUrl() { return capturedAuthorizeUrl; },
 			get tokenUrl() { return capturedTokenUrl; },
