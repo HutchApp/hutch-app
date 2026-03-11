@@ -117,20 +117,24 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 
-		const token = await deps.createVerificationToken(createResult.userId);
-		const verifyUrl = `${deps.baseUrl}/verify-email?token=${token}`;
-		const html = buildVerificationEmailHtml(verifyUrl);
-
-		await deps.sendEmail({
-			from: EMAIL_FROM,
-			to: email,
-			subject: "Verify your email — Hutch",
-			html,
-		});
-
 		const sessionId = await deps.createSession(createResult.userId);
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
 		res.redirect(303, "/queue");
+
+		deps.createVerificationToken(createResult.userId)
+			.then((token) => {
+				const verifyUrl = `${deps.baseUrl}/verify-email?token=${token}`;
+				const html = buildVerificationEmailHtml(verifyUrl);
+				return deps.sendEmail({
+					from: EMAIL_FROM,
+					to: email,
+					subject: "Verify your email — Hutch",
+					html,
+				});
+			})
+			.catch((err) => {
+				console.error("[Email] Verification email failed", err);
+			});
 	});
 
 	router.get("/verify-email", async (req: Request, res: Response) => {
