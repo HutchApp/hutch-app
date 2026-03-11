@@ -22,5 +22,7 @@ config.enforceCoverage({
     'src/e2e/e2e-server.ts',
     // DynamoDB adapters — thin AWS SDK wrappers tested via integration against real DynamoDB
     'src/runtime/providers/**/dynamodb-*.ts',
+    // Resend adapter — thin SDK wrapper, same rationale as DynamoDB adapters
+    'src/runtime/providers/email/resend-email.ts',
   ],
 })
