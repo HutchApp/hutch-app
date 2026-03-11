@@ -47,13 +47,14 @@ async function main() {
 	const baseUrl = getBucketBaseUrl(stage);
 
 	let currentUpdateLink = null;
-	const updatesResponse = await fetch(`${baseUrl}/updates.json`);
+	const updatesUrl = `${baseUrl}/updates.json`;
+	const updatesResponse = await fetch(updatesUrl);
 	if (updatesResponse.status === 404) {
-		console.log("No updates.json on S3 yet (first run)");
+		console.log(`No updates.json on S3 yet (first run): ${updatesUrl} ${updatesResponse.status}`);
 	} else {
 		assert.ok(
 			updatesResponse.ok,
-			`Failed to read updates.json from S3: ${updatesResponse.status}`,
+			`Failed to read updates.json from S3 (${updatesUrl}): ${updatesResponse.status}`,
 		);
 		const updates = await updatesResponse.json();
 		const addonUpdates = updates.addons?.[ADDON_ID]?.updates;

@@ -31,6 +31,13 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 					Action: "s3:GetObject",
 					Resource: `${arn}/*`,
 				},
+				{
+					Sid: "PublicListBucket",
+					Effect: "Allow",
+					Principal: "*",
+					Action: "s3:ListBucket",
+					Resource: arn,
+				},
 			],
 		}),
 	),
