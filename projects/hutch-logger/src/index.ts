@@ -8,7 +8,7 @@ export interface HutchLogger {
 }
 
 export const consoleLogger: HutchLogger = {
-	info: console.log,
+	info: console.info,
 	error: console.error,
 	warn: console.warn,
 	debug: console.debug,
