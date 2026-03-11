@@ -1,21 +1,15 @@
 type LogMethod = (...args: unknown[]) => void;
 
-export interface LogMethods {
+export interface HutchLogger {
 	info: LogMethod;
 	error: LogMethod;
 	warn: LogMethod;
 	debug: LogMethod;
 }
 
-export type HutchLogger = LogMethods;
-
-export function createHutchLogger(
-	methods: LogMethods,
-): (_config: Record<string, unknown>) => HutchLogger {
-	return (_config) => ({
-		info: (...args) => methods.info(...args),
-		error: (...args) => methods.error(...args),
-		warn: (...args) => methods.warn(...args),
-		debug: (...args) => methods.debug(...args),
-	});
-}
+export const consoleLogger: HutchLogger = {
+	info: console.log,
+	error: console.error,
+	warn: console.warn,
+	debug: console.debug,
+};

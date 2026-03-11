@@ -4,7 +4,7 @@ import express from "express";
 import helmet from "helmet";
 import compression from "compression";
 import serverless from "serverless-http";
-import { createHutchLogger } from "hutch-logger";
+import { consoleLogger } from "hutch-logger";
 import { logger } from "./logger";
 import { errorHandler } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
@@ -14,18 +14,11 @@ import { getEnv } from "../runtime/require-env";
 // present in Lambda runtime, absent locally — https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
 const lambda = !!getEnv("AWS_LAMBDA_FUNCTION_NAME");
 
-const hutchLogger = createHutchLogger({
-	info: console.log,
-	error: console.error,
-	warn: console.warn,
-	debug: console.debug,
-})({});
-
 export const lambdaExpress = ({
 	app,
 	binaryMimeTypes,
 }: { app: Express; binaryMimeTypes?: string[] }): Handler => {
-	const log = logger(hutchLogger);
+	const log = logger(consoleLogger);
 
 	const application = express()
 		.disable("x-powered-by")
@@ -38,7 +31,7 @@ export const lambdaExpress = ({
 		)
 		.use(log)
 		.use(app)
-		.use(errorHandler(hutchLogger));
+		.use(errorHandler(consoleLogger));
 
 	// ---
 
@@ -50,6 +43,6 @@ export const lambdaExpress = ({
 		);
 	}
 
-	localServer(application, hutchLogger);
+	localServer(application, consoleLogger);
 	return () => {}; // local noop handler
 };

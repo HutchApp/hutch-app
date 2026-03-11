@@ -1,6 +1,6 @@
 import express from 'express'
 import type { Request, Response, NextFunction } from 'express'
-import { createHutchLogger } from 'hutch-logger'
+import { consoleLogger } from 'hutch-logger'
 import { createApp } from '../runtime/server'
 import { initInMemoryAuth } from '../runtime/providers/auth/in-memory-auth'
 import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
@@ -73,13 +73,6 @@ app.use(innerApp)
 process.on('SIGTERM', () => process.exit(0))
 process.on('SIGINT', () => process.exit(0))
 
-const hutchLogger = createHutchLogger({
-  info: console.log,
-  error: console.error,
-  warn: console.warn,
-  debug: console.debug,
-})({})
-
 app.listen(PORT, () => {
-  hutchLogger.info(`E2E server running on http://localhost:${PORT}`)
+  consoleLogger.info(`E2E server running on http://localhost:${PORT}`)
 })

@@ -5,6 +5,7 @@
       "outputs": ["{projectRoot}/dist-extension-compiled", "{projectRoot}/dist-extension-files"]
     },
     "check": {
+      "//dependsOn": "hutch:check is needed because E2E tests dynamically import hutch/dist/runtime/test-app, but hutch cannot be a declared dependency (circular). This explicit ordering prevents a race condition where hutch's dist/ is deleted mid-recompile.",
       "dependsOn": ["^compile", "hutch:check"]
     }
   }
