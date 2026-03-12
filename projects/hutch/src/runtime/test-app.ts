@@ -29,6 +29,7 @@ export function createTestApp(options?: {
 	const emailVerification = initInMemoryEmailVerification();
 
 	const app = createApp({
+		appOrigin: "http://localhost:3000",
 		...auth,
 		...articleStore,
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
@@ -52,6 +53,7 @@ export function createTestAppWithFetchHtml(fetchHtml: FetchHtml) {
 	const emailVerification = initInMemoryEmailVerification();
 
 	const app = createApp({
+		appOrigin: "http://localhost:3000",
 		...auth,
 		...articleStore,
 		...parser,
