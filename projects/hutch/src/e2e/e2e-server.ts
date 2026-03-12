@@ -1,48 +1,10 @@
 import express from 'express'
 import type { Request, Response, NextFunction } from 'express'
-import { createTestApp } from '../runtime/test-app'
-import type { ParseArticle } from '../runtime/providers/article-parser/article-parser.types'
+import { createHutchApp } from '../runtime/app'
 
 const PORT = 3100
 
-const STUB_ARTICLES: Record<string, { title: string; siteName: string; excerpt: string; wordCount: number; content: string }> = {
-  'https://example.com/article-one': {
-    title: 'Article One',
-    siteName: 'example.com',
-    excerpt: 'First test article excerpt.',
-    wordCount: 500,
-    content: '<p>Content of article one. This is the first article saved in the E2E test.</p>',
-  },
-  'https://example.com/article-two': {
-    title: 'Article Two',
-    siteName: 'example.com',
-    excerpt: 'Second test article excerpt.',
-    wordCount: 1000,
-    content: '<p>Content of article two. This is the second article saved in the E2E test.</p>',
-  },
-  'https://example.com/article-three': {
-    title: 'Article Three',
-    siteName: 'example.com',
-    excerpt: 'Third test article excerpt.',
-    wordCount: 1500,
-    content: '<p>Content of article three. This is the third article saved in the E2E test.</p>',
-  },
-  'https://example.com/article-four': {
-    title: 'Article Four',
-    siteName: 'example.com',
-    excerpt: 'Fourth test article excerpt.',
-    wordCount: 2000,
-    content: '<p>Content of article four. This is the fourth article saved in the E2E test.</p>',
-  },
-}
-
-const parseArticle: ParseArticle = async (url) => {
-  const stub = STUB_ARTICLES[url]
-  if (!stub) return { ok: false, reason: 'Unknown test URL' }
-  return { ok: true, article: stub }
-}
-
-const { app: innerApp } = createTestApp({ parseArticle })
+const { app: innerApp } = createHutchApp()
 
 // Wrap the app to strip the Origin header for same-origin requests.
 // The production CORS middleware only allows browser extension origins,

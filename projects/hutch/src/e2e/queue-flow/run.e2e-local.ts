@@ -31,6 +31,7 @@ test.describe('Queue management flow (local)', () => {
       checkedReadTab: false,
       checkedUnreadTab: false,
       checkedArchivedTab: false,
+      cleanupDeleted: false,
     }
 
     const allActions = groupOf(
@@ -49,7 +50,7 @@ test.describe('Queue management flow (local)', () => {
     )
 
     const client = new HATEOASClient(page, navigationHandler)
-    const config: NavigationConfig = { maxNavigations: 35 }
+    const config: NavigationConfig = { maxNavigations: 40 }
 
     const result = await client.navigate('http://localhost:3100/', config)
 

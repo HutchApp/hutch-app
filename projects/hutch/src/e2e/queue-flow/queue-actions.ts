@@ -17,19 +17,23 @@ export type QueueProgress = {
   checkedReadTab: boolean
   checkedUnreadTab: boolean
   checkedArchivedTab: boolean
+  cleanupDeleted: boolean
 }
 
 const TEST_URLS = [
-  'https://example.com/article-one',
-  'https://example.com/article-two',
-  'https://example.com/article-three',
-  'https://example.com/article-four',
+  'https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol',
+  'https://en.wikipedia.org/wiki/Web_browser',
+  'https://en.wikipedia.org/wiki/URL',
+  'https://en.wikipedia.org/wiki/HTML',
 ]
+
+// Titles extracted by Readability from the Wikipedia pages above
+const TEST_TITLES = ['HTTP', 'Web browser', 'URL', 'HTML']
 
 // Newest-first (desc, default): 4, 3, 2, 1
 // Oldest-first (asc): 1, 2, 3, 4
-const TITLES_NEWEST_FIRST = ['Article Four', 'Article Three', 'Article Two', 'Article One']
-const TITLES_OLDEST_FIRST = ['Article One', 'Article Two', 'Article Three', 'Article Four']
+const TITLES_NEWEST_FIRST = [...TEST_TITLES].reverse()
+const TITLES_OLDEST_FIRST = [...TEST_TITLES]
 
 async function getArticleCount(page: Page): Promise<number> {
   return page.locator('[data-test-article]').count()
@@ -209,7 +213,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       expect(count).toBe(1)
 
       const titles = await getArticleTitles(page)
-      expect(titles).toEqual(['Article One'])
+      expect(titles).toEqual([TEST_TITLES[0]])
 
       progress.checkedReadTab = true
     },
@@ -228,7 +232,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       expect(count).toBe(1)
 
       const titles = await getArticleTitles(page)
-      expect(titles).toEqual(['Article Two'])
+      expect(titles).toEqual([TEST_TITLES[1]])
 
       progress.checkedUnreadTab = true
     },
@@ -247,9 +251,26 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       expect(count).toBe(1)
 
       const titles = await getArticleTitles(page)
-      expect(titles).toEqual(['Article Three'])
+      expect(titles).toEqual([TEST_TITLES[2]])
 
       progress.checkedArchivedTab = true
+    },
+  })
+
+  actions.set('cleanup-delete-all', {
+    isAvailable: async (page) => {
+      if (!progress.checkedArchivedTab) return false
+      if (progress.cleanupDeleted) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      await clickAndWaitForPageReload(page, page.locator('[data-test-filter="all"]'))
+      let count = await page.locator('[data-test-action="delete"]').count()
+      while (count > 0) {
+        await clickAndWaitForPageReload(page, page.locator('[data-test-action="delete"]').first())
+        count = await page.locator('[data-test-action="delete"]').count()
+      }
+      progress.cleanupDeleted = true
     },
   })
 

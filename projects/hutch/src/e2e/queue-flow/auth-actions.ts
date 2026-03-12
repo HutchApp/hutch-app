@@ -38,8 +38,20 @@ export function createAuthActions(data: AuthData, progress: AuthProgress): Map<s
         page,
         page.locator('[data-test-form="signup"] button[type="submit"]'),
       )
-      await page.waitForSelector('body.page-queue')
-      progress.accountCreated = true
+
+      const onQueue = await isOnPage(page, 'page-queue')
+      if (onQueue) {
+        progress.accountCreated = true
+        return
+      }
+
+      // Account already exists in persistent storage — navigate to login
+      const error = page.locator('[data-test-global-error]')
+      if (await error.isVisible()) {
+        await page.locator('.auth-card__footer a[href="/login"]').click()
+        progress.accountCreated = true
+        progress.loggedOut = true
+      }
     },
   })
 
