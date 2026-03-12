@@ -40,6 +40,7 @@ export const PORT = requireEnv("PORT", { defaultValue: "3000" });
 const COOKIE_NAME = "hutch_sid";
 
 interface AppDependencies {
+	appOrigin: string;
 	livereloadMiddleware?: ReturnType<typeof import("connect-livereload")>;
 	createUser: CreateUser;
 	verifyCredentials: VerifyCredentials;
@@ -65,7 +66,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 }
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { livereloadMiddleware, getSessionUserId, ...deps } = dependencies;
+	const { appOrigin, livereloadMiddleware, getSessionUserId, ...deps } = dependencies;
 	const app: Express = express();
 
 	if (livereloadMiddleware) {
@@ -119,10 +120,10 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	const extensionCors = cors({
 		origin: (origin, callback) => {
-			if (!origin || /^(moz|chrome)-extension:\/\//.test(origin)) {
+			if (!origin || origin === appOrigin || /^(moz|chrome)-extension:\/\//.test(origin)) {
 				callback(null, true);
 			} else {
-				callback(new Error("Not allowed by CORS"));
+				callback(null, false);
 			}
 		},
 		methods: ["GET", "POST", "PUT", "DELETE"],

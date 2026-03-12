@@ -236,6 +236,9 @@ class HutchLambda {
 					NODE_ENV: "production",
 					PERSISTENCE: "prod",
 					STAGE: args.stage,
+					APP_ORIGIN: args.domainRegistration
+						? `https://${args.domainRegistration.primaryDomain}`
+						: "",
 					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
 					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,

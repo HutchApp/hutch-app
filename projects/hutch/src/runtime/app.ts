@@ -68,6 +68,7 @@ function initProviders() {
 }
 
 export function createHutchApp(options?: {
+	appOrigin?: string;
 	parseArticle?: ParseArticle;
 	livereloadMiddleware?: Parameters<typeof createApp>[0]["livereloadMiddleware"];
 }) {
@@ -76,7 +77,10 @@ export function createHutchApp(options?: {
 		? { parseArticle: options.parseArticle }
 		: initReadabilityParser({ fetchHtml });
 
+	const appOrigin = options?.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
+
 	const app = createApp({
+		appOrigin,
 		...auth,
 		...articleStore,
 		...parser,
