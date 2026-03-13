@@ -1,6 +1,19 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
+import { initInMemoryAuth } from "../../providers/auth/in-memory-auth";
+import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
+import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
+import type { FetchHtml } from "../../providers/article-parser/readability-parser";
+import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
+import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
+import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
+import { createApp } from "../../server";
+
+const stubFetchHtml: FetchHtml = async (url) => {
+	const hostname = new URL(url).hostname;
+	return `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content</p></article></body></html>`;
+};
 
 describe("Email verification", () => {
 	describe("POST /signup", () => {
@@ -19,6 +32,35 @@ describe("Email verification", () => {
 			expect(sent[0].from).toContain("hutch@hutch-app.com");
 			expect(sent[0].subject).toContain("Verify");
 			expect(sent[0].html).toContain("verify-email?token=");
+		});
+
+		it("should complete signup even when email sending fails", async () => {
+			const auth = initInMemoryAuth();
+			const articleStore = initInMemoryArticleStore();
+			const parser = initReadabilityParser({ fetchHtml: stubFetchHtml });
+			const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+			const emailVerification = initInMemoryEmailVerification();
+
+			const app = createApp({
+				appOrigin: "http://localhost:3000",
+				...auth,
+				...articleStore,
+				...parser,
+				...emailVerification,
+				sendEmail: async () => { throw new Error("Email service down"); },
+				baseUrl: "http://localhost:3000",
+				oauthModel,
+				validateAccessToken: createValidateAccessToken(oauthModel),
+			});
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "fail-email@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+			});
+
+			expect(response.status).toBe(303);
+			await new Promise((r) => setTimeout(r, 50));
 		});
 
 		it("should not send a verification email when signup fails", async () => {
