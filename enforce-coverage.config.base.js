@@ -92,7 +92,8 @@ function validateC8Config(projectRoot) {
     console.error('')
     console.error('Related issue: https://github.com/bcoe/c8/issues/204')
     console.error('  "include/exclude only affect reporting, not collection"')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 }
 
@@ -173,7 +174,8 @@ function enforceCoverage(options = {}) {
     const coverageFile = path.join(projectRoot, 'coverage/coverage-summary.json')
     if (!fs.existsSync(coverageFile)) {
       console.error('❌ No coverage summary found. Run tests first.')
-      process.exit(1)
+      process.exitCode = 1
+      return
     }
 
     const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'))
@@ -216,13 +218,13 @@ function enforceCoverage(options = {}) {
       console.log('\n💡 Fix by:')
       console.log('   1. Adding tests for uncovered lines')
       console.log('   2. Removing dead code')
-      process.exit(1)
+      process.exitCode = 1
     } else {
       console.log('\n🎉 ALL COVERAGE THRESHOLDS MET!')
     }
   } catch (error) {
     console.error('❌ Error reading coverage data:', error.message)
-    process.exit(1)
+    process.exitCode = 1
   }
 }
 
