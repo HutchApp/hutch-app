@@ -61,6 +61,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: npx nx compile hutch
+
       - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod --yes
         working-directory: projects/hutch
 
@@ -97,10 +99,10 @@ jobs:
         run: node projects/firefox-extension/scripts/bump-version.js ${{ github.run_number }}
 
       - name: Build and package extension
-        run: pnpm --filter browser-extension-core compile && pnpm --filter firefox-extension compile
+        run: npx nx run-many --target=compile --projects=browser-extension-core,firefox-extension
 
       - name: Submit extension to AMO for signing
-        run: pnpm --filter firefox-extension sign
+        run: npx nx run firefox-extension:sign
         env:
           AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
           AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
