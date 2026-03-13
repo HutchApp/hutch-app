@@ -39,7 +39,6 @@ const COOKIE_NAME = "hutch_sid";
 
 interface AppDependencies {
 	appOrigin: string;
-	livereloadMiddleware?: ReturnType<typeof import("connect-livereload")>;
 	createUser: CreateUser;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
@@ -65,12 +64,8 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 }
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { appOrigin, livereloadMiddleware, getSessionUserId, countUsers, ...deps } = dependencies;
+	const { appOrigin, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
-
-	if (livereloadMiddleware) {
-		app.use(livereloadMiddleware);
-	}
 
 	app.use(express.static(join(__dirname, "public")));
 	app.use(express.urlencoded({ extended: true }));

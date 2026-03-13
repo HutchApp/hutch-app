@@ -6,8 +6,6 @@ import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
-import { initReadabilityParser } from "./providers/article-parser/readability-parser";
-import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import {
 	createOAuthModel,
@@ -17,23 +15,6 @@ import { initDynamoDbOAuthModel } from "./providers/oauth/dynamodb-oauth-model";
 import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
-
-const FETCH_TIMEOUT_MS = 5000;
-
-const fetchHtml: FetchHtml = async (url) => {
-	try {
-		const response = await fetch(url, {
-			signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-			headers: { accept: "text/html" },
-		});
-		if (!response.ok) return undefined;
-		const contentType = response.headers.get("content-type") ?? "";
-		if (!contentType.includes("text/html")) return undefined;
-		return await response.text();
-	} catch {
-		return undefined;
-	}
-};
 
 function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
@@ -67,29 +48,24 @@ function initProviders() {
 	};
 }
 
-export function createHutchApp(options?: {
+export function createHutchApp(deps: {
+	parseArticle: ParseArticle;
 	appOrigin?: string;
-	parseArticle?: ParseArticle;
-	livereloadMiddleware?: Parameters<typeof createApp>[0]["livereloadMiddleware"];
 }) {
 	const { auth, articleStore, oauthModel, validateAccessToken } = initProviders();
-	const parser = options?.parseArticle
-		? { parseArticle: options.parseArticle }
-		: initReadabilityParser({ fetchHtml });
 
-	const appOrigin = options?.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
+	const appOrigin = deps.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 
 	const app = createApp({
 		appOrigin,
 		...auth,
 		...articleStore,
-		...parser,
+		parseArticle: deps.parseArticle,
 		oauthModel,
 		validateAccessToken,
-		livereloadMiddleware: options?.livereloadMiddleware,
 	});
 
-	return { app, auth, articleStore, parser, oauthModel };
+	return { app, auth, articleStore, oauthModel };
 }
 
 export const localServer = (expressApp: Express, logger: Logger): void => {
