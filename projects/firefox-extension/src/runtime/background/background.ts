@@ -11,7 +11,10 @@ import {
 	type RemoveUrlResult,
 	type TokenStorage,
 } from "browser-extension-core";
+import { HutchLogger, consoleLogger } from "hutch-logger";
 import { createBrowserSetIcon } from "./tinted-icon.browser";
+
+const logger = HutchLogger.from(consoleLogger);
 
 const STORAGE_KEY = "hutch_oauth_tokens";
 declare const __SERVER_URL__: string;
@@ -63,14 +66,14 @@ const shell: BrowserShell = {
 					loginWindow = { id: win.id, tabId: tab.id, tabUrl: url };
 				}
 			})
-			.catch(console.error);
+			.catch((err) => logger.error(err));
 	},
 
 	focusLoginWindow() {
 		if (loginWindow) {
 			browser.windows
 				.update(loginWindow.id, { focused: true })
-				.catch(console.error);
+				.catch((err) => logger.error(err));
 		}
 	},
 
@@ -174,9 +177,10 @@ async function initCore() {
 		},
 		fetchFn: (...args) => fetch(...args),
 		tokenStorage,
+		logger,
 	});
 
-	const core = BrowserExtensionCore(shell, { auth });
+	const core = BrowserExtensionCore(shell, { auth, logger });
 
 	core.on("pre-init", () => {
 		shell.createContextMenus();

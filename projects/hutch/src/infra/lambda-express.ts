@@ -4,7 +4,8 @@ import express from "express";
 import helmet from "helmet";
 import compression from "compression";
 import serverless from "serverless-http";
-import { logger } from "./logger";
+import { HutchLogger, consoleLogger } from "hutch-logger";
+import { logger as requestLogger } from "./logger";
 import { errorHandler } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
 import { localServer } from "../runtime/app";
@@ -17,7 +18,8 @@ export const lambdaExpress = ({
 	app,
 	binaryMimeTypes,
 }: { app: Express; binaryMimeTypes?: string[] }): Handler => {
-	const log = logger();
+	const log = requestLogger();
+	const logger = HutchLogger.from(consoleLogger);
 
 	const application = express()
 		.disable("x-powered-by")
@@ -30,7 +32,7 @@ export const lambdaExpress = ({
 		)
 		.use(log)
 		.use(app)
-		.use(errorHandler());
+		.use(errorHandler(logger));
 
 	// ---
 

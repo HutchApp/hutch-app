@@ -1,5 +1,6 @@
 import { initOAuthAuth } from "./oauth-auth";
 import type { OAuthAuthDeps, OAuthTokens, TokenStorage } from "./auth.types";
+import { HutchLogger, noopLogger } from "hutch-logger";
 
 function createMockTokenStorage(): TokenStorage & { stored: OAuthTokens | null } {
 	const store: { stored: OAuthTokens | null } = { stored: null };
@@ -62,6 +63,7 @@ function createMockDeps(overrides?: Partial<OAuthAuthDeps>) {
 		closeTab,
 		fetchFn,
 		tokenStorage: createMockTokenStorage(),
+		logger: HutchLogger.from(noopLogger),
 		captured: {
 			get authorizeUrl() { return capturedAuthorizeUrl; },
 			get tokenUrl() { return capturedTokenUrl; },

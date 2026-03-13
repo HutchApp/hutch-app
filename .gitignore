@@ -35,6 +35,9 @@ playwright-report/
 **/visual-current/
 **/visual-diffs/
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Environment variables
 .env
 .env.local

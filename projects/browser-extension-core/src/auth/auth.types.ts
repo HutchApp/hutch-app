@@ -1,3 +1,5 @@
+import type { HutchLogger } from "hutch-logger";
+
 export type LoginResult = { ok: true };
 
 export type RefreshResult =
@@ -47,4 +49,5 @@ export interface OAuthAuthDeps {
 	closeTab(tabId: number): Promise<void>;
 	fetchFn(url: string, init: { method: string; headers: Record<string, string>; body: string }): Promise<{ ok: boolean; status: number; json(): Promise<Record<string, string>> }>;
 	tokenStorage: TokenStorage;
+	logger: HutchLogger;
 }

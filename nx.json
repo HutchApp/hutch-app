@@ -31,6 +31,7 @@
     },
     "check": {
       "inputs": ["default", "^production"],
+      "dependsOn": ["^compile"],
       "cache": true
     },
     "deploy": {

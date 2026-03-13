@@ -38,6 +38,9 @@ importers:
 
   projects/browser-extension-core:
     dependencies:
+      hutch-logger:
+        specifier: workspace:*
+        version: link:../hutch-logger
       js-base64:
         specifier: 3.7.8
         version: 3.7.8
@@ -63,6 +66,9 @@ importers:
       browser-extension-core:
         specifier: workspace:*
         version: link:../browser-extension-core
+      hutch-logger:
+        specifier: workspace:*
+        version: link:../hutch-logger
     devDependencies:
       '@pulumi/aws':
         specifier: 7.20.0
@@ -139,6 +145,9 @@ importers:
       helmet:
         specifier: 8.1.0
         version: 8.1.0
+      hutch-logger:
+        specifier: workspace:*
+        version: link:../hutch-logger
       linkedom:
         specifier: 0.18.12
         version: 0.18.12
@@ -218,6 +227,15 @@ importers:
       tsx:
         specifier: 4.21.0
         version: 4.21.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  projects/hutch-logger:
+    devDependencies:
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
       typescript:
         specifier: 5.9.3
         version: 5.9.3
