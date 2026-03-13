@@ -1,5 +1,5 @@
 export { BrowserExtensionCore } from "./core";
-export type { Core, CoreError, ResultHandler } from "./core";
+export type { Core, CoreError, ResultHandler, ReadingList } from "./core";
 export type { BrowserShell } from "./shell.types";
 export type { SetIcon } from "./icon-status";
 export type {
@@ -20,6 +20,9 @@ export type {
 	TokenStorage,
 } from "./auth/auth.types";
 export { initOAuthAuth } from "./auth/oauth-auth";
+export { initSirenReadingList } from "./reading-list/siren-reading-list";
+export type { SirenReadingListDeps } from "./reading-list/siren-reading-list";
+export type { SaveUrl, RemoveUrl, FindByUrl, GetAllItems } from "./reading-list/reading-list.types";
 export type { PopupMessage } from "./popup-message.types";
 export { filterByUrl } from "./popup/filter-by-url";
 export { paginateItems } from "./popup/paginate-items";

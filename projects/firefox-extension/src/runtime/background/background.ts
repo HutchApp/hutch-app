@@ -1,6 +1,7 @@
 import {
 	BrowserExtensionCore,
 	initOAuthAuth,
+	initSirenReadingList,
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,
 	type BrowserShell,
@@ -180,7 +181,13 @@ async function initCore() {
 		logger,
 	});
 
-	const core = BrowserExtensionCore(shell, { auth, logger });
+	const readingList = initSirenReadingList({
+		serverUrl: SERVER_URL,
+		getAccessToken: auth.getAccessToken,
+		fetchFn: (...args) => fetch(...args),
+	});
+
+	const core = BrowserExtensionCore(shell, { auth, logger, readingList });
 
 	core.on("pre-init", () => {
 		shell.createContextMenus();

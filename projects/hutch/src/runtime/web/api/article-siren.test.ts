@@ -50,6 +50,7 @@ describe("toArticleSubEntity", () => {
 				readAt: null,
 			},
 			links: [{ rel: ["self"], href: "/queue/test-article-id" }],
+			actions: [{ name: "delete", href: "/queue/test-article-id/delete", method: "POST" }],
 		});
 	});
 

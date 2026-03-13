@@ -7,6 +7,7 @@ import { Options } from "selenium-webdriver/firefox";
 import { FlowRunner } from "../test-framework/flow-runner";
 import { LoginFlowStateHandler } from "./navigation-handler";
 import { createLoginActions } from "./login-actions";
+import { createSaveLinkActions } from "./save-link-actions";
 
 const ADDON_ID = "hutch-extension@hutch-app.com";
 const ADDON_UUID = "d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12";
@@ -16,6 +17,9 @@ const POPUP_URL = `moz-extension://${ADDON_UUID}/popup/popup.template.html`;
 const TEST_EMAIL = "e2e-test@example.com";
 const TEST_PASSWORD = "testpassword123";
 const TEST_PORT = 3000;
+
+const TEST_LINK_URL = "https://example.com/test-article";
+const TEST_LINK_TITLE = "Test Article";
 
 async function startTestServer(): Promise<http.Server> {
 	const hutchTestApp = path.resolve(
@@ -33,7 +37,7 @@ async function startTestServer(): Promise<http.Server> {
 	});
 }
 
-test("should complete OAuth login flow", async () => {
+test("should complete OAuth login flow and save a link to the list", async () => {
 	const server = await startTestServer();
 
 	const options = new Options();
@@ -62,7 +66,6 @@ test("should complete OAuth login flow", async () => {
 
 		await driver.get(POPUP_URL);
 
-		// Wait for login-view to appear
 		await driver.wait(async () => {
 			try {
 				const el = await driver.findElement(By.id("login-view"));
@@ -75,35 +78,38 @@ test("should complete OAuth login flow", async () => {
 
 		const popupWindowHandle = await driver.getWindowHandle();
 
+		const saveLinkProgress = { linkSaved: false, listVerified: false };
+
 		const loginActions = createLoginActions({
 			testEmail: TEST_EMAIL,
 			testPassword: TEST_PASSWORD,
 			popupWindowHandle,
 		});
 
+		const saveLinkActions = createSaveLinkActions({
+			popupUrl: POPUP_URL,
+			testUrl: TEST_LINK_URL,
+			testTitle: TEST_LINK_TITLE,
+			popupWindowHandle,
+			progress: saveLinkProgress,
+		});
+
+		const allActions = new Map([...loginActions, ...saveLinkActions]);
+
 		const stateHandler = new LoginFlowStateHandler(
 			driver,
-			async (d) => {
-				try {
-					const url = await d.getCurrentUrl();
-					if (!url.startsWith("moz-extension://")) return false;
-
-					const loginView = await d.findElement(By.id("login-view"));
-					const hidden = await loginView.getAttribute("hidden");
-					return hidden !== null;
-				} catch {
-					return false;
-				}
-			},
-			loginActions,
+			async () => saveLinkProgress.listVerified,
+			allActions,
 		);
 
 		const flowRunner = new FlowRunner(driver, stateHandler);
 		const result = await flowRunner.run(POPUP_URL, {
-			maxSteps: 15,
+			maxSteps: 25,
 		});
 
 		assert.equal(result.success, true, `Flow failed: ${result.error}`);
+		assert.equal(saveLinkProgress.linkSaved, true, "Link should have been saved");
+		assert.equal(saveLinkProgress.listVerified, true, "Link should have been verified in list");
 	} finally {
 		await driver.quit();
 		server.close();

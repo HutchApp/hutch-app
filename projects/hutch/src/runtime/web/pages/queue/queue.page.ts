@@ -1,6 +1,6 @@
 import type { Request, Response, Router } from "express";
 import express from "express";
-import type { ArticleStatus } from "../../../domain/article/article.types";
+import type { ArticleId, ArticleStatus } from "../../../domain/article/article.types";
 import { SaveArticleInputSchema } from "../../../domain/article/article.schema";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
@@ -13,8 +13,9 @@ import type {
 } from "../../../providers/article-store/article-store.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
-import { SIREN_MEDIA_TYPE } from "../../api/siren";
+import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
+import { toArticleEntity } from "../../api/article-siren";
 import { parseQueueUrl } from "./queue.url";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
@@ -35,6 +36,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	router.get("/", async (req: Request, res: Response) => {
 		const userId = req.userId as UserId;
 		const urlState = parseQueueUrl(req.query as Record<string, unknown>);
+		const filterUrl = typeof req.query.url === "string" ? req.query.url : undefined;
 
 		const result = await deps.findArticlesByUser({
 			userId,
@@ -44,12 +46,17 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		});
 
 		if (wantsSiren(req)) {
+			const filtered = filterUrl
+				? { ...result, articles: result.articles.filter(a => a.url === filterUrl), total: result.articles.filter(a => a.url === filterUrl).length }
+				: result;
+
 			res.type(SIREN_MEDIA_TYPE).json(
-				toArticleCollectionEntity(result, {
+				toArticleCollectionEntity(filtered, {
 					status: urlState.status,
 					order: urlState.order,
 					page: urlState.page,
 					pageSize: result.pageSize,
+					url: filterUrl,
 				}),
 			);
 			return;
@@ -58,6 +65,49 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const vm = toQueueViewModel(result, urlState);
 		const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
+	});
+
+	router.post("/", async (req: Request, res: Response) => {
+		if (!wantsSiren(req)) {
+			res.status(406).send("Not Acceptable");
+			return;
+		}
+
+		const userId = req.userId as UserId;
+		const parsed = SaveArticleInputSchema.safeParse(req.body);
+
+		if (!parsed.success) {
+			res.status(422).type(SIREN_MEDIA_TYPE).json(
+				sirenError({ code: "invalid-url", message: "Please enter a valid URL" }),
+			);
+			return;
+		}
+
+		const parseResult = await deps.parseArticle(parsed.data.url);
+
+		if (!parseResult.ok) {
+			res.status(422).type(SIREN_MEDIA_TYPE).json(
+				sirenError({ code: "parse-failed", message: `Could not parse article: ${parseResult.reason}` }),
+			);
+			return;
+		}
+
+		const { article } = parseResult;
+		const saved = await deps.saveArticle({
+			userId,
+			url: parsed.data.url,
+			metadata: {
+				title: article.title,
+				siteName: article.siteName,
+				excerpt: article.excerpt,
+				wordCount: article.wordCount,
+				imageUrl: article.imageUrl,
+			},
+			content: article.content || undefined,
+			estimatedReadTime: calculateReadTime(article.wordCount),
+		});
+
+		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(saved));
 	});
 
 	router.post("/save", async (req: Request, res: Response) => {
@@ -108,7 +158,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 	router.get("/:id/read", async (req: Request, res: Response) => {
 		const userId = req.userId as UserId;
-		const articleId = req.params.id as unknown as import("../../../domain/article/article.types").ArticleId;
+		const articleId = req.params.id as unknown as ArticleId;
 
 		const article = await deps.findArticleById(articleId);
 
@@ -123,7 +173,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 	router.post("/:id/status", async (req: Request, res: Response) => {
 		const userId = req.userId as UserId;
-		const articleId = req.params.id as unknown as import("../../../domain/article/article.types").ArticleId;
+		const articleId = req.params.id as unknown as ArticleId;
 		const status = req.body.status as ArticleStatus;
 
 		await deps.updateArticleStatus(articleId, userId, status);
@@ -132,9 +182,15 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 	router.post("/:id/delete", async (req: Request, res: Response) => {
 		const userId = req.userId as UserId;
-		const articleId = req.params.id as unknown as import("../../../domain/article/article.types").ArticleId;
+		const articleId = req.params.id as unknown as ArticleId;
 
 		await deps.deleteArticle(articleId, userId);
+
+		if (wantsSiren(req)) {
+			res.status(204).send();
+			return;
+		}
+
 		res.redirect(303, req.get("Referer") || "/queue");
 	});
 
