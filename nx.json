@@ -34,6 +34,11 @@
       "dependsOn": ["^compile"],
       "cache": true
     },
+    "check-infra": {
+      "inputs": ["production", "^production"],
+      "dependsOn": ["^compile"],
+      "cache": false
+    },
     "deploy": {
       "inputs": ["production", "^production"],
       "cache": false
