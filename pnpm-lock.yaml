@@ -173,9 +173,6 @@ importers:
       '@types/compression':
         specifier: 1.8.1
         version: 1.8.1
-      '@types/connect-livereload':
-        specifier: 0.6.3
-        version: 0.6.3
       '@types/cookie-parser':
         specifier: 1.4.10
         version: 1.4.10(@types/express@4.17.25)
@@ -203,9 +200,6 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
-      connect-livereload:
-        specifier: 0.6.1
-        version: 0.6.1
       esbuild:
         specifier: 0.25.4
         version: 0.25.4
@@ -1840,9 +1834,6 @@ packages:
   '@types/compression@1.8.1':
     resolution: {integrity: sha512-kCFuWS0ebDbmxs0AXYn6e2r2nrGAb5KwQhknjSPSPgJcGd8+HVSILlUyFhGqML2gk39HcG7D1ydW9/qpYkN00Q==}
 
-  '@types/connect-livereload@0.6.3':
-    resolution: {integrity: sha512-CaWami/rQdycHKnOR+UIfBNxNeqLC5f1KqMdclbsf+TsiLgXwYm2/+KlAefcR3ODom7Fuz4bvWazDMsmfaV5gw==}
-
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
 
@@ -2412,9 +2403,6 @@ packages:
   configstore@7.1.0:
     resolution: {integrity: sha512-N4oog6YJWbR9kGyXvS7jEykLDXIE2C0ILYqNBZBp9iwiJpoCBWYsuAdW6PPFn6w06jjnC+3JstVvWHO4cZqvRg==}
     engines: {node: '>=18'}
-
-  connect-livereload@0.6.1:
-    resolution: {integrity: sha512-3R0kMOdL7CjJpU66fzAkCe6HNtd3AavCS4m+uW4KtJjrdGPT0SQEZieAYd+cm+lJoBznNQ4lqipYWkhBMgk00g==}
 
   content-disposition@0.5.4:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
@@ -7058,10 +7046,6 @@ snapshots:
       '@types/express': 4.17.25
       '@types/node': 22.19.1
 
-  '@types/connect-livereload@0.6.3':
-    dependencies:
-      '@types/connect': 3.4.38
-
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 22.19.1
@@ -7737,8 +7721,6 @@ snapshots:
       dot-prop: 9.0.0
       graceful-fs: 4.2.11
       xdg-basedir: 5.1.0
-
-  connect-livereload@0.6.1: {}
 
   content-disposition@0.5.4:
     dependencies:

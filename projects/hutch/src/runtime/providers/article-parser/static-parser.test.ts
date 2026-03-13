@@ -1,8 +1,10 @@
 import { initStaticParser } from "./static-parser";
 
+const noopFetchHtml = async (_url: string) => undefined;
+
 describe("initStaticParser", () => {
 	it("should return hostname as siteName", async () => {
-		const { parseArticle } = initStaticParser();
+		const { parseArticle } = initStaticParser({ fetchHtml: noopFetchHtml });
 
 		const result = await parseArticle("https://blog.example.com/post/123");
 
@@ -13,7 +15,7 @@ describe("initStaticParser", () => {
 	});
 
 	it("should include a title with the hostname", async () => {
-		const { parseArticle } = initStaticParser();
+		const { parseArticle } = initStaticParser({ fetchHtml: noopFetchHtml });
 
 		const result = await parseArticle("https://example.com/article");
 
@@ -24,7 +26,7 @@ describe("initStaticParser", () => {
 	});
 
 	it("should return error for invalid URL", async () => {
-		const { parseArticle } = initStaticParser();
+		const { parseArticle } = initStaticParser({ fetchHtml: noopFetchHtml });
 
 		const result = await parseArticle("not-a-url");
 
@@ -47,20 +49,8 @@ describe("initStaticParser", () => {
 		}
 	});
 
-	it("should leave imageUrl undefined when fetchHtml is not provided", async () => {
-		const { parseArticle } = initStaticParser();
-		const result = await parseArticle("https://example.com/article");
-
-		expect(result.ok).toBe(true);
-		if (result.ok) {
-			expect(result.article.imageUrl).toBeUndefined();
-		}
-	});
-
 	it("should leave imageUrl undefined when fetchHtml returns undefined", async () => {
-		const fetchHtml = async (_url: string) => undefined;
-
-		const { parseArticle } = initStaticParser({ fetchHtml });
+		const { parseArticle } = initStaticParser({ fetchHtml: noopFetchHtml });
 		const result = await parseArticle("https://example.com/article");
 
 		expect(result.ok).toBe(true);

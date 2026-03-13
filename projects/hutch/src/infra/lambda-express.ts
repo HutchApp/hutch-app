@@ -16,8 +16,7 @@ const lambda = !!getEnv("AWS_LAMBDA_FUNCTION_NAME");
 
 export const lambdaExpress = ({
 	app,
-	binaryMimeTypes,
-}: { app: Express; binaryMimeTypes?: string[] }): Handler => {
+}: { app: Express }): Handler => {
 	const log = requestLogger();
 	const logger = HutchLogger.from(consoleLogger);
 
@@ -37,11 +36,7 @@ export const lambdaExpress = ({
 	// ---
 
 	if (lambda) {
-		return removeStageFromRawPath(
-			serverless(application, {
-				...(binaryMimeTypes ? { binary: binaryMimeTypes } : {}),
-			}),
-		);
+		return removeStageFromRawPath(serverless(application));
 	}
 
 	localServer(application, log.logger);

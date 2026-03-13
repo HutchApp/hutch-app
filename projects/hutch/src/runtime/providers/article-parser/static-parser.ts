@@ -3,8 +3,8 @@ import { extractThumbnail } from "./extract-thumbnail";
 
 type FetchHtml = (url: string) => Promise<string | undefined>;
 
-export function initStaticParser(deps?: {
-	fetchHtml?: FetchHtml;
+export function initStaticParser(deps: {
+	fetchHtml: FetchHtml;
 }): { parseArticle: ParseArticle } {
 	const parseArticle: ParseArticle = async (url) => {
 		let hostname: string;
@@ -15,11 +15,9 @@ export function initStaticParser(deps?: {
 		}
 
 		let imageUrl: string | undefined;
-		if (deps?.fetchHtml) {
-			const html = await deps.fetchHtml(url);
-			if (html) {
-				imageUrl = extractThumbnail(html);
-			}
+		const html = await deps.fetchHtml(url);
+		if (html) {
+			imageUrl = extractThumbnail(html);
 		}
 
 		return {

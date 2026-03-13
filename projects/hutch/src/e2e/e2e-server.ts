@@ -1,10 +1,13 @@
 import { HutchLogger, consoleLogger } from 'hutch-logger'
 import { createHutchApp } from '../runtime/app'
+import { fetchHtml } from '../runtime/providers/article-parser/fetch-html'
+import { initReadabilityParser } from '../runtime/providers/article-parser/readability-parser'
 
 const PORT = 3100
 const logger = HutchLogger.from(consoleLogger)
 
-const { app } = createHutchApp({ appOrigin: `http://localhost:${PORT}` })
+const { parseArticle } = initReadabilityParser({ fetchHtml })
+const { app } = createHutchApp({ parseArticle, appOrigin: `http://localhost:${PORT}` })
 
 // Graceful shutdown so V8 writes coverage data to NODE_V8_COVERAGE directory
 process.on('SIGTERM', () => process.exit(0))

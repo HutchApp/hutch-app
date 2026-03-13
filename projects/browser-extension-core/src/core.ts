@@ -4,7 +4,6 @@ import type { SaveUrlResult, RemoveUrlResult } from "./reading-list/reading-list
 import type { BrowserShell } from "./shell.types";
 import type { HutchLogger } from "hutch-logger";
 import { createEventBus } from "./event-bus";
-import { initInMemoryAuth } from "./auth/in-memory-auth";
 import { initInMemoryReadingList } from "./reading-list/in-memory-reading-list";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initIconStatus } from "./icon-status";
@@ -46,10 +45,10 @@ export interface Core {
 	once(event: "checked-url", handler: ResultHandler<ReadingListItem | null>): void;
 }
 
-export function BrowserExtensionCore(shell: BrowserShell, deps: { auth?: Auth; logger: HutchLogger }): Core {
+export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; logger: HutchLogger }): Core {
 	const logger = deps.logger;
 	const eventBus = createEventBus();
-	const auth = deps.auth ?? initInMemoryAuth();
+	const auth = deps.auth;
 	const readingList = initInMemoryReadingList();
 	const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
 	const { updateIconForTab } = initIconStatus({
