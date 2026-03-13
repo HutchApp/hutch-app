@@ -29,7 +29,6 @@
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "cors": "2.8.6",
-    "dotenv": "17.2.3",
     "express": "4.22.1",
     "firefox-extension": "workspace:*",
     "handlebars": "4.7.8",

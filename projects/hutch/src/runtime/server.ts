@@ -1,7 +1,6 @@
 import { join } from "node:path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import { config } from "dotenv";
 import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
 import type {
@@ -32,8 +31,6 @@ import { InstallPage, fetchExtensionDownloadUrl } from "./web/pages/install";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
-
-config({ path: join(__dirname, "../../.env") });
 
 export const PORT = requireEnv("PORT", { defaultValue: "3000" });
 
