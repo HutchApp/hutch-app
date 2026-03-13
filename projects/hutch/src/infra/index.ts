@@ -209,6 +209,7 @@ class HutchLambda {
 									"dynamodb:UpdateItem",
 									"dynamodb:DeleteItem",
 									"dynamodb:Query",
+									"dynamodb:Scan",
 								],
 								Resource: [
 									articlesArn,
