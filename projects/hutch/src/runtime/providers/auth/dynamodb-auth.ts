@@ -4,10 +4,12 @@ import {
 	PutCommand,
 	GetCommand,
 	DeleteCommand,
+	ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import type { UserId } from "../../domain/user/user.types";
 import type {
+	CountUsers,
 	CreateSession,
 	CreateUser,
 	DestroySession,
@@ -26,6 +28,7 @@ export function initDynamoDbAuth(deps: {
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
+	countUsers: CountUsers;
 } {
 	const { client, usersTableName, sessionsTableName } = deps;
 
@@ -117,11 +120,22 @@ export function initDynamoDbAuth(deps: {
 		);
 	};
 
+	const countUsers: CountUsers = async () => {
+		const result = await client.send(
+			new ScanCommand({
+				TableName: usersTableName,
+				Select: "COUNT",
+			}),
+		);
+		return result.Count ?? 0;
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,
 		destroySession,
+		countUsers,
 	};
 }

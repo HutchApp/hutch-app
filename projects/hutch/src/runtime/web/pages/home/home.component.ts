@@ -7,7 +7,12 @@ import { HOME_PAGE_STYLES } from "./home.styles";
 
 const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8");
 
-export function HomePage(): Component {
+const FOUNDING_MEMBER_LIMIT = 100;
+
+export function HomePage(params: { userCount: number }): Component {
+	const { userCount } = params;
+	const progressPercent = Math.min(Math.round((userCount / FOUNDING_MEMBER_LIMIT) * 100), 100);
+	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
 		seo: {
 			title: "Hutch — A read-it-later app by Fayner Brack",
@@ -38,6 +43,10 @@ export function HomePage(): Component {
 		headerVariant: "transparent",
 		bodyClass: "page-home",
 		content: render(HOME_TEMPLATE, {
+			userCount,
+			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
+			progressPercent,
+			allocationExhausted,
 			coreFeatures: [
 				{
 					name: "Firefox Browser Extension",

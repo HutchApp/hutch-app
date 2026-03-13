@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { UserId } from "../../domain/user/user.types";
 import type {
+	CountUsers,
 	CreateSession,
 	CreateUser,
 	DestroySession,
@@ -21,6 +22,7 @@ export function initInMemoryAuth(): {
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
+	countUsers: CountUsers;
 } {
 	const users = new Map<string, StoredUser>();
 	const sessions = new Map<string, UserId>();
@@ -70,11 +72,16 @@ export function initInMemoryAuth(): {
 		sessions.delete(sessionId);
 	};
 
+	const countUsers: CountUsers = async () => {
+		return users.size;
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,
 		destroySession,
+		countUsers,
 	};
 }
