@@ -49,7 +49,7 @@ export interface Core {
 export function BrowserExtensionCore(shell: BrowserShell, deps: { auth?: Auth; logger: HutchLogger }): Core {
 	const logger = deps.logger;
 	const eventBus = createEventBus();
-	const auth = deps?.auth ?? initInMemoryAuth();
+	const auth = deps.auth ?? initInMemoryAuth();
 	const readingList = initInMemoryReadingList();
 	const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
 	const { updateIconForTab } = initIconStatus({
