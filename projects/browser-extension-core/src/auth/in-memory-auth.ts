@@ -1,10 +1,6 @@
-import type { Login, Logout, WhenLoggedIn } from "./auth.types";
+import type { Auth, GetAccessToken, Login, Logout, RefreshTokens, WhenLoggedIn } from "./auth.types";
 
-export function initInMemoryAuth(): {
-	login: Login;
-	logout: Logout;
-	whenLoggedIn: WhenLoggedIn;
-} {
+export function initInMemoryAuth(): Auth {
 	let loggedIn = false;
 
 	const login: Login = async () => {
@@ -14,6 +10,14 @@ export function initInMemoryAuth(): {
 
 	const logout: Logout = async () => {
 		loggedIn = false;
+	};
+
+	const refreshTokens: RefreshTokens = async () => {
+		return { ok: true };
+	};
+
+	const getAccessToken: GetAccessToken = async () => {
+		return loggedIn ? "in-memory-token" : null;
 	};
 
 	const whenLoggedIn: WhenLoggedIn = (fn) => {
@@ -33,6 +37,8 @@ export function initInMemoryAuth(): {
 	return {
 		login,
 		logout,
+		refreshTokens,
+		getAccessToken,
 		whenLoggedIn,
 	};
 }

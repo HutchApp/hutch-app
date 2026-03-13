@@ -131,9 +131,9 @@ export function initDynamoDbOAuthModel(deps: {
 		async saveToken(token: Token, oauthClient: Client, user: User): Promise<Token> {
 			const refreshToken = token.refreshToken ?? "";
 			const accessTokenExpiresAt =
-				token.accessTokenExpiresAt ?? new Date(Date.now() + 3600000);
+				token.accessTokenExpiresAt ?? new Date(Date.now() + 24 * 3600000);
 			const refreshTokenExpiresAt =
-				token.refreshTokenExpiresAt ?? new Date(Date.now() + 30 * 24 * 3600000);
+				token.refreshTokenExpiresAt ?? new Date(Date.now() + 180 * 24 * 3600000);
 
 			const ttl = toEpochSeconds(
 				refreshTokenExpiresAt > accessTokenExpiresAt

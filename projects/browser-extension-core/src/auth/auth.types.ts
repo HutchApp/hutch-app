@@ -1,5 +1,10 @@
 export type LoginResult = { ok: true };
 
+export type RefreshResult =
+	| { ok: true }
+	| { ok: false; reason: "no-refresh-token" }
+	| { ok: false; reason: "refresh-failed" };
+
 export type GuardedResult<T> =
 	| { ok: true; value: T }
 	| { ok: false; reason: "not-logged-in" }
@@ -9,11 +14,17 @@ export type Login = () => Promise<LoginResult>;
 
 export type Logout = () => Promise<void>;
 
+export type RefreshTokens = () => Promise<RefreshResult>;
+
+export type GetAccessToken = () => Promise<string | null>;
+
 export type WhenLoggedIn = <T>(fn: () => T) => GuardedResult<T>;
 
 export interface Auth {
 	login: Login;
 	logout: Logout;
+	refreshTokens: RefreshTokens;
+	getAccessToken: GetAccessToken;
 	whenLoggedIn: WhenLoggedIn;
 }
 

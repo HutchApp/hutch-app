@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Auth, LoginResult, OAuthAuthDeps, WhenLoggedIn } from "./auth.types";
+import type { Auth, LoginResult, OAuthAuthDeps, RefreshResult, WhenLoggedIn } from "./auth.types";
 import { generateCodeVerifier, generateCodeChallenge } from "./pkce";
 
 const TokenResponse = z.object({
@@ -9,11 +9,6 @@ const TokenResponse = z.object({
 
 export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 	let loggedIn = false;
-
-	const tokens = await deps.tokenStorage.getTokens();
-	if (tokens) {
-		loggedIn = true;
-	}
 
 	const login = async (): Promise<LoginResult> => {
 		const serverUrl = deps.serverUrl;
@@ -82,6 +77,51 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 		return { ok: true };
 	};
 
+	const refreshTokens = async (): Promise<RefreshResult> => {
+		const storedTokens = await deps.tokenStorage.getTokens();
+		if (!storedTokens?.refreshToken) {
+			await deps.tokenStorage.clearTokens();
+			loggedIn = false;
+			return { ok: false, reason: "no-refresh-token" };
+		}
+
+		const response = await deps.fetchFn(`${deps.serverUrl}/oauth/token`, {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: new URLSearchParams({
+				grant_type: "refresh_token",
+				refresh_token: storedTokens.refreshToken,
+				client_id: deps.clientId,
+			}).toString(),
+		});
+
+		if (!response.ok) {
+			await deps.tokenStorage.clearTokens();
+			loggedIn = false;
+			return { ok: false, reason: "refresh-failed" };
+		}
+
+		const tokenData = TokenResponse.safeParse(await response.json());
+		if (!tokenData.success) {
+			await deps.tokenStorage.clearTokens();
+			loggedIn = false;
+			return { ok: false, reason: "refresh-failed" };
+		}
+
+		await deps.tokenStorage.setTokens({
+			accessToken: tokenData.data.access_token,
+			refreshToken: tokenData.data.refresh_token,
+		});
+
+		loggedIn = true;
+		return { ok: true };
+	};
+
+	const getAccessToken = async (): Promise<string | null> => {
+		const storedTokens = await deps.tokenStorage.getTokens();
+		return storedTokens?.accessToken ?? null;
+	};
+
 	const logout = async (): Promise<void> => {
 		const serverUrl = deps.serverUrl;
 		const tokens = await deps.tokenStorage.getTokens();
@@ -111,5 +151,11 @@ export async function initOAuthAuth(deps: OAuthAuthDeps): Promise<Auth> {
 		}
 	};
 
-	return { login, logout, whenLoggedIn };
+	const storedTokens = await deps.tokenStorage.getTokens();
+	if (storedTokens) {
+		loggedIn = true;
+		await refreshTokens().catch(() => {});
+	}
+
+	return { login, logout, refreshTokens, getAccessToken, whenLoggedIn };
 }

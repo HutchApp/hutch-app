@@ -44,6 +44,35 @@ describe("initInMemoryAuth", () => {
 		});
 	});
 
+	describe("refreshTokens", () => {
+		it("should return ok true", async () => {
+			const auth = initInMemoryAuth();
+
+			const result = await auth.refreshTokens();
+
+			expect(result).toEqual({ ok: true });
+		});
+	});
+
+	describe("getAccessToken", () => {
+		it("should return null when not logged in", async () => {
+			const auth = initInMemoryAuth();
+
+			const token = await auth.getAccessToken();
+
+			expect(token).toBeNull();
+		});
+
+		it("should return a token when logged in", async () => {
+			const auth = initInMemoryAuth();
+			await auth.login();
+
+			const token = await auth.getAccessToken();
+
+			expect(token).toBe("in-memory-token");
+		});
+	});
+
 	describe("logout", () => {
 		it("should return not-logged-in after logout", async () => {
 			const auth = initInMemoryAuth();
