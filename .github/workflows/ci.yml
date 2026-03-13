@@ -47,6 +47,7 @@ jobs:
       AWS_REGION: ap-southeast-2
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
       PULUMI_CONFIG_PASSPHRASE: ''
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
