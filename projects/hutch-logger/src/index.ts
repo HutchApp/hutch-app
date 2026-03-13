@@ -13,3 +13,10 @@ export const consoleLogger: HutchLogger = {
 	warn: console.warn,
 	debug: console.debug,
 };
+
+export const noopLogger: HutchLogger = {
+	info: () => {},
+	error: () => {},
+	warn: () => {},
+	debug: () => {},
+};

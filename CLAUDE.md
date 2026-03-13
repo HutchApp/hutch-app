@@ -132,6 +132,25 @@ const mode = requireEnv<"prod" | "development">("PERSISTENCE");
 // mode is typed as "prod" | "development" — no assert needed
 ```
 
+### No Default Noop Logger in Production Code
+
+Never default a logger dependency to `noopLogger` in production code. A missing logger silently swallows errors and makes debugging impossible. Always require the caller to pass a logger explicitly. Use `noopLogger` only in test code where logging output is intentionally suppressed.
+
+```typescript
+// BAD - Silent failure in production
+function createWidget(deps?: { logger?: HutchLogger }) {
+	const logger = deps?.logger ?? noopLogger;
+}
+
+// GOOD - Logger is required
+function createWidget(deps: { logger: HutchLogger }) {
+	const logger = deps.logger;
+}
+
+// GOOD - noopLogger in tests
+const widget = createWidget({ logger: noopLogger });
+```
+
 ### Branded Types for Domain IDs
 
 Use branded types to prevent mixing up identifiers.

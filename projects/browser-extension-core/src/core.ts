@@ -46,15 +46,8 @@ export interface Core {
 	once(event: "checked-url", handler: ResultHandler<ReadingListItem | null>): void;
 }
 
-const noopLogger: HutchLogger = {
-	info: () => {},
-	error: () => {},
-	warn: () => {},
-	debug: () => {},
-};
-
-export function BrowserExtensionCore(shell: BrowserShell, deps?: { auth?: Auth; logger?: HutchLogger }): Core {
-	const logger = deps?.logger ?? noopLogger;
+export function BrowserExtensionCore(shell: BrowserShell, deps: { auth?: Auth; logger: HutchLogger }): Core {
+	const logger = deps.logger;
 	const eventBus = createEventBus();
 	const auth = deps?.auth ?? initInMemoryAuth();
 	const readingList = initInMemoryReadingList();

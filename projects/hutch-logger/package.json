@@ -8,7 +8,7 @@
   "scripts": {
     "compile": "tsc",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
-    "test": "echo 'Type-only package — no runtime behavior to test'",
+    "test": "echo 'No testable logic — consoleLogger is a trivial binding'",
     "check": "pnpm compile && pnpm lint"
   },
   "devDependencies": {
