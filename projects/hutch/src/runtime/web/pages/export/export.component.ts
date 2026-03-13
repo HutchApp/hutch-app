@@ -7,7 +7,7 @@ import { EXPORT_STYLES } from "./export.styles";
 
 const EXPORT_TEMPLATE = readFileSync(join(__dirname, "export.template.html"), "utf-8");
 
-export function ExportPage(): Component {
+export function ExportPage(options?: { emailVerified?: boolean }): Component {
 	return Base({
 		seo: {
 			title: "Export Your Data — Hutch",
@@ -19,5 +19,6 @@ export function ExportPage(): Component {
 		bodyClass: "page-export",
 		content: render(EXPORT_TEMPLATE, {}),
 		isAuthenticated: true,
+		emailVerified: options?.emailVerified,
 	});
 }

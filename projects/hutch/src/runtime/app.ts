@@ -13,6 +13,10 @@ import {
 } from "./providers/oauth/oauth-model";
 import { initDynamoDbOAuthModel } from "./providers/oauth/dynamodb-oauth-model";
 import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
+import { initLogEmail } from "./providers/email/log-email";
+import { initResendEmail } from "./providers/email/resend-email";
+import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
+import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -24,6 +28,8 @@ function initProviders() {
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
+		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
+		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
@@ -32,6 +38,8 @@ function initProviders() {
 		return {
 			auth,
 			articleStore,
+			...initResendEmail(resendApiKey),
+			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 		};
@@ -43,6 +51,8 @@ function initProviders() {
 	return {
 		auth,
 		articleStore,
+		...initLogEmail(),
+		...initInMemoryEmailVerification(),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	};
@@ -52,7 +62,7 @@ export function createHutchApp(deps: {
 	parseArticle: ParseArticle;
 	appOrigin?: string;
 }) {
-	const { auth, articleStore, oauthModel, validateAccessToken } = initProviders();
+	const { auth, articleStore, oauthModel, validateAccessToken, ...providers } = initProviders();
 
 	const appOrigin = deps.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 
@@ -61,6 +71,8 @@ export function createHutchApp(deps: {
 		...auth,
 		...articleStore,
 		parseArticle: deps.parseArticle,
+		...providers,
+		baseUrl: appOrigin,
 		oauthModel,
 		validateAccessToken,
 	});

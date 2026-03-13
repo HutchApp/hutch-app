@@ -86,6 +86,10 @@
   cursor: pointer;
   transition: background 0.15s ease;
   margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .auth-form__submit:hover {

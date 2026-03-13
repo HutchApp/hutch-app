@@ -9,6 +9,8 @@ import type {
 	CreateUser,
 	DestroySession,
 	GetSessionUserId,
+	IsEmailVerified,
+	MarkEmailVerified,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
@@ -19,6 +21,11 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { SendEmail } from "./providers/email/email.types";
+import type {
+	CreateVerificationToken,
+	VerifyEmailToken,
+} from "./providers/email-verification/email-verification.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
@@ -45,12 +52,18 @@ interface AppDependencies {
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
 	countUsers: CountUsers;
+	markEmailVerified: MarkEmailVerified;
+	isEmailVerified: IsEmailVerified;
 	parseArticle: ParseArticle;
 	findArticleById: FindArticleById;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
+	sendEmail: SendEmail;
+	createVerificationToken: CreateVerificationToken;
+	verifyEmailToken: VerifyEmailToken;
+	baseUrl: string;
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
 }
@@ -64,7 +77,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 }
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { appOrigin, getSessionUserId, countUsers, ...deps } = dependencies;
+	const { appOrigin, getSessionUserId, countUsers, isEmailVerified, ...deps } = dependencies;
 	const app: Express = express();
 
 	app.use(express.static(join(__dirname, "public")));
@@ -78,6 +91,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			const userId = await getSessionUserId(sessionId);
 			if (userId) {
 				req.userId = userId;
+				req.emailVerified = await isEmailVerified(userId);
 			}
 		}
 		next();
@@ -110,6 +124,11 @@ export function createApp(dependencies: AppDependencies): Express {
 		verifyCredentials: deps.verifyCredentials,
 		createSession: deps.createSession,
 		destroySession: deps.destroySession,
+		markEmailVerified: deps.markEmailVerified,
+		sendEmail: deps.sendEmail,
+		createVerificationToken: deps.createVerificationToken,
+		verifyEmailToken: deps.verifyEmailToken,
+		baseUrl: deps.baseUrl,
 	});
 	app.use(authRouter);
 
