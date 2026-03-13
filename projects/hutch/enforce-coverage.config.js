@@ -19,7 +19,6 @@ config.enforceCoverage({
     'src/infra/**',
     // Composition roots — no logic to test, only wiring
     'src/runtime/app.ts',
-    'src/runtime/providers/article-parser/fetch-html.ts',
     'src/e2e/e2e-server.ts',
     // DynamoDB adapters — thin AWS SDK wrappers tested via integration against real DynamoDB
     'src/runtime/providers/**/dynamodb-*.ts',

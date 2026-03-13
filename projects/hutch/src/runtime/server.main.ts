@@ -1,8 +1,9 @@
 import { createHutchApp } from "./app";
-import { fetchHtml } from "./providers/article-parser/fetch-html";
+import { initFetchHtml } from "./providers/article-parser/fetch-html";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import { PORT } from "./server";
 
+const fetchHtml = initFetchHtml({ fetch: globalThis.fetch });
 const { parseArticle } = initReadabilityParser({ fetchHtml });
 const { app } = createHutchApp({ parseArticle });
 
