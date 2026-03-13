@@ -19,6 +19,7 @@ config.enforceCoverage({
     'src/infra/**',
     // Composition roots — no logic to test, only wiring
     'src/runtime/app.ts',
+    'src/runtime/test-app.ts',
     // E2E test infrastructure — coverage depends on V8 data from Playwright/E2E server process, which is non-deterministic
     'src/e2e/**',
     // DynamoDB adapters — thin AWS SDK wrappers tested via integration against real DynamoDB

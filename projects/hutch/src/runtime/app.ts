@@ -73,6 +73,7 @@ export function createHutchApp(deps: {
 		parseArticle: deps.parseArticle,
 		...providers,
 		baseUrl: appOrigin,
+		logError: (message, error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack })),
 		oauthModel,
 		validateAccessToken,
 	});

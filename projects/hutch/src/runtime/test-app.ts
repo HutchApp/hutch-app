@@ -35,6 +35,7 @@ export function createTestApp(options?: {
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",
+		logError: () => {},
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
@@ -58,6 +59,7 @@ export function createTestAppWithFetchHtml(fetchHtml: FetchHtml) {
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",
+		logError: () => {},
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	});

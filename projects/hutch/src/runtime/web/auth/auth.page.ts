@@ -37,6 +37,7 @@ interface AuthDependencies {
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
 	baseUrl: string;
+	logError: (message: string, error?: Error) => void;
 }
 
 function flattenZodErrors(
@@ -135,7 +136,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 				});
 			})
 			.catch((err) => {
-				console.error("[Email] Verification email failed", err);
+				deps.logError("[Email] Verification email failed", err instanceof Error ? err : new Error(String(err)));
 			});
 	});
 

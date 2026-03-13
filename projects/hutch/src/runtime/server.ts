@@ -64,6 +64,7 @@ interface AppDependencies {
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
 	baseUrl: string;
+	logError: (message: string, error?: Error) => void;
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
 }
@@ -129,6 +130,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		createVerificationToken: deps.createVerificationToken,
 		verifyEmailToken: deps.verifyEmailToken,
 		baseUrl: deps.baseUrl,
+		logError: deps.logError,
 	});
 	app.use(authRouter);
 

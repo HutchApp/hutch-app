@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
+import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import {
 	PutCommand,
-	GetCommand,
 	DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { UserId } from "../../domain/user/user.types";
@@ -38,34 +38,38 @@ export function initDynamoDbEmailVerification(deps: {
 	};
 
 	const verifyEmailToken: VerifyEmailToken = async (token) => {
-		const result = await client.send(
-			new GetCommand({
-				TableName: tableName,
-				Key: { token },
-			}),
-		);
+		try {
+			const result = await client.send(
+				new DeleteCommand({
+					TableName: tableName,
+					Key: { token },
+					ConditionExpression: "attribute_exists(#tk)",
+					ExpressionAttributeNames: { "#tk": "token" },
+					ReturnValues: "ALL_OLD",
+				}),
+			);
 
-		if (!result.Item) {
-			return { ok: false, reason: "invalid-token" };
+			const item = result.Attributes;
+			if (!item) {
+				return { ok: false, reason: "invalid-token" };
+			}
+
+			const expiresAt = item.expiresAt as number;
+			if (expiresAt < Math.floor(Date.now() / 1000)) {
+				return { ok: false, reason: "invalid-token" };
+			}
+
+			return {
+				ok: true,
+				userId: item.userId as UserId,
+				email: item.email as string,
+			};
+		} catch (error) {
+			if (error instanceof ConditionalCheckFailedException) {
+				return { ok: false, reason: "invalid-token" };
+			}
+			throw error;
 		}
-
-		const expiresAt = result.Item.expiresAt as number;
-		if (expiresAt < Math.floor(Date.now() / 1000)) {
-			return { ok: false, reason: "invalid-token" };
-		}
-
-		await client.send(
-			new DeleteCommand({
-				TableName: tableName,
-				Key: { token },
-			}),
-		);
-
-		return {
-			ok: true,
-			userId: result.Item.userId as UserId,
-			email: result.Item.email as string,
-		};
 	};
 
 	return { createVerificationToken, verifyEmailToken };

@@ -49,6 +49,7 @@ describe("Email verification", () => {
 				...emailVerification,
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
+				logError: () => {},
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
 			});

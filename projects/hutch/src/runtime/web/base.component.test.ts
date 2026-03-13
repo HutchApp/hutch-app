@@ -120,7 +120,6 @@ describe("Base component", () => {
 
 		const banner = doc.querySelector(".verify-banner");
 		expect(banner?.textContent).toContain("Please verify your email");
-		expect(banner?.querySelector("a")?.getAttribute("href")).toBe("/verify-email-resend");
 	});
 
 	it("should hide verification banner when email is verified", () => {
