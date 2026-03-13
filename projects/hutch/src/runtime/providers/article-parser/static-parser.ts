@@ -1,7 +1,6 @@
 import type { ParseArticle } from "./article-parser.types";
 import { extractThumbnail } from "./extract-thumbnail";
-
-type FetchHtml = (url: string) => Promise<string | undefined>;
+import type { FetchHtml } from "./readability-parser";
 
 export function initStaticParser(deps: {
 	fetchHtml: FetchHtml;
