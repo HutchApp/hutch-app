@@ -7,6 +7,7 @@ import type {
 	GetSessionUserId,
 	VerifyCredentials,
 } from "./auth.types";
+import { normalizeEmail } from "./normalize-email";
 import { hashPassword, verifyPassword } from "./password";
 
 interface StoredUser {
@@ -26,7 +27,7 @@ export function initInMemoryAuth(): {
 	const sessions = new Map<string, UserId>();
 
 	const createUser: CreateUser = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 
 		if (users.has(normalizedEmail)) {
 			return { ok: false, reason: "email-already-exists" };
@@ -41,7 +42,7 @@ export function initInMemoryAuth(): {
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 		const user = users.get(normalizedEmail);
 
 		if (!user) {

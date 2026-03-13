@@ -4,7 +4,7 @@
   "description": "Hutch — read-it-later web application",
   "main": "src/infra/index.ts",
   "scripts": {
-    "start": "NODE_ENV=production node dist/runtime/server.main.js",
+    "start": "node dist/runtime/server.main.js",
     "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true tsx watch src/runtime/server.main.ts\"",
     "dev:lambda": "tsx watch src/infra/lambda.ts",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",

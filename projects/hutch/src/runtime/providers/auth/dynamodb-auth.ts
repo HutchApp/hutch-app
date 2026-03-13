@@ -14,6 +14,7 @@ import type {
 	GetSessionUserId,
 	VerifyCredentials,
 } from "./auth.types";
+import { normalizeEmail } from "./normalize-email";
 import { hashPassword, verifyPassword } from "./password";
 
 export function initDynamoDbAuth(deps: {
@@ -30,7 +31,7 @@ export function initDynamoDbAuth(deps: {
 	const { client, usersTableName, sessionsTableName } = deps;
 
 	const createUser: CreateUser = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 		const userId = randomBytes(16).toString("hex") as UserId;
 		const passwordHash = await hashPassword(password);
 
@@ -52,7 +53,7 @@ export function initDynamoDbAuth(deps: {
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 
 		const result = await client.send(
 			new GetCommand({
