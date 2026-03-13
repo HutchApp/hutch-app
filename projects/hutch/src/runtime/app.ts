@@ -18,6 +18,7 @@ import { createValidateAccessToken } from "./providers/oauth/validate-access-tok
 import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
+import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -46,6 +47,7 @@ function initProviders() {
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
+		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -56,8 +58,7 @@ function initProviders() {
 			auth,
 			articleStore,
 			...initResendEmail(resendApiKey),
-			// TODO: replace with DynamoDB-backed verification store — tokens are lost on restart
-			...initInMemoryEmailVerification(),
+			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 		};

@@ -8,6 +8,8 @@ import type {
 	CreateUser,
 	DestroySession,
 	GetSessionUserId,
+	IsEmailVerified,
+	MarkEmailVerified,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
@@ -49,6 +51,8 @@ interface AppDependencies {
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
+	markEmailVerified: MarkEmailVerified;
+	isEmailVerified: IsEmailVerified;
 	parseArticle: ParseArticle;
 	findArticleById: FindArticleById;
 	findArticlesByUser: FindArticlesByUser;
@@ -72,7 +76,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 }
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { appOrigin, livereloadMiddleware, getSessionUserId, ...deps } = dependencies;
+	const { appOrigin, livereloadMiddleware, getSessionUserId, isEmailVerified, ...deps } = dependencies;
 	const app: Express = express();
 
 	if (livereloadMiddleware) {
@@ -90,6 +94,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			const userId = await getSessionUserId(sessionId);
 			if (userId) {
 				req.userId = userId;
+				req.emailVerified = await isEmailVerified(userId);
 			}
 		}
 		next();
@@ -121,6 +126,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		verifyCredentials: deps.verifyCredentials,
 		createSession: deps.createSession,
 		destroySession: deps.destroySession,
+		markEmailVerified: deps.markEmailVerified,
 		sendEmail: deps.sendEmail,
 		createVerificationToken: deps.createVerificationToken,
 		verifyEmailToken: deps.verifyEmailToken,

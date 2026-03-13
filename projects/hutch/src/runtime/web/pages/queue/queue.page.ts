@@ -56,7 +56,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		const vm = toQueueViewModel(result, urlState);
-		const html = QueuePage(vm).to("text/html");
+		const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 
@@ -70,7 +70,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			const vm = toQueueViewModel(result, urlState, {
 				saveError: "Please enter a valid URL",
 			});
-			const html = QueuePage(vm).to("text/html");
+			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);
 			return;
 		}
@@ -83,7 +83,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			const vm = toQueueViewModel(result, urlState, {
 				saveError: `Could not parse article: ${parseResult.reason}`,
 			});
-			const html = QueuePage(vm).to("text/html");
+			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);
 			return;
 		}
@@ -117,7 +117,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const html = ReaderPage(article).to("text/html");
+		const html = ReaderPage(article, { emailVerified: req.emailVerified }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

@@ -8,7 +8,7 @@ import {
 	HEADER_STYLES,
 	NAV_STYLES,
 	OFFLINE_BANNER_STYLES,
-
+	VERIFY_BANNER_STYLES,
 	UTILITY_STYLES,
 } from "./base.styles";
 import type { Component } from "./component.types";
@@ -38,6 +38,7 @@ export interface PageContent {
 	content: string;
 	scripts?: string;
 	isAuthenticated?: boolean;
+	emailVerified?: boolean;
 }
 
 function renderHeader(
@@ -169,7 +170,8 @@ function renderBaseTemplate(page: PageContent): string {
 		navStyles: NAV_STYLES,
 		footerStyles: FOOTER_STYLES,
 		offlineBannerStyles: OFFLINE_BANNER_STYLES,
-
+		verifyBannerStyles: VERIFY_BANNER_STYLES,
+		showVerificationBanner: page.isAuthenticated === true && page.emailVerified === false,
 		pageStyles: page.styles,
 		bodyClass: page.bodyClass,
 		header: renderHeader(headerVariant, page.isAuthenticated ?? false),

@@ -50,8 +50,8 @@ export async function fetchAllArticles(
 export function initExportRoutes(deps: ExportDependencies): Router {
 	const router = express.Router();
 
-	router.get("/", (_req: Request, res: Response) => {
-		const html = ExportPage().to("text/html");
+	router.get("/", (req: Request, res: Response) => {
+		const html = ExportPage({ emailVerified: req.emailVerified }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

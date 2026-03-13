@@ -128,7 +128,7 @@ const MARK_READ_ON_CLICK_SCRIPT = `
 })();
 </script>`;
 
-export function QueuePage(vm: QueueViewModel): Component {
+export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean }): Component {
 	const displayModel = toQueueDisplayModel(vm);
 	const content = render(QUEUE_TEMPLATE, displayModel);
 
@@ -144,5 +144,6 @@ export function QueuePage(vm: QueueViewModel): Component {
 		content,
 		scripts: MARK_READ_ON_CLICK_SCRIPT,
 		isAuthenticated: true,
+		emailVerified: options?.emailVerified,
 	});
 }

@@ -350,6 +350,23 @@ export const NAV_STYLES = `
   }
 `;
 
+export const VERIFY_BANNER_STYLES = `
+  .verify-banner {
+    background: var(--color-warning);
+    color: var(--foreground);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+  }
+
+  .verify-banner a {
+    color: var(--foreground);
+    font-weight: 600;
+    margin-left: 8px;
+  }
+`;
+
 export const BANNER_AREA_STYLES = `
   .banner-area {
     position: fixed;

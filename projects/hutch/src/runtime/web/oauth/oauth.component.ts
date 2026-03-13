@@ -13,6 +13,7 @@ interface AuthorizePageParams {
 	redirectUri: string;
 	codeChallenge: string;
 	state?: string;
+	emailVerified?: boolean;
 }
 
 const OAUTH_AUTHORIZE_STYLES = `
@@ -100,10 +101,11 @@ export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
 		bodyClass: "page-oauth-authorize",
 		content,
 		isAuthenticated: true,
+		emailVerified: params.emailVerified,
 	});
 }
 
-export function OAuthCallbackPage(): Component {
+export function OAuthCallbackPage(options?: { emailVerified?: boolean }): Component {
 	return Base({
 		seo: {
 			title: "Authorization Complete — Hutch",
@@ -115,5 +117,6 @@ export function OAuthCallbackPage(): Component {
 		bodyClass: "page-oauth-callback",
 		content: render(OAUTH_CALLBACK_TEMPLATE, {}),
 		isAuthenticated: true,
+		emailVerified: options?.emailVerified,
 	});
 }

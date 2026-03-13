@@ -4,6 +4,7 @@ import type {
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	MarkEmailVerified,
 	VerifyCredentials,
 } from "../../providers/auth/auth.types";
 import type { SendEmail } from "../../providers/email/email.types";
@@ -31,6 +32,7 @@ interface AuthDependencies {
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	destroySession: DestroySession;
+	markEmailVerified: MarkEmailVerified;
 	sendEmail: SendEmail;
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
@@ -121,7 +123,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
 		res.redirect(303, "/queue");
 
-		deps.createVerificationToken(createResult.userId)
+		deps.createVerificationToken({ userId: createResult.userId, email })
 			.then((token) => {
 				const verifyUrl = `${deps.baseUrl}/verify-email?token=${token}`;
 				const html = buildVerificationEmailHtml(verifyUrl);
@@ -159,6 +161,8 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			res.status(400).type("html").send(result.body);
 			return;
 		}
+
+		await deps.markEmailVerified(verifyResult.email);
 
 		const result = VerifyEmailPage({ success: true }).to("text/html");
 		res.status(200).type("html").send(result.body);

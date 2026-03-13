@@ -10,21 +10,21 @@ export function initInMemoryEmailVerification(): {
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
 } {
-	const tokens = new Map<VerificationToken, UserId>();
+	const tokens = new Map<VerificationToken, { userId: UserId; email: string }>();
 
-	const createVerificationToken: CreateVerificationToken = async (userId) => {
+	const createVerificationToken: CreateVerificationToken = async ({ userId, email }) => {
 		const token = randomBytes(32).toString("hex") as VerificationToken;
-		tokens.set(token, userId);
+		tokens.set(token, { userId, email });
 		return token;
 	};
 
 	const verifyEmailToken: VerifyEmailToken = async (token) => {
-		const userId = tokens.get(token);
-		if (!userId) {
+		const entry = tokens.get(token);
+		if (!entry) {
 			return { ok: false, reason: "invalid-token" };
 		}
 		tokens.delete(token);
-		return { ok: true, userId };
+		return { ok: true, userId: entry.userId, email: entry.email };
 	};
 
 	return { createVerificationToken, verifyEmailToken };

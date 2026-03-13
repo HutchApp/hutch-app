@@ -139,5 +139,51 @@ describe("Email verification", () => {
 			const doc = new JSDOM(secondResponse.text).window.document;
 			expect(doc.querySelector("h1")?.textContent).toBe("Verification failed");
 		});
+
+		it("should mark email as verified after successful verification", async () => {
+			const { app, auth, email } = createTestApp();
+
+			const signupResponse = await request(app).post("/signup").type("form").send({
+				email: "flag@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+			});
+
+			const cookies = signupResponse.headers["set-cookie"];
+			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
+			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
+			const sessionId = sessionMatch![1];
+			const userId = await auth.getSessionUserId(sessionId);
+
+			expect(await auth.isEmailVerified(userId!)).toBe(false);
+
+			const sent = email.getSentEmails();
+			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const token = tokenMatch![1];
+
+			await request(app).get(`/verify-email?token=${token}`);
+
+			expect(await auth.isEmailVerified(userId!)).toBe(true);
+		});
+
+		it("should not mark email as verified when token is invalid", async () => {
+			const { app, auth } = createTestApp();
+
+			const signupResponse = await request(app).post("/signup").type("form").send({
+				email: "noverify@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+			});
+
+			const cookies = signupResponse.headers["set-cookie"];
+			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
+			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
+			const sessionId = sessionMatch![1];
+			const userId = await auth.getSessionUserId(sessionId);
+
+			await request(app).get("/verify-email?token=invalidtoken");
+
+			expect(await auth.isEmailVerified(userId!)).toBe(false);
+		});
 	});
 });

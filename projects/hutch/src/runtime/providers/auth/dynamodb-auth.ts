@@ -4,6 +4,8 @@ import {
 	PutCommand,
 	GetCommand,
 	DeleteCommand,
+	UpdateCommand,
+	QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import type { UserId } from "../../domain/user/user.types";
@@ -12,6 +14,8 @@ import type {
 	CreateUser,
 	DestroySession,
 	GetSessionUserId,
+	IsEmailVerified,
+	MarkEmailVerified,
 	VerifyCredentials,
 } from "./auth.types";
 import { normalizeEmail } from "./normalize-email";
@@ -27,6 +31,8 @@ export function initDynamoDbAuth(deps: {
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
+	markEmailVerified: MarkEmailVerified;
+	isEmailVerified: IsEmailVerified;
 } {
 	const { client, usersTableName, sessionsTableName } = deps;
 
@@ -39,7 +45,7 @@ export function initDynamoDbAuth(deps: {
 			await client.send(
 				new PutCommand({
 					TableName: usersTableName,
-					Item: { email: normalizedEmail, userId, passwordHash },
+					Item: { email: normalizedEmail, userId, passwordHash, emailVerified: false },
 					ConditionExpression: "attribute_not_exists(email)",
 				}),
 			);
@@ -118,11 +124,44 @@ export function initDynamoDbAuth(deps: {
 		);
 	};
 
+	const markEmailVerified: MarkEmailVerified = async (email) => {
+		const normalizedEmail = normalizeEmail(email);
+		await client.send(
+			new UpdateCommand({
+				TableName: usersTableName,
+				Key: { email: normalizedEmail },
+				UpdateExpression: "SET emailVerified = :val",
+				ConditionExpression: "attribute_exists(email)",
+				ExpressionAttributeValues: { ":val": true },
+			}),
+		);
+	};
+
+	const isEmailVerified: IsEmailVerified = async (userId) => {
+		const result = await client.send(
+			new QueryCommand({
+				TableName: usersTableName,
+				IndexName: "userId-index",
+				KeyConditionExpression: "userId = :uid",
+				ExpressionAttributeValues: { ":uid": userId },
+				Limit: 1,
+			}),
+		);
+
+		if (!result.Items || result.Items.length === 0) {
+			return false;
+		}
+
+		return result.Items[0].emailVerified === true;
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,
 		destroySession,
+		markEmailVerified,
+		isEmailVerified,
 	};
 }
