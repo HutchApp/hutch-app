@@ -1,13 +1,13 @@
     <main class="auth-page">
       <div class="auth-card">
         {{#if success}}
-        <h1 class="auth-card__title" data-test-verify-success>Email verified</h1>
+        <h1 class="auth-card__title">Email verified</h1>
         <p class="auth-card__subtitle">Your email has been verified. You can now use your account.</p>
         <a class="auth-form__submit" href="/queue" style="text-align:center;text-decoration:none;display:block;">Go to your queue</a>
         {{else}}
-        <h1 class="auth-card__title" data-test-verify-error>Verification failed</h1>
+        <h1 class="auth-card__title">Verification failed</h1>
         <p class="auth-card__subtitle">{{error}}</p>
-        <a class="auth-form__submit" href="/signup" style="text-align:center;text-decoration:none;display:block;">Sign up again</a>
+        <a class="auth-form__submit" href="/login" style="text-align:center;text-decoration:none;display:block;">Go to login</a>
         {{/if}}
       </div>
     </main>

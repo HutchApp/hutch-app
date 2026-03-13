@@ -10,6 +10,7 @@ export function initResendEmail(apiKey: string): { sendEmail: SendEmail } {
 			to: message.to,
 			subject: message.subject,
 			html: message.html,
+			...(message.bcc && { bcc: message.bcc }),
 		});
 	};
 

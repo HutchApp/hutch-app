@@ -54,7 +54,7 @@ describe("Email verification", () => {
 
 			expect(verifyResponse.status).toBe(200);
 			const doc = new JSDOM(verifyResponse.text).window.document;
-			expect(doc.querySelector("[data-test-verify-success]")).toBeTruthy();
+			expect(doc.querySelector("h1")?.textContent).toBe("Email verified");
 		});
 
 		it("should reject an invalid token", async () => {
@@ -64,7 +64,7 @@ describe("Email verification", () => {
 
 			expect(response.status).toBe(400);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-verify-error]")).toBeTruthy();
+			expect(doc.querySelector("h1")?.textContent).toBe("Verification failed");
 		});
 
 		it("should reject when no token is provided", async () => {
@@ -74,7 +74,7 @@ describe("Email verification", () => {
 
 			expect(response.status).toBe(400);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-verify-error]")).toBeTruthy();
+			expect(doc.querySelector("h1")?.textContent).toBe("Verification failed");
 		});
 
 		it("should reject a token that has already been used", async () => {
@@ -95,7 +95,7 @@ describe("Email verification", () => {
 
 			expect(secondResponse.status).toBe(400);
 			const doc = new JSDOM(secondResponse.text).window.document;
-			expect(doc.querySelector("[data-test-verify-error]")).toBeTruthy();
+			expect(doc.querySelector("h1")?.textContent).toBe("Verification failed");
 		});
 	});
 });
