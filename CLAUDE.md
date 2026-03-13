@@ -148,7 +148,7 @@ function createWidget(deps: { logger: HutchLogger }) {
 }
 
 // GOOD - noopLogger in tests
-const widget = createWidget({ logger: noopLogger });
+const widget = createWidget({ logger: HutchLogger.from(noopLogger) });
 ```
 
 ### Branded Types for Domain IDs

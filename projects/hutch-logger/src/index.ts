@@ -7,6 +7,12 @@ export interface HutchLogger {
 	debug: LogMethod;
 }
 
+export namespace HutchLogger {
+	export function from(impl: HutchLogger): HutchLogger {
+		return impl;
+	}
+}
+
 export const consoleLogger: HutchLogger = {
 	info: console.info,
 	error: console.error,

@@ -8,7 +8,7 @@
   "scripts": {
     "compile": "tsc",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
-    "test": "echo 'No testable logic — consoleLogger is a trivial binding'",
+    "test": "echo 'No testable logic — trivial bindings and pass-through factory'",
     "check": "pnpm compile && pnpm lint"
   },
   "devDependencies": {
