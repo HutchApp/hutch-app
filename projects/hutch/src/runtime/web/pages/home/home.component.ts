@@ -44,6 +44,7 @@ export function HomePage(params: { userCount: number }): Component {
 		bodyClass: "page-home",
 		content: render(HOME_TEMPLATE, {
 			userCount,
+			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
 			progressPercent,
 			allocationExhausted,
 			coreFeatures: [

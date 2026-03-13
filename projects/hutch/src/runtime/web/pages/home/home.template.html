@@ -109,7 +109,7 @@
           <div class="founding-progress__bar">
             <div class="founding-progress__fill" style="width: {{progressPercent}}%"></div>
           </div>
-          <p class="founding-progress__label">{{userCount}} / 100 founding members</p>
+          <p class="founding-progress__label">{{userCount}} / {{foundingMemberLimit}} founding members</p>
           {{#if allocationExhausted}}
           <p class="founding-progress__exhausted" data-test-founding-exhausted>The free allocation has exhausted! You might still be able to create an account for free while we develop the pricing system but it may require payment in a few months.</p>
           {{/if}}
