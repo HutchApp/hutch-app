@@ -11,7 +11,7 @@ const FOUNDING_MEMBER_LIMIT = 100;
 
 export function HomePage(params: { userCount: number }): Component {
 	const { userCount } = params;
-	const progressPercent = Math.min(userCount, FOUNDING_MEMBER_LIMIT);
+	const progressPercent = Math.min(Math.round((userCount / FOUNDING_MEMBER_LIMIT) * 100), 100);
 	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
 		seo: {

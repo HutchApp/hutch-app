@@ -89,7 +89,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	});
 
 	app.get("/", async (_req: Request, res: Response) => {
-		const userCount = await countUsers();
+		const userCount = await countUsers().catch(() => 0);
 		const result = HomePage({ userCount }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
