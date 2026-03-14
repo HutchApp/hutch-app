@@ -301,6 +301,15 @@ document.getElementById("filter-input")?.addEventListener("input", () => {
 	renderLinks(filterItems());
 });
 
+const shortcutHint = document.querySelector(".shortcut-hint");
+if (shortcutHint) {
+	const isMac = navigator.platform.startsWith("Mac");
+	if (isMac) {
+		shortcutHint.innerHTML =
+			'Tip: Use <kbd>\u2318</kbd>+<kbd>D</kbd> to save from any page';
+	}
+}
+
 saveAndShowList().catch((error) => {
 	logger.error("Failed to initialize popup:", error);
 	showView("list-view");
