@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import request from "supertest";
 import type { Token, Client } from "@node-oauth/oauth2-server";
-import { createTestApp, createTestAppWithFetchHtml } from "../../test-app";
+import { createTestApp } from "../../test-app";
 import type { UserId } from "../../domain/user/user.types";
 import { SIREN_MEDIA_TYPE } from "./siren";
 
@@ -255,7 +255,7 @@ describe("POST /queue (Siren save article)", () => {
 
 	it("returns 422 when article parsing fails", async () => {
 		const fetchHtml = async (_url: string): Promise<undefined> => undefined;
-		const testApp = createTestAppWithFetchHtml(fetchHtml);
+		const testApp = createTestApp({ fetchHtml });
 		const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
 		assert(client);
 		const testToken = createTestToken();
