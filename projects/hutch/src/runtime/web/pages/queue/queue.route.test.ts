@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp, createTestAppWithFetchHtml } from "../../../test-app";
+import { createTestApp } from "../../../test-app";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -296,7 +296,7 @@ describe("Queue routes", () => {
 			const fetchHtml = async (_url: string) =>
 				`<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`;
 
-			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -338,7 +338,7 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const fetchHtml = async (_url: string) => articleHtml;
-			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -391,7 +391,7 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const fetchHtml = async (_url: string) => articleHtml;
-			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -407,7 +407,7 @@ describe("Queue routes", () => {
 
 		it("should show no-content fallback when article has no extracted content", async () => {
 			const fetchHtml = async (_url: string) => "<html><body></body></html>";
-			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -430,7 +430,7 @@ describe("Queue routes", () => {
 	describe("Parse failure", () => {
 		it("should show error when article parsing fails", async () => {
 			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
-			const { app, auth } = createTestAppWithFetchHtml(fetchHtml);
+			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent

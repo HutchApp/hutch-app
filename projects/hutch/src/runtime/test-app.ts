@@ -19,10 +19,11 @@ const stubFetchHtml: FetchHtml = async (url) => {
 
 export function createTestApp(options?: {
 	parseArticle?: ParseArticle;
+	fetchHtml?: FetchHtml;
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
-	const parser = initReadabilityParser({ fetchHtml: stubFetchHtml });
+	const parser = initReadabilityParser({ fetchHtml: options?.fetchHtml ?? stubFetchHtml });
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
@@ -32,30 +33,6 @@ export function createTestApp(options?: {
 		...auth,
 		...articleStore,
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
-		...email,
-		...emailVerification,
-		baseUrl: "http://localhost:3000",
-		logError: () => {},
-		oauthModel,
-		validateAccessToken: createValidateAccessToken(oauthModel),
-	});
-
-	return { app, auth, articleStore, parser, oauthModel, email, emailVerification };
-}
-
-export function createTestAppWithFetchHtml(fetchHtml: FetchHtml) {
-	const auth = initInMemoryAuth();
-	const articleStore = initInMemoryArticleStore();
-	const parser = initReadabilityParser({ fetchHtml });
-	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
-	const email = initInMemoryEmail();
-	const emailVerification = initInMemoryEmailVerification();
-
-	const app = createApp({
-		appOrigin: "http://localhost:3000",
-		...auth,
-		...articleStore,
-		...parser,
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",
