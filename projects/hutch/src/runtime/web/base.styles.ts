@@ -41,7 +41,6 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 	"--input-height": "48px",
 	"--input-padding": "12px 16px",
 	"--input-font-size": "16px",
-	"--input-border-radius": "6px",
 	"--form-gap": "20px",
 	"--color-on-brand": "#ffffff",
 	"--footer-bg": "#1a1a1a",
@@ -268,7 +267,7 @@ export const NAV_STYLES = `
     right: 0;
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     min-width: 180px;
     margin-top: 8px;
