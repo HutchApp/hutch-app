@@ -74,6 +74,7 @@ const DARK_THEME_VARIABLES: Record<string, string> = {
 	"--ring-shadow": "hsl(27 65% 52% / 0.25)",
 	"--error-bg": "hsl(0 43% 56% / 0.15)",
 	"--footer-bg": "#0d0d0d",
+	"--color-on-brand": "#ffffff",
 };
 
 function generateCssVariables(variables: Record<string, string>): string {
