@@ -51,13 +51,13 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 };
 
 const DARK_THEME_VARIABLES: Record<string, string> = {
-	"--color-background": "#121212",
-	"--color-surface": "#1a1a1a",
-	"--color-surface-elevated": "#222222",
+	"--color-background": "#1A1F2B",
+	"--color-surface": "#232836",
+	"--color-surface-elevated": "#2A3040",
 	"--color-text-primary": "#e4e4e4",
 	"--color-text-secondary": "#9BA1AE",
-	"--color-text-muted": "#6b6b6b",
-	"--color-border": "#2e2e2e",
+	"--color-text-muted": "#6B7080",
+	"--color-border": "#3A3F4E",
 	"--color-brand": "#d4833a",
 	"--color-brand-dark": "#e89a55",
 	"--color-brand-light": "#3d2a18",
