@@ -34,10 +34,6 @@ export interface QueueViewModel {
 		prev?: string;
 		next?: string;
 	};
-	showUrlToggle: {
-		label: string;
-		url: string;
-	};
 	saveError?: string;
 }
 
@@ -110,9 +106,6 @@ export function toQueueViewModel(
 					? buildQueueUrl({ ...filters, page: result.page + 1 })
 					: undefined,
 		},
-		showUrlToggle: filters.showUrl
-			? { label: "Hide URLs", url: buildQueueUrl({ ...filters, showUrl: undefined }) }
-			: { label: "Show URLs", url: buildQueueUrl({ ...filters, showUrl: true }) },
 		saveError: options?.saveError,
 	};
 }

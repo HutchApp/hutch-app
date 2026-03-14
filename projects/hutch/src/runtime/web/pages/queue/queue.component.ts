@@ -33,7 +33,6 @@ interface QueueDisplayModel {
 	total: number;
 	pluralSuffix: string;
 	saveError?: string;
-	showUrl: boolean;
 	isEmpty: boolean;
 	hasArticles: boolean;
 	articles: ArticleDisplayModel[];
@@ -45,8 +44,6 @@ interface QueueDisplayModel {
 	filterUnreadUrl: string;
 	filterReadUrl: string;
 	filterArchivedUrl: string;
-	showUrlToggleUrl: string;
-	showUrlToggleLabel: string;
 	sortUrl: string;
 	sortLabel: string;
 	showPagination: boolean;
@@ -72,7 +69,6 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 		total: vm.total,
 		pluralSuffix: vm.total !== 1 ? "s" : "",
 		saveError: vm.saveError,
-		showUrl: vm.filters.showUrl === true,
 		isEmpty: vm.isEmpty,
 		hasArticles: !vm.isEmpty,
 		articles: vm.articles.map(toArticleDisplayModel),
@@ -84,8 +80,6 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 		filterUnreadUrl: vm.filterUrls.unread,
 		filterReadUrl: vm.filterUrls.read,
 		filterArchivedUrl: vm.filterUrls.archived,
-		showUrlToggleUrl: vm.showUrlToggle.url,
-		showUrlToggleLabel: vm.showUrlToggle.label,
 		sortUrl,
 		sortLabel,
 		showPagination: vm.totalPages > 1,
