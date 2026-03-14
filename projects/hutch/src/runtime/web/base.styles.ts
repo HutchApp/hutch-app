@@ -114,6 +114,11 @@ export const BASE_RESET_STYLES = `
     min-height: 100vh;
     padding-top: var(--banner-area-height, 38px);
   }
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 `;
 
 export const HEADER_STYLES = `
