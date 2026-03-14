@@ -157,9 +157,7 @@ describe("GET /", () => {
 		const schemas = Array.from(scripts).map((s) => JSON.parse(s.textContent ?? "{}"));
 
 		const types = schemas.map((s: { "@type": string }) => s["@type"]);
-		expect(types).toContain("WebApplication");
-		expect(types).toContain("Organization");
-		expect(types).toContain("FAQPage");
+		expect(types).toEqual(["WebApplication", "Organization", "FAQPage"]);
 	});
 
 	it("should include FAQ structured data with questions and answers", async () => {
