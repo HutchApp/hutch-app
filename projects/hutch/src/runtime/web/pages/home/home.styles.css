@@ -1,5 +1,5 @@
 .home-hero {
-  background: linear-gradient(135deg, #2B3A55 0%, #1f2a3e 100%);
+  background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-dark) 100%);
   color: #fff;
   padding: 80px 20px 60px;
   text-align: center;
@@ -67,7 +67,7 @@
 
 .btn--primary {
   background: #fff;
-  color: #2B3A55;
+  color: var(--color-navy);
 }
 
 .btn--secondary {
