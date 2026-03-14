@@ -3,6 +3,7 @@ import * as aws from "@pulumi/aws";
 import { build, type Loader } from "esbuild";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { getEnv, requireEnv } from "../runtime/require-env";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
@@ -77,6 +78,7 @@ class HutchStorage {
 	public readonly usersTable: aws.dynamodb.Table;
 	public readonly sessionsTable: aws.dynamodb.Table;
 	public readonly oauthTable: aws.dynamodb.Table;
+	public readonly verificationTokensTable: aws.dynamodb.Table;
 
 	constructor(_name: string) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
@@ -100,7 +102,17 @@ class HutchStorage {
 		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "email",
-			attributes: [{ name: "email", type: "S" }],
+			attributes: [
+				{ name: "email", type: "S" },
+				{ name: "userId", type: "S" },
+			],
+			globalSecondaryIndexes: [
+				{
+					name: "userId-index",
+					hashKey: "userId",
+					projectionType: "ALL",
+				},
+			],
 		});
 
 		this.sessionsTable = new aws.dynamodb.Table(`hutch-sessions`, {
@@ -127,6 +139,16 @@ class HutchStorage {
 					projectionType: "ALL",
 				},
 			],
+			ttl: {
+				attributeName: "expiresAt",
+				enabled: true,
+			},
+		});
+
+		this.verificationTokensTable = new aws.dynamodb.Table(`hutch-verification-tokens`, {
+			billingMode: "PAY_PER_REQUEST",
+			hashKey: "token",
+			attributes: [{ name: "token", type: "S" }],
 			ttl: {
 				attributeName: "expiresAt",
 				enabled: true,
@@ -196,8 +218,9 @@ class HutchLambda {
 					args.storage.usersTable.arn,
 					args.storage.sessionsTable.arn,
 					args.storage.oauthTable.arn,
+					args.storage.verificationTokensTable.arn,
 				])
-				.apply(([articlesArn, usersArn, sessionsArn, oauthArn]) =>
+				.apply(([articlesArn, usersArn, sessionsArn, oauthArn, verificationTokensArn]) =>
 					JSON.stringify({
 						Version: "2012-10-17",
 						Statement: [
@@ -215,9 +238,11 @@ class HutchLambda {
 									articlesArn,
 									`${articlesArn}/index/*`,
 									usersArn,
+									`${usersArn}/index/*`,
 									sessionsArn,
 									oauthArn,
 									`${oauthArn}/index/*`,
+									verificationTokensArn,
 								],
 							},
 						],
@@ -244,6 +269,10 @@ class HutchLambda {
 					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
 					DYNAMODB_OAUTH_TABLE: args.storage.oauthTable.name,
+					DYNAMODB_VERIFICATION_TOKENS_TABLE: args.storage.verificationTokensTable.name,
+					RESEND_API_KEY: pulumi.runtime.isDryRun()
+						? (getEnv("RESEND_API_KEY") ?? "")
+						: requireEnv("RESEND_API_KEY"),
 				},
 			},
 		});

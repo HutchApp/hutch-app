@@ -112,4 +112,37 @@ describe("Base component", () => {
 		const data = JSON.parse(ldJson?.textContent || "{}");
 		expect(data.name).toBe("Hutch");
 	});
+
+	it("should show verification banner when authenticated and email not verified", () => {
+		const page = createTestPageContent({ isAuthenticated: true, emailVerified: false });
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		const banner = doc.querySelector(".verify-banner");
+		expect(banner?.textContent).toContain("Please verify your email");
+	});
+
+	it("should hide verification banner when email is verified", () => {
+		const page = createTestPageContent({ isAuthenticated: true, emailVerified: true });
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(doc.querySelector(".verify-banner")).toBeNull();
+	});
+
+	it("should hide verification banner when not authenticated", () => {
+		const page = createTestPageContent({ isAuthenticated: false, emailVerified: false });
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(doc.querySelector(".verify-banner")).toBeNull();
+	});
+
+	it("should hide verification banner when emailVerified is not provided", () => {
+		const page = createTestPageContent({ isAuthenticated: true });
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(doc.querySelector(".verify-banner")).toBeNull();
+	});
 });

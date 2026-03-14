@@ -24,7 +24,7 @@ function renderReaderContent(article: SavedArticle): string {
 	});
 }
 
-export function ReaderPage(article: SavedArticle): Component {
+export function ReaderPage(article: SavedArticle, options?: { emailVerified?: boolean }): Component {
 	const content = render(READER_TEMPLATE, {
 		innerContent: renderReaderContent(article),
 	});
@@ -40,5 +40,6 @@ export function ReaderPage(article: SavedArticle): Component {
 		bodyClass: "page-reader",
 		content,
 		isAuthenticated: true,
+		emailVerified: options?.emailVerified,
 	});
 }

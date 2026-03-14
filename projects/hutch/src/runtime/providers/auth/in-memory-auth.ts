@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { randomBytes } from "node:crypto";
 import type { UserId } from "../../domain/user/user.types";
 import type {
@@ -6,14 +7,23 @@ import type {
 	CreateUser,
 	DestroySession,
 	GetSessionUserId,
+	MarkEmailVerified,
+	MarkSessionEmailVerified,
 	VerifyCredentials,
 } from "./auth.types";
+import { normalizeEmail } from "./normalize-email";
 import { hashPassword, verifyPassword } from "./password";
 
 interface StoredUser {
 	id: UserId;
 	email: string;
 	passwordHash: string;
+	emailVerified: boolean;
+}
+
+interface StoredSession {
+	userId: UserId;
+	emailVerified: boolean;
 }
 
 export function initInMemoryAuth(): {
@@ -23,12 +33,14 @@ export function initInMemoryAuth(): {
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
 	countUsers: CountUsers;
+	markEmailVerified: MarkEmailVerified;
+	markSessionEmailVerified: MarkSessionEmailVerified;
 } {
 	const users = new Map<string, StoredUser>();
-	const sessions = new Map<string, UserId>();
+	const sessions = new Map<string, StoredSession>();
 
 	const createUser: CreateUser = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 
 		if (users.has(normalizedEmail)) {
 			return { ok: false, reason: "email-already-exists" };
@@ -37,13 +49,13 @@ export function initInMemoryAuth(): {
 		const userId = randomBytes(16).toString("hex") as UserId;
 		const passwordHash = await hashPassword(password);
 
-		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash });
+		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash, emailVerified: false });
 
 		return { ok: true, userId };
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 		const user = users.get(normalizedEmail);
 
 		if (!user) {
@@ -55,12 +67,12 @@ export function initInMemoryAuth(): {
 			return { ok: false, reason: "invalid-credentials" };
 		}
 
-		return { ok: true, userId: user.id };
+		return { ok: true, userId: user.id, emailVerified: user.emailVerified };
 	};
 
-	const createSession: CreateSession = async (userId) => {
+	const createSession: CreateSession = async ({ userId, emailVerified }) => {
 		const sessionId = randomBytes(32).toString("hex");
-		sessions.set(sessionId, userId);
+		sessions.set(sessionId, { userId, emailVerified });
 		return sessionId;
 	};
 
@@ -76,6 +88,20 @@ export function initInMemoryAuth(): {
 		return users.size;
 	};
 
+	const markEmailVerified: MarkEmailVerified = async (email) => {
+		const normalizedEmail = normalizeEmail(email);
+		const user = users.get(normalizedEmail);
+		assert(user, `Cannot mark email verified: no user found for ${normalizedEmail}`);
+		user.emailVerified = true;
+	};
+
+	const markSessionEmailVerified: MarkSessionEmailVerified = async (sessionId) => {
+		const session = sessions.get(sessionId);
+		if (session) {
+			session.emailVerified = true;
+		}
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
@@ -83,5 +109,7 @@ export function initInMemoryAuth(): {
 		getSessionUserId,
 		destroySession,
 		countUsers,
+		markEmailVerified,
+		markSessionEmailVerified,
 	};
 }

@@ -7,6 +7,7 @@ import { AUTH_STYLES } from "./auth.styles";
 
 const LOGIN_TEMPLATE = readFileSync(join(__dirname, "login.template.html"), "utf-8");
 const SIGNUP_TEMPLATE = readFileSync(join(__dirname, "signup.template.html"), "utf-8");
+const VERIFY_EMAIL_TEMPLATE = readFileSync(join(__dirname, "verify-email.template.html"), "utf-8");
 
 interface FieldError {
 	field: string;
@@ -56,6 +57,22 @@ export function LoginPage(data?: AuthFormData): Component {
 		},
 		styles: AUTH_STYLES,
 		bodyClass: "page-login",
+		content,
+	});
+}
+
+export function VerifyEmailPage(data: { success: boolean; error?: string }): Component {
+	const content = render(VERIFY_EMAIL_TEMPLATE, data);
+
+	return Base({
+		seo: {
+			title: "Verify email — Hutch",
+			description: "Email verification for your Hutch account.",
+			canonicalUrl: "/verify-email",
+			robots: "noindex, nofollow",
+		},
+		styles: AUTH_STYLES,
+		bodyClass: "page-verify-email",
 		content,
 	});
 }

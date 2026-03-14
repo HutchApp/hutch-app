@@ -5,6 +5,7 @@ import {
 	GetCommand,
 	DeleteCommand,
 	ScanCommand,
+	UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import type { UserId } from "../../domain/user/user.types";
@@ -14,8 +15,11 @@ import type {
 	CreateUser,
 	DestroySession,
 	GetSessionUserId,
+	MarkEmailVerified,
+	MarkSessionEmailVerified,
 	VerifyCredentials,
 } from "./auth.types";
+import { normalizeEmail } from "./normalize-email";
 import { hashPassword, verifyPassword } from "./password";
 
 export function initDynamoDbAuth(deps: {
@@ -29,11 +33,13 @@ export function initDynamoDbAuth(deps: {
 	getSessionUserId: GetSessionUserId;
 	destroySession: DestroySession;
 	countUsers: CountUsers;
+	markEmailVerified: MarkEmailVerified;
+	markSessionEmailVerified: MarkSessionEmailVerified;
 } {
 	const { client, usersTableName, sessionsTableName } = deps;
 
 	const createUser: CreateUser = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 		const userId = randomBytes(16).toString("hex") as UserId;
 		const passwordHash = await hashPassword(password);
 
@@ -41,7 +47,7 @@ export function initDynamoDbAuth(deps: {
 			await client.send(
 				new PutCommand({
 					TableName: usersTableName,
-					Item: { email: normalizedEmail, userId, passwordHash },
+					Item: { email: normalizedEmail, userId, passwordHash, emailVerified: false },
 					ConditionExpression: "attribute_not_exists(email)",
 				}),
 			);
@@ -55,7 +61,7 @@ export function initDynamoDbAuth(deps: {
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
-		const normalizedEmail = email.toLowerCase().trim();
+		const normalizedEmail = normalizeEmail(email);
 
 		const result = await client.send(
 			new GetCommand({
@@ -76,17 +82,17 @@ export function initDynamoDbAuth(deps: {
 			return { ok: false, reason: "invalid-credentials" };
 		}
 
-		return { ok: true, userId: result.Item.userId as UserId };
+		return { ok: true, userId: result.Item.userId as UserId, emailVerified: result.Item.emailVerified === true };
 	};
 
-	const createSession: CreateSession = async (userId) => {
+	const createSession: CreateSession = async ({ userId, emailVerified }) => {
 		const sessionId = randomBytes(32).toString("hex");
 		const expiresAt = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60; // 7 days in seconds (TTL)
 
 		await client.send(
 			new PutCommand({
 				TableName: sessionsTableName,
-				Item: { sessionId, userId, expiresAt },
+				Item: { sessionId, userId, emailVerified, expiresAt },
 			}),
 		);
 
@@ -108,7 +114,10 @@ export function initDynamoDbAuth(deps: {
 			return null;
 		}
 
-		return result.Item.userId as UserId;
+		return {
+			userId: result.Item.userId as UserId,
+			emailVerified: result.Item.emailVerified === true,
+		};
 	};
 
 	const destroySession: DestroySession = async (sessionId) => {
@@ -130,6 +139,30 @@ export function initDynamoDbAuth(deps: {
 		return result.Count ?? 0;
 	};
 
+	const markEmailVerified: MarkEmailVerified = async (email) => {
+		const normalizedEmail = normalizeEmail(email);
+		await client.send(
+			new UpdateCommand({
+				TableName: usersTableName,
+				Key: { email: normalizedEmail },
+				UpdateExpression: "SET emailVerified = :val",
+				ConditionExpression: "attribute_exists(email)",
+				ExpressionAttributeValues: { ":val": true },
+			}),
+		);
+	};
+
+	const markSessionEmailVerified: MarkSessionEmailVerified = async (sessionId) => {
+		await client.send(
+			new UpdateCommand({
+				TableName: sessionsTableName,
+				Key: { sessionId },
+				UpdateExpression: "SET emailVerified = :val",
+				ExpressionAttributeValues: { ":val": true },
+			}),
+		);
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
@@ -137,5 +170,7 @@ export function initDynamoDbAuth(deps: {
 		getSessionUserId,
 		destroySession,
 		countUsers,
+		markEmailVerified,
+		markSessionEmailVerified,
 	};
 }

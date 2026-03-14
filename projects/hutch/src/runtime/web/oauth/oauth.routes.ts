@@ -78,6 +78,7 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 			redirectUri: redirect_uri,
 			codeChallenge: parsed.data.code_challenge,
 			state,
+			emailVerified: req.emailVerified,
 		}).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
@@ -157,8 +158,8 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 		res.status(200).json({});
 	});
 
-	router.get("/callback", (_req: Request, res: Response) => {
-		const result = OAuthCallbackPage().to("text/html");
+	router.get("/callback", (req: Request, res: Response) => {
+		const result = OAuthCallbackPage({ emailVerified: req.emailVerified }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
