@@ -4,7 +4,10 @@ import type { SaveUrlResult, RemoveUrlResult, SaveUrl, RemoveUrl, FindByUrl, Get
 import type { BrowserShell } from "./shell.types";
 import type { HutchLogger } from "hutch-logger";
 import { createEventBus } from "./event-bus";
-import { initInMemoryReadingList } from "./reading-list/in-memory-reading-list";
+import { initSaveCurrentTab } from "./save-current-tab";
+import { initIconStatus } from "./icon-status";
+import { initSaveFromContextMenu } from "./save-from-context-menu";
+import { initHandleShortcutCommand } from "./handle-shortcut-command";
 
 export interface ReadingList {
 	saveUrl: SaveUrl;
@@ -12,10 +15,6 @@ export interface ReadingList {
 	findByUrl: FindByUrl;
 	getAllItems: GetAllItems;
 }
-import { initSaveCurrentTab } from "./save-current-tab";
-import { initIconStatus } from "./icon-status";
-import { initSaveFromContextMenu } from "./save-from-context-menu";
-import { initHandleShortcutCommand } from "./handle-shortcut-command";
 
 export type ResultHandler<T> = {
 	success: (value: T) => void;
@@ -52,11 +51,11 @@ export interface Core {
 	once(event: "checked-url", handler: ResultHandler<ReadingListItem | null>): void;
 }
 
-export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; logger: HutchLogger; readingList?: ReadingList }): Core {
+export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; logger: HutchLogger; readingList: ReadingList }): Core {
 	const logger = deps.logger;
 	const eventBus = createEventBus();
 	const auth = deps.auth;
-	const readingList = deps.readingList ?? initInMemoryReadingList();
+	const readingList = deps.readingList;
 	const saveCurrentTab = initSaveCurrentTab({ saveUrl: readingList.saveUrl });
 	const { updateIconForTab } = initIconStatus({
 		findByUrl: readingList.findByUrl,

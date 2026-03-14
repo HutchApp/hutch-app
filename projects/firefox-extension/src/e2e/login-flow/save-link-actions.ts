@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { By, until } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
 import type { FlowAction } from "../test-framework/flow-state-handler.types";
@@ -22,7 +23,8 @@ export function createSaveLinkActions(config: {
 			try {
 				const loginView = await driver.findElement(By.id("login-view"));
 				const loginHidden = await loginView.getAttribute("hidden");
-				return loginHidden !== null;
+				assert.notEqual(loginHidden, null, "login-view should be hidden after login");
+				return true;
 			} catch {
 				return false;
 			}
@@ -53,7 +55,8 @@ export function createSaveLinkActions(config: {
 			try {
 				const savedView = await driver.findElement(By.id("saved-view"));
 				const hidden = await savedView.getAttribute("hidden");
-				return hidden === null;
+				assert.equal(hidden, null, "saved-view should be visible");
+				return true;
 			} catch {
 				return false;
 			}
@@ -79,7 +82,8 @@ export function createSaveLinkActions(config: {
 			try {
 				const listView = await driver.findElement(By.id("list-view"));
 				const hidden = await listView.getAttribute("hidden");
-				return hidden === null;
+				assert.equal(hidden, null, "list-view should be visible");
+				return true;
 			} catch {
 				return false;
 			}
@@ -91,10 +95,10 @@ export function createSaveLinkActions(config: {
 			);
 			const items = await driver.findElements(By.css("#link-list .list-view__item-title"));
 			const titles = await Promise.all(items.map(el => el.getText()));
-			const found = titles.some(t => t.includes("Article from"));
-			if (!found) {
-				throw new Error(`Expected saved link in list, but found: ${titles.join(", ")}`);
-			}
+			assert.ok(
+				titles.some(t => t === config.testTitle),
+				`Expected "${config.testTitle}" in list, but found: ${titles.join(", ")}`,
+			);
 			config.progress.listVerified = true;
 		},
 	});

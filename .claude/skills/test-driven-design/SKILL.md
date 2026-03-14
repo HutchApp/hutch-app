@@ -57,10 +57,16 @@ Use TypeScript's type system to prevent invalid states at compile time. When typ
 // Best: Type system prevents invalid states
 type SupportedLocale = 'en-AU';
 
-// Good: Assert for runtime checks
-import assert from 'assert';
-assert.ok(user, 'User is required');
+// Good: Assert for runtime checks in production code
+import assert from 'node:assert';
+assert(entity.properties, 'Server response entity missing properties');
+
+// Good: Assert with strict equality in test code
+import assert from 'node:assert/strict';
+assert.equal(actual, expected, 'Values should match');
 ```
+
+Always use `assert` instead of `if`/`throw` for invariant checks. Assert is more concise, communicates intent clearly, and avoids coverage branches for the truthy path.
 
 ### No Silent Fallbacks for Missing Values
 
@@ -72,6 +78,22 @@ const targets = toCustomerEmail ? [toCustomerEmail] : [];
 
 // ✅ GOOD - Fail fast if required
 const resendApiKey = requireEnv("RESEND_API_KEY");
+```
+
+### No Default In-Memory Implementations
+
+Never default a dependency to an in-memory implementation in production code. All dependencies MUST be mandatory and the in-memory or production implementations are explicitly set at the entry point (composition root). In-memory implementations are for tests only.
+
+```typescript
+// ❌ BAD - Silent fallback to in-memory
+function createWidget(deps: { store?: Store }) {
+	const store = deps.store ?? initInMemoryStore();
+}
+
+// ✅ GOOD - Store is required
+function createWidget(deps: { store: Store }) {
+	const store = deps.store;
+}
 ```
 
 ### Named Parameters Over Positional When Types Repeat

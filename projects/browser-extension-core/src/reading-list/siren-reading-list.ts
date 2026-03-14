@@ -11,6 +11,10 @@ import type {
 
 const SIREN_MEDIA_TYPE = "application/vnd.siren+json";
 
+function assert(value: unknown, message: string): asserts value {
+	if (!value) throw new Error(message);
+}
+
 interface SirenSubEntity {
 	properties?: Record<string, unknown>;
 	actions?: Array<{ name: string; href: string; method: string }>;
@@ -27,9 +31,7 @@ export interface SirenReadingListDeps {
 }
 
 function toReadingListItem(entity: SirenSubEntity): ReadingListItem {
-	if (!entity.properties) {
-		throw new Error("Server response entity missing properties");
-	}
+	assert(entity.properties, "Server response entity missing properties");
 	const props = entity.properties;
 	return {
 		id: props.id as ReadingListItemId,
@@ -47,6 +49,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 } {
 	async function authHeaders(): Promise<Record<string, string>> {
 		const token = await deps.getAccessToken();
+		assert(token, "No access token available");
 		return {
 			Authorization: `Bearer ${token}`,
 			Accept: SIREN_MEDIA_TYPE,
