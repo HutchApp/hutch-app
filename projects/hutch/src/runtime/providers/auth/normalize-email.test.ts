@@ -9,19 +9,19 @@ describe("normalizeEmail", () => {
 		expect(normalizeEmail("  test@example.com  ")).toBe("test@example.com");
 	});
 
-	it("should strip plus alias from local part", () => {
-		expect(normalizeEmail("jessika012023+whatever@gmail.com")).toBe("jessika012023@gmail.com");
+	it("should preserve plus alias in local part", () => {
+		expect(normalizeEmail("jessika012023+whatever@gmail.com")).toBe("jessika012023+whatever@gmail.com");
 	});
 
-	it("should strip plus alias with multiple segments", () => {
-		expect(normalizeEmail("user+tag+extra@example.com")).toBe("user@example.com");
+	it("should preserve plus alias with multiple segments", () => {
+		expect(normalizeEmail("user+tag+extra@example.com")).toBe("user+tag+extra@example.com");
 	});
 
 	it("should leave emails without plus alias unchanged", () => {
 		expect(normalizeEmail("user@example.com")).toBe("user@example.com");
 	});
 
-	it("should handle plus alias with case and whitespace", () => {
-		expect(normalizeEmail("  User+Alias@Example.COM  ")).toBe("user@example.com");
+	it("should lowercase and trim while preserving plus alias", () => {
+		expect(normalizeEmail("  User+Alias@Example.COM  ")).toBe("user+alias@example.com");
 	});
 });
