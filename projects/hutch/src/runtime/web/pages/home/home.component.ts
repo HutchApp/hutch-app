@@ -23,6 +23,7 @@ export function HomePage(params: { userCount: number }): Component {
 			ogImage: "https://hutch-app.com/og-image-1200x630.png",
 			ogImageAlt:
 				"Hutch — Save now, read later. A read-it-later app built in Australia.",
+			ogImageType: "image/png",
 			twitterImage: "https://hutch-app.com/twitter-card-1200x600.png",
 			twitterSite: "@hutchapp",
 			author: "Fayner Brack",
@@ -71,18 +72,6 @@ export function HomePage(params: { userCount: number }): Component {
 					},
 					description:
 						"Hutch is a read-it-later app built in Australia by a solo developer.",
-				},
-				{
-					"@context": "https://schema.org",
-					"@type": "BreadcrumbList",
-					itemListElement: [
-						{
-							"@type": "ListItem",
-							position: 1,
-							name: "Home",
-							item: "https://hutch-app.com",
-						},
-					],
 				},
 				{
 					"@context": "https://schema.org",

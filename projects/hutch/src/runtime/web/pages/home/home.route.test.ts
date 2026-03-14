@@ -159,7 +159,6 @@ describe("GET /", () => {
 		const types = schemas.map((s: { "@type": string }) => s["@type"]);
 		expect(types).toContain("WebApplication");
 		expect(types).toContain("Organization");
-		expect(types).toContain("BreadcrumbList");
 		expect(types).toContain("FAQPage");
 	});
 
@@ -248,11 +247,16 @@ describe("GET /sitemap.xml", () => {
 		expect(response.text).toContain("<loc>http://localhost:3000/terms</loc>");
 	});
 
-	it("should not include private routes in the sitemap", async () => {
+	it("should contain only the expected public pages", async () => {
 		const response = await request(app).get("/sitemap.xml");
-		expect(response.text).not.toContain("/queue");
-		expect(response.text).not.toContain("/login");
-		expect(response.text).not.toContain("/signup");
+		const doc = new JSDOM(response.text, { contentType: "application/xml" }).window.document;
+		const urls = Array.from(doc.querySelectorAll("loc")).map((el) => el.textContent);
+		expect(urls).toEqual([
+			"http://localhost:3000/",
+			"http://localhost:3000/install",
+			"http://localhost:3000/privacy",
+			"http://localhost:3000/terms",
+		]);
 	});
 });
 
