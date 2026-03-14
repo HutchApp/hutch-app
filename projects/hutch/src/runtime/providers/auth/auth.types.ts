@@ -5,7 +5,7 @@ export type CreateUserResult =
 	| { ok: false; reason: "email-already-exists" };
 
 export type VerifyCredentialsResult =
-	| { ok: true; userId: UserId }
+	| { ok: true; userId: UserId; emailVerified: boolean }
 	| { ok: false; reason: "invalid-credentials" };
 
 export type CreateUser = (credentials: {
@@ -18,9 +18,14 @@ export type VerifyCredentials = (credentials: {
 	password: string;
 }) => Promise<VerifyCredentialsResult>;
 
-export type CreateSession = (userId: UserId) => Promise<string>;
+export type CreateSession = (session: {
+	userId: UserId;
+	emailVerified: boolean;
+}) => Promise<string>;
 
-export type GetSessionUserId = (sessionId: string) => Promise<UserId | null>;
+export type GetSessionUserId = (
+	sessionId: string,
+) => Promise<{ userId: UserId; emailVerified: boolean } | null>;
 
 export type DestroySession = (sessionId: string) => Promise<void>;
 
@@ -28,4 +33,4 @@ export type CountUsers = () => Promise<number>;
 
 export type MarkEmailVerified = (email: string) => Promise<void>;
 
-export type IsEmailVerified = (userId: UserId) => Promise<boolean>;
+export type MarkSessionEmailVerified = (sessionId: string) => Promise<void>;

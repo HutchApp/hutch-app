@@ -84,11 +84,11 @@ describe("initInMemoryAuth", () => {
 		it("should create a session and resolve the userId", async () => {
 			const auth = initInMemoryAuth();
 			const userId = "user-123" as UserId;
-			const sessionId = await auth.createSession(userId);
+			const sessionId = await auth.createSession({ userId, emailVerified: false });
 
 			const resolved = await auth.getSessionUserId(sessionId);
 
-			expect(resolved).toBe(userId);
+			expect(resolved).toEqual({ userId, emailVerified: false });
 		});
 
 		it("should return null for unknown session", async () => {
@@ -102,7 +102,7 @@ describe("initInMemoryAuth", () => {
 		it("should destroy a session", async () => {
 			const auth = initInMemoryAuth();
 			const userId = "user-123" as UserId;
-			const sessionId = await auth.createSession(userId);
+			const sessionId = await auth.createSession({ userId, emailVerified: false });
 
 			await auth.destroySession(sessionId);
 			const resolved = await auth.getSessionUserId(sessionId);

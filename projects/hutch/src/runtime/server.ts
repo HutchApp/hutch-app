@@ -9,8 +9,8 @@ import type {
 	CreateUser,
 	DestroySession,
 	GetSessionUserId,
-	IsEmailVerified,
 	MarkEmailVerified,
+	MarkSessionEmailVerified,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
@@ -53,7 +53,7 @@ interface AppDependencies {
 	destroySession: DestroySession;
 	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
-	isEmailVerified: IsEmailVerified;
+	markSessionEmailVerified: MarkSessionEmailVerified;
 	parseArticle: ParseArticle;
 	findArticleById: FindArticleById;
 	findArticlesByUser: FindArticlesByUser;
@@ -78,7 +78,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 }
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { appOrigin, getSessionUserId, countUsers, isEmailVerified, ...deps } = dependencies;
+	const { appOrigin, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
 
 	app.use(express.static(join(__dirname, "public")));
@@ -89,10 +89,10 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use(async (req: Request, _res: Response, next: NextFunction) => {
 		const sessionId = req.cookies?.[COOKIE_NAME];
 		if (sessionId) {
-			const userId = await getSessionUserId(sessionId);
-			if (userId) {
-				req.userId = userId;
-				req.emailVerified = await isEmailVerified(userId);
+			const session = await getSessionUserId(sessionId);
+			if (session) {
+				req.userId = session.userId;
+				req.emailVerified = session.emailVerified;
 			}
 		}
 		next();
@@ -126,6 +126,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		createSession: deps.createSession,
 		destroySession: deps.destroySession,
 		markEmailVerified: deps.markEmailVerified,
+		markSessionEmailVerified: deps.markSessionEmailVerified,
 		sendEmail: deps.sendEmail,
 		createVerificationToken: deps.createVerificationToken,
 		verifyEmailToken: deps.verifyEmailToken,

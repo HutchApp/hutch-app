@@ -5,6 +5,7 @@ import type {
 	CreateUser,
 	DestroySession,
 	MarkEmailVerified,
+	MarkSessionEmailVerified,
 	VerifyCredentials,
 } from "../../providers/auth/auth.types";
 import type { SendEmail } from "../../providers/email/email.types";
@@ -33,6 +34,7 @@ interface AuthDependencies {
 	createSession: CreateSession;
 	destroySession: DestroySession;
 	markEmailVerified: MarkEmailVerified;
+	markSessionEmailVerified: MarkSessionEmailVerified;
 	sendEmail: SendEmail;
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
@@ -85,7 +87,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 
-		const sessionId = await deps.createSession(credentials.userId);
+		const sessionId = await deps.createSession({ userId: credentials.userId, emailVerified: credentials.emailVerified });
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
 		const redirectTo = returnUrl?.startsWith("/") && !returnUrl.startsWith("//") ? returnUrl : "/queue";
 		res.redirect(303, redirectTo);
@@ -120,7 +122,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 
-		const sessionId = await deps.createSession(createResult.userId);
+		const sessionId = await deps.createSession({ userId: createResult.userId, emailVerified: false });
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
 		res.redirect(303, "/queue");
 
@@ -164,6 +166,11 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 
 		await deps.markEmailVerified(verifyResult.email);
+
+		const sessionId = req.cookies?.[COOKIE_NAME];
+		if (sessionId) {
+			await deps.markSessionEmailVerified(sessionId);
+		}
 
 		const result = VerifyEmailPage({ success: true }).to("text/html");
 		res.status(200).type("html").send(result.body);

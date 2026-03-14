@@ -7,8 +7,8 @@ import type {
 	CreateUser,
 	DestroySession,
 	GetSessionUserId,
-	IsEmailVerified,
 	MarkEmailVerified,
+	MarkSessionEmailVerified,
 	VerifyCredentials,
 } from "./auth.types";
 import { normalizeEmail } from "./normalize-email";
@@ -21,6 +21,11 @@ interface StoredUser {
 	emailVerified: boolean;
 }
 
+interface StoredSession {
+	userId: UserId;
+	emailVerified: boolean;
+}
+
 export function initInMemoryAuth(): {
 	createUser: CreateUser;
 	verifyCredentials: VerifyCredentials;
@@ -29,10 +34,10 @@ export function initInMemoryAuth(): {
 	destroySession: DestroySession;
 	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
-	isEmailVerified: IsEmailVerified;
+	markSessionEmailVerified: MarkSessionEmailVerified;
 } {
 	const users = new Map<string, StoredUser>();
-	const sessions = new Map<string, UserId>();
+	const sessions = new Map<string, StoredSession>();
 
 	const createUser: CreateUser = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
@@ -62,12 +67,12 @@ export function initInMemoryAuth(): {
 			return { ok: false, reason: "invalid-credentials" };
 		}
 
-		return { ok: true, userId: user.id };
+		return { ok: true, userId: user.id, emailVerified: user.emailVerified };
 	};
 
-	const createSession: CreateSession = async (userId) => {
+	const createSession: CreateSession = async ({ userId, emailVerified }) => {
 		const sessionId = randomBytes(32).toString("hex");
-		sessions.set(sessionId, userId);
+		sessions.set(sessionId, { userId, emailVerified });
 		return sessionId;
 	};
 
@@ -90,13 +95,11 @@ export function initInMemoryAuth(): {
 		user.emailVerified = true;
 	};
 
-	const isEmailVerified: IsEmailVerified = async (userId) => {
-		for (const user of users.values()) {
-			if (user.id === userId) {
-				return user.emailVerified;
-			}
+	const markSessionEmailVerified: MarkSessionEmailVerified = async (sessionId) => {
+		const session = sessions.get(sessionId);
+		if (session) {
+			session.emailVerified = true;
 		}
-		return false;
 	};
 
 	return {
@@ -107,6 +110,6 @@ export function initInMemoryAuth(): {
 		destroySession,
 		countUsers,
 		markEmailVerified,
-		isEmailVerified,
+		markSessionEmailVerified,
 	};
 }

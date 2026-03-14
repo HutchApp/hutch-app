@@ -41,6 +41,11 @@ describe("Email verification", () => {
 			const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 			const emailVerification = initInMemoryEmailVerification();
 
+			let resolveErrorLogged: () => void;
+			const errorLogged = new Promise<void>((resolve) => {
+				resolveErrorLogged = resolve;
+			});
+
 			const app = createApp({
 				appOrigin: "http://localhost:3000",
 				...auth,
@@ -49,7 +54,7 @@ describe("Email verification", () => {
 				...emailVerification,
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
-				logError: () => {},
+				logError: () => { resolveErrorLogged(); },
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
 			});
@@ -61,7 +66,7 @@ describe("Email verification", () => {
 			});
 
 			expect(response.status).toBe(303);
-			await new Promise((r) => setTimeout(r, 50));
+			await errorLogged;
 		});
 
 		it("should not send a verification email when signup fails", async () => {
@@ -154,17 +159,18 @@ describe("Email verification", () => {
 			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
 			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
 			const sessionId = sessionMatch![1];
-			const userId = await auth.getSessionUserId(sessionId);
+			const session = await auth.getSessionUserId(sessionId);
 
-			expect(await auth.isEmailVerified(userId!)).toBe(false);
+			expect(session!.emailVerified).toBe(false);
 
 			const sent = email.getSentEmails();
 			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
 			const token = tokenMatch![1];
 
-			await request(app).get(`/verify-email?token=${token}`);
+			await request(app).get(`/verify-email?token=${token}`).set("Cookie", `hutch_sid=${sessionId}`);
 
-			expect(await auth.isEmailVerified(userId!)).toBe(true);
+			const updatedSession = await auth.getSessionUserId(sessionId);
+			expect(updatedSession!.emailVerified).toBe(true);
 		});
 
 		it("should not mark email as verified when token is invalid", async () => {
@@ -180,11 +186,11 @@ describe("Email verification", () => {
 			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
 			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
 			const sessionId = sessionMatch![1];
-			const userId = await auth.getSessionUserId(sessionId);
 
-			await request(app).get("/verify-email?token=invalidtoken");
+			await request(app).get("/verify-email?token=invalidtoken").set("Cookie", `hutch_sid=${sessionId}`);
 
-			expect(await auth.isEmailVerified(userId!)).toBe(false);
+			const session = await auth.getSessionUserId(sessionId);
+			expect(session!.emailVerified).toBe(false);
 		});
 	});
 });
