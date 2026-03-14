@@ -27,7 +27,10 @@ export interface SirenReadingListDeps {
 }
 
 function toReadingListItem(entity: SirenSubEntity): ReadingListItem {
-	const props = entity.properties!;
+	if (!entity.properties) {
+		throw new Error("Server response entity missing properties");
+	}
+	const props = entity.properties;
 	return {
 		id: props.id as ReadingListItemId,
 		url: props.url as string,

@@ -20,8 +20,6 @@ export function createSaveLinkActions(config: {
 		async isAvailable(driver: WebDriver): Promise<boolean> {
 			if (config.progress.linkSaved) return false;
 			try {
-				const url = await driver.getCurrentUrl();
-				if (!url.startsWith("moz-extension://")) return false;
 				const loginView = await driver.findElement(By.id("login-view"));
 				const loginHidden = await loginView.getAttribute("hidden");
 				return loginHidden !== null;
@@ -53,8 +51,6 @@ export function createSaveLinkActions(config: {
 			if (!config.progress.linkSaved) return false;
 			if (config.progress.listVerified) return false;
 			try {
-				const url = await driver.getCurrentUrl();
-				if (!url.startsWith("moz-extension://")) return false;
 				const savedView = await driver.findElement(By.id("saved-view"));
 				const hidden = await savedView.getAttribute("hidden");
 				return hidden === null;
@@ -81,8 +77,6 @@ export function createSaveLinkActions(config: {
 			if (!config.progress.linkSaved) return false;
 			if (config.progress.listVerified) return false;
 			try {
-				const url = await driver.getCurrentUrl();
-				if (!url.startsWith("moz-extension://")) return false;
 				const listView = await driver.findElement(By.id("list-view"));
 				const hidden = await listView.getAttribute("hidden");
 				return hidden === null;

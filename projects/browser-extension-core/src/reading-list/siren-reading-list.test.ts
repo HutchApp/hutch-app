@@ -124,6 +124,22 @@ describe("initSirenReadingList", () => {
 		});
 	});
 
+	describe("toReadingListItem error handling", () => {
+		it("throws when server response entity has no properties", async () => {
+			const fetchFn = createMockFetch([{
+				status: 200,
+				body: {
+					entities: [{}],
+				},
+			}]);
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			await expect(list.findByUrl("https://example.com/article")).rejects.toThrow(
+				"Server response entity missing properties",
+			);
+		});
+	});
+
 	describe("getAllItems", () => {
 		it("should return all items from the collection", async () => {
 			const fetchFn = createMockFetch([{

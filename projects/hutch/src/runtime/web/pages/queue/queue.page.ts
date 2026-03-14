@@ -46,8 +46,11 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		});
 
 		if (wantsSiren(req)) {
+			const filteredArticles = filterUrl
+				? result.articles.filter(a => a.url === filterUrl)
+				: result.articles;
 			const filtered = filterUrl
-				? { ...result, articles: result.articles.filter(a => a.url === filterUrl), total: result.articles.filter(a => a.url === filterUrl).length }
+				? { ...result, articles: filteredArticles, total: filteredArticles.length }
 				: result;
 
 			res.type(SIREN_MEDIA_TYPE).json(
