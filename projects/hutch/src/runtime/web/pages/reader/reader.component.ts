@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SavedArticle } from "../../../domain/article/article.types";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../base.component";
 import { render } from "../../render";
 import { READER_STYLES } from "./reader.styles";
 
@@ -24,12 +23,12 @@ function renderReaderContent(article: SavedArticle): string {
 	});
 }
 
-export function ReaderPage(article: SavedArticle, options?: { emailVerified?: boolean }): Component {
+export function ReaderPage(article: SavedArticle): PageBody {
 	const content = render(READER_TEMPLATE, {
 		innerContent: renderReaderContent(article),
 	});
 
-	return Base({
+	return {
 		seo: {
 			title: `${article.metadata.title} — Hutch Reader`,
 			description: article.metadata.excerpt,
@@ -39,7 +38,5 @@ export function ReaderPage(article: SavedArticle, options?: { emailVerified?: bo
 		styles: READER_STYLES,
 		bodyClass: "page-reader",
 		content,
-		isAuthenticated: true,
-		emailVerified: options?.emailVerified,
-	});
+	};
 }
