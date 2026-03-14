@@ -24,6 +24,8 @@ export function HomePage(params: { userCount: number }): Component {
 			ogImageAlt:
 				"Hutch — Save now, read later. A read-it-later app built in Australia.",
 			ogImageType: "image/png",
+			ogImageWidth: "1200",
+			ogImageHeight: "630",
 			twitterImage: "https://hutch-app.com/twitter-card-1200x600.png",
 			twitterSite: "@hutchapp",
 			author: "Fayner Brack",

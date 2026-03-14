@@ -26,6 +26,8 @@ export interface SeoMetadata {
 	ogImage?: string;
 	ogImageAlt?: string;
 	ogImageType?: string;
+	ogImageWidth?: string;
+	ogImageHeight?: string;
 	twitterImage?: string;
 	twitterSite?: string;
 	ogType?: "website" | "article";
@@ -166,6 +168,8 @@ function renderBaseTemplate(page: PageContent): string {
 		ogImage: seo.ogImage,
 		ogImageAlt: seo.ogImageAlt,
 		ogImageType: seo.ogImageType,
+		ogImageWidth: seo.ogImageWidth,
+		ogImageHeight: seo.ogImageHeight,
 		twitterImage: seo.twitterImage ?? seo.ogImage,
 		twitterSite: seo.twitterSite,
 		robots,

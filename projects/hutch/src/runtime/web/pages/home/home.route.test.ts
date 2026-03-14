@@ -48,12 +48,13 @@ describe("GET /", () => {
 		expect(features?.length).toBe(5);
 	});
 
-	it("should render the backstory section", async () => {
+	it("should render the backstory section with creator narrative", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
 		const backstory = doc.querySelector('[data-test-section="backstory"]');
-		expect(backstory).not.toBeNull();
+		expect(backstory?.querySelector(".home-backstory__title")?.textContent).toBe("Why I built this");
+		expect(backstory?.textContent).toContain("Fayner Brack");
 	});
 
 	it("should render one pricing plan for founding members", async () => {
@@ -234,19 +235,11 @@ describe("GET /robots.txt", () => {
 describe("GET /sitemap.xml", () => {
 	const { app } = createTestApp();
 
-	it("should return an XML sitemap with public pages", async () => {
+	it("should return an XML sitemap with exactly the expected public pages", async () => {
 		const response = await request(app).get("/sitemap.xml");
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/application\/xml/);
-		expect(response.text).toContain("<urlset");
-		expect(response.text).toContain("<loc>http://localhost:3000/</loc>");
-		expect(response.text).toContain("<loc>http://localhost:3000/install</loc>");
-		expect(response.text).toContain("<loc>http://localhost:3000/privacy</loc>");
-		expect(response.text).toContain("<loc>http://localhost:3000/terms</loc>");
-	});
 
-	it("should contain only the expected public pages", async () => {
-		const response = await request(app).get("/sitemap.xml");
 		const doc = new JSDOM(response.text, { contentType: "application/xml" }).window.document;
 		const urls = Array.from(doc.querySelectorAll("loc")).map((el) => el.textContent);
 		expect(urls).toEqual([
