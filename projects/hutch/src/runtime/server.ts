@@ -98,6 +98,41 @@ export function createApp(dependencies: AppDependencies): Express {
 		next();
 	});
 
+	app.get("/robots.txt", (_req: Request, res: Response) => {
+		res.type("text/plain").send(
+			[
+				"User-agent: *",
+				"Allow: /",
+				"Disallow: /queue",
+				"Disallow: /export",
+				"Disallow: /oauth",
+				"Disallow: /login",
+				"Disallow: /signup",
+				"Disallow: /forgot-password",
+				"",
+				`Sitemap: ${dependencies.baseUrl}/sitemap.xml`,
+			].join("\n"),
+		);
+	});
+
+	app.get("/sitemap.xml", (_req: Request, res: Response) => {
+		const pages = [
+			{ loc: "/", priority: "1.0", changefreq: "weekly" },
+			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
+			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
+			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
+		];
+		const urls = pages
+			.map(
+				(p) =>
+					`  <url>\n    <loc>${dependencies.baseUrl}${p.loc}</loc>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>`,
+			)
+			.join("\n");
+		res.type("application/xml").send(
+			`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`,
+		);
+	});
+
 	app.get("/", async (_req: Request, res: Response) => {
 		const userCount = await countUsers().catch(() => 0);
 		const result = HomePage({ userCount }).to("text/html");
