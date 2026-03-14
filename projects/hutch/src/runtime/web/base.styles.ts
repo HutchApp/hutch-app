@@ -114,6 +114,9 @@ export const BASE_RESET_STYLES = `
     min-height: 100vh;
     padding-top: var(--banner-area-height, 38px);
   }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: Georgia, 'Times New Roman', serif;
+  }
 `;
 
 export const HEADER_STYLES = `
@@ -143,6 +146,7 @@ export const HEADER_STYLES = `
   }
   .header__brand {
     font-size: 1.5rem;
+    font-family: Georgia, 'Times New Roman', serif;
     font-weight: 700;
     color: var(--primary);
     text-decoration: none;
