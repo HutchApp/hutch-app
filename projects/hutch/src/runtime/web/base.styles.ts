@@ -42,7 +42,7 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 	"--input-border-radius": "8px",
 	"--form-gap": "20px",
 	"--color-on-brand": "#ffffff",
-	"--footer-bg": "#1a1a1a",
+	"--footer-bg": "#2B3A55",
 	"--footer-text": "hsl(0 0% 100% / 0.7)",
 	"--footer-link": "hsl(0 0% 100% / 0.9)",
 	"--footer-link-hover": "hsl(0 0% 100%)",
@@ -72,7 +72,7 @@ const DARK_THEME_VARIABLES: Record<string, string> = {
 	"--ring": "hsl(27 65% 52%)",
 	"--ring-shadow": "hsl(27 65% 52% / 0.25)",
 	"--error-bg": "hsl(0 84% 60% / 0.15)",
-	"--footer-bg": "#0d0d0d",
+	"--footer-bg": "#1A1F2B",
 };
 
 function generateCssVariables(variables: Record<string, string>): string {
