@@ -51,7 +51,7 @@
   background: var(--primary);
   color: var(--primary-foreground);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
