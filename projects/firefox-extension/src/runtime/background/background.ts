@@ -149,7 +149,8 @@ async function initCore() {
 		clientId: CLIENT_ID,
 		async openTab(url: string): Promise<number> {
 			const tab = await browser.tabs.create({ url });
-			return tab.id!;
+			if (tab.id == null) throw new Error("Created tab has no id");
+			return tab.id;
 		},
 		waitForRedirect({ tabId, urlPrefix }): Promise<string> {
 			return new Promise((resolve, reject) => {

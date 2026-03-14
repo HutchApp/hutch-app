@@ -94,10 +94,10 @@ export function createSaveLinkActions(config: {
 				15000,
 			);
 			const items = await driver.findElements(By.css("#link-list .list-view__item-title"));
-			const titles = await Promise.all(items.map(el => el.getText()));
+			const hrefs = await Promise.all(items.map(el => el.getAttribute("href")));
 			assert.ok(
-				titles.some(t => t === config.testTitle),
-				`Expected "${config.testTitle}" in list, but found: ${titles.join(", ")}`,
+				hrefs.some(href => href === config.testUrl),
+				`Expected "${config.testUrl}" in list hrefs, but found: ${hrefs.join(", ")}`,
 			);
 			config.progress.listVerified = true;
 		},
