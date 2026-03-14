@@ -4,10 +4,10 @@ const path = require('path')
 const config = {
   ...baseConfig,
   thresholds: {
-    statements: 97,
+    statements: 99,
     branches: 91,
     functions: 100,
-    lines: 97,
+    lines: 99,
   },
 };
 
@@ -20,8 +20,7 @@ config.enforceCoverage({
     // Composition roots — no logic to test, only wiring
     'src/runtime/app.ts',
     'src/runtime/test-app.ts',
-    // E2E test infrastructure — coverage depends on V8 data from Playwright/E2E server process, which is non-deterministic
-    'src/e2e/**',
+    'src/e2e/e2e-server.ts',
     // DynamoDB adapters — thin AWS SDK wrappers tested via integration against real DynamoDB
     'src/runtime/providers/**/dynamodb-*.ts',
     // Resend adapter — thin SDK wrapper, same rationale as DynamoDB adapters

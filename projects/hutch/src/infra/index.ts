@@ -3,7 +3,7 @@ import * as aws from "@pulumi/aws";
 import { build, type Loader } from "esbuild";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { getEnv } from "../runtime/require-env";
+import { requireEnv } from "../runtime/require-env";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
@@ -270,7 +270,7 @@ class HutchLambda {
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
 					DYNAMODB_OAUTH_TABLE: args.storage.oauthTable.name,
 					DYNAMODB_VERIFICATION_TOKENS_TABLE: args.storage.verificationTokensTable.name,
-					RESEND_API_KEY: getEnv("RESEND_API_KEY") ?? "",
+					RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
 				},
 			},
 		});

@@ -137,4 +137,12 @@ describe("Base component", () => {
 
 		expect(doc.querySelector(".verify-banner")).toBeNull();
 	});
+
+	it("should hide verification banner when emailVerified is not provided", () => {
+		const page = createTestPageContent({ isAuthenticated: true });
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(doc.querySelector(".verify-banner")).toBeNull();
+	});
 });

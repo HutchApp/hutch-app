@@ -133,6 +133,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 				return deps.sendEmail({
 					from: EMAIL_FROM,
 					to: email,
+					bcc: "hutch+account_verifications@hutch-app.com",
 					subject: "Verify your email — Hutch",
 					html,
 				});
