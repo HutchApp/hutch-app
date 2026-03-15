@@ -101,6 +101,8 @@ ${generateCssVariables(DARK_THEME_VARIABLES)}
   }
 `;
 
+const SERIF_FONT_FAMILY = "Georgia, 'Times New Roman', serif";
+
 export const BASE_RESET_STYLES = `
   * {
     box-sizing: border-box;
@@ -113,6 +115,9 @@ export const BASE_RESET_STYLES = `
     color: var(--foreground);
     min-height: 100vh;
     padding-top: var(--banner-area-height, 38px);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: ${SERIF_FONT_FAMILY};
   }
 `;
 
@@ -143,6 +148,7 @@ export const HEADER_STYLES = `
   }
   .header__brand {
     font-size: 1.5rem;
+    font-family: ${SERIF_FONT_FAMILY};
     font-weight: 700;
     color: var(--primary);
     text-decoration: none;
