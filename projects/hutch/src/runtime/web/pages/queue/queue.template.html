@@ -16,6 +16,7 @@
       </nav>
       <div class="queue__sort">
         <a class="queue__sort-link" href="{{sortUrl}}" data-test-sort>{{sortLabel}}</a>
+        <a class="queue__sort-link" href="{{showUrlToggleHref}}" data-test-show-url>{{showUrlToggleLabel}}</a>
       </div>
       {{#if isEmpty}}
       <div class="queue__empty" data-test-empty-queue>
@@ -33,6 +34,7 @@
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
               <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} data-test-article-title>{{title}}</a>
             </div>
+            {{#if showArticleUrl}}<div class="queue-article__url" data-test-article-url>{{url}}</div>{{/if}}
             <div class="queue-article__meta">
               <span>{{siteName}}</span>
               <span>{{readTimeLabel}}</span>
