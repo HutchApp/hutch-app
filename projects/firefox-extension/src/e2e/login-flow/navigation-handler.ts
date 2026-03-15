@@ -52,9 +52,19 @@ export class LoginFlowStateHandler implements FlowStateHandler {
 
 	private async getActiveView(): Promise<string> {
 		try {
-			const url = await this.driver.getCurrentUrl();
-			if (url.includes("/login")) return "server-login";
-			if (url.includes("/oauth/authorize")) return "oauth-authorize";
+			const serverPages = [
+				{ className: "page-login", view: "server-login" },
+				{ className: "page-oauth-authorize", view: "oauth-authorize" },
+			];
+
+			for (const { className, view } of serverPages) {
+				try {
+					await this.driver.findElement(By.css(`body.${className}`));
+					return view;
+				} catch {
+					// Page doesn't have this body class
+				}
+			}
 
 			for (const viewId of VIEW_IDS) {
 				try {

@@ -4,12 +4,19 @@ import type { WebDriver } from "selenium-webdriver";
 import { LoginFlowStateHandler } from "./navigation-handler";
 import type { FlowAction } from "../test-framework/flow-state-handler.types";
 
-function createTestDriver(getAttributeValue: string | null, currentUrl = "moz-extension://test/popup.html"): WebDriver {
+function createTestDriver(getAttributeValue: string | null, bodyClass?: string): WebDriver {
 	return {
-		findElement: async () => ({
-			getAttribute: async () => getAttributeValue,
-		}),
-		getCurrentUrl: async () => currentUrl,
+		findElement: async (_locator: unknown) => {
+			const locatorStr = String(_locator);
+			if (bodyClass && locatorStr.includes(bodyClass)) {
+				return { getAttribute: async () => getAttributeValue };
+			}
+			if (locatorStr.includes("body.")) {
+				throw new Error("No such element");
+			}
+			return { getAttribute: async () => getAttributeValue };
+		},
+		getCurrentUrl: async () => "moz-extension://test/popup.html",
 	} as unknown as WebDriver;
 }
 
@@ -73,8 +80,8 @@ describe("LoginFlowStateHandler", () => {
 		assert.deepEqual(state.availableActions, ["click-login"]);
 	});
 
-	it("detects server-login view from URL", async () => {
-		const driver = createTestDriver("true", "http://127.0.0.1:3000/login?return=%2Foauth");
+	it("detects server-login view from body class", async () => {
+		const driver = createTestDriver("true", "page-login");
 		const handler = new LoginFlowStateHandler(
 			driver,
 			async () => false,
@@ -85,8 +92,8 @@ describe("LoginFlowStateHandler", () => {
 		assert.equal(state.activeView, "server-login");
 	});
 
-	it("detects oauth-authorize view from URL", async () => {
-		const driver = createTestDriver("true", "http://127.0.0.1:3000/oauth/authorize?client_id=test");
+	it("detects oauth-authorize view from body class", async () => {
+		const driver = createTestDriver("true", "page-oauth-authorize");
 		const handler = new LoginFlowStateHandler(
 			driver,
 			async () => false,

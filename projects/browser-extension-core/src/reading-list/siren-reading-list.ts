@@ -44,6 +44,7 @@ function toReadingListItem(entity: SirenSubEntity): ReadingListItem {
 	assert(entity.properties, "Server response entity missing properties");
 	const props = SirenPropertiesSchema.parse(entity.properties);
 	return {
+		// Zod validates id is a string; branded type narrowing is safe after schema validation
 		id: props.id as ReadingListItemId,
 		url: props.url,
 		title: props.title,
