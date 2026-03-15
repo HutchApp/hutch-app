@@ -1,5 +1,5 @@
 import type { SavedArticle } from "../../domain/article/article.types";
-import type { SirenSubEntity } from "./siren";
+import type { SirenEntity, SirenSubEntity } from "./siren";
 
 export function toArticleSubEntity(article: SavedArticle): SirenSubEntity {
 	return {
@@ -19,5 +19,17 @@ export function toArticleSubEntity(article: SavedArticle): SirenSubEntity {
 			readAt: article.readAt?.toISOString() ?? null,
 		},
 		links: [{ rel: ["self"], href: `/queue/${article.id}` }],
+		actions: [
+			{
+				name: "delete",
+				href: `/queue/${article.id}/delete`,
+				method: "POST",
+			},
+		],
 	};
+}
+
+export function toArticleEntity(article: SavedArticle): SirenEntity {
+	const { rel: _rel, ...entity } = toArticleSubEntity(article);
+	return entity;
 }

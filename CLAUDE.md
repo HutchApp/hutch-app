@@ -153,6 +153,43 @@ function createWidget(deps: { logger: HutchLogger }) {
 const widget = createWidget({ logger: HutchLogger.from(noopLogger) });
 ```
 
+### Use `assert` for Runtime Invariants
+
+Use `assert` from `node:assert` for runtime invariant checks instead of `if`/`throw`. Assert is more concise, communicates intent clearly, and integrates with coverage tooling (no uncovered branches for the truthy path).
+
+```typescript
+// BAD - Verbose, creates coverage branches
+if (!entity.properties) {
+	throw new Error("Server response entity missing properties");
+}
+
+// GOOD - Concise, clear intent
+import assert from "node:assert";
+assert(entity.properties, "Server response entity missing properties");
+
+// GOOD - Strict equality in test code
+import assert from "node:assert/strict";
+assert.equal(actual, expected, "Values should match");
+```
+
+Use `assert` from `node:assert` in production code (non-strict, allows falsy checking). Use `assert` from `node:assert/strict` in test code for strict equality semantics.
+
+### No Default In-Memory Implementations
+
+Never default a dependency to an in-memory implementation in production code. All dependencies MUST be mandatory and the in-memory or production implementations are explicitly set at the entry point (composition root). In-memory implementations are for tests only.
+
+```typescript
+// BAD - Silent fallback to in-memory
+function createWidget(deps: { store?: Store }) {
+	const store = deps.store ?? initInMemoryStore();
+}
+
+// GOOD - Store is required
+function createWidget(deps: { store: Store }) {
+	const store = deps.store;
+}
+```
+
 ### Branded Types for Domain IDs
 
 Use branded types to prevent mixing up identifiers.

@@ -35,18 +35,24 @@ await page.waitForSelector('body.page-passengers');
 
 **CRITICAL**: PageAction `isAvailable` functions MUST use element-based detection, NOT URL path checks.
 
+Use `assert` (from `node:assert/strict`) inside `isAvailable` to verify element state. This ensures the check line is properly covered by test instrumentation. The surrounding `try/catch` converts assertion failures into `false` returns.
+
 ```typescript
 // FORBIDDEN
 isAvailable: async page => {
   if (page.url().includes('/flights')) return false
 }
 
-// REQUIRED - Element-based
+// REQUIRED - Element-based with assert
 isAvailable: async page => {
-  const element = page.locator('#unique-element-id')
-  const exists = await element.count() > 0
-  if (!exists) return false
-  // Additional value checks...
+  try {
+    const element = page.locator('#unique-element-id')
+    const count = await element.count()
+    assert.ok(count > 0, 'element should exist')
+    return true
+  } catch {
+    return false
+  }
 }
 ```
 

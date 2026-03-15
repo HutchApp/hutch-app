@@ -5,7 +5,7 @@ import type {
 	SavedArticle,
 } from "../../domain/article/article.types";
 import type { UserId } from "../../domain/user/user.types";
-import { toArticleSubEntity } from "./article-siren";
+import { toArticleSubEntity, toArticleEntity } from "./article-siren";
 
 function makeArticle(overrides: Partial<SavedArticle> = {}): SavedArticle {
 	return {
@@ -50,6 +50,7 @@ describe("toArticleSubEntity", () => {
 				readAt: null,
 			},
 			links: [{ rel: ["self"], href: "/queue/test-article-id" }],
+			actions: [{ name: "delete", href: "/queue/test-article-id/delete", method: "POST" }],
 		});
 	});
 
@@ -61,5 +62,19 @@ describe("toArticleSubEntity", () => {
 		const subEntity = toArticleSubEntity(article);
 
 		expect(subEntity.properties?.readAt).toBe("2026-03-04T12:00:00.000Z");
+	});
+});
+
+describe("toArticleEntity", () => {
+	it("returns same structure as sub-entity without rel", () => {
+		const article = makeArticle();
+		const entity = toArticleEntity(article);
+		const subEntity = toArticleSubEntity(article);
+
+		expect(entity).not.toHaveProperty("rel");
+		expect(entity.class).toEqual(subEntity.class);
+		expect(entity.properties).toEqual(subEntity.properties);
+		expect(entity.links).toEqual(subEntity.links);
+		expect(entity.actions).toEqual(subEntity.actions);
 	});
 });

@@ -1,6 +1,7 @@
 import {
 	BrowserExtensionCore,
 	initOAuthAuth,
+	initSirenReadingList,
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,
 	type BrowserShell,
@@ -148,7 +149,8 @@ async function initCore() {
 		clientId: CLIENT_ID,
 		async openTab(url: string): Promise<number> {
 			const tab = await browser.tabs.create({ url });
-			return tab.id!;
+			if (tab.id == null) throw new Error("Created tab has no id");
+			return tab.id;
 		},
 		waitForRedirect({ tabId, urlPrefix }): Promise<string> {
 			return new Promise((resolve, reject) => {
@@ -180,7 +182,13 @@ async function initCore() {
 		logger,
 	});
 
-	const core = BrowserExtensionCore(shell, { auth, logger });
+	const readingList = initSirenReadingList({
+		serverUrl: SERVER_URL,
+		getAccessToken: auth.getAccessToken,
+		fetchFn: (...args) => fetch(...args),
+	});
+
+	const core = BrowserExtensionCore(shell, { auth, logger, readingList });
 
 	core.on("pre-init", () => {
 		shell.createContextMenus();

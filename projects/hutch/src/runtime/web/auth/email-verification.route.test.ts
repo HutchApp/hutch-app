@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
@@ -95,8 +96,8 @@ describe("Email verification", () => {
 
 			const sent = email.getSentEmails();
 			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
-			expect(tokenMatch).toBeTruthy();
-			const token = tokenMatch![1];
+			assert(tokenMatch, "Expected token in verification email");
+			const token = tokenMatch[1];
 
 			const verifyResponse = await request(app).get(`/verify-email?token=${token}`);
 
@@ -136,7 +137,8 @@ describe("Email verification", () => {
 
 			const sent = email.getSentEmails();
 			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
-			const token = tokenMatch![1];
+			assert(tokenMatch, "Expected token in verification email");
+			const token = tokenMatch[1];
 
 			await request(app).get(`/verify-email?token=${token}`);
 			const secondResponse = await request(app).get(`/verify-email?token=${token}`);
@@ -158,19 +160,23 @@ describe("Email verification", () => {
 			const cookies = signupResponse.headers["set-cookie"];
 			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
 			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
-			const sessionId = sessionMatch![1];
+			assert(sessionMatch, "Expected session cookie");
+			const sessionId = sessionMatch[1];
 			const session = await auth.getSessionUserId(sessionId);
+			assert(session, "Expected session to exist");
 
-			expect(session!.emailVerified).toBe(false);
+			expect(session.emailVerified).toBe(false);
 
 			const sent = email.getSentEmails();
 			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
-			const token = tokenMatch![1];
+			assert(tokenMatch, "Expected token in verification email");
+			const token = tokenMatch[1];
 
 			await request(app).get(`/verify-email?token=${token}`).set("Cookie", `hutch_sid=${sessionId}`);
 
 			const updatedSession = await auth.getSessionUserId(sessionId);
-			expect(updatedSession!.emailVerified).toBe(true);
+			assert(updatedSession, "Expected session to exist after verification");
+			expect(updatedSession.emailVerified).toBe(true);
 		});
 
 		it("should not mark email as verified when token is invalid", async () => {
@@ -185,12 +191,14 @@ describe("Email verification", () => {
 			const cookies = signupResponse.headers["set-cookie"];
 			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
 			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
-			const sessionId = sessionMatch![1];
+			assert(sessionMatch, "Expected session cookie");
+			const sessionId = sessionMatch[1];
 
 			await request(app).get("/verify-email?token=invalidtoken").set("Cookie", `hutch_sid=${sessionId}`);
 
 			const session = await auth.getSessionUserId(sessionId);
-			expect(session!.emailVerified).toBe(false);
+			assert(session, "Expected session to exist");
+			expect(session.emailVerified).toBe(false);
 		});
 	});
 });

@@ -11,6 +11,7 @@ interface CollectionQueryParams {
 	order?: SortOrder;
 	page?: number;
 	pageSize?: number;
+	url?: string;
 }
 
 function buildQueryString(params: CollectionQueryParams): string {
@@ -19,6 +20,7 @@ function buildQueryString(params: CollectionQueryParams): string {
 	if (params.order) search.set("order", params.order);
 	if (params.page) search.set("page", String(params.page));
 	if (params.pageSize) search.set("pageSize", String(params.pageSize));
+	if (params.url) search.set("url", params.url);
 	const qs = search.toString();
 	return qs ? `?${qs}` : "";
 }
