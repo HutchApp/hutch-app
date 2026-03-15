@@ -351,6 +351,7 @@ describe("Queue routes", () => {
 		});
 	});
 
+
 	describe("Thumbnail", () => {
 		it("should render thumbnail when article has og:image", async () => {
 			const fetchHtml = async (_url: string) =>

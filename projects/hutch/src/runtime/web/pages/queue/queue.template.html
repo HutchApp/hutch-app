@@ -15,7 +15,6 @@
         <a class="{{filterArchivedClass}}" href="{{filterArchivedUrl}}" data-test-filter="archived">Archived</a>
       </nav>
       <div class="queue__sort">
-        <a class="queue__sort-link" href="{{showUrlToggleUrl}}" data-test-show-url>{{showUrlToggleLabel}}</a>
         <a class="queue__sort-link" href="{{sortUrl}}" data-test-sort>{{sortLabel}}</a>
       </div>
       {{#if isEmpty}}
@@ -34,7 +33,6 @@
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
               <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} data-test-article-title>{{title}}</a>
             </div>
-            {{#if ../showUrl}}<span class="queue-article__url" data-test-article-url>{{url}}</span>{{/if}}
             <div class="queue-article__meta">
               <span>{{siteName}}</span>
               <span>{{readTimeLabel}}</span>
