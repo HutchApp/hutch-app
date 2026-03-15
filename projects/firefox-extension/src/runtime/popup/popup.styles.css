@@ -174,27 +174,6 @@ h2 {
   gap: 8px;
 }
 
-/**
- * 1. Override the filled primary style — reload is a utility action
- */
-.list-view__reload {
-  background: transparent; /* 1 */
-  color: var(--popup-heading);
-  font-size: 18px;
-  padding: 4px 8px;
-  line-height: 1;
-  border: 1px solid var(--popup-border);
-  border-radius: 6px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background-color 0.15s ease;
-}
-
-.list-view__reload:hover {
-  background: var(--popup-surface);
-  color: var(--popup-heading);
-}
-
 .list-view__logout {
   background: transparent;
   color: var(--popup-label);
