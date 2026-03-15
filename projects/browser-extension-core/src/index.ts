@@ -1,3 +1,9 @@
+// Zod 4.x JIT-compiles validators with new Function(), which browser extension
+// CSPs block. Zod catches the error and falls back, but Firefox still logs a
+// noisy CSP violation on every popup open. Disabling JIT avoids the attempt.
+import { config } from "zod";
+config({ jitless: true });
+
 export { BrowserExtensionCore } from "./core";
 export type { Core, CoreError, ResultHandler, ReadingList } from "./core";
 export type { BrowserShell } from "./shell.types";
