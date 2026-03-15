@@ -1,7 +1,6 @@
+// Plus aliases (user+tag@example.com) are intentionally preserved because some
+// providers treat them as distinct mailboxes, not as aliases of the base address.
 // Precondition: email must contain "@" (enforced by Zod schema validation upstream)
 export function normalizeEmail(email: string): string {
-	const trimmedLower = email.toLowerCase().trim();
-	const [localPart, domain] = trimmedLower.split("@");
-	const stripped = localPart.split("+")[0];
-	return `${stripped}@${domain}`;
+	return email.toLowerCase().trim();
 }

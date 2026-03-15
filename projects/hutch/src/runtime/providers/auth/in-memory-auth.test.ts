@@ -37,6 +37,14 @@ describe("initInMemoryAuth", () => {
 
 			expect(result).toEqual({ ok: false, reason: "email-already-exists" });
 		});
+
+		it("should treat plus aliases as separate users", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createUser({ email: "user@example.com", password: "password123" });
+			const result = await auth.createUser({ email: "user+tag@example.com", password: "password456" });
+
+			expect(result.ok).toBe(true);
+		});
 	});
 
 	describe("verifyCredentials", () => {
@@ -66,6 +74,15 @@ describe("initInMemoryAuth", () => {
 			const auth = initInMemoryAuth();
 
 			const result = await auth.verifyCredentials({ email: "noone@example.com", password: "password123" });
+
+			expect(result).toEqual({ ok: false, reason: "invalid-credentials" });
+		});
+
+		it("should not match plus alias against base email", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createUser({ email: "user@example.com", password: "password123" });
+
+			const result = await auth.verifyCredentials({ email: "user+tag@example.com", password: "password123" });
 
 			expect(result).toEqual({ ok: false, reason: "invalid-credentials" });
 		});
