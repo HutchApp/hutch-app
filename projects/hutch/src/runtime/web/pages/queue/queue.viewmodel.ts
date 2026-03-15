@@ -3,6 +3,20 @@ import type { FindArticlesResult } from "../../../providers/article-store/articl
 import type { QueueUrlState } from "./queue.url";
 import { buildQueueUrl } from "./queue.url";
 
+export interface ArticleActionField {
+	name: string;
+	value: string;
+}
+
+export interface ArticleAction {
+	method: string;
+	url: string;
+	text: string;
+	title: string;
+	testAction: string;
+	fields: ArticleActionField[];
+}
+
 export interface QueueArticleViewModel {
 	id: string;
 	title: string;
@@ -15,6 +29,7 @@ export interface QueueArticleViewModel {
 	savedAgo: string;
 	imageUrl?: string;
 	hasContent: boolean;
+	actions: ArticleAction[];
 }
 
 export interface QueueViewModel {
@@ -54,9 +69,61 @@ function formatRelativeDate(date: Date, now: Date): string {
 	});
 }
 
+function toArticleActions(
+	article: { id: string; status: string },
+	returnQuery: string,
+): ArticleAction[] {
+	const actions: ArticleAction[] = [];
+
+	if (article.status !== "read") {
+		actions.push({
+			method: "POST",
+			url: `/queue/${article.id}/status${returnQuery}`,
+			text: "Read",
+			title: "Mark as read",
+			testAction: "mark-read",
+			fields: [{ name: "status", value: "read" }],
+		});
+	}
+
+	if (article.status !== "unread") {
+		actions.push({
+			method: "POST",
+			url: `/queue/${article.id}/status${returnQuery}`,
+			text: "Unread",
+			title: "Mark as unread",
+			testAction: "mark-unread",
+			fields: [{ name: "status", value: "unread" }],
+		});
+	}
+
+	if (article.status !== "archived") {
+		actions.push({
+			method: "POST",
+			url: `/queue/${article.id}/status${returnQuery}`,
+			text: "Archive",
+			title: "Archive",
+			testAction: "archive",
+			fields: [{ name: "status", value: "archived" }],
+		});
+	}
+
+	actions.push({
+		method: "POST",
+		url: `/queue/${article.id}/delete${returnQuery}`,
+		text: "×",
+		title: "Delete",
+		testAction: "delete",
+		fields: [],
+	});
+
+	return actions;
+}
+
 function toArticleViewModel(
 	article: SavedArticle,
 	now: Date,
+	returnQuery: string,
 ): QueueArticleViewModel {
 	const readTime = article.estimatedReadTime;
 	return {
@@ -71,6 +138,7 @@ function toArticleViewModel(
 		savedAgo: formatRelativeDate(article.savedAt, now),
 		imageUrl: article.metadata.imageUrl,
 		hasContent: Boolean(article.content),
+		actions: toArticleActions(article, returnQuery),
 	};
 }
 
@@ -82,9 +150,12 @@ export function toQueueViewModel(
 	const now = options?.now ?? new Date();
 	const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
 	const baseFilters = { order: filters.order };
+	const queueUrl = buildQueueUrl(filters);
+	const queryIndex = queueUrl.indexOf("?");
+	const returnQuery = queryIndex !== -1 ? queueUrl.slice(queryIndex) : "";
 
 	return {
-		articles: result.articles.map((a) => toArticleViewModel(a, now)),
+		articles: result.articles.map((a) => toArticleViewModel(a, now, returnQuery)),
 		filters,
 		isEmpty: result.total === 0,
 		totalPages,

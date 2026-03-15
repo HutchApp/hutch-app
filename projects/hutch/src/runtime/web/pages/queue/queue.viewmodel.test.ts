@@ -255,4 +255,69 @@ describe("toQueueViewModel", () => {
 
 		expect(vm.articles[0].hasContent).toBe(false);
 	});
+
+	it("should generate mark-read, archive, and delete actions for unread article", () => {
+		const article = makeArticle({ status: "unread" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const actions = vm.articles[0].actions;
+		expect(actions.map(a => a.testAction)).toEqual(["mark-read", "archive", "delete"]);
+	});
+
+	it("should generate mark-unread, archive, and delete actions for read article", () => {
+		const article = makeArticle({ status: "read" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const actions = vm.articles[0].actions;
+		expect(actions.map(a => a.testAction)).toEqual(["mark-unread", "archive", "delete"]);
+	});
+
+	it("should generate mark-read, mark-unread, and delete actions for archived article", () => {
+		const article = makeArticle({ status: "archived" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const actions = vm.articles[0].actions;
+		expect(actions.map(a => a.testAction)).toEqual(["mark-read", "mark-unread", "delete"]);
+	});
+
+	it("should include return query in action URLs for non-default view", () => {
+		const article = makeArticle({ status: "unread" });
+		const filters = { order: "asc" as const, page: 1, status: "unread" as const };
+		const vm = toQueueViewModel(makeResult([article]), filters, { now: NOW });
+
+		const deleteAction = vm.articles[0].actions.find(a => a.testAction === "delete");
+		expect(deleteAction?.url).toBe("/queue/art-1/delete?status=unread&order=asc");
+	});
+
+	it("should not include query string in action URLs for default view", () => {
+		const article = makeArticle({ status: "unread" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const deleteAction = vm.articles[0].actions.find(a => a.testAction === "delete");
+		expect(deleteAction?.url).toBe("/queue/art-1/delete");
+	});
+
+	it("should include status hidden field in status actions", () => {
+		const article = makeArticle({ status: "unread" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const markReadAction = vm.articles[0].actions.find(a => a.testAction === "mark-read");
+		expect(markReadAction?.fields).toEqual([{ name: "status", value: "read" }]);
+	});
+
+	it("should have no hidden fields in delete action", () => {
+		const article = makeArticle({ status: "unread" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const deleteAction = vm.articles[0].actions.find(a => a.testAction === "delete");
+		expect(deleteAction?.fields).toEqual([]);
+	});
+
+	it("should set method to POST for all actions", () => {
+		const article = makeArticle({ status: "unread" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const methods = vm.articles[0].actions.map(a => a.method);
+		expect(methods).toEqual(["POST", "POST", "POST"]);
+	});
 });

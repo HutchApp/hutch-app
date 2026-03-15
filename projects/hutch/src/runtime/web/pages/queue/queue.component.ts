@@ -4,28 +4,40 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
-import type { QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
+import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
+import { buildQueueUrl } from "./queue.url";
 
 const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf-8");
 
+interface ActionDisplayModel extends ArticleAction {
+	buttonClass: string;
+}
+
 interface ArticleDisplayModel extends QueueArticleViewModel {
-	showMarkRead: boolean;
-	showMarkUnread: boolean;
-	showArchive: boolean;
 	linkUrl: string;
 	isExternalLink: boolean;
 	unreadClass: string;
+	showArticleUrl: boolean;
+	actions: ActionDisplayModel[];
 }
 
-function toArticleDisplayModel(article: QueueArticleViewModel): ArticleDisplayModel {
+function toActionDisplayModel(action: ArticleAction): ActionDisplayModel {
+	return {
+		...action,
+		buttonClass: action.testAction === "delete"
+			? "queue-article__action-btn queue-article__action-btn--delete"
+			: "queue-article__action-btn",
+	};
+}
+
+function toArticleDisplayModel(article: QueueArticleViewModel, showUrl: boolean): ArticleDisplayModel {
 	return {
 		...article,
-		showMarkRead: article.status !== "read",
-		showMarkUnread: article.status !== "unread",
-		showArchive: article.status !== "archived",
 		linkUrl: article.hasContent ? `/queue/${article.id}/read` : article.url,
 		isExternalLink: !article.hasContent,
 		unreadClass: article.isUnread ? " queue-article--unread" : "",
+		showArticleUrl: showUrl,
+		actions: article.actions.map(toActionDisplayModel),
 	};
 }
 
@@ -46,6 +58,8 @@ interface QueueDisplayModel {
 	filterArchivedUrl: string;
 	sortUrl: string;
 	sortLabel: string;
+	showUrlToggleLabel: string;
+	showUrlToggleHref: string;
 	showPagination: boolean;
 	hasPrev: boolean;
 	hasNext: boolean;
@@ -64,6 +78,11 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
 	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
 	const sortUrl = `/queue?order=${nextOrder}${activeStatus ? `&status=${activeStatus}` : ""}`;
+	const showUrl = Boolean(vm.filters.showUrl);
+	const showUrlToggleLabel = showUrl ? "Hide URLs" : "Show URLs";
+	const showUrlToggleHref = showUrl
+		? buildQueueUrl({ ...vm.filters, showUrl: undefined })
+		: buildQueueUrl({ ...vm.filters, showUrl: true });
 
 	return {
 		total: vm.total,
@@ -71,7 +90,7 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 		saveError: vm.saveError,
 		isEmpty: vm.isEmpty,
 		hasArticles: !vm.isEmpty,
-		articles: vm.articles.map(toArticleDisplayModel),
+		articles: vm.articles.map(a => toArticleDisplayModel(a, showUrl)),
 		filterAllClass: filterLinkClass(!activeStatus),
 		filterUnreadClass: filterLinkClass(activeStatus === "unread"),
 		filterReadClass: filterLinkClass(activeStatus === "read"),
@@ -82,6 +101,8 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 		filterArchivedUrl: vm.filterUrls.archived,
 		sortUrl,
 		sortLabel,
+		showUrlToggleLabel,
+		showUrlToggleHref,
 		showPagination: vm.totalPages > 1,
 		hasPrev: Boolean(vm.paginationUrls.prev),
 		hasNext: Boolean(vm.paginationUrls.next),

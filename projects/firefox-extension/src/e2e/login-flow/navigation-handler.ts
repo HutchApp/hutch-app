@@ -15,6 +15,8 @@ const VIEW_IDS = [
 	"loading-view",
 ];
 
+const TRANSITIONING_VIEW = "transitioning";
+
 type SuccessDetector = (driver: WebDriver) => Promise<boolean>;
 
 export class LoginFlowStateHandler implements FlowStateHandler {
@@ -50,18 +52,32 @@ export class LoginFlowStateHandler implements FlowStateHandler {
 
 	private async getActiveView(): Promise<string> {
 		try {
-			const url = await this.driver.getCurrentUrl();
-			if (url.includes("/login")) return "server-login";
-			if (url.includes("/oauth/authorize")) return "oauth-authorize";
+			const serverPages = [
+				{ className: "page-login", view: "server-login" },
+				{ className: "page-oauth-authorize", view: "oauth-authorize" },
+			];
 
-			for (const viewId of VIEW_IDS) {
-				const element = await this.driver.findElement(By.id(viewId));
-				const hidden = await element.getAttribute("hidden");
-				if (hidden === null) {
-					return viewId;
+			for (const { className, view } of serverPages) {
+				try {
+					await this.driver.findElement(By.css(`body.${className}`));
+					return view;
+				} catch {
+					// Page doesn't have this body class
 				}
 			}
-			throw new Error("No visible view found");
+
+			for (const viewId of VIEW_IDS) {
+				try {
+					const element = await this.driver.findElement(By.id(viewId));
+					const hidden = await element.getAttribute("hidden");
+					if (hidden === null) {
+						return viewId;
+					}
+				} catch {
+					// Non-extension pages lack these elements
+				}
+			}
+			return TRANSITIONING_VIEW;
 		} catch (error) {
 			if (
 				error instanceof Error &&
