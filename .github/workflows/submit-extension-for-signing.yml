@@ -1,0 +1,53 @@
+name: Submit Extension for Signing
+
+on:
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AMO_JWT_ISSUER:
+        required: true
+      AMO_JWT_SECRET:
+        required: true
+
+jobs:
+  submit-firefox-extension:
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
+      PULUMI_CONFIG_PASSPHRASE: ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy extension bucket infrastructure
+        run: pulumi up --stack prod --yes
+        working-directory: projects/firefox-extension
+
+      - name: Bump extension version
+        run: node projects/firefox-extension/scripts/bump-version.js ${{ github.run_number }}
+
+      - name: Build and package extension
+        run: npx nx run-many --target=compile --projects=browser-extension-core,firefox-extension
+
+      - name: Submit extension to AMO for signing
+        run: npx nx run firefox-extension:sign
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
