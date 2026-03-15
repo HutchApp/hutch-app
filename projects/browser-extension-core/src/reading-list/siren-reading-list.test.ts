@@ -55,6 +55,15 @@ describe("initSirenReadingList", () => {
 			expect(result).toEqual({ ok: true });
 		});
 
+		it("should return ok when server responds with 303 redirect", async () => {
+			const fetchFn = async () => new Response(null, { status: 303 });
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			const result = await list.removeUrl("article-1" as ReadingListItemId);
+
+			expect(result).toEqual({ ok: true });
+		});
+
 		it("should return not-found when server responds with non-204", async () => {
 			const fetchFn = async () => new Response(null, { status: 404 });
 			const list = initSirenReadingList(createDeps(fetchFn));

@@ -88,9 +88,10 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		const response = await deps.fetchFn(`${deps.serverUrl}/queue/${id}/delete`, {
 			method: "POST",
 			headers,
+			redirect: "manual",
 		});
 
-		if (response.status === 204) {
+		if (response.status === 204 || response.status === 303) {
 			return { ok: true };
 		}
 
