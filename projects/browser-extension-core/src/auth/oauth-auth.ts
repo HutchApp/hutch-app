@@ -1,3 +1,4 @@
+import "../zod-config";
 import { z } from "zod";
 import type { Auth, LoginResult, OAuthAuthDeps, RefreshResult, WhenLoggedIn } from "./auth.types";
 import { generateCodeVerifier, generateCodeChallenge } from "./pkce";
