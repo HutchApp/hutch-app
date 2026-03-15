@@ -58,7 +58,7 @@
   font-size: 1rem;
   font-weight: 600;
   text-decoration: none;
-  border-radius: var(--input-border-radius);
+  border-radius: var(--radius);
   transition: opacity 0.15s ease;
 }
 
