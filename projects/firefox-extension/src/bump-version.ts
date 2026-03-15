@@ -8,10 +8,16 @@ interface BumpVersionDeps {
 	writeFile: (path: string, content: string) => void;
 }
 
+const BUMP_TYPES: Record<string, BumpType> = {
+	patch: "patch",
+	minor: "minor",
+	major: "major",
+};
+
 export function parseBumpType(arg: string): BumpType {
-	const validTypes: BumpType[] = ["patch", "minor", "major"];
-	if (validTypes.includes(arg as BumpType)) {
-		return arg as BumpType;
+	const bumpType = BUMP_TYPES[arg];
+	if (bumpType) {
+		return bumpType;
 	}
 	throw new Error(
 		`Invalid argument: ${arg}\n` +
