@@ -14,7 +14,7 @@ function createTestDriver(getAttributeValue: string | null, currentUrl = "moz-ex
 }
 
 describe("LoginFlowStateHandler", () => {
-	it("throws when no visible view is found", async () => {
+	it("returns transitioning view when no visible view is found", async () => {
 		const driver = createTestDriver("true");
 		const handler = new LoginFlowStateHandler(
 			driver,
@@ -22,9 +22,8 @@ describe("LoginFlowStateHandler", () => {
 			new Map(),
 		);
 
-		await assert.rejects(() => handler.detectCurrentState(), {
-			message: "No visible view found",
-		});
+		const state = await handler.detectCurrentState();
+		assert.equal(state.activeView, "transitioning");
 	});
 
 	it("throws when executing an unknown action", async () => {

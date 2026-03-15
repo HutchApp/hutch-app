@@ -15,6 +15,8 @@ const VIEW_IDS = [
 	"loading-view",
 ];
 
+const TRANSITIONING_VIEW = "transitioning";
+
 type SuccessDetector = (driver: WebDriver) => Promise<boolean>;
 
 export class LoginFlowStateHandler implements FlowStateHandler {
@@ -55,13 +57,17 @@ export class LoginFlowStateHandler implements FlowStateHandler {
 			if (url.includes("/oauth/authorize")) return "oauth-authorize";
 
 			for (const viewId of VIEW_IDS) {
-				const element = await this.driver.findElement(By.id(viewId));
-				const hidden = await element.getAttribute("hidden");
-				if (hidden === null) {
-					return viewId;
+				try {
+					const element = await this.driver.findElement(By.id(viewId));
+					const hidden = await element.getAttribute("hidden");
+					if (hidden === null) {
+						return viewId;
+					}
+				} catch {
+					// Non-extension pages lack these elements
 				}
 			}
-			throw new Error("No visible view found");
+			return TRANSITIONING_VIEW;
 		} catch (error) {
 			if (
 				error instanceof Error &&
