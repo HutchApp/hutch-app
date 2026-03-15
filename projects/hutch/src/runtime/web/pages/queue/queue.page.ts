@@ -16,7 +16,7 @@ import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
 import { toArticleEntity } from "../../api/article-siren";
-import { parseQueueUrl } from "./queue.url";
+import { parseQueueUrl, buildQueueUrl } from "./queue.url";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
 import { ReaderPage } from "../reader/reader.component";
@@ -180,7 +180,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const status = req.body.status as ArticleStatus;
 
 		await deps.updateArticleStatus(articleId, userId, status);
-		res.redirect(303, req.get("Referer") || "/queue");
+		const returnState = parseQueueUrl(req.query as Record<string, unknown>);
+		res.redirect(303, buildQueueUrl(returnState));
 	});
 
 	router.post("/:id/delete", async (req: Request, res: Response) => {
@@ -194,7 +195,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		res.redirect(303, req.get("Referer") || "/queue");
+		const returnState = parseQueueUrl(req.query as Record<string, unknown>);
+		res.redirect(303, buildQueueUrl(returnState));
 	});
 
 	return router;

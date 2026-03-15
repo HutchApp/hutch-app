@@ -4,28 +4,37 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
-import type { QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
+import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
 
 const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf-8");
 
+interface ActionDisplayModel extends ArticleAction {
+	buttonClass: string;
+}
+
 interface ArticleDisplayModel extends QueueArticleViewModel {
-	showMarkRead: boolean;
-	showMarkUnread: boolean;
-	showArchive: boolean;
 	linkUrl: string;
 	isExternalLink: boolean;
 	unreadClass: string;
+	actions: ActionDisplayModel[];
+}
+
+function toActionDisplayModel(action: ArticleAction): ActionDisplayModel {
+	return {
+		...action,
+		buttonClass: action.testAction === "delete"
+			? "queue-article__action-btn queue-article__action-btn--delete"
+			: "queue-article__action-btn",
+	};
 }
 
 function toArticleDisplayModel(article: QueueArticleViewModel): ArticleDisplayModel {
 	return {
 		...article,
-		showMarkRead: article.status !== "read",
-		showMarkUnread: article.status !== "unread",
-		showArchive: article.status !== "archived",
 		linkUrl: article.hasContent ? `/queue/${article.id}/read` : article.url,
 		isExternalLink: !article.hasContent,
 		unreadClass: article.isUnread ? " queue-article--unread" : "",
+		actions: article.actions.map(toActionDisplayModel),
 	};
 }
 

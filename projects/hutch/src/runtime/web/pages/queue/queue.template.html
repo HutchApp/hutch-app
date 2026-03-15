@@ -43,27 +43,12 @@
             <p class="queue-article__excerpt">{{excerpt}}</p>
           </div>
           <div class="queue-article__actions">
-            {{#if showMarkRead}}
-            <form method="POST" action="/queue/{{id}}/status" class="queue-article__action-form">
-              <input type="hidden" name="status" value="read">
-              <button class="queue-article__action-btn" type="submit" title="Mark as read" data-test-action="mark-read">Read</button>
+            {{#each actions}}
+            <form method="{{method}}" action="{{url}}" class="queue-article__action-form">
+              {{#each fields}}<input type="hidden" name="{{name}}" value="{{value}}">{{/each}}
+              <button class="{{buttonClass}}" type="submit" title="{{title}}" data-test-action="{{testAction}}">{{text}}</button>
             </form>
-            {{/if}}
-            {{#if showMarkUnread}}
-            <form method="POST" action="/queue/{{id}}/status" class="queue-article__action-form">
-              <input type="hidden" name="status" value="unread">
-              <button class="queue-article__action-btn" type="submit" title="Mark as unread" data-test-action="mark-unread">Unread</button>
-            </form>
-            {{/if}}
-            {{#if showArchive}}
-            <form method="POST" action="/queue/{{id}}/status" class="queue-article__action-form">
-              <input type="hidden" name="status" value="archived">
-              <button class="queue-article__action-btn" type="submit" title="Archive" data-test-action="archive">Archive</button>
-            </form>
-            {{/if}}
-            <form method="POST" action="/queue/{{id}}/delete" class="queue-article__action-form">
-              <button class="queue-article__action-btn queue-article__action-btn--delete" type="submit" title="Delete" data-test-action="delete">×</button>
-            </form>
+            {{/each}}
           </div>
         </div>
         {{/each}}

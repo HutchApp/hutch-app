@@ -107,6 +107,27 @@ describe("Queue routes", () => {
 			const readDoc = new JSDOM(readResponse.text).window.document;
 			expect(readDoc.querySelectorAll(".queue-article").length).toBe(1);
 		});
+
+		it("should redirect preserving queue view state from query params", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+
+			const statusResponse = await agent
+				.post(`/queue/${articleId}/status?order=asc&status=unread`)
+				.type("form")
+				.send({ status: "read" });
+
+			expect(statusResponse.headers.location).toBe("/queue?status=unread&order=asc");
+		});
 	});
 
 	describe("POST /queue/:id/delete", () => {
@@ -131,6 +152,24 @@ describe("Queue routes", () => {
 			const afterDeleteResponse = await agent.get("/queue");
 			const afterDoc = new JSDOM(afterDeleteResponse.text).window.document;
 			expect(afterDoc.querySelector("[data-test-empty-queue]")?.textContent).toContain("empty");
+		});
+
+		it("should redirect preserving queue view state from query params", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+
+			const deleteResponse = await agent.post(`/queue/${articleId}/delete?order=asc&status=unread`);
+
+			expect(deleteResponse.headers.location).toBe("/queue?status=unread&order=asc");
 		});
 	});
 
@@ -236,6 +275,27 @@ describe("Queue routes", () => {
 					s.textContent?.includes("data-article-id"),
 			);
 			expect(markReadScript).toBeTruthy();
+		});
+	});
+
+	describe("Action forms", () => {
+		it("should render action forms from view model for each article", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const actionForms = doc.querySelectorAll(".queue-article__action-form");
+
+			expect(actionForms.length).toBe(3);
+			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Read");
+			expect(doc.querySelector("[data-test-action='archive']")?.textContent).toBe("Archive");
+			expect(doc.querySelector("[data-test-action='delete']")?.textContent).toBe("×");
 		});
 	});
 
