@@ -80,7 +80,7 @@
 
 .queue__filter-link {
   padding: 6px 14px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--muted-foreground);
