@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type {
 	ReadingListItem,
 	ReadingListItemId,
@@ -11,9 +12,18 @@ import type {
 
 const SIREN_MEDIA_TYPE = "application/vnd.siren+json";
 
+// Cannot use node:assert in browser bundles — this minimal assert
+// provides the same asserts-value narrowing for runtime invariants.
 function assert(value: unknown, message: string): asserts value {
 	if (!value) throw new Error(message);
 }
+
+const SirenPropertiesSchema = z.object({
+	id: z.string(),
+	url: z.string(),
+	title: z.string(),
+	savedAt: z.string(),
+});
 
 interface SirenSubEntity {
 	properties?: Record<string, unknown>;
@@ -32,12 +42,12 @@ export interface SirenReadingListDeps {
 
 function toReadingListItem(entity: SirenSubEntity): ReadingListItem {
 	assert(entity.properties, "Server response entity missing properties");
-	const props = entity.properties;
+	const props = SirenPropertiesSchema.parse(entity.properties);
 	return {
 		id: props.id as ReadingListItemId,
-		url: props.url as string,
-		title: props.title as string,
-		savedAt: new Date(props.savedAt as string),
+		url: props.url,
+		title: props.title,
+		savedAt: new Date(props.savedAt),
 	};
 }
 

@@ -115,6 +115,15 @@ describe("initSirenReadingList", () => {
 				"Server response entity missing properties",
 			);
 		});
+
+		it("throws when server response entity properties are missing required fields", async () => {
+			const fetchFn = async () => new Response(JSON.stringify({
+				entities: [{ properties: { id: "1", url: "https://example.com" } }],
+			}), { status: 200 });
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			await expect(list.findByUrl("https://example.com")).rejects.toThrow();
+		});
 	});
 
 	describe("authHeaders error handling", () => {

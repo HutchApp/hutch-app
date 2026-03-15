@@ -164,6 +164,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 		const filterAction = response.body.actions?.find(
 			(a: { name: string }) => a.name === "filter-by-status",
 		);
+		assert(filterAction, "expected filter-by-status action");
 		expect(filterAction.method).toBe("GET");
 		expect(filterAction.fields.map((f: { name: string }) => f.name)).toEqual([
 			"status",
@@ -185,6 +186,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 		const saveAction = response.body.actions?.find(
 			(a: { name: string }) => a.name === "save-article",
 		);
+		assert(saveAction, "expected save-article action");
 		expect(saveAction.method).toBe("POST");
 	});
 });
@@ -287,7 +289,7 @@ describe("POST /queue (Siren save article)", () => {
 		const deleteAction = response.body.actions?.find(
 			(a: { name: string }) => a.name === "delete",
 		);
-		expect(deleteAction).toBeDefined();
+		assert(deleteAction, "expected delete action");
 		expect(deleteAction.method).toBe("POST");
 		expect(deleteAction.href).toContain("/delete");
 	});
@@ -394,7 +396,7 @@ describe("Article sub-entity actions", () => {
 		const deleteAction = entity.actions?.find(
 			(a: { name: string }) => a.name === "delete",
 		);
-		expect(deleteAction).toBeDefined();
+		assert(deleteAction, "expected delete action on sub-entity");
 		expect(deleteAction.method).toBe("POST");
 		expect(deleteAction.href).toContain("/delete");
 	});
