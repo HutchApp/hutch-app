@@ -162,6 +162,39 @@ type ArticleId = string & { readonly __brand: 'ArticleId' };
 type UserId = string & { readonly __brand: 'UserId' };
 ```
 
+### Avoid TypeScript Type Assertions (`as`)
+
+Do not use `as` to cast types. Type assertions bypass the compiler and create weak connections between modules — if a type changes upstream, `as` silently hides the mismatch instead of producing a compile error.
+
+```typescript
+// BAD - Assertion hides type mismatches
+const userId = rawValue as UserId;
+const item = dbResult.Item.url as string;
+
+// GOOD - Validated factory with Zod + infer
+const UserIdSchema = z.string().brand<'UserId'>();
+type UserId = z.infer<typeof UserIdSchema>;
+const userId = UserIdSchema.parse(rawValue);
+
+// GOOD - Zod schema at system boundary (DynamoDB, HTTP, etc.)
+const SavedArticleRow = z.object({
+  id: ArticleIdSchema,
+  url: z.string(),
+  // ...
+});
+function fromItem(item: Record<string, unknown>): SavedArticle {
+  return SavedArticleRow.parse(item);
+}
+```
+
+**Allowed exceptions:**
+
+| Exception | Reason |
+|-----------|--------|
+| `as const` | Not a type assertion — narrows literal types |
+| Isolated Node.js API wrappers (e.g., `promisify(scrypt)` returning `Buffer`, `requireEnv` generic) | The `as` is already contained in a single wrapper function with no better alternative from the type definitions |
+| Test doubles (`{} as unknown as WebDriver`) | Faking external interfaces in tests where full implementation is impractical |
+
 ## CLI Commands
 
 ### Prefer Longhand Parameters

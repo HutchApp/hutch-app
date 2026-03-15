@@ -4,19 +4,21 @@ You have been triggered because CI has failed on a pull request.
 
 ## Your Task
 
-1. Run `gh run view <RUN_ID> --log-failed` to see detailed logs (the run ID is provided in the comment that triggered you)
-2. Analyze the failure and identify the root cause
-3. Implement the fix - focus ONLY on fixing the CI failure, do not make unrelated changes
-4. Run `pnpm check` to verify your fix works before pushing
-5. Commit with message: `fix: resolve CI failure (attempt #N)` where N is the attempt number from the triggering comment
-6. Push: `git pull --rebase origin <BRANCH> && git push origin <BRANCH>`
-7. Comment on PR with summary: `gh pr comment <PR_NUMBER>`
+1. **Understand what the PR is trying to do before touching anything.** Run `git log --format='%h %s%n%b' origin/<BASE_BRANCH>..HEAD` to read the full commit history (subject + body) between the PR branch and the base branch. This tells you the intent behind every change — features added, code removed, refactors, etc. You need this context to avoid undoing intentional changes. For example, if a commit deliberately removed a function and CI fails because something still references it, the fix is to remove the leftover reference, NOT to restore the deleted function.
+2. Run `gh run view <RUN_ID> --log-failed` to see detailed logs (the run ID is provided in the comment that triggered you)
+3. Analyze the failure and identify the root cause — always cross-reference against the commit history from step 1 to understand whether the failing code was intentionally changed
+4. Implement the fix - focus ONLY on fixing the CI failure, do not make unrelated changes
+5. Run `pnpm check` to verify your fix works before pushing
+6. Commit with message: `fix: resolve CI failure (attempt #N)` where N is the attempt number from the triggering comment
+7. Push: `git pull --rebase origin <BRANCH> && git push origin <BRANCH>`
+8. Comment on PR with summary: `gh pr comment <PR_NUMBER>`
 
 ## Important Guidelines
 
 - Follow ALL CLAUDE.md guidelines when making fixes
 - If git push fails due to conflicts: do NOT force push, try to resolve, or comment and exit gracefully
 - Focus only on fixing the CI failure - do not refactor or improve unrelated code
+- **Never reverse intentional changes.** If the commit history shows something was deliberately removed, renamed, or refactored, fix the failure by updating the code that still depends on the old state — do not restore what was intentionally removed. The commit history is the source of truth for what the PR intended.
 
 ## Applicable Skills
 
