@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../base.component";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
@@ -122,11 +121,11 @@ const MARK_READ_ON_CLICK_SCRIPT = `
 })();
 </script>`;
 
-export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean }): Component {
+export function QueuePage(vm: QueueViewModel): PageBody {
 	const displayModel = toQueueDisplayModel(vm);
 	const content = render(QUEUE_TEMPLATE, displayModel);
 
-	return Base({
+	return {
 		seo: {
 			title: "My Queue — Hutch",
 			description: "Your saved articles reading queue.",
@@ -137,7 +136,5 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 		bodyClass: "page-queue",
 		content,
 		scripts: MARK_READ_ON_CLICK_SCRIPT,
-		isAuthenticated: true,
-		emailVerified: options?.emailVerified,
-	});
+	};
 }

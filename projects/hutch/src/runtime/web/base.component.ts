@@ -183,6 +183,8 @@ function renderBaseTemplate(page: PageContent): string {
 	});
 }
 
+export type PageBody = Omit<PageContent, "isAuthenticated" | "emailVerified">;
+
 export function Base(page: PageContent): Component {
 	return HtmlPage(renderBaseTemplate(page));
 }
