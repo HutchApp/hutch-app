@@ -51,22 +51,11 @@ interface EncryptedLink { ... }
 
 ### Make Invalid States Non-Representable
 
-Use TypeScript's type system to prevent invalid states at compile time. When types can't help, use `assert`.
+Use TypeScript's type system to prevent invalid states at compile time.
 
 ```typescript
-// Best: Type system prevents invalid states
 type SupportedLocale = 'en-AU';
-
-// Good: Assert for runtime checks in production code
-import assert from 'node:assert';
-assert(entity.properties, 'Server response entity missing properties');
-
-// Good: Assert with strict equality in test code
-import assert from 'node:assert/strict';
-assert.equal(actual, expected, 'Values should match');
 ```
-
-Always use `assert` instead of `if`/`throw` for invariant checks. Assert is more concise, communicates intent clearly, and avoids coverage branches for the truthy path.
 
 ### No Silent Fallbacks for Missing Values
 

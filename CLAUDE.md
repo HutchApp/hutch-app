@@ -166,6 +166,10 @@ if (!entity.properties) {
 // GOOD - Concise, clear intent
 import assert from "node:assert";
 assert(entity.properties, "Server response entity missing properties");
+
+// GOOD - Strict equality in test code
+import assert from "node:assert/strict";
+assert.equal(actual, expected, "Values should match");
 ```
 
 Use `assert` from `node:assert` in production code (non-strict, allows falsy checking). Use `assert` from `node:assert/strict` in test code for strict equality semantics.
