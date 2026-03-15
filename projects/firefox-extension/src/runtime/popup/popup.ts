@@ -284,12 +284,6 @@ document
 	});
 
 document
-	.getElementById("reload-button")
-	?.addEventListener("click", async () => {
-		await loadAllItems();
-	});
-
-document
 	.getElementById("logout-button")
 	?.addEventListener("click", async () => {
 		await send({ type: "logout" });
