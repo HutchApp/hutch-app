@@ -108,7 +108,7 @@ export const BASE_RESET_STYLES = `
     padding: 0;
   }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: Inter, 'Source Sans Pro', system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     color: var(--foreground);
     min-height: 100vh;
