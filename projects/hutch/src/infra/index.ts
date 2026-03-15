@@ -83,6 +83,7 @@ class HutchStorage {
 	constructor(_name: string) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			billingMode: "PAY_PER_REQUEST",
+			deletionProtectionEnabled: true,
 			hashKey: "id",
 			attributes: [
 				{ name: "id", type: "S" },
@@ -101,6 +102,7 @@ class HutchStorage {
 
 		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
 			billingMode: "PAY_PER_REQUEST",
+			deletionProtectionEnabled: true,
 			hashKey: "email",
 			attributes: [
 				{ name: "email", type: "S" },
