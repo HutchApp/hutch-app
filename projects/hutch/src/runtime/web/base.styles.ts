@@ -29,7 +29,9 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 	"--card-foreground": "var(--color-text-primary)",
 	"--accent": "hsl(27 65% 47%)",
 	"--accent-foreground": "hsl(0 0% 100%)",
-	"--radius": "0.75rem",
+	"--radius-sm": "6px",
+	"--radius": "8px",
+	"--radius-lg": "12px",
 	"--input": "var(--color-border)",
 	"--ring": "hsl(27 65% 47%)",
 	"--ring-shadow": "hsl(27 65% 47% / 0.15)",
@@ -39,7 +41,6 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 	"--input-height": "48px",
 	"--input-padding": "12px 16px",
 	"--input-font-size": "16px",
-	"--input-border-radius": "8px",
 	"--form-gap": "20px",
 	"--color-on-brand": "#ffffff",
 	"--footer-bg": "#1a1a1a",
@@ -266,7 +267,7 @@ export const NAV_STYLES = `
     right: 0;
     background: var(--background);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     min-width: 180px;
     margin-top: 8px;
