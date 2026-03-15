@@ -5,6 +5,7 @@ import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
+
 const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf-8");
 
 interface ActionDisplayModel extends ArticleAction {
