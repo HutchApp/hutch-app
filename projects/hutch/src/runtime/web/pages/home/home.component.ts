@@ -21,6 +21,7 @@ export function HomePage(params: { userCount: number }): Component {
 			canonicalUrl: "https://hutch-app.com",
 			ogType: "website",
 			ogImage: "https://hutch-app.com/og-image-1200x630.png",
+			ogImageType: "image/png",
 			ogImageAlt:
 				"Hutch — Save now, read later. A read-it-later app built in Australia.",
 			twitterImage: "https://hutch-app.com/twitter-card-1200x600.png",
@@ -71,18 +72,6 @@ export function HomePage(params: { userCount: number }): Component {
 					},
 					description:
 						"Hutch is a read-it-later app built in Australia by a solo developer.",
-				},
-				{
-					"@context": "https://schema.org",
-					"@type": "BreadcrumbList",
-					itemListElement: [
-						{
-							"@type": "ListItem",
-							position: 1,
-							name: "Home",
-							item: "https://hutch-app.com",
-						},
-					],
 				},
 				{
 					"@context": "https://schema.org",

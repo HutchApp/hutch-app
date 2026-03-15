@@ -25,6 +25,7 @@ export interface SeoMetadata {
 	canonicalUrl: string;
 	ogImage?: string;
 	ogImageAlt?: string;
+	ogImageType?: string;
 	twitterImage?: string;
 	twitterSite?: string;
 	ogType?: "website" | "article";
@@ -164,6 +165,7 @@ function renderBaseTemplate(page: PageContent): string {
 		ogType,
 		ogImage: seo.ogImage,
 		ogImageAlt: seo.ogImageAlt,
+		ogImageType: seo.ogImageType,
 		twitterImage: seo.twitterImage ?? seo.ogImage,
 		twitterSite: seo.twitterSite,
 		robots,

@@ -157,10 +157,7 @@ describe("GET /", () => {
 		const schemas = Array.from(scripts).map((s) => JSON.parse(s.textContent ?? "{}"));
 
 		const types = schemas.map((s: { "@type": string }) => s["@type"]);
-		expect(types).toContain("WebApplication");
-		expect(types).toContain("Organization");
-		expect(types).toContain("BreadcrumbList");
-		expect(types).toContain("FAQPage");
+		expect(types).toEqual(["WebApplication", "Organization", "FAQPage"]);
 	});
 
 	it("should include FAQ structured data with questions and answers", async () => {
@@ -237,22 +234,18 @@ describe("GET /robots.txt", () => {
 describe("GET /sitemap.xml", () => {
 	const { app } = createTestApp();
 
-	it("should return an XML sitemap with public pages", async () => {
+	it("should return an XML sitemap with exactly the public pages", async () => {
 		const response = await request(app).get("/sitemap.xml");
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/application\/xml/);
-		expect(response.text).toContain("<urlset");
-		expect(response.text).toContain("<loc>http://localhost:3000/</loc>");
-		expect(response.text).toContain("<loc>http://localhost:3000/install</loc>");
-		expect(response.text).toContain("<loc>http://localhost:3000/privacy</loc>");
-		expect(response.text).toContain("<loc>http://localhost:3000/terms</loc>");
-	});
 
-	it("should not include private routes in the sitemap", async () => {
-		const response = await request(app).get("/sitemap.xml");
-		expect(response.text).not.toContain("/queue");
-		expect(response.text).not.toContain("/login");
-		expect(response.text).not.toContain("/signup");
+		const urls = Array.from(response.text.matchAll(/<loc>([^<]+)<\/loc>/g)).map((m) => m[1]);
+		expect(urls).toEqual([
+			"http://localhost:3000/",
+			"http://localhost:3000/install",
+			"http://localhost:3000/privacy",
+			"http://localhost:3000/terms",
+		]);
 	});
 });
 
