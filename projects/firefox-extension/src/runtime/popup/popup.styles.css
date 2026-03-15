@@ -152,6 +152,23 @@ h2 {
   background: var(--popup-surface);
 }
 
+/* --- Shortcut hint --- */
+
+.shortcut-hint {
+  font-size: 11px;
+  color: var(--popup-label);
+  margin: 4px 0 0;
+}
+
+.shortcut-hint kbd {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 1px 4px;
+  border: 1px solid var(--popup-border);
+  border-radius: 3px;
+  background: var(--popup-surface);
+}
+
 /* --- List view (saved links) --- */
 
 .list-view__header {
