@@ -301,6 +301,24 @@ document.getElementById("filter-input")?.addEventListener("input", () => {
 	renderLinks(filterItems());
 });
 
+const shortcutHint = document.querySelector(".shortcut-hint");
+if (shortcutHint) {
+	// navigator.platform is deprecated but navigator.userAgentData is not
+	// supported in Firefox, so this is the best available approach
+	const isMac = navigator.platform.startsWith("Mac");
+	if (isMac) {
+		shortcutHint.textContent = "";
+		const prefix = document.createTextNode("Tip: Use ");
+		const cmdKey = document.createElement("kbd");
+		cmdKey.textContent = "\u2318";
+		const plus = document.createTextNode("+");
+		const dKey = document.createElement("kbd");
+		dKey.textContent = "D";
+		const suffix = document.createTextNode(" to save from any page");
+		shortcutHint.append(prefix, cmdKey, plus, dKey, suffix);
+	}
+}
+
 saveAndShowList().catch((error) => {
 	logger.error("Failed to initialize popup:", error);
 	showView("list-view");
