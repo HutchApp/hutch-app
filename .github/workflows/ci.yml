@@ -67,7 +67,7 @@ jobs:
           echo "hutch=$(echo "$AFFECTED" | jq 'any(. == "hutch")')" >> "$GITHUB_OUTPUT"
           echo "firefox-extension=$(echo "$AFFECTED" | jq 'any(. == "firefox-extension")')" >> "$GITHUB_OUTPUT"
 
-  deploy-to-prod:
+  hutch-deploy-to-prod:
     if: needs.detect-changes.outputs.hutch == 'true'
     needs: [check, detect-changes]
     runs-on: ubuntu-latest
@@ -98,7 +98,7 @@ jobs:
       - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod --yes
         working-directory: projects/hutch
 
-  submit-extension-for-signing:
+  ff-extension-deploy-to-prod:
     if: needs.detect-changes.outputs.firefox-extension == 'true'
     needs: [check, detect-changes]
     permissions:
