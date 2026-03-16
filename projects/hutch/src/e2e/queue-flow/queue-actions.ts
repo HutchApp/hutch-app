@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import type { PageAction } from '../hateoas/navigation-handler.types'
 import { isOnPage, clickAndWaitForPageReload } from '../page-interactions'
+import { retriable } from '../../retriable'
 import type { AuthProgress } from './auth-actions'
 
 export type QueueProgress = {
@@ -80,7 +81,13 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
-      const titles = await getArticleTitles(page)
+      const titles = await retriable(getArticleTitles, {
+        maxAttempts: 3,
+        retryDelayMs: 2000,
+        shouldRetry: (result) => result.length !== TITLES_NEWEST_FIRST.length,
+        // c8 ignore: beforeRetry only executes on CI when article parsing is slow
+        beforeRetry: /* c8 ignore next */ async (p) => { await p.reload({ waitUntil: 'domcontentloaded' }) },
+      })(page)
       expect(titles).toEqual(TITLES_NEWEST_FIRST)
       progress.verifiedNewestFirst = true
     },

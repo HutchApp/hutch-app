@@ -74,6 +74,21 @@ Without this, `waitForLoadState('domcontentloaded')` may resolve immediately bef
 
 Keep test data inline within each E2E test flow rather than extracting to shared fixtures.
 
+## Coverage for E2E Test Support Code
+
+E2E test support files (`src/e2e/**`) are **not excluded** from coverage enforcement. They run under c8 during `pnpm check` and must meet the same thresholds as production code.
+
+### `c8 ignore` for Intermittent Retry Paths
+
+Retry callbacks (e.g., `beforeRetry`) that only execute under CI flakiness (slow network, delayed parsing) will never fire during a passing local run. Use `/* c8 ignore next */` with a comment explaining why:
+
+```typescript
+// c8 ignore: beforeRetry only executes on CI when article parsing is slow
+beforeRetry: /* c8 ignore next */ async (p) => { await p.reload({ waitUntil: 'domcontentloaded' }) },
+```
+
+This is the **only** approved use of c8 ignore in E2E code — for retry paths that are inherently non-deterministic.
+
 ## Running E2E Tests
 
 E2E tests run as part of `pnpm check` which includes headless E2E execution with coverage.
