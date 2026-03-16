@@ -41,7 +41,7 @@ jobs:
         working-directory: projects/firefox-extension
 
       - name: Compile bump-version script
-        run: pnpm --filter firefox-extension exec tsc
+        run: pnpm --filter firefox-extension exec tsc --outDir dist --rootDir src --module commonjs --esModuleInterop --skipLibCheck src/bump-version.ts
 
       - name: Bump extension version
         run: node projects/firefox-extension/scripts/bump-version.js patch
