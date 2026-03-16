@@ -67,9 +67,40 @@ jobs:
           echo "hutch=$(echo "$AFFECTED" | jq 'any(. == "hutch")')" >> "$GITHUB_OUTPUT"
           echo "firefox-extension=$(echo "$AFFECTED" | jq 'any(. == "firefox-extension")')" >> "$GITHUB_OUTPUT"
 
-  hutch-deploy-to-prod:
+  hutch-deploy-to-staging:
     if: needs.detect-changes.outputs.hutch == 'true'
     needs: [check, detect-changes]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
+      PULUMI_CONFIG_PASSPHRASE: ''
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: npx nx compile hutch
+
+      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack staging --yes
+        working-directory: projects/hutch
+
+  hutch-deploy-to-prod:
+    if: needs.detect-changes.outputs.hutch == 'true'
+    needs: [check, detect-changes, hutch-deploy-to-staging]
     runs-on: ubuntu-latest
     environment: prod
     env:

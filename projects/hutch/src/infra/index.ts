@@ -80,10 +80,10 @@ class HutchStorage {
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
 
-	constructor(_name: string) {
+	constructor(_name: string, args: { deletionProtection: boolean }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			billingMode: "PAY_PER_REQUEST",
-			deletionProtectionEnabled: true,
+			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "id",
 			attributes: [
 				{ name: "id", type: "S" },
@@ -102,7 +102,7 @@ class HutchStorage {
 
 		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
 			billingMode: "PAY_PER_REQUEST",
-			deletionProtectionEnabled: true,
+			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "email",
 			attributes: [
 				{ name: "email", type: "S" },
@@ -371,14 +371,20 @@ class HutchLambda {
 	}
 }
 
-const storage = new HutchStorage("hutch");
+const isProduction = stage === "production";
+
+const storage = new HutchStorage("hutch", {
+	deletionProtection: isProduction,
+});
+
+const domainRegistration = isProduction
+	? new DomainRegistration("hutch-domain", { domains: ["hutch-app.com"] })
+	: undefined;
 
 const hutch = new HutchLambda("hutch", {
 	stage,
 	storage,
-	domainRegistration: new DomainRegistration("hutch-domain", {
-		domains: ["hutch-app.com"],
-	}),
+	domainRegistration,
 });
 
 export const apiUrl = hutch.apiUrl;
