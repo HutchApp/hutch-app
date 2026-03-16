@@ -12,9 +12,6 @@ on:
       AMO_JWT_SECRET:
         required: true
 
-permissions:
-  contents: write
-
 jobs:
   submit-firefox-extension:
     runs-on: ubuntu-latest
