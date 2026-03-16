@@ -106,8 +106,6 @@ export function createApp(dependencies: AppDependencies): Express {
 				"Disallow: /queue",
 				"Disallow: /export",
 				"Disallow: /oauth",
-				"Disallow: /login",
-				"Disallow: /signup",
 				"Disallow: /forgot-password",
 				"",
 				`Sitemap: ${dependencies.baseUrl}/sitemap.xml`,
@@ -119,6 +117,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		const pages = [
 			{ loc: "/", priority: "1.0", changefreq: "weekly" },
 			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
+			{ loc: "/login", priority: "0.5", changefreq: "yearly" },
+			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
 			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
 		];

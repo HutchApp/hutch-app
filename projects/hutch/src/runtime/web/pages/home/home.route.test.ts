@@ -141,12 +141,12 @@ describe("GET /", () => {
 		expect(ogImageAlt?.getAttribute("content")).toContain("Hutch");
 	});
 
-	it("should include twitter:site meta tag", async () => {
+	it("should not include twitter:site when no handle is configured", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
 		const twitterSite = doc.querySelector('meta[name="twitter:site"]');
-		expect(twitterSite?.getAttribute("content")).toBe("@hutchapp");
+		expect(twitterSite).toBeNull();
 	});
 
 	it("should include multiple structured data schemas", async () => {
@@ -243,6 +243,8 @@ describe("GET /sitemap.xml", () => {
 		expect(urls).toEqual([
 			"http://localhost:3000/",
 			"http://localhost:3000/install",
+			"http://localhost:3000/login",
+			"http://localhost:3000/signup",
 			"http://localhost:3000/privacy",
 			"http://localhost:3000/terms",
 		]);

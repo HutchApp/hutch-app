@@ -25,8 +25,7 @@ export function HomePage(params: { userCount: number }): Component {
 			ogImageAlt:
 				"Hutch — Save now, read later. A read-it-later app built in Australia.",
 			twitterImage: "https://hutch-app.com/twitter-card-1200x600.png",
-			twitterSite: "@hutchapp",
-			author: "Fayner Brack",
+				author: "Fayner Brack",
 			keywords:
 				"read it later, save articles, bookmark manager, reading list, Pocket alternative, Omnivore alternative, browser extension, Firefox extension, article reader, distraction free reading",
 			structuredData: [
@@ -49,7 +48,7 @@ export function HomePage(params: { userCount: number }): Component {
 					author: {
 						"@type": "Person",
 						name: "Fayner Brack",
-						url: "https://www.reddit.com/user/fagnerbrack/",
+						url: "https://www.linkedin.com/in/fagnerbrack/",
 					},
 					featureList: [
 						"One-click article saving via Firefox extension",
@@ -65,6 +64,7 @@ export function HomePage(params: { userCount: number }): Component {
 					logo: "https://hutch-app.com/og-image-1200x630.png",
 					sameAs: [
 						"https://www.reddit.com/r/hutchapp",
+						"https://www.linkedin.com/in/fagnerbrack/",
 					],
 					founder: {
 						"@type": "Person",
