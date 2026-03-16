@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.styles.css">
+</head>
+<body>
+  <div id="login-view" class="view" hidden>
+    <div class="login">
+      <div class="login__brand">
+        <a href="https://hutch-app.com/?utm=ff-ext" class="login__logo-link" aria-label="Visit Hutch website" target="_blank" rel="noopener">
+          <div class="login__icon" aria-hidden="true">H</div>
+        </a>
+      </div>
+      <button id="login-button" class="login__submit" type="button">Log in to Hutch</button>
+      <p id="login-error" class="login__error" hidden></p>
+    </div>
+  </div>
+
+  <div id="saved-view" class="view" hidden>
+    <p>Saved!</p>
+    <button id="undo-button" class="button--secondary">Undo</button>
+    <p class="shortcut-hint">Tip: Use <kbd>Ctrl</kbd>+<kbd>D</kbd> to save from any page</p>
+  </div>
+
+  <div id="already-saved-view" class="view" hidden>
+    <p>Already in your list</p>
+  </div>
+
+  <div id="removed-view" class="view" hidden>
+    <p>Removed</p>
+  </div>
+
+  <div id="list-view" class="view" hidden>
+    <div class="list-view__header">
+      <h2 class="list-view__title">My List</h2>
+      <div class="list-view__actions">
+        <button id="logout-button" class="list-view__logout" title="Log out">Log out</button>
+      </div>
+    </div>
+    <input
+      type="text"
+      id="filter-input"
+      class="list-view__filter"
+      placeholder="Filter by URL..."
+    >
+    <div id="link-list" class="list-view__links"></div>
+    <div id="pagination" class="pagination" hidden></div>
+    <p id="empty-list" class="list-view__empty" hidden>No saved links</p>
+    <p id="no-matches" class="list-view__empty" hidden>No matching links</p>
+    <p id="list-error" class="list-view__error" hidden>Failed to load links</p>
+  </div>
+
+  <div id="loading-view" class="view">
+    <p>Loading...</p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
