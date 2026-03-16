@@ -80,21 +80,9 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
-      // Article parsing may still be in progress after save; retry with reload
-      let lastError: Error | undefined
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const titles = await getArticleTitles(page)
-          expect(titles).toEqual(TITLES_NEWEST_FIRST)
-          progress.verifiedNewestFirst = true
-          return
-        } catch (error) {
-          lastError = error as Error
-          await page.waitForTimeout(2000)
-          await page.reload({ waitUntil: 'domcontentloaded' })
-        }
-      }
-      throw lastError
+      const titles = await getArticleTitles(page)
+      expect(titles).toEqual(TITLES_NEWEST_FIRST)
+      progress.verifiedNewestFirst = true
     },
   })
 
