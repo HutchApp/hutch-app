@@ -50,6 +50,8 @@ jobs:
         run: npx nx run-many --target=compile --projects=browser-extension-core,firefox-extension
 
       - name: Commit and push bumped version to main
+        env:
+          HUSKY: '0'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
