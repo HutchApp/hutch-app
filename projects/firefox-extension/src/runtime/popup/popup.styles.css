@@ -1,48 +1,48 @@
 :root {
-  --popup-bg: #ffffff;
-  --popup-text: #1a202c;
-  --popup-heading: #2b3a55;
-  --popup-brand: #c8923c;
-  --popup-brand-hover: #b5832f;
-  --popup-label: #5a6170;
-  --popup-border: #e2e5ea;
-  --popup-surface: #f7f8fa;
-  --popup-placeholder: #8c919d;
-  --popup-error: #c45c5c;
-  --popup-link-hover: #996d1f;
-  --popup-delete: #5b5b66;
-  --popup-delete-hover-bg: #ffe4e4;
-  --popup-delete-hover-text: #d70022;
-  --popup-disabled: #c0c4cc;
-  --popup-icon-bg: #2b3a55;
-  --popup-icon-text: #c8923c;
-  --popup-brand-text: #1a202c;
-  --popup-active-bg: #2b3a55;
-  --popup-active-hover: #3d4f6f;
+  --popup-bg: #FFFFFF;
+  --popup-text: #1A202C;
+  --popup-heading: #2B3A55;
+  --popup-brand: #C8923C;
+  --popup-brand-hover: #B5832F;
+  --popup-label: #5A6170;
+  --popup-border: #E2E5EA;
+  --popup-surface: #F7F8FA;
+  --popup-placeholder: #8C919D;
+  --popup-error: #C45C5C;
+  --popup-link-hover: #996D1F;
+  --popup-delete: #5B5B66;
+  --popup-delete-hover-bg: #FFE4E4;
+  --popup-delete-hover-text: #D70022;
+  --popup-disabled: #C0C4CC;
+  --popup-icon-bg: #2B3A55;
+  --popup-icon-text: #C8923C;
+  --popup-brand-text: #1A202C;
+  --popup-active-bg: #2B3A55;
+  --popup-active-hover: #3D4F6F;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --popup-bg: #1e2028;
-    --popup-text: #d8dae0;
-    --popup-heading: #c0c8d8;
-    --popup-brand: #d4a04a;
-    --popup-brand-hover: #c8923c;
-    --popup-label: #8c919d;
-    --popup-border: #33363f;
+    --popup-bg: #1E2028;
+    --popup-text: #D8DAE0;
+    --popup-heading: #C0C8D8;
+    --popup-brand: #D4A04A;
+    --popup-brand-hover: #C8923C;
+    --popup-label: #8C919D;
+    --popup-border: #33363F;
     --popup-surface: #262830;
-    --popup-placeholder: #5a6170;
-    --popup-error: #e87070;
-    --popup-link-hover: #d4a04a;
-    --popup-delete: #8c8c96;
-    --popup-delete-hover-bg: #3d1f1f;
-    --popup-delete-hover-text: #ff4466;
-    --popup-disabled: #4a4d56;
-    --popup-icon-bg: #2b3a55;
-    --popup-icon-text: #d4a04a;
-    --popup-brand-text: #1a202c;
-    --popup-active-bg: #3d4f6f;
-    --popup-active-hover: #4a5f80;
+    --popup-placeholder: #5A6170;
+    --popup-error: #E87070;
+    --popup-link-hover: #D4A04A;
+    --popup-delete: #8C8C96;
+    --popup-delete-hover-bg: #3D1F1F;
+    --popup-delete-hover-text: #FF4466;
+    --popup-disabled: #4A4D56;
+    --popup-icon-bg: #2B3A55;
+    --popup-icon-text: #D4A04A;
+    --popup-brand-text: #1A202C;
+    --popup-active-bg: #3D4F6F;
+    --popup-active-hover: #4A5F80;
   }
 }
 
@@ -364,7 +364,7 @@ h2 {
 
 .pagination__page--active {
   background: var(--popup-active-bg);
-  color: #ffffff;
+  color: #FFFFFF;
   border-color: var(--popup-active-bg);
 }
 
