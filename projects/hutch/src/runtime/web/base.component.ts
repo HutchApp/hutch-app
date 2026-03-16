@@ -24,9 +24,14 @@ export interface SeoMetadata {
 	description: string;
 	canonicalUrl: string;
 	ogImage?: string;
+	ogImageAlt?: string;
+	ogImageType?: string;
 	twitterImage?: string;
+	twitterSite?: string;
 	ogType?: "website" | "article";
 	robots?: string;
+	author?: string;
+	keywords?: string;
 	structuredData?: object[];
 }
 
@@ -159,8 +164,13 @@ function renderBaseTemplate(page: PageContent): string {
 		canonicalUrl: seo.canonicalUrl,
 		ogType,
 		ogImage: seo.ogImage,
+		ogImageAlt: seo.ogImageAlt,
+		ogImageType: seo.ogImageType,
 		twitterImage: seo.twitterImage ?? seo.ogImage,
+		twitterSite: seo.twitterSite,
 		robots,
+		author: seo.author,
+		keywords: seo.keywords,
 		structuredDataScript: renderStructuredData(seo.structuredData),
 		baseStyles: BASE_CSS_VARIABLES,
 		resetStyles: BASE_RESET_STYLES,

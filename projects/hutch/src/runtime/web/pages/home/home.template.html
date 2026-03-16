@@ -1,5 +1,5 @@
   <main>
-    <section class="home-hero" data-test-section="hero">
+    <section class="home-hero" data-test-section="hero" aria-label="Introduction">
       <div class="home-hero__container">
         <p class="home-hero__tagline">A read-it-later app by Fayner Brack</p>
         <h1 class="home-hero__title">Save now.<br>Read later.<br>That's it.</h1>
@@ -12,7 +12,7 @@
       </div>
     </section>
 
-    <section id="what-works" class="home-features" data-test-section="core-features">
+    <section id="what-works" class="home-features" data-test-section="core-features" aria-label="Current features">
       <div class="home-features__header">
         <p class="home-features__label">What Works Today</p>
         <h2 class="home-features__title">Save articles. Read them later.</h2>
@@ -28,7 +28,7 @@
       </div>
     </section>
 
-    <section id="roadmap" class="home-features" data-test-section="roadmap">
+    <section id="roadmap" class="home-features" data-test-section="roadmap" aria-label="Planned features">
       <div class="home-features__header">
         <p class="home-features__label">What's Coming</p>
         <h2 class="home-features__title">Built in public. Shaped by users.</h2>
@@ -44,7 +44,7 @@
       </div>
     </section>
 
-    <section class="home-backstory" data-test-section="backstory">
+    <section class="home-backstory" data-test-section="backstory" aria-label="About the creator">
       <div class="home-backstory__container">
         <h2 class="home-backstory__title">Why I built this</h2>
         <div class="home-backstory__content">
@@ -56,7 +56,7 @@
       </div>
     </section>
 
-    <section class="home-comparison" data-test-section="comparison">
+    <section class="home-comparison" data-test-section="comparison" aria-label="Feature comparison">
       <div class="home-comparison__container">
         <div class="home-comparison__header">
           <p class="home-comparison__label">Honest Comparison</p>
@@ -65,30 +65,30 @@
         <table class="comparison-table" data-test-comparison-table>
           <thead>
             <tr>
-              <th></th>
-              <th class="comparison-table__hutch">Hutch</th>
-              <th>Readwise Reader</th>
-              <th>Instapaper</th>
-              <th>GoodLinks</th>
+              <th scope="col"></th>
+              <th scope="col" class="comparison-table__hutch">Hutch</th>
+              <th scope="col">Readwise Reader</th>
+              <th scope="col">Instapaper</th>
+              <th scope="col">GoodLinks</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Price</td>
+              <th scope="row">Price</th>
               <td class="comparison-table__hutch">Free (first 100)</td>
               <td>A$20/mo</td>
               <td>A$9/mo</td>
               <td>A$15 once</td>
             </tr>
             <tr>
-              <td>Browser Extension</td>
+              <th scope="row">Browser Extension</th>
               <td class="comparison-table__hutch"><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
               <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
               <td><span class="comparison-table__check" aria-label="Yes">&#10003;</span></td>
               <td><span class="comparison-table__cross" aria-label="No">&#10007;</span></td>
             </tr>
             <tr>
-              <td>Platforms</td>
+              <th scope="row">Platforms</th>
               <td class="comparison-table__hutch">Web + Extensions</td>
               <td>All</td>
               <td>All</td>
@@ -99,7 +99,7 @@
       </div>
     </section>
 
-    <section id="pricing" class="home-pricing" data-test-section="pricing">
+    <section id="pricing" class="home-pricing" data-test-section="pricing" aria-label="Pricing">
       <div class="home-pricing__container">
         <div class="home-pricing__header">
           <p class="home-pricing__label">Simple Pricing</p>
@@ -134,7 +134,7 @@
       </div>
     </section>
 
-    <section id="trust" class="home-trust" data-test-section="trust">
+    <section id="trust" class="home-trust" data-test-section="trust" aria-label="Trust and privacy">
       <div class="home-trust__container">
         <div class="home-trust__header">
           <p class="home-trust__label">Trust &amp; Privacy</p>
@@ -152,7 +152,7 @@
       </div>
     </section>
 
-    <section class="home-cta" data-test-section="cta">
+    <section class="home-cta" data-test-section="cta" aria-label="Get started">
       <div class="home-cta__container">
         <h2 class="home-cta__title">I'm building this in public.</h2>
         <p class="home-cta__subtitle">Try the extension, tell me what to build next. Hutch gets better with every user who shows up and says what they need.</p>

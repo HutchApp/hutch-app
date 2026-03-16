@@ -121,6 +121,78 @@ describe("GET /", () => {
 		const description = doc.querySelector('meta[name="description"]');
 		expect(description?.getAttribute("content")).toContain("read-it-later");
 	});
+
+	it("should include author and keywords meta tags", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const author = doc.querySelector('meta[name="author"]');
+		expect(author?.getAttribute("content")).toBe("Fayner Brack");
+
+		const keywords = doc.querySelector('meta[name="keywords"]');
+		expect(keywords?.getAttribute("content")).toContain("Pocket alternative");
+	});
+
+	it("should include Open Graph image alt text", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const ogImageAlt = doc.querySelector('meta[property="og:image:alt"]');
+		expect(ogImageAlt?.getAttribute("content")).toContain("Hutch");
+	});
+
+	it("should not include twitter:site when no handle is configured", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const twitterSite = doc.querySelector('meta[name="twitter:site"]');
+		expect(twitterSite).toBeNull();
+	});
+
+	it("should include multiple structured data schemas", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+		const schemas = Array.from(scripts).map((s) => JSON.parse(s.textContent ?? "{}"));
+
+		const types = schemas.map((s: { "@type": string }) => s["@type"]);
+		expect(types).toEqual(["WebApplication", "Organization", "FAQPage"]);
+	});
+
+	it("should include FAQ structured data with questions and answers", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+		const schemas = Array.from(scripts).map((s) => JSON.parse(s.textContent ?? "{}"));
+		const faq = schemas.find((s: { "@type": string }) => s["@type"] === "FAQPage");
+
+		expect(faq.mainEntity.length).toBe(4);
+		expect(faq.mainEntity[0].name).toBe("What is Hutch?");
+	});
+
+	it("should render section landmarks with aria-labels", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const hero = doc.querySelector('[data-test-section="hero"]');
+		expect(hero?.getAttribute("aria-label")).toBe("Introduction");
+
+		const pricing = doc.querySelector('[data-test-section="pricing"]');
+		expect(pricing?.getAttribute("aria-label")).toBe("Pricing");
+	});
+
+	it("should use scope attributes on comparison table headers", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const colHeaders = doc.querySelectorAll('[data-test-comparison-table] thead th[scope="col"]');
+		expect(colHeaders.length).toBe(5);
+
+		const rowHeaders = doc.querySelectorAll('[data-test-comparison-table] tbody th[scope="row"]');
+		expect(rowHeaders.length).toBe(3);
+	});
 });
 
 describe("GET / with exhausted founding allocation", () => {
@@ -142,6 +214,40 @@ describe("GET / with exhausted founding allocation", () => {
 
 		const label = doc.querySelector(".founding-progress__label");
 		expect(label?.textContent).toBe("101 / 100 founding members");
+	});
+});
+
+describe("GET /robots.txt", () => {
+	const { app } = createTestApp();
+
+	it("should return a text response with crawl directives", async () => {
+		const response = await request(app).get("/robots.txt");
+		expect(response.status).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/text\/plain/);
+		expect(response.text).toContain("User-agent: *");
+		expect(response.text).toContain("Allow: /");
+		expect(response.text).toContain("Disallow: /queue");
+		expect(response.text).toContain("Sitemap:");
+	});
+});
+
+describe("GET /sitemap.xml", () => {
+	const { app } = createTestApp();
+
+	it("should return an XML sitemap with exactly the public pages", async () => {
+		const response = await request(app).get("/sitemap.xml");
+		expect(response.status).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/application\/xml/);
+
+		const urls = Array.from(response.text.matchAll(/<loc>([^<]+)<\/loc>/g)).map((m) => m[1]);
+		expect(urls).toEqual([
+			"http://localhost:3000/",
+			"http://localhost:3000/install",
+			"http://localhost:3000/login",
+			"http://localhost:3000/signup",
+			"http://localhost:3000/privacy",
+			"http://localhost:3000/terms",
+		]);
 	});
 });
 
