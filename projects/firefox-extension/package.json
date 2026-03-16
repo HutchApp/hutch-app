@@ -1,6 +1,6 @@
 {
   "name": "firefox-extension",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Hutch — Firefox browser extension for saving URLs to a reading list",
   "main": "src/infra/index.ts",
   "private": true,
