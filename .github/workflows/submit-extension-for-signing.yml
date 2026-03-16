@@ -12,6 +12,9 @@ on:
       AMO_JWT_SECRET:
         required: true
 
+permissions:
+  contents: write
+
 jobs:
   submit-firefox-extension:
     runs-on: ubuntu-latest
@@ -40,12 +43,22 @@ jobs:
         run: pulumi up --stack prod --yes
         working-directory: projects/firefox-extension
 
+      - name: Compile bump-version script
+        run: pnpm --filter firefox-extension exec tsc
+
       - name: Bump extension version
-        # github.run_number is inherited from the calling workflow, not this reusable workflow
-        run: node projects/firefox-extension/scripts/bump-version.js ${{ github.run_number }}
+        run: node projects/firefox-extension/scripts/bump-version.js patch
 
       - name: Build and package extension
         run: npx nx run-many --target=compile --projects=browser-extension-core,firefox-extension
+
+      - name: Commit and push bumped version to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add projects/firefox-extension/package.json projects/firefox-extension/src/runtime/manifest.json
+          git commit -m "chore: bump extension version to $(node -p "require('./projects/firefox-extension/package.json').version")"
+          git push origin main
 
       - name: Submit extension to AMO for signing
         run: npx nx run firefox-extension:sign

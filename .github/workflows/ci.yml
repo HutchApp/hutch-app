@@ -36,9 +36,40 @@ jobs:
 
       - run: pnpm check
 
-  deploy-to-prod:
+  detect-changes:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: check
+    runs-on: ubuntu-latest
+    outputs:
+      hutch: ${{ steps.detect.outputs.hutch }}
+      firefox-extension: ${{ steps.detect.outputs.firefox-extension }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: nrwl/nx-set-shas@v4
+
+      - id: detect
+        run: |
+          AFFECTED=$(pnpm nx show projects --affected --json)
+          echo "Affected projects: $AFFECTED"
+          echo "hutch=$(echo "$AFFECTED" | jq 'any(. == "hutch")')" >> "$GITHUB_OUTPUT"
+          echo "firefox-extension=$(echo "$AFFECTED" | jq 'any(. == "firefox-extension")')" >> "$GITHUB_OUTPUT"
+
+  deploy-to-prod:
+    if: needs.detect-changes.outputs.hutch == 'true'
+    needs: [check, detect-changes]
     runs-on: ubuntu-latest
     environment: prod
     env:
@@ -68,8 +99,8 @@ jobs:
         working-directory: projects/hutch
 
   submit-extension-for-signing:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: check
+    if: needs.detect-changes.outputs.firefox-extension == 'true'
+    needs: [check, detect-changes]
     uses: ./.github/workflows/submit-extension-for-signing.yml
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
