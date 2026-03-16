@@ -59,6 +59,23 @@ jobs:
           git commit -m "chore: bump extension version to $(node -p "require('./projects/firefox-extension/package.json').version")"
           git push origin main
 
+      - name: Create source code archive for AMO review
+        run: |
+          zip -r /tmp/extension-source.zip \
+            projects/firefox-extension/src/ \
+            projects/firefox-extension/scripts/build-extension.js \
+            projects/firefox-extension/package.json \
+            projects/firefox-extension/tsconfig.json \
+            projects/browser-extension-core/src/ \
+            projects/browser-extension-core/package.json \
+            projects/browser-extension-core/tsconfig.json \
+            projects/hutch-logger/src/ \
+            projects/hutch-logger/package.json \
+            projects/hutch-logger/tsconfig.json \
+            package.json \
+            pnpm-lock.yaml \
+            pnpm-workspace.yaml
+
       - name: Submit extension to AMO for signing
         run: npx nx run firefox-extension:sign
         env:
