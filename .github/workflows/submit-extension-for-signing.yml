@@ -41,8 +41,7 @@ jobs:
         working-directory: projects/firefox-extension
 
       - name: Bump extension version
-        # github.run_number is inherited from the calling workflow, not this reusable workflow
-        run: node projects/firefox-extension/scripts/bump-version.js ${{ github.run_number }}
+        run: node projects/firefox-extension/scripts/bump-version.js
 
       - name: Build and package extension
         run: npx nx run-many --target=compile --projects=browser-extension-core,firefox-extension
