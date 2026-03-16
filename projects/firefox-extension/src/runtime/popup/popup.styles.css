@@ -391,3 +391,12 @@ h2 {
   text-align: center;
   margin: 0;
 }
+
+/* --- Focus accessibility --- */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--popup-brand);
+  outline-offset: 2px;
+}
