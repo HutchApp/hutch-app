@@ -1,6 +1,6 @@
 import type { SetIcon } from "browser-extension-core";
 
-const SAVED_COLOR = "#22c55e";
+const SAVED_COLOR = "#22C55E";
 const ICON_SIZES = [16, 32, 48, 64] as const;
 
 const DEFAULT_PATHS: Record<number, string> = {
