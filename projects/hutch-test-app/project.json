@@ -1,0 +1,8 @@
+{
+  "name": "hutch-test-app",
+  "targets": {
+    "compile": {
+      "dependsOn": []
+    }
+  }
+}
