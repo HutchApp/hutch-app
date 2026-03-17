@@ -88,6 +88,9 @@ importers:
       esbuild:
         specifier: 0.25.4
         version: 0.25.4
+      hutch:
+        specifier: workspace:*
+        version: link:../hutch
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))

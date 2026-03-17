@@ -22,6 +22,8 @@ export default {
 		"playwright",
 		// Used via CLI script, not imported in source
 		"purgecss",
+		// E2E tests dynamically import hutch test-app via relative path
+		"hutch",
 	],
 	ignoreBinaries: [
 		// Installed at root level in monorepo
