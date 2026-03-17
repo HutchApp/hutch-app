@@ -14,7 +14,7 @@ const buildExtension = initBuildExtension({
 buildExtension({
   config,
   projectDir: join(__dirname, '..'),
-  serverUrl: process.env.HUTCH_SERVER_URL || '',
+  serverUrl: process.env.HUTCH_SERVER_URL,
 }).catch((err) => {
   console.error(err);
   process.exit(1);

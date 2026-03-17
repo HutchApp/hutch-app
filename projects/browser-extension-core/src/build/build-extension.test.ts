@@ -231,4 +231,17 @@ describe("initBuildExtension", () => {
 			}),
 		).rejects.toThrow("HUTCH_SERVER_URL");
 	});
+
+	it("throws when serverUrl is undefined", async () => {
+		const { deps } = createInMemoryDeps();
+		const buildExtension = initBuildExtension(deps);
+
+		await expect(
+			buildExtension({
+				config: { target: "firefox91" },
+				projectDir: "/projects/firefox-extension",
+				serverUrl: undefined,
+			}),
+		).rejects.toThrow("HUTCH_SERVER_URL");
+	});
 });

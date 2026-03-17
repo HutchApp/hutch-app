@@ -82,7 +82,7 @@ export function initBuildExtension(deps: BuildExtensionDeps) {
 	return async function buildExtension(input: {
 		config: ExtensionBuildConfig;
 		projectDir: string;
-		serverUrl: string;
+		serverUrl: string | undefined;
 	}): Promise<void> {
 		assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)");
 
