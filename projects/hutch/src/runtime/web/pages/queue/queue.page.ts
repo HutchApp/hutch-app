@@ -181,9 +181,14 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
 		const articleId = ArticleIdSchema.parse(req.params.id);
-		const status = ArticleStatusSchema.parse(req.body.status);
+		const parsed = ArticleStatusSchema.safeParse(req.body.status);
 
-		await deps.updateArticleStatus(articleId, userId, status);
+		if (!parsed.success) {
+			res.redirect(303, buildQueueUrl(parseQueueUrl(req.query)));
+			return;
+		}
+
+		await deps.updateArticleStatus(articleId, userId, parsed.data);
 		const returnState = parseQueueUrl(req.query);
 		res.redirect(303, buildQueueUrl(returnState));
 	});
