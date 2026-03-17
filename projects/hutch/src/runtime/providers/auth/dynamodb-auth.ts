@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import {
 	PutCommand,
@@ -8,7 +9,7 @@ import {
 	UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
-import type { UserId } from "../../domain/user/user.types";
+import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CountUsers,
 	CreateSession,
@@ -21,6 +22,18 @@ import type {
 } from "./auth.types";
 import { normalizeEmail } from "./normalize-email";
 import { hashPassword, verifyPassword } from "./password";
+
+const CredentialsRow = z.object({
+	passwordHash: z.string(),
+	userId: UserIdSchema,
+	emailVerified: z.boolean().optional(),
+});
+
+const SessionRow = z.object({
+	expiresAt: z.number(),
+	userId: UserIdSchema,
+	emailVerified: z.boolean().optional(),
+});
 
 export function initDynamoDbAuth(deps: {
 	client: DynamoDBDocumentClient;
@@ -40,7 +53,7 @@ export function initDynamoDbAuth(deps: {
 
 	const createUser: CreateUser = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
-		const userId = randomBytes(16).toString("hex") as UserId;
+		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 		const passwordHash = await hashPassword(password);
 
 		try {
@@ -74,15 +87,13 @@ export function initDynamoDbAuth(deps: {
 			return { ok: false, reason: "invalid-credentials" };
 		}
 
-		const valid = await verifyPassword(
-			password,
-			result.Item.passwordHash as string,
-		);
+		const row = CredentialsRow.parse(result.Item);
+		const valid = await verifyPassword(password, row.passwordHash);
 		if (!valid) {
 			return { ok: false, reason: "invalid-credentials" };
 		}
 
-		return { ok: true, userId: result.Item.userId as UserId, emailVerified: result.Item.emailVerified === true };
+		return { ok: true, userId: row.userId, emailVerified: row.emailVerified === true };
 	};
 
 	const createSession: CreateSession = async ({ userId, emailVerified }) => {
@@ -109,14 +120,14 @@ export function initDynamoDbAuth(deps: {
 
 		if (!result.Item) return null;
 
-		const expiresAt = result.Item.expiresAt as number;
-		if (expiresAt < Math.floor(Date.now() / 1000)) {
+		const row = SessionRow.parse(result.Item);
+		if (row.expiresAt < Math.floor(Date.now() / 1000)) {
 			return null;
 		}
 
 		return {
-			userId: result.Item.userId as UserId,
-			emailVerified: result.Item.emailVerified === true,
+			userId: row.userId,
+			emailVerified: row.emailVerified === true,
 		};
 	};
 

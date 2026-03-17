@@ -7,7 +7,7 @@ export interface ErrorResponse {
 	statusCode: number;
 }
 
-export const errorHandler = (logger: HutchLogger) => {
+export const logAndRespondOnError = (logger: HutchLogger) => {
 	return (err: Error, _req: Request, res: Response, _next: NextFunction) => {
 		logger.error(
 			JSON.stringify({

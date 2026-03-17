@@ -1,8 +1,9 @@
-import type { OAuthClient, OAuthClientId } from "../../domain/oauth/oauth.types";
+import type { OAuthClient } from "../../domain/oauth/oauth.types";
+import { OAuthClientIdSchema } from "../../domain/oauth/oauth.schema";
 
 const REGISTERED_CLIENTS: Record<string, OAuthClient> = {
 	"hutch-firefox-extension": {
-		id: "hutch-firefox-extension" as OAuthClientId,
+		id: OAuthClientIdSchema.parse("hutch-firefox-extension"),
 		name: "Hutch Firefox Extension",
 		redirectUris: [
 			"https://hutch-app.com/oauth/callback",

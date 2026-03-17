@@ -5,6 +5,7 @@ import type {
 	VerificationToken,
 	VerifyEmailToken,
 } from "./email-verification.types";
+import { VerificationTokenSchema } from "./email-verification.schema";
 
 export function initInMemoryEmailVerification(): {
 	createVerificationToken: CreateVerificationToken;
@@ -13,7 +14,7 @@ export function initInMemoryEmailVerification(): {
 	const tokens = new Map<VerificationToken, { userId: UserId; email: string }>();
 
 	const createVerificationToken: CreateVerificationToken = async ({ userId, email }) => {
-		const token = randomBytes(32).toString("hex") as VerificationToken;
+		const token = VerificationTokenSchema.parse(randomBytes(32).toString("hex"));
 		tokens.set(token, { userId, email });
 		return token;
 	};

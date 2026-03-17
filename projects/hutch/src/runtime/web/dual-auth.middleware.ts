@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { AccessToken } from "../domain/oauth/oauth.types";
 import type { UserId } from "../domain/user/user.types";
+import { AccessTokenSchema } from "../domain/oauth/oauth.schema";
 import { wantsSiren } from "./content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "./api/siren";
 
@@ -23,7 +24,7 @@ export function initDualAuth(deps: DualAuthDeps) {
 				return;
 			}
 
-			const token = header.slice(7) as AccessToken;
+			const token = AccessTokenSchema.parse(header.slice(7));
 			const userId = await deps.validateAccessToken(token);
 			if (!userId) {
 				res

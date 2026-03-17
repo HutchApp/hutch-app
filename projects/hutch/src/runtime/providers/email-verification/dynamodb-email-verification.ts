@@ -1,18 +1,25 @@
 import { randomBytes } from "node:crypto";
+import { z } from "zod";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import {
 	PutCommand,
 	DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { UserId } from "../../domain/user/user.types";
+import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CreateVerificationToken,
-	VerificationToken,
 	VerifyEmailToken,
 } from "./email-verification.types";
+import { VerificationTokenSchema } from "./email-verification.schema";
 
 const TOKEN_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+
+const VerificationRow = z.object({
+	expiresAt: z.number(),
+	userId: UserIdSchema,
+	email: z.string(),
+});
 
 export function initDynamoDbEmailVerification(deps: {
 	client: DynamoDBDocumentClient;
@@ -24,7 +31,7 @@ export function initDynamoDbEmailVerification(deps: {
 	const { client, tableName } = deps;
 
 	const createVerificationToken: CreateVerificationToken = async ({ userId, email }) => {
-		const token = randomBytes(32).toString("hex") as VerificationToken;
+		const token = VerificationTokenSchema.parse(randomBytes(32).toString("hex"));
 		const expiresAt = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
 
 		await client.send(
@@ -54,15 +61,15 @@ export function initDynamoDbEmailVerification(deps: {
 				return { ok: false, reason: "invalid-token" };
 			}
 
-			const expiresAt = item.expiresAt as number;
-			if (expiresAt < Math.floor(Date.now() / 1000)) {
+			const row = VerificationRow.parse(item);
+			if (row.expiresAt < Math.floor(Date.now() / 1000)) {
 				return { ok: false, reason: "invalid-token" };
 			}
 
 			return {
 				ok: true,
-				userId: item.userId as UserId,
-				email: item.email as string,
+				userId: row.userId,
+				email: row.email,
 			};
 		} catch (error) {
 			if (error instanceof ConditionalCheckFailedException) {

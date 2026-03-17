@@ -1,13 +1,13 @@
-type EventHandler = (...args: unknown[]) => void;
+type EventCallback = (...args: unknown[]) => void;
 
 interface EventBus {
-	on: (event: string, handler: EventHandler) => void;
-	once: (event: string, handler: EventHandler) => void;
+	on: (event: string, handler: EventCallback) => void;
+	once: (event: string, handler: EventCallback) => void;
 	emit: (event: string, ...args: unknown[]) => void;
 }
 
 export function createEventBus(): EventBus {
-	const listeners = new Map<string, EventHandler[]>();
+	const listeners = new Map<string, EventCallback[]>();
 
 	return {
 		on(event, handler) {
@@ -16,7 +16,7 @@ export function createEventBus(): EventBus {
 			listeners.set(event, existing);
 		},
 		once(event, handler) {
-			const wrapper: EventHandler = (...args) => {
+			const wrapper: EventCallback = (...args) => {
 				const handlers = listeners.get(event) ?? [];
 				const index = handlers.indexOf(wrapper);
 				if (index !== -1) {

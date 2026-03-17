@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { ArticleStatus } from "../../../domain/article/article.types";
 import type { SortOrder } from "../../../providers/article-store/article-store.types";
 
@@ -7,22 +8,22 @@ export interface QueueUrlState {
 	page: number;
 }
 
-const VALID_STATUSES: ArticleStatus[] = ["unread", "read", "archived"];
-const VALID_ORDERS: SortOrder[] = ["asc", "desc"];
+const QueueQuerySchema = z.object({
+	status: z.enum(["unread", "read", "archived"]).optional().catch(undefined),
+	order: z.enum(["asc", "desc"]).optional().catch(undefined),
+	page: z.coerce.number().int().min(1).optional().catch(undefined),
+}).passthrough();
 
 export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
-	const status = VALID_STATUSES.includes(query.status as ArticleStatus)
-		? (query.status as ArticleStatus)
-		: undefined;
-
-	const order = VALID_ORDERS.includes(query.order as SortOrder)
-		? (query.order as SortOrder)
-		: "desc";
-
-	const rawPage = Number(query.page);
-	const page = Number.isInteger(rawPage) && rawPage >= 1 ? rawPage : 1;
-
-	return { status, order, page };
+	const parsed = QueueQuerySchema.safeParse(query);
+	if (!parsed.success) {
+		return { order: "desc", page: 1 };
+	}
+	return {
+		status: parsed.data.status,
+		order: parsed.data.order ?? "desc",
+		page: parsed.data.page ?? 1,
+	};
 }
 
 export function buildQueueUrl(state: Partial<QueueUrlState>): string {

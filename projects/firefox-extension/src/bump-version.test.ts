@@ -26,7 +26,7 @@ describe("initBumpVersion", () => {
 	function createInMemoryDeps(files: Record<string, string>) {
 		return {
 			readFile: (path: string) => files[path],
-			writeFile: (path: string, content: string) => {
+			writeFile: ({ path, content }: { path: string; content: string }) => {
 				files[path] = content;
 			},
 		};

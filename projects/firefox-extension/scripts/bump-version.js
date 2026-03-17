@@ -11,7 +11,7 @@ const bumpType = parseBumpType(arg);
 
 const bumpVersion = initBumpVersion({
 	readFile: (path) => readFileSync(path, "utf-8"),
-	writeFile: (path, content) => writeFileSync(path, content),
+	writeFile: ({ path, content }) => writeFileSync(path, content),
 });
 
 const result = bumpVersion({

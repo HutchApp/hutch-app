@@ -1,8 +1,6 @@
 import { randomBytes } from "node:crypto";
-import type {
-	ArticleId,
-	SavedArticle,
-} from "../../domain/article/article.types";
+import type { ArticleId, SavedArticle } from "../../domain/article/article.types";
+import { ArticleIdSchema } from "../../domain/article/article.schema";
 import type {
 	DeleteArticle,
 	FindArticleById,
@@ -21,7 +19,7 @@ export function initInMemoryArticleStore(): {
 	const articles = new Map<ArticleId, SavedArticle>();
 
 	const saveArticle: SaveArticle = async (params) => {
-		const id = randomBytes(16).toString("hex") as ArticleId;
+		const id = ArticleIdSchema.parse(randomBytes(16).toString("hex"));
 		const article: SavedArticle = {
 			id,
 			userId: params.userId,

@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import type {
 	AuthorizationCodeModel,
 	RefreshTokenModel,
@@ -15,6 +16,13 @@ import type {
 	OAuthClientId,
 	RefreshToken as RefreshTokenBrand,
 } from "../../domain/oauth/oauth.types";
+import {
+	OAuthClientIdSchema,
+	AccessTokenSchema,
+	AuthorizationCodeSchema,
+	RefreshTokenSchema,
+} from "../../domain/oauth/oauth.schema";
+import { UserIdSchema } from "../../domain/user/user.schema";
 import { getClient } from "./oauth-clients";
 import { generateToken } from "./generate-token";
 
@@ -24,7 +32,7 @@ interface StoredAuthorizationCode {
 	userId: UserId;
 	redirectUri: string;
 	codeChallenge: string;
-	codeChallengeMethod: string;
+	codeChallengeMethod: "S256" | "plain";
 	expiresAt: Date;
 	scope?: string[];
 }
@@ -78,16 +86,14 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 			client: Client,
 			user: User,
 		): Promise<AuthorizationCode> {
-			if (!code.codeChallenge) {
-				throw new Error("PKCE code_challenge is required for authorization_code grants");
-			}
+			assert(code.codeChallenge, "PKCE code_challenge is required for authorization_code grants");
 			const stored: StoredAuthorizationCode = {
-				code: code.authorizationCode as AuthorizationCodeBrand,
-				clientId: client.id as OAuthClientId,
-				userId: user.id as UserId,
+				code: AuthorizationCodeSchema.parse(code.authorizationCode),
+				clientId: OAuthClientIdSchema.parse(client.id),
+				userId: UserIdSchema.parse(user.id),
 				redirectUri: code.redirectUri,
 				codeChallenge: code.codeChallenge,
-				codeChallengeMethod: code.codeChallengeMethod ?? "S256",
+				codeChallengeMethod: code.codeChallengeMethod === "plain" ? "plain" : "S256",
 				expiresAt: code.expiresAt,
 				scope: code.scope,
 			};
@@ -119,7 +125,7 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 				redirectUri: stored.redirectUri,
 				scope: stored.scope,
 				codeChallenge: stored.codeChallenge,
-				codeChallengeMethod: stored.codeChallengeMethod as "S256" | "plain",
+				codeChallengeMethod: stored.codeChallengeMethod,
 				client: {
 					id: client.id,
 					grants: client.grants,
@@ -143,12 +149,12 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 				token.refreshTokenExpiresAt ?? new Date(Date.now() + 180 * 24 * 3600000);
 
 			const stored: StoredToken = {
-				accessToken: token.accessToken as AccessTokenBrand,
+				accessToken: AccessTokenSchema.parse(token.accessToken),
 				accessTokenExpiresAt,
-				refreshToken: refreshToken as RefreshTokenBrand,
+				refreshToken: RefreshTokenSchema.parse(refreshToken),
 				refreshTokenExpiresAt,
-				clientId: client.id as OAuthClientId,
-				userId: user.id as UserId,
+				clientId: OAuthClientIdSchema.parse(client.id),
+				userId: UserIdSchema.parse(user.id),
 				scope: token.scope,
 			};
 

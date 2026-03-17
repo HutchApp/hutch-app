@@ -1,6 +1,7 @@
 import assert from "node:assert";
 import { randomBytes } from "node:crypto";
 import type { UserId } from "../../domain/user/user.types";
+import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CountUsers,
 	CreateSession,
@@ -46,7 +47,7 @@ export function initInMemoryAuth(): {
 			return { ok: false, reason: "email-already-exists" };
 		}
 
-		const userId = randomBytes(16).toString("hex") as UserId;
+		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 		const passwordHash = await hashPassword(password);
 
 		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash, emailVerified: false });

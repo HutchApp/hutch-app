@@ -11,9 +11,9 @@ import type {
 import type { SendEmail } from "../../providers/email/email.types";
 import type {
 	CreateVerificationToken,
-	VerificationToken,
 	VerifyEmailToken,
 } from "../../providers/email-verification/email-verification.types";
+import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
 import { buildVerificationEmailHtml } from "./verification-email";
@@ -155,7 +155,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 
-		const verifyResult = await deps.verifyEmailToken(token as VerificationToken);
+		const verifyResult = await deps.verifyEmailToken(VerificationTokenSchema.parse(token));
 
 		if (!verifyResult.ok) {
 			const result = VerifyEmailPage({

@@ -1,7 +1,7 @@
+import assert from "node:assert";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import type { ArticleId, ArticleStatus } from "../../../domain/article/article.types";
-import { SaveArticleInputSchema } from "../../../domain/article/article.schema";
+import { SaveArticleInputSchema, ArticleIdSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import type {
@@ -11,7 +11,6 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
-import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
@@ -34,8 +33,9 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	const router = express.Router();
 
 	router.get("/", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const urlState = parseQueueUrl(req.query as Record<string, unknown>);
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
+		const urlState = parseQueueUrl(req.query);
 		const filterUrl = typeof req.query.url === "string" ? req.query.url : undefined;
 
 		const result = await deps.findArticlesByUser({
@@ -76,7 +76,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const userId = req.userId as UserId;
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
 		const parsed = SaveArticleInputSchema.safeParse(req.body);
 
 		if (!parsed.success) {
@@ -114,7 +115,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	});
 
 	router.post("/save", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
 		const parsed = SaveArticleInputSchema.safeParse(req.body);
 
 		if (!parsed.success) {
@@ -160,8 +162,9 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	});
 
 	router.get("/:id/read", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const articleId = req.params.id as unknown as ArticleId;
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
+		const articleId = ArticleIdSchema.parse(req.params.id);
 
 		const article = await deps.findArticleById(articleId);
 
@@ -175,18 +178,20 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	});
 
 	router.post("/:id/status", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const articleId = req.params.id as unknown as ArticleId;
-		const status = req.body.status as ArticleStatus;
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
+		const articleId = ArticleIdSchema.parse(req.params.id);
+		const status = ArticleStatusSchema.parse(req.body.status);
 
 		await deps.updateArticleStatus(articleId, userId, status);
-		const returnState = parseQueueUrl(req.query as Record<string, unknown>);
+		const returnState = parseQueueUrl(req.query);
 		res.redirect(303, buildQueueUrl(returnState));
 	});
 
 	router.post("/:id/delete", async (req: Request, res: Response) => {
-		const userId = req.userId as UserId;
-		const articleId = req.params.id as unknown as ArticleId;
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
+		const articleId = ArticleIdSchema.parse(req.params.id);
 
 		await deps.deleteArticle(articleId, userId);
 
@@ -195,7 +200,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const returnState = parseQueueUrl(req.query as Record<string, unknown>);
+		const returnState = parseQueueUrl(req.query);
 		res.redirect(303, buildQueueUrl(returnState));
 	});
 
