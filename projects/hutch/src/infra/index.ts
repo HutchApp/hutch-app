@@ -1,12 +1,15 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { build, type Loader } from "esbuild";
+import assert from "node:assert";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { getEnv, requireEnv } from "../runtime/require-env";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
+const domains = config.getObject<string[]>("domains") ?? [];
+const deletionProtection = config.requireBoolean("deletionProtection");
 
 const esbuildLoaders: Record<string, Loader> = {
 	".ts": "ts",
@@ -26,18 +29,22 @@ function copyAssetFiles(dirs: { src: string; dest: string }) {
 }
 
 class DomainRegistration {
-	public readonly certificateArn: pulumi.Output<string>;
-	public readonly zoneId: Promise<string>;
+	public readonly certificateArn?: pulumi.Output<string>;
+	public readonly zoneId?: Promise<string>;
 	public readonly domains: string[];
-	public readonly primaryDomain: string;
+	public readonly primaryDomain?: string;
 
 	constructor(name: string, args: { domains: string[] }) {
-		const [primaryDomain, ...altDomains] = args.domains;
 		this.domains = args.domains;
+
+		if (args.domains.length === 0) return;
+
+		const [primaryDomain, ...altDomains] = args.domains;
 		this.primaryDomain = primaryDomain;
 
 		const zone = aws.route53.getZone({ name: primaryDomain });
-		this.zoneId = zone.then((z) => z.zoneId);
+		const zoneId = zone.then((z) => z.zoneId);
+		this.zoneId = zoneId;
 
 		const cert = new aws.acm.Certificate(`${name}-cert`, {
 			domainName: primaryDomain,
@@ -50,7 +57,7 @@ class DomainRegistration {
 			opts.map(
 				(opt, i) =>
 					new aws.route53.Record(`${name}-cert-validation-${i}`, {
-						zoneId: this.zoneId,
+						zoneId,
 						name: opt.resourceRecordName,
 						type: opt.resourceRecordType,
 						records: [opt.resourceRecordValue],
@@ -80,10 +87,10 @@ class HutchStorage {
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
 
-	constructor(_name: string) {
+	constructor(_name: string, args: { deletionProtection: boolean }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			billingMode: "PAY_PER_REQUEST",
-			deletionProtectionEnabled: true,
+			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "id",
 			attributes: [
 				{ name: "id", type: "S" },
@@ -102,7 +109,7 @@ class HutchStorage {
 
 		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
 			billingMode: "PAY_PER_REQUEST",
-			deletionProtectionEnabled: true,
+			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "email",
 			attributes: [
 				{ name: "email", type: "S" },
@@ -169,7 +176,7 @@ class HutchLambda {
 		args: {
 			stage: string;
 			storage: HutchStorage;
-			domainRegistration?: DomainRegistration;
+			domainRegistration: DomainRegistration;
 		},
 	) {
 		const memorySize = 512;
@@ -252,6 +259,17 @@ class HutchLambda {
 				),
 		});
 
+		const apiGateway = new aws.apigatewayv2.Api(`${name}-api-gateway`, {
+			protocolType: "HTTP",
+			description: `Hutch API Gateway (${args.stage})`,
+		});
+
+		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
+			apiId: apiGateway.id,
+			name: args.stage,
+			autoDeploy: true,
+		});
+
 		const lambdaFunction = new aws.lambda.Function(`${name}-api`, {
 			runtime: aws.lambda.Runtime.NodeJS22dX,
 			handler: "index.handler",
@@ -264,9 +282,9 @@ class HutchLambda {
 					NODE_ENV: "production",
 					PERSISTENCE: "prod",
 					STAGE: args.stage,
-					APP_ORIGIN: args.domainRegistration
+					APP_ORIGIN: args.domainRegistration.domains.length > 0
 						? `https://${args.domainRegistration.primaryDomain}`
-						: "",
+						: pulumi.interpolate`${apiGateway.apiEndpoint}/${apiStage.name}`,
 					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
 					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
@@ -277,11 +295,6 @@ class HutchLambda {
 						: requireEnv("RESEND_API_KEY"),
 				},
 			},
-		});
-
-		const apiGateway = new aws.apigatewayv2.Api(`${name}-api-gateway`, {
-			protocolType: "HTTP",
-			description: `Hutch API Gateway (${args.stage})`,
 		});
 
 		const lambdaIntegration = new aws.apigatewayv2.Integration(
@@ -303,12 +316,6 @@ class HutchLambda {
 			},
 		);
 
-		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
-			apiId: apiGateway.id,
-			name: args.stage,
-			autoDeploy: true,
-		});
-
 		new aws.lambda.Permission(`${name}-api-gateway-permission`, {
 			action: "lambda:InvokeFunction",
 			function: lambdaFunction.name,
@@ -316,8 +323,10 @@ class HutchLambda {
 			sourceArn: pulumi.interpolate`${apiGateway.executionArn}/*/*`,
 		});
 
-		if (args.domainRegistration) {
+		if (args.domainRegistration.domains.length > 0) {
 			const dr = args.domainRegistration;
+			assert(dr.certificateArn, "DomainRegistration with domains must have certificateArn");
+			assert(dr.zoneId, "DomainRegistration with domains must have zoneId");
 
 			for (const domain of dr.domains) {
 				const safeName = domain.replace(/\./g, "-");
@@ -371,14 +380,16 @@ class HutchLambda {
 	}
 }
 
-const storage = new HutchStorage("hutch");
+const storage = new HutchStorage("hutch", {
+	deletionProtection,
+});
+
+const domainRegistration = new DomainRegistration("hutch-domain", { domains });
 
 const hutch = new HutchLambda("hutch", {
 	stage,
 	storage,
-	domainRegistration: new DomainRegistration("hutch-domain", {
-		domains: ["hutch-app.com"],
-	}),
+	domainRegistration,
 });
 
 export const apiUrl = hutch.apiUrl;
