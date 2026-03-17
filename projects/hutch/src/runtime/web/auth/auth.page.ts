@@ -55,6 +55,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 	const router = express.Router();
 
 	router.get("/login", (req: Request, res: Response) => {
+		if (req.userId) {
+			res.redirect(303, "/queue");
+			return;
+		}
 		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
 		const result = LoginPage({ returnUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
@@ -93,7 +97,11 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		res.redirect(303, redirectTo);
 	});
 
-	router.get("/signup", (_req: Request, res: Response) => {
+	router.get("/signup", (req: Request, res: Response) => {
+		if (req.userId) {
+			res.redirect(303, "/queue");
+			return;
+		}
 		const result = SignupPage().to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});

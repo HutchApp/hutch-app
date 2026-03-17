@@ -15,6 +15,19 @@ describe("Auth routes", () => {
 			expect(doc.querySelector('input[name="password"]')?.getAttribute("type")).toBe("password");
 		});
 
+		it("should redirect authenticated user to /queue", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+
+			const agent = request.agent(app);
+			await agent.post("/login").type("form").send({ email: "test@example.com", password: "password123" });
+
+			const response = await agent.get("/login");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
 		it("should include return URL in form action when provided", async () => {
 			const { app } = createTestApp();
 			const response = await request(app).get("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
@@ -119,6 +132,19 @@ describe("Auth routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector('[data-test-form="signup"]')?.getAttribute("action")).toBe("/signup");
 			expect(doc.querySelector('input[name="confirmPassword"]')?.getAttribute("type")).toBe("password");
+		});
+
+		it("should redirect authenticated user to /queue", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+
+			const agent = request.agent(app);
+			await agent.post("/login").type("form").send({ email: "test@example.com", password: "password123" });
+
+			const response = await agent.get("/signup");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
 		});
 	});
 
