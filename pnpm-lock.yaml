@@ -95,8 +95,8 @@ importers:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
       playwright:
-        specifier: 1.52.0
-        version: 1.52.0
+        specifier: 1.58.2
+        version: 1.58.2
       purgecss:
         specifier: 8.0.0
         version: 8.0.0
@@ -4188,18 +4188,8 @@ packages:
     resolution: {integrity: sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==}
     engines: {node: '>=8'}
 
-  playwright-core@1.52.0:
-    resolution: {integrity: sha512-l2osTgLXSMeuLZOML9qYODUQoPPnUsKsb5/P6LJ2e6uPKXUdPK5WYhN4z03G+YNbWmGDY4YENauNu4ZKczreHg==}
-    engines: {node: '>=18'}
-    hasBin: true
-
   playwright-core@1.58.2:
     resolution: {integrity: sha512-yZkEtftgwS8CsfYo7nm0KE8jsvm6i/PTgVtB8DL726wNf6H2IMsDuxCpJj59KDaxCtSnrWan2AeDqM7JBaultg==}
-    engines: {node: '>=18'}
-    hasBin: true
-
-  playwright@1.52.0:
-    resolution: {integrity: sha512-JAwMNMBlxJ2oD1kce4KPtMkDeKGHQstdpFPcPH3maElAXon/QZeTvtsfXmTMRyO9TslfoYOXkSsvao2nE1ilTw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -9966,15 +9956,7 @@ snapshots:
     dependencies:
       find-up: 4.1.0
 
-  playwright-core@1.52.0: {}
-
   playwright-core@1.58.2: {}
-
-  playwright@1.52.0:
-    dependencies:
-      playwright-core: 1.52.0
-    optionalDependencies:
-      fsevents: 2.3.2
 
   playwright@1.58.2:
     dependencies:

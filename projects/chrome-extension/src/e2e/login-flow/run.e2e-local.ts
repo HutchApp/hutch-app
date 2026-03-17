@@ -40,6 +40,7 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 
 	const context = await chromium.launchPersistentContext("", {
 		headless,
+		channel: "chromium",
 		args: [
 			`--disable-extensions-except=${EXTENSION_DIR}`,
 			`--load-extension=${EXTENSION_DIR}`,
@@ -67,6 +68,10 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 			return el && el.getAttribute("hidden") === null;
 		}, { timeout: 10000 });
 
+		let activePage = page;
+		const getActivePage = () => activePage;
+		const setActivePage = (p: typeof page) => { activePage = p; };
+
 		const saveLinkProgress = { linkSaved: false, listVerified: false };
 
 		const loginActions = createLoginActions({
@@ -74,6 +79,7 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 			testPassword: TEST_PASSWORD,
 			context,
 			getPopupPage: () => page,
+			setActivePage,
 		});
 
 		const saveLinkActions = createSaveLinkActions({
@@ -87,7 +93,7 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 		const allActions = new Map([...loginActions, ...saveLinkActions]);
 
 		const stateHandler = new LoginFlowStateHandler(
-			page,
+			getActivePage,
 			async () => saveLinkProgress.listVerified,
 			allActions,
 		);

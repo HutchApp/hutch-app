@@ -16,6 +16,7 @@ function createTestPage(getAttributeValue: string | null, bodyClass?: string): P
 			return { getAttribute: async () => getAttributeValue };
 		},
 		url: () => "chrome-extension://test/popup.html",
+		isClosed: () => false,
 	} as unknown as Page;
 }
 
@@ -23,7 +24,7 @@ describe("LoginFlowStateHandler", () => {
 	it("returns transitioning view when no visible view is found", async () => {
 		const page = createTestPage("true");
 		const handler = new LoginFlowStateHandler(
-			page,
+			() => page,
 			async () => false,
 			new Map(),
 		);
@@ -35,7 +36,7 @@ describe("LoginFlowStateHandler", () => {
 	it("throws when executing an unknown action", async () => {
 		const page = createTestPage(null);
 		const handler = new LoginFlowStateHandler(
-			page,
+			() => page,
 			async () => false,
 			new Map(),
 		);
@@ -53,7 +54,7 @@ describe("LoginFlowStateHandler", () => {
 		};
 
 		const handler = new LoginFlowStateHandler(
-			page,
+			() => page,
 			async () => false,
 			new Map([["unavailable-action", unavailableAction]]),
 		);
@@ -70,7 +71,7 @@ describe("LoginFlowStateHandler", () => {
 		};
 
 		const handler = new LoginFlowStateHandler(
-			page,
+			() => page,
 			async () => false,
 			new Map([["click-login", availableAction]]),
 		);
@@ -82,7 +83,7 @@ describe("LoginFlowStateHandler", () => {
 	it("detects server-login view from body class", async () => {
 		const page = createTestPage("true", "page-login");
 		const handler = new LoginFlowStateHandler(
-			page,
+			() => page,
 			async () => false,
 			new Map(),
 		);
@@ -94,7 +95,7 @@ describe("LoginFlowStateHandler", () => {
 	it("detects oauth-authorize view from body class", async () => {
 		const page = createTestPage("true", "page-oauth-authorize");
 		const handler = new LoginFlowStateHandler(
-			page,
+			() => page,
 			async () => false,
 			new Map(),
 		);
@@ -114,7 +115,7 @@ describe("LoginFlowStateHandler", () => {
 		};
 
 		const handler = new LoginFlowStateHandler(
-			page,
+			() => page,
 			async () => false,
 			new Map([["click-login", action]]),
 		);

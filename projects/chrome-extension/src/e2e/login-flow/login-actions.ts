@@ -6,6 +6,7 @@ export function createLoginActions(config: {
 	testPassword: string;
 	context: BrowserContext;
 	getPopupPage: () => Page;
+	setActivePage: (page: Page) => void;
 }): Map<string, FlowAction> {
 	const actions = new Map<string, FlowAction>();
 
@@ -23,14 +24,16 @@ export function createLoginActions(config: {
 	actions.set("switch-to-login-tab", {
 		async isAvailable(_page: Page): Promise<boolean> {
 			const pages = config.context.pages();
-			return pages.length > 1;
+			const popupPage = config.getPopupPage();
+			return pages.some((p) => p !== popupPage && !p.url().startsWith("about:"));
 		},
 		async execute(_page: Page): Promise<void> {
 			const pages = config.context.pages();
 			const popupPage = config.getPopupPage();
-			const newPage = pages.find((p) => p !== popupPage);
+			const newPage = pages.find((p) => p !== popupPage && !p.url().startsWith("about:"));
 			if (!newPage) throw new Error("No new tab found for login");
 			await newPage.waitForSelector("#email", { timeout: 10000 });
+			config.setActivePage(newPage);
 		},
 	});
 
@@ -40,15 +43,10 @@ export function createLoginActions(config: {
 			if (!emailInput) return false;
 			return emailInput.isVisible();
 		},
-		async execute(_page: Page): Promise<void> {
-			const pages = config.context.pages();
-			const popupPage = config.getPopupPage();
-			const loginPage = pages.find((p) => p !== popupPage);
-			if (!loginPage) throw new Error("No login page found");
-
-			await loginPage.fill("#email", config.testEmail);
-			await loginPage.fill("#password", config.testPassword);
-			await loginPage.click('button[type="submit"]');
+		async execute(page: Page): Promise<void> {
+			await page.fill("#email", config.testEmail);
+			await page.fill("#password", config.testPassword);
+			await page.click('button[type="submit"]');
 		},
 	});
 
@@ -58,24 +56,15 @@ export function createLoginActions(config: {
 			if (!button) return false;
 			return button.isVisible();
 		},
-		async execute(_page: Page): Promise<void> {
-			const pages = config.context.pages();
-			const popupPage = config.getPopupPage();
-			const authPage = pages.find((p) => p !== popupPage);
-			if (!authPage) throw new Error("No auth page found");
-
-			await authPage.click('button[value="approve"]');
+		async execute(page: Page): Promise<void> {
+			await page.click('button[value="approve"]');
 		},
 	});
 
 	actions.set("switch-to-popup", {
-		async isAvailable(_page: Page): Promise<boolean> {
-			const pages = config.context.pages();
-			const popupPage = config.getPopupPage();
-			const otherPage = pages.find((p) => p !== popupPage);
-			if (!otherPage) return true;
+		async isAvailable(page: Page): Promise<boolean> {
 			try {
-				const url = otherPage.url();
+				const url = page.url();
 				return url.includes("/oauth/callback");
 			} catch {
 				return true;
@@ -83,7 +72,8 @@ export function createLoginActions(config: {
 		},
 		async execute(_page: Page): Promise<void> {
 			const popupPage = config.getPopupPage();
-			await popupPage.bringToFront();
+			config.setActivePage(popupPage);
+			await popupPage.reload({ waitUntil: "domcontentloaded" });
 		},
 	});
 
