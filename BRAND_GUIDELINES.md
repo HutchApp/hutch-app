@@ -132,8 +132,7 @@ The Firefox extension uses a slightly different palette tuned for small popup co
 
 | Role | Typeface | Weight | Where defined |
 |---|---|---|---|
-| **Body / UI** | System stack: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif` | Regular / Medium / Semibold / Bold | `base.styles.ts` → `BASE_RESET_STYLES` |
-| **Body (enhanced)** | Inter (loaded from Google Fonts, weights 400–700) | 400, 500, 600, 700 | `base.template.html` preload link |
+| **Body / UI** | `Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif` (Inter loaded from Google Fonts, weights 400–700) | 400, 500, 600, 700 | `base.styles.ts` → `BASE_RESET_STYLES`; `base.template.html` preload link |
 | **Extension UI** | `Inter, "Source Sans Pro", system-ui, -apple-system, sans-serif` | — | `popup.styles.css` |
 | **Brand serif** | `Georgia, "Times New Roman", serif` | — | Extension popup brand text |
 | **Reader view** | User-configurable (default: high-legibility serif or sans) | Regular | Article body text in reading mode — this is the user's space |
