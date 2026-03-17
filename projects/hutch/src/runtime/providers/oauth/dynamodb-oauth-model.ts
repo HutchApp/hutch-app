@@ -48,6 +48,8 @@ const RefreshIndexRow = z.object({
 	accessToken: z.string(),
 });
 
+const RevokeItemRow = z.object({ pk: z.string(), refreshToken: z.string().optional() });
+
 function rebuildClient(clientId: string): Client | null {
 	const client = getClient(clientId);
 	if (!client) return null;
@@ -314,7 +316,6 @@ export function initDynamoDbOAuthModel(deps: {
 				if (!queryResult.Items || queryResult.Items.length === 0) continue;
 
 				for (const item of queryResult.Items) {
-					const RevokeItemRow = z.object({ pk: z.string(), refreshToken: z.string().optional() });
 					const parsed = RevokeItemRow.parse(item);
 
 					if (parsed.pk.startsWith("token#") && parsed.refreshToken) {

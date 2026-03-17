@@ -15,14 +15,11 @@ const QueueQuerySchema = z.object({
 }).passthrough();
 
 export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
-	const parsed = QueueQuerySchema.safeParse(query);
-	if (!parsed.success) {
-		return { order: "desc", page: 1 };
-	}
+	const parsed = QueueQuerySchema.parse(query);
 	return {
-		status: parsed.data.status,
-		order: parsed.data.order ?? "desc",
-		page: parsed.data.page ?? 1,
+		status: parsed.status,
+		order: parsed.order ?? "desc",
+		page: parsed.page ?? 1,
 	};
 }
 

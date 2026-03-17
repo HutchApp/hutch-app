@@ -17,7 +17,7 @@ function toExportArticle(article: SavedArticle) {
 		siteName: article.metadata.siteName,
 		excerpt: article.metadata.excerpt,
 		wordCount: article.metadata.wordCount,
-		estimatedReadTimeMinutes: Number(article.estimatedReadTime),
+		estimatedReadTimeMinutes: article.estimatedReadTime,
 		status: article.status,
 		savedAt: article.savedAt.toISOString(),
 		readAt: article.readAt?.toISOString() ?? null,
