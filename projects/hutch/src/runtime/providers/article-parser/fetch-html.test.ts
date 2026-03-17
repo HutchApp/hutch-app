@@ -1,6 +1,6 @@
 import { initFetchHtml } from "./fetch-html";
 
-function createMockResponse(overrides: {
+function createFakeResponse(overrides: {
 	ok?: boolean;
 	contentType?: string;
 	text?: string;
@@ -16,7 +16,7 @@ function createMockResponse(overrides: {
 describe("initFetchHtml", () => {
 	it("should return HTML text for a successful response", async () => {
 		const fakeFetch = async () =>
-			createMockResponse({ text: "<html>Hello</html>" });
+			createFakeResponse({ text: "<html>Hello</html>" });
 		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
 
 		const result = await fetchHtml("https://example.com");
@@ -25,7 +25,7 @@ describe("initFetchHtml", () => {
 	});
 
 	it("should return undefined when response is not ok", async () => {
-		const fakeFetch = async () => createMockResponse({ ok: false });
+		const fakeFetch = async () => createFakeResponse({ ok: false });
 		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
 
 		const result = await fetchHtml("https://example.com");
@@ -35,7 +35,7 @@ describe("initFetchHtml", () => {
 
 	it("should return undefined when content-type is not text/html", async () => {
 		const fakeFetch = async () =>
-			createMockResponse({ contentType: "application/json" });
+			createFakeResponse({ contentType: "application/json" });
 		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
 
 		const result = await fetchHtml("https://example.com");
@@ -58,7 +58,7 @@ describe("initFetchHtml", () => {
 		let capturedUrl: string | undefined;
 		const fakeFetch = async (input: string | URL | Request) => {
 			capturedUrl = input as string;
-			return createMockResponse({ text: "<html></html>" });
+			return createFakeResponse({ text: "<html></html>" });
 		};
 		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
 
@@ -74,7 +74,7 @@ describe("initFetchHtml", () => {
 			init?: RequestInit,
 		) => {
 			capturedInit = init;
-			return createMockResponse({ text: "<html></html>" });
+			return createFakeResponse({ text: "<html></html>" });
 		};
 		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
 

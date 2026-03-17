@@ -6,10 +6,10 @@ const path = require('path')
 const config = {
   ...baseConfig,
   thresholds: {
-    statements: 97,
-    branches: 94,
+    statements: 99.1,
+    branches: 95,
     functions: 100,
-    lines: 97,
+    lines: 99.1,
   },
   extraExcludePatterns: [
     // Wiring module — composes providers and event bus, tested via integration
