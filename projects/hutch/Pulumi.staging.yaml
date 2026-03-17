@@ -3,4 +3,5 @@ config:
   aws:allowedAccountIds:
     - '572337278115'
   hutch:stage: staging
+  hutch:deletionProtection: false
 encryptionsalt: v1:fILgDgnVVEY=:v1:sFKytKYEpZU4Qs+9:o/Q+JSj6rS/qo7p6WyjaekWrgFAk5A==

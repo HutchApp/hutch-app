@@ -1,12 +1,15 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { build, type Loader } from "esbuild";
+import assert from "node:assert";
 import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { getEnv, requireEnv } from "../runtime/require-env";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
+const domains = config.getObject<string[]>("domains") ?? [];
+const deletionProtection = config.requireBoolean("deletionProtection");
 
 const esbuildLoaders: Record<string, Loader> = {
 	".ts": "ts",
@@ -26,18 +29,22 @@ function copyAssetFiles(dirs: { src: string; dest: string }) {
 }
 
 class DomainRegistration {
-	public readonly certificateArn: pulumi.Output<string>;
-	public readonly zoneId: Promise<string>;
+	public readonly certificateArn?: pulumi.Output<string>;
+	public readonly zoneId?: Promise<string>;
 	public readonly domains: string[];
-	public readonly primaryDomain: string;
+	public readonly primaryDomain?: string;
 
 	constructor(name: string, args: { domains: string[] }) {
-		const [primaryDomain, ...altDomains] = args.domains;
 		this.domains = args.domains;
+
+		if (args.domains.length === 0) return;
+
+		const [primaryDomain, ...altDomains] = args.domains;
 		this.primaryDomain = primaryDomain;
 
 		const zone = aws.route53.getZone({ name: primaryDomain });
-		this.zoneId = zone.then((z) => z.zoneId);
+		const zoneId = zone.then((z) => z.zoneId);
+		this.zoneId = zoneId;
 
 		const cert = new aws.acm.Certificate(`${name}-cert`, {
 			domainName: primaryDomain,
@@ -50,7 +57,7 @@ class DomainRegistration {
 			opts.map(
 				(opt, i) =>
 					new aws.route53.Record(`${name}-cert-validation-${i}`, {
-						zoneId: this.zoneId,
+						zoneId,
 						name: opt.resourceRecordName,
 						type: opt.resourceRecordType,
 						records: [opt.resourceRecordValue],
@@ -169,7 +176,7 @@ class HutchLambda {
 		args: {
 			stage: string;
 			storage: HutchStorage;
-			domainRegistration?: DomainRegistration;
+			domainRegistration: DomainRegistration;
 		},
 	) {
 		const memorySize = 512;
@@ -275,7 +282,7 @@ class HutchLambda {
 					NODE_ENV: "production",
 					PERSISTENCE: "prod",
 					STAGE: args.stage,
-					APP_ORIGIN: args.domainRegistration
+					APP_ORIGIN: args.domainRegistration.domains.length > 0
 						? `https://${args.domainRegistration.primaryDomain}`
 						: pulumi.interpolate`${apiGateway.apiEndpoint}/${apiStage.name}`,
 					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
@@ -316,8 +323,10 @@ class HutchLambda {
 			sourceArn: pulumi.interpolate`${apiGateway.executionArn}/*/*`,
 		});
 
-		if (args.domainRegistration) {
+		if (args.domainRegistration.domains.length > 0) {
 			const dr = args.domainRegistration;
+			assert(dr.certificateArn, "DomainRegistration with domains must have certificateArn");
+			assert(dr.zoneId, "DomainRegistration with domains must have zoneId");
 
 			for (const domain of dr.domains) {
 				const safeName = domain.replace(/\./g, "-");
@@ -371,15 +380,11 @@ class HutchLambda {
 	}
 }
 
-const isProduction = stage === "production";
-
 const storage = new HutchStorage("hutch", {
-	deletionProtection: isProduction,
+	deletionProtection,
 });
 
-const domainRegistration = isProduction
-	? new DomainRegistration("hutch-domain", { domains: ["hutch-app.com"] })
-	: undefined;
+const domainRegistration = new DomainRegistration("hutch-domain", { domains });
 
 const hutch = new HutchLambda("hutch", {
 	stage,
