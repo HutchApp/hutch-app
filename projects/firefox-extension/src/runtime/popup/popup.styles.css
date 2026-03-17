@@ -364,7 +364,7 @@ h2 {
 
 .pagination__page--active {
   background: var(--popup-active-bg);
-  color: #FFFFFF;
+  color: var(--popup-bg);
   border-color: var(--popup-active-bg);
 }
 

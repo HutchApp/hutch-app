@@ -1,6 +1,6 @@
 .home-hero {
   background: linear-gradient(135deg, hsl(27 65% 47%) 0%, hsl(27 50% 35%) 100%);
-  color: #FFFFFF;
+  color: var(--color-on-brand);
   padding: 80px 20px 60px;
   text-align: center;
 }
@@ -66,13 +66,13 @@
 }
 
 .btn--primary {
-  background: #FFFFFF;
+  background: var(--color-on-brand);
   color: hsl(27 65% 40%);
 }
 
 .btn--secondary {
   background: rgba(255,255,255,0.15);
-  color: #FFFFFF;
+  color: var(--color-on-brand);
   border: 1px solid rgba(255,255,255,0.3);
 }
 
@@ -264,7 +264,7 @@
 
 .founding-progress__fill {
   height: 100%;
-  background: hsl(142 71% 45%);
+  background: var(--color-success);
   border-radius: 12px;
   transition: width 0.3s ease;
 }
