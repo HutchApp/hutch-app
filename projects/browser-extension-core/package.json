@@ -4,6 +4,17 @@
   "description": "Browser-agnostic core logic for Hutch browser extensions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./build": {
+      "types": "./dist/build/build-extension.d.ts",
+      "default": "./dist/build/build-extension.js"
+    },
+    "./package.json": "./package.json"
+  },
   "private": true,
   "scripts": {
     "compile": "tsc",
