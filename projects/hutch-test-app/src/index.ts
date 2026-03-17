@@ -1,1 +1,1 @@
-export { createTestApp } from "hutch/dist/runtime/test-app";
+export { createTestApp } from "hutch/test-app";
