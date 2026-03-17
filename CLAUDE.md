@@ -8,6 +8,10 @@
 
 ## Architecture Guidelines
 
+### Brand & Design Guidelines
+
+For colours, typography, voice, and UI conventions, see the [brand guidelines](./BRAND_GUIDELINES.md).
+
 ### Web Adapter Conventions
 
 For HTML/CSS/SSR conventions, see the [web skill](./.claude/skills/web/SKILL.md).
