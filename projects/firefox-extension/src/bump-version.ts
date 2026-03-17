@@ -5,7 +5,7 @@ type BumpType = "patch" | "minor" | "major";
 
 interface BumpVersionDeps {
 	readFile: (path: string) => string;
-	writeFile: (path: string, content: string) => void;
+	writeFile: (args: { path: string; content: string }) => void;
 }
 
 const BUMP_TYPES: Record<string, BumpType> = {
@@ -46,8 +46,8 @@ export function initBumpVersion(deps: BumpVersionDeps) {
 		packageJson.version = newVersion;
 		manifest.version = newVersion;
 
-		deps.writeFile(input.packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
-		deps.writeFile(input.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+		deps.writeFile({ path: input.packageJsonPath, content: `${JSON.stringify(packageJson, null, 2)}\n` });
+		deps.writeFile({ path: input.manifestPath, content: `${JSON.stringify(manifest, null, 2)}\n` });
 
 		return { oldVersion, newVersion };
 	};

@@ -19,7 +19,7 @@ function getBucketBaseUrl(stage) {
 	return `https://${bucketName}.s3.${S3_CONFIG.region}.amazonaws.com`;
 }
 
-function getExtensionDownloadUrl(stage, xpiFilename) {
+function getExtensionDownloadUrl({ stage, xpiFilename }) {
 	return `${getBucketBaseUrl(stage)}/${xpiFilename}`;
 }
 

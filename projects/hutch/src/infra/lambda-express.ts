@@ -6,7 +6,7 @@ import compression from "compression";
 import serverless from "serverless-http";
 import { HutchLogger, consoleLogger } from "hutch-logger";
 import { logger as requestLogger } from "./logger";
-import { errorHandler } from "./error-handler";
+import { logAndRespondOnError } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
 import { localServer } from "../runtime/app";
 import { getEnv } from "../runtime/require-env";
@@ -31,7 +31,7 @@ export const lambdaExpress = ({
 		)
 		.use(log)
 		.use(app)
-		.use(errorHandler(logger));
+		.use(logAndRespondOnError(logger));
 
 	// ---
 

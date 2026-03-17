@@ -128,6 +128,28 @@ describe("Queue routes", () => {
 
 			expect(statusResponse.headers.location).toBe("/queue?status=unread&order=asc");
 		});
+
+		it("should redirect to queue when status value is invalid", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+
+			const statusResponse = await agent
+				.post(`/queue/${articleId}/status`)
+				.type("form")
+				.send({ status: "invalid-status" });
+
+			expect(statusResponse.status).toBe(303);
+			expect(statusResponse.headers.location).toBe("/queue");
+		});
 	});
 
 	describe("POST /queue/:id/delete", () => {

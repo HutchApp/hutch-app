@@ -2,8 +2,8 @@ import assert from "node:assert";
 import type { Request, Response, Router } from "express";
 import express from "express";
 import type { FindArticlesByUser } from "../../../providers/article-store/article-store.types";
-import type { UserId } from "../../../domain/user/user.types";
 import type { SavedArticle } from "../../../domain/article/article.types";
+import type { UserId } from "../../../domain/user/user.types";
 import { ExportPage } from "./export.component";
 
 interface ExportDependencies {
@@ -17,7 +17,7 @@ function toExportArticle(article: SavedArticle) {
 		siteName: article.metadata.siteName,
 		excerpt: article.metadata.excerpt,
 		wordCount: article.metadata.wordCount,
-		estimatedReadTimeMinutes: article.estimatedReadTime as number,
+		estimatedReadTimeMinutes: article.estimatedReadTime,
 		status: article.status,
 		savedAt: article.savedAt.toISOString(),
 		readAt: article.readAt?.toISOString() ?? null,
@@ -57,7 +57,7 @@ export function initExportRoutes(deps: ExportDependencies): Router {
 
 	router.get("/download", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
-		const userId = req.userId as UserId;
+		const userId = req.userId;
 		const articles = await fetchAllArticles(
 			deps.findArticlesByUser,
 			userId,

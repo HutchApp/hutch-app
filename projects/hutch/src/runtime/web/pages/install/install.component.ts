@@ -14,7 +14,7 @@ export async function fetchExtensionDownloadUrl(): Promise<string | null> {
 	if (!response.ok) return null;
 	const xpiFilename = (await response.text()).trim();
 	if (!xpiFilename) return null;
-	return getExtensionDownloadUrl("prod", xpiFilename);
+	return getExtensionDownloadUrl({ stage: "prod", xpiFilename });
 }
 
 export function InstallPage(extensionDownloadUrl: string | null): Component {

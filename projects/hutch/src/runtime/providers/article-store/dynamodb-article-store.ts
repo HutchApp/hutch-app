@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import {
 	PutCommand,
@@ -7,12 +8,9 @@ import {
 	DeleteCommand,
 	UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type {
-	ArticleId,
-	ArticleStatus,
-	Minutes,
-	SavedArticle,
-} from "../../domain/article/article.types";
+import type { SavedArticle } from "../../domain/article/article.types";
+import { ArticleIdSchema, MinutesSchema, ArticleStatusSchema } from "../../domain/article/article.schema";
+import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	DeleteArticle,
 	FindArticleById,
@@ -39,23 +37,40 @@ function toItem(article: SavedArticle): Record<string, unknown> {
 	};
 }
 
+const SavedArticleRow = z.object({
+	id: ArticleIdSchema,
+	userId: UserIdSchema,
+	url: z.string(),
+	title: z.string(),
+	siteName: z.string(),
+	excerpt: z.string(),
+	wordCount: z.number(),
+	imageUrl: z.string().optional(),
+	content: z.string().optional(),
+	estimatedReadTime: MinutesSchema,
+	status: ArticleStatusSchema,
+	savedAt: z.string(),
+	readAt: z.string().optional(),
+});
+
 function fromItem(item: Record<string, unknown>): SavedArticle {
+	const row = SavedArticleRow.parse(item);
 	return {
-		id: item.id as ArticleId,
-		userId: item.userId as SavedArticle["userId"],
-		url: item.url as string,
+		id: row.id,
+		userId: row.userId,
+		url: row.url,
 		metadata: {
-			title: item.title as string,
-			siteName: item.siteName as string,
-			excerpt: item.excerpt as string,
-			wordCount: item.wordCount as number,
-			imageUrl: item.imageUrl as string | undefined,
+			title: row.title,
+			siteName: row.siteName,
+			excerpt: row.excerpt,
+			wordCount: row.wordCount,
+			imageUrl: row.imageUrl,
 		},
-		content: item.content as string | undefined,
-		estimatedReadTime: item.estimatedReadTime as Minutes,
-		status: item.status as ArticleStatus,
-		savedAt: new Date(item.savedAt as string),
-		readAt: item.readAt ? new Date(item.readAt as string) : undefined,
+		content: row.content,
+		estimatedReadTime: row.estimatedReadTime,
+		status: row.status,
+		savedAt: new Date(row.savedAt),
+		readAt: row.readAt ? new Date(row.readAt) : undefined,
 	};
 }
 
@@ -72,7 +87,7 @@ export function initDynamoDbArticleStore(deps: {
 	const { client, tableName } = deps;
 
 	const saveArticle: SaveArticle = async (params) => {
-		const id = randomBytes(16).toString("hex") as ArticleId;
+		const id = ArticleIdSchema.parse(randomBytes(16).toString("hex"));
 		const article: SavedArticle = {
 			id,
 			userId: params.userId,
@@ -121,7 +136,7 @@ export function initDynamoDbArticleStore(deps: {
 		let exclusiveStartKey: Record<string, unknown> | undefined;
 		let skippedCount = 0;
 
-		// Get accurate total count with a separate COUNT query
+		// DynamoDB paginated queries cannot know total count upfront
 		let total = 0;
 		let countStartKey: Record<string, unknown> | undefined;
 		do {

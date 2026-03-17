@@ -16,7 +16,7 @@ export interface ReadingList {
 	getAllItems: GetAllItems;
 }
 
-export type ResultHandler<T> = {
+export type ResultCallbacks<T> = {
 	success: (value: T) => void;
 	failure: (error: CoreError) => void;
 };
@@ -37,18 +37,18 @@ export interface Core {
 
 	on(event: "pre-init", handler: () => void): void;
 	on(event: "post-init", handler: () => void): void;
-	on(event: "logged-in", handler: ResultHandler<void>): void;
+	on(event: "logged-in", handler: ResultCallbacks<void>): void;
 	on(event: "logged-out", handler: () => void): void;
-	on(event: "saved-current-tab", handler: ResultHandler<SaveUrlResult>): void;
-	on(event: "removed-item", handler: ResultHandler<RemoveUrlResult>): void;
-	on(event: "fetched-reading-list", handler: ResultHandler<ReadingListItem[]>): void;
-	on(event: "checked-url", handler: ResultHandler<ReadingListItem | null>): void;
+	on(event: "saved-current-tab", handler: ResultCallbacks<SaveUrlResult>): void;
+	on(event: "removed-item", handler: ResultCallbacks<RemoveUrlResult>): void;
+	on(event: "fetched-reading-list", handler: ResultCallbacks<ReadingListItem[]>): void;
+	on(event: "checked-url", handler: ResultCallbacks<ReadingListItem | null>): void;
 
-	once(event: "logged-in", handler: ResultHandler<void>): void;
-	once(event: "saved-current-tab", handler: ResultHandler<SaveUrlResult>): void;
-	once(event: "removed-item", handler: ResultHandler<RemoveUrlResult>): void;
-	once(event: "fetched-reading-list", handler: ResultHandler<ReadingListItem[]>): void;
-	once(event: "checked-url", handler: ResultHandler<ReadingListItem | null>): void;
+	once(event: "logged-in", handler: ResultCallbacks<void>): void;
+	once(event: "saved-current-tab", handler: ResultCallbacks<SaveUrlResult>): void;
+	once(event: "removed-item", handler: ResultCallbacks<RemoveUrlResult>): void;
+	once(event: "fetched-reading-list", handler: ResultCallbacks<ReadingListItem[]>): void;
+	once(event: "checked-url", handler: ResultCallbacks<ReadingListItem | null>): void;
 }
 
 export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; logger: HutchLogger; readingList: ReadingList }): Core {
@@ -217,7 +217,7 @@ export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; lo
 			if (typeof handler === "function") {
 				eventBus.on(event, handler);
 			} else {
-				const resultHandler = handler as ResultHandler<unknown>;
+				const resultHandler = handler as ResultCallbacks<unknown>;
 				eventBus.on(event, (type: unknown, value: unknown) => {
 					if (type === "success") {
 						resultHandler.success(value);
@@ -230,7 +230,7 @@ export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; lo
 
 		// biome-ignore lint/suspicious/noExplicitAny: implementation signature must accept all overloaded handler shapes
 		once(event: string, handler: any) {
-			const resultHandler = handler as ResultHandler<unknown>;
+			const resultHandler = handler as ResultCallbacks<unknown>;
 			eventBus.once(event, (type: unknown, value: unknown) => {
 				if (type === "success") {
 					resultHandler.success(value);
