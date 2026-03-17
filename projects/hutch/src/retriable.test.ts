@@ -159,6 +159,9 @@ describe('retriable', () => {
   })
 
   describe('retry delay', () => {
+    beforeEach(() => { jest.useFakeTimers() })
+    afterEach(() => { jest.useRealTimers() })
+
     it('waits retryDelayMs between attempts', async () => {
       let callCount = 0
       const fetchItems = async () => {
@@ -166,15 +169,17 @@ describe('retriable', () => {
         return callCount >= 2 ? ['done'] : []
       }
 
-      const start = Date.now()
-      await retriable(fetchItems, {
+      const promise = retriable(fetchItems, {
         maxAttempts: 3,
         retryDelayMs: 50,
         shouldRetry: (items) => items.length === 0,
       })()
-      const elapsed = Date.now() - start
 
-      expect(elapsed).toBeGreaterThanOrEqual(50)
+      await jest.advanceTimersByTimeAsync(50)
+      await promise
+
+      expect(callCount).toBe(2)
+      expect(jest.getTimerCount()).toBe(0)
     })
   })
 
