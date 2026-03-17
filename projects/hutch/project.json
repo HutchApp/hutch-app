@@ -1,0 +1,10 @@
+{
+  "name": "hutch",
+  "targets": {
+    "compile": {
+      "dependsOn": [
+        { "projects": ["hutch-logger"], "target": "compile" }
+      ]
+    }
+  }
+}
