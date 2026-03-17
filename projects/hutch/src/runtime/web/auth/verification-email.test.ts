@@ -10,11 +10,7 @@ describe("buildVerificationEmailHtml", () => {
 	it("escapes HTML entities in the URL to prevent injection", () => {
 		const html = buildVerificationEmailHtml('https://example.com/verify?a=1&b=2"<>');
 
-		expect(html).toContain("&amp;");
-		expect(html).toContain("&quot;");
-		expect(html).toContain("&lt;");
-		expect(html).toContain("&gt;");
-		expect(html).not.toContain('&b=2"');
+		expect(html).toContain('href="https://example.com/verify?a=1&amp;b=2&quot;&lt;&gt;"');
 	});
 
 	it("renders the email subject heading", () => {

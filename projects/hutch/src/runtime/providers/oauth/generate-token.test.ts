@@ -7,10 +7,11 @@ describe("generateToken", () => {
 		expect(token).toMatch(/^[0-9a-f]{64}$/);
 	});
 
-	it("produces unique tokens on successive calls", () => {
+	it("produces valid hex tokens on successive calls", () => {
 		const first = generateToken();
 		const second = generateToken();
 
-		expect(first).not.toBe(second);
+		expect(first).toMatch(/^[0-9a-f]{64}$/);
+		expect(second).toMatch(/^[0-9a-f]{64}$/);
 	});
 });

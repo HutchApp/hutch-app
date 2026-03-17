@@ -20,7 +20,7 @@ function createInMemoryTokenStorage(): TokenStorage & { stored: OAuthTokens | nu
 	};
 }
 
-function createTestDeps(overrides?: Partial<OAuthAuthDeps>) {
+function createInMemoryOAuthDeps(overrides?: Partial<OAuthAuthDeps>) {
 	let capturedState = "";
 	let capturedAuthorizeUrl = "";
 	let capturedTokenUrl = "";
@@ -77,7 +77,7 @@ function createTestDeps(overrides?: Partial<OAuthAuthDeps>) {
 describe("initOAuthAuth", () => {
 	describe("whenLoggedIn before login", () => {
 		it("should return not-logged-in", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			const result = auth.whenLoggedIn(() => "value");
@@ -87,7 +87,7 @@ describe("initOAuthAuth", () => {
 
 	describe("login", () => {
 		it("should open a tab with the authorize URL", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
@@ -103,7 +103,7 @@ describe("initOAuthAuth", () => {
 
 		it("should wait for redirect to callback URL", async () => {
 			let capturedRedirectParams: { tabId: number; urlPrefix: string } | undefined;
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				waitForRedirect: async (params) => {
 					capturedRedirectParams = params;
 					return `http://localhost:3000/oauth/callback?code=test-code&state=${new URL(deps.captured.authorizeUrl).searchParams.get("state")}`;
@@ -120,7 +120,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should close the tab after redirect", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
@@ -129,7 +129,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should exchange code for tokens", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
@@ -144,7 +144,7 @@ describe("initOAuthAuth", () => {
 
 		it("should store tokens after successful exchange", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({ tokenStorage });
+			const deps = createInMemoryOAuthDeps({ tokenStorage });
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
@@ -156,7 +156,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should be logged in after login", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
@@ -166,7 +166,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should throw when OAuth returns an error", async () => {
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				waitForRedirect: async () =>
 					"http://localhost:3000/oauth/callback?error=access_denied",
 			});
@@ -176,7 +176,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should throw when callback has no code", async () => {
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				waitForRedirect: async () =>
 					"http://localhost:3000/oauth/callback?state=anything",
 			});
@@ -186,7 +186,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should throw on state mismatch", async () => {
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				waitForRedirect: async () =>
 					"http://localhost:3000/oauth/callback?code=test-code&state=wrong-state",
 			});
@@ -196,7 +196,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should throw when token exchange fails", async () => {
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				fetchFn: async () => ({ ok: false as boolean, status: 400, json: async () => ({}) }),
 			});
 			const auth = await initOAuthAuth(deps);
@@ -205,7 +205,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should throw when token response has invalid shape", async () => {
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				fetchFn: async () => ({
 					ok: true as boolean,
 					status: 200,
@@ -223,7 +223,7 @@ describe("initOAuthAuth", () => {
 			const tokenStorage = createInMemoryTokenStorage();
 			let revokeUrl = "";
 			let revokeOptions: { method: string; headers: Record<string, string>; body: string } | undefined;
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (url, init) => {
 					revokeUrl = url;
@@ -249,7 +249,7 @@ describe("initOAuthAuth", () => {
 
 		it("should clear stored tokens", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({ tokenStorage });
+			const deps = createInMemoryOAuthDeps({ tokenStorage });
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
@@ -260,7 +260,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should be logged out after logout", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			await auth.login();
@@ -273,7 +273,7 @@ describe("initOAuthAuth", () => {
 
 	describe("whenLoggedIn callback throws", () => {
 		it("should catch the error and return it", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 			await auth.login();
 			const thrownError = new Error("something broke");
@@ -297,7 +297,7 @@ describe("initOAuthAuth", () => {
 				refreshToken: "stored-refresh",
 			});
 
-			const deps = createTestDeps({ tokenStorage });
+			const deps = createInMemoryOAuthDeps({ tokenStorage });
 			const auth = await initOAuthAuth(deps);
 
 			const result = auth.whenLoggedIn(() => "restored");
@@ -311,7 +311,7 @@ describe("initOAuthAuth", () => {
 				refreshToken: "old-refresh",
 			});
 
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					if (init.body.includes("grant_type=refresh_token")) {
@@ -342,7 +342,7 @@ describe("initOAuthAuth", () => {
 				refreshToken: "expired-refresh",
 			});
 
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async () => ({ ok: false as boolean, status: 400, json: async () => ({}) }),
 			});
@@ -360,7 +360,7 @@ describe("initOAuthAuth", () => {
 				refreshToken: "existing-refresh",
 			});
 
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async () => { throw new Error("Network error"); },
 			});
@@ -380,7 +380,7 @@ describe("initOAuthAuth", () => {
 			const tokenStorage = createInMemoryTokenStorage();
 			let capturedUrl = "";
 			let capturedBody = "";
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (url, init) => {
 					capturedUrl = url;
@@ -408,7 +408,7 @@ describe("initOAuthAuth", () => {
 
 		it("should store new tokens after successful refresh", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					if (init.body.includes("grant_type=refresh_token")) {
@@ -444,7 +444,7 @@ describe("initOAuthAuth", () => {
 
 		it("should remain logged in after successful refresh", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					if (init.body.includes("grant_type=refresh_token")) {
@@ -477,7 +477,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should return no-refresh-token when no tokens are stored", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			const result = await auth.refreshTokens();
@@ -488,7 +488,7 @@ describe("initOAuthAuth", () => {
 		it("should log out when no refresh token is available", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
 			await tokenStorage.setTokens({ accessToken: "access", refreshToken: "" });
-			const deps = createTestDeps({ tokenStorage });
+			const deps = createInMemoryOAuthDeps({ tokenStorage });
 			const auth = await initOAuthAuth(deps);
 
 			await auth.refreshTokens();
@@ -500,7 +500,7 @@ describe("initOAuthAuth", () => {
 		it("should clear tokens when no refresh token is available", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
 			await tokenStorage.setTokens({ accessToken: "access", refreshToken: "" });
-			const deps = createTestDeps({ tokenStorage });
+			const deps = createInMemoryOAuthDeps({ tokenStorage });
 			const auth = await initOAuthAuth(deps);
 
 			await auth.refreshTokens();
@@ -510,7 +510,7 @@ describe("initOAuthAuth", () => {
 
 		it("should return refresh-failed when server rejects the refresh token", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					if (init.body.includes("grant_type=refresh_token")) {
@@ -536,7 +536,7 @@ describe("initOAuthAuth", () => {
 
 		it("should clear tokens and log out on failed refresh", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					if (init.body.includes("grant_type=refresh_token")) {
@@ -564,7 +564,7 @@ describe("initOAuthAuth", () => {
 
 		it("should return refresh-failed when response has invalid shape", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					if (init.body.includes("grant_type=refresh_token")) {
@@ -596,7 +596,7 @@ describe("initOAuthAuth", () => {
 		it("should send the stored refresh token in the request body", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
 			let capturedBody = "";
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					capturedBody = init.body;
@@ -631,7 +631,7 @@ describe("initOAuthAuth", () => {
 
 	describe("getAccessToken", () => {
 		it("should return null when no tokens are stored", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 
 			const token = await auth.getAccessToken();
@@ -640,7 +640,7 @@ describe("initOAuthAuth", () => {
 		});
 
 		it("should return the stored access token", async () => {
-			const deps = createTestDeps();
+			const deps = createInMemoryOAuthDeps();
 			const auth = await initOAuthAuth(deps);
 			await auth.login();
 
@@ -651,7 +651,7 @@ describe("initOAuthAuth", () => {
 
 		it("should return updated token after refresh", async () => {
 			const tokenStorage = createInMemoryTokenStorage();
-			const deps = createTestDeps({
+			const deps = createInMemoryOAuthDeps({
 				tokenStorage,
 				fetchFn: async (_url, init) => {
 					if (init.body.includes("grant_type=refresh_token")) {

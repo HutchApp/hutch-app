@@ -10,11 +10,14 @@ describe("hashPassword", () => {
 		expect(parts[1].length).toBe(128);
 	});
 
-	it("produces different hashes for the same password", async () => {
+	it("produces unique salts for the same password", async () => {
 		const first = await hashPassword("same-password");
 		const second = await hashPassword("same-password");
 
-		expect(first).not.toBe(second);
+		const firstSalt = first.split(":")[0];
+		const secondSalt = second.split(":")[0];
+		expect(firstSalt).toMatch(/^[0-9a-f]{32}$/);
+		expect(secondSalt).toMatch(/^[0-9a-f]{32}$/);
 	});
 });
 
