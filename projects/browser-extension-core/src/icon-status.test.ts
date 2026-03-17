@@ -3,7 +3,7 @@ import { initInMemoryReadingList } from "./reading-list/in-memory-reading-list";
 import type { SetIcon } from "./icon-status";
 import { initIconStatus } from "./icon-status";
 
-function createMockSetIcon(): SetIcon & {
+function createRecordingSetIcon(): SetIcon & {
 	calls: { method: string; tabId: number }[];
 } {
 	const calls: { method: string; tabId: number }[] = [];
@@ -22,7 +22,7 @@ describe("initIconStatus", () => {
 	it("should show default icon when not logged in", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
-		const setIcon = createMockSetIcon();
+		const setIcon = createRecordingSetIcon();
 
 		const { updateIconForTab } = initIconStatus({
 			findByUrl: readingList.findByUrl,
@@ -38,7 +38,7 @@ describe("initIconStatus", () => {
 	it("should show default icon when URL is not saved", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
-		const setIcon = createMockSetIcon();
+		const setIcon = createRecordingSetIcon();
 		await auth.login();
 
 		const { updateIconForTab } = initIconStatus({
@@ -55,7 +55,7 @@ describe("initIconStatus", () => {
 	it("should show saved icon when URL is saved", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
-		const setIcon = createMockSetIcon();
+		const setIcon = createRecordingSetIcon();
 		await auth.login();
 		await readingList.saveUrl({
 			url: "https://example.com/saved",
@@ -76,7 +76,7 @@ describe("initIconStatus", () => {
 	it("should use correct tabId for each call", async () => {
 		const auth = initInMemoryAuth();
 		const readingList = initInMemoryReadingList();
-		const setIcon = createMockSetIcon();
+		const setIcon = createRecordingSetIcon();
 		await auth.login();
 		await readingList.saveUrl({
 			url: "https://example.com/saved",

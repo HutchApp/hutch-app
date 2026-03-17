@@ -97,6 +97,73 @@ describe("initInMemoryAuth", () => {
 		});
 	});
 
+	describe("countUsers", () => {
+		it("should return zero when no users exist", async () => {
+			const auth = initInMemoryAuth();
+
+			const count = await auth.countUsers();
+
+			expect(count).toBe(0);
+		});
+
+		it("should return the number of registered users", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createUser({ email: "a@example.com", password: "password123" });
+			await auth.createUser({ email: "b@example.com", password: "password456" });
+
+			const count = await auth.countUsers();
+
+			expect(count).toBe(2);
+		});
+	});
+
+	describe("markEmailVerified", () => {
+		it("should mark user email as verified", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createUser({ email: "user@example.com", password: "password123" });
+
+			await auth.markEmailVerified("user@example.com");
+			const result = await auth.verifyCredentials({ email: "user@example.com", password: "password123" });
+
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.emailVerified).toBe(true);
+			}
+		});
+
+		it("should handle case-insensitive email lookup", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createUser({ email: "user@example.com", password: "password123" });
+
+			await auth.markEmailVerified("User@Example.COM");
+			const result = await auth.verifyCredentials({ email: "user@example.com", password: "password123" });
+
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.emailVerified).toBe(true);
+			}
+		});
+	});
+
+	describe("markSessionEmailVerified", () => {
+		it("should mark session emailVerified flag to true", async () => {
+			const auth = initInMemoryAuth();
+			const userId = "user-456" as UserId;
+			const sessionId = await auth.createSession({ userId, emailVerified: false });
+
+			await auth.markSessionEmailVerified(sessionId);
+			const session = await auth.getSessionUserId(sessionId);
+
+			expect(session).toEqual({ userId, emailVerified: true });
+		});
+
+		it("should be a no-op for unknown sessions", async () => {
+			const auth = initInMemoryAuth();
+
+			await auth.markSessionEmailVerified("nonexistent-session");
+		});
+	});
+
 	describe("sessions", () => {
 		it("should create a session and resolve the userId", async () => {
 			const auth = initInMemoryAuth();
