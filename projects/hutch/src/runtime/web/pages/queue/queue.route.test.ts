@@ -283,20 +283,21 @@ describe("Queue routes", () => {
 			expect(article?.getAttribute("data-article-id")).toBe(articleId);
 		});
 
-		it("should include mark-as-read script on queue page", async () => {
+		it("should include htmx mark-as-read on unread article title links", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);
 
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
-			const scripts = Array.from(doc.querySelectorAll("script"));
-			const markReadScript = scripts.find(
-				(s) =>
-					s.textContent?.includes("queue-article--unread") &&
-					s.textContent?.includes("status=read") &&
-					s.textContent?.includes("data-article-id"),
-			);
-			expect(markReadScript).toBeTruthy();
+			const titleLink = doc.querySelector(".queue-article__title");
+			const hxOnClick = titleLink?.getAttribute("hx-on:click");
+			expect(hxOnClick).toContain("status=read");
+			expect(titleLink?.getAttribute("hx-boost")).toBe("false");
 		});
 	});
 

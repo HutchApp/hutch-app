@@ -101,33 +101,15 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	};
 }
 
-const MARK_READ_ON_CLICK_SCRIPT = `
+const HTMX_SWAP_ON_VALIDATION_ERROR_SCRIPT = `
 <script>
 (function() {
-  var articles = document.querySelectorAll('.queue-article--unread');
-  for (var i = 0; i < articles.length; i++) {
-    (function(article) {
-      var link = article.querySelector('.queue-article__title');
-      if (!link) return;
-
-      link.addEventListener('click', function() {
-        var id = article.getAttribute('data-article-id');
-        if (!id) return;
-
-        fetch('/queue/' + id + '/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: 'status=read'
-        }).then(function() {
-          article.classList.remove('queue-article--unread');
-          var dot = article.querySelector('.queue-article__unread-dot');
-          if (dot) dot.remove();
-        }).catch(function() {
-          // Silently fail - user can use the Read button as fallback
-        });
-      });
-    })(articles[i]);
-  }
+  document.body.addEventListener('htmx:beforeSwap', function(evt) {
+    if (evt.detail.xhr.status === 422) {
+      evt.detail.shouldSwap = true;
+      evt.detail.isError = false;
+    }
+  });
 })();
 </script>`;
 
@@ -145,7 +127,7 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 		styles: QUEUE_STYLES,
 		bodyClass: "page-queue",
 		content,
-		scripts: MARK_READ_ON_CLICK_SCRIPT,
+		scripts: HTMX_SWAP_ON_VALIDATION_ERROR_SCRIPT,
 		isAuthenticated: true,
 		emailVerified: options?.emailVerified,
 	});

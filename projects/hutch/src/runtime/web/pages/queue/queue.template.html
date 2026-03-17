@@ -1,4 +1,4 @@
-    <main class="queue">
+    <main class="queue" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
       <div class="queue__header">
         <h1 class="queue__title">My Queue</h1>
         <span class="queue__count" data-test-article-count>{{total}} article{{pluralSuffix}}</span>
@@ -31,7 +31,7 @@
           <div class="queue-article__content">
             <div class="queue-article__title-row">
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
-              <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} data-test-article-title>{{title}}</a>
+              <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} hx-boost="false"{{#if isUnread}} hx-on:click="fetch('/queue/{{id}}/status',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'status=read'})"{{/if}} data-test-article-title>{{title}}</a>
             </div>
             <div class="queue-article__meta">
               <span>{{siteName}}</span>
