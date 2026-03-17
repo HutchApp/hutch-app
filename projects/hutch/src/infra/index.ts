@@ -252,6 +252,17 @@ class HutchLambda {
 				),
 		});
 
+		const apiGateway = new aws.apigatewayv2.Api(`${name}-api-gateway`, {
+			protocolType: "HTTP",
+			description: `Hutch API Gateway (${args.stage})`,
+		});
+
+		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
+			apiId: apiGateway.id,
+			name: args.stage,
+			autoDeploy: true,
+		});
+
 		const lambdaFunction = new aws.lambda.Function(`${name}-api`, {
 			runtime: aws.lambda.Runtime.NodeJS22dX,
 			handler: "index.handler",
@@ -266,7 +277,7 @@ class HutchLambda {
 					STAGE: args.stage,
 					APP_ORIGIN: args.domainRegistration
 						? `https://${args.domainRegistration.primaryDomain}`
-						: "",
+						: pulumi.interpolate`${apiGateway.apiEndpoint}/${apiStage.name}`,
 					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
 					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
@@ -277,11 +288,6 @@ class HutchLambda {
 						: requireEnv("RESEND_API_KEY"),
 				},
 			},
-		});
-
-		const apiGateway = new aws.apigatewayv2.Api(`${name}-api-gateway`, {
-			protocolType: "HTTP",
-			description: `Hutch API Gateway (${args.stage})`,
 		});
 
 		const lambdaIntegration = new aws.apigatewayv2.Integration(
@@ -302,12 +308,6 @@ class HutchLambda {
 				target: pulumi.interpolate`integrations/${lambdaIntegration.id}`,
 			},
 		);
-
-		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
-			apiId: apiGateway.id,
-			name: args.stage,
-			autoDeploy: true,
-		});
 
 		new aws.lambda.Permission(`${name}-api-gateway-permission`, {
 			action: "lambda:InvokeFunction",
