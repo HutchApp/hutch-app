@@ -207,7 +207,7 @@ describe("GET / with exhausted founding allocation", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
-		expect(exhausted?.textContent).toBe("The free allocation has exhausted! You might still be able to create an account for free while we develop the pricing system but it may require payment in a few months.");
+		expect(exhausted?.textContent).toBe("The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.");
 
 		const fill = doc.querySelector(".founding-progress__fill") as HTMLElement;
 		expect(fill.getAttribute("style")).toBe("width: 100%");
