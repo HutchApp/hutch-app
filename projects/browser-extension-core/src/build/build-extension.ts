@@ -1,5 +1,7 @@
 import assert from "node:assert";
+import { cpSync as defaultCpSync, mkdirSync as defaultMkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
+import { build } from "esbuild";
 
 export interface ExtensionBuildConfig {
 	target: string;
@@ -29,12 +31,18 @@ interface BuildExtensionDeps {
 	resolveCorePackageJson: () => string;
 }
 
-export function createBuildPlan(input: {
+
+interface BuildPlanInput {
 	config: ExtensionBuildConfig;
 	projectDir: string;
 	serverUrl: string;
-	corePackageJsonPath: string;
-}): { esbuildOptions: EsbuildOptions; copies: CopyOperation[]; directories: string[] } {
+}
+
+function createBuildPlan(input: BuildPlanInput & { corePackageJsonPath: string }): {
+	esbuildOptions: EsbuildOptions;
+	copies: CopyOperation[];
+	directories: string[];
+} {
 	const srcDir = join(input.projectDir, "src");
 	const outDir = join(input.projectDir, "dist-extension-compiled");
 	const coreDir = dirname(input.corePackageJsonPath);
@@ -78,35 +86,51 @@ export function createBuildPlan(input: {
 	return { esbuildOptions, copies, directories };
 }
 
-export function initBuildExtension(deps: BuildExtensionDeps) {
-	return async function buildExtension(input: {
-		config: ExtensionBuildConfig;
-		projectDir: string;
-		serverUrl: string | undefined;
-	}): Promise<void> {
-		assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)");
+export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
+	const resolvedDeps: BuildExtensionDeps = {
+		esbuild: deps.esbuild ?? build,
+		mkdirSync: deps.mkdirSync ?? defaultMkdirSync,
+		cpSync: deps.cpSync ?? defaultCpSync,
+		resolveCorePackageJson: deps.resolveCorePackageJson ?? (() => join(__dirname, "..", "..", "package.json")),
+	};
 
-		const plan = createBuildPlan({
-			config: input.config,
-			projectDir: input.projectDir,
-			serverUrl: input.serverUrl,
-			corePackageJsonPath: deps.resolveCorePackageJson(),
-		});
+	return {
+		createBuildPlan(input: BuildPlanInput) {
+			return createBuildPlan({
+				...input,
+				corePackageJsonPath: resolvedDeps.resolveCorePackageJson(),
+			});
+		},
 
-		for (const dir of plan.directories) {
-			deps.mkdirSync(dir, { recursive: true });
-		}
+		async buildExtension(input: {
+			config: ExtensionBuildConfig;
+			projectDir: string;
+			serverUrl: string | undefined;
+		}): Promise<void> {
+			assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)");
 
-		await deps.esbuild(plan.esbuildOptions);
+			const plan = createBuildPlan({
+				config: input.config,
+				projectDir: input.projectDir,
+				serverUrl: input.serverUrl,
+				corePackageJsonPath: resolvedDeps.resolveCorePackageJson(),
+			});
 
-		for (const copy of plan.copies) {
-			if (copy.recursive) {
-				deps.cpSync(copy.src, copy.dest, { recursive: true });
-			} else {
-				deps.cpSync(copy.src, copy.dest);
+			for (const dir of plan.directories) {
+				resolvedDeps.mkdirSync(dir, { recursive: true });
 			}
-		}
 
-		console.log("Extension built to dist-extension-compiled/");
+			await resolvedDeps.esbuild(plan.esbuildOptions);
+
+			for (const copy of plan.copies) {
+				if (copy.recursive) {
+					resolvedDeps.cpSync(copy.src, copy.dest, { recursive: true });
+				} else {
+					resolvedDeps.cpSync(copy.src, copy.dest);
+				}
+			}
+
+			console.log("Extension built to dist-extension-compiled/");
+		},
 	};
 }

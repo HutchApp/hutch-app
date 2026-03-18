@@ -25,6 +25,7 @@
     "check": "pnpm compile && pnpm lint && pnpm test-with-coverage"
   },
   "dependencies": {
+    "esbuild": "0.25.4",
     "hutch-logger": "workspace:*",
     "js-base64": "3.7.8",
     "zod": "4.1.13"

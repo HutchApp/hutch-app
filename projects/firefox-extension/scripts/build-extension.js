@@ -1,15 +1,8 @@
-const { build } = require('esbuild');
-const { cpSync, mkdirSync } = require('node:fs');
 const { join } = require('node:path');
 const { initBuildExtension } = require('browser-extension-core/build');
 const config = require('../build-extension.config.js');
 
-const buildExtension = initBuildExtension({
-  esbuild: build,
-  mkdirSync,
-  cpSync,
-  resolveCorePackageJson: () => require.resolve('browser-extension-core/package.json'),
-});
+const { buildExtension } = initBuildExtension();
 
 buildExtension({
   config,

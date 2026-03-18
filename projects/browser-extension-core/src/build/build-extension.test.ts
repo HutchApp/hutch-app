@@ -1,16 +1,22 @@
 import { join } from "node:path";
-import { createBuildPlan, initBuildExtension } from "./build-extension";
+import { initBuildExtension } from "./build-extension";
 
 describe("createBuildPlan", () => {
 	const projectDir = "/projects/firefox-extension";
 	const corePackageJsonPath = "/projects/browser-extension-core/package.json";
+
+	function createBuildPlan(input: { config: { target: string }; projectDir: string; serverUrl: string }) {
+		const { createBuildPlan } = initBuildExtension({
+			resolveCorePackageJson: () => corePackageJsonPath,
+		});
+		return createBuildPlan(input);
+	}
 
 	it("sets esbuild target from config", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		expect(plan.esbuildOptions.target).toBe("firefox91");
@@ -21,7 +27,6 @@ describe("createBuildPlan", () => {
 			config: { target: "chrome109" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		expect(plan.esbuildOptions.target).toBe("chrome109");
@@ -32,7 +37,6 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		expect(plan.esbuildOptions.entryPoints).toEqual([
@@ -47,7 +51,6 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		expect(plan.esbuildOptions.outdir).toBe(join(projectDir, "dist-extension-compiled"));
@@ -58,7 +61,6 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		expect(plan.esbuildOptions.format).toBe("iife");
@@ -70,7 +72,6 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		expect(plan.esbuildOptions.alias["browser-extension-core"]).toBe(
@@ -83,7 +84,6 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		expect(plan.esbuildOptions.define.__SERVER_URL__).toBe('"https://hutch-app.com"');
@@ -94,7 +94,6 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		const outDir = join(projectDir, "dist-extension-compiled");
@@ -113,7 +112,6 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://hutch-app.com",
-			corePackageJsonPath,
 		});
 
 		const srcDir = join(projectDir, "src");
@@ -129,15 +127,28 @@ describe("createBuildPlan", () => {
 	});
 });
 
+describe("initBuildExtension defaults", () => {
+	it("resolves core package.json from module location by default", () => {
+		const { createBuildPlan } = initBuildExtension();
+		const plan = createBuildPlan({
+			config: { target: "firefox91" },
+			projectDir: "/test",
+			serverUrl: "https://example.com",
+		});
+
+		expect(plan.esbuildOptions.alias["browser-extension-core"]).toContain("browser-extension-core");
+	});
+});
+
 describe("initBuildExtension", () => {
 	function createInMemoryDeps() {
 		const createdDirs: Array<{ path: string; options: { recursive: true } }> = [];
 		const copiedFiles: Array<{ src: string; dest: string; options?: { recursive: boolean } }> = [];
 		let esbuildCallCount = 0;
-		let lastEsbuildOptions: unknown = null;
+		let lastEsbuildOptions: { target: string } | null = null;
 
 		const deps = {
-			esbuild: async (options: unknown) => {
+			esbuild: async (options: { target: string }) => {
 				esbuildCallCount++;
 				lastEsbuildOptions = options;
 			},
@@ -161,7 +172,7 @@ describe("initBuildExtension", () => {
 
 	it("creates output directories before building", async () => {
 		const { deps, createdDirs } = createInMemoryDeps();
-		const buildExtension = initBuildExtension(deps);
+		const { buildExtension } = initBuildExtension(deps);
 
 		await buildExtension({
 			config: { target: "firefox91" },
@@ -175,7 +186,7 @@ describe("initBuildExtension", () => {
 
 	it("calls esbuild with resolved options", async () => {
 		const { deps, getEsbuildCallCount, getLastEsbuildOptions } = createInMemoryDeps();
-		const buildExtension = initBuildExtension(deps);
+		const { buildExtension } = initBuildExtension(deps);
 
 		await buildExtension({
 			config: { target: "chrome109" },
@@ -184,13 +195,12 @@ describe("initBuildExtension", () => {
 		});
 
 		expect(getEsbuildCallCount()).toBe(1);
-		const options = getLastEsbuildOptions() as { target: string };
-		expect(options.target).toBe("chrome109");
+		expect(getLastEsbuildOptions()?.target).toBe("chrome109");
 	});
 
 	it("copies static files after esbuild completes", async () => {
 		const { deps, copiedFiles } = createInMemoryDeps();
-		const buildExtension = initBuildExtension(deps);
+		const { buildExtension } = initBuildExtension(deps);
 
 		await buildExtension({
 			config: { target: "firefox91" },
@@ -204,7 +214,7 @@ describe("initBuildExtension", () => {
 
 	it("passes recursive option for directory copies", async () => {
 		const { deps, copiedFiles } = createInMemoryDeps();
-		const buildExtension = initBuildExtension(deps);
+		const { buildExtension } = initBuildExtension(deps);
 
 		await buildExtension({
 			config: { target: "firefox91" },
@@ -221,7 +231,7 @@ describe("initBuildExtension", () => {
 
 	it("throws when serverUrl is empty", async () => {
 		const { deps } = createInMemoryDeps();
-		const buildExtension = initBuildExtension(deps);
+		const { buildExtension } = initBuildExtension(deps);
 
 		await expect(
 			buildExtension({
@@ -234,7 +244,7 @@ describe("initBuildExtension", () => {
 
 	it("throws when serverUrl is undefined", async () => {
 		const { deps } = createInMemoryDeps();
-		const buildExtension = initBuildExtension(deps);
+		const { buildExtension } = initBuildExtension(deps);
 
 		await expect(
 			buildExtension({
