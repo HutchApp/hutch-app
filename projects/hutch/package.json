@@ -3,6 +3,18 @@
   "version": "1.0.0",
   "description": "Hutch — read-it-later web application",
   "main": "src/infra/index.ts",
+  "exports": {
+    ".": "./src/infra/index.ts",
+    "./test-app": {
+      "types": "./dist/runtime/test-app.d.ts",
+      "default": "./dist/runtime/test-app.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "test-app": ["./dist/runtime/test-app.d.ts"]
+    }
+  },
   "scripts": {
     "start": "NODE_ENV=production node dist/runtime/server.main.js",
     "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"LIVERELOAD=true tsx watch src/runtime/server.main.ts\"",

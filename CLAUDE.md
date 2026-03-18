@@ -20,6 +20,19 @@ For HTML/CSS/SSR conventions, see the [web skill](./.claude/skills/web/SKILL.md)
 
 For testing conventions and designing testable code, see the [test-driven-design skill](./.claude/skills/test-driven-design/SKILL.md).
 
+### No Cross-Project Relative Imports
+
+Never import from another project using relative filesystem paths (e.g., `../../../../other-project/dist/...`). These create invisible dependencies that bypass the package manager and risk cyclic imports. Extract shared code into a workspace package instead.
+
+```typescript
+// BAD - Invisible sideways dependency
+const mod = path.resolve(__dirname, "../../../../hutch/dist/runtime/test-app");
+const { createTestApp } = await import(mod);
+
+// GOOD - Declared workspace dependency
+const { createTestApp } = await import("hutch-test-app");
+```
+
 ### Filter and Query Testing Strategy
 
 Use integration tests for comprehensive filter/query functionality testing, not E2E tests. Filter logic tests should verify URL parameters produce correct HTML output using supertest + parseHTML.

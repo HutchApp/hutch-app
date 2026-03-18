@@ -1,0 +1,20 @@
+{
+  "name": "hutch-test-app",
+  "version": "1.0.0",
+  "description": "Shared test server for Hutch extension E2E tests",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "scripts": {
+    "compile": "tsc",
+    "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
+    "check": "pnpm compile && pnpm lint"
+  },
+  "dependencies": {
+    "hutch": "workspace:*"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.1",
+    "typescript": "5.9.3"
+  }
+}
