@@ -35,9 +35,31 @@ For examples, see:
 
 ### Progressive Enhancement
 
-Build features that work without JavaScript, then enhance with JS for better UX. JavaScript fetches the same URL and extracts DOM fragments from the full HTML response.
+Build features in two steps:
 
-For examples, see any `*.client.js` file in `projects/hutch/src/web/pages/`.
+**Step 1 — Semantic HTML first.** Every interaction must work as a standard HTML form submission or link navigation with no JavaScript. Use `<form method="POST">` for mutations and `<a href="...">` for navigation. This is the baseline that must always work.
+
+**Step 2 — Add htmx for SPA performance.** Once the semantic HTML works, add `hx-boost="true"` to forms and link containers so htmx intercepts them as AJAX requests. Use `hx-target="main" hx-select="main" hx-swap="outerHTML show:none"` to swap only the `<main>` content without scrolling. The server returns the same full HTML response — htmx extracts just the `<main>` fragment.
+
+```html
+<!-- Step 1: Works without JS -->
+<form method="POST" action="/queue/save">
+  <input type="url" name="url" required>
+  <button type="submit">Save</button>
+</form>
+
+<!-- Step 2: Same form, boosted for SPA feel -->
+<form method="POST" action="/queue/save"
+      hx-boost="true" hx-target="main" hx-select="main"
+      hx-swap="outerHTML show:none">
+  <input type="url" name="url" required>
+  <button type="submit">Save</button>
+</form>
+```
+
+No custom `*.client.js` is needed when htmx covers the interaction. Reserve `*.client.js` files for behaviour htmx cannot express (e.g., inline validation, animations).
+
+IMPORTANT: Ask for human intervention whenever a deviation from htmx is needed away from this basic pattern for SPA navigation.
 
 ### Anti-Patterns
 
@@ -46,6 +68,7 @@ For examples, see any `*.client.js` file in `projects/hutch/src/web/pages/`.
 | Client-side state management (`let passengers = []`) | State in URL query string |
 | Redundant JSON APIs for web UI | Use HTML responses |
 | Hidden form fields for state | State in URL |
+| JavaScript-only interactions with no HTML fallback | Semantic forms/links first, htmx second |
 
 ## CSS and Styling Conventions
 

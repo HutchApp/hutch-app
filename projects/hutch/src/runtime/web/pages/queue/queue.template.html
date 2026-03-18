@@ -3,7 +3,7 @@
         <h1 class="queue__title">My Queue</h1>
         <span class="queue__count" data-test-article-count>{{total}} article{{pluralSuffix}}</span>
       </div>
-      <form class="queue__save-form" method="POST" action="/queue/save" data-test-form="save-article">
+      <form class="queue__save-form" method="POST" action="/queue/save" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-form="save-article">
         <input class="queue__save-input" type="url" name="url" placeholder="Paste a URL to save an article…" required>
         <button class="queue__save-btn" type="submit">Save</button>
       </form>
@@ -42,7 +42,7 @@
           </div>
           <div class="queue-article__actions">
             {{#each actions}}
-            <form method="{{method}}" action="{{url}}" class="queue-article__action-form">
+            <form method="{{method}}" action="{{url}}" class="queue-article__action-form" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
               {{#each fields}}<input type="hidden" name="{{name}}" value="{{value}}">{{/each}}
               <button class="{{buttonClass}}" type="submit" title="{{title}}" data-test-action="{{testAction}}">{{text}}</button>
             </form>
