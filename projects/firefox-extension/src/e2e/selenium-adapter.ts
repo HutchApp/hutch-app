@@ -1,8 +1,10 @@
 import { By } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
-import type { ElementQueries } from "browser-extension-core/dist/e2e/element-queries.types";
-import type { DriverNavigation } from "browser-extension-core/dist/e2e/flow-state-handler.types";
-import { stateChanged } from "browser-extension-core/dist/e2e/flow-runner";
+import {
+	stateChanged,
+	type ElementQueries,
+	type DriverNavigation,
+} from "browser-extension-core/e2e";
 
 export function createSeleniumElementQueries(): ElementQueries<WebDriver> {
 	return {

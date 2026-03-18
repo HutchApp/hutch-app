@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { By, until } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
-import type { FlowAction } from "browser-extension-core/dist/e2e/flow-state-handler.types";
-import { CSS_SELECTORS } from "browser-extension-core/dist/e2e/extension-views";
+import { CSS_SELECTORS, type FlowAction } from "browser-extension-core/e2e";
 
 interface SaveLinkProgress {
 	linkSaved: boolean;
