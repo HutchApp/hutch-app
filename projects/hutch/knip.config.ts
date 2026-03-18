@@ -18,6 +18,8 @@ export default {
 		"firefox-extension",
 		// Used in infra code (compiled separately)
 		"hutch-logger",
+		// tsconfig paths alias resolves at compile time; runtime requires the workspace package via node_modules
+		"hutch-test-app",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

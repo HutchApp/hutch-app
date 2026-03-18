@@ -1,5 +1,5 @@
 import request from "supertest";
-import { createTestApp } from "../../../test-app";
+import { createTestApp } from "hutch-test-app";
 
 describe("GET /privacy", () => {
 	const { app } = createTestApp();

@@ -1,4 +1,15 @@
 {
   "name": "hutch-test-app",
-  "targets": {}
+  "targets": {
+    "compile": {
+      "dependsOn": [
+        { "projects": ["hutch"], "target": "compile" }
+      ]
+    },
+    "check": {
+      "dependsOn": [
+        { "projects": ["hutch"], "target": "compile" }
+      ]
+    }
+  }
 }
