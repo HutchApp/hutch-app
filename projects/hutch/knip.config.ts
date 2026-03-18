@@ -3,17 +3,18 @@ import type { KnipConfig } from "knip";
 
 export default {
 	...baseConfig,
-	ignore: [...(baseConfig.ignore || []), "src/infra/**"],
+	ignore: [
+		"src/infra/**",
+		// Integration test files are entry points for jest
+		"**/*.integration.ts",
+		// Test utilities used by integration tests
+		"**/test-utils.ts",
+		// PurgeCSS config loaded via CLI, not imported in source
+		"purgecss.config.js",
+	],
 	ignoreDependencies: [
-		...(baseConfig.ignoreDependencies || []),
-		// Deployment infra runs outside the main build (Lambda handler + Pulumi IaC)
-		"serverless-http",
-		"@pulumi/pulumi",
-		"@pulumi/aws",
-		"@types/aws-lambda",
-		"helmet",
-		"compression",
-		"@types/compression",
+		// Used via CLI in dev script
+		"livereload",
 		// Workspace dependency for S3 config (subpath import not detected by knip)
 		"firefox-extension",
 		// Used in infra code (compiled separately)

@@ -147,6 +147,7 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 			await deps.model.revokeToken(refreshToken);
 		} else {
 			const accessTokenResult = await deps.model.getAccessToken(token);
+			// biome-ignore lint/complexity/useOptionalChain: optional chain breaks TypeScript type narrowing for accessTokenResult
 			if (accessTokenResult && accessTokenResult.refreshToken) {
 				const associatedRefresh = await deps.model.getRefreshToken(accessTokenResult.refreshToken);
 				if (associatedRefresh) {
