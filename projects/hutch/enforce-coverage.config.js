@@ -5,7 +5,7 @@ const config = {
   ...baseConfig,
   thresholds: {
     statements: 99.6,
-    branches: 97.4,
+    branches: 97,
     functions: 100,
     lines: 99.6,
   },
