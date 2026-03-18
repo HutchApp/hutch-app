@@ -39,6 +39,15 @@ describe("GET /", () => {
 		expect(features?.length).toBe(3);
 	});
 
+	it("should render the roadmap section with planned features", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const roadmapSection = doc.querySelector('[data-test-section="roadmap"]');
+		const features = roadmapSection?.querySelectorAll(".feature-card");
+		expect(features?.length).toBe(8);
+	});
+
 	it("should render the backstory section", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
