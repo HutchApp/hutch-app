@@ -101,7 +101,8 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	};
 }
 
-const HTMX_SWAP_ON_VALIDATION_ERROR_SCRIPT = `
+const HTMX_SCRIPTS = `
+<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>
 <script>
 (function() {
   document.body.addEventListener('htmx:beforeSwap', function(evt) {
@@ -127,7 +128,7 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 		styles: QUEUE_STYLES,
 		bodyClass: "page-queue",
 		content,
-		scripts: HTMX_SWAP_ON_VALIDATION_ERROR_SCRIPT,
+		scripts: HTMX_SCRIPTS,
 		isAuthenticated: true,
 		emailVerified: options?.emailVerified,
 	});

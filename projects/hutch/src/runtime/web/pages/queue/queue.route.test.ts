@@ -295,8 +295,10 @@ describe("Queue routes", () => {
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
 			const titleLink = doc.querySelector(".queue-article__title");
-			const hxOnClick = titleLink?.getAttribute("hx-on:click");
-			expect(hxOnClick).toContain("status=read");
+			const articleId = doc.querySelector(".queue-article")?.getAttribute("data-test-article");
+			expect(titleLink?.getAttribute("hx-post")).toBe(`/queue/${articleId}/status`);
+			expect(titleLink?.getAttribute("hx-vals")).toBe('{"status":"read"}');
+			expect(titleLink?.getAttribute("hx-swap")).toBe("none");
 			expect(titleLink?.getAttribute("hx-boost")).toBe("false");
 		});
 	});
