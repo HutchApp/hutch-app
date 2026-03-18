@@ -13,7 +13,7 @@ module.exports = {
   ignoreDependencies: [
     // Used via CLI in dev script
     'livereload',
-// Used via c8 CLI wrapper in test-with-coverage script
+    // Used via c8 CLI wrapper in test-with-coverage script
     'c8',
   ],
   ignoreBinaries: [

@@ -99,26 +99,26 @@ function parseInlineIgnores(filePath) {
   return ignoredSelectors;
 }
 
-/** @type {Map<string, Set<string>>} */
-const inlineIgnoreCache = new Map();
-
-/**
- * @param {string} filePath - Path to the CSS file
- * @returns {Set<string>} Set of ignored selectors
- */
-function getInlineIgnores(filePath) {
-  if (!inlineIgnoreCache.has(filePath)) {
-    inlineIgnoreCache.set(filePath, parseInlineIgnores(filePath));
-  }
-  return inlineIgnoreCache.get(filePath);
-}
-
 /**
  * Checks for unused CSS classes and exits with code 1 if any are found.
  *
  * @param {{ config: import('purgecss').UserDefinedOptions }} options
  */
 async function checkUnusedCss({ config }) {
+  /** @type {Map<string, Set<string>>} */
+  const inlineIgnoreCache = new Map();
+
+  /**
+   * @param {string} filePath - Path to the CSS file
+   * @returns {Set<string>} Set of ignored selectors
+   */
+  function getInlineIgnores(filePath) {
+    if (!inlineIgnoreCache.has(filePath)) {
+      inlineIgnoreCache.set(filePath, parseInlineIgnores(filePath));
+    }
+    return inlineIgnoreCache.get(filePath);
+  }
+
   console.log('🔍 Checking for unused CSS classes');
   console.log('===================================\n');
 
