@@ -94,6 +94,9 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
+      hutch-test-app:
+        specifier: workspace:*
+        version: link:../hutch-test-app
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
@@ -235,6 +238,19 @@ importers:
         version: 5.9.3
 
   projects/hutch-logger:
+    devDependencies:
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  projects/hutch-test-app:
+    dependencies:
+      hutch:
+        specifier: workspace:*
+        version: link:../hutch
     devDependencies:
       concurrently:
         specifier: 9.2.1
