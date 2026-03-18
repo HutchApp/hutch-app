@@ -23,9 +23,7 @@
 				"noUnusedVariables": "error",
 				"noUnusedImports": "error"
 			},
-			"complexity": {
-				"useOptionalChain": "error"
-			},
+			"complexity": {},
 			"suspicious": {
 				"noTemplateCurlyInString": "off"
 			},
