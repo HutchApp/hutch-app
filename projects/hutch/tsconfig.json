@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "paths": {
-      "hutch-test-app": ["./src/runtime/test-app.ts"]
+      "@packages/hutch-test-app": ["./src/runtime/test-app.ts"]
     }
   },
   "include": ["src/**/*.ts"],

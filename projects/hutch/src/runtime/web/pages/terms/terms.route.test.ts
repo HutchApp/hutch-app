@@ -1,5 +1,5 @@
 import request from "supertest";
-import { createTestApp } from "hutch-test-app";
+import { createTestApp } from "@packages/hutch-test-app";
 
 describe("GET /terms", () => {
 	const { app } = createTestApp();

@@ -38,12 +38,12 @@ importers:
 
   projects/browser-extension-core:
     dependencies:
+      '@packages/hutch-logger':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-logger
       esbuild:
         specifier: 0.25.4
         version: 0.25.4
-      hutch-logger:
-        specifier: workspace:*
-        version: link:../hutch-logger
       js-base64:
         specifier: 3.7.8
         version: 3.7.8
@@ -66,13 +66,16 @@ importers:
 
   projects/firefox-extension:
     dependencies:
+      '@packages/hutch-logger':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-logger
       browser-extension-core:
         specifier: workspace:*
         version: link:../browser-extension-core
-      hutch-logger:
-        specifier: workspace:*
-        version: link:../hutch-logger
     devDependencies:
+      '@packages/hutch-test-app':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-test-app
       '@pulumi/aws':
         specifier: 7.20.0
         version: 7.20.0(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
@@ -94,9 +97,6 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
-      hutch-test-app:
-        specifier: workspace:*
-        version: link:../hutch-test-app
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
@@ -133,6 +133,9 @@ importers:
       '@node-oauth/oauth2-server':
         specifier: 5.2.1
         version: 5.2.1
+      '@packages/hutch-logger':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-logger
       compression:
         specifier: 1.8.1
         version: 1.8.1
@@ -154,9 +157,6 @@ importers:
       helmet:
         specifier: 8.1.0
         version: 8.1.0
-      hutch-logger:
-        specifier: workspace:*
-        version: link:../hutch-logger
       linkedom:
         specifier: 0.18.12
         version: 0.18.12
@@ -170,6 +170,9 @@ importers:
         specifier: 4.1.13
         version: 4.1.13
     devDependencies:
+      '@packages/hutch-test-app':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-test-app
       '@playwright/test':
         specifier: 1.58.2
         version: 1.58.2
@@ -215,9 +218,6 @@ importers:
       esbuild:
         specifier: 0.25.4
         version: 0.25.4
-      hutch-test-app:
-        specifier: workspace:*
-        version: link:../hutch-test-app
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.15.21)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.9.3))
@@ -240,7 +240,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  projects/hutch-logger:
+  src/packages/hutch-logger:
     devDependencies:
       concurrently:
         specifier: 9.2.1
@@ -249,11 +249,11 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  projects/hutch-test-app:
+  src/packages/hutch-test-app:
     dependencies:
       hutch:
         specifier: workspace:*
-        version: link:../hutch
+        version: link:../../../projects/hutch
     devDependencies:
       concurrently:
         specifier: 9.2.1

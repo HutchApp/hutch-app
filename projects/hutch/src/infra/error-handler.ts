@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import type { HutchLogger } from "hutch-logger";
+import type { HutchLogger } from "@packages/hutch-logger";
 
 export interface ErrorResponse {
 	error: string;

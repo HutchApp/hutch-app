@@ -12,7 +12,7 @@ import {
 	type RemoveUrlResult,
 	type TokenStorage,
 } from "browser-extension-core";
-import { HutchLogger, consoleLogger } from "hutch-logger";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { createBrowserSetIcon } from "./tinted-icon.browser";
 
 const logger = HutchLogger.from(consoleLogger);

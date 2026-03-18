@@ -17,9 +17,9 @@ export default {
 		// Workspace dependency for S3 config (subpath import not detected by knip)
 		"firefox-extension",
 		// Used in infra code (compiled separately)
-		"hutch-logger",
+		"@packages/hutch-logger",
 		// tsconfig paths alias resolves at compile time; runtime requires the workspace package via node_modules
-		"hutch-test-app",
+		"@packages/hutch-test-app",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

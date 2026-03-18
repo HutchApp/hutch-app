@@ -24,9 +24,9 @@ export default {
 		"web-ext",
 		// Workspace dependencies — knip can't trace through esbuild-bundled entry points
 		"browser-extension-core",
-		"hutch-logger",
+		"@packages/hutch-logger",
 		// Dynamic import in E2E test — knip can't trace dynamic imports
-		"hutch-test-app",
+		"@packages/hutch-test-app",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),

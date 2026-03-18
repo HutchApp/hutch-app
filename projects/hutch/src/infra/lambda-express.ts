@@ -4,7 +4,7 @@ import express from "express";
 import helmet from "helmet";
 import compression from "compression";
 import serverless from "serverless-http";
-import { HutchLogger, consoleLogger } from "hutch-logger";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { logger as requestLogger } from "./logger";
 import { logAndRespondOnError } from "./error-handler";
 import { removeStageFromRawPath } from "./remove-stage-from-raw-path";

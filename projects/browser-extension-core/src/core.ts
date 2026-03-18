@@ -2,7 +2,7 @@ import type { ReadingListItem, ReadingListItemId } from "./domain/reading-list-i
 import type { Auth, GuardedResult } from "./auth/auth.types";
 import type { SaveUrlResult, RemoveUrlResult, SaveUrl, RemoveUrl, FindByUrl, GetAllItems } from "./reading-list/reading-list.types";
 import type { BrowserShell } from "./shell.types";
-import type { HutchLogger } from "hutch-logger";
+import type { HutchLogger } from "@packages/hutch-logger";
 import { createEventBus } from "./event-bus";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initIconStatus } from "./icon-status";

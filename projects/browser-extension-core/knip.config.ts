@@ -10,6 +10,6 @@ export default {
 	],
 	ignoreDependencies: [
 		// Type-only import from hutch-logger — knip doesn't trace type imports as usage
-		"hutch-logger",
+		"@packages/hutch-logger",
 	],
 } satisfies KnipConfig;
