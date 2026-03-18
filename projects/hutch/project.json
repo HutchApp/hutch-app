@@ -3,17 +3,17 @@
   "targets": {
     "compile": {
       "dependsOn": [
-        { "projects": ["hutch-logger"], "target": "compile" }
+        { "projects": ["@packages/hutch-logger"], "target": "compile" }
       ]
     },
     "test": {
       "dependsOn": [
-        { "projects": ["hutch-test-app"], "target": "compile" }
+        { "projects": ["@packages/hutch-test-app"], "target": "compile" }
       ]
     },
     "test-integration": {
       "dependsOn": [
-        { "projects": ["hutch-test-app"], "target": "compile" }
+        { "projects": ["@packages/hutch-test-app"], "target": "compile" }
       ]
     }
   }
