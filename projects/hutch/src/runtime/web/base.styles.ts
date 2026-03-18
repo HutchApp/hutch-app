@@ -307,9 +307,10 @@ export const NAV_STYLES = `
     cursor: pointer;
     font-family: inherit;
     font-size: inherit;
+    font-style: inherit;
+    font-variant: inherit;
     font-weight: inherit;
     line-height: inherit;
-    letter-spacing: inherit;
     width: 100%;
     text-align: left;
   }
