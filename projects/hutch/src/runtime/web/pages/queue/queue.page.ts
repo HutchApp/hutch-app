@@ -173,6 +173,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
+		if (article.status === "unread") {
+			await deps.updateArticleStatus(articleId, userId, "read");
+		}
+
 		const html = ReaderPage(article, { emailVerified: req.emailVerified }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});

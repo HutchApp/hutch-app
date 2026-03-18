@@ -9,11 +9,10 @@ export type QueueProgress = {
   verifiedNewestFirst: boolean
   sortedOldestFirst: boolean
   verifiedOldestFirst: boolean
-  markedFirstAsRead: boolean
   openedFirstArticle: boolean
   backFromReader: boolean
-  deletedLastArticle: boolean
   verifiedReadStatus: boolean
+  deletedLastArticle: boolean
   archivedThird: boolean
   checkedReadTab: boolean
   checkedUnreadTab: boolean
@@ -118,28 +117,25 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     },
   })
 
-  actions.set('mark-first-as-read', {
-    isAvailable: async (page) => {
-      if (!progress.verifiedOldestFirst) return false
-      if (progress.markedFirstAsRead) return false
-      return isOnPage(page, 'page-queue')
-    },
-    execute: async (page) => {
-      const firstArticle = page.locator('[data-test-article]').first()
-      await clickAndWaitForPageReload(page, firstArticle.locator('[data-test-action="mark-read"]'))
-      progress.markedFirstAsRead = true
-    },
-  })
-
   actions.set('read-first-article', {
     isAvailable: async (page) => {
-      if (!progress.markedFirstAsRead) return false
+      if (!progress.verifiedOldestFirst) return false
       if (progress.openedFirstArticle) return false
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
+      const firstArticle = page.locator('[data-test-article]').first()
+      const hasUnreadClass = await firstArticle.evaluate(
+        el => el.classList.contains('queue-article--unread'),
+      )
+      expect(hasUnreadClass).toBe(true)
+
       await page.locator('[data-test-article-title]').first().click()
       await page.waitForLoadState('domcontentloaded')
+
+      const onReader = await isOnPage(page, 'page-reader')
+      expect(onReader).toBe(true)
+
       progress.openedFirstArticle = true
     },
   })
@@ -157,29 +153,15 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     },
   })
 
-  actions.set('delete-last-article', {
-    isAvailable: async (page) => {
-      if (!progress.backFromReader) return false
-      if (progress.deletedLastArticle) return false
-      return isOnPage(page, 'page-queue')
-    },
-    execute: async (page) => {
-      const deleteButtons = page.locator('[data-test-action="delete"]')
-      const count = await deleteButtons.count()
-      await clickAndWaitForPageReload(page, deleteButtons.nth(count - 1))
-      progress.deletedLastArticle = true
-    },
-  })
-
   actions.set('verify-first-is-read', {
     isAvailable: async (page) => {
-      if (!progress.deletedLastArticle) return false
+      if (!progress.backFromReader) return false
       if (progress.verifiedReadStatus) return false
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
       const articleCount = await getArticleCount(page)
-      expect(articleCount).toBe(3)
+      expect(articleCount).toBe(4)
 
       const firstArticle = page.locator('[data-test-article]').first()
       const hasUnreadClass = await firstArticle.evaluate(
@@ -191,6 +173,20 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       await expect(unreadButton).toBeVisible()
 
       progress.verifiedReadStatus = true
+    },
+  })
+
+  actions.set('delete-last-article', {
+    isAvailable: async (page) => {
+      if (!progress.verifiedReadStatus) return false
+      if (progress.deletedLastArticle) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      const deleteButtons = page.locator('[data-test-action="delete"]')
+      const count = await deleteButtons.count()
+      await clickAndWaitForPageReload(page, deleteButtons.nth(count - 1))
+      progress.deletedLastArticle = true
     },
   })
 
