@@ -37,6 +37,43 @@ export function initCreatePaymentPlan(deps: Deps): (input: Input) => PaymentPlan
 
 For real examples, see `init*` functions in `projects/hutch/src/domain/` and `projects/hutch/src/providers/`.
 
+### Do Not Export Internal Functions for Testing
+
+Do not export functions solely so tests can call them directly. Constructor functions (`init*`) MUST return all functions that need testing as part of their return value — analogous to how class methods are accessed through an instance, not exported separately.
+
+```typescript
+// ❌ BAD - Exporting internal function for test access
+export function createBuildPlan(input: Input) { ... }
+export function initBuildExtension(deps: Deps) {
+	return async function buildExtension(input: Input) {
+		const plan = createBuildPlan(input);
+		// ...
+	};
+}
+
+// ✅ GOOD - Plan returned from init*, with execution as a method on the plan
+function createPlanData(input: Input) { ... }
+export function initBuildExtension(deps: Deps) {
+	return {
+		createBuildPlan(input: Input) {
+			const planData = createPlanData(input);
+			return {
+				...planData,
+				async buildExtension() { /* uses planData and deps */ },
+			};
+		},
+	};
+}
+
+// Test accesses plan data through init -> createBuildPlan
+const { createBuildPlan } = initBuildExtension({ ...inMemoryDeps });
+const plan = createBuildPlan({ ... });
+expect(plan.esbuildOptions.target).toBe("firefox91");
+
+// Execution is a method on the plan itself
+await plan.buildExtension();
+```
+
 ### No Design Pattern Names in Identifiers
 
 Do not name variables, functions, types, or files with design pattern suffixes like `Service`, `Factory`, `Singleton`, etc.

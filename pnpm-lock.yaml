@@ -38,6 +38,9 @@ importers:
 
   projects/browser-extension-core:
     dependencies:
+      esbuild:
+        specifier: 0.25.4
+        version: 0.25.4
       hutch-logger:
         specifier: workspace:*
         version: link:../hutch-logger
@@ -91,9 +94,6 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
-      esbuild:
-        specifier: 0.25.4
-        version: 0.25.4
       hutch-test-app:
         specifier: workspace:*
         version: link:../hutch-test-app
