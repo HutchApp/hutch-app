@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { By, until } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
-import type { FlowAction } from "../test-framework/flow-state-handler.types";
+import { CSS_SELECTORS, type FlowAction } from "browser-extension-core/e2e";
 
 interface SaveLinkProgress {
 	linkSaved: boolean;
@@ -14,8 +14,8 @@ export function createSaveLinkActions(config: {
 	testTitle: string;
 	popupWindowHandle: string;
 	progress: SaveLinkProgress;
-}): Map<string, FlowAction> {
-	const actions = new Map<string, FlowAction>();
+}): Map<string, FlowAction<WebDriver>> {
+	const actions = new Map<string, FlowAction<WebDriver>>();
 
 	actions.set("navigate-to-save-link", {
 		async isAvailable(driver: WebDriver): Promise<boolean> {
@@ -90,10 +90,10 @@ export function createSaveLinkActions(config: {
 		},
 		async execute(driver: WebDriver): Promise<void> {
 			await driver.wait(
-				until.elementLocated(By.css("#link-list .list-view__item")),
+				until.elementLocated(By.css(CSS_SELECTORS.listItem)),
 				15000,
 			);
-			const items = await driver.findElements(By.css("#link-list .list-view__item-title"));
+			const items = await driver.findElements(By.css(CSS_SELECTORS.listItemTitle));
 			const hrefs = await Promise.all(items.map(el => el.getAttribute("href")));
 			assert.ok(
 				hrefs.some(href => href === config.testUrl),

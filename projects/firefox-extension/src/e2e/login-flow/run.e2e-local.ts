@@ -4,8 +4,8 @@ import type http from "node:http";
 import path from "node:path";
 import { Builder, By } from "selenium-webdriver";
 import { Options } from "selenium-webdriver/firefox";
-import { FlowRunner } from "../test-framework/flow-runner";
-import { LoginFlowStateHandler } from "./navigation-handler";
+import { FlowRunner, ExtensionStateHandler } from "browser-extension-core/e2e";
+import { createSeleniumElementQueries, createSeleniumNavigation } from "../selenium-adapter";
 import { createLoginActions } from "./login-actions";
 import { createSaveLinkActions } from "./save-link-actions";
 
@@ -92,13 +92,18 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 
 		const allActions = new Map([...loginActions, ...saveLinkActions]);
 
-		const stateHandler = new LoginFlowStateHandler(
+		const stateHandler = new ExtensionStateHandler(
 			driver,
 			async () => saveLinkProgress.listVerified,
 			allActions,
+			createSeleniumElementQueries(),
 		);
 
-		const flowRunner = new FlowRunner(driver, stateHandler);
+		const flowRunner = new FlowRunner(
+			driver,
+			stateHandler,
+			createSeleniumNavigation(),
+		);
 		const result = await flowRunner.run(POPUP_URL, {
 			maxSteps: 25,
 		});

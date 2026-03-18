@@ -13,7 +13,16 @@
       "types": "./dist/build/build-extension.d.ts",
       "default": "./dist/build/build-extension.js"
     },
+    "./e2e": {
+      "types": "./dist/e2e/index.d.ts",
+      "default": "./dist/e2e/index.js"
+    },
     "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "e2e": ["dist/e2e/index.d.ts"]
+    }
   },
   "private": true,
   "scripts": {

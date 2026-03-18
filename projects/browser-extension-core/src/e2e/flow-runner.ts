@@ -1,5 +1,4 @@
-import type { WebDriver } from "selenium-webdriver";
-import type { FlowState, FlowStateHandler } from "./flow-state-handler.types";
+import type { DriverNavigation, FlowState, FlowStateHandler } from "./flow-state-handler.types";
 
 function stateChanged(previous: FlowState, current: FlowState): boolean {
 	if (current.activeView !== previous.activeView) return true;
@@ -20,17 +19,18 @@ function pickAction(
 	return newActions.length > 0 ? newActions[0] : current.availableActions[0];
 }
 
-export class FlowRunner {
+export class FlowRunner<TDriver> {
 	constructor(
-		private driver: WebDriver,
+		private driver: TDriver,
 		private stateHandler: FlowStateHandler,
+		private navigation: DriverNavigation<TDriver>,
 	) {}
 
 	async run(
 		startUrl: string,
 		config: { maxSteps: number },
 	): Promise<{ success: boolean; currentState: FlowState; error?: string }> {
-		await this.driver.get(startUrl);
+		await this.navigation.navigateTo(this.driver, startUrl);
 
 		let previousActions: string[] = [];
 
@@ -53,11 +53,11 @@ export class FlowRunner {
 			previousActions = state.availableActions;
 			await this.stateHandler.executeAction(actionName);
 
-			await this.driver.wait(async () => {
-				const newState =
-					await this.stateHandler.detectCurrentState();
-				return stateChanged(state, newState);
-			}, 10000);
+			await this.navigation.waitForStateChange(
+				this.driver,
+				state,
+				() => this.stateHandler.detectCurrentState(),
+			);
 		}
 
 		const finalState = await this.stateHandler.detectCurrentState();
@@ -68,3 +68,5 @@ export class FlowRunner {
 		};
 	}
 }
+
+export { stateChanged, pickAction };
