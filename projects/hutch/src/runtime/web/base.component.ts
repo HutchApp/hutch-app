@@ -14,6 +14,7 @@ import {
 import type { Component } from "./component.types";
 import { HtmlPage } from "./html-page";
 import { render } from "./render";
+import { getEnv } from "../require-env";
 
 const HEADER_TEMPLATE = readFileSync(join(__dirname, "header.template.html"), "utf-8");
 const FOOTER_TEMPLATE = readFileSync(join(__dirname, "footer.template.html"), "utf-8");
@@ -84,6 +85,10 @@ const NAV_SCRIPT = `
   });
 })();
 </script>`;
+
+const LIVERELOAD_SCRIPT = getEnv("LIVERELOAD")
+	? `\n<script src="http://localhost:35729/livereload.js?snipver=1"></script>`
+	: "";
 
 const OFFLINE_INDICATOR_SCRIPT = `
 <script>
@@ -189,7 +194,7 @@ function renderBaseTemplate(page: PageContent): string {
 		footer: renderFooter(),
 		navScript: NAV_SCRIPT,
 		offlineScript: OFFLINE_INDICATOR_SCRIPT,
-		scripts: page.scripts,
+		scripts: (page.scripts ?? "") + LIVERELOAD_SCRIPT,
 	});
 }
 
