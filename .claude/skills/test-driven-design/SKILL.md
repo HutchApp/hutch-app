@@ -56,7 +56,6 @@ function createBuildPlan(input: Input) { ... }
 export function initBuildExtension(deps: Deps) {
 	return {
 		createBuildPlan(input: Input) { return createBuildPlan(input); },
-		async buildExtension(input: Input) { ... },
 	};
 }
 
