@@ -101,18 +101,7 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	};
 }
 
-const HTMX_SCRIPTS = `
-<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>
-<script>
-(function() {
-  document.body.addEventListener('htmx:beforeSwap', function(evt) {
-    if (evt.detail.xhr.status === 422) {
-      evt.detail.shouldSwap = true;
-      evt.detail.isError = false;
-    }
-  });
-})();
-</script>`;
+const HTMX_SCRIPTS = `<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>`;
 
 export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean }): Component {
 	const displayModel = toQueueDisplayModel(vm);
