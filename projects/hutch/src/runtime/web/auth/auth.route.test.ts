@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "../../test-app";
+import { createTestApp } from "hutch-test-app";
 
 describe("Auth routes", () => {
 	describe("GET /login", () => {

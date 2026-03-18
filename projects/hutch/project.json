@@ -5,6 +5,16 @@
       "dependsOn": [
         { "projects": ["hutch-logger"], "target": "compile" }
       ]
+    },
+    "test": {
+      "dependsOn": [
+        { "projects": ["hutch-test-app"], "target": "compile" }
+      ]
+    },
+    "test-integration": {
+      "dependsOn": [
+        { "projects": ["hutch-test-app"], "target": "compile" }
+      ]
     }
   }
 }

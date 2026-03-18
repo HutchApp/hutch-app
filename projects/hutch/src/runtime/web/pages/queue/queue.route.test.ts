@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "../../../test-app";
+import { createTestApp } from "hutch-test-app";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });

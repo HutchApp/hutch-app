@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { createHash, randomBytes } from "node:crypto";
 import request from "supertest";
 import type { Token } from "@node-oauth/oauth2-server";
-import { createTestApp } from "../../test-app";
+import { createTestApp } from "hutch-test-app";
 import type { UserId } from "../../domain/user/user.types";
 import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.component";
 
