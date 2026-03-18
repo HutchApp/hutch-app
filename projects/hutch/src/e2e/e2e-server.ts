@@ -1,4 +1,4 @@
-import { HutchLogger, consoleLogger } from 'hutch-logger'
+import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
 import { createHutchApp } from '../runtime/app'
 import { initFetchHtml } from '../runtime/providers/article-parser/fetch-html'
 import { initReadabilityParser } from '../runtime/providers/article-parser/readability-parser'

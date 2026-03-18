@@ -25,10 +25,10 @@
   },
   "dependencies": {
     "browser-extension-core": "workspace:*",
-    "hutch-logger": "workspace:*"
+    "@packages/hutch-logger": "workspace:*"
   },
   "devDependencies": {
-    "hutch-test-app": "workspace:*",
+    "@packages/hutch-test-app": "workspace:*",
     "@pulumi/aws": "7.20.0",
     "@pulumi/pulumi": "3.224.0",
     "@types/jest": "29.5.14",

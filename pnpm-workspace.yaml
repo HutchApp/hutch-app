@@ -1,2 +1,3 @@
 packages:
   - 'projects/*'
+  - 'src/packages/*'

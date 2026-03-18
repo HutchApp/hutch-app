@@ -1,5 +1,5 @@
 {
-  "name": "hutch-test-app",
+  "name": "@packages/hutch-test-app",
   "targets": {
     "compile": {
       "dependsOn": [

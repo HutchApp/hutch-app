@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "esbuild": "0.25.4",
-    "hutch-logger": "workspace:*",
+    "@packages/hutch-logger": "workspace:*",
     "js-base64": "3.7.8",
     "zod": "4.1.13"
   },

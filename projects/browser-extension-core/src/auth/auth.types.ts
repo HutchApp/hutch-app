@@ -1,4 +1,4 @@
-import type { HutchLogger } from "hutch-logger";
+import type { HutchLogger } from "@packages/hutch-logger";
 
 export type LoginResult = { ok: true };
 

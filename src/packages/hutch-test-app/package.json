@@ -1,5 +1,5 @@
 {
-  "name": "hutch-test-app",
+  "name": "@packages/hutch-test-app",
   "version": "1.0.0",
   "description": "Shared test server for Hutch extension E2E tests",
   "main": "dist/index.js",

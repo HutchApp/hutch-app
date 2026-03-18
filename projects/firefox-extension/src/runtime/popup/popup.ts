@@ -7,7 +7,7 @@ import type {
 	RemoveUrlResult,
 } from "browser-extension-core";
 import { filterByUrl, paginateItems } from "browser-extension-core";
-import { HutchLogger, consoleLogger } from "hutch-logger";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 
 const logger = HutchLogger.from(consoleLogger);
 

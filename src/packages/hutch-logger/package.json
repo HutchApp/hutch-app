@@ -1,5 +1,5 @@
 {
-  "name": "hutch-logger",
+  "name": "@packages/hutch-logger",
   "version": "1.0.0",
   "description": "Shared logging abstraction for Hutch projects",
   "main": "dist/index.js",

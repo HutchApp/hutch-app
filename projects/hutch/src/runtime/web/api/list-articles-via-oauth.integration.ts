@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import request from "supertest";
-import { createTestApp } from "hutch-test-app";
+import { createTestApp } from "@packages/hutch-test-app";
 import { SIREN_MEDIA_TYPE } from "./siren";
 
 const CLIENT_ID = "hutch-firefox-extension";

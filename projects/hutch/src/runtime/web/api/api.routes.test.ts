@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import request from "supertest";
 import type { Token, Client } from "@node-oauth/oauth2-server";
-import { createTestApp } from "hutch-test-app";
+import { createTestApp } from "@packages/hutch-test-app";
 import type { UserId } from "../../domain/user/user.types";
 import { SIREN_MEDIA_TYPE } from "./siren";
 

@@ -1,7 +1,7 @@
 import { getExtensionDownloadUrl } from "firefox-extension/s3-config";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "hutch-test-app";
+import { createTestApp } from "@packages/hutch-test-app";
 
 const TEST_XPI_FILENAME = "abc123-1.0.0.xpi";
 
