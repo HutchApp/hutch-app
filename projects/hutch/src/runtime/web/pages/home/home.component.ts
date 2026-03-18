@@ -140,6 +140,21 @@ export function HomePage(params: { userCount: number }): Component {
 			],
 			plannedFeatures: [
 				{
+					name: "AI Summary",
+					description:
+						"Summarise core topics in the caption and Reader View for quick reading based on your interests",
+				},
+				{
+					name: "Email Link Import",
+					description:
+						"Import links from your email to Hutch queue",
+				},
+				{
+					name: "AI Daily/Weekly Email Digest",
+					description:
+						"Using AI, send an email to yourself daily/weekly with the links that fit your interests",
+				},
+				{
 					name: "Highlights & Notes",
 					description:
 						"Highlight in multiple colours, add inline notes, export as Markdown.",
