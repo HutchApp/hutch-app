@@ -1,4 +1,4 @@
-    <main class="queue" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
+    <main class="queue">
       <div class="queue__header">
         <h1 class="queue__title">My Queue</h1>
         <span class="queue__count" data-test-article-count>{{total}} article{{pluralSuffix}}</span>
@@ -8,13 +8,13 @@
         <button class="queue__save-btn" type="submit">Save</button>
       </form>
       {{#if saveError}}<p class="queue__save-error" data-test-save-error>{{saveError}}</p>{{/if}}
-      <nav class="queue__filters" data-test-filters>
+      <nav class="queue__filters" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-filters>
         <a class="{{filterAllClass}}" href="{{filterAllUrl}}" data-test-filter="all">All</a>
         <a class="{{filterUnreadClass}}" href="{{filterUnreadUrl}}" data-test-filter="unread">Unread</a>
         <a class="{{filterReadClass}}" href="{{filterReadUrl}}" data-test-filter="read">Read</a>
         <a class="{{filterArchivedClass}}" href="{{filterArchivedUrl}}" data-test-filter="archived">Archived</a>
       </nav>
-      <div class="queue__sort">
+      <div class="queue__sort" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
         <a class="queue__sort-link" href="{{sortUrl}}" data-test-sort>{{sortLabel}}</a>
       </div>
       {{#if isEmpty}}
@@ -31,7 +31,7 @@
           <div class="queue-article__content">
             <div class="queue-article__title-row">
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
-              <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} hx-boost="false"{{#if isUnread}} hx-post="/queue/{{id}}/status" hx-vals='{"status":"read"}' hx-swap="none"{{/if}} data-test-article-title>{{title}}</a>
+              <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}}{{#if isUnread}} hx-post="/queue/{{id}}/status" hx-vals='{"status":"read"}' hx-swap="none"{{/if}} data-test-article-title>{{title}}</a>
             </div>
             <div class="queue-article__meta">
               <span>{{siteName}}</span>
@@ -53,7 +53,7 @@
       </div>
       {{/if}}
       {{#if showPagination}}
-      <nav class="queue__pagination" data-test-pagination>
+      <nav class="queue__pagination" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-pagination>
         {{#if hasPrev}}<a class="queue__pagination-link" href="{{prevUrl}}">← Previous</a>{{/if}}
         <span class="queue__pagination-info">Page {{currentPage}} of {{totalPages}}</span>
         {{#if hasNext}}<a class="queue__pagination-link" href="{{nextUrl}}">Next →</a>{{/if}}

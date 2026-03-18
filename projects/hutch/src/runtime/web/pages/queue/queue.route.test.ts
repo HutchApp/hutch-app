@@ -299,7 +299,6 @@ describe("Queue routes", () => {
 			expect(titleLink?.getAttribute("hx-post")).toBe(`/queue/${articleId}/status`);
 			expect(titleLink?.getAttribute("hx-vals")).toBe('{"status":"read"}');
 			expect(titleLink?.getAttribute("hx-swap")).toBe("none");
-			expect(titleLink?.getAttribute("hx-boost")).toBe("false");
 		});
 	});
 

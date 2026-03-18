@@ -58,13 +58,16 @@ isAvailable: async page => {
 
 ## Page Reload After Form Submissions
 
-Form submissions in SSR apps cause full page reloads. Use `clickAndWaitForPageReload` to set up a load event listener before clicking:
+Form submissions and link clicks may cause full page reloads or HTMX AJAX swaps. Use `clickAndWaitForPageReload` which handles both:
 
 ```typescript
 async function clickAndWaitForPageReload(page: Page, locator: ReturnType<Page['locator']>): Promise<void> {
-  const loadPromise = page.waitForEvent('load')
+  const loadOrHtmxSwap = Promise.race([
+    page.waitForEvent('load'),
+    page.waitForResponse(resp => resp.request().headers()['hx-request'] === 'true'),
+  ])
   await locator.click()
-  await loadPromise
+  await loadOrHtmxSwap
 }
 ```
 
