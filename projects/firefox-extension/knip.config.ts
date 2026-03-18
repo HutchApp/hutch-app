@@ -27,6 +27,8 @@ export default {
 		"@packages/hutch-logger",
 		// Dynamic import in E2E test — knip can't trace dynamic imports
 		"@packages/hutch-test-app",
+		// Used by scripts/check-unused-css.js (not a source-level import)
+		"@packages/check-unused-css",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),

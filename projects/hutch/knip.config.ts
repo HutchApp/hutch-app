@@ -20,6 +20,8 @@ export default {
 		"@packages/hutch-logger",
 		// tsconfig paths alias resolves at compile time; runtime requires the workspace package via node_modules
 		"@packages/hutch-test-app",
+		// Used by scripts/check-unused-css.js (not a source-level import)
+		"@packages/check-unused-css",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),
