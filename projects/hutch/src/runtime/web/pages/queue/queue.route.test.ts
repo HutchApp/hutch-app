@@ -267,22 +267,6 @@ describe("Queue routes", () => {
 			expect(unreadArticle?.querySelector(".queue-article__unread-dot")?.getAttribute("aria-label")).toBe("Unread");
 		});
 
-		it("should include data-article-id attribute for mark-as-read on click", async () => {
-			const { app, auth } = createTestApp();
-			const agent = await loginAgent(app, auth);
-
-			await agent
-				.post("/queue/save")
-				.type("form")
-				.send({ url: "https://example.com/article" });
-
-			const response = await agent.get("/queue");
-			const doc = new JSDOM(response.text).window.document;
-			const article = doc.querySelector(".queue-article");
-			const articleId = article?.getAttribute("data-test-article");
-			expect(article?.getAttribute("data-article-id")).toBe(articleId);
-		});
-
 		it("should include htmx mark-as-read on unread article title links", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);

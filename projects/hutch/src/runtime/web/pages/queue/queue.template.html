@@ -26,7 +26,7 @@
       {{#if hasArticles}}
       <div class="queue__list" data-test-article-list>
         {{#each articles}}
-        <div class="queue-article{{unreadClass}}" data-test-article="{{id}}" data-article-id="{{id}}">
+        <div class="queue-article{{unreadClass}}" data-test-article="{{id}}">
           {{#if imageUrl}}<img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy">{{/if}}
           <div class="queue-article__content">
             <div class="queue-article__title-row">
