@@ -1,6 +1,9 @@
 import type { KnipConfig } from "knip";
 
 export default {
+	entry: [
+		"src/e2e/index.ts",
+	],
 	ignoreBinaries: [
 		"knip",
 		"biome",
