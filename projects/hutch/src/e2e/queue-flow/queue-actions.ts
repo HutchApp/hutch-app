@@ -82,8 +82,8 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     },
     execute: async (page) => {
       const titles = await retriable(getArticleTitles, {
-        maxAttempts: 3,
-        retryDelayMs: 2000,
+        maxAttempts: 5,
+        retryDelayMs: 3000,
         shouldRetry: (result) => result.length !== TITLES_NEWEST_FIRST.length,
         // c8 ignore: beforeRetry only executes on CI when article parsing is slow
         beforeRetry: /* c8 ignore next */ async (p) => { await p.reload({ waitUntil: 'domcontentloaded' }) },

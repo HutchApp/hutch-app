@@ -24,7 +24,7 @@ export const INSTALL_PAGE_STYLES = `
 
 .install-page__download {
   display: inline-block;
-  padding: 14px 28px;
+  padding: 16px 28px;
   border-radius: var(--radius);
   font-weight: 600;
   font-size: 1rem;
@@ -64,7 +64,7 @@ export const INSTALL_PAGE_STYLES = `
 
 .install-page__steps code {
   background: var(--muted);
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.875rem;
 }

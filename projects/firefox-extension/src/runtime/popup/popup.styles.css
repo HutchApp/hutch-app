@@ -18,6 +18,7 @@
   --popup-icon-text: #C8923C;
   --popup-brand-text: #1A202C;
   --popup-active-bg: #2B3A55;
+  --popup-active-text: #FFFFFF;
   --popup-active-hover: #3D4F6F;
 }
 
@@ -328,7 +329,7 @@ h2 {
   border-radius: 4px;
   color: var(--popup-heading);
   font-size: 16px;
-  padding: 2px 8px;
+  padding: 4px 8px;
   cursor: pointer;
   line-height: 1;
   font-family: inherit;
@@ -350,7 +351,7 @@ h2 {
   border-radius: 4px;
   color: var(--popup-heading);
   font-size: 13px;
-  padding: 2px 8px;
+  padding: 4px 8px;
   min-width: 28px;
   cursor: pointer;
   line-height: 1.4;
@@ -364,7 +365,7 @@ h2 {
 
 .pagination__page--active {
   background: var(--popup-active-bg);
-  color: #FFFFFF;
+  color: var(--popup-active-text);
   border-color: var(--popup-active-bg);
 }
 

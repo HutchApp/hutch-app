@@ -79,7 +79,7 @@
 }
 
 .queue__filter-link {
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 6px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -214,7 +214,7 @@
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   font-size: 0.75rem;
   color: var(--muted-foreground);
   cursor: pointer;
