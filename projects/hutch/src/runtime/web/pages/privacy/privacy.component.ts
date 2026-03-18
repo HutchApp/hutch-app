@@ -12,7 +12,7 @@ export function PrivacyPage(): Component {
 		seo: {
 			title: "Privacy Policy — Hutch",
 			description:
-				"How Hutch handles your data. Only what's necessary to run the service is collected and your information is never sold.",
+				"How Hutch handles your data. I collect only what's necessary to run the service and never sell your information.",
 			canonicalUrl: "https://hutch-app.com/privacy",
 			robots: "noindex, follow",
 		},
