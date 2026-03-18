@@ -5,7 +5,10 @@ export function isOnPage(page: Page, bodyClass: string): Promise<boolean> {
 }
 
 export async function clickAndWaitForPageReload(page: Page, locator: ReturnType<Page['locator']>): Promise<void> {
-  const loadPromise = page.waitForEvent('load')
+  const loadOrHtmxSwap = Promise.race([
+    page.waitForEvent('load'),
+    page.waitForResponse(resp => resp.request().headers()['hx-request'] === 'true'),
+  ])
   await locator.click()
-  await loadPromise
+  await loadOrHtmxSwap
 }

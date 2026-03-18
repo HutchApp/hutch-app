@@ -267,7 +267,7 @@ describe("Queue routes", () => {
 			expect(unreadArticle?.querySelector(".queue-article__unread-dot")?.getAttribute("aria-label")).toBe("Unread");
 		});
 
-		it("should include data-article-id attribute for mark-as-read on click", async () => {
+		it("should include htmx mark-as-read on unread article title links", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);
 
@@ -278,25 +278,11 @@ describe("Queue routes", () => {
 
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
-			const article = doc.querySelector(".queue-article");
-			const articleId = article?.getAttribute("data-test-article");
-			expect(article?.getAttribute("data-article-id")).toBe(articleId);
-		});
-
-		it("should include mark-as-read script on queue page", async () => {
-			const { app, auth } = createTestApp();
-			const agent = await loginAgent(app, auth);
-
-			const response = await agent.get("/queue");
-			const doc = new JSDOM(response.text).window.document;
-			const scripts = Array.from(doc.querySelectorAll("script"));
-			const markReadScript = scripts.find(
-				(s) =>
-					s.textContent?.includes("queue-article--unread") &&
-					s.textContent?.includes("status=read") &&
-					s.textContent?.includes("data-article-id"),
-			);
-			expect(markReadScript).toBeTruthy();
+			const titleLink = doc.querySelector(".queue-article__title");
+			const articleId = doc.querySelector(".queue-article")?.getAttribute("data-test-article");
+			expect(titleLink?.getAttribute("hx-post")).toBe(`/queue/${articleId}/status`);
+			expect(titleLink?.getAttribute("hx-vals")).toBe('{"status":"read"}');
+			expect(titleLink?.getAttribute("hx-swap")).toBe("none");
 		});
 	});
 
