@@ -45,7 +45,7 @@ describe("GET /", () => {
 
 		const roadmapSection = doc.querySelector('[data-test-section="roadmap"]');
 		const features = roadmapSection?.querySelectorAll(".feature-card");
-		expect(features?.length).toBe(5);
+		expect(features?.length).toBe(8);
 	});
 
 	it("should render the backstory section", async () => {
