@@ -125,6 +125,34 @@ describe("createBuildPlan", () => {
 			{ src: join(srcDir, "icons-saved"), dest: join(outDir, "icons-saved"), recursive: true },
 		]);
 	});
+
+	it("throws when serverUrl is empty", () => {
+		const { createBuildPlan } = initBuildExtension({
+			resolveCorePackageJson: () => corePackageJsonPath,
+		});
+
+		expect(() =>
+			createBuildPlan({
+				config: { target: "firefox91" },
+				projectDir,
+				serverUrl: "",
+			}),
+		).toThrow("HUTCH_SERVER_URL");
+	});
+
+	it("throws when serverUrl is undefined", () => {
+		const { createBuildPlan } = initBuildExtension({
+			resolveCorePackageJson: () => corePackageJsonPath,
+		});
+
+		expect(() =>
+			createBuildPlan({
+				config: { target: "firefox91" },
+				projectDir,
+				serverUrl: undefined,
+			}),
+		).toThrow("HUTCH_SERVER_URL");
+	});
 });
 
 describe("initBuildExtension defaults", () => {
@@ -140,7 +168,7 @@ describe("initBuildExtension defaults", () => {
 	});
 });
 
-describe("initBuildExtension", () => {
+describe("plan.buildExtension", () => {
 	function createInMemoryDeps() {
 		const createdDirs: Array<{ path: string; options: { recursive: true } }> = [];
 		const copiedFiles: Array<{ src: string; dest: string; options?: { recursive: boolean } }> = [];
@@ -172,13 +200,14 @@ describe("initBuildExtension", () => {
 
 	it("creates output directories before building", async () => {
 		const { deps, createdDirs } = createInMemoryDeps();
-		const { buildExtension } = initBuildExtension(deps);
-
-		await buildExtension({
+		const { createBuildPlan } = initBuildExtension(deps);
+		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
 			serverUrl: "https://hutch-app.com",
 		});
+
+		await plan.buildExtension();
 
 		expect(createdDirs.length).toBe(6);
 		expect(createdDirs[0].options).toEqual({ recursive: true });
@@ -186,13 +215,14 @@ describe("initBuildExtension", () => {
 
 	it("calls esbuild with resolved options", async () => {
 		const { deps, getEsbuildCallCount, getLastEsbuildOptions } = createInMemoryDeps();
-		const { buildExtension } = initBuildExtension(deps);
-
-		await buildExtension({
+		const { createBuildPlan } = initBuildExtension(deps);
+		const plan = createBuildPlan({
 			config: { target: "chrome109" },
 			projectDir: "/projects/chrome-extension",
 			serverUrl: "https://hutch-app.com",
 		});
+
+		await plan.buildExtension();
 
 		expect(getEsbuildCallCount()).toBe(1);
 		expect(getLastEsbuildOptions()?.target).toBe("chrome109");
@@ -200,13 +230,14 @@ describe("initBuildExtension", () => {
 
 	it("copies static files after esbuild completes", async () => {
 		const { deps, copiedFiles } = createInMemoryDeps();
-		const { buildExtension } = initBuildExtension(deps);
-
-		await buildExtension({
+		const { createBuildPlan } = initBuildExtension(deps);
+		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
 			serverUrl: "https://hutch-app.com",
 		});
+
+		await plan.buildExtension();
 
 		expect(copiedFiles.length).toBe(5);
 		expect(copiedFiles[0].dest).toContain("manifest.json");
@@ -214,44 +245,19 @@ describe("initBuildExtension", () => {
 
 	it("passes recursive option for directory copies", async () => {
 		const { deps, copiedFiles } = createInMemoryDeps();
-		const { buildExtension } = initBuildExtension(deps);
-
-		await buildExtension({
+		const { createBuildPlan } = initBuildExtension(deps);
+		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
 			serverUrl: "https://hutch-app.com",
 		});
+
+		await plan.buildExtension();
 
 		const iconsCopy = copiedFiles.find((c) => c.dest.endsWith("icons") && !c.dest.endsWith("icons-saved"));
 		expect(iconsCopy?.options).toEqual({ recursive: true });
 
 		const manifestCopy = copiedFiles.find((c) => c.dest.endsWith("manifest.json"));
 		expect(manifestCopy?.options).toBeUndefined();
-	});
-
-	it("throws when serverUrl is empty", async () => {
-		const { deps } = createInMemoryDeps();
-		const { buildExtension } = initBuildExtension(deps);
-
-		await expect(
-			buildExtension({
-				config: { target: "firefox91" },
-				projectDir: "/projects/firefox-extension",
-				serverUrl: "",
-			}),
-		).rejects.toThrow("HUTCH_SERVER_URL");
-	});
-
-	it("throws when serverUrl is undefined", async () => {
-		const { deps } = createInMemoryDeps();
-		const { buildExtension } = initBuildExtension(deps);
-
-		await expect(
-			buildExtension({
-				config: { target: "firefox91" },
-				projectDir: "/projects/firefox-extension",
-				serverUrl: undefined,
-			}),
-		).rejects.toThrow("HUTCH_SERVER_URL");
 	});
 });

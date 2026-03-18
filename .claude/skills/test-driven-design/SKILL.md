@@ -51,17 +51,27 @@ export function initBuildExtension(deps: Deps) {
 	};
 }
 
-// ✅ GOOD - Internal function returned from init*
-function createBuildPlan(input: Input) { ... }
+// ✅ GOOD - Plan returned from init*, with execution as a method on the plan
+function createPlanData(input: Input) { ... }
 export function initBuildExtension(deps: Deps) {
 	return {
-		createBuildPlan(input: Input) { return createBuildPlan(input); },
+		createBuildPlan(input: Input) {
+			const planData = createPlanData(input);
+			return {
+				...planData,
+				async buildExtension() { /* uses planData and deps */ },
+			};
+		},
 	};
 }
 
-// Test accesses createBuildPlan through init
+// Test accesses plan data through init -> createBuildPlan
 const { createBuildPlan } = initBuildExtension({ ...inMemoryDeps });
 const plan = createBuildPlan({ ... });
+expect(plan.esbuildOptions.target).toBe("firefox91");
+
+// Execution is a method on the plan itself
+await plan.buildExtension();
 ```
 
 ### No Design Pattern Names in Identifiers

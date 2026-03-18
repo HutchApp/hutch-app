@@ -31,14 +31,13 @@ interface BuildExtensionDeps {
 	resolveCorePackageJson: () => string;
 }
 
-
 interface BuildPlanInput {
 	config: ExtensionBuildConfig;
 	projectDir: string;
-	serverUrl: string;
+	serverUrl: string | undefined;
 }
 
-function createBuildPlan(input: BuildPlanInput & { corePackageJsonPath: string }): {
+function createPlanData(input: { config: ExtensionBuildConfig; projectDir: string; serverUrl: string; corePackageJsonPath: string }): {
 	esbuildOptions: EsbuildOptions;
 	copies: CopyOperation[];
 	directories: string[];
@@ -96,41 +95,35 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 
 	return {
 		createBuildPlan(input: BuildPlanInput) {
-			return createBuildPlan({
-				...input,
-				corePackageJsonPath: resolvedDeps.resolveCorePackageJson(),
-			});
-		},
-
-		async buildExtension(input: {
-			config: ExtensionBuildConfig;
-			projectDir: string;
-			serverUrl: string | undefined;
-		}): Promise<void> {
 			assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)");
 
-			const plan = createBuildPlan({
+			const planData = createPlanData({
 				config: input.config,
 				projectDir: input.projectDir,
 				serverUrl: input.serverUrl,
 				corePackageJsonPath: resolvedDeps.resolveCorePackageJson(),
 			});
 
-			for (const dir of plan.directories) {
-				resolvedDeps.mkdirSync(dir, { recursive: true });
-			}
+			return {
+				...planData,
+				async buildExtension(): Promise<void> {
+					for (const dir of planData.directories) {
+						resolvedDeps.mkdirSync(dir, { recursive: true });
+					}
 
-			await resolvedDeps.esbuild(plan.esbuildOptions);
+					await resolvedDeps.esbuild(planData.esbuildOptions);
 
-			for (const copy of plan.copies) {
-				if (copy.recursive) {
-					resolvedDeps.cpSync(copy.src, copy.dest, { recursive: true });
-				} else {
-					resolvedDeps.cpSync(copy.src, copy.dest);
-				}
-			}
+					for (const copy of planData.copies) {
+						if (copy.recursive) {
+							resolvedDeps.cpSync(copy.src, copy.dest, { recursive: true });
+						} else {
+							resolvedDeps.cpSync(copy.src, copy.dest);
+						}
+					}
 
-			console.log("Extension built to dist-extension-compiled/");
+					console.log("Extension built to dist-extension-compiled/");
+				},
+			};
 		},
 	};
 }
