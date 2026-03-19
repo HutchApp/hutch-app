@@ -266,7 +266,7 @@ class HutchLambda {
 
 		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
 			apiId: apiGateway.id,
-			name: args.stage,
+			name: "$default",
 			autoDeploy: true,
 		});
 
@@ -281,10 +281,9 @@ class HutchLambda {
 				variables: {
 					NODE_ENV: "production",
 					PERSISTENCE: "prod",
-					STAGE: args.stage,
 					APP_ORIGIN: args.domainRegistration.domains.length > 0
 						? `https://${args.domainRegistration.primaryDomain}`
-						: pulumi.interpolate`${apiGateway.apiEndpoint}/${apiStage.name}`,
+						: apiGateway.apiEndpoint,
 					DYNAMODB_ARTICLES_TABLE: args.storage.articlesTable.name,
 					DYNAMODB_USERS_TABLE: args.storage.usersTable.name,
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,

@@ -7,7 +7,6 @@ import serverless from "serverless-http";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { logger as requestLogger } from "./logger";
 import { logAndRespondOnError } from "./error-handler";
-import { removeStageFromRawPath } from "./remove-stage-from-raw-path";
 import { localServer } from "../runtime/app";
 import { getEnv } from "../runtime/require-env";
 
@@ -36,7 +35,7 @@ export const lambdaExpress = ({
 	// ---
 
 	if (lambda) {
-		return removeStageFromRawPath(serverless(application));
+		return serverless(application);
 	}
 
 	localServer(application, log.logger);
