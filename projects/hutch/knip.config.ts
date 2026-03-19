@@ -22,6 +22,8 @@ export default {
 		"@packages/hutch-test-app",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
+		// Used via scripts/run-tests-with-coverage.js (not a source import)
+		"@packages/test-phase-runner",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),
