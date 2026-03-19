@@ -28,9 +28,9 @@
     "compile": "rm -rf dist && tsc && node scripts/copy-static-assets.js",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
-    "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview; fi",
+    "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
     "check": "pnpm compile && pnpm lint && pnpm test-with-coverage && pnpm check-infra",
-    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up"
+    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\""
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.1001.0",

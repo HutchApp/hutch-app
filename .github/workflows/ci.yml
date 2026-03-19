@@ -19,6 +19,7 @@ jobs:
       AWS_REGION: ap-southeast-2
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
       PULUMI_CONFIG_PASSPHRASE: ''
+      PULUMI_STACK: prod
       PERSISTENCE: development
     steps:
       - uses: actions/checkout@v4
@@ -78,6 +79,7 @@ jobs:
       AWS_REGION: ap-southeast-2
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
       PULUMI_CONFIG_PASSPHRASE: ''
+      PULUMI_STACK: staging
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +97,7 @@ jobs:
 
       - run: npx nx compile hutch
 
-      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack staging --yes
+      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
         working-directory: projects/hutch
 
   hutch-deploy-to-prod:
@@ -109,6 +111,7 @@ jobs:
       AWS_REGION: ap-southeast-2
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
       PULUMI_CONFIG_PASSPHRASE: ''
+      PULUMI_STACK: prod
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
     steps:
       - uses: actions/checkout@v4
@@ -126,7 +129,7 @@ jobs:
 
       - run: npx nx compile hutch
 
-      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack prod --yes
+      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
         working-directory: projects/hutch
 
   # Commenting the Firefox extension deploy to prod due to every submission making my signing review go back to the end of the queue
