@@ -28,6 +28,7 @@
     "@packages/hutch-logger": "workspace:*"
   },
   "devDependencies": {
+    "@packages/test-phase-runner": "workspace:*",
     "@packages/hutch-test-app": "workspace:*",
     "@pulumi/aws": "7.20.0",
     "@pulumi/pulumi": "3.224.0",

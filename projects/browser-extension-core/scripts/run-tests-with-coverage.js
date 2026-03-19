@@ -1,27 +1,16 @@
 #!/usr/bin/env node
-const { execSync } = require('child_process')
-const path = require('path')
+const { join } = require('node:path');
+const { initTestPhaseRunner, defaultDeps } = require('@packages/test-phase-runner');
+const config = require('../run-tests.config.js');
 
-const projectRoot = path.resolve(__dirname, '..')
+const { createTestPlan } = initTestPhaseRunner(defaultDeps);
 
-function run(name, command, extraEnv = {}) {
-  console.log(`\n=== ${name} ===\n`)
-  process.stdout.write('')
-  try {
-    execSync(command, {
-      cwd: projectRoot,
-      stdio: 'inherit',
-      env: { ...process.env, ...extraEnv },
-    })
-  } catch (error) {
-    console.error(`${name} failed with exit code ${error.status}`)
-    process.exit(error.status || 1)
-  }
-  process.stdout.write('')
-}
+const plan = createTestPlan({
+  config,
+  projectRoot: join(__dirname, '..'),
+});
 
-run('Browser Extension Core - Running unit tests',
-  'node_modules/.bin/jest --testMatch="**/dist/**/*.test.js" --testTimeout=10000 --runInBand')
-
-console.log('\n=== Browser Extension Core - All tests completed successfully ===\n')
-process.stdout.write('')
+plan.runAllPhases().catch((error) => {
+  console.error('Test run failed:', error.message);
+  process.exit(1);
+});
