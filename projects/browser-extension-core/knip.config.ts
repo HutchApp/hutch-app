@@ -17,7 +17,7 @@ export default {
 		"@packages/hutch-logger",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)
 		"@packages/test-phase-runner",
-		// Used via check-unused-css script (require'd by purgecss.config.js)
-		"purgecss",
+		// Used by scripts/check-unused-css.js (not a source-level import)
+		"@packages/check-unused-css",
 	],
 } satisfies KnipConfig;
