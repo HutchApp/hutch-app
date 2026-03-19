@@ -73,6 +73,9 @@ importers:
         specifier: workspace:*
         version: link:../browser-extension-core
     devDependencies:
+      '@packages/check-unused-css':
+        specifier: workspace:*
+        version: link:../../src/packages/check-unused-css
       '@packages/hutch-test-app':
         specifier: workspace:*
         version: link:../../src/packages/hutch-test-app
@@ -100,9 +103,6 @@ importers:
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
-      purgecss:
-        specifier: 8.0.0
-        version: 8.0.0
       selenium-webdriver:
         specifier: 4.41.0
         version: 4.41.0
@@ -170,6 +170,9 @@ importers:
         specifier: 4.1.13
         version: 4.1.13
     devDependencies:
+      '@packages/check-unused-css':
+        specifier: workspace:*
+        version: link:../../src/packages/check-unused-css
       '@packages/hutch-test-app':
         specifier: workspace:*
         version: link:../../src/packages/hutch-test-app
@@ -227,9 +230,6 @@ importers:
       livereload:
         specifier: 0.10.3
         version: 0.10.3
-      purgecss:
-        specifier: 8.0.0
-        version: 8.0.0
       supertest:
         specifier: 7.1.4
         version: 7.1.4
@@ -239,6 +239,12 @@ importers:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
+
+  src/packages/check-unused-css:
+    dependencies:
+      purgecss:
+        specifier: 8.0.0
+        version: 8.0.0
 
   src/packages/hutch-logger:
     devDependencies:

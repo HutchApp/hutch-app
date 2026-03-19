@@ -1,0 +1,13 @@
+{
+  "name": "@packages/check-unused-css",
+  "version": "1.0.0",
+  "description": "Shared unused CSS detection using PurgeCSS",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "check": "echo 'No testable logic — thin PurgeCSS wrapper'"
+  },
+  "dependencies": {
+    "purgecss": "8.0.0"
+  }
+}

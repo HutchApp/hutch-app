@@ -13,8 +13,6 @@ module.exports = {
   ignoreDependencies: [
     // Used via CLI in dev script
     'livereload',
-    // Used via CLI script, not imported in source
-    'purgecss',
     // Used via c8 CLI wrapper in test-with-coverage script
     'c8',
   ],
