@@ -1,5 +1,5 @@
 import type { ExecSyncOptions, SpawnOptions } from "node:child_process";
-import { initTestPhaseRunner } from "./run-test-phases";
+import { defaultDeps, initTestPhaseRunner } from "./run-test-phases";
 import type { ResolvedPhase, TestPhaseRunnerDeps } from "./run-test-phases";
 
 function createInMemoryDeps() {
@@ -39,7 +39,7 @@ function createInMemoryDeps() {
 	};
 }
 
-function createRunner(deps?: Parameters<typeof initTestPhaseRunner>[0]) {
+function createRunner(deps: TestPhaseRunnerDeps = defaultDeps) {
 	return initTestPhaseRunner(deps);
 }
 

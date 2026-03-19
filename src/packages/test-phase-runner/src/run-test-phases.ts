@@ -176,21 +176,52 @@ function defaultWaitForServer(url: string, timeoutMs: number): Promise<void> {
 	});
 }
 
-export function initTestPhaseRunner(deps: Partial<TestPhaseRunnerDeps> = {}) {
-	const resolvedDeps: TestPhaseRunnerDeps = {
-		execSync: deps.execSync ?? (defaultExecSync as ExecSyncFn),
-		spawn: deps.spawn ?? defaultSpawn,
-		globSync: deps.globSync ?? defaultGlobSync,
-		waitForServer: deps.waitForServer ?? defaultWaitForServer,
-	};
+export const defaultDeps: TestPhaseRunnerDeps = {
+	execSync: defaultExecSync as ExecSyncFn,
+	spawn: defaultSpawn,
+	globSync: defaultGlobSync,
+	waitForServer: defaultWaitForServer,
+};
 
+export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 	function runCommand(displayName: string, command: string, options: { cwd: string; extraEnv?: Record<string, string> }) {
 		console.log(`\n=== ${displayName} ===\n`);
-		resolvedDeps.execSync(command, {
+		deps.execSync(command, {
 			cwd: options.cwd,
 			stdio: "inherit",
 			env: { ...process.env, ...options.extraEnv },
 		});
+	}
+
+	async function runPlaywrightPhase(displayName: string, phase: ResolvedPlaywrightPhase, projectRoot: string) {
+		console.log(`\n=== ${displayName} ===\n`);
+
+		deps.execSync(phase.browserInstallCommand, {
+			cwd: projectRoot,
+			stdio: "inherit",
+		});
+
+		const spawnCommand = phase.stripCoverage ? "env" : phase.serverSpawnArgs[0];
+		const spawnArgs = phase.stripCoverage
+			? ["-u", "NODE_V8_COVERAGE", ...phase.serverSpawnArgs]
+			: phase.serverSpawnArgs.slice(1);
+
+		const serverProcess = deps.spawn(spawnCommand, spawnArgs, {
+			cwd: projectRoot,
+			stdio: "inherit",
+		});
+
+		try {
+			await deps.waitForServer(phase.serverUrl, phase.waitTimeoutMs);
+
+			deps.execSync(phase.testCommand, {
+				cwd: projectRoot,
+				stdio: "inherit",
+				env: { ...process.env, ...phase.env },
+			});
+		} finally {
+			serverProcess.kill("SIGTERM");
+		}
 	}
 
 	return {
@@ -203,7 +234,7 @@ export function initTestPhaseRunner(deps: Partial<TestPhaseRunnerDeps> = {}) {
 					case "jest":
 						return resolveJestPhase(phase);
 					case "node-test":
-						return resolveNodeTestPhase(phase, resolvedDeps.globSync);
+						return resolveNodeTestPhase(phase, deps.globSync);
 					case "script":
 						return resolveScriptPhase(phase);
 					case "playwright":
@@ -242,35 +273,4 @@ export function initTestPhaseRunner(deps: Partial<TestPhaseRunnerDeps> = {}) {
 			};
 		},
 	};
-
-	async function runPlaywrightPhase(displayName: string, phase: ResolvedPlaywrightPhase, projectRoot: string) {
-		console.log(`\n=== ${displayName} ===\n`);
-
-		resolvedDeps.execSync(phase.browserInstallCommand, {
-			cwd: projectRoot,
-			stdio: "inherit",
-		});
-
-		const spawnCommand = phase.stripCoverage ? "env" : phase.serverSpawnArgs[0];
-		const spawnArgs = phase.stripCoverage
-			? ["-u", "NODE_V8_COVERAGE", ...phase.serverSpawnArgs]
-			: phase.serverSpawnArgs.slice(1);
-
-		const serverProcess = resolvedDeps.spawn(spawnCommand, spawnArgs, {
-			cwd: projectRoot,
-			stdio: "inherit",
-		});
-
-		try {
-			await resolvedDeps.waitForServer(phase.serverUrl, phase.waitTimeoutMs);
-
-			resolvedDeps.execSync(phase.testCommand, {
-				cwd: projectRoot,
-				stdio: "inherit",
-				env: { ...process.env, ...phase.env },
-			});
-		} finally {
-			serverProcess.kill("SIGTERM");
-		}
-	}
 }
