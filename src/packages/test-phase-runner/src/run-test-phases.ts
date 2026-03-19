@@ -186,13 +186,11 @@ export function initTestPhaseRunner(deps: Partial<TestPhaseRunnerDeps> = {}) {
 
 	function runCommand(displayName: string, command: string, options: { cwd: string; extraEnv?: Record<string, string> }) {
 		console.log(`\n=== ${displayName} ===\n`);
-		process.stdout.write("");
 		resolvedDeps.execSync(command, {
 			cwd: options.cwd,
 			stdio: "inherit",
 			env: { ...process.env, ...options.extraEnv },
 		});
-		process.stdout.write("");
 	}
 
 	return {
@@ -240,7 +238,6 @@ export function initTestPhaseRunner(deps: Partial<TestPhaseRunnerDeps> = {}) {
 					}
 
 					console.log(`\n=== ${input.config.projectName} - All tests completed successfully ===\n`);
-					process.stdout.write("");
 				},
 			};
 		},
@@ -248,7 +245,6 @@ export function initTestPhaseRunner(deps: Partial<TestPhaseRunnerDeps> = {}) {
 
 	async function runPlaywrightPhase(displayName: string, phase: ResolvedPlaywrightPhase, projectRoot: string) {
 		console.log(`\n=== ${displayName} ===\n`);
-		process.stdout.write("");
 
 		resolvedDeps.execSync(phase.browserInstallCommand, {
 			cwd: projectRoot,
@@ -276,7 +272,5 @@ export function initTestPhaseRunner(deps: Partial<TestPhaseRunnerDeps> = {}) {
 		} finally {
 			serverProcess.kill("SIGTERM");
 		}
-
-		process.stdout.write("");
 	}
 }
