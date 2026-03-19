@@ -10,7 +10,7 @@ const NO_CONTENT_TEMPLATE = readFileSync(join(__dirname, "reader-no-content.temp
 const READER_CONTENT_TEMPLATE = readFileSync(join(__dirname, "reader-content.template.html"), "utf-8");
 const READER_TEMPLATE = readFileSync(join(__dirname, "reader.template.html"), "utf-8");
 
-function renderReaderContent(article: SavedArticle): string {
+function renderReaderContent(article: SavedArticle, summary?: string | null): string {
 	if (!article.content) {
 		return render(NO_CONTENT_TEMPLATE, { url: article.url });
 	}
@@ -21,12 +21,13 @@ function renderReaderContent(article: SavedArticle): string {
 		estimatedReadTime: article.estimatedReadTime,
 		url: article.url,
 		content: article.content,
+		summary: summary ?? undefined,
 	});
 }
 
-export function ReaderPage(article: SavedArticle, options?: { emailVerified?: boolean }): Component {
+export function ReaderPage(article: SavedArticle, options?: { emailVerified?: boolean; summary?: string | null }): Component {
 	const content = render(READER_TEMPLATE, {
-		innerContent: renderReaderContent(article),
+		innerContent: renderReaderContent(article, options?.summary),
 	});
 
 	return Base({

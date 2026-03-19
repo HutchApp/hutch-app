@@ -3,6 +3,7 @@ import { initInMemoryArticleStore } from "./providers/article-store/in-memory-ar
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
+import type { SummarizeArticle } from "./providers/article-summary/article-summary.types";
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import {
@@ -17,9 +18,12 @@ const stubFetchHtml: FetchHtml = async (url) => {
 	return `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content saved from ${hostname}.</p></article></body></html>`;
 };
 
+const noopSummarize: SummarizeArticle = async () => null;
+
 export function createTestApp(options?: {
 	parseArticle?: ParseArticle;
 	fetchHtml?: FetchHtml;
+	summarizeArticle?: SummarizeArticle;
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
@@ -33,6 +37,7 @@ export function createTestApp(options?: {
 		...auth,
 		...articleStore,
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
+		summarizeArticle: options?.summarizeArticle ?? noopSummarize,
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",

@@ -454,6 +454,65 @@ describe("Queue routes", () => {
 			expect(titleLink?.getAttribute("href")).toContain("/read");
 		});
 
+		it("should display AI summary when summarizeArticle returns text", async () => {
+			const articleHtml = `
+			<html><head><title>Summarized Post</title><meta property="og:site_name" content="Example Blog"></head>
+			<body><article>
+				<h1>Summarized Post</h1>
+				<p>This is archived content that has been saved for later reading and will be summarized.</p>
+			</article></body></html>`;
+
+			const fetchHtml = async (_url: string) => articleHtml;
+			const summarizeArticle = async () => "Key points from the article distilled into a brief summary.";
+			const { app, auth } = createTestApp({ fetchHtml, summarizeArticle });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/summarized-post" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-reader-summary]")?.textContent).toContain("Key points from the article");
+			expect(doc.querySelector(".reader__summary-label")?.textContent).toBe("AI Summary");
+		});
+
+		it("should not display summary block when summarizeArticle returns null", async () => {
+			const articleHtml = `
+			<html><head><title>No Summary Post</title></head>
+			<body><article>
+				<h1>No Summary Post</h1>
+				<p>Content without a summary generated.</p>
+			</article></body></html>`;
+
+			const fetchHtml = async (_url: string) => articleHtml;
+			const summarizeArticle = async () => null;
+			const { app, auth } = createTestApp({ fetchHtml, summarizeArticle });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/no-summary-post" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-reader-summary]")).toBeNull();
+		});
+
 		it("should show no-content fallback when article has no extracted content", async () => {
 			const fetchHtml = async (_url: string) => "<html><body></body></html>";
 			const { app, auth } = createTestApp({ fetchHtml });

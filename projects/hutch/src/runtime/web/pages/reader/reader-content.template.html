@@ -7,6 +7,12 @@
       </div>
       <a class="reader__original-link" href="{{url}}" target="_blank" rel="noopener" data-test-original-link>View original</a>
     </div>
+    {{#if summary}}
+    <div class="reader__summary" data-test-reader-summary>
+      <div class="reader__summary-label">AI Summary</div>
+      <p class="reader__summary-text">{{summary}}</p>
+    </div>
+    {{/if}}
     <div class="reader__content" data-test-reader-content>
       {{{content}}}
     </div>

@@ -11,6 +11,7 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
+import type { SummarizeArticle } from "../../../providers/article-summary/article-summary.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
@@ -27,6 +28,7 @@ interface QueueDependencies {
 	parseArticle: ParseArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
+	summarizeArticle: SummarizeArticle;
 }
 
 export function initQueueRoutes(deps: QueueDependencies): Router {
@@ -177,7 +179,15 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			await deps.updateArticleStatus(articleId, userId, "read");
 		}
 
-		const html = ReaderPage(article, { emailVerified: req.emailVerified }).to("text/html");
+		let summary: string | null = null;
+		if (article.content) {
+			summary = await deps.summarizeArticle({
+				url: article.url,
+				textContent: article.content,
+			});
+		}
+
+		const html = ReaderPage(article, { emailVerified: req.emailVerified, summary }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

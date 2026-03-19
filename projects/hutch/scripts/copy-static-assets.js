@@ -13,7 +13,7 @@ const path = require('path')
 const SRC_DIR = path.join(__dirname, '../src')
 const DIST_DIR = path.join(__dirname, '../dist')
 
-const EXTENSIONS = ['.css', '.html', '.json', '.png', '.ico', '.webmanifest', '.xml', '.client.js']
+const EXTENSIONS = ['.css', '.html', '.json', '.png', '.ico', '.webmanifest', '.xml', '.client.js', '.md']
 
 function shouldCopy(filePath) {
   return EXTENSIONS.some(ext => filePath.endsWith(ext))

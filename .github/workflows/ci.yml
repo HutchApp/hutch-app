@@ -81,6 +81,7 @@ jobs:
       PULUMI_STACK: staging
       PULUMI_CONFIG_PASSPHRASE: ''
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -167,6 +168,7 @@ jobs:
       PULUMI_STACK: prod
       PULUMI_CONFIG_PASSPHRASE: ''
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
