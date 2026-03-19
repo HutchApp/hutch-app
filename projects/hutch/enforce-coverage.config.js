@@ -25,5 +25,7 @@ config.enforceCoverage({
     'src/runtime/providers/**/dynamodb-*.ts',
     // Resend adapter — thin SDK wrapper, same rationale as DynamoDB adapters
     'src/runtime/providers/email/resend-email.ts',
+    // Staging E2E tests — only run in CI against deployed staging, not locally
+    '**/*.e2e-staging.ts',
   ],
 })
