@@ -51,6 +51,9 @@ importers:
         specifier: 4.1.13
         version: 4.1.13
     devDependencies:
+      '@packages/check-unused-css':
+        specifier: workspace:*
+        version: link:../../src/packages/check-unused-css
       '@packages/test-phase-runner':
         specifier: workspace:*
         version: link:../../src/packages/test-phase-runner

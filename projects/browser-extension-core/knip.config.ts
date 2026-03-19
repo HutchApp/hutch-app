@@ -4,6 +4,10 @@ export default {
 	entry: [
 		"src/e2e/index.ts",
 	],
+	ignore: [
+		// PurgeCSS config loaded via CLI, not imported in source
+		"purgecss.config.js",
+	],
 	ignoreBinaries: [
 		"knip",
 		"biome",
@@ -13,5 +17,7 @@ export default {
 		"@packages/hutch-logger",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)
 		"@packages/test-phase-runner",
+		// Used by scripts/check-unused-css.js (not a source-level import)
+		"@packages/check-unused-css",
 	],
 } satisfies KnipConfig;
