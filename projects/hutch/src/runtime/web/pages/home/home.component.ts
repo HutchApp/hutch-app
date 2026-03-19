@@ -15,7 +15,7 @@ export function HomePage(params: { userCount: number }): Component {
 	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
 		seo: {
-			title: "Hutch — A read-it-later app by Fayner Brack",
+			title: "Hutch — A read-it-later app by <a href=\"https://reddit.com/u/fagnerbrack\">Fayner Brack</a>",
 			description:
 				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
 			canonicalUrl: "https://hutch-app.com",
