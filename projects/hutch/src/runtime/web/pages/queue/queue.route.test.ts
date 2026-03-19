@@ -267,7 +267,7 @@ describe("Queue routes", () => {
 			expect(unreadArticle?.querySelector(".queue-article__unread-dot")?.getAttribute("aria-label")).toBe("Unread");
 		});
 
-		it("should include htmx mark-as-read on unread article title links", async () => {
+		it("should not include htmx attributes on article title links", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);
 
@@ -279,10 +279,9 @@ describe("Queue routes", () => {
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
 			const titleLink = doc.querySelector(".queue-article__title");
-			const articleId = doc.querySelector(".queue-article")?.getAttribute("data-test-article");
-			expect(titleLink?.getAttribute("hx-post")).toBe(`/queue/${articleId}/status`);
-			expect(titleLink?.getAttribute("hx-vals")).toBe('{"status":"read"}');
-			expect(titleLink?.getAttribute("hx-swap")).toBe("none");
+			expect(titleLink?.getAttribute("hx-post")).toBeNull();
+			expect(titleLink?.getAttribute("hx-vals")).toBeNull();
+			expect(titleLink?.getAttribute("hx-swap")).toBeNull();
 		});
 	});
 
@@ -376,6 +375,40 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-reader-title]")?.textContent).toBe("Saved Post");
 			expect(doc.querySelector("[data-test-back-link]")?.getAttribute("href")).toBe("/queue");
 			expect(doc.querySelector("[data-test-original-link]")?.getAttribute("href")).toBe("https://example.com/saved-post");
+		});
+
+		it("should mark unread article as read when opening reader", async () => {
+			const articleHtml = `
+			<html><head><title>Auto Read</title></head>
+			<body><article>
+				<h1>Auto Read</h1>
+				<p>This article should be marked as read when opened in the reader view.</p>
+				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
+			</article></body></html>`;
+
+			const fetchHtml = async (_url: string) => articleHtml;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/auto-read" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+			const article = queueDoc.querySelector(".queue-article");
+			expect(article?.classList.contains("queue-article--unread")).toBe(true);
+
+			await agent.get(`/queue/${articleId}/read`);
+
+			const afterResponse = await agent.get("/queue");
+			const afterDoc = new JSDOM(afterResponse.text).window.document;
+			const readArticle = afterDoc.querySelector(".queue-article");
+			expect(readArticle?.classList.contains("queue-article--unread")).toBe(false);
 		});
 
 		it("should redirect to queue for non-existent article", async () => {
