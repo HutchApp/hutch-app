@@ -149,6 +149,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     execute: async (page) => {
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
+      await page.reload({ waitUntil: 'domcontentloaded' })
       progress.backFromReader = true
     },
   })
