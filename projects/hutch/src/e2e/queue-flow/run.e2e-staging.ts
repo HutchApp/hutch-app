@@ -91,7 +91,7 @@ test.describe('Queue management flow (staging)', () => {
     const privacyUrl = `${baseURL}/privacy`
     const stagingArticles: TestArticleData = {
       urls: [privacyUrl, privacyUrl, privacyUrl, privacyUrl],
-      titles: ['Privacy Policy', 'Privacy Policy', 'Privacy Policy', 'Privacy Policy'],
+      titles: ['Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch'],
     }
 
     const allActions = groupOf(
