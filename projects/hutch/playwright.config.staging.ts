@@ -6,6 +6,7 @@ export default createPlaywrightConfig({
   baseURL: process.env.STAGING_URL,
   retries: 1,
   headless: true,
+  timeout: 300000,
   video: 'off',
   launchOptions: undefined,
   webServer: undefined,

@@ -6,6 +6,7 @@ interface PlaywrightConfigOptions {
   baseURL: string | undefined
   retries: number
   headless: boolean
+  timeout?: number
   video: 'off' | 'on' | 'retain-on-failure' | 'on-first-retry'
   launchOptions: { slowMo?: number } | undefined
   webServer:
@@ -28,7 +29,7 @@ export const createPlaywrightConfig = (options: PlaywrightConfigOptions) => {
     forbidOnly: true,
     reporter: 'html',
     retries: options.retries,
-    timeout: 120000,
+    timeout: options.timeout ?? 120000,
     use: {
       baseURL: options.baseURL,
       trace: 'on-first-retry',
