@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../hateoas'
 import { groupOf } from '../hateoas/action-composer'
-import { clickAndWaitForPageReload, isOnPage } from '../page-interactions'
+import { isOnPage } from '../page-interactions'
 import { createAuthActions, type AuthData, type AuthProgress } from './auth-actions'
 import { createQueueActions, type QueueProgress, type TestArticleData } from './queue-actions'
 import type { PageAction } from '../hateoas/navigation-handler.types'
@@ -23,7 +23,14 @@ function createStagingCleanupActions(
     execute: async (page) => {
       let count = await page.locator('[data-test-action="delete"]').count()
       while (count > 0) {
-        await clickAndWaitForPageReload(page, page.locator('[data-test-action="delete"]').first())
+        const expectedCount = count - 1
+        await page.locator('[data-test-action="delete"]').first().click()
+        // Wait for HTMX to finish swapping — article count decreases
+        await page.waitForFunction(
+          (expected) => document.querySelectorAll('[data-test-article]').length <= expected,
+          expectedCount,
+          { timeout: 30000 },
+        )
         count = await page.locator('[data-test-action="delete"]').count()
       }
       stagingProgress.previousArticlesDeleted = true
