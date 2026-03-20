@@ -86,16 +86,16 @@ test.describe('Queue management flow (staging)', () => {
       cleanupDeleted: false,
     }
 
-    // Same URL repeated — Lambda can reliably fetch this within its 30s
-    // timeout. Title verification still validates count and tab filtering.
+    // Lightweight URLs that Lambda can reliably fetch within its 30s
+    // timeout. example.com is an IANA-maintained page (~1KB).
     const stagingArticles: TestArticleData = {
       urls: [
-        'https://en.wikipedia.org/wiki/URL',
-        'https://en.wikipedia.org/wiki/URL',
-        'https://en.wikipedia.org/wiki/URL',
-        'https://en.wikipedia.org/wiki/URL',
+        'https://example.com',
+        'https://example.com',
+        'https://example.com',
+        'https://example.com',
       ],
-      titles: ['URL', 'URL', 'URL', 'URL'],
+      titles: ['Example Domain', 'Example Domain', 'Example Domain', 'Example Domain'],
     }
 
     const allActions = groupOf(
