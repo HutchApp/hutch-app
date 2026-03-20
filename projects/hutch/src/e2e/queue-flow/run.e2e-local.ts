@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../hateoas'
 import { groupOf } from '../hateoas/action-composer'
 import { createAuthActions, type AuthData, type AuthProgress } from './auth-actions'
-import { createQueueActions, type QueueProgress } from './queue-actions'
+import { createQueueActions, LOCAL_TEST_ARTICLES, type QueueProgress } from './queue-actions'
 
 test.describe('Queue management flow (local)', () => {
   test('signup, logout, login, add articles, sort, read, delete, archive, verify tabs', async ({ page }) => {
@@ -35,7 +35,7 @@ test.describe('Queue management flow (local)', () => {
 
     const allActions = groupOf(
       createAuthActions(authData, authProgress),
-      createQueueActions(authProgress, queueProgress),
+      createQueueActions(authProgress, queueProgress, LOCAL_TEST_ARTICLES),
     )
 
     const navigationHandler = new PageNavigationHandler(

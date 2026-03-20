@@ -20,20 +20,21 @@ export type QueueProgress = {
   cleanupDeleted: boolean
 }
 
-const TEST_URLS = [
-  'https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol',
-  'https://en.wikipedia.org/wiki/Web_browser',
-  'https://en.wikipedia.org/wiki/URL',
-  'https://en.wikipedia.org/wiki/HTML',
-]
+export const LOCAL_TEST_ARTICLES: TestArticleData = {
+  urls: [
+    'https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol',
+    'https://en.wikipedia.org/wiki/Web_browser',
+    'https://en.wikipedia.org/wiki/URL',
+    'https://en.wikipedia.org/wiki/HTML',
+  ],
+  // Titles extracted by Readability from the Wikipedia pages above
+  titles: ['HTTP', 'Web browser', 'URL', 'HTML'],
+}
 
-// Titles extracted by Readability from the Wikipedia pages above
-const TEST_TITLES = ['HTTP', 'Web browser', 'URL', 'HTML']
-
-// Newest-first (desc, default): 4, 3, 2, 1
-// Oldest-first (asc): 1, 2, 3, 4
-const TITLES_NEWEST_FIRST = [...TEST_TITLES].reverse()
-const TITLES_OLDEST_FIRST = [...TEST_TITLES]
+export type TestArticleData = {
+  urls: string[]
+  titles: string[]
+}
 
 async function getArticleCount(page: Page): Promise<number> {
   return page.locator('[data-test-article]').count()
@@ -43,7 +44,12 @@ async function getArticleTitles(page: Page): Promise<string[]> {
   return page.locator('[data-test-article-title]').allTextContents()
 }
 
-export function createQueueActions(authProgress: AuthProgress, progress: QueueProgress): Map<string, PageAction> {
+export function createQueueActions(authProgress: AuthProgress, progress: QueueProgress, testData: TestArticleData): Map<string, PageAction> {
+  const TEST_URLS = testData.urls
+  const TEST_TITLES = testData.titles
+  const TITLES_NEWEST_FIRST = [...TEST_TITLES].reverse()
+  const TITLES_OLDEST_FIRST = [...TEST_TITLES]
+
   const actions = new Map<string, PageAction>()
 
   let articlesAdded = 0

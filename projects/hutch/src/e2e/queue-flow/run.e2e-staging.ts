@@ -3,7 +3,7 @@ import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../
 import { groupOf } from '../hateoas/action-composer'
 import { clickAndWaitForPageReload, isOnPage } from '../page-interactions'
 import { createAuthActions, type AuthData, type AuthProgress } from './auth-actions'
-import { createQueueActions, type QueueProgress } from './queue-actions'
+import { createQueueActions, type QueueProgress, type TestArticleData } from './queue-actions'
 import type { PageAction } from '../hateoas/navigation-handler.types'
 
 function createStagingCleanupActions(
@@ -79,10 +79,22 @@ test.describe('Queue management flow (staging)', () => {
       cleanupDeleted: false,
     }
 
+    // Same URL repeated — Lambda can reliably fetch this within its 30s
+    // timeout. Title verification still validates count and tab filtering.
+    const stagingArticles: TestArticleData = {
+      urls: [
+        'https://en.wikipedia.org/wiki/URL',
+        'https://en.wikipedia.org/wiki/URL',
+        'https://en.wikipedia.org/wiki/URL',
+        'https://en.wikipedia.org/wiki/URL',
+      ],
+      titles: ['URL', 'URL', 'URL', 'URL'],
+    }
+
     const allActions = groupOf(
       createAuthActions(authData, authProgress),
       createStagingCleanupActions(authProgress, stagingProgress),
-      createQueueActions(authProgress, queueProgress),
+      createQueueActions(authProgress, queueProgress, stagingArticles),
     )
 
     const navigationHandler = new PageNavigationHandler(
