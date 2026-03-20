@@ -5,18 +5,15 @@ export function isOnPage(page: Page, bodyClass: string): Promise<boolean> {
 }
 
 export async function clickAndWaitForPageReload(page: Page, locator: ReturnType<Page['locator']>): Promise<void> {
-  const loadOrHtmxSwap = Promise.race([
-    page.waitForEvent('load'),
-    page.waitForResponse(resp => resp.request().headers()['hx-request'] === 'true'),
-  ])
-  // Wait for any response after the click — ensures the request triggered
-  // by the click has been sent and responded to before checking networkidle.
-  // Without this, networkidle resolves immediately if the network is already
-  // idle from a previous action (HTMX hasn't started the new POST yet).
-  const responseAfterClick = page.waitForResponse(() => true)
+  const loadEvent = page.waitForEvent('load')
   await locator.click()
   await Promise.race([
-    loadOrHtmxSwap,
-    responseAfterClick.then(() => page.waitForLoadState('networkidle')),
+    // Full page navigation (non-HTMX links, standard form submits)
+    loadEvent,
+    // HTMX adds htmx-request class when request starts, removes after swap.
+    // Wait for it to appear then disappear — guarantees the DOM is stable.
+    page.waitForSelector('.htmx-request', { state: 'attached', timeout: 5000 })
+      .then(() => page.waitForSelector('.htmx-request', { state: 'detached', timeout: 60000 }))
+      .catch(() => page.waitForLoadState('networkidle')),
   ])
 }
