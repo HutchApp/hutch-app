@@ -86,16 +86,12 @@ test.describe('Queue management flow (staging)', () => {
       cleanupDeleted: false,
     }
 
-    // Lightweight URLs that Lambda can reliably fetch within its 30s
-    // timeout. example.com is an IANA-maintained page (~1KB).
+    // Use the staging app's own privacy page — fetched locally by Lambda
+    // (same API Gateway), so no external network dependency or timeout risk.
+    const privacyUrl = `${baseURL}/privacy`
     const stagingArticles: TestArticleData = {
-      urls: [
-        'https://example.com',
-        'https://example.com',
-        'https://example.com',
-        'https://example.com',
-      ],
-      titles: ['Example Domain', 'Example Domain', 'Example Domain', 'Example Domain'],
+      urls: [privacyUrl, privacyUrl, privacyUrl, privacyUrl],
+      titles: ['Privacy Policy', 'Privacy Policy', 'Privacy Policy', 'Privacy Policy'],
     }
 
     const allActions = groupOf(
