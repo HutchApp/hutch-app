@@ -1,8 +1,50 @@
 import { test, expect } from '@playwright/test'
 import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../hateoas'
 import { groupOf } from '../hateoas/action-composer'
+import { clickAndWaitForPageReload, isOnPage } from '../page-interactions'
 import { createAuthActions, type AuthData, type AuthProgress } from './auth-actions'
 import { createQueueActions, type QueueProgress } from './queue-actions'
+import type { PageAction } from '../hateoas/navigation-handler.types'
+
+function createStagingCleanupActions(
+  authProgress: AuthProgress,
+  stagingProgress: { previousArticlesDeleted: boolean },
+): Map<string, PageAction> {
+  const actions = new Map<string, PageAction>()
+
+  actions.set('cleanup-previous-articles', {
+    isAvailable: async (page) => {
+      if (!authProgress.loggedIn) return false
+      if (stagingProgress.previousArticlesDeleted) return false
+      if (!(await isOnPage(page, 'page-queue'))) return false
+      const count = await page.locator('[data-test-action="delete"]').count()
+      return count > 0
+    },
+    execute: async (page) => {
+      let count = await page.locator('[data-test-action="delete"]').count()
+      while (count > 0) {
+        await clickAndWaitForPageReload(page, page.locator('[data-test-action="delete"]').first())
+        count = await page.locator('[data-test-action="delete"]').count()
+      }
+      stagingProgress.previousArticlesDeleted = true
+    },
+  })
+
+  actions.set('mark-cleanup-done', {
+    isAvailable: async (page) => {
+      if (!authProgress.loggedIn) return false
+      if (stagingProgress.previousArticlesDeleted) return false
+      if (!(await isOnPage(page, 'page-queue'))) return false
+      const count = await page.locator('[data-test-action="delete"]').count()
+      return count === 0
+    },
+    execute: async () => {
+      stagingProgress.previousArticlesDeleted = true
+    },
+  })
+
+  return actions
+}
 
 test.describe('Queue management flow (staging)', () => {
   test('signup, logout, login, add articles, sort, read, delete, archive, verify tabs', async ({ page, baseURL }) => {
@@ -15,6 +57,10 @@ test.describe('Queue management flow (staging)', () => {
       accountCreated: false,
       loggedOut: false,
       loggedIn: false,
+    }
+
+    const stagingProgress = {
+      previousArticlesDeleted: false,
     }
 
     const queueProgress: QueueProgress = {
@@ -35,6 +81,7 @@ test.describe('Queue management flow (staging)', () => {
 
     const allActions = groupOf(
       createAuthActions(authData, authProgress),
+      createStagingCleanupActions(authProgress, stagingProgress),
       createQueueActions(authProgress, queueProgress),
     )
 
@@ -42,14 +89,16 @@ test.describe('Queue management flow (staging)', () => {
       page,
       {
         successDetector: async () => {
-          return Object.values(authProgress).every(Boolean) && Object.values(queueProgress).every(Boolean)
+          return Object.values(authProgress).every(Boolean)
+            && Object.values(stagingProgress).every(Boolean)
+            && Object.values(queueProgress).every(Boolean)
         },
       },
       allActions,
     )
 
     const client = new HATEOASClient(page, navigationHandler)
-    const config: NavigationConfig = { maxNavigations: 40 }
+    const config: NavigationConfig = { maxNavigations: 60 }
 
     const result = await client.navigate(baseURL!, config)
 
