@@ -135,9 +135,22 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: projects/hutch
 
+      - name: Verify staging is reachable
+        run: |
+          echo "Staging URL: ${{ steps.staging-url.outputs.url }}"
+          curl --fail --silent --show-error --max-time 30 "${{ steps.staging-url.outputs.url }}" | head -50
+
       - name: Run E2E tests against staging
         run: STAGING_URL=${{ steps.staging-url.outputs.url }} pnpm test:e2e:staging
         working-directory: projects/hutch
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-staging-results
+          path: projects/hutch/test-results-staging/
+          retention-days: 7
 
   hutch-deploy-to-prod:
     if: needs.detect-changes.outputs.hutch == 'true'
