@@ -289,19 +289,12 @@ export const NAV_STYLES = `
     padding: 8px 0;
   }
 
-  /**
-   * 1. Increase specificity of font-size to ensure the nav font-size is consistent
-   *    when link is wrapped inside a <form> (such as the logout button)
-   * /
-  .nav__list .nav__link {
-    font-size: 14px; /* 1 */
-  }
-
   .nav__link {
     display: block;
     padding: 12px 16px;
     color: var(--foreground);
     text-decoration: none;
+    font-size: 14px;
   }
 
   .nav__link:hover {
