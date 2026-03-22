@@ -13,7 +13,7 @@ on:
         required: true
 
 jobs:
-  submit-firefox-extension:
+  submit-firefox-extension-prod:
     runs-on: ubuntu-latest
     environment: prod
     env:
