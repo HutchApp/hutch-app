@@ -62,6 +62,18 @@
   opacity: 0.9;
 }
 
+.queue__save-btn-saving {
+  display: none;
+}
+
+.htmx-request .queue__save-btn-label {
+  display: none;
+}
+
+.htmx-request .queue__save-btn-saving {
+  display: inline;
+}
+
 .queue__save-error {
   color: var(--error);
   font-size: 0.875rem;

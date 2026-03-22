@@ -27,8 +27,8 @@ export function initClaudeSummarizer(deps: {
 
 		try {
 			const response = await deps.createMessage({
-				model: "claude-sonnet-4-6-20250514",
-				max_tokens: 4096,
+				model: "claude-sonnet-4-6",
+				max_tokens: 20480,
 				system: SUMMARIZE_PROMPT,
 				messages: [{ role: "user", content: cleanedContent }],
 			});

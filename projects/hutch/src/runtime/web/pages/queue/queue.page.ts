@@ -115,7 +115,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		});
 
 		if (article.content) {
-			await deps.summarizeArticle({ url: parsed.data.url, textContent: article.content });
+			// Intentionally not awaited — summarization runs in the background so the response returns immediately
+			deps.summarizeArticle({ url: parsed.data.url, textContent: article.content });
 		}
 
 		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(saved));
@@ -166,7 +167,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		});
 
 		if (article.content) {
-			await deps.summarizeArticle({ url: parsedBody.data.url, textContent: article.content });
+			// Intentionally not awaited — summarization runs in the background so the response returns immediately
+			deps.summarizeArticle({ url: parsedBody.data.url, textContent: article.content });
 		}
 
 		res.redirect(303, "/queue");
