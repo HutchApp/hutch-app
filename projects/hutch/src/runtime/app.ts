@@ -24,6 +24,8 @@ import type { SummarizeArticle } from "./providers/article-summary/article-summa
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
+const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
+
 function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
 
@@ -43,7 +45,6 @@ function initProviders() {
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: summaryCacheTable });
 		const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
-		const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 		const { summarizeArticle } = initClaudeSummarizer({
 			createMessage: anthropicClient.messages.create.bind(anthropicClient.messages),
 			...summaryCache,
@@ -90,7 +91,7 @@ export function createHutchApp(deps: {
 		parseArticle: deps.parseArticle,
 		...providers,
 		baseUrl: appOrigin,
-		logError: (message, error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack })),
+		logError,
 		oauthModel,
 		validateAccessToken,
 	});
