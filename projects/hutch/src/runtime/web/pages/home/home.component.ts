@@ -137,13 +137,13 @@ export function HomePage(params: { userCount: number }): Component {
 					description:
 						"Distraction-free reading with clean fonts, themes, and typography.",
 				},
-			],
-			plannedFeatures: [
 				{
 					name: "AI Summary",
 					description:
-						"Summarise core topics in the caption and Reader View for quick reading based on your interests",
-				},
+						"Summarise core topics in the Reader View before you read the full content.",
+				}
+			],
+			plannedFeatures: [
 				{
 					name: "Email Link Import",
 					description:

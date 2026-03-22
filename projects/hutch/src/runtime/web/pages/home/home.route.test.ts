@@ -36,7 +36,7 @@ describe("GET /", () => {
 
 		const coreSection = doc.querySelector('[data-test-section="core-features"]');
 		const features = coreSection?.querySelectorAll(".feature-card");
-		expect(features?.length).toBe(3);
+		expect(features?.length).toBe(4);
 	});
 
 	it("should render the backstory section", async () => {
