@@ -171,7 +171,7 @@ describe("initBuildExtension defaults", () => {
 describe("plan.buildExtension", () => {
 	function createInMemoryDeps() {
 		const createdDirs: Array<{ path: string; options: { recursive: true } }> = [];
-		const copiedFiles: Array<{ src: string; dest: string; options?: { recursive: boolean } }> = [];
+		const copiedFiles: Array<{ src: string; dest: string; options?: { recursive?: boolean; force?: boolean } }> = [];
 		let esbuildCallCount = 0;
 		let lastEsbuildOptions: { target: string } | null = null;
 
@@ -183,7 +183,7 @@ describe("plan.buildExtension", () => {
 			mkdirSync: (path: string, options: { recursive: true }) => {
 				createdDirs.push({ path, options });
 			},
-			cpSync: (src: string, dest: string, options?: { recursive: boolean }) => {
+			cpSync: (src: string, dest: string, options?: { recursive?: boolean; force?: boolean }) => {
 				copiedFiles.push({ src, dest, options });
 			},
 			resolveCorePackageJson: () => "/projects/browser-extension-core/package.json",
@@ -255,9 +255,9 @@ describe("plan.buildExtension", () => {
 		await plan.buildExtension();
 
 		const iconsCopy = copiedFiles.find((c) => c.dest.endsWith("icons") && !c.dest.endsWith("icons-saved"));
-		expect(iconsCopy?.options).toEqual({ recursive: true });
+		expect(iconsCopy?.options).toEqual({ recursive: true, force: true });
 
 		const manifestCopy = copiedFiles.find((c) => c.dest.endsWith("manifest.json"));
-		expect(manifestCopy?.options).toBeUndefined();
+		expect(manifestCopy?.options).toEqual({ force: true });
 	});
 });

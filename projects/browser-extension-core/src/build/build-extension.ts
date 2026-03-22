@@ -27,7 +27,7 @@ interface CopyOperation {
 interface BuildExtensionDeps {
 	esbuild: (options: EsbuildOptions) => Promise<unknown>;
 	mkdirSync: (path: string, options: { recursive: true }) => void;
-	cpSync: (src: string, dest: string, options?: { recursive: boolean }) => void;
+	cpSync: (src: string, dest: string, options?: { recursive?: boolean; force?: boolean }) => void;
 	resolveCorePackageJson: () => string;
 }
 
@@ -115,9 +115,9 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 
 					for (const copy of planData.copies) {
 						if (copy.recursive) {
-							resolvedDeps.cpSync(copy.src, copy.dest, { recursive: true });
+							resolvedDeps.cpSync(copy.src, copy.dest, { recursive: true, force: true });
 						} else {
-							resolvedDeps.cpSync(copy.src, copy.dest);
+							resolvedDeps.cpSync(copy.src, copy.dest, { force: true });
 						}
 					}
 
