@@ -290,9 +290,10 @@ export const NAV_STYLES = `
   }
 
   /**
-   * 1. Ensure font-size of nav-list is consistent to avoid different sizes when wrapped by a form, like the logout
+   * 1. Increase specificity of font-size to ensure the nav font-size is consistent
+   *    when link is wrapped inside a <form> (such as the logout button)
    */
-  .nav__list {
+  .nav__list .nav__link {
     font-size: 14px; /* 1 */
   }
 
