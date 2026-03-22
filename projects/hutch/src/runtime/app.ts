@@ -17,11 +17,18 @@ import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
+import Anthropic from "@anthropic-ai/sdk";
+import { initClaudeSummarizer } from "./providers/article-summary/claude-summarizer";
+import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
+import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
 function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
+	const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
+	const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
+	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
 	if (persistence === "prod") {
 		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
@@ -29,12 +36,19 @@ function initProviders() {
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
+		const summaryCacheTable = requireEnv("DYNAMODB_SUMMARY_CACHE_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
+		const summaryCache = initDynamoDbSummaryCache({ client, tableName: summaryCacheTable });
+		const { summarizeArticle } = initClaudeSummarizer({
+			createMessage: (params) => anthropicClient.messages.create(params),
+			logError,
+			...summaryCache,
+		});
 		return {
 			auth,
 			articleStore,
@@ -42,12 +56,21 @@ function initProviders() {
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
+			summarizeArticle,
+			findCachedSummary: summaryCache.findCachedSummary,
 		};
 	}
 
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const summaryCache = initInMemorySummaryCache();
+	const { summarizeArticle } = initClaudeSummarizer({
+		createMessage: (params) => anthropicClient.messages.create(params),
+		logError,
+		...summaryCache,
+	});
+
 	return {
 		auth,
 		articleStore,
@@ -55,6 +78,8 @@ function initProviders() {
 		...initInMemoryEmailVerification(),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
+		summarizeArticle,
+		findCachedSummary: summaryCache.findCachedSummary,
 	};
 }
 

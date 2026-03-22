@@ -58,6 +58,8 @@ describe("Email verification", () => {
 				logError: () => { resolveErrorLogged(); },
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
+				summarizeArticle: async () => null,
+				findCachedSummary: async () => "",
 			});
 
 			const response = await request(app).post("/signup").type("form").send({

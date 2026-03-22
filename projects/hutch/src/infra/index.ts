@@ -86,6 +86,7 @@ class HutchStorage {
 	public readonly sessionsTable: aws.dynamodb.Table;
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
+	public readonly summaryCacheTable: aws.dynamodb.Table;
 
 	constructor(_name: string, args: { deletionProtection: boolean }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
@@ -163,6 +164,13 @@ class HutchStorage {
 				enabled: true,
 			},
 		});
+
+		this.summaryCacheTable = new aws.dynamodb.Table(`hutch-summary-cache`, {
+			billingMode: "PAY_PER_REQUEST",
+			deletionProtectionEnabled: args.deletionProtection,
+			hashKey: "url",
+			attributes: [{ name: "url", type: "S" }],
+		});
 	}
 }
 
@@ -228,8 +236,9 @@ class HutchLambda {
 					args.storage.sessionsTable.arn,
 					args.storage.oauthTable.arn,
 					args.storage.verificationTokensTable.arn,
+					args.storage.summaryCacheTable.arn,
 				])
-				.apply(([articlesArn, usersArn, sessionsArn, oauthArn, verificationTokensArn]) =>
+				.apply(([articlesArn, usersArn, sessionsArn, oauthArn, verificationTokensArn, summaryCacheArn]) =>
 					JSON.stringify({
 						Version: "2012-10-17",
 						Statement: [
@@ -252,6 +261,7 @@ class HutchLambda {
 									oauthArn,
 									`${oauthArn}/index/*`,
 									verificationTokensArn,
+									summaryCacheArn,
 								],
 							},
 						],
@@ -292,6 +302,10 @@ class HutchLambda {
 					RESEND_API_KEY: pulumi.runtime.isDryRun()
 						? (getEnv("RESEND_API_KEY") ?? "")
 						: requireEnv("RESEND_API_KEY"),
+					ANTHROPIC_API_KEY: pulumi.runtime.isDryRun()
+						? (getEnv("ANTHROPIC_API_KEY") ?? "")
+						: requireEnv("ANTHROPIC_API_KEY"),
+					DYNAMODB_SUMMARY_CACHE_TABLE: args.storage.summaryCacheTable.name,
 				},
 			},
 		});

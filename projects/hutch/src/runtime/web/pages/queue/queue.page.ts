@@ -11,6 +11,7 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
+import type { FindCachedSummary, SummarizeArticle } from "../../../providers/article-summary/article-summary.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
@@ -27,6 +28,8 @@ interface QueueDependencies {
 	parseArticle: ParseArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
+	summarizeArticle: SummarizeArticle;
+	findCachedSummary: FindCachedSummary;
 }
 
 export function initQueueRoutes(deps: QueueDependencies): Router {
@@ -111,15 +114,19 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			estimatedReadTime: calculateReadTime(article.wordCount),
 		});
 
+		if (article.content) {
+			await deps.summarizeArticle({ url: parsed.data.url, textContent: article.content });
+		}
+
 		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(saved));
 	});
 
 	router.post("/save", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
-		const parsed = SaveArticleInputSchema.safeParse(req.body);
+		const parsedBody = SaveArticleInputSchema.safeParse(req.body);
 
-		if (!parsed.success) {
+		if (!parsedBody.success) {
 			const urlState = parseQueueUrl({});
 			const result = await deps.findArticlesByUser({ userId });
 			const vm = toQueueViewModel(result, urlState, {
@@ -130,23 +137,23 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const parseResult = await deps.parseArticle(parsed.data.url);
+		const parseArticleResult = await deps.parseArticle(parsedBody.data.url);
 
-		if (!parseResult.ok) {
+		if (!parseArticleResult.ok) {
 			const urlState = parseQueueUrl({});
 			const result = await deps.findArticlesByUser({ userId });
 			const vm = toQueueViewModel(result, urlState, {
-				saveError: `Could not parse article: ${parseResult.reason}`,
+				saveError: `Could not parse article: ${parseArticleResult.reason}`,
 			});
 			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);
 			return;
 		}
 
-		const { article } = parseResult;
+		const { article } = parseArticleResult;
 		await deps.saveArticle({
 			userId,
-			url: parsed.data.url,
+			url: parsedBody.data.url,
 			metadata: {
 				title: article.title,
 				siteName: article.siteName,
@@ -157,6 +164,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			content: article.content || undefined,
 			estimatedReadTime: calculateReadTime(article.wordCount),
 		});
+
+		if (article.content) {
+			await deps.summarizeArticle({ url: parsedBody.data.url, textContent: article.content });
+		}
 
 		res.redirect(303, "/queue");
 	});
@@ -177,7 +188,9 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			await deps.updateArticleStatus(articleId, userId, "read");
 		}
 
-		const html = ReaderPage(article, { emailVerified: req.emailVerified }).to("text/html");
+		const summary = await deps.findCachedSummary(article.url);
+
+		const html = ReaderPage(article, { emailVerified: req.emailVerified, summary }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

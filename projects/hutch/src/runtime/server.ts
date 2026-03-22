@@ -21,6 +21,7 @@ import type {
 	SaveArticle,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { FindCachedSummary, SummarizeArticle } from "./providers/article-summary/article-summary.types";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
 	CreateVerificationToken,
@@ -67,6 +68,8 @@ interface AppDependencies {
 	logError: (message: string, error?: Error) => void;
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
+	summarizeArticle: SummarizeArticle;
+	findCachedSummary: FindCachedSummary;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -194,6 +197,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		parseArticle: deps.parseArticle,
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
+		summarizeArticle: deps.summarizeArticle,
+		findCachedSummary: deps.findCachedSummary,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 
