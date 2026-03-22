@@ -8,6 +8,8 @@ export type FindCachedSummary = (url: string) => Promise<string>;
 export type SaveCachedSummary = (params: {
 	url: string;
 	summary: string;
+	inputTokens: number;
+	outputTokens: number;
 }) => Promise<void>;
 
 export type CreateAiMessage = (params: {
@@ -15,4 +17,7 @@ export type CreateAiMessage = (params: {
 	max_tokens: number;
 	system: string;
 	messages: Array<{ role: "user" | "assistant"; content: string }>;
-}) => Promise<{ content: Array<{ type: string; text?: string }> }>;
+}) => Promise<{
+	content: Array<{ type: string; text?: string }>;
+	usage: { input_tokens: number; output_tokens: number };
+}>;

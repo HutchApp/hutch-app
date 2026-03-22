@@ -21,6 +21,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { initClaudeSummarizer } from "./providers/article-summary/claude-summarizer";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
+import { stripHtml } from "./providers/article-summary/strip-html";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -47,6 +48,7 @@ function initProviders() {
 		const { summarizeArticle } = initClaudeSummarizer({
 			createMessage: (params) => anthropicClient.messages.create(params),
 			logError,
+			cleanContent: stripHtml,
 			...summaryCache,
 		});
 		return {
@@ -68,6 +70,7 @@ function initProviders() {
 	const { summarizeArticle } = initClaudeSummarizer({
 		createMessage: (params) => anthropicClient.messages.create(params),
 		logError,
+		cleanContent: stripHtml,
 		...summaryCache,
 	});
 

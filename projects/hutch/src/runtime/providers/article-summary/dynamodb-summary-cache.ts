@@ -30,7 +30,12 @@ export function initDynamoDbSummaryCache(deps: {
 		await client.send(
 			new PutCommand({
 				TableName: tableName,
-				Item: { url: params.url, summary: params.summary },
+				Item: {
+					url: params.url,
+					summary: params.summary,
+					inputTokens: params.inputTokens,
+					outputTokens: params.outputTokens,
+				},
 			}),
 		);
 	};

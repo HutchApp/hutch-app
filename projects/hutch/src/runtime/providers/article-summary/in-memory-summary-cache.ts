@@ -7,8 +7,7 @@ export function initInMemorySummaryCache(): {
 	const cache = new Map<string, string>();
 
 	const findCachedSummary: FindCachedSummary = async (url) => {
-		const summary = cache.get(url) ?? ""
-		return summary;
+		return cache.get(url) ?? "";
 	};
 
 	const saveCachedSummary: SaveCachedSummary = async (params) => {

@@ -38,7 +38,7 @@ export function createTestApp(options?: {
 	const summarizeArticle: SummarizeArticle = async (params) => {
 		const summary = await baseSummarize(params);
 		if (summary) {
-			await summaryCache.saveCachedSummary({ url: params.url, summary });
+			await summaryCache.saveCachedSummary({ url: params.url, summary, inputTokens: 0, outputTokens: 0 });
 		}
 		return summary;
 	};
