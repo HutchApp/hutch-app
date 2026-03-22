@@ -224,7 +224,6 @@ export const OFFLINE_BANNER_STYLES = `
   }
 `;
 
-const NAV_FONT_SIZE = '14px'
 export const NAV_STYLES = `
   .nav {
     position: relative;
