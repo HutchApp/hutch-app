@@ -17,6 +17,7 @@ import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
+import Anthropic from "@anthropic-ai/sdk";
 import { initClaudeSummarizer } from "./providers/article-summary/claude-summarizer";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import type { SummarizeArticle } from "./providers/article-summary/article-summary.types";
@@ -41,9 +42,12 @@ function initProviders() {
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: summaryCacheTable });
+		const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
+		const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 		const { summarizeArticle } = initClaudeSummarizer({
-			apiKey: anthropicApiKey,
+			createMessage: anthropicClient.messages.create.bind(anthropicClient.messages),
 			...summaryCache,
+			logError,
 		});
 		return {
 			auth,

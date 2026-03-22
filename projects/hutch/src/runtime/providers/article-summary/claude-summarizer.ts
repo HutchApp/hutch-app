@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import Anthropic from "@anthropic-ai/sdk";
 import type {
+	CreateAiMessage,
 	FindCachedSummary,
 	SaveCachedSummary,
 	SummarizeArticle,
@@ -15,12 +15,11 @@ const SUMMARIZE_PROMPT = readFileSync(
 const MAX_CONTENT_LENGTH = 20_000;
 
 export function initClaudeSummarizer(deps: {
-	apiKey: string;
+	createMessage: CreateAiMessage;
 	findCachedSummary: FindCachedSummary;
 	saveCachedSummary: SaveCachedSummary;
+	logError: (message: string, error?: Error) => void;
 }): { summarizeArticle: SummarizeArticle } {
-	const client = new Anthropic({ apiKey: deps.apiKey });
-
 	const summarizeArticle: SummarizeArticle = async (params) => {
 		const cached = await deps.findCachedSummary(params.url);
 		if (cached) return cached;
@@ -28,7 +27,7 @@ export function initClaudeSummarizer(deps: {
 		const truncatedContent = params.textContent.slice(0, MAX_CONTENT_LENGTH);
 
 		try {
-			const response = await client.messages.create({
+			const response = await deps.createMessage({
 				model: "claude-sonnet-4-6-20250514",
 				max_tokens: 300,
 				system: SUMMARIZE_PROMPT,
@@ -40,12 +39,13 @@ export function initClaudeSummarizer(deps: {
 			);
 			if (!textBlock || textBlock.type !== "text") return null;
 
-			const summary = textBlock.text.trim();
+			const summary = textBlock.text?.trim() ?? "";
 			if (summary === "Summary not available.") return null;
 
 			await deps.saveCachedSummary({ url: params.url, summary });
 			return summary;
-		} catch {
+		} catch (error) {
+			deps.logError("Article summarization failed", error instanceof Error ? error : undefined);
 			return null;
 		}
 	};
