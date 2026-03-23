@@ -68,8 +68,10 @@
 }
 
 .reader__summary-text {
+  font-family: inherit;
   font-size: 1rem;
   line-height: 1.6;
+  white-space: pre-wrap;
   color: var(--color-text-primary);
   margin: 0;
 }
