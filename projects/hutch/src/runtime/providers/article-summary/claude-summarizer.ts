@@ -8,12 +8,10 @@ import type {
 	SummarizeArticle,
 } from "./article-summary.types";
 
-const MAX_TOKENS = 200;
-
 const SUMMARIZE_PROMPT = readFileSync(
 	join(__dirname, "summarize-prompt.md"),
 	"utf-8",
-).replace("{{MAX_TOKENS}}", String(MAX_TOKENS));
+);
 
 export function initClaudeSummarizer(deps: {
 	createMessage: CreateAiMessage;
@@ -37,7 +35,7 @@ export function initClaudeSummarizer(deps: {
 		try {
 			const response = await deps.createMessage({
 				model: "claude-sonnet-4-6",
-				max_tokens: MAX_TOKENS,
+				max_tokens: 10240,
 				system: SUMMARIZE_PROMPT,
 				messages: [{ role: "user", content: cleanedContent }],
 				output_config: {

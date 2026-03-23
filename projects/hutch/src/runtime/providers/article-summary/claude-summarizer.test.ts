@@ -44,7 +44,7 @@ describe("initClaudeSummarizer", () => {
 		expect(result).toBe("A concise summary.");
 		expect(deps.createMessage).toHaveBeenCalledTimes(1);
 		const callArgs = (deps.createMessage as jest.Mock).mock.calls[0][0];
-		expect(callArgs.max_tokens).toBe(200);
+		expect(callArgs.max_tokens).toBe(10240);
 		expect(callArgs.output_config).toEqual({
 			format: {
 				type: "json_schema",
