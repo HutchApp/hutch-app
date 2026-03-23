@@ -88,9 +88,15 @@ test.describe('Queue management flow (staging)', () => {
 
     // Use the staging app's own privacy page — fetched locally by Lambda
     // (same API Gateway), so no external network dependency or timeout risk.
-    const privacyUrl = `${baseURL}/privacy`
+    // Each URL must be unique because articles are keyed by userId+url.
+    // Query params make each URL distinct while fetching the same page.
     const stagingArticles: TestArticleData = {
-      urls: [privacyUrl, privacyUrl, privacyUrl, privacyUrl],
+      urls: [
+        `${baseURL}/privacy?v=1`,
+        `${baseURL}/privacy?v=2`,
+        `${baseURL}/privacy?v=3`,
+        `${baseURL}/privacy?v=4`,
+      ],
       titles: ['Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch'],
     }
 
