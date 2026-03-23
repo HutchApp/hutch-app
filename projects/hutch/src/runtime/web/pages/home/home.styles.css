@@ -1,3 +1,46 @@
+/**
+ * Shared Section Header
+ *
+ * 1. Uppercase for short eyebrow labels per brand guidelines
+ * 2. Min 1.3 line-height for headings per brand typography rules
+ * 3. Constrain subtitle width to maintain readability (~680px)
+ */
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-header__label {
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase; /* 1 */
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.section-header__title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.3; /* 2 */
+  margin-bottom: 12px;
+  color: var(--foreground);
+}
+
+.section-header__subtitle {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  max-width: 560px; /* 3 */
+  margin: 0 auto;
+}
+
+.section-header__subtitle a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* Hero Section */
 .home-hero {
   background: linear-gradient(135deg, hsl(27 65% 47%) 0%, hsl(27 50% 35%) 100%);
   color: var(--color-on-brand);
@@ -48,6 +91,7 @@
   opacity: 0.7;
 }
 
+/* Buttons */
 .btn {
   display: inline-block;
   padding: 16px 28px;
@@ -149,38 +193,10 @@
   margin: 0 auto;
 }
 
-.home-features__header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
-.home-features__label {
-  font-size: 0.8125rem;
-  letter-spacing: 0.05em;
-  color: var(--primary);
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.home-features__title {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.3;
-  margin-bottom: 12px;
-  color: var(--foreground);
-}
-
-.home-features__subtitle {
-  font-size: 1.0625rem;
-  color: var(--muted-foreground);
-  max-width: 560px;
-  margin: 0 auto;
-}
-
 .home-features__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 32px;
+  gap: 24px;
 }
 
 .feature-card {
@@ -193,6 +209,7 @@
 .feature-card__name {
   font-size: 1.0625rem;
   font-weight: 600;
+  line-height: 1.3;
   margin-bottom: 8px;
   color: var(--foreground);
 }
@@ -200,7 +217,7 @@
 .feature-card__description {
   font-size: 0.9375rem;
   color: var(--muted-foreground);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* Backstory Section */
@@ -217,6 +234,7 @@
 .home-backstory__title {
   font-size: 2rem;
   font-weight: 700;
+  line-height: 1.3;
   margin-bottom: 24px;
   color: var(--foreground);
 }
@@ -242,25 +260,6 @@
 .home-comparison__container {
   max-width: 900px;
   margin: 0 auto;
-}
-
-.home-comparison__header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
-.home-comparison__label {
-  font-size: 0.8125rem;
-  letter-spacing: 0.05em;
-  color: var(--primary);
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.home-comparison__title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 12px;
 }
 
 .comparison-table {
@@ -338,7 +337,7 @@
   font-size: 0.875rem;
   color: var(--muted-foreground);
   margin-top: 8px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* Pricing Section */
@@ -349,25 +348,6 @@
 .home-pricing__container {
   max-width: 1000px;
   margin: 0 auto;
-}
-
-.home-pricing__header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
-.home-pricing__label {
-  font-size: 0.8125rem;
-  letter-spacing: 0.05em;
-  color: var(--primary);
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.home-pricing__title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 12px;
 }
 
 .pricing-grid {
@@ -407,12 +387,14 @@
 .pricing-card__name {
   font-size: 1.25rem;
   font-weight: 700;
+  line-height: 1.3;
   margin-bottom: 4px;
 }
 
 .pricing-card__price {
   font-size: 2.5rem;
   font-weight: 800;
+  line-height: 1.3;
   margin-bottom: 4px;
 }
 
@@ -425,6 +407,7 @@
 .pricing-card__description {
   font-size: 0.9375rem;
   color: var(--muted-foreground);
+  line-height: 1.6;
   margin-bottom: 24px;
 }
 
@@ -464,30 +447,6 @@
   margin: 0 auto;
 }
 
-.home-trust__header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
-.home-trust__label {
-  font-size: 0.8125rem;
-  letter-spacing: 0.05em;
-  color: var(--primary);
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.home-trust__title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
-.home-trust__subtitle {
-  font-size: 1.0625rem;
-  color: var(--muted-foreground);
-}
-
 .trust-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -504,13 +463,14 @@
 .trust-card__name {
   font-size: 1.0625rem;
   font-weight: 600;
+  line-height: 1.3;
   margin-bottom: 8px;
 }
 
 .trust-card__description {
   font-size: 0.9375rem;
   color: var(--muted-foreground);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* Footer CTA Section */
@@ -527,11 +487,13 @@
 .home-cta__title {
   font-size: 2rem;
   font-weight: 700;
+  line-height: 1.3;
   margin-bottom: 16px;
 }
 
 .home-cta__subtitle {
   font-size: 1.0625rem;
+  line-height: 1.6;
   color: var(--muted-foreground);
   margin-bottom: 32px;
 }
@@ -554,7 +516,6 @@
   }
 }
 
-/* Hide comparison table on mobile, show stacked cards instead */
 @media (max-width: 767px) {
   .comparison-table {
     font-size: 0.8125rem;
