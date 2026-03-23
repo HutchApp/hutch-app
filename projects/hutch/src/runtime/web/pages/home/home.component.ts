@@ -9,8 +9,8 @@ const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8
 
 const FOUNDING_MEMBER_LIMIT = 100;
 
-export function HomePage(params: { userCount: number }): Component {
-	const { userCount } = params;
+export function HomePage(params: { userCount: number; staticBaseUrl: string }): Component {
+	const { userCount, staticBaseUrl } = params;
 	const progressPercent = Math.min(Math.round((userCount / FOUNDING_MEMBER_LIMIT) * 100), 100);
 	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
@@ -117,6 +117,7 @@ export function HomePage(params: { userCount: number }): Component {
 		headerVariant: "transparent",
 		bodyClass: "page-home",
 		content: render(HOME_TEMPLATE, {
+			staticBaseUrl,
 			userCount,
 			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
 			progressPercent,

@@ -48,6 +48,7 @@ export function createTestApp(options?: {
 
 	const app = createApp({
 		appOrigin: "http://localhost:3000",
+		staticBaseUrl: "",
 		...auth,
 		...articleStore,
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
