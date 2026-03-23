@@ -10,6 +10,7 @@ export class HutchStaticAssets {
 		args: {
 			bucketName: string;
 			staticDomains: string[];
+			domains: string[];
 			zoneId?: Promise<string>;
 		},
 	) {
@@ -113,6 +114,22 @@ export class HutchStaticAssets {
 			};
 		}
 
+		const corsOrigins = args.domains.map((d) => `https://${d}`);
+
+		const responseHeadersPolicy = new aws.cloudfront.ResponseHeadersPolicy(
+			`${name}-response-headers`,
+			{
+				name: `${name}-cors-headers`,
+				corsConfig: {
+					accessControlAllowCredentials: false,
+					accessControlAllowHeaders: { items: ["*"] },
+					accessControlAllowMethods: { items: ["GET", "HEAD"] },
+					accessControlAllowOrigins: { items: corsOrigins },
+					originOverride: true,
+				},
+			},
+		);
+
 		const distribution = new aws.cloudfront.Distribution(
 			`${name}-cdn`,
 			{
@@ -131,6 +148,7 @@ export class HutchStaticAssets {
 					cachedMethods: ["GET", "HEAD"],
 					compress: true,
 					cachePolicyId: "658327ea-f89d-4fab-a63d-7e88639e58f6",
+					responseHeadersPolicyId: responseHeadersPolicy.id,
 				},
 				restrictions: {
 					geoRestriction: {

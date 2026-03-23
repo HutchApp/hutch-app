@@ -29,6 +29,7 @@ const domainRegistration = new DomainRegistration("hutch-domain", { domains });
 const staticAssets = new HutchStaticAssets("hutch-static", {
 	bucketName: staticBucketName,
 	staticDomains,
+	domains,
 	zoneId: domainRegistration.zoneId,
 });
 
