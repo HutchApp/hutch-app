@@ -114,7 +114,10 @@ export class HutchStaticAssets {
 			};
 		}
 
-		const corsOrigins = args.domains.map((d) => `https://${d}`);
+		const corsOrigins =
+			args.domains.length > 0
+				? args.domains.map((d) => `https://${d}`)
+				: ["*"];
 
 		const responseHeadersPolicy = new aws.cloudfront.ResponseHeadersPolicy(
 			`${name}-response-headers`,
