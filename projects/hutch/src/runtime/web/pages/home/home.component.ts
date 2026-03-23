@@ -140,7 +140,7 @@ export function HomePage(params: { userCount: number }): Component {
 				{
 					name: "TL;DR Summary",
 					description:
-						"Summarise core topics in the Reader View before you read the full content.",
+						"Summaries for every link you save. Get the key points instantly before diving into the full read.",
 				}
 			],
 			plannedFeatures: [
