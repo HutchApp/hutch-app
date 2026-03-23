@@ -32,7 +32,7 @@
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-with-coverage": "c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
-    "check": "pnpm lint && pnpm test-with-coverage"
+    "check": "nx run browser-extension-core:check"
   },
   "dependencies": {
     "esbuild": "0.25.4",

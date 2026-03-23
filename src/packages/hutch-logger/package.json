@@ -9,7 +9,7 @@
     "compile": "tsc",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
     "test": "echo 'No testable logic — trivial bindings and pass-through factory'",
-    "check": "pnpm lint"
+    "check": "nx run @packages/hutch-logger:check"
   },
   "devDependencies": {
     "concurrently": "9.2.1",

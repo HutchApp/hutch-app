@@ -5,7 +5,8 @@
       "outputs": ["{projectRoot}/dist-extension-compiled", "{projectRoot}/dist-extension-files"]
     },
     "check": {
-      "dependsOn": ["^compile"]
+      "command": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+      "options": { "cwd": "{projectRoot}" }
     }
   }
 }

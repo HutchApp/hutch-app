@@ -1,0 +1,9 @@
+{
+  "name": "@packages/hutch-logger",
+  "targets": {
+    "check": {
+      "command": "pnpm lint",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

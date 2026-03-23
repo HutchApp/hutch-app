@@ -1,3 +1,9 @@
 {
-  "name": "browser-extension-core"
+  "name": "browser-extension-core",
+  "targets": {
+    "check": {
+      "command": "pnpm lint && pnpm test-with-coverage",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
 }

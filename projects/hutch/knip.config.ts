@@ -27,6 +27,8 @@ export default {
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),
+		// Used via check script to delegate to Nx
+		"nx",
 		// Used via deploy script, installed globally or via npx
 		"pulumi",
 	],

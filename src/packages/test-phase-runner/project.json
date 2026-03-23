@@ -1,0 +1,9 @@
+{
+  "name": "@packages/test-phase-runner",
+  "targets": {
+    "check": {
+      "command": "pnpm lint && pnpm test",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

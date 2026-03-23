@@ -34,6 +34,8 @@ export default {
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),
+		// Used via check script to delegate to Nx
+		"nx",
 		// Used via check-infra script
 		"pulumi",
 		// Used via compile and ext:run scripts

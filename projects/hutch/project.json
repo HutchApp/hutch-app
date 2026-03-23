@@ -6,6 +6,10 @@
         { "projects": ["@packages/hutch-logger"], "target": "compile" }
       ]
     },
+    "check": {
+      "command": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+      "options": { "cwd": "{projectRoot}" }
+    },
     "test": {
       "dependsOn": [
         { "projects": ["@packages/hutch-test-app"], "target": "compile" }

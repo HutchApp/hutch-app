@@ -7,6 +7,8 @@
       ]
     },
     "check": {
+      "command": "pnpm lint",
+      "options": { "cwd": "{projectRoot}" },
       "dependsOn": [
         { "projects": ["hutch"], "target": "compile" }
       ]

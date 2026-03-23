@@ -11,6 +11,8 @@ export default {
 	ignoreBinaries: [
 		"knip",
 		"biome",
+		// Used via check script to delegate to Nx
+		"nx",
 	],
 	ignoreDependencies: [
 		// Type-only import from hutch-logger — knip doesn't trace type imports as usage
