@@ -90,7 +90,7 @@ class HutchStorage {
 
 	constructor(_name: string, args: { deletionProtection: boolean }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
-			name: "hutch-articles-6804751",
+			name: "hutch-articles-cda0a08",
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "url",
@@ -108,7 +108,7 @@ class HutchStorage {
 		});
 
 		this.userArticlesTable = new aws.dynamodb.Table(`hutch-user-articles`, {
-			name: "hutch-user-articles-eca05af",
+			name: "hutch-user-articles-8226beb",
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "userId",
