@@ -12,13 +12,13 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    environment: prod
+    environment: staging
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
-      PULUMI_STACK: prod
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
+      PULUMI_STACK: staging
       PULUMI_CONFIG_PASSPHRASE: ''
       PERSISTENCE: development
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
