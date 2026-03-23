@@ -31,8 +31,8 @@
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
-    "test-with-coverage": "pnpm compile && c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
-    "check": "pnpm compile && pnpm lint && pnpm test-with-coverage"
+    "test-with-coverage": "c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
+    "check": "pnpm lint && pnpm test-with-coverage"
   },
   "dependencies": {
     "esbuild": "0.25.4",

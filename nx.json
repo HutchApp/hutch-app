@@ -31,7 +31,7 @@
     },
     "check": {
       "inputs": ["default", "^production"],
-      "dependsOn": ["^compile"],
+      "dependsOn": ["compile", "^compile"],
       "cache": true
     },
     "check-infra": {

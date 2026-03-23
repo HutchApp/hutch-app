@@ -10,7 +10,7 @@
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
-    "check": "pnpm compile && pnpm lint && pnpm test"
+    "check": "pnpm lint && pnpm test"
   },
   "devDependencies": {
     "concurrently": "9.2.1",

@@ -17,10 +17,10 @@
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --passWithNoTests",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand --passWithNoTests",
-    "test-with-coverage": "pnpm compile && c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
+    "test-with-coverage": "c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
     "test:e2e": "HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js && node --test dist/e2e/login-flow/run.e2e-local.js",
     "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
-    "check": "pnpm compile && pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+    "check": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
     "ext:run": "HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js && web-ext run --source-dir dist-extension-compiled"
   },
   "dependencies": {

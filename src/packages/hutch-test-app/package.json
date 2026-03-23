@@ -8,7 +8,7 @@
   "scripts": {
     "compile": "tsc",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
-    "check": "pnpm compile && pnpm lint"
+    "check": "pnpm lint"
   },
   "dependencies": {
     "hutch": "workspace:*"
