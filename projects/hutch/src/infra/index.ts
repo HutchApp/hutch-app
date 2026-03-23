@@ -10,6 +10,14 @@ const config = new pulumi.Config();
 const stage = config.require("stage");
 const domains = config.getObject<string[]>("domains") ?? [];
 const deletionProtection = config.requireBoolean("deletionProtection");
+const tableNames = {
+	articles: config.require("dynamodbArticlesTable"),
+	userArticles: config.require("dynamodbUserArticlesTable"),
+	users: config.require("dynamodbUsersTable"),
+	sessions: config.require("dynamodbSessionsTable"),
+	oauth: config.require("dynamodbOauthTable"),
+	verificationTokens: config.require("dynamodbVerificationTokensTable"),
+};
 
 const esbuildLoaders: Record<string, Loader> = {
 	".ts": "ts",
@@ -88,9 +96,16 @@ class HutchStorage {
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
 
-	constructor(_name: string, args: { deletionProtection: boolean }) {
+	constructor(_name: string, args: { deletionProtection: boolean; tableNames: {
+		articles: string;
+		userArticles: string;
+		users: string;
+		sessions: string;
+		oauth: string;
+		verificationTokens: string;
+	} }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
-			name: "hutch-articles-cda0a08",
+			name: args.tableNames.articles,
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "url",
@@ -108,7 +123,7 @@ class HutchStorage {
 		});
 
 		this.userArticlesTable = new aws.dynamodb.Table(`hutch-user-articles`, {
-			name: "hutch-user-articles-8226beb",
+			name: args.tableNames.userArticles,
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "userId",
@@ -129,7 +144,7 @@ class HutchStorage {
 		});
 
 		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
-			name: "hutch-users-f90c09e",
+			name: args.tableNames.users,
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "email",
@@ -147,7 +162,7 @@ class HutchStorage {
 		});
 
 		this.sessionsTable = new aws.dynamodb.Table(`hutch-sessions`, {
-			name: "hutch-sessions-d17dbb3",
+			name: args.tableNames.sessions,
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "sessionId",
 			attributes: [{ name: "sessionId", type: "S" }],
@@ -158,7 +173,7 @@ class HutchStorage {
 		});
 
 		this.oauthTable = new aws.dynamodb.Table(`hutch-oauth`, {
-			name: "hutch-oauth-ecd3db9",
+			name: args.tableNames.oauth,
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "pk",
 			attributes: [
@@ -179,7 +194,7 @@ class HutchStorage {
 		});
 
 		this.verificationTokensTable = new aws.dynamodb.Table(`hutch-verification-tokens`, {
-			name: "hutch-verification-tokens-3f85043",
+			name: args.tableNames.verificationTokens,
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "token",
 			attributes: [{ name: "token", type: "S" }],
@@ -414,6 +429,7 @@ class HutchLambda {
 
 const storage = new HutchStorage("hutch", {
 	deletionProtection,
+	tableNames,
 });
 
 const domainRegistration = new DomainRegistration("hutch-domain", { domains });
