@@ -14,7 +14,7 @@ import {
 import type { Component } from "./component.types";
 import { HtmlPage } from "./html-page";
 import { render } from "./render";
-import { getEnv } from "../require-env";
+import { getEnv, requireEnv } from "../require-env";
 
 const HEADER_TEMPLATE = readFileSync(join(__dirname, "header.template.html"), "utf-8");
 const FOOTER_TEMPLATE = readFileSync(join(__dirname, "footer.template.html"), "utf-8");
@@ -85,6 +85,8 @@ const NAV_SCRIPT = `
   });
 })();
 </script>`;
+
+const STATIC_BASE_URL = requireEnv("STATIC_BASE_URL");
 
 const LIVERELOAD_SCRIPT = getEnv("LIVERELOAD")
 	? `\n<script src="http://localhost:35729/livereload.js?snipver=1"></script>`
@@ -164,6 +166,7 @@ function renderBaseTemplate(page: PageContent): string {
 	const robots = seo.robots || "index, follow";
 
 	return render(BASE_TEMPLATE, {
+		staticBaseUrl: STATIC_BASE_URL,
 		title: seo.title,
 		description: seo.description,
 		canonicalUrl: seo.canonicalUrl,

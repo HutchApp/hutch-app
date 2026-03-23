@@ -38,6 +38,10 @@ playwright-report/
 # TypeScript incremental build cache
 *.tsbuildinfo
 
+# Large media files (served from CDN)
+*.mp4
+*.mov
+
 # Environment variables
 .env
 .env.local

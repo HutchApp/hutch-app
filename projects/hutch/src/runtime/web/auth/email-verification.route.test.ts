@@ -49,6 +49,7 @@ describe("Email verification", () => {
 
 			const app = createApp({
 				appOrigin: "http://localhost:3000",
+				staticBaseUrl: "",
 				...auth,
 				...articleStore,
 				...parser,

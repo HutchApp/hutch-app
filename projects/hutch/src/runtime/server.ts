@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
@@ -49,6 +48,7 @@ const COOKIE_NAME = "hutch_sid";
 
 interface AppDependencies {
 	appOrigin: string;
+	staticBaseUrl: string;
 	createUser: CreateUser;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
@@ -85,10 +85,9 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 }
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { appOrigin, getSessionUserId, countUsers, ...deps } = dependencies;
+	const { appOrigin, staticBaseUrl, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
 
-	app.use(express.static(join(__dirname, "public")));
 	app.use(express.urlencoded({ extended: true }));
 	app.use(express.json());
 	app.use(cookieParser());
@@ -142,7 +141,7 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const userCount = await countUsers().catch(() => 0);
-		const result = HomePage({ userCount }).to("text/html");
+		const result = HomePage({ userCount, staticBaseUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 

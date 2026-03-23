@@ -12,6 +12,29 @@
       </div>
     </section>
 
+    <section class="home-demo" data-test-section="demo" aria-label="Product demo">
+      <div class="home-demo__container">
+        <p class="home-demo__label">See It In Action</p>
+        <h2 class="home-demo__title">Save an article. Read it later.</h2>
+        <div class="home-demo__videos">
+          <div class="home-demo__video-wrapper">
+            <p class="home-demo__video-label">Desktop</p>
+            <video class="home-demo__video" autoplay muted loop playsinline>
+              <source src="{{staticBaseUrl}}/videos/desktop-demo.mp4" type="video/mp4; codecs=av01.0.05M.08">
+              <source src="{{staticBaseUrl}}/videos/desktop-demo-h264.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="home-demo__video-wrapper">
+            <p class="home-demo__video-label">Firefox Extension</p>
+            <video class="home-demo__video" autoplay muted loop playsinline>
+              <source src="{{staticBaseUrl}}/videos/firefox-extension-demo.mp4" type="video/mp4; codecs=av01.0.05M.08">
+              <source src="{{staticBaseUrl}}/videos/firefox-extension-demo-h264.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="what-works" class="home-features" data-test-section="core-features" aria-label="Current features">
       <div class="section-header">
         <p class="section-header__label">What Works Today</p>

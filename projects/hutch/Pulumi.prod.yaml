@@ -6,6 +6,9 @@ config:
   hutch:domains:
     - hutch-app.com
   hutch:deletionProtection: true
+  hutch:staticDomains:
+    - static.hutch-app.com
+  hutch:staticBucketName: hutch-static-assets-prod
   hutch:dynamodbArticlesTable: hutch-articles-cda0a08
   hutch:dynamodbUserArticlesTable: hutch-user-articles-8226beb
   hutch:dynamodbUsersTable: hutch-users-f90c09e
