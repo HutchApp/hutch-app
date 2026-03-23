@@ -90,6 +90,7 @@ class HutchStorage {
 
 	constructor(_name: string, args: { deletionProtection: boolean }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
+			name: "hutch-articles-6804751",
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "url",
@@ -107,6 +108,7 @@ class HutchStorage {
 		});
 
 		this.userArticlesTable = new aws.dynamodb.Table(`hutch-user-articles`, {
+			name: "hutch-user-articles-eca05af",
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "userId",
@@ -127,6 +129,7 @@ class HutchStorage {
 		});
 
 		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
+			name: "hutch-users-f90c09e",
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "email",
@@ -144,6 +147,7 @@ class HutchStorage {
 		});
 
 		this.sessionsTable = new aws.dynamodb.Table(`hutch-sessions`, {
+			name: "hutch-sessions-d17dbb3",
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "sessionId",
 			attributes: [{ name: "sessionId", type: "S" }],
@@ -154,6 +158,7 @@ class HutchStorage {
 		});
 
 		this.oauthTable = new aws.dynamodb.Table(`hutch-oauth`, {
+			name: "hutch-oauth-ecd3db9",
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "pk",
 			attributes: [
@@ -174,6 +179,7 @@ class HutchStorage {
 		});
 
 		this.verificationTokensTable = new aws.dynamodb.Table(`hutch-verification-tokens`, {
+			name: "hutch-verification-tokens-3f85043",
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "token",
 			attributes: [{ name: "token", type: "S" }],
