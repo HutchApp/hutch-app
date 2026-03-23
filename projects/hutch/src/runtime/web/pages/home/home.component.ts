@@ -138,7 +138,7 @@ export function HomePage(params: { userCount: number }): Component {
 						"Distraction-free reading with clean fonts, themes, and typography.",
 				},
 				{
-					name: "AI Summary",
+					name: "TL;DR Summary",
 					description:
 						"Summarise core topics in the Reader View before you read the full content.",
 				}

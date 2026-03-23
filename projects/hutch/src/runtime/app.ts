@@ -92,12 +92,11 @@ function initProviders() {
 	const { summarizeArticle } = initClaudeSummarizer({
 		createMessage: (params) => {
 			// Output a log for the call outside prod environment to avoid spending tokens running e2e tests in local machine and CI environments
-			const stubbedText = `[AI Summary Called] with params ${JSON.stringify(params)}`
-			consoleLogger.info(stubbedText);
+			consoleLogger.info(`[AI Summary Called] with params ${JSON.stringify(params)}`);
 			return Promise.resolve({
 				content: [{
-					type: "user",
-					text: stubbedText
+					type: "text",
+					text: JSON.stringify({ summary: `[AI Summary Stub] for model ${params.model}` })
 				}],
 				usage: { input_tokens: 0, output_tokens: 0 }
 			})

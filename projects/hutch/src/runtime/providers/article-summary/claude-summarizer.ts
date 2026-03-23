@@ -35,9 +35,25 @@ export function initClaudeSummarizer(deps: {
 		try {
 			const response = await deps.createMessage({
 				model: "claude-sonnet-4-6",
-				max_tokens: 20480,
+				max_tokens: 200,
 				system: SUMMARIZE_PROMPT,
 				messages: [{ role: "user", content: cleanedContent }],
+				output_config: {
+					format: {
+						type: "json_schema",
+						schema: {
+							type: "object",
+							properties: {
+								summary: {
+									type: "string",
+									description: "Plain text summary, max 750 characters",
+								},
+							},
+							required: ["summary"],
+							additionalProperties: false,
+						},
+					},
+				},
 			});
 
 			const textBlock = response.content.find(
@@ -48,7 +64,8 @@ export function initClaudeSummarizer(deps: {
 				return null;
 			}
 
-			const summary = textBlock.text.trim();
+			const parsed = JSON.parse(textBlock.text) as { summary: string };
+			const summary = parsed.summary.trim();
 			if (summary === "Summary not available.") {
 				deps.logger.info("[summarize] Claude returned unavailable", { url: params.url });
 				return null;

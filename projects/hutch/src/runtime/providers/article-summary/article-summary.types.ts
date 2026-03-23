@@ -17,6 +17,12 @@ export type CreateAiMessage = (params: {
 	max_tokens: number;
 	system: string;
 	messages: Array<{ role: "user" | "assistant"; content: string }>;
+	output_config?: {
+		format: {
+			type: "json_schema";
+			schema: Record<string, unknown>;
+		};
+	};
 }) => Promise<{
 	content: Array<{ type: string; text?: string }>;
 	usage: { input_tokens: number; output_tokens: number };

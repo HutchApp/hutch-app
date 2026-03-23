@@ -12,7 +12,7 @@ function createDeps(overrides?: {
 }) {
 	return {
 		createMessage: overrides?.createMessage ?? jest.fn<Promise<{ content: Array<{ type: string; text?: string }>; usage: { input_tokens: number; output_tokens: number } }>, [unknown]>().mockResolvedValue({
-			content: [{ type: "text", text: "A concise summary." }],
+			content: [{ type: "text", text: JSON.stringify({ summary: "A concise summary." }) }],
 			usage: { input_tokens: 150, output_tokens: 42 },
 		}),
 		findCachedSummary: overrides?.findCachedSummary ?? jest.fn<Promise<string>, [string]>().mockResolvedValue(""),
@@ -35,7 +35,7 @@ describe("initClaudeSummarizer", () => {
 		expect(deps.createMessage).not.toHaveBeenCalled();
 	});
 
-	it("should call createMessage and save summary with token counts on cache miss", async () => {
+	it("should call createMessage with output_config and save summary with token counts on cache miss", async () => {
 		const deps = createDeps();
 		const { summarizeArticle } = initClaudeSummarizer(deps);
 
@@ -43,6 +43,24 @@ describe("initClaudeSummarizer", () => {
 
 		expect(result).toBe("A concise summary.");
 		expect(deps.createMessage).toHaveBeenCalledTimes(1);
+		const callArgs = (deps.createMessage as jest.Mock).mock.calls[0][0];
+		expect(callArgs.max_tokens).toBe(200);
+		expect(callArgs.output_config).toEqual({
+			format: {
+				type: "json_schema",
+				schema: {
+					type: "object",
+					properties: {
+						summary: {
+							type: "string",
+							description: "Plain text summary, max 750 characters",
+						},
+					},
+					required: ["summary"],
+					additionalProperties: false,
+				},
+			},
+		});
 		expect(deps.saveCachedSummary).toHaveBeenCalledWith({
 			url: "https://example.com/article",
 			summary: "A concise summary.",
@@ -54,7 +72,7 @@ describe("initClaudeSummarizer", () => {
 	it("should return null when Claude responds with 'Summary not available.'", async () => {
 		const deps = createDeps({
 			createMessage: jest.fn<Promise<{ content: Array<{ type: string; text?: string }>; usage: { input_tokens: number; output_tokens: number } }>, [unknown]>().mockResolvedValue({
-				content: [{ type: "text", text: "Summary not available." }],
+				content: [{ type: "text", text: JSON.stringify({ summary: "Summary not available." }) }],
 				usage: { input_tokens: 50, output_tokens: 5 },
 			}),
 		});

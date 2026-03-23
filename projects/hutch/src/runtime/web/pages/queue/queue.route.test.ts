@@ -482,7 +482,7 @@ describe("Queue routes", () => {
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
 			expect(doc.querySelector("[data-test-reader-summary]")?.textContent).toContain("Key points from the article");
-			expect(doc.querySelector(".reader__summary-label")?.textContent).toBe("AI Summary");
+			expect(doc.querySelector(".reader__summary-label")?.textContent).toBe("TL;DR");
 		});
 
 		it("should not display summary block when summarizeArticle returns null", async () => {
