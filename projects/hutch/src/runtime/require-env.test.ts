@@ -28,16 +28,14 @@ describe("requireEnv", () => {
 		);
 	});
 
-	it("should throw when the environment variable is empty string and no default provided", () => {
+	it("should return empty string when the environment variable is set to empty string", () => {
 		process.env.EMPTY_VAR = "";
-		expect(() => requireEnv("EMPTY_VAR")).toThrow(
-			"Environment variable EMPTY_VAR is required but not set",
-		);
+		expect(requireEnv("EMPTY_VAR")).toBe("");
 	});
 
-	it("should return default when the environment variable is empty string", () => {
+	it("should return empty string over default when the environment variable is set to empty string", () => {
 		process.env.EMPTY_VAR = "";
-		expect(requireEnv("EMPTY_VAR", { defaultValue: "fallback" })).toBe("fallback");
+		expect(requireEnv("EMPTY_VAR", { defaultValue: "fallback" })).toBe("");
 	});
 
 });

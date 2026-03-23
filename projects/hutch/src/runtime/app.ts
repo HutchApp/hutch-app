@@ -138,7 +138,7 @@ export function createHutchApp(deps: {
 	const { auth, articleStore, oauthModel, validateAccessToken, ...providers } = initProviders();
 
 	const appOrigin = deps.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
-	const staticBaseUrl = requireEnv("STATIC_BASE_URL", { defaultValue: "" });
+	const staticBaseUrl = requireEnv("STATIC_BASE_URL");
 
 	const app = createApp({
 		appOrigin,

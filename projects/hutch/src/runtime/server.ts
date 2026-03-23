@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
@@ -89,7 +88,6 @@ export function createApp(dependencies: AppDependencies): Express {
 	const { appOrigin, staticBaseUrl, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
 
-	app.use(express.static(join(__dirname, "..", "public")));
 	app.use(express.urlencoded({ extended: true }));
 	app.use(express.json());
 	app.use(cookieParser());

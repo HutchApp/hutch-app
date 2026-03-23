@@ -20,11 +20,11 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
 			canonicalUrl: "https://hutch-app.com",
 			ogType: "website",
-			ogImage: "https://hutch-app.com/og-image-1200x630.png",
+			ogImage: `${staticBaseUrl}/og-image-1200x630.png`,
 			ogImageType: "image/png",
 			ogImageAlt:
 				"Hutch — Save now, read later. A read-it-later app built in Australia.",
-			twitterImage: "https://hutch-app.com/twitter-card-1200x600.png",
+			twitterImage: `${staticBaseUrl}/twitter-card-1200x600.png`,
 				author: "Fayner Brack",
 			keywords:
 				"read it later, save articles, bookmark manager, reading list, Pocket alternative, Omnivore alternative, browser extension, Firefox extension, article reader, distraction free reading",
@@ -61,7 +61,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 					"@type": "Organization",
 					name: "Hutch",
 					url: "https://hutch-app.com",
-					logo: "https://hutch-app.com/og-image-1200x630.png",
+					logo: `${staticBaseUrl}/og-image-1200x630.png`,
 					sameAs: [
 						"https://www.reddit.com/r/hutchapp",
 						"https://www.linkedin.com/in/fagnerbrack/",
