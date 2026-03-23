@@ -7,6 +7,10 @@ import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
+import { initFetchHtmlWithHeaders } from "./providers/article-parser/fetch-html";
+import { initFetchConditional } from "./providers/article-parser/fetch-conditional";
+import { parseHtml } from "./providers/article-parser/readability-parser";
+import { initRefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -22,6 +26,7 @@ import { initClaudeSummarizer } from "./providers/article-summary/claude-summari
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
 import { stripHtml } from "./providers/article-summary/strip-html";
+import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -31,25 +36,41 @@ function initProviders() {
 	const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
+	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch });
+	const fetchConditional = initFetchConditional({ fetch: globalThis.fetch });
+	const staleTtlMs = 86400000;
+
 	if (persistence === "prod") {
 		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
+		const userArticlesTable = requireEnv("DYNAMODB_USER_ARTICLES_TABLE");
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
-		const summaryCacheTable = requireEnv("DYNAMODB_SUMMARY_CACHE_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
-		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable });
+		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
-		const summaryCache = initDynamoDbSummaryCache({ client, tableName: summaryCacheTable });
+		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
 		const { summarizeArticle } = initClaudeSummarizer({
 			createMessage: (params) => anthropicClient.messages.create(params),
-			logError,
+			logger: consoleLogger,
 			cleanContent: stripHtml,
 			...summaryCache,
+		});
+		const { refreshArticleIfStale } = initRefreshArticleIfStale({
+			findArticleFreshness: articleStore.findArticleFreshness,
+			fetchConditional,
+			fetchHtmlWithHeaders,
+			parseHtml,
+			updateArticleContent: articleStore.updateArticleContent,
+			updateArticleFetchMetadata: articleStore.updateArticleFetchMetadata,
+			clearArticleSummary: articleStore.clearArticleSummary,
+			logError,
+			now: () => new Date(),
+			staleTtlMs,
 		});
 		return {
 			auth,
@@ -60,6 +81,7 @@ function initProviders() {
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			summarizeArticle,
 			findCachedSummary: summaryCache.findCachedSummary,
+			refreshArticleIfStale,
 		};
 	}
 
@@ -68,10 +90,33 @@ function initProviders() {
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const summaryCache = initInMemorySummaryCache();
 	const { summarizeArticle } = initClaudeSummarizer({
-		createMessage: (params) => anthropicClient.messages.create(params),
-		logError,
+		createMessage: (params) => {
+			// Output a log for the call outside prod environment to avoid spending tokens running e2e tests in local machine and CI environments
+			const stubbedText = `[AI Summary Called] with params ${JSON.stringify(params)}`
+			consoleLogger.info(stubbedText);
+			return Promise.resolve({
+				content: [{
+					type: "user",
+					text: stubbedText
+				}],
+				usage: { input_tokens: 0, output_tokens: 0 }
+			})
+		},
+		logger: consoleLogger,
 		cleanContent: stripHtml,
 		...summaryCache,
+	});
+	const { refreshArticleIfStale } = initRefreshArticleIfStale({
+		findArticleFreshness: articleStore.findArticleFreshness,
+		fetchConditional,
+		fetchHtmlWithHeaders,
+		parseHtml,
+		updateArticleContent: articleStore.updateArticleContent,
+		updateArticleFetchMetadata: articleStore.updateArticleFetchMetadata,
+		clearArticleSummary: articleStore.clearArticleSummary,
+		logError,
+		now: () => new Date(),
+		staleTtlMs,
 	});
 
 	return {
@@ -83,6 +128,7 @@ function initProviders() {
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		summarizeArticle,
 		findCachedSummary: summaryCache.findCachedSummary,
+		refreshArticleIfStale,
 	};
 }
 

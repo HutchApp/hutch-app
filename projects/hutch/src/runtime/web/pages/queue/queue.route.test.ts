@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "@packages/hutch-test-app";
+import type { RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -654,6 +655,65 @@ describe("Queue routes", () => {
 			const sortLink = doc.querySelector("[data-test-sort]");
 			expect(sortLink?.getAttribute("href")).toContain("order=desc");
 			expect(sortLink?.textContent).toContain("Oldest first");
+		});
+	});
+
+	describe("POST /queue/save with existing article (skip freshness)", () => {
+		it("should save user-article relationship without re-fetching", async () => {
+			const skipFreshness: RefreshArticleIfStale = async () => ({ action: "skip" });
+			const { app, auth } = createTestApp({ refreshArticleIfStale: skipFreshness });
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/existing" });
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should save for unchanged content (304)", async () => {
+			const unchangedFreshness: RefreshArticleIfStale = async () => ({ action: "unchanged" });
+			const { app, auth } = createTestApp({ refreshArticleIfStale: unchangedFreshness });
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/existing" });
+
+			expect(response.status).toBe(303);
+		});
+
+		it("should trigger re-summarization for refreshed content", async () => {
+			let summarizeCalled = false;
+			const refreshedFreshness: RefreshArticleIfStale = async () => ({
+				action: "refreshed",
+				article: {
+					ok: true as const,
+					article: {
+						title: "Refreshed",
+						siteName: "example.com",
+						excerpt: "Refreshed excerpt",
+						wordCount: 100,
+						content: "<p>New content</p>",
+					},
+				},
+			});
+			const { app, auth } = createTestApp({
+				refreshArticleIfStale: refreshedFreshness,
+				summarizeArticle: async () => { summarizeCalled = true; return null; },
+			});
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/existing" });
+
+			expect(response.status).toBe(303);
+			expect(summarizeCalled).toBe(true);
 		});
 	});
 

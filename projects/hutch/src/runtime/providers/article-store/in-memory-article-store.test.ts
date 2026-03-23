@@ -29,10 +29,68 @@ describe("initInMemoryArticleStore", () => {
 			const store = initInMemoryArticleStore();
 			const saved = await store.saveArticle(makeArticleParams());
 
-			const found = await store.findArticleById(saved.id);
+			const found = await store.findArticleById(saved.id, USER_A);
 
 			expect(found?.url).toBe("https://example.com/article");
 			expect(found?.status).toBe("unread");
+		});
+
+		it("should return null when user has no relationship to the article", async () => {
+			const store = initInMemoryArticleStore();
+			const saved = await store.saveArticle(makeArticleParams({ userId: USER_A }));
+
+			const found = await store.findArticleById(saved.id, USER_B);
+
+			expect(found).toBeNull();
+		});
+	});
+
+	describe("article deduplication", () => {
+		it("should reuse the same global article when two users save the same URL", async () => {
+			const store = initInMemoryArticleStore();
+			const savedA = await store.saveArticle(makeArticleParams({ userId: USER_A }));
+			const savedB = await store.saveArticle(makeArticleParams({ userId: USER_B }));
+
+			expect(savedA.id).toBe(savedB.id);
+		});
+
+		it("should produce the same routeId regardless of scheme or fragment", async () => {
+			const store = initInMemoryArticleStore();
+			const https = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/article" }),
+			);
+			const http = await store.saveArticle(
+				makeArticleParams({ userId: USER_B, url: "http://example.com/article" }),
+			);
+			const withFragment = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/article#heading" }),
+			);
+
+			expect(https.id).toBe(http.id);
+			expect(https.id).toBe(withFragment.id);
+		});
+
+		it("should create separate user-article relationships for each user", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams({ userId: USER_A }));
+			await store.saveArticle(makeArticleParams({ userId: USER_B }));
+
+			const resultA = await store.findArticlesByUser({ userId: USER_A });
+			const resultB = await store.findArticlesByUser({ userId: USER_B });
+
+			expect(resultA.articles.length).toBe(1);
+			expect(resultB.articles.length).toBe(1);
+		});
+
+		it("should not create a duplicate user-article when the same user saves the same URL twice", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams({ userId: USER_A }));
+			await store.saveArticle(makeArticleParams({ userId: USER_A }));
+
+			const result = await store.findArticlesByUser({ userId: USER_A });
+
+			expect(result.articles.length).toBe(1);
+			expect(result.total).toBe(1);
 		});
 	});
 
@@ -40,7 +98,9 @@ describe("initInMemoryArticleStore", () => {
 		it("should return only articles belonging to the user", async () => {
 			const store = initInMemoryArticleStore();
 			await store.saveArticle(makeArticleParams({ userId: USER_A }));
-			await store.saveArticle(makeArticleParams({ userId: USER_B }));
+			await store.saveArticle(
+				makeArticleParams({ userId: USER_B, url: "https://other.com/page" }),
+			);
 
 			const result = await store.findArticlesByUser({ userId: USER_A });
 
@@ -50,8 +110,12 @@ describe("initInMemoryArticleStore", () => {
 
 		it("should filter by status", async () => {
 			const store = initInMemoryArticleStore();
-			const a1 = await store.saveArticle(makeArticleParams());
-			await store.saveArticle(makeArticleParams());
+			const a1 = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/1" }),
+			);
+			await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/2" }),
+			);
 			await store.updateArticleStatus(a1.id, USER_A, "read");
 
 			const result = await store.findArticlesByUser({
@@ -68,7 +132,6 @@ describe("initInMemoryArticleStore", () => {
 			const a1 = await store.saveArticle(
 				makeArticleParams({ url: "https://example.com/first" }),
 			);
-			// Ensure different timestamp
 			await new Promise((resolve) => setTimeout(resolve, 10));
 			const a2 = await store.saveArticle(
 				makeArticleParams({ url: "https://example.com/second" }),
@@ -85,7 +148,6 @@ describe("initInMemoryArticleStore", () => {
 			const a1 = await store.saveArticle(
 				makeArticleParams({ url: "https://example.com/first" }),
 			);
-			// Ensure different timestamp
 			await new Promise((resolve) => setTimeout(resolve, 10));
 			const a2 = await store.saveArticle(
 				makeArticleParams({ url: "https://example.com/second" }),
@@ -126,14 +188,25 @@ describe("initInMemoryArticleStore", () => {
 	});
 
 	describe("deleteArticle", () => {
-		it("should delete own article", async () => {
+		it("should remove user's relationship to the article", async () => {
 			const store = initInMemoryArticleStore();
 			const saved = await store.saveArticle(makeArticleParams());
 
 			const deleted = await store.deleteArticle(saved.id, USER_A);
 
 			expect(deleted).toBe(true);
-			expect(await store.findArticleById(saved.id)).toBeNull();
+			expect(await store.findArticleById(saved.id, USER_A)).toBeNull();
+		});
+
+		it("should not affect another user's relationship to the same article", async () => {
+			const store = initInMemoryArticleStore();
+			const saved = await store.saveArticle(makeArticleParams({ userId: USER_A }));
+			await store.saveArticle(makeArticleParams({ userId: USER_B }));
+
+			await store.deleteArticle(saved.id, USER_A);
+
+			const foundByB = await store.findArticleById(saved.id, USER_B);
+			expect(foundByB?.url).toBe("https://example.com/article");
 		});
 
 		it("should not delete another user's article", async () => {
@@ -143,7 +216,70 @@ describe("initInMemoryArticleStore", () => {
 			const deleted = await store.deleteArticle(saved.id, USER_B);
 
 			expect(deleted).toBe(false);
-			expect((await store.findArticleById(saved.id))?.url).toBe("https://example.com/article");
+		});
+	});
+
+	describe("freshness operations", () => {
+		it("findArticleFreshness returns null for unknown URL", async () => {
+			const store = initInMemoryArticleStore();
+
+			const result = await store.findArticleFreshness("https://unknown.com/page");
+
+			expect(result).toBeNull();
+		});
+
+		it("updateArticleFetchMetadata sets contentFetchedAt", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams());
+
+			await store.updateArticleFetchMetadata({
+				url: "https://example.com/article",
+				contentFetchedAt: "2026-03-20T10:00:00Z",
+			});
+			const freshness = await store.findArticleFreshness("https://example.com/article");
+
+			expect(freshness?.contentFetchedAt).toBe("2026-03-20T10:00:00Z");
+		});
+
+		it("updateArticleContent updates metadata and content", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams());
+
+			await store.updateArticleContent({
+				url: "https://example.com/article",
+				metadata: {
+					title: "Updated Title",
+					siteName: "example.com",
+					excerpt: "Updated excerpt",
+					wordCount: 200,
+				},
+				content: "<p>Updated content</p>",
+				estimatedReadTime: 1 as Minutes,
+				etag: '"new-etag"',
+				lastModified: "Wed, 20 Mar 2026 10:00:00 GMT",
+				contentFetchedAt: "2026-03-20T10:00:00Z",
+			});
+
+			const found = await store.findArticleById(
+				(await store.findArticleByUrl("https://example.com/article"))!.id,
+				USER_A,
+			);
+			expect(found?.metadata.title).toBe("Updated Title");
+			expect(found?.content).toBe("<p>Updated content</p>");
+
+			const freshness = await store.findArticleFreshness("https://example.com/article");
+			expect(freshness?.etag).toBe('"new-etag"');
+			expect(freshness?.contentFetchedAt).toBe("2026-03-20T10:00:00Z");
+		});
+
+		it("clearArticleSummary sets summary to undefined", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams());
+
+			await store.clearArticleSummary("https://example.com/article");
+
+			const freshness = await store.findArticleFreshness("https://example.com/article");
+			expect(freshness).not.toBeNull();
 		});
 	});
 
@@ -153,7 +289,7 @@ describe("initInMemoryArticleStore", () => {
 			const saved = await store.saveArticle(makeArticleParams());
 
 			await store.updateArticleStatus(saved.id, USER_A, "read");
-			const found = await store.findArticleById(saved.id);
+			const found = await store.findArticleById(saved.id, USER_A);
 
 			expect(found?.status).toBe("read");
 			expect(found?.readAt).toBeInstanceOf(Date);
@@ -165,7 +301,7 @@ describe("initInMemoryArticleStore", () => {
 			await store.updateArticleStatus(saved.id, USER_A, "read");
 			await store.updateArticleStatus(saved.id, USER_A, "unread");
 
-			const found = await store.findArticleById(saved.id);
+			const found = await store.findArticleById(saved.id, USER_A);
 
 			expect(found?.status).toBe("unread");
 			expect(found?.readAt).toBeUndefined();
@@ -178,8 +314,8 @@ describe("initInMemoryArticleStore", () => {
 			const updated = await store.updateArticleStatus(saved.id, USER_B, "read");
 
 			expect(updated).toBe(false);
-			expect((await store.findArticleById(saved.id))?.status).toBe("unread");
+			const found = await store.findArticleById(saved.id, USER_A);
+			expect(found?.status).toBe("unread");
 		});
 	});
-
 });

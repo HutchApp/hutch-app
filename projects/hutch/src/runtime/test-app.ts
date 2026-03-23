@@ -5,6 +5,7 @@ import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { SummarizeArticle } from "./providers/article-summary/article-summary.types";
 import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
+import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import {
@@ -15,6 +16,7 @@ import { createValidateAccessToken } from "./providers/oauth/validate-access-tok
 import { createApp } from "./server";
 
 const noopSummarize: SummarizeArticle = async () => null;
+const noopCheckFreshness: RefreshArticleIfStale = async () => ({ action: "new" });
 
 const stubFetchHtml: FetchHtml = async (url) => {
 	const hostname = new URL(url).hostname;
@@ -25,6 +27,7 @@ export function createTestApp(options?: {
 	parseArticle?: ParseArticle;
 	fetchHtml?: FetchHtml;
 	summarizeArticle?: SummarizeArticle;
+	refreshArticleIfStale?: RefreshArticleIfStale;
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
@@ -50,6 +53,7 @@ export function createTestApp(options?: {
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
 		summarizeArticle,
 		findCachedSummary: summaryCache.findCachedSummary,
+		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",

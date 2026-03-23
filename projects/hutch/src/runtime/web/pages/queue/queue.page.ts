@@ -4,14 +4,17 @@ import express from "express";
 import { SaveArticleInputSchema, ArticleIdSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
+import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type {
 	DeleteArticle,
 	FindArticleById,
 	FindArticlesByUser,
 	SaveArticle,
+	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
 import type { FindCachedSummary, SummarizeArticle } from "../../../providers/article-summary/article-summary.types";
+import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
@@ -30,6 +33,67 @@ interface QueueDependencies {
 	updateArticleStatus: UpdateArticleStatus;
 	summarizeArticle: SummarizeArticle;
 	findCachedSummary: FindCachedSummary;
+	refreshArticleIfStale: RefreshArticleIfStale;
+	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	logError: (message: string, error?: Error) => void;
+}
+
+type SaveArticleFromUrlResult =
+	| { ok: true; saved: Awaited<ReturnType<SaveArticle>> }
+	| { ok: false; reason: string };
+
+async function saveArticleFromUrl(deps: QueueDependencies, params: {
+	userId: UserId;
+	url: string;
+	freshness: ContentFreshnessResult;
+}): Promise<SaveArticleFromUrlResult> {
+	const { userId, url, freshness } = params;
+
+	if (freshness.action === "new") {
+		const parseResult = await deps.parseArticle(url);
+		if (!parseResult.ok) {
+			return { ok: false, reason: parseResult.reason };
+		}
+
+		const { article } = parseResult;
+		const saved = await deps.saveArticle({
+			userId,
+			url,
+			metadata: {
+				title: article.title,
+				siteName: article.siteName,
+				excerpt: article.excerpt,
+				wordCount: article.wordCount,
+				imageUrl: article.imageUrl,
+			},
+			content: article.content || undefined,
+			estimatedReadTime: calculateReadTime(article.wordCount),
+		});
+
+		deps.updateArticleFetchMetadata({
+			url,
+			contentFetchedAt: new Date().toISOString(),
+		}).catch((error) => deps.logError("Failed to update fetch metadata", error instanceof Error ? error : undefined));
+
+		if (article.content) {
+			deps.summarizeArticle({ url, textContent: article.content });
+		}
+
+		return { ok: true, saved };
+	}
+
+	const saved = await deps.saveArticle({
+		userId,
+		url,
+		metadata: { title: "", siteName: "", excerpt: "", wordCount: 0 },
+		estimatedReadTime: calculateReadTime(0),
+	});
+
+	if (freshness.action === "refreshed" && freshness.article.article.content) {
+		deps.summarizeArticle({ url, textContent: freshness.article.article.content });
+	}
+
+	return { ok: true, saved };
 }
 
 export function initQueueRoutes(deps: QueueDependencies): Router {
@@ -90,36 +154,17 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const parseResult = await deps.parseArticle(parsed.data.url);
+		const freshness = await deps.refreshArticleIfStale({ url: parsed.data.url });
+		const result = await saveArticleFromUrl(deps, { userId, url: parsed.data.url, freshness });
 
-		if (!parseResult.ok) {
+		if (!result.ok) {
 			res.status(422).type(SIREN_MEDIA_TYPE).json(
-				sirenError({ code: "parse-failed", message: `Could not parse article: ${parseResult.reason}` }),
+				sirenError({ code: "parse-failed", message: `Could not parse article: ${result.reason}` }),
 			);
 			return;
 		}
 
-		const { article } = parseResult;
-		const saved = await deps.saveArticle({
-			userId,
-			url: parsed.data.url,
-			metadata: {
-				title: article.title,
-				siteName: article.siteName,
-				excerpt: article.excerpt,
-				wordCount: article.wordCount,
-				imageUrl: article.imageUrl,
-			},
-			content: article.content || undefined,
-			estimatedReadTime: calculateReadTime(article.wordCount),
-		});
-
-		if (article.content) {
-			// Intentionally not awaited — summarization runs in the background so the response returns immediately
-			deps.summarizeArticle({ url: parsed.data.url, textContent: article.content });
-		}
-
-		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(saved));
+		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
 	});
 
 	router.post("/save", async (req: Request, res: Response) => {
@@ -138,37 +183,18 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const parseArticleResult = await deps.parseArticle(parsedBody.data.url);
+		const freshness = await deps.refreshArticleIfStale({ url: parsedBody.data.url });
+		const result = await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
 
-		if (!parseArticleResult.ok) {
+		if (!result.ok) {
 			const urlState = parseQueueUrl({});
-			const result = await deps.findArticlesByUser({ userId });
-			const vm = toQueueViewModel(result, urlState, {
-				saveError: `Could not parse article: ${parseArticleResult.reason}`,
+			const articlesResult = await deps.findArticlesByUser({ userId });
+			const vm = toQueueViewModel(articlesResult, urlState, {
+				saveError: `Could not parse article: ${result.reason}`,
 			});
 			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);
 			return;
-		}
-
-		const { article } = parseArticleResult;
-		await deps.saveArticle({
-			userId,
-			url: parsedBody.data.url,
-			metadata: {
-				title: article.title,
-				siteName: article.siteName,
-				excerpt: article.excerpt,
-				wordCount: article.wordCount,
-				imageUrl: article.imageUrl,
-			},
-			content: article.content || undefined,
-			estimatedReadTime: calculateReadTime(article.wordCount),
-		});
-
-		if (article.content) {
-			// Intentionally not awaited — summarization runs in the background so the response returns immediately
-			deps.summarizeArticle({ url: parsedBody.data.url, textContent: article.content });
 		}
 
 		res.redirect(303, "/queue");
@@ -179,9 +205,9 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const userId = req.userId;
 		const articleId = ArticleIdSchema.parse(req.params.id);
 
-		const article = await deps.findArticleById(articleId);
+		const article = await deps.findArticleById(articleId, userId);
 
-		if (!article || article.userId !== userId) {
+		if (!article) {
 			res.redirect(303, "/queue");
 			return;
 		}

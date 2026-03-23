@@ -60,6 +60,7 @@ describe("Email verification", () => {
 				validateAccessToken: createValidateAccessToken(oauthModel),
 				summarizeArticle: async () => null,
 				findCachedSummary: async () => "",
+				refreshArticleIfStale: async () => ({ action: "new" as const }),
 			});
 
 			const response = await request(app).post("/signup").type("form").send({

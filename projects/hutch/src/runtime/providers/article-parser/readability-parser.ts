@@ -1,17 +1,72 @@
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
-import type { ParseArticle } from "./article-parser.types";
+import type { ParseArticle, ParseArticleResult } from "./article-parser.types";
 import { extractThumbnail } from "./extract-thumbnail";
 
 export type FetchHtml = (url: string) => Promise<string | undefined>;
+
+export function parseHtml(params: { url: string; html: string }): ParseArticleResult {
+	let hostname: string;
+	try {
+		hostname = new URL(params.url).hostname;
+	} catch {
+		return { ok: false, reason: "Invalid URL" };
+	}
+
+	const imageUrl = extractThumbnail(params.html);
+	const { document } = parseHTML(params.html);
+	const reader = new Readability(document);
+	const parsed = reader.parse();
+
+	if (!parsed) {
+		return {
+			ok: true,
+			article: {
+				title: `Article from ${hostname}`,
+				siteName: hostname,
+				excerpt: `Content saved from ${hostname}.`,
+				wordCount: 0,
+				content: "",
+				imageUrl,
+			},
+		};
+	}
+
+	let textContent = parsed.textContent;
+	if (!textContent) textContent = "";
+	const wordCount = textContent.split(/\s+/).filter(Boolean).length;
+
+	let title = parsed.title;
+	if (!title) title = `Article from ${hostname}`;
+
+	let siteName = parsed.siteName;
+	if (!siteName) siteName = hostname;
+
+	let excerpt = parsed.excerpt;
+	if (!excerpt) excerpt = `Content saved from ${hostname}.`;
+
+	let content = parsed.content;
+	if (!content) content = "";
+
+	return {
+		ok: true,
+		article: {
+			title,
+			siteName,
+			excerpt,
+			wordCount,
+			content,
+			imageUrl,
+		},
+	};
+}
 
 export function initReadabilityParser(deps: {
 	fetchHtml: FetchHtml;
 }): { parseArticle: ParseArticle } {
 	const parseArticle: ParseArticle = async (url) => {
-		let hostname: string;
 		try {
-			hostname = new URL(url).hostname;
+			new URL(url);
 		} catch {
 			return { ok: false, reason: "Invalid URL" };
 		}
@@ -21,52 +76,7 @@ export function initReadabilityParser(deps: {
 			return { ok: false, reason: "Could not fetch article" };
 		}
 
-		const imageUrl = extractThumbnail(html);
-		const { document } = parseHTML(html);
-		const reader = new Readability(document);
-		const parsed = reader.parse();
-
-		if (!parsed) {
-			return {
-				ok: true,
-				article: {
-					title: `Article from ${hostname}`,
-					siteName: hostname,
-					excerpt: `Content saved from ${hostname}.`,
-					wordCount: 0,
-					content: "",
-					imageUrl,
-				},
-			};
-		}
-
-		let textContent = parsed.textContent;
-		if (!textContent) textContent = "";
-		const wordCount = textContent.split(/\s+/).filter(Boolean).length;
-
-		let title = parsed.title;
-		if (!title) title = `Article from ${hostname}`;
-
-		let siteName = parsed.siteName;
-		if (!siteName) siteName = hostname;
-
-		let excerpt = parsed.excerpt;
-		if (!excerpt) excerpt = `Content saved from ${hostname}.`;
-
-		let content = parsed.content;
-		if (!content) content = "";
-
-		return {
-			ok: true,
-			article: {
-				title,
-				siteName,
-				excerpt,
-				wordCount,
-				content,
-				imageUrl,
-			},
-		};
+		return parseHtml({ url, html });
 	};
 
 	return { parseArticle };

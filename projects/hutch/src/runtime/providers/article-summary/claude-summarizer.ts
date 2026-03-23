@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { HutchLogger } from "@packages/hutch-logger";
 import type {
 	CreateAiMessage,
 	FindCachedSummary,
@@ -16,13 +17,19 @@ export function initClaudeSummarizer(deps: {
 	createMessage: CreateAiMessage;
 	findCachedSummary: FindCachedSummary;
 	saveCachedSummary: SaveCachedSummary;
-	logError: (message: string, error?: Error) => void;
+	logger: HutchLogger;
 	cleanContent: (html: string) => string;
 }): { summarizeArticle: SummarizeArticle } {
 	const summarizeArticle: SummarizeArticle = async (params) => {
-		const cached = await deps.findCachedSummary(params.url);
-		if (cached) return cached;
+		deps.logger.info("[summarize] starting", { url: params.url });
 
+		const cached = await deps.findCachedSummary(params.url);
+		if (cached) {
+			deps.logger.info("[summarize] cache hit", { url: params.url });
+			return cached;
+		}
+
+		deps.logger.info("[summarize] cache miss, calling Claude", { url: params.url });
 		const cleanedContent = deps.cleanContent(params.textContent);
 
 		try {
@@ -36,10 +43,16 @@ export function initClaudeSummarizer(deps: {
 			const textBlock = response.content.find(
 				(block) => block.type === "text",
 			);
-			if (!textBlock || textBlock.type !== "text" || !textBlock.text) return null;
+			if (!textBlock || textBlock.type !== "text" || !textBlock.text) {
+				deps.logger.info("[summarize] no text block in response", { url: params.url });
+				return null;
+			}
 
 			const summary = textBlock.text.trim();
-			if (summary === "Summary not available.") return null;
+			if (summary === "Summary not available.") {
+				deps.logger.info("[summarize] Claude returned unavailable", { url: params.url });
+				return null;
+			}
 
 			await deps.saveCachedSummary({
 				url: params.url,
@@ -47,9 +60,10 @@ export function initClaudeSummarizer(deps: {
 				inputTokens: response.usage.input_tokens,
 				outputTokens: response.usage.output_tokens,
 			});
+			deps.logger.info("[summarize] saved", { url: params.url, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens });
 			return summary;
 		} catch (error) {
-			deps.logError("Failed to summarize article", error instanceof Error ? error : undefined);
+			deps.logger.error("[summarize] failed to summarize article", error instanceof Error ? error : undefined);
 			return null;
 		}
 	};

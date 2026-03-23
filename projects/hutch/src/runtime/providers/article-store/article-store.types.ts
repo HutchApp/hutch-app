@@ -36,7 +36,20 @@ export type SaveArticle = (params: SaveArticleParams) => Promise<SavedArticle>;
 
 export type FindArticleById = (
 	id: ArticleId,
+	userId: UserId,
 ) => Promise<SavedArticle | null>;
+
+export interface GlobalArticleData {
+	id: ArticleId;
+	url: string;
+	metadata: SavedArticle["metadata"];
+	content?: string;
+	estimatedReadTime: SavedArticle["estimatedReadTime"];
+}
+
+export type FindArticleByUrl = (
+	url: string,
+) => Promise<GlobalArticleData | null>;
 
 export type FindArticlesByUser = (
 	query: FindArticlesQuery,
@@ -52,3 +65,30 @@ export type UpdateArticleStatus = (
 	userId: UserId,
 	status: ArticleStatus,
 ) => Promise<boolean>;
+
+export interface ArticleFreshnessData {
+	etag?: string;
+	lastModified?: string;
+	contentFetchedAt?: string;
+}
+
+export type FindArticleFreshness = (
+	url: string,
+) => Promise<ArticleFreshnessData | null>;
+
+export type UpdateArticleContent = (params: {
+	url: string;
+	metadata: SavedArticle["metadata"];
+	content?: string;
+	estimatedReadTime: SavedArticle["estimatedReadTime"];
+	etag?: string;
+	lastModified?: string;
+	contentFetchedAt: string;
+}) => Promise<void>;
+
+export type UpdateArticleFetchMetadata = (params: {
+	url: string;
+	contentFetchedAt: string;
+}) => Promise<void>;
+
+export type ClearArticleSummary = (url: string) => Promise<void>;

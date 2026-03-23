@@ -19,8 +19,10 @@ import type {
 	FindArticleById,
 	FindArticlesByUser,
 	SaveArticle,
+	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type { FindCachedSummary, SummarizeArticle } from "./providers/article-summary/article-summary.types";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
@@ -70,6 +72,8 @@ interface AppDependencies {
 	validateAccessToken: ValidateAccessToken;
 	summarizeArticle: SummarizeArticle;
 	findCachedSummary: FindCachedSummary;
+	refreshArticleIfStale: RefreshArticleIfStale;
+	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -199,6 +203,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		updateArticleStatus: deps.updateArticleStatus,
 		summarizeArticle: deps.summarizeArticle,
 		findCachedSummary: deps.findCachedSummary,
+		refreshArticleIfStale: deps.refreshArticleIfStale,
+		updateArticleFetchMetadata: deps.updateArticleFetchMetadata,
+		logError: deps.logError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 

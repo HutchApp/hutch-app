@@ -239,6 +239,16 @@ const SavedArticleRow = z.object({
 function fromItem(item: Record<string, unknown>): SavedArticle {
   return SavedArticleRow.parse(item);
 }
+
+// BAD - Faking a partial object with `as`
+function createFakeResponse(): Response {
+  return { status: 200, ok: true } as Response;
+}
+
+// GOOD - Partial<T> makes the subset explicit
+function createFakeResponse(): Partial<Response> {
+  return { status: 200, ok: true };
+}
 ```
 
 **Allowed exceptions:**
@@ -247,7 +257,6 @@ function fromItem(item: Record<string, unknown>): SavedArticle {
 |-----------|--------|
 | `as const` | Not a type assertion — narrows literal types |
 | Isolated Node.js API wrappers (e.g., `promisify(scrypt)` returning `Buffer`, `requireEnv` generic) | The `as` is already contained in a single wrapper function with no better alternative from the type definitions |
-| Test doubles (`{} as unknown as WebDriver`) | Faking external interfaces in tests where full implementation is impractical |
 
 ## CLI Commands
 

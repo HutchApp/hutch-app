@@ -1,3 +1,4 @@
+import { noopLogger } from "@packages/hutch-logger";
 import type { CreateAiMessage } from "./article-summary.types";
 import { initClaudeSummarizer } from "./claude-summarizer";
 
@@ -7,7 +8,6 @@ function createDeps(overrides?: {
 	createMessage?: CreateAiMessage;
 	findCachedSummary?: (url: string) => Promise<string>;
 	saveCachedSummary?: (params: { url: string; summary: string; inputTokens: number; outputTokens: number }) => Promise<void>;
-	logError?: (message: string, error?: Error) => void;
 	cleanContent?: (html: string) => string;
 }) {
 	return {
@@ -17,7 +17,7 @@ function createDeps(overrides?: {
 		}),
 		findCachedSummary: overrides?.findCachedSummary ?? jest.fn<Promise<string>, [string]>().mockResolvedValue(""),
 		saveCachedSummary: overrides?.saveCachedSummary ?? jest.fn<Promise<void>, [{ url: string; summary: string; inputTokens: number; outputTokens: number }]>().mockResolvedValue(undefined),
-		logError: overrides?.logError ?? jest.fn(),
+		logger: noopLogger,
 		cleanContent: overrides?.cleanContent ?? passthrough,
 	};
 }
@@ -68,15 +68,16 @@ describe("initClaudeSummarizer", () => {
 
 	it("should return null and log error when createMessage throws", async () => {
 		const apiError = new Error("API rate limited");
+		const logger = { ...noopLogger, error: jest.fn() };
 		const deps = createDeps({
 			createMessage: jest.fn<Promise<{ content: Array<{ type: string; text?: string }>; usage: { input_tokens: number; output_tokens: number } }>, [unknown]>().mockRejectedValue(apiError),
 		});
-		const { summarizeArticle } = initClaudeSummarizer(deps);
+		const { summarizeArticle } = initClaudeSummarizer({ ...deps, logger });
 
 		const result = await summarizeArticle({ url: "https://example.com/article", textContent: "Content" });
 
 		expect(result).toBeNull();
-		expect(deps.logError).toHaveBeenCalledWith("Failed to summarize article", apiError);
+		expect(logger.error).toHaveBeenCalledWith("[summarize] failed to summarize article", apiError);
 	});
 
 	it("should return null when response has no text block", async () => {
