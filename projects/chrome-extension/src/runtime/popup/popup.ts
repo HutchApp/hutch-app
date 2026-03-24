@@ -26,6 +26,42 @@ function send(message: PopupMessage): Promise<unknown> {
 let allItems: ReadingListItem[] = [];
 let currentPage = 1;
 
+const AVATAR_COLORS = [
+	"#6366F1",
+	"#8B5CF6",
+	"#EC4899",
+	"#F59E0B",
+	"#10B981",
+	"#3B82F6",
+	"#EF4444",
+	"#14B8A6",
+	"#F97316",
+	"#06B6D4",
+];
+
+function avatarColor(domain: string): string {
+	let hash = 0;
+	for (let i = 0; i < domain.length; i++) {
+		hash = (hash * 31 + domain.charCodeAt(i)) | 0;
+	}
+	return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function relativeTime(date: Date): string {
+	const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+	if (seconds < 60) return "just now";
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes}m ago`;
+	const hours = Math.floor(minutes / 60);
+	if (hours < 24) return `${hours}h ago`;
+	const days = Math.floor(hours / 24);
+	if (days === 1) return "Yesterday";
+	if (days < 30) return `${days}d ago`;
+	const months = Math.floor(days / 30);
+	if (months < 12) return `${months}mo ago`;
+	return `${Math.floor(months / 12)}y ago`;
+}
+
 function renderPagination(totalPages: number, visiblePages: number[]) {
 	const pagination = document.getElementById("pagination");
 	if (!pagination) throw new Error("pagination element not found");
@@ -117,6 +153,18 @@ function renderLinks(items: ReadingListItem[]) {
 		const div = document.createElement("div");
 		div.className = "list-view__item";
 
+		let hostname: string;
+		try {
+			hostname = new URL(item.url).hostname;
+		} catch {
+			hostname = item.url;
+		}
+
+		const avatar = document.createElement("div");
+		avatar.className = "list-view__avatar";
+		avatar.textContent = hostname.charAt(0);
+		avatar.style.backgroundColor = avatarColor(hostname);
+
 		const textContainer = document.createElement("div");
 		textContainer.className = "list-view__text";
 
@@ -129,14 +177,14 @@ function renderLinks(items: ReadingListItem[]) {
 
 		const domain = document.createElement("span");
 		domain.className = "list-view__domain";
-		try {
-			domain.textContent = new URL(item.url).hostname;
-		} catch {
-			domain.textContent = item.url;
-		}
+		domain.textContent = hostname;
 
 		textContainer.appendChild(link);
 		textContainer.appendChild(domain);
+
+		const time = document.createElement("span");
+		time.className = "list-view__time";
+		time.textContent = relativeTime(new Date(item.savedAt));
 
 		const deleteButton = document.createElement("button");
 		deleteButton.className = "list-view__delete";
@@ -154,7 +202,9 @@ function renderLinks(items: ReadingListItem[]) {
 			}
 		});
 
+		div.appendChild(avatar);
 		div.appendChild(textContainer);
+		div.appendChild(time);
 		div.appendChild(deleteButton);
 		linkList.appendChild(div);
 	}

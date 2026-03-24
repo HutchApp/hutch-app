@@ -5,8 +5,8 @@
   --popup-brand: #C8923C;
   --popup-brand-hover: #B5832F;
   --popup-label: #5A6170;
-  --popup-border: #E2E5EA;
-  --popup-surface: #F7F8FA;
+  --popup-border: #E8EBF0;
+  --popup-surface: #F4F5F8;
   --popup-placeholder: #8C919D;
   --popup-error: #C45C5C;
   --popup-link-hover: #996D1F;
@@ -22,54 +22,51 @@
   --popup-active-hover: #3D4F6F;
   --popup-success: #3D8B6E;
   --popup-success-bg: #E6F4EE;
+  --popup-item-hover: #F4F5F8;
+  --popup-time: #8C919D;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --popup-bg: #1E2028;
+    --popup-bg: #1A2332;
     --popup-text: #D8DAE0;
     --popup-heading: #C0C8D8;
     --popup-brand: #D4A04A;
     --popup-brand-hover: #C8923C;
-    --popup-label: #8C919D;
-    --popup-border: #33363F;
-    --popup-surface: #262830;
-    --popup-placeholder: #5A6170;
+    --popup-label: #7A8290;
+    --popup-border: #263044;
+    --popup-surface: #1E2A3A;
+    --popup-placeholder: #556070;
     --popup-error: #E87070;
     --popup-link-hover: #D4A04A;
-    --popup-delete: #8C8C96;
+    --popup-delete: #6A7080;
     --popup-delete-hover-bg: #3D1F1F;
     --popup-delete-hover-text: #FF4466;
-    --popup-disabled: #4A4D56;
+    --popup-disabled: #3A4050;
     --popup-icon-bg: #2B3A55;
     --popup-icon-text: #D4A04A;
-    --popup-brand-text: #1A202C;
+    --popup-brand-text: #1E1208;
     --popup-active-bg: #3D4F6F;
     --popup-active-hover: #4A5F80;
     --popup-success: #4a9f7f;
     --popup-success-bg: #1a3329;
+    --popup-item-hover: #1E2A3A;
+    --popup-time: #556070;
   }
 }
 
 body {
-  width: 350px;
+  width: 380px;
   font-family: Inter, "Source Sans Pro", system-ui, -apple-system, sans-serif;
   margin: 0;
-  padding: 16px;
+  padding: 0;
   background: var(--popup-bg);
   color: var(--popup-text);
-}
-
-h2 {
-  font-size: 16px;
-  margin: 0 0 12px;
-  color: var(--popup-heading);
 }
 
 .view {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .view[hidden] {
@@ -82,7 +79,7 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 16px 8px 8px;
+  padding: 32px 24px 24px;
 }
 
 .login__brand {
@@ -100,7 +97,7 @@ h2 {
   height: 48px;
   background: var(--popup-icon-bg);
   color: var(--popup-icon-text);
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,12 +113,12 @@ h2 {
 }
 
 .login__submit {
-  padding: 16px 24px;
+  padding: 14px 24px;
   border: none;
   border-radius: 8px;
   background: var(--popup-brand);
   color: var(--popup-brand-text);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -131,14 +128,6 @@ h2 {
 
 .login__submit:hover {
   background: var(--popup-brand-hover);
-}
-
-/* --- Status views (saved, already-saved, removed) --- */
-
-.view > p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--popup-text);
 }
 
 /* --- Saved view --- */
@@ -211,20 +200,47 @@ h2 {
   background: var(--popup-surface);
 }
 
-/* --- List view (saved links) --- */
+/* --- Header (list view) --- */
 
 .list-view__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--popup-border);
 }
 
-.list-view__title {
-  margin: 0;
+.list-view__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/**
+ * 1. Small icon matching the header context
+ */
+.list-view__brand-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--popup-icon-bg);
+  color: var(--popup-icon-text);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, "Times New Roman", serif; /* 1 */
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.list-view__brand-name {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 16px;
+  font-weight: 700;
   color: var(--popup-heading);
+  line-height: 1;
 }
 
 .list-view__actions {
@@ -237,13 +253,13 @@ h2 {
   background: transparent;
   color: var(--popup-label);
   font-size: 12px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   line-height: 1;
   border: 1px solid var(--popup-border);
   border-radius: 6px;
   cursor: pointer;
   font-family: inherit;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .list-view__logout:hover {
@@ -252,17 +268,24 @@ h2 {
   border-color: var(--popup-error);
 }
 
+/* --- Search / filter --- */
+
+.list-view__search {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--popup-border);
+}
+
 .list-view__filter {
   width: 100%;
   box-sizing: border-box;
   padding: 8px 12px;
   border: 1px solid var(--popup-border);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
   color: var(--popup-text);
   background: var(--popup-surface);
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .list-view__filter:focus {
@@ -275,8 +298,10 @@ h2 {
   color: var(--popup-placeholder);
 }
 
+/* --- List items --- */
+
 .list-view__links {
-  max-height: 300px;
+  max-height: 360px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -284,15 +309,38 @@ h2 {
 
 /* purgecss-ignore-start: applied dynamically in popup.ts when rendering saved links */
 .list-view__item {
-  padding: 8px 0;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--popup-border);
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  transition: background-color 0.1s ease;
+}
+
+.list-view__item:hover {
+  background: var(--popup-item-hover);
 }
 
 .list-view__item:last-child {
   border-bottom: none;
+}
+
+/**
+ * 1. Deterministic colour based on domain — set via inline style in popup.ts
+ */
+.list-view__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  color: #fff; /* 1 */
 }
 
 .list-view__text {
@@ -315,7 +363,6 @@ h2 {
 }
 
 .list-view__item-title:hover {
-  text-decoration: underline;
   color: var(--popup-link-hover);
 }
 
@@ -328,19 +375,34 @@ h2 {
   white-space: nowrap;
 }
 
+.list-view__time {
+  color: var(--popup-time);
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /**
  * 1. Override the filled primary style — delete is a destructive utility action
+ * 2. Hidden by default, shown on row hover
  */
 .list-view__delete {
   background: transparent; /* 1 */
   color: var(--popup-delete);
   font-size: 16px;
-  padding: 0 4px;
+  padding: 2px 6px;
   line-height: 1;
   border: none;
   border-radius: 4px;
   flex-shrink: 0;
   cursor: pointer;
+  opacity: 0; /* 2 */
+  transition: opacity 0.1s ease, background-color 0.1s ease;
+}
+
+.list-view__item:hover .list-view__delete,
+.list-view__item:focus-within .list-view__delete {
+  opacity: 1;
 }
 
 .list-view__delete:hover {
@@ -357,7 +419,8 @@ h2 {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 8px 0 4px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--popup-border);
 }
 
 .pagination[hidden] {
@@ -415,16 +478,35 @@ h2 {
 }
 /* purgecss-ignore-end */
 
+/* --- Status views (saved, already-saved, removed) --- */
+
+.view--status {
+  padding: 24px 16px;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+}
+
+.view--status > p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--popup-text);
+}
+
+/* --- Empty / error states --- */
+
 .list-view__empty {
   color: var(--popup-label);
   text-align: center;
-  padding: 24px 0;
+  padding: 32px 16px;
+  font-size: 13px;
 }
 
 .list-view__error {
   color: var(--popup-error);
   text-align: center;
-  padding: 24px 0;
+  padding: 32px 16px;
+  font-size: 13px;
 }
 
 .login__error {
@@ -432,6 +514,19 @@ h2 {
   font-size: 13px;
   text-align: center;
   margin: 0;
+}
+
+/* --- Loading view --- */
+
+.view--loading {
+  padding: 32px 16px;
+  align-items: center;
+}
+
+.view--loading > p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--popup-label);
 }
 
 /* --- Focus accessibility --- */

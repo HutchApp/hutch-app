@@ -27,27 +27,32 @@
     <p class="shortcut-hint">Tip: Use <kbd>Ctrl</kbd>+<kbd>D</kbd> to save from any page</p>
   </div>
 
-  <div id="already-saved-view" class="view" hidden>
+  <div id="already-saved-view" class="view view--status" hidden>
     <p>Already in your list</p>
   </div>
 
-  <div id="removed-view" class="view" hidden>
+  <div id="removed-view" class="view view--status" hidden>
     <p>Removed</p>
   </div>
 
   <div id="list-view" class="view" hidden>
     <div class="list-view__header">
-      <h2 class="list-view__title">My List</h2>
+      <div class="list-view__brand">
+        <div class="list-view__brand-icon" aria-hidden="true">H</div>
+        <span class="list-view__brand-name">Hutch</span>
+      </div>
       <div class="list-view__actions">
         <button id="logout-button" class="list-view__logout" title="Log out">Log out</button>
       </div>
     </div>
-    <input
-      type="text"
-      id="filter-input"
-      class="list-view__filter"
-      placeholder="Filter by URL..."
-    >
+    <div class="list-view__search">
+      <input
+        type="text"
+        id="filter-input"
+        class="list-view__filter"
+        placeholder="Search articles..."
+      >
+    </div>
     <div id="link-list" class="list-view__links"></div>
     <div id="pagination" class="pagination" hidden></div>
     <p id="empty-list" class="list-view__empty" hidden>No saved links</p>
@@ -55,7 +60,7 @@
     <p id="list-error" class="list-view__error" hidden>Failed to load links</p>
   </div>
 
-  <div id="loading-view" class="view">
+  <div id="loading-view" class="view view--loading">
     <p>Loading...</p>
   </div>
 
