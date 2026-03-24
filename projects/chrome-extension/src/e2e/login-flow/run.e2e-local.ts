@@ -74,7 +74,6 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 	options.addArguments(`--load-extension=${EXTENSION_DIR}`);
 	options.addArguments("--disable-search-engine-choice-screen");
 	// CI runs in a container-like environment without a user namespace
-	options.addArguments("--no-sandbox");
 	options.addArguments("--disable-dev-shm-usage");
 
 	// Chrome 137+ removed --load-extension in branded Google Chrome.
