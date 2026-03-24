@@ -20,6 +20,8 @@
   --popup-active-bg: #2B3A55;
   --popup-active-text: #FFFFFF;
   --popup-active-hover: #3D4F6F;
+  --popup-success: #3D8B6E;
+  --popup-success-bg: #E6F4EE;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,6 +46,8 @@
     --popup-brand-text: #1A202C;
     --popup-active-bg: #3D4F6F;
     --popup-active-hover: #4A5F80;
+    --popup-success: #4a9f7f;
+    --popup-success-bg: #1a3329;
   }
 }
 
@@ -137,20 +141,57 @@ h2 {
   color: var(--popup-text);
 }
 
-.button--secondary {
-  padding: 8px 12px;
-  border: 1px solid var(--popup-heading);
+/* --- Saved view --- */
+
+.saved-view {
+  align-items: center;
+  text-align: center;
+  padding: 16px 0 8px;
+  gap: 4px;
+}
+
+.saved-view__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--popup-success-bg);
+  color: var(--popup-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.saved-view__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--popup-text);
+  margin: 0;
+}
+
+.saved-view__subtitle {
+  font-size: 13px;
+  color: var(--popup-label);
+  margin: 0 0 8px;
+}
+
+.saved-view__action {
+  padding: 10px 24px;
+  border: 2px solid var(--popup-brand);
   border-radius: 6px;
   background: transparent;
-  color: var(--popup-heading);
+  color: var(--popup-brand);
   font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: background-color 0.15s ease;
+  margin-top: 4px;
 }
 
-.button--secondary:hover {
-  background: var(--popup-surface);
+.saved-view__action:hover {
+  background: var(--popup-brand);
+  color: var(--popup-brand-text);
 }
 
 /* --- Shortcut hint --- */
@@ -158,7 +199,7 @@ h2 {
 .shortcut-hint {
   font-size: 11px;
   color: var(--popup-label);
-  margin: 4px 0 0;
+  margin: 8px 0 0;
 }
 
 .shortcut-hint kbd {

@@ -1,6 +1,5 @@
 import type {
 	ReadingListItem,
-	ReadingListItemId,
 	PopupMessage,
 	GuardedResult,
 	SaveUrlResult,
@@ -23,7 +22,6 @@ function send(message: PopupMessage): Promise<unknown> {
 	return browser.runtime.sendMessage(message);
 }
 
-let savedItemId: ReadingListItemId | null = null;
 let allItems: ReadingListItem[] = [];
 let currentPage = 1;
 
@@ -233,7 +231,6 @@ async function saveAndShowList() {
 	})) as GuardedResult<SaveUrlResult>;
 
 	if (saveResult.ok && saveResult.value.ok) {
-		savedItemId = saveResult.value.item.id;
 		showView("saved-view");
 	}
 }
@@ -268,19 +265,9 @@ document.getElementById("login-button")?.addEventListener("click", async () => {
 });
 
 document
-	.getElementById("undo-button")
+	.getElementById("view-queue-button")
 	?.addEventListener("click", async () => {
-		if (!savedItemId) return;
-
-		const result = (await send({
-			type: "remove-item",
-			id: savedItemId,
-		})) as GuardedResult<RemoveUrlResult>;
-
-		if (result.ok && result.value.ok) {
-			savedItemId = null;
-			await showListView();
-		}
+		await showListView();
 	});
 
 document
