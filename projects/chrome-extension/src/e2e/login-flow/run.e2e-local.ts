@@ -74,6 +74,7 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 	options.addArguments(`--load-extension=${EXTENSION_DIR}`);
 	options.addArguments("--disable-search-engine-choice-screen");
 	options.addArguments("--no-sandbox"); // Prevents pnpm check hanging due to "session not created: Chrome instance exited. Examine ChromeDriver verbose log to determine the cause."
+	options.addArguments("--disable-dev-shm-usage"); // CI runners have a small /dev/shm partition; without this Chrome crashes with ECONNREFUSED
 
 	// Chrome 137+ removed --load-extension in branded Google Chrome.
 	// Use Chrome for Testing which still supports it.
