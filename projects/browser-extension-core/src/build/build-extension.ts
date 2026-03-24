@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { cpSync as defaultCpSync, mkdirSync as defaultMkdirSync } from "node:fs";
+import { cpSync as defaultCpSync, mkdirSync as defaultMkdirSync, readFileSync as defaultReadFileSync, writeFileSync as defaultWriteFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { build } from "esbuild";
 
@@ -28,6 +28,8 @@ interface BuildExtensionDeps {
 	esbuild: (options: EsbuildOptions) => Promise<unknown>;
 	mkdirSync: (path: string, options: { recursive: true }) => void;
 	cpSync: (src: string, dest: string, options?: { recursive?: boolean; force?: boolean }) => void;
+	readFileSync: (path: string, encoding: "utf-8") => string;
+	writeFileSync: (path: string, data: string) => void;
 	resolveCorePackageJson: () => string;
 }
 
@@ -91,17 +93,20 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 		esbuild: deps.esbuild ?? build,
 		mkdirSync: deps.mkdirSync ?? defaultMkdirSync,
 		cpSync: deps.cpSync ?? defaultCpSync,
+		readFileSync: deps.readFileSync ?? defaultReadFileSync,
+		writeFileSync: deps.writeFileSync ?? defaultWriteFileSync,
 		resolveCorePackageJson: deps.resolveCorePackageJson ?? (() => join(__dirname, "..", "..", "package.json")),
 	};
 
 	return {
 		createBuildPlan(input: BuildPlanInput) {
 			assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)");
+			const serverUrl = input.serverUrl;
 
 			const planData = createPlanData({
 				config: input.config,
 				projectDir: input.projectDir,
-				serverUrl: input.serverUrl,
+				serverUrl,
 				corePackageJsonPath: resolvedDeps.resolveCorePackageJson(),
 			});
 
@@ -120,6 +125,25 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 						} else {
 							resolvedDeps.cpSync(copy.src, copy.dest, { force: true });
 						}
+					}
+
+					if (serverUrl.includes("127.0.0.1")) {
+						const manifestDest = join(input.projectDir, "dist-extension-compiled", "manifest.json");
+						const manifest = JSON.parse(resolvedDeps.readFileSync(manifestDest, "utf-8"));
+						const localhostPattern = `${serverUrl}/*`;
+
+						if (Array.isArray(manifest.host_permissions)) {
+							manifest.host_permissions.push(localhostPattern);
+						}
+
+						if (Array.isArray(manifest.permissions)) {
+							const hasUrlPermissions = manifest.permissions.some((p: string) => p.startsWith("http"));
+							if (hasUrlPermissions) {
+								manifest.permissions.push(localhostPattern);
+							}
+						}
+
+						resolvedDeps.writeFileSync(manifestDest, JSON.stringify(manifest, null, 2) + "\n");
 					}
 
 					console.log("Extension built to dist-extension-compiled/");
