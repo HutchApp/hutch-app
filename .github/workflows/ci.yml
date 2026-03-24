@@ -38,7 +38,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: NX_PARALLEL=2 pnpm check
+      - run: NX_PARALLEL=1 pnpm check
+        timeout-minutes: 15
 
   detect-changes:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
