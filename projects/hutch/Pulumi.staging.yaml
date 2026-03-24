@@ -4,6 +4,8 @@ config:
     - '572337278115'
   hutch:stage: staging
   hutch:deletionProtection: false
+  hutch:staticDomains:
+    - d2uoxssv1ey7em.cloudfront.net
   hutch:staticBucketName: hutch-static-assets-staging
   hutch:dynamodbArticlesTable: hutch-articles-cda0a08
   hutch:dynamodbUserArticlesTable: hutch-user-articles-8226beb
