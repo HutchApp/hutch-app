@@ -16,7 +16,7 @@ export function initStaticParser(deps: {
 		let imageUrl: string | undefined;
 		const html = await deps.fetchHtml(url);
 		if (html) {
-			imageUrl = extractThumbnail(html);
+			imageUrl = extractThumbnail(html, url);
 		}
 
 		return {

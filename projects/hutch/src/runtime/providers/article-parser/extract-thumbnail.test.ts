@@ -91,12 +91,32 @@ describe("extractThumbnail", () => {
 		expect(extractThumbnail(html)).toBeUndefined();
 	});
 
-	it("should reject relative URLs", () => {
+	it("should reject relative URLs when no base URL provided", () => {
 		const html = `<html><body>
 			<img src="/images/photo.jpg" alt="Photo">
 		</body></html>`;
 
 		expect(extractThumbnail(html)).toBeUndefined();
+	});
+
+	it("should resolve relative og:image when base URL provided", () => {
+		const html = `<html><head>
+			<meta property="og:image" content="/images/og.jpg">
+		</head><body></body></html>`;
+
+		expect(extractThumbnail(html, "https://example.com/post")).toBe(
+			"https://example.com/images/og.jpg",
+		);
+	});
+
+	it("should resolve relative img src when base URL provided", () => {
+		const html = `<html><body>
+			<img src="/images/photo.jpg" alt="Photo">
+		</body></html>`;
+
+		expect(extractThumbnail(html, "https://example.com/post")).toBe(
+			"https://example.com/images/photo.jpg",
+		);
 	});
 
 	it("should accept valid http URLs", () => {

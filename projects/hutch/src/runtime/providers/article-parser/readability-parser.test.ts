@@ -1,4 +1,4 @@
-import { initReadabilityParser } from "./readability-parser";
+import { initReadabilityParser, parseHtml } from "./readability-parser";
 
 const ARTICLE_HTML = `
 <html>
@@ -149,6 +149,53 @@ describe("initReadabilityParser", () => {
 		expect(result.ok).toBe(true);
 		if (result.ok) {
 			expect(typeof result.article.content).toBe("string");
+		}
+	});
+
+	it("should resolve relative image URLs to absolute", () => {
+		const htmlWithRelativeImg = `
+		<html><head><title>Post</title></head>
+		<body><article>
+			<h1>Post</h1>
+			<p>Enough content to be parsed by readability as a real article with several words.</p>
+			<img src="/images/diagram.jpg" alt="Diagram">
+			<p>Another paragraph with additional text for the parser.</p>
+		</article></body></html>`;
+
+		const result = parseHtml({
+			url: "https://blog.example.com/post",
+			html: htmlWithRelativeImg,
+		});
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.article.content).toContain(
+				'src="https://blog.example.com/images/diagram.jpg"',
+			);
+			expect(result.article.content).not.toContain('src="/images/diagram.jpg"');
+		}
+	});
+
+	it("should resolve relative link hrefs to absolute", () => {
+		const htmlWithRelativeLink = `
+		<html><head><title>Post</title></head>
+		<body><article>
+			<h1>Post</h1>
+			<p>Enough content to be parsed by readability as a real article with several words.</p>
+			<p>See <a href="/other-post">this other post</a> for more details.</p>
+			<p>Another paragraph with additional text for the parser.</p>
+		</article></body></html>`;
+
+		const result = parseHtml({
+			url: "https://blog.example.com/post",
+			html: htmlWithRelativeLink,
+		});
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.article.content).toContain(
+				'href="https://blog.example.com/other-post"',
+			);
 		}
 	});
 });
