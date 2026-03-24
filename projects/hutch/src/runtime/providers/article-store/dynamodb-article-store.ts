@@ -26,9 +26,9 @@ import type {
 } from "./article-store.types";
 
 const ArticleFreshnessRow = z.object({
-	etag: z.string().optional(),
-	lastModified: z.string().optional(),
-	contentFetchedAt: z.string().optional(),
+	etag: z.string().nullish(),
+	lastModified: z.string().nullish(),
+	contentFetchedAt: z.string().nullish(),
 });
 
 const ArticleRow = z.object({
@@ -362,9 +362,9 @@ export function initDynamoDbArticleStore(deps: {
 		if (!result.Item) return null;
 		const row = ArticleFreshnessRow.parse(result.Item);
 		return {
-			etag: row.etag,
-			lastModified: row.lastModified,
-			contentFetchedAt: row.contentFetchedAt,
+			etag: row.etag ?? undefined,
+			lastModified: row.lastModified ?? undefined,
+			contentFetchedAt: row.contentFetchedAt ?? undefined,
 		};
 	};
 
