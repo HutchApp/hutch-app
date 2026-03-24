@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hutch",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Save URLs to your reading list",
   "permissions": [
     "activeTab",
