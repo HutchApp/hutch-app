@@ -84,6 +84,7 @@ export function SignupPage(data?: AuthFormData): Component {
 	const content = render(SIGNUP_TEMPLATE, {
 		email,
 		globalError: data?.globalError,
+		returnUrl: data?.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),

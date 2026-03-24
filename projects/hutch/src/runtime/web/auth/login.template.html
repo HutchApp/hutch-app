@@ -17,7 +17,7 @@
           <button class="auth-form__submit" type="submit">Sign in</button>
         </form>
         <p class="auth-card__footer">
-          Don't have an account? <a href="/signup">Create one</a>
+          Don't have an account? <a href="/signup{{#if returnUrl}}?return={{returnUrl}}{{/if}}">Create one</a>
         </p>
       </div>
     </main>

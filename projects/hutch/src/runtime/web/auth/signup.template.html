@@ -3,7 +3,7 @@
         <h1 class="auth-card__title">Create your account</h1>
         <p class="auth-card__subtitle">Start saving articles to read later</p>
         {{#if globalError}}<div class="auth-form__global-error" data-test-global-error>{{globalError}}</div>{{/if}}
-        <form class="auth-form" method="POST" action="/signup" data-test-form="signup">
+        <form class="auth-form" method="POST" action="/signup{{#if returnUrl}}?return={{returnUrl}}{{/if}}" data-test-form="signup">
           <div class="auth-form__field">
             <label class="auth-form__label" for="email">Email</label>
             <input class="auth-form__input{{emailField.errorClass}}" type="email" id="email" name="email" value="{{email}}" required autocomplete="email">
@@ -22,7 +22,7 @@
           <button class="auth-form__submit" type="submit">Create account</button>
         </form>
         <p class="auth-card__footer">
-          Already have an account? <a href="/login">Sign in</a>
+          Already have an account? <a href="/login{{#if returnUrl}}?return={{returnUrl}}{{/if}}">Sign in</a>
         </p>
       </div>
     </main>
