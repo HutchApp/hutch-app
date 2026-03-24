@@ -1,0 +1,12 @@
+{
+  "extends": "../../../../tsconfig.config.base.json",
+  "compilerOptions": {
+    "outDir": "./bin",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "incremental": false,
+    "allowJs": true
+  },
+  "include": ["index.ts", "../../s3-config.js"]
+}

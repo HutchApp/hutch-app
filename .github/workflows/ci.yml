@@ -45,6 +45,7 @@ jobs:
     outputs:
       hutch: ${{ steps.detect.outputs.hutch }}
       firefox-extension: ${{ steps.detect.outputs.firefox-extension }}
+      chrome-extension: ${{ steps.detect.outputs.chrome-extension }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,6 +70,7 @@ jobs:
           echo "Affected projects: $AFFECTED"
           echo "hutch=$(echo "$AFFECTED" | jq 'any(. == "hutch")')" >> "$GITHUB_OUTPUT"
           echo "firefox-extension=$(echo "$AFFECTED" | jq 'any(. == "firefox-extension")')" >> "$GITHUB_OUTPUT"
+          echo "chrome-extension=$(echo "$AFFECTED" | jq 'any(. == "chrome-extension")')" >> "$GITHUB_OUTPUT"
 
   hutch-deploy-to-staging:
     if: needs.detect-changes.outputs.hutch == 'true'
@@ -202,3 +204,13 @@ jobs:
   #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   #     AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
   #     AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+
+  chrome-extension-deploy-to-prod:
+    if: needs.detect-changes.outputs.chrome-extension == 'true'
+    needs: [check, detect-changes]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish-chrome-extension.yml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -1,0 +1,59 @@
+name: Publish Chrome Extension
+
+on:
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  publish-chrome-extension-prod:
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
+      PULUMI_CONFIG_PASSPHRASE: ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy extension bucket infrastructure
+        run: pulumi up --stack prod --yes
+        working-directory: projects/chrome-extension
+
+      - name: Compile bump-version script
+        run: pnpm --filter chrome-extension exec tsc --outDir dist --rootDir src --module commonjs --esModuleInterop --skipLibCheck src/bump-version.ts
+
+      - name: Bump extension version
+        run: node projects/chrome-extension/scripts/bump-version.js patch
+
+      - name: Build and package extension
+        run: npx nx run-many --target=compile --projects=browser-extension-core,chrome-extension
+
+      - name: Commit and push bumped version to main
+        env:
+          HUSKY: '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add projects/chrome-extension/package.json projects/chrome-extension/src/runtime/manifest.json
+          git commit -m "chore: bump chrome extension version to $(node -p "require('./projects/chrome-extension/package.json').version")"
+          git push origin main
+
+      - name: Publish to S3
+        run: node projects/chrome-extension/scripts/publish-to-s3.js

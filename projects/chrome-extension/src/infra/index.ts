@@ -1,11 +1,12 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
+import { getBucketName } from "../../s3-config";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
 
 const bucket = new aws.s3.Bucket("hutch-chrome-extension", {
-	bucket: `hutch-chrome-extension-${stage}`,
+	bucket: getBucketName(stage),
 	forceDestroy: true,
 });
 

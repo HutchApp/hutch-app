@@ -12,6 +12,9 @@ export default {
 		// CLI scripts (not entry points)
 		"scripts/bump-version.js",
 		"scripts/install-chrome-for-testing.js",
+		"scripts/publish-to-s3.js",
+		// Type declarations for s3-config.js (used when package exports are consumed)
+		"s3-config.d.ts",
 		// PurgeCSS config loaded via CLI, not imported in source
 		"purgecss.config.js",
 	],
@@ -49,5 +52,7 @@ export default {
 		"src/runtime/offscreen/offscreen.ts",
 		// E2E test entry points (run via node --test)
 		"src/e2e/**/run.e2e-local.ts",
+		// S3 config used by infra and publish script
+		"s3-config.js",
 	],
 } satisfies KnipConfig;
