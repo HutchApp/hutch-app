@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type { Minutes } from "../../domain/article/article.types";
 import type { UserId } from "../../domain/user/user.types";
 import type { SaveArticleParams } from "./article-store.types";
@@ -260,8 +261,10 @@ describe("initInMemoryArticleStore", () => {
 				contentFetchedAt: "2026-03-20T10:00:00Z",
 			});
 
+			const byUrl = await store.findArticleByUrl("https://example.com/article");
+			assert(byUrl, "Article should exist after updateArticleContent");
 			const found = await store.findArticleById(
-				(await store.findArticleByUrl("https://example.com/article"))!.id,
+				byUrl.id,
 				USER_A,
 			);
 			expect(found?.metadata.title).toBe("Updated Title");

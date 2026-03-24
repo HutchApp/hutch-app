@@ -1,3 +1,4 @@
+import assert from 'node:assert'
 import { test, expect } from '@playwright/test'
 import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../hateoas'
 import { groupOf } from '../hateoas/action-composer'
@@ -121,7 +122,8 @@ test.describe('Queue management flow (staging)', () => {
     const client = new HATEOASClient(page, navigationHandler)
     const config: NavigationConfig = { maxNavigations: 60 }
 
-    const result = await client.navigate(baseURL!, config)
+    assert(baseURL, "baseURL must be defined — set STAGING_URL env var")
+    const result = await client.navigate(baseURL, config)
 
     expect(result.success).toBe(true)
   })
