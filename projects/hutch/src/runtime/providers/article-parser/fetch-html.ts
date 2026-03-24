@@ -2,7 +2,7 @@ import type { FetchHtmlWithHeaders } from "./article-parser.types";
 import type { FetchHtml } from "./readability-parser";
 import { headerOrUndefined } from "./header-utils";
 
-const FETCH_TIMEOUT_MS = 5000;
+const FETCH_TIMEOUT_MS = 15000;
 
 export function initFetchHtmlWithHeaders(deps: {
 	fetch: typeof globalThis.fetch;
