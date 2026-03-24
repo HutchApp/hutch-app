@@ -131,7 +131,7 @@
 }
 
 .home-demo__container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   text-align: center;
 }
@@ -182,7 +182,7 @@
 
 @media (min-width: 768px) {
   .home-demo__videos {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 

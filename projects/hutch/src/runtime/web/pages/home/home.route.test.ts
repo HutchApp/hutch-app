@@ -39,6 +39,16 @@ describe("GET /", () => {
 		expect(features?.length).toBe(4);
 	});
 
+	it("should render three demo videos: Desktop, Firefox Extension, and Chrome Extension", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const demoSection = doc.querySelector('[data-test-section="demo"]');
+		const videoLabels = demoSection?.querySelectorAll(".home-demo__video-label");
+		const labels = Array.from(videoLabels ?? []).map((el) => el.textContent);
+		expect(labels).toEqual(["Desktop", "Firefox Extension", "Chrome Extension"]);
+	});
+
 	it("should render the backstory section", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
