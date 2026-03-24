@@ -76,7 +76,8 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 		}).catch((error) => deps.logError("Failed to update fetch metadata", error instanceof Error ? error : undefined));
 
 		if (article.content) {
-			deps.summarizeArticle({ url, textContent: article.content });
+			deps.summarizeArticle({ url, textContent: article.content })
+				.catch((error) => deps.logError("Failed to summarize article", error instanceof Error ? error : undefined));
 		}
 
 		return { ok: true, saved };
@@ -90,7 +91,8 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	});
 
 	if (freshness.action === "refreshed" && freshness.article.article.content) {
-		deps.summarizeArticle({ url, textContent: freshness.article.article.content });
+		deps.summarizeArticle({ url, textContent: freshness.article.article.content })
+			.catch((error) => deps.logError("Failed to summarize article", error instanceof Error ? error : undefined));
 	}
 
 	return { ok: true, saved };
