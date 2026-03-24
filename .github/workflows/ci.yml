@@ -23,7 +23,6 @@ jobs:
       PERSISTENCE: development
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       STATIC_BASE_URL: 'https://d2uoxssv1ey7em.cloudfront.net'
-      NODE_OPTIONS: '--max-old-space-size=8192'
     steps:
       - uses: actions/checkout@v4
 
@@ -38,8 +37,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: NX_PARALLEL=1 pnpm check
-        timeout-minutes: 15
+      - run: pnpm check
 
   detect-changes:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
