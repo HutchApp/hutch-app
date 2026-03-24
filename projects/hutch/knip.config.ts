@@ -14,7 +14,8 @@ export default {
 		"helmet",
 		"compression",
 		"@types/compression",
-		// Workspace dependency for S3 config (subpath import not detected by knip)
+		// Workspace dependencies for S3 config (subpath imports not detected by knip)
+		"chrome-extension",
 		"firefox-extension",
 		// Used in infra code (compiled separately)
 		"@packages/hutch-logger",

@@ -38,7 +38,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 						"A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
 					applicationCategory: "ProductivityApplication",
 					operatingSystem: "Web, iOS, Android",
-					browserRequirements: "Requires Firefox for browser extension",
+					browserRequirements: "Requires Firefox or Chrome for browser extension",
 					offers: {
 						"@type": "Offer",
 						price: "0",
@@ -51,7 +51,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 						url: "https://www.linkedin.com/in/fagnerbrack/",
 					},
 					featureList: [
-						"One-click article saving via Firefox extension",
+						"One-click article saving via browser extension",
 						"Web app for managing saved articles",
 						"Distraction-free reader view with clean typography",
 					],
@@ -82,7 +82,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 							name: "What is Hutch?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click using the Firefox browser extension, and read them later in a distraction-free reader view.",
+								text: "Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click using the browser extension for Firefox or Chrome, and read them later in a distraction-free reader view.",
 							},
 						},
 						{
@@ -106,7 +106,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 							name: "What features does Hutch have?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Hutch currently offers a Firefox browser extension for one-click saving, a web app for managing saved articles, and a distraction-free reader view. Planned features include highlights and notes, full-text search, offline reading, text-to-speech, and a newsletter inbox.",
+								text: "Hutch currently offers browser extensions for Firefox and Chrome for one-click saving, a web app for managing saved articles, and a distraction-free reader view. Planned features include highlights and notes, full-text search, offline reading, text-to-speech, and a newsletter inbox.",
 							},
 						},
 					],
@@ -124,9 +124,9 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 			allocationExhausted,
 			coreFeatures: [
 				{
-					name: "Firefox Browser Extension",
+					name: "Browser Extension",
 					description:
-						"Save any page in one click from Firefox. No friction.",
+						"Save any page in one click from Firefox or Chrome. No friction.",
 				},
 				{
 					name: "Web App",

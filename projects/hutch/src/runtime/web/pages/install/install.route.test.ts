@@ -1,14 +1,27 @@
-import { getExtensionDownloadUrl } from "firefox-extension/s3-config";
+import { getExtensionDownloadUrl as getFirefoxDownloadUrl } from "firefox-extension/s3-config";
+import { getExtensionDownloadUrl as getChromeDownloadUrl } from "chrome-extension/s3-config";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "@packages/hutch-test-app";
 
 const TEST_XPI_FILENAME = "abc123-1.0.0.xpi";
+const TEST_ZIP_FILENAME = "hutch-chrome-1.0.0.zip";
+
+function mockBothAvailable() {
+	jest.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+		const urlStr = url.toString();
+		if (urlStr.includes("hutch-extension-prod")) {
+			return new Response(TEST_XPI_FILENAME, { status: 200 });
+		}
+		if (urlStr.includes("hutch-chrome-extension-prod")) {
+			return new Response(TEST_ZIP_FILENAME, { status: 200 });
+		}
+		return new Response("Not Found", { status: 404 });
+	});
+}
 
 beforeEach(() => {
-	jest.spyOn(globalThis, "fetch").mockResolvedValue(
-		new Response(TEST_XPI_FILENAME, { status: 200 }),
-	);
+	mockBothAvailable();
 });
 
 afterEach(() => {
@@ -31,22 +44,42 @@ describe("GET /install", () => {
 		expect(doc.body.classList.contains("page-install")).toBe(true);
 	});
 
-	it("should render the download button linking to the S3 XPI", async () => {
+	it("should render the Firefox download button linking to the S3 XPI", async () => {
 		const response = await request(app).get("/install");
 		const doc = new JSDOM(response.text).window.document;
 
 		const cta = doc.querySelector(
-			'[data-test-cta="download-extension"]',
+			'[data-test-cta="download-firefox"]',
 		) as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe(getExtensionDownloadUrl({ stage: "prod", xpiFilename: TEST_XPI_FILENAME }));
+		expect(cta.getAttribute("href")).toBe(getFirefoxDownloadUrl({ stage: "prod", xpiFilename: TEST_XPI_FILENAME }));
 		expect(cta.textContent).toBe("Download Hutch for Firefox (test mode)");
 	});
 
-	it("should render installation steps", async () => {
+	it("should render the Chrome download button linking to the S3 ZIP", async () => {
 		const response = await request(app).get("/install");
 		const doc = new JSDOM(response.text).window.document;
 
-		const steps = doc.querySelector('[data-test-section="install-steps"]');
+		const cta = doc.querySelector(
+			'[data-test-cta="download-chrome"]',
+		) as HTMLAnchorElement;
+		expect(cta.getAttribute("href")).toBe(getChromeDownloadUrl({ stage: "prod", zipFilename: TEST_ZIP_FILENAME }));
+		expect(cta.textContent).toBe("Download Hutch for Chrome");
+	});
+
+	it("should render Firefox installation steps", async () => {
+		const response = await request(app).get("/install");
+		const doc = new JSDOM(response.text).window.document;
+
+		const steps = doc.querySelector('[data-test-section="firefox-steps"]');
+		const items = steps?.querySelectorAll("li");
+		expect(items?.length).toBe(3);
+	});
+
+	it("should render Chrome installation steps", async () => {
+		const response = await request(app).get("/install");
+		const doc = new JSDOM(response.text).window.document;
+
+		const steps = doc.querySelector('[data-test-section="chrome-steps"]');
 		const items = steps?.querySelectorAll("li");
 		expect(items?.length).toBe(3);
 	});
@@ -60,19 +93,49 @@ describe("GET /install", () => {
 		expect(description?.getAttribute("content")).toContain("extension");
 	});
 
-	it("should show unavailable message when latest.txt returns 404", async () => {
+	it("should show Firefox unavailable message when Firefox latest.txt returns 404", async () => {
 		jest.restoreAllMocks();
-		jest.spyOn(globalThis, "fetch").mockResolvedValue(
-			new Response("Not Found", { status: 404 }),
-		);
+		jest.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+			const urlStr = url.toString();
+			if (urlStr.includes("hutch-extension-prod")) {
+				return new Response("Not Found", { status: 404 });
+			}
+			if (urlStr.includes("hutch-chrome-extension-prod")) {
+				return new Response(TEST_ZIP_FILENAME, { status: 200 });
+			}
+			return new Response("Not Found", { status: 404 });
+		});
 
 		const response = await request(app).get("/install");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.querySelector('[data-test-cta="download-extension"]')).toBeNull();
-		const unavailable = doc.querySelector('[data-test-section="download-unavailable"]');
+		expect(doc.querySelector('[data-test-cta="download-firefox"]')).toBeNull();
+		const unavailable = doc.querySelector('[data-test-section="firefox-unavailable"]');
 		expect(unavailable?.textContent).toBe(
-			"The extension is not available for download yet. Please check back soon.",
+			"The Firefox extension is not available for download yet. Please check back soon.",
+		);
+	});
+
+	it("should show Chrome unavailable message when Chrome latest.txt returns 404", async () => {
+		jest.restoreAllMocks();
+		jest.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+			const urlStr = url.toString();
+			if (urlStr.includes("hutch-extension-prod")) {
+				return new Response(TEST_XPI_FILENAME, { status: 200 });
+			}
+			if (urlStr.includes("hutch-chrome-extension-prod")) {
+				return new Response("Not Found", { status: 404 });
+			}
+			return new Response("Not Found", { status: 404 });
+		});
+
+		const response = await request(app).get("/install");
+		const doc = new JSDOM(response.text).window.document;
+
+		expect(doc.querySelector('[data-test-cta="download-chrome"]')).toBeNull();
+		const unavailable = doc.querySelector('[data-test-section="chrome-unavailable"]');
+		expect(unavailable?.textContent).toBe(
+			"The Chrome extension is not available for download yet. Please check back soon.",
 		);
 	});
 });

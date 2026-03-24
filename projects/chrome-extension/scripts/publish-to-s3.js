@@ -8,6 +8,17 @@ const { getBucketName, getBucketBaseUrl } = require("../s3-config");
 
 const stage = "prod";
 
+function buildUpdatesXml({ version, codebase }) {
+	return [
+		'<?xml version="1.0" encoding="UTF-8"?>',
+		"<gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>",
+		"  <app appid='hutch-chrome-extension'>",
+		`    <updatecheck codebase='${codebase}' version='${version}'/>`,
+		"  </app>",
+		"</gupdate>",
+	].join("\n");
+}
+
 async function main() {
 	assert.ok(process.env.AWS_ACCESS_KEY_ID, "AWS_ACCESS_KEY_ID is required");
 	assert.ok(process.env.AWS_SECRET_ACCESS_KEY, "AWS_SECRET_ACCESS_KEY is required");
@@ -55,6 +66,18 @@ async function main() {
 		console.log(`Uploading ${versionedFilename} to S3...`);
 		execSync(
 			`aws s3 cp "${tmpZipPath}" "s3://${bucketName}/${versionedFilename}" --content-type "application/zip"`,
+			{ stdio: "inherit" },
+		);
+
+		// Update updates.xml before latest.txt so auto-update pointer is
+		// consistent before the install page pointer changes
+		const updatesXmlPath = path.join(tmpDir, "updates.xml");
+		fs.writeFileSync(
+			updatesXmlPath,
+			buildUpdatesXml({ version, codebase: expectedLink }),
+		);
+		execSync(
+			`aws s3 cp "${updatesXmlPath}" "s3://${bucketName}/updates.xml" --content-type "application/xml"`,
 			{ stdio: "inherit" },
 		);
 

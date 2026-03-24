@@ -206,6 +206,9 @@ importers:
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../src/packages/hutch-logger
+      chrome-extension:
+        specifier: workspace:*
+        version: link:../chrome-extension
       compression:
         specifier: 1.8.1
         version: 1.8.1

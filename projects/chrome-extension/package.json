@@ -4,6 +4,12 @@
   "description": "Hutch — Chrome browser extension for saving URLs to a reading list",
   "main": "src/infra/index.ts",
   "private": true,
+  "exports": {
+    "./s3-config": {
+      "types": "./s3-config.d.ts",
+      "default": "./s3-config.js"
+    }
+  },
   "scripts": {
     "compile": "tsc && HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js && HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js",
     "check-unused-css": "node scripts/check-unused-css.js",

@@ -1,23 +1,45 @@
   <main class="install-page">
     <div class="install-page__container">
-      <h1 class="install-page__title">Install Hutch for Firefox</h1>
+      <h1 class="install-page__title">Install Hutch</h1>
       <p class="install-page__subtitle">Save articles to your reading list with a single click or keyboard shortcut.</p>
 
-      {{#if extensionDownloadUrl}}
-      <a href="{{extensionDownloadUrl}}" class="install-page__download" data-test-cta="download-extension">Download Hutch for Firefox (test mode)</a>
+      <section class="install-page__browser" data-test-section="firefox">
+        <h2 class="install-page__browser-title">Firefox</h2>
+        {{#if firefoxDownloadUrl}}
+        <a href="{{firefoxDownloadUrl}}" class="install-page__download" data-test-cta="download-firefox">Download Hutch for Firefox (test mode)</a>
 
-      <section class="install-page__steps" data-test-section="install-steps">
-        <h2>Installation steps</h2>
-        <ol>
-          <li>Download <code>hutch.xpi</code> using the button above</li>
-          <li>Firefox will prompt you to allow the installation — click "Continue to Installation"</li>
-          <li>Click "Add" to install the extension</li>
-        </ol>
+        <div class="install-page__steps" data-test-section="firefox-steps">
+          <h3>Installation steps</h3>
+          <ol>
+            <li>Download <code>hutch.xpi</code> using the button above</li>
+            <li>Firefox will prompt you to allow the installation — click "Continue to Installation"</li>
+            <li>Click "Add" to install the extension</li>
+          </ol>
+          <p class="install-page__footnote" data-test-section="install-footnote">Login uses your real hutch-app.com account via OAuth. The version 0.0.1 saves the links in-memory and are lost after extension reloads. We're waiting the Firefox review to complete which may take some time.</p>
+        </div>
+        {{else}}
+        <p class="install-page__unavailable" data-test-section="firefox-unavailable">The Firefox extension is not available for download yet. Please check back soon.</p>
+        {{/if}}
       </section>
 
-      <p class="install-page__footnote" data-test-section="install-footnote">Login uses your real hutch-app.com account via OAuth, but saved links are stored in memory only and will be lost when the extension reloads.</p>
-      {{else}}
-      <p class="install-page__unavailable" data-test-section="download-unavailable">The extension is not available for download yet. Please check back soon.</p>
-      {{/if}}
+      <section class="install-page__browser" data-test-section="chrome">
+        <h2 class="install-page__browser-title">Chrome</h2>
+        {{#if chromeDownloadUrl}}
+        <a href="{{chromeDownloadUrl}}" class="install-page__download" data-test-cta="download-chrome">Download Hutch for Chrome</a>
+
+        <div class="install-page__steps" data-test-section="chrome-steps">
+          <h3>Installation steps</h3>
+          <ol>
+            <li>Download <code>hutch.zip</code> using the button above</li>
+            <li>Open <code>chrome://extensions</code> and enable "Developer mode"</li>
+            <li>Drag and drop the downloaded zip onto the extensions page</li>
+          </ol>
+        </div>
+        {{else}}
+        <p class="install-page__unavailable" data-test-section="chrome-unavailable">The Chrome extension is not available for download yet. Please check back soon.</p>
+        {{/if}}
+      </section>
+
+      <p class="install-page__footnote" data-test-section="install-footnote">Login uses your real hutch-app.com account via OAuth.</p>
     </div>
   </main>

@@ -22,6 +22,25 @@ export const INSTALL_PAGE_STYLES = `
   margin-bottom: 40px;
 }
 
+.install-page__browser {
+  margin-bottom: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+.install-page__browser:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.install-page__browser-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--foreground);
+}
+
 .install-page__download {
   display: inline-block;
   padding: 16px 28px;
@@ -44,7 +63,7 @@ export const INSTALL_PAGE_STYLES = `
   margin-bottom: 32px;
 }
 
-.install-page__steps h2 {
+.install-page__steps h3 {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 16px;

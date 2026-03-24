@@ -27,7 +27,7 @@ describe("GET /", () => {
 
 		const cta = doc.querySelector('[data-test-cta="install-extension"]') as HTMLAnchorElement;
 		expect(cta.getAttribute("href")).toBe("/install");
-		expect(cta.textContent).toBe("Install the Firefox Extension");
+		expect(cta.textContent).toBe("Install the Browser Extension");
 	});
 
 	it("should render the core features section with shipped features only", async () => {
