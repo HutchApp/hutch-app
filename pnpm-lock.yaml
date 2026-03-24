@@ -70,6 +70,64 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  projects/chrome-extension:
+    dependencies:
+      '@packages/hutch-logger':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-logger
+      browser-extension-core:
+        specifier: workspace:*
+        version: link:../browser-extension-core
+      webextension-polyfill:
+        specifier: 0.12.0
+        version: 0.12.0
+    devDependencies:
+      '@packages/check-unused-css':
+        specifier: workspace:*
+        version: link:../../src/packages/check-unused-css
+      '@packages/hutch-test-app':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-test-app
+      '@packages/test-phase-runner':
+        specifier: workspace:*
+        version: link:../../src/packages/test-phase-runner
+      '@pulumi/aws':
+        specifier: 7.20.0
+        version: 7.20.0(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+      '@pulumi/pulumi':
+        specifier: 3.224.0
+        version: 3.224.0(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
+      '@types/selenium-webdriver':
+        specifier: 4.35.5
+        version: 4.35.5
+      '@types/semver':
+        specifier: 7.7.1
+        version: 7.7.1
+      c8:
+        specifier: 10.1.3
+        version: 10.1.3
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      esbuild:
+        specifier: 0.25.4
+        version: 0.25.4
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
+      selenium-webdriver:
+        specifier: 4.41.0
+        version: 4.41.0
+      semver:
+        specifier: 7.7.4
+        version: 7.7.4
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   projects/firefox-extension:
     dependencies:
       '@packages/hutch-logger':
@@ -4976,6 +5034,9 @@ packages:
     resolution: {integrity: sha512-RDAJvyIyJ/iIFssx2w7VrD7mtkc4X+8VJFPq8Ax3mL2auF4KQsV9ZQmPZOzqP9Ji0k0D6YKAzGZ1Ae67qavDVQ==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
+
+  webextension-polyfill@0.12.0:
+    resolution: {integrity: sha512-97TBmpoWJEE+3nFBQ4VocyCdLKfw54rFaJ6EVQYLBCXqCIpLSZkwGgASpv4oPt9gdKCJ80RJlcmNzNn008Ag6Q==}
 
   webidl-conversions@7.0.0:
     resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
@@ -10819,6 +10880,8 @@ snapshots:
       - node-fetch
       - safe-compare
       - supports-color
+
+  webextension-polyfill@0.12.0: {}
 
   webidl-conversions@7.0.0: {}
 

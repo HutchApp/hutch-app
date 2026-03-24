@@ -10,6 +10,15 @@ describe("getClient", () => {
 		expect(client?.grants).toContain("refresh_token");
 	});
 
+	it("returns the registered Chrome extension client", () => {
+		const client = getClient("hutch-chrome-extension");
+
+		expect(client).toBeDefined();
+		expect(client?.name).toBe("Hutch Chrome Extension");
+		expect(client?.grants).toContain("authorization_code");
+		expect(client?.grants).toContain("refresh_token");
+	});
+
 	it("returns undefined for an unknown client ID", () => {
 		const client = getClient("unknown-client");
 

@@ -11,6 +11,16 @@ const REGISTERED_CLIENTS: Record<string, OAuthClient> = {
 		],
 		grants: ["authorization_code", "refresh_token"],
 	},
+	"hutch-chrome-extension": {
+		id: OAuthClientIdSchema.parse("hutch-chrome-extension"),
+		name: "Hutch Chrome Extension",
+		redirectUris: [
+			"https://hutch-app.com/oauth/callback",
+			"http://127.0.0.1:3000/oauth/callback",
+			"http://127.0.0.1:3001/oauth/callback",
+		],
+		grants: ["authorization_code", "refresh_token"],
+	},
 };
 
 export function getClient(
