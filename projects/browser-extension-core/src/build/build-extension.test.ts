@@ -261,3 +261,73 @@ describe("plan.buildExtension", () => {
 		expect(manifestCopy?.options).toEqual({ force: true });
 	});
 });
+
+describe("plan.packExtension", () => {
+	function createInMemoryDeps() {
+		const createdDirs: Array<{ path: string; options: { recursive: true } }> = [];
+
+		const deps = {
+			esbuild: async () => {},
+			mkdirSync: (path: string, options: { recursive: true }) => {
+				createdDirs.push({ path, options });
+			},
+			cpSync: () => {},
+			resolveCorePackageJson: () => "/projects/browser-extension-core/package.json",
+		};
+
+		return { deps, createdDirs };
+	}
+
+	it("calls pack with sourceDir and outputPath", () => {
+		const { deps } = createInMemoryDeps();
+		const { createBuildPlan } = initBuildExtension(deps);
+		let packCalledWith: { sourceDir: string; outputPath: string } | null = null;
+
+		const plan = createBuildPlan({
+			config: { target: "firefox91" },
+			projectDir: "/projects/firefox-extension",
+			serverUrl: "https://hutch-app.com",
+			pack: (params) => {
+				packCalledWith = params;
+			},
+		});
+
+		plan.packExtension("hutch-abc123.xpi");
+
+		expect(packCalledWith).toEqual({
+			sourceDir: join("/projects/firefox-extension", "dist-extension-compiled"),
+			outputPath: join("/projects/firefox-extension", "dist-extension-files", "hutch-abc123.xpi"),
+		});
+	});
+
+	it("creates the dist-extension-files directory", () => {
+		const { deps, createdDirs } = createInMemoryDeps();
+		const { createBuildPlan } = initBuildExtension(deps);
+
+		const plan = createBuildPlan({
+			config: { target: "firefox91" },
+			projectDir: "/projects/firefox-extension",
+			serverUrl: "https://hutch-app.com",
+			pack: () => {},
+		});
+
+		plan.packExtension("hutch-abc123.xpi");
+
+		const artifactsDir = createdDirs.find((d) => d.path.endsWith("dist-extension-files"));
+		expect(artifactsDir).toBeDefined();
+		expect(artifactsDir?.options).toEqual({ recursive: true });
+	});
+
+	it("throws when pack callback is not provided", () => {
+		const { deps } = createInMemoryDeps();
+		const { createBuildPlan } = initBuildExtension(deps);
+
+		const plan = createBuildPlan({
+			config: { target: "firefox91" },
+			projectDir: "/projects/firefox-extension",
+			serverUrl: "https://hutch-app.com",
+		});
+
+		expect(() => plan.packExtension("hutch-abc123.xpi")).toThrow();
+	});
+});

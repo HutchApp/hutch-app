@@ -35,6 +35,7 @@ interface BuildPlanInput {
 	config: ExtensionBuildConfig;
 	projectDir: string;
 	serverUrl: string | undefined;
+	pack?: (params: { sourceDir: string; outputPath: string }) => void;
 }
 
 function createPlanData(input: { config: ExtensionBuildConfig; projectDir: string; serverUrl: string; corePackageJsonPath: string }): {
@@ -122,6 +123,14 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 					}
 
 					console.log("Extension built to dist-extension-compiled/");
+				},
+				packExtension(filename: string): void {
+					assert(input.pack, "pack callback is required — provide it in createBuildPlan input");
+					const sourceDir = join(input.projectDir, "dist-extension-compiled");
+					const artifactsDir = join(input.projectDir, "dist-extension-files");
+					resolvedDeps.mkdirSync(artifactsDir, { recursive: true });
+					input.pack({ sourceDir, outputPath: join(artifactsDir, filename) });
+					console.log(`Extension packed to dist-extension-files/${filename}`);
 				},
 			};
 		},
