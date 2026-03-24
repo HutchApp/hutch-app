@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import type { Request, Response, Router } from "express";
+import type { NextFunction, Request, Response, Router } from "express";
 import express from "express";
 import { SaveArticleInputSchema, ArticleIdSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
@@ -169,37 +169,41 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
 	});
 
-	router.post("/save", async (req: Request, res: Response) => {
-		assert(req.userId, "userId required - route must be protected by requireAuth");
-		const userId = req.userId;
-		const parsedBody = SaveArticleInputSchema.safeParse(req.body);
+	router.post("/save", async (req: Request, res: Response, next: NextFunction) => {
+		try {
+			assert(req.userId, "userId required - route must be protected by requireAuth");
+			const userId = req.userId;
+			const parsedBody = SaveArticleInputSchema.safeParse(req.body);
 
-		if (!parsedBody.success) {
-			const urlState = parseQueueUrl({});
-			const result = await deps.findArticlesByUser({ userId });
-			const vm = toQueueViewModel(result, urlState, {
-				saveError: "Please enter a valid URL",
-			});
-			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
-			res.status(422).type("html").send(html.body);
-			return;
+			if (!parsedBody.success) {
+				const urlState = parseQueueUrl({});
+				const result = await deps.findArticlesByUser({ userId });
+				const vm = toQueueViewModel(result, urlState, {
+					saveError: "Please enter a valid URL",
+				});
+				const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
+				res.status(422).type("html").send(html.body);
+				return;
+			}
+
+			const freshness = await deps.refreshArticleIfStale({ url: parsedBody.data.url });
+			const result = await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
+
+			if (!result.ok) {
+				const urlState = parseQueueUrl({});
+				const articlesResult = await deps.findArticlesByUser({ userId });
+				const vm = toQueueViewModel(articlesResult, urlState, {
+					saveError: `Could not parse article: ${result.reason}`,
+				});
+				const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
+				res.status(422).type("html").send(html.body);
+				return;
+			}
+
+			res.redirect(303, "/queue");
+		} catch (error) {
+			next(error);
 		}
-
-		const freshness = await deps.refreshArticleIfStale({ url: parsedBody.data.url });
-		const result = await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
-
-		if (!result.ok) {
-			const urlState = parseQueueUrl({});
-			const articlesResult = await deps.findArticlesByUser({ userId });
-			const vm = toQueueViewModel(articlesResult, urlState, {
-				saveError: `Could not parse article: ${result.reason}`,
-			});
-			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
-			res.status(422).type("html").send(html.body);
-			return;
-		}
-
-		res.redirect(303, "/queue");
 	});
 
 	router.get("/:id/read", async (req: Request, res: Response) => {
