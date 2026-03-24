@@ -1,4 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
+import assert from "node:assert";
 import { DomainRegistration } from "./domain-registration";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
@@ -8,7 +9,8 @@ const config = new pulumi.Config();
 const stage = config.require("stage");
 const domains = config.getObject<string[]>("domains") ?? [];
 const deletionProtection = config.requireBoolean("deletionProtection");
-const staticDomains = config.getObject<string[]>("staticDomains") ?? [];
+const staticDomains = config.requireObject<string[]>("staticDomains");
+assert(staticDomains.length > 0, "staticDomains must have at least one entry");
 const staticBucketName = config.require("staticBucketName");
 const tableNames = {
 	articles: config.require("dynamodbArticlesTable"),

@@ -1,6 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import assert from "node:assert";
 
 export class HutchStaticAssets {
 	public readonly baseUrl: pulumi.Output<string>;
@@ -50,10 +49,8 @@ export class HutchStaticAssets {
 
 		let viewerCertificate: aws.types.input.cloudfront.DistributionViewerCertificate;
 		let aliases: pulumi.Input<string>[] | undefined;
-		let certificateArn: pulumi.Output<string> | undefined;
 
-		if (args.staticDomains.length > 0) {
-			assert(args.zoneId, "HutchStaticAssets with staticDomains must have zoneId");
+		if (args.zoneId) {
 			const zoneId = args.zoneId;
 
 			const usEast1 = new aws.Provider(`${name}-us-east-1`, {
@@ -101,10 +98,9 @@ export class HutchStaticAssets {
 				{ provider: usEast1 },
 			);
 
-			certificateArn = validated.certificateArn;
 			aliases = args.staticDomains;
 			viewerCertificate = {
-				acmCertificateArn: certificateArn,
+				acmCertificateArn: validated.certificateArn,
 				sslSupportMethod: "sni-only",
 				minimumProtocolVersion: "TLSv1.2_2021",
 			};
@@ -163,8 +159,7 @@ export class HutchStaticAssets {
 			},
 		);
 
-		if (args.staticDomains.length > 0) {
-			assert(args.zoneId, "HutchStaticAssets with staticDomains must have zoneId");
+		if (args.zoneId) {
 			const zoneId = args.zoneId;
 
 			for (const domain of args.staticDomains) {
@@ -183,10 +178,8 @@ export class HutchStaticAssets {
 					],
 				});
 			}
-
-			this.baseUrl = pulumi.output(`https://${args.staticDomains[0]}`);
-		} else {
-			this.baseUrl = pulumi.interpolate`https://${distribution.domainName}`;
 		}
+
+		this.baseUrl = pulumi.output(`https://${args.staticDomains[0]}`);
 	}
 }
