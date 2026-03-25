@@ -16,6 +16,7 @@ import type {
 import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
+import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { buildVerificationEmailHtml } from "./verification-email";
 
 const COOKIE_NAME = "hutch_sid";
@@ -59,13 +60,13 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			res.redirect(303, "/queue");
 			return;
 		}
-		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
+		const returnUrl = extractReturnUrl(req.query);
 		const result = LoginPage({ returnUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
-		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
+		const returnUrl = extractReturnUrl(req.query);
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
@@ -93,8 +94,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const sessionId = await deps.createSession({ userId: credentials.userId, emailVerified: credentials.emailVerified });
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
-		const redirectTo = returnUrl?.startsWith("/") && !returnUrl.startsWith("//") ? returnUrl : "/queue";
-		res.redirect(303, redirectTo);
+		res.redirect(303, parseReturnUrl(req.query));
 	});
 
 	router.get("/signup", (req: Request, res: Response) => {
@@ -102,13 +102,13 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			res.redirect(303, "/queue");
 			return;
 		}
-		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
+		const returnUrl = extractReturnUrl(req.query);
 		const result = SignupPage({ returnUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
-		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
+		const returnUrl = extractReturnUrl(req.query);
 		const parsed = SignupSchema.safeParse(req.body);
 
 		if (!parsed.success) {
@@ -136,8 +136,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const sessionId = await deps.createSession({ userId: createResult.userId, emailVerified: false });
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
-		const redirectTo = returnUrl?.startsWith("/") && !returnUrl.startsWith("//") ? returnUrl : "/queue";
-		res.redirect(303, redirectTo);
+		res.redirect(303, parseReturnUrl(req.query));
 
 		deps.createVerificationToken({ userId: createResult.userId, email })
 			.then((token) => {
