@@ -123,11 +123,11 @@ describe("Queue routes", () => {
 			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
 
 			const statusResponse = await agent
-				.post(`/queue/${articleId}/status?order=asc&status=unread`)
+				.post(`/queue/${articleId}/status?order=asc`)
 				.type("form")
 				.send({ status: "read" });
 
-			expect(statusResponse.headers.location).toBe("/queue?status=unread&order=asc");
+			expect(statusResponse.headers.location).toBe("/queue?order=asc");
 		});
 
 		it("should redirect to queue when status value is invalid", async () => {
@@ -190,9 +190,9 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(queueResponse.text).window.document;
 			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
 
-			const deleteResponse = await agent.post(`/queue/${articleId}/delete?order=asc&status=unread`);
+			const deleteResponse = await agent.post(`/queue/${articleId}/delete?order=asc`);
 
-			expect(deleteResponse.headers.location).toBe("/queue?status=unread&order=asc");
+			expect(deleteResponse.headers.location).toBe("/queue?order=asc");
 		});
 	});
 
@@ -337,9 +337,8 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			const actionForms = doc.querySelectorAll(".queue-article__action-form");
 
-			expect(actionForms.length).toBe(3);
+			expect(actionForms.length).toBe(2);
 			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Read");
-			expect(doc.querySelector("[data-test-action='archive']")?.textContent).toBe("Archive");
 			expect(doc.querySelector("[data-test-action='delete']")?.textContent).toBe("×");
 		});
 	});
@@ -445,8 +444,7 @@ describe("Queue routes", () => {
 
 			const afterResponse = await agent.get("/queue");
 			const afterDoc = new JSDOM(afterResponse.text).window.document;
-			const readArticle = afterDoc.querySelector(".queue-article");
-			expect(readArticle?.classList.contains("queue-article--unread")).toBe(false);
+			expect(afterDoc.querySelectorAll(".queue-article").length).toBe(0);
 		});
 
 		it("should redirect to queue for non-existent article", async () => {
@@ -640,11 +638,7 @@ describe("Queue routes", () => {
 				.type("form")
 				.send({ url: "https://example.com/2" });
 
-			const allResponse = await agent.get("/queue");
-			const allDoc = new JSDOM(allResponse.text).window.document;
-			expect(allDoc.querySelectorAll(".queue-article").length).toBe(2);
-
-			const unreadResponse = await agent.get("/queue?status=unread");
+			const unreadResponse = await agent.get("/queue");
 			const unreadDoc = new JSDOM(unreadResponse.text).window.document;
 			expect(unreadDoc.querySelectorAll(".queue-article").length).toBe(2);
 
@@ -662,14 +656,14 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-sort]")?.textContent).toContain("first");
 		});
 
-		it("should include status in sort toggle URL when filter is active", async () => {
+		it("should include status in sort toggle URL when on read tab", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);
 
-			const response = await agent.get("/queue?status=unread");
+			const response = await agent.get("/queue?status=read");
 			const doc = new JSDOM(response.text).window.document;
 			const sortLink = doc.querySelector("[data-test-sort]");
-			expect(sortLink?.getAttribute("href")).toContain("status=unread");
+			expect(sortLink?.getAttribute("href")).toContain("status=read");
 		});
 
 		it("should toggle sort order from desc to asc", async () => {

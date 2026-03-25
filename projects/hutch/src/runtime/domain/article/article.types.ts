@@ -3,7 +3,7 @@ import type { UserId } from "../user/user.types";
 export type ArticleId = string & { readonly __brand: "ArticleId" };
 export type Minutes = number & { readonly __brand: "Minutes" };
 
-export type ArticleStatus = "unread" | "read" | "archived";
+export type ArticleStatus = "unread" | "read";
 
 export interface ArticleMetadata {
 	title: string;

@@ -193,16 +193,11 @@ describe("Export routes", () => {
 			const doc = new JSDOM(queueResponse.text).window.document;
 			const articles = doc.querySelectorAll("[data-test-article]");
 			const id1 = articles[0]?.getAttribute("data-test-article");
-			const id2 = articles[1]?.getAttribute("data-test-article");
 
 			await agent
 				.post(`/queue/${id1}/status`)
 				.type("form")
 				.send({ status: "read" });
-			await agent
-				.post(`/queue/${id2}/status`)
-				.type("form")
-				.send({ status: "archived" });
 
 			const response = await agent.get("/export/download");
 			const data = JSON.parse(response.text);
@@ -213,7 +208,6 @@ describe("Export routes", () => {
 			);
 			expect(statuses).toContain("unread");
 			expect(statuses).toContain("read");
-			expect(statuses).toContain("archived");
 		});
 	});
 });

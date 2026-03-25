@@ -1,19 +1,18 @@
 import { buildQueueUrl, parseQueueUrl } from "./queue.url";
 
 describe("parseQueueUrl", () => {
-	it("should return defaults for empty query", () => {
+	it("should default to unread status for empty query", () => {
 		const state = parseQueueUrl({});
-		expect(state).toEqual({ status: undefined, order: "desc", page: 1 });
+		expect(state).toEqual({ status: "unread", order: "desc", page: 1 });
 	});
 
 	it("should parse valid status", () => {
 		expect(parseQueueUrl({ status: "read" }).status).toBe("read");
 		expect(parseQueueUrl({ status: "unread" }).status).toBe("unread");
-		expect(parseQueueUrl({ status: "archived" }).status).toBe("archived");
 	});
 
-	it("should ignore invalid status", () => {
-		expect(parseQueueUrl({ status: "invalid" }).status).toBeUndefined();
+	it("should default to unread for invalid status", () => {
+		expect(parseQueueUrl({ status: "invalid" }).status).toBe("unread");
 	});
 
 	it("should parse order", () => {
@@ -42,7 +41,11 @@ describe("buildQueueUrl", () => {
 		expect(buildQueueUrl({})).toBe("/queue");
 	});
 
-	it("should include status", () => {
+	it("should omit default status (unread)", () => {
+		expect(buildQueueUrl({ status: "unread" })).toBe("/queue");
+	});
+
+	it("should include non-default status", () => {
 		expect(buildQueueUrl({ status: "read" })).toBe("/queue?status=read");
 	});
 
@@ -63,8 +66,8 @@ describe("buildQueueUrl", () => {
 	});
 
 	it("should combine multiple params", () => {
-		const url = buildQueueUrl({ status: "unread", order: "asc", page: 3 });
-		expect(url).toContain("status=unread");
+		const url = buildQueueUrl({ status: "read", order: "asc", page: 3 });
+		expect(url).toContain("status=read");
 		expect(url).toContain("order=asc");
 		expect(url).toContain("page=3");
 	});

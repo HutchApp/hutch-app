@@ -5,7 +5,8 @@ import { createAuthActions, type AuthData, type AuthProgress } from './auth-acti
 import { createQueueActions, LOCAL_TEST_ARTICLES, type QueueProgress } from './queue-actions'
 
 test.describe('Queue management flow (local)', () => {
-  test('signup, logout, login, add articles, pagination, sort, read, delete, archive, verify tabs', async ({ page }) => {
+  test('signup, logout, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page }) => {
+
     const authData: AuthData = {
       email: 'e2e-test@example.com',
       password: 'test-password-123',
@@ -33,10 +34,8 @@ test.describe('Queue management flow (local)', () => {
       backFromReader: false,
       verifiedReadStatus: false,
       deletedLastArticle: false,
-      archivedThird: false,
       checkedReadTab: false,
       checkedUnreadTab: false,
-      checkedArchivedTab: false,
       cleanupDeleted: false,
     }
 

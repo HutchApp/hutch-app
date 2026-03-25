@@ -55,7 +55,7 @@ function createStagingCleanupActions(
 }
 
 test.describe('Queue management flow (staging)', () => {
-  test('signup, logout, login, add articles, pagination, sort, read, delete, archive, verify tabs', async ({ page, baseURL }) => {
+  test('signup, logout, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page, baseURL }) => {
     const authData: AuthData = {
       email: 'e2e-test@example.com',
       password: 'test-password-123',
@@ -87,10 +87,8 @@ test.describe('Queue management flow (staging)', () => {
       backFromReader: false,
       verifiedReadStatus: false,
       deletedLastArticle: false,
-      archivedThird: false,
       checkedReadTab: false,
       checkedUnreadTab: false,
-      checkedArchivedTab: false,
       cleanupDeleted: false,
     }
 
