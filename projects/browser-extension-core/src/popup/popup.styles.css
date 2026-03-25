@@ -321,6 +321,9 @@ body {
   align-items: center;
   gap: 10px;
   transition: background-color 0.1s ease;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .list-view__item:hover {
@@ -368,7 +371,7 @@ body {
   white-space: nowrap;
 }
 
-.list-view__item-title:hover {
+.list-view__item:hover .list-view__item-title {
   color: var(--popup-link-hover);
 }
 

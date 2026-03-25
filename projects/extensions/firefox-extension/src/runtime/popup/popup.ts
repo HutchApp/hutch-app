@@ -113,8 +113,11 @@ function renderLinks(items: ReadingListItem[]) {
 	currentPage = paginated.currentPage;
 
 	for (const item of paginated.items) {
-		const div = document.createElement("div");
-		div.className = "list-view__item";
+		const itemLink = document.createElement("a");
+		itemLink.className = "list-view__item";
+		itemLink.href = item.url;
+		itemLink.target = "_blank";
+		itemLink.rel = "noopener noreferrer";
 
 		let hostname: string;
 		try {
@@ -131,18 +134,15 @@ function renderLinks(items: ReadingListItem[]) {
 		const textContainer = document.createElement("div");
 		textContainer.className = "list-view__text";
 
-		const link = document.createElement("a");
-		link.className = "list-view__item-title";
-		link.href = item.url;
-		link.textContent = item.title;
-		link.target = "_blank";
-		link.rel = "noopener noreferrer";
+		const title = document.createElement("span");
+		title.className = "list-view__item-title";
+		title.textContent = item.title;
 
 		const domain = document.createElement("span");
 		domain.className = "list-view__domain";
 		domain.textContent = hostname;
 
-		textContainer.appendChild(link);
+		textContainer.appendChild(title);
 		textContainer.appendChild(domain);
 
 		const time = document.createElement("span");
@@ -154,7 +154,9 @@ function renderLinks(items: ReadingListItem[]) {
 		deleteButton.textContent = "\u00D7";
 		deleteButton.title = "Remove from list";
 		deleteButton.setAttribute("aria-label", "Remove from list");
-		deleteButton.addEventListener("click", async () => {
+		deleteButton.addEventListener("click", async (e) => {
+			e.preventDefault();
+			e.stopPropagation();
 			const result = (await send({
 				type: "remove-item",
 				id: item.id,
@@ -166,11 +168,11 @@ function renderLinks(items: ReadingListItem[]) {
 			}
 		});
 
-		div.appendChild(avatar);
-		div.appendChild(textContainer);
-		div.appendChild(time);
-		div.appendChild(deleteButton);
-		linkList.appendChild(div);
+		itemLink.appendChild(avatar);
+		itemLink.appendChild(textContainer);
+		itemLink.appendChild(time);
+		itemLink.appendChild(deleteButton);
+		linkList.appendChild(itemLink);
 	}
 
 	renderPagination(paginated.totalPages, paginated.visiblePages);
