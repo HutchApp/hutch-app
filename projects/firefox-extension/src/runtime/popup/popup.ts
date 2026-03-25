@@ -153,6 +153,7 @@ function renderLinks(items: ReadingListItem[]) {
 		deleteButton.className = "list-view__delete";
 		deleteButton.textContent = "\u00D7";
 		deleteButton.title = "Remove from list";
+		deleteButton.setAttribute("aria-label", "Remove from list");
 		deleteButton.addEventListener("click", async () => {
 			const result = (await send({
 				type: "remove-item",
