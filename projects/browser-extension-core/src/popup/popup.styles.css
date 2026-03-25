@@ -214,6 +214,8 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  text-decoration: none;
+  color: inherit;
 }
 
 /**
@@ -241,6 +243,10 @@ body {
   font-weight: 700;
   color: var(--popup-heading);
   line-height: 1;
+}
+
+.list-view__brand:hover .list-view__brand-name {
+  color: var(--popup-brand);
 }
 
 .list-view__actions {
