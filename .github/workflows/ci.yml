@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  all-tests:
     runs-on: ubuntu-latest
     environment: staging
     env:
@@ -76,9 +76,9 @@ jobs:
           echo "firefox-extension=$(echo "$AFFECTED" | jq 'any(. == "firefox-extension")')" >> "$GITHUB_OUTPUT"
           echo "chrome-extension=$(echo "$AFFECTED" | jq 'any(. == "chrome-extension")')" >> "$GITHUB_OUTPUT"
 
-  hutch-deploy-to-staging:
+  deploy-staging:
     if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [check, detect-changes]
+    needs: [all-tests, detect-changes]
     runs-on: ubuntu-latest
     environment: staging
     env:
@@ -109,9 +109,9 @@ jobs:
       - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
         working-directory: projects/hutch
 
-  hutch-e2e-staging:
+  post-deploy-staging:
     if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [check, detect-changes, hutch-deploy-to-staging]
+    needs: [all-tests, detect-changes, deploy-staging]
     runs-on: ubuntu-latest
     environment: staging
     env:
@@ -163,9 +163,9 @@ jobs:
           path: projects/hutch/test-results-staging/
           retention-days: 7
 
-  hutch-deploy-to-prod:
+  deploy-prod:
     if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [check, detect-changes, hutch-deploy-to-staging, hutch-e2e-staging]
+    needs: [all-tests, detect-changes, deploy-staging, post-deploy-staging]
     runs-on: ubuntu-latest
     environment: prod
     env:
@@ -199,7 +199,7 @@ jobs:
   # Commenting the Firefox extension deploy to prod due to every submission making my signing review go back to the end of the queue
   # ff-extension-deploy-to-prod:
   #   if: needs.detect-changes.outputs.firefox-extension == 'true'
-  #   needs: [check, detect-changes]
+  #   needs: [all-tests, detect-changes]
   #   permissions:
   #     contents: write
   #   uses: ./.github/workflows/submit-extension-for-signing.yml
@@ -211,7 +211,7 @@ jobs:
 
   chrome-extension-deploy-to-prod:
     if: needs.detect-changes.outputs.chrome-extension == 'true'
-    needs: [check, detect-changes]
+    needs: [all-tests, detect-changes]
     permissions:
       contents: write
     uses: ./.github/workflows/publish-chrome-extension.yml
