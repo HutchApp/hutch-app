@@ -19,7 +19,7 @@ export const TRANSITIONING_VIEW = "transitioning";
 export const ELEMENT_IDS = {
 	loginButton: "login-button",
 	loginError: "login-error",
-	undoButton: "undo-button",
+	viewQueueButton: "view-queue-button",
 	logoutButton: "logout-button",
 	filterInput: "filter-input",
 	linkList: "link-list",

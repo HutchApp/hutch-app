@@ -78,7 +78,7 @@ function createPlanData(input: { config: ExtensionBuildConfig; projectDir: strin
 	const copies: CopyOperation[] = [
 		{ src: join(srcDir, "runtime", "manifest.json"), dest: join(outDir, "manifest.json"), recursive: false },
 		{ src: join(srcDir, "runtime", "popup", "popup.template.html"), dest: join(outDir, "popup", "popup.template.html"), recursive: false },
-		{ src: join(srcDir, "runtime", "popup", "popup.styles.css"), dest: join(outDir, "popup", "popup.styles.css"), recursive: false },
+		{ src: join(coreDir, "src", "popup", "popup.styles.css"), dest: join(outDir, "popup", "popup.styles.css"), recursive: false },
 		{ src: join(srcDir, "icons"), dest: join(outDir, "icons"), recursive: true },
 		{ src: join(srcDir, "icons-saved"), dest: join(outDir, "icons-saved"), recursive: true },
 	];
