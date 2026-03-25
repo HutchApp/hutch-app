@@ -83,10 +83,22 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 		fs.readFileSync(CFT_PATH_FILE, "utf8").trim(),
 	);
 
-	const driver = (await new Builder()
-		.forBrowser("chrome")
-		.setChromeOptions(options)
-		.build()) as ChromeDriver;
+	// CI resource contention (parallel NX tasks) causes Chrome to exit on startup intermittently.
+	// Retry the driver build to handle transient failures.
+	let driver: ChromeDriver | undefined;
+	for (let attempt = 0; attempt < 3; attempt++) {
+		try {
+			driver = (await new Builder()
+				.forBrowser("chrome")
+				.setChromeOptions(options)
+				.build()) as ChromeDriver;
+			break;
+		} catch (err) {
+			if (attempt === 2) throw err;
+			await new Promise((r) => setTimeout(r, 2000));
+		}
+	}
+	assert(driver, "ChromeDriver should be initialized after retries");
 
 	try {
 		const extensionId = await discoverExtensionId(driver);
