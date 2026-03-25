@@ -64,8 +64,29 @@ async function discoverExtensionId(driver: ChromeDriver): Promise<string> {
 	throw new Error("Could not find extension service worker target within 15s");
 }
 
+// CI resource contention (parallel NX tasks) crashes Chrome intermittently.
+// Retry the full test since the crash can happen at any point mid-execution.
+const MAX_ATTEMPTS = 3;
 test("should complete OAuth login flow and save a link to the list", async () => {
 	const server = await startTestServer();
+	try {
+		for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+			try {
+				await runTest();
+				return;
+			} catch (err) {
+				const isChromeExit = err instanceof Error && (
+					err.message.includes("ECONNREFUSED") || err.message.includes("Chrome instance exited")
+				);
+				if (!isChromeExit || attempt === MAX_ATTEMPTS) throw err;
+			}
+		}
+	} finally {
+		server.close();
+	}
+});
+
+async function runTest() {
 
 	const options = new Options();
 	if (process.env.HEADLESS !== "false") {
@@ -145,6 +166,5 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 		assert.equal(saveLinkProgress.listVerified, true, "Link should have been verified in list");
 	} finally {
 		await driver.quit();
-		server.close();
 	}
-});
+}

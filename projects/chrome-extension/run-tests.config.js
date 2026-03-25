@@ -30,7 +30,6 @@ module.exports = {
       name: 'Running E2E tests',
       files: ['dist/e2e/login-flow/run.e2e-local.js'],
       timeout: 90000,
-      retries: 2, // Chrome crashes intermittently on CI due to resource contention from parallel NX tasks
       env: { HEADLESS: 'true' },
     },
   ],
