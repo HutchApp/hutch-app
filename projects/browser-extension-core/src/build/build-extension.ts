@@ -137,10 +137,7 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 						}
 
 						if (Array.isArray(manifest.permissions)) {
-							const hasUrlPermissions = manifest.permissions.some((p: string) => p.startsWith("http"));
-							if (hasUrlPermissions) {
-								manifest.permissions.push(localhostPattern);
-							}
+							manifest.permissions.push(localhostPattern);
 						}
 
 						resolvedDeps.writeFileSync(manifestDest, JSON.stringify(manifest, null, 2) + "\n");
