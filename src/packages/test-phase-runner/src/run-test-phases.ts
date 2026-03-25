@@ -19,6 +19,7 @@ interface NodeTestPhase {
 	glob?: string;
 	files?: string[];
 	timeout?: number;
+	retries?: number;
 	env?: Record<string, string>;
 }
 
@@ -134,7 +135,8 @@ function resolveNodeTestPhase(phase: NodeTestPhase, globSync: GlobSyncFn): Resol
 	}
 	const skip = files.length === 0;
 	const timeoutFlag = phase.timeout ? ` --test-timeout=${phase.timeout}` : "";
-	const command = skip ? "" : `node --test${timeoutFlag} ${files.join(" ")}`;
+	const retriesFlag = phase.retries ? ` --test-retries=${phase.retries}` : "";
+	const command = skip ? "" : `node --test${timeoutFlag}${retriesFlag} ${files.join(" ")}`;
 	return { type: "node-test", name: phase.name, command, env: phase.env ?? {}, files, skip };
 }
 
