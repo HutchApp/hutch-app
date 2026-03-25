@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Hutch",
   "version": "1.0.21",
-  "description": "Save URLs to your reading list",
+  "description": "Where reading still matters",
   "permissions": [
     "activeTab",
     "tabs",

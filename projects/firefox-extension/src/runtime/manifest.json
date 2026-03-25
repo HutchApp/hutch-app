@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Hutch",
   "version": "1.0.7",
-  "description": "Save URLs to your reading list",
+  "description": "Where reading still matters",
   "browser_specific_settings": {
     "gecko": {
       "id": "hutch-extension@hutch-app.com",

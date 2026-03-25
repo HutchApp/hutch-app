@@ -36,7 +36,7 @@ export function InstallPage(downloads: { firefox: string | null; chrome: string 
 		seo: {
 			title: "Install Hutch Browser Extension",
 			description:
-				"Download and install the Hutch browser extension for Firefox or Chrome. Save articles to your reading list with one click.",
+				"Where reading still matters. Download the Hutch browser extension for Firefox or Chrome and save articles with one click.",
 			canonicalUrl: "https://hutch-app.com/install",
 		},
 		styles: INSTALL_PAGE_STYLES,

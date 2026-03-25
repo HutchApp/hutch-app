@@ -17,13 +17,13 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 		seo: {
 			title: "Hutch — A read-it-later app by <a href=\"https://reddit.com/u/fagnerbrack\">Fayner Brack</a>",
 			description:
-				"Pocket is gone. Omnivore is gone. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
+				"Where reading still matters. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
 			canonicalUrl: "https://hutch-app.com",
 			ogType: "website",
 			ogImage: `${staticBaseUrl}/og-image-1200x630.png`,
 			ogImageType: "image/png",
 			ogImageAlt:
-				"Hutch — Save now, read later. A read-it-later app built in Australia.",
+				"Hutch — Where reading still matters. A read-it-later app built in Australia.",
 			twitterImage: `${staticBaseUrl}/twitter-card-1200x600.png`,
 				author: "Fayner Brack",
 			keywords:
@@ -35,7 +35,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 					name: "Hutch",
 					url: "https://hutch-app.com",
 					description:
-						"A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
+						"Where reading still matters. A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
 					applicationCategory: "ProductivityApplication",
 					operatingSystem: "Web, iOS, Android",
 					browserRequirements: "Requires Firefox or Chrome for browser extension",
@@ -71,7 +71,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 						name: "Fayner Brack",
 					},
 					description:
-						"Hutch is a read-it-later app built in Australia by a solo developer.",
+						"Where reading still matters. Hutch is a read-it-later app built in Australia by a solo developer.",
 				},
 				{
 					"@context": "https://schema.org",
