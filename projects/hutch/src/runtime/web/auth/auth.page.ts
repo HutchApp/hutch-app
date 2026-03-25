@@ -14,10 +14,13 @@ import type {
 	VerifyEmailToken,
 } from "../../providers/email-verification/email-verification.types";
 import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
+import { z } from "zod";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { buildVerificationEmailHtml } from "./verification-email";
+
+const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
 const COOKIE_NAME = "hutch_sid";
 
@@ -156,7 +159,8 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 	});
 
 	router.get("/verify-email", async (req: Request, res: Response) => {
-		const token = typeof req.query.token === "string" ? req.query.token : "";
+		const parsed = TokenQuerySchema.safeParse(req.query);
+		const token = parsed.success ? (parsed.data.token ?? "") : "";
 
 		if (!token) {
 			const result = VerifyEmailPage({
