@@ -68,7 +68,7 @@ const DARK_THEME_VARIABLES: Record<string, string> = {
 	"--shadow-md": "0 4px 6px rgba(0,0,0,0.4)",
 	"--primary": "hsl(27 65% 52%)",
 	"--secondary": "hsl(27 15% 18%)",
-	"--secondary-foreground": "hsl(27 55% 70%)",
+	"--secondary-foreground": "hsl(27, 65%, 35%)",
 	"--accent": "hsl(27 65% 52%)",
 	"--ring": "hsl(27 65% 52%)",
 	"--ring-shadow": "hsl(27 65% 52% / 0.25)",
