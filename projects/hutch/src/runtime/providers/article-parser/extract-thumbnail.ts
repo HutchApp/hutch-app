@@ -1,14 +1,35 @@
-export function extractThumbnail(html: string): string | undefined {
+export function extractThumbnail(params: {
+	html: string;
+	baseUrl?: string;
+}): string | undefined {
+	const { html, baseUrl } = params;
 	const ogImage = matchMetaContent(html, "property", "og:image");
-	if (ogImage && isValidHttpUrl(ogImage)) return ogImage;
+	const resolvedOg = resolveIfRelative(ogImage, baseUrl);
+	if (resolvedOg && isValidHttpUrl(resolvedOg)) return resolvedOg;
 
 	const twitterImage = matchMetaContent(html, "name", "twitter:image");
-	if (twitterImage && isValidHttpUrl(twitterImage)) return twitterImage;
+	const resolvedTwitter = resolveIfRelative(twitterImage, baseUrl);
+	if (resolvedTwitter && isValidHttpUrl(resolvedTwitter)) return resolvedTwitter;
 
 	const firstImg = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-	if (firstImg && isValidHttpUrl(firstImg[1])) return firstImg[1];
+	const resolvedImg = resolveIfRelative(firstImg?.[1], baseUrl);
+	if (resolvedImg && isValidHttpUrl(resolvedImg)) return resolvedImg;
 
 	return undefined;
+}
+
+function resolveIfRelative(
+	url: string | undefined,
+	baseUrl: string | undefined,
+): string | undefined {
+	if (!url) return undefined;
+	if (isValidHttpUrl(url)) return url;
+	if (!baseUrl) return url;
+	try {
+		return new URL(url, baseUrl).href;
+	} catch {
+		return url;
+	}
 }
 
 function isValidHttpUrl(url: string): boolean {

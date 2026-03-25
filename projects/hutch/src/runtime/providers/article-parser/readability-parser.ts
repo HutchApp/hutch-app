@@ -2,6 +2,7 @@ import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import type { ParseArticle, ParseArticleResult } from "./article-parser.types";
 import { extractThumbnail } from "./extract-thumbnail";
+import { resolveRelativeUrls } from "./resolve-relative-urls";
 
 export type FetchHtml = (url: string) => Promise<string | undefined>;
 
@@ -13,7 +14,7 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 		return { ok: false, reason: "Invalid URL" };
 	}
 
-	const imageUrl = extractThumbnail(params.html);
+	const imageUrl = extractThumbnail({ html: params.html, baseUrl: params.url });
 	const { document } = parseHTML(params.html);
 	const reader = new Readability(document);
 	const parsed = reader.parse();
@@ -47,6 +48,7 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 
 	let content = parsed.content;
 	if (!content) content = "";
+	content = resolveRelativeUrls({ html: content, baseUrl: params.url });
 
 	return {
 		ok: true,
