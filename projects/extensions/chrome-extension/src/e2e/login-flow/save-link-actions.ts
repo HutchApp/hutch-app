@@ -93,7 +93,7 @@ export function createSaveLinkActions(config: {
 				until.elementLocated(By.css(CSS_SELECTORS.listItem)),
 				15000,
 			);
-			const items = await driver.findElements(By.css(CSS_SELECTORS.listItemTitle));
+			const items = await driver.findElements(By.css(CSS_SELECTORS.listItem));
 			const hrefs = await Promise.all(items.map(el => el.getAttribute("href")));
 			assert.ok(
 				hrefs.some(href => href === config.testUrl),
