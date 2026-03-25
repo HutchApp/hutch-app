@@ -2,6 +2,16 @@ import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "@packages/hutch-test-app";
 
+async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
+	await auth.createUser({ email: "voter@example.com", password: "password123" });
+	const agent = request.agent(app);
+	await agent
+		.post("/login")
+		.type("form")
+		.send({ email: "voter@example.com", password: "password123" });
+	return agent;
+}
+
 describe("GET /", () => {
 	const { app } = createTestApp();
 
@@ -223,6 +233,122 @@ describe("GET / with exhausted founding allocation", () => {
 
 		const label = doc.querySelector(".founding-progress__label");
 		expect(label?.textContent).toBe("101 / 100 founding members");
+	});
+});
+
+describe("GET / roadmap voting (unauthenticated)", () => {
+	it("should show login link instead of vote buttons", async () => {
+		const { app } = createTestApp();
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const roadmap = doc.querySelector('[data-test-section="roadmap"]');
+		const subtitle = roadmap?.querySelector(".section-header__subtitle");
+		expect(subtitle?.textContent).toContain("Log in");
+
+		const voteButtons = roadmap?.querySelectorAll(".vote-btn");
+		expect(voteButtons?.length).toBe(0);
+	});
+
+	it("should show vote counts even when not logged in", async () => {
+		const { app } = createTestApp();
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const voteCounts = doc.querySelectorAll(".feature-card__vote-count");
+		expect(voteCounts.length).toBe(7);
+		expect(voteCounts[0].textContent).toBe("0 votes");
+	});
+});
+
+describe("GET / roadmap voting (authenticated)", () => {
+	it("should show vote buttons for planned features", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		const response = await agent.get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const roadmap = doc.querySelector('[data-test-section="roadmap"]');
+		const voteButtons = roadmap?.querySelectorAll(".vote-btn");
+		expect(voteButtons?.length).toBe(7);
+	});
+
+	it("should show 'Vote' text on unvoted features", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		const response = await agent.get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const voteBtn = doc.querySelector('[data-test-vote="email-link-import"]');
+		expect(voteBtn?.textContent?.trim()).toContain("Vote");
+	});
+});
+
+describe("POST /vote", () => {
+	it("should redirect to login when not authenticated", async () => {
+		const { app } = createTestApp();
+		const response = await request(app)
+			.post("/vote")
+			.type("form")
+			.send({ featureId: "email-link-import" });
+
+		expect(response.status).toBe(303);
+		expect(response.headers.location).toBe("/login");
+	});
+
+	it("should cast a vote and redirect to roadmap", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		const voteResponse = await agent
+			.post("/vote")
+			.type("form")
+			.send({ featureId: "email-link-import" });
+
+		expect(voteResponse.status).toBe(303);
+		expect(voteResponse.headers.location).toBe("/#roadmap");
+
+		const homeResponse = await agent.get("/");
+		const doc = new JSDOM(homeResponse.text).window.document;
+		const voteCount = doc.querySelector('[data-test-vote-count="email-link-import"]');
+		expect(voteCount?.textContent).toBe("1 vote");
+	});
+
+	it("should toggle vote off when voting again on the same feature", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		await agent.post("/vote").type("form").send({ featureId: "email-link-import" });
+		await agent.post("/vote").type("form").send({ featureId: "email-link-import" });
+
+		const homeResponse = await agent.get("/");
+		const doc = new JSDOM(homeResponse.text).window.document;
+		const voteCount = doc.querySelector('[data-test-vote-count="email-link-import"]');
+		expect(voteCount?.textContent).toBe("0 votes");
+	});
+
+	it("should show voted state after casting a vote", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		await agent.post("/vote").type("form").send({ featureId: "highlights-notes" });
+
+		const homeResponse = await agent.get("/");
+		const doc = new JSDOM(homeResponse.text).window.document;
+		const voteBtn = doc.querySelector('[data-test-vote="highlights-notes"]');
+		expect(voteBtn?.classList.contains("vote-btn--voted")).toBe(true);
+		expect(voteBtn?.textContent?.trim()).toContain("Voted");
+	});
+
+	it("should redirect to roadmap when featureId is missing", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		const response = await agent.post("/vote").type("form").send({});
+		expect(response.status).toBe(303);
+		expect(response.headers.location).toBe("/#roadmap");
 	});
 });
 

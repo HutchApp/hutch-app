@@ -34,7 +34,9 @@ import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
-import { HomePage } from "./web/pages/home";
+import { HomePage, PLANNED_FEATURE_IDS } from "./web/pages/home";
+import type { CastVote, GetVoteSummaries, RemoveVote } from "./providers/feature-vote/feature-vote.types";
+import { FeatureIdSchema } from "./providers/feature-vote/feature-vote.schema";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
@@ -74,6 +76,9 @@ interface AppDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	castVote: CastVote;
+	removeVote: RemoveVote;
+	getVoteSummaries: GetVoteSummaries;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -139,10 +144,33 @@ export function createApp(dependencies: AppDependencies): Express {
 		);
 	});
 
-	app.get("/", async (_req: Request, res: Response) => {
+	app.get("/", async (req: Request, res: Response) => {
 		const userCount = await countUsers().catch(() => 0);
-		const result = HomePage({ userCount, staticBaseUrl }).to("text/html");
+		const isLoggedIn = !!req.userId;
+		const voteSummaries = await deps.getVoteSummaries({
+			featureIds: PLANNED_FEATURE_IDS,
+			userId: req.userId,
+		});
+		const result = HomePage({ userCount, staticBaseUrl, isLoggedIn, voteSummaries }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
+	});
+
+	app.post("/vote", requireAuth, async (req: Request, res: Response) => {
+		const parsed = FeatureIdSchema.safeParse(req.body?.featureId);
+		if (!parsed.success) {
+			res.redirect(303, "/#roadmap");
+			return;
+		}
+		const featureId = parsed.data;
+		const userId = req.userId!;
+
+		const [summary] = await deps.getVoteSummaries({ featureIds: [featureId], userId });
+		if (summary?.hasVoted) {
+			await deps.removeVote({ featureId, userId });
+		} else {
+			await deps.castVote({ featureId, userId });
+		}
+		res.redirect(303, "/#roadmap");
 	});
 
 	app.get("/privacy", (_req: Request, res: Response) => {

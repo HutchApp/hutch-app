@@ -8,6 +8,7 @@ import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
+import { initInMemoryFeatureVote } from "./providers/feature-vote/in-memory-feature-vote";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -36,6 +37,7 @@ export function createTestApp(options?: {
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
 	const summaryCache = initInMemorySummaryCache();
+	const featureVote = initInMemoryFeatureVote();
 
 	const baseSummarize = options?.summarizeArticle ?? noopSummarize;
 	const summarizeArticle: SummarizeArticle = async (params) => {
@@ -61,7 +63,8 @@ export function createTestApp(options?: {
 		logError: () => {},
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
+		...featureVote,
 	});
 
-	return { app, auth, articleStore, parser, oauthModel, email, emailVerification };
+	return { app, auth, articleStore, parser, oauthModel, email, emailVerification, featureVote };
 }

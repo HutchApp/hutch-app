@@ -7,6 +7,7 @@ import { initInMemoryArticleStore } from "../../providers/article-store/in-memor
 import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
 import type { FetchHtml } from "../../providers/article-parser/readability-parser";
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
+import { initInMemoryFeatureVote } from "../../providers/feature-vote/in-memory-feature-vote";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
@@ -54,6 +55,7 @@ describe("Email verification", () => {
 				...articleStore,
 				...parser,
 				...emailVerification,
+				...initInMemoryFeatureVote(),
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
 				logError: () => { resolveErrorLogged(); },

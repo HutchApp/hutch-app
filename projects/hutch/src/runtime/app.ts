@@ -26,6 +26,8 @@ import { initClaudeSummarizer } from "./providers/article-summary/claude-summari
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
 import { stripHtml } from "./providers/article-summary/strip-html";
+import { initDynamoDbFeatureVote } from "./providers/feature-vote/dynamodb-feature-vote";
+import { initInMemoryFeatureVote } from "./providers/feature-vote/in-memory-feature-vote";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
@@ -47,6 +49,7 @@ function initProviders() {
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
+		const featureVotesTable = requireEnv("DYNAMODB_FEATURE_VOTES_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -72,6 +75,7 @@ function initProviders() {
 			now: () => new Date(),
 			staleTtlMs,
 		});
+		const featureVote = initDynamoDbFeatureVote({ client, tableName: featureVotesTable });
 		return {
 			auth,
 			articleStore,
@@ -82,6 +86,7 @@ function initProviders() {
 			summarizeArticle,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
+			...featureVote,
 		};
 	}
 
@@ -118,6 +123,7 @@ function initProviders() {
 		staleTtlMs,
 	});
 
+	const featureVote = initInMemoryFeatureVote();
 	return {
 		auth,
 		articleStore,
@@ -128,6 +134,7 @@ function initProviders() {
 		summarizeArticle,
 		findCachedSummary: summaryCache.findCachedSummary,
 		refreshArticleIfStale,
+		...featureVote,
 	};
 }
 

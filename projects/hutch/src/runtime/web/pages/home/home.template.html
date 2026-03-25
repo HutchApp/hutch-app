@@ -61,14 +61,25 @@
     <section id="roadmap" class="home-features" data-test-section="roadmap" aria-label="Planned features">
       <div class="section-header">
         <p class="section-header__label">What's Coming</p>
-        <h2 class="section-header__title">Built in public. One feature at a time.</h2>
-        <p class="section-header__subtitle">Here's what I'm planning to build next.</p>
+        <h2 class="section-header__title">Built in public. Shaped by users.</h2>
+        <p class="section-header__subtitle">I'm planning to build these.{{#if isLoggedIn}} Vote on what matters most to you.{{else}} <a href="/login">Log in</a> to vote on what matters most to you.{{/if}}</p>
       </div>
       <div class="home-features__grid">
         {{#each plannedFeatures}}
         <div class="feature-card" data-test-feature="{{name}}">
           <h3 class="feature-card__name">{{name}}</h3>
           <p class="feature-card__description">{{description}}</p>
+          <div class="feature-card__vote">
+            {{#if ../isLoggedIn}}
+            <form method="POST" action="/vote" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
+              <input type="hidden" name="featureId" value="{{id}}">
+              <button type="submit" class="vote-btn{{#if hasVoted}} vote-btn--voted{{/if}}" data-test-vote="{{id}}">
+                {{#if hasVoted}}&#10003; Voted{{else}}&#9650; Vote{{/if}}
+              </button>
+            </form>
+            {{/if}}
+            <span class="feature-card__vote-count" data-test-vote-count="{{id}}">{{voteCount}} {{#if voteCountIsOne}}vote{{else}}votes{{/if}}</span>
+          </div>
         </div>
         {{/each}}
       </div>

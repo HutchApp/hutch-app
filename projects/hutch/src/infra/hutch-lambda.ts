@@ -89,8 +89,9 @@ export class HutchLambda {
 					args.storage.sessionsTable.arn,
 					args.storage.oauthTable.arn,
 					args.storage.verificationTokensTable.arn,
+					args.storage.featureVotesTable.arn,
 				])
-				.apply(([articlesArn, userArticlesArn, usersArn, sessionsArn, oauthArn, verificationTokensArn]) =>
+				.apply(([articlesArn, userArticlesArn, usersArn, sessionsArn, oauthArn, verificationTokensArn, featureVotesArn]) =>
 					JSON.stringify({
 						Version: "2012-10-17",
 						Statement: [
@@ -116,6 +117,7 @@ export class HutchLambda {
 									oauthArn,
 									`${oauthArn}/index/*`,
 									verificationTokensArn,
+									featureVotesArn,
 								],
 							},
 						],
@@ -154,6 +156,7 @@ export class HutchLambda {
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
 					DYNAMODB_OAUTH_TABLE: args.storage.oauthTable.name,
 					DYNAMODB_VERIFICATION_TOKENS_TABLE: args.storage.verificationTokensTable.name,
+					DYNAMODB_FEATURE_VOTES_TABLE: args.storage.featureVotesTable.name,
 					RESEND_API_KEY: pulumi.runtime.isDryRun()
 						? (getEnv("RESEND_API_KEY") ?? "")
 						: requireEnv("RESEND_API_KEY"),

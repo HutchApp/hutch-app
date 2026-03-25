@@ -4,13 +4,73 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { HOME_PAGE_STYLES } from "./home.styles";
+import type { FeatureId, FeatureVoteSummary } from "../../../providers/feature-vote/feature-vote.types";
 
 const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8");
 
 const FOUNDING_MEMBER_LIMIT = 100;
 
-export function HomePage(params: { userCount: number; staticBaseUrl: string }): Component {
-	const { userCount, staticBaseUrl } = params;
+export const PLANNED_FEATURE_IDS: FeatureId[] = [
+	"email-link-import" as FeatureId,
+	"ai-queue-filter" as FeatureId,
+	"highlights-notes" as FeatureId,
+	"full-text-search" as FeatureId,
+	"offline-reading" as FeatureId,
+	"text-to-speech" as FeatureId,
+	"newsletter-inbox" as FeatureId,
+];
+
+interface PlannedFeatureDefinition {
+	id: FeatureId;
+	name: string;
+	description: string;
+}
+
+const PLANNED_FEATURES: PlannedFeatureDefinition[] = [
+	{
+		id: "email-link-import" as FeatureId,
+		name: "Email Link Import",
+		description: "Import links from your email to Hutch queue",
+	},
+	{
+		id: "ai-queue-filter" as FeatureId,
+		name: "Filter your queue using AI based on your preferences",
+		description: "Allow Hutch to select the most relevant links for you based on your goals",
+	},
+	{
+		id: "highlights-notes" as FeatureId,
+		name: "Highlights & Notes",
+		description: "Highlight in multiple colours, add inline notes, export as Markdown.",
+	},
+	{
+		id: "full-text-search" as FeatureId,
+		name: "Full-Text Search",
+		description: "Search across titles and article body text. Filter by tags, read status, and date.",
+	},
+	{
+		id: "offline-reading" as FeatureId,
+		name: "Offline Reading",
+		description: "Articles auto-download for offline access. Your queue persists even if the original page disappears.",
+	},
+	{
+		id: "text-to-speech" as FeatureId,
+		name: "Text-to-Speech",
+		description: "Listen to articles with natural TTS. Adjustable speed, background playback.",
+	},
+	{
+		id: "newsletter-inbox" as FeatureId,
+		name: "Newsletter Inbox",
+		description: "Unique email alias routes newsletters straight into your reading queue.",
+	},
+];
+
+export function HomePage(params: {
+	userCount: number;
+	staticBaseUrl: string;
+	isLoggedIn: boolean;
+	voteSummaries: FeatureVoteSummary[];
+}): Component {
+	const { userCount, staticBaseUrl, isLoggedIn, voteSummaries } = params;
 	const progressPercent = Math.min(Math.round((userCount / FOUNDING_MEMBER_LIMIT) * 100), 100);
 	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
@@ -63,7 +123,6 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 					url: "https://hutch-app.com",
 					logo: `${staticBaseUrl}/og-image-1200x630.png`,
 					sameAs: [
-						"https://www.reddit.com/r/hutchapp",
 						"https://www.linkedin.com/in/fagnerbrack/",
 					],
 					founder: {
@@ -122,6 +181,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
 			progressPercent,
 			allocationExhausted,
+			isLoggedIn,
 			coreFeatures: [
 				{
 					name: "Firefox Extension",
@@ -169,28 +229,16 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 						"Hosted in Sydney. Australian Privacy Act compliant. No tracking, no ads.",
 				},
 			],
-			plannedFeatures: [
-				{
-					name: "Personalised Summaries (BYOK)",
-					description:
-						"Summaries tailored to how you learn, powered by your own API key (Anthropic or OpenAI).",
-				},
-				{
-					name: "Preference Learning",
-					description:
-						"\"More like this\" and \"less like this\" buttons that update a personal preference model, re-ranking your reading list and surfacing articles that match how you actually learn. You can review your preferences.",
-				},
-				{
-					name: "Gmail Integration",
-					description:
-						"Import links from newsletters automatically and process them all. No more 19,577 unread emails.",
-				},
-				{
-					name: "Highlights & Notes",
-					description:
-						"Highlight passages and add notes as you read.",
-				},
-			],
+			plannedFeatures: PLANNED_FEATURES.map((feature) => {
+				const summary = voteSummaries.find((s) => s.featureId === feature.id);
+				const voteCount = summary?.voteCount ?? 0;
+				return {
+					...feature,
+					voteCount,
+					hasVoted: summary?.hasVoted ?? false,
+					voteCountIsOne: voteCount === 1,
+				};
+			}),
 			trustItems: [
 				{
 					name: "\"Even If You Cancel\" Promise",
