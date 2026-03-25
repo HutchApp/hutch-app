@@ -37,6 +37,16 @@ describe("Auth routes", () => {
 			const action = doc.querySelector('[data-test-form="login"]')?.getAttribute("action");
 			expect(action).toContain("/login?return=");
 		});
+
+		it("should pass return URL to signup link", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const signupLink = doc.querySelector(".auth-card__footer a")?.getAttribute("href");
+			expect(signupLink).toContain("/signup?return=");
+		});
 	});
 
 	describe("POST /login", () => {
@@ -121,6 +131,34 @@ describe("Auth routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector('[data-test-error="email"]')?.textContent).toBe("Please enter a valid email address");
 		});
+
+		it("should preserve return URL in form action after invalid credentials", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
+				.type("form")
+				.send({ email: "test@example.com", password: "wrongpassword" });
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			const action = doc.querySelector('[data-test-form="login"]')?.getAttribute("action");
+			expect(action).toContain("/login?return=");
+		});
+
+		it("should preserve return URL in form action after validation error", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
+				.type("form")
+				.send({ email: "", password: "password123" });
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			const action = doc.querySelector('[data-test-form="login"]')?.getAttribute("action");
+			expect(action).toContain("/login?return=");
+		});
 	});
 
 	describe("GET /signup", () => {
@@ -146,6 +184,26 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/queue");
 		});
+
+		it("should include return URL in form action when provided", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const action = doc.querySelector('[data-test-form="signup"]')?.getAttribute("action");
+			expect(action).toContain("/signup?return=");
+		});
+
+		it("should pass return URL to login link", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const loginLink = doc.querySelector(".auth-card__footer a")?.getAttribute("href");
+			expect(loginLink).toContain("/login?return=");
+		});
 	});
 
 	describe("POST /signup", () => {
@@ -161,6 +219,54 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/queue");
 			expect(response.headers["set-cookie"].length).toBeGreaterThan(0);
+		});
+
+		it("should redirect to return URL after successful signup", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
+				.type("form")
+				.send({
+					email: "new@example.com",
+					password: "password123",
+					confirmPassword: "password123",
+				});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/oauth/authorize?client_id=test");
+		});
+
+		it("should ignore protocol-relative return URLs on signup", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/signup?return=%2F%2Fevil.com")
+				.type("form")
+				.send({
+					email: "new@example.com",
+					password: "password123",
+					confirmPassword: "password123",
+				});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should ignore non-relative return URLs on signup", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/signup?return=https%3A%2F%2Fevil.com")
+				.type("form")
+				.send({
+					email: "new@example.com",
+					password: "password123",
+					confirmPassword: "password123",
+				});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
 		});
 
 		it("should show error for duplicate email", async () => {
@@ -194,6 +300,43 @@ describe("Auth routes", () => {
 			expect(
 				doc.querySelector('[data-test-error="confirmPassword"]')?.textContent,
 			).toBe("Passwords do not match");
+		});
+
+		it("should preserve return URL in form action after mismatched passwords", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
+				.type("form")
+				.send({
+					email: "new@example.com",
+					password: "password123",
+					confirmPassword: "differentpassword",
+				});
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			const action = doc.querySelector('[data-test-form="signup"]')?.getAttribute("action");
+			expect(action).toContain("/signup?return=");
+		});
+
+		it("should preserve return URL in form action after duplicate email", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "existing@example.com", password: "password123" });
+
+			const response = await request(app)
+				.post("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
+				.type("form")
+				.send({
+					email: "existing@example.com",
+					password: "password123",
+					confirmPassword: "password123",
+				});
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			const action = doc.querySelector('[data-test-form="signup"]')?.getAttribute("action");
+			expect(action).toContain("/signup?return=");
 		});
 
 		it("should show error for short password", async () => {

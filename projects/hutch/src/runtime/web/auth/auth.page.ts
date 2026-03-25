@@ -14,9 +14,13 @@ import type {
 	VerifyEmailToken,
 } from "../../providers/email-verification/email-verification.types";
 import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
+import { z } from "zod";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
+import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { buildVerificationEmailHtml } from "./verification-email";
+
+const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
 const COOKIE_NAME = "hutch_sid";
 
@@ -59,13 +63,13 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			res.redirect(303, "/queue");
 			return;
 		}
-		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
+		const returnUrl = extractReturnUrl(req.query);
 		const result = LoginPage({ returnUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
-		const returnUrl = typeof req.query.return === "string" ? req.query.return : undefined;
+		const returnUrl = extractReturnUrl(req.query);
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
@@ -93,8 +97,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const sessionId = await deps.createSession({ userId: credentials.userId, emailVerified: credentials.emailVerified });
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
-		const redirectTo = returnUrl?.startsWith("/") && !returnUrl.startsWith("//") ? returnUrl : "/queue";
-		res.redirect(303, redirectTo);
+		res.redirect(303, parseReturnUrl(req.query));
 	});
 
 	router.get("/signup", (req: Request, res: Response) => {
@@ -102,15 +105,18 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			res.redirect(303, "/queue");
 			return;
 		}
-		const result = SignupPage().to("text/html");
+		const returnUrl = extractReturnUrl(req.query);
+		const result = SignupPage({ returnUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
+		const returnUrl = extractReturnUrl(req.query);
 		const parsed = SignupSchema.safeParse(req.body);
 
 		if (!parsed.success) {
 			const result = SignupPage({
+				returnUrl,
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
 			}).to("text/html");
@@ -123,6 +129,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!createResult.ok) {
 			const result = SignupPage({
+				returnUrl,
 				email,
 				globalError: "An account with this email already exists",
 			}).to("text/html");
@@ -132,7 +139,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const sessionId = await deps.createSession({ userId: createResult.userId, emailVerified: false });
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);
-		res.redirect(303, "/queue");
+		res.redirect(303, parseReturnUrl(req.query));
 
 		deps.createVerificationToken({ userId: createResult.userId, email })
 			.then((token) => {
@@ -152,7 +159,8 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 	});
 
 	router.get("/verify-email", async (req: Request, res: Response) => {
-		const token = typeof req.query.token === "string" ? req.query.token : "";
+		const parsed = TokenQuerySchema.safeParse(req.query);
+		const token = parsed.success ? (parsed.data.token ?? "") : "";
 
 		if (!token) {
 			const result = VerifyEmailPage({
