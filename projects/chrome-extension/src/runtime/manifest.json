@@ -11,9 +11,7 @@
     "offscreen"
   ],
   "host_permissions": [
-    "https://hutch-app.com/*",
-    "http://127.0.0.1:3000/*",
-    "http://127.0.0.1:3001/*"
+    "https://hutch-app.com/*"
   ],
   "icons": {
     "16": "icons/icon-16.png",

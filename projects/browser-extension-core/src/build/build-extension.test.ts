@@ -173,8 +173,10 @@ describe("plan.buildExtension", () => {
 	function createInMemoryDeps() {
 		const createdDirs: Array<{ path: string; options: { recursive: true } }> = [];
 		const copiedFiles: Array<{ src: string; dest: string; options?: { recursive?: boolean; force?: boolean } }> = [];
+		const writtenFiles: Map<string, string> = new Map();
 		let esbuildCallCount = 0;
 		let lastEsbuildOptions: { target: string } | null = null;
+		let manifestContent = JSON.stringify({ host_permissions: ["https://hutch-app.com/*"], permissions: ["activeTab"] });
 
 		const deps = {
 			esbuild: async (options: { target: string }) => {
@@ -187,6 +189,10 @@ describe("plan.buildExtension", () => {
 			cpSync: (src: string, dest: string, options?: { recursive?: boolean; force?: boolean }) => {
 				copiedFiles.push({ src, dest, options });
 			},
+			readFileSync: (_path: string, _encoding: "utf-8") => manifestContent,
+			writeFileSync: (path: string, data: string) => {
+				writtenFiles.set(path, data);
+			},
 			resolveCorePackageJson: () => "/projects/browser-extension-core/package.json",
 		};
 
@@ -194,6 +200,8 @@ describe("plan.buildExtension", () => {
 			deps,
 			createdDirs,
 			copiedFiles,
+			writtenFiles,
+			setManifestContent: (content: string) => { manifestContent = content; },
 			getEsbuildCallCount: () => esbuildCallCount,
 			getLastEsbuildOptions: () => lastEsbuildOptions,
 		};
@@ -261,6 +269,58 @@ describe("plan.buildExtension", () => {
 		const manifestCopy = copiedFiles.find((c) => c.dest.endsWith("manifest.json"));
 		expect(manifestCopy?.options).toEqual({ force: true });
 	});
+
+	it("adds localhost host_permissions for dev builds", async () => {
+		const { deps, writtenFiles, setManifestContent } = createInMemoryDeps();
+		setManifestContent(JSON.stringify({ host_permissions: ["https://hutch-app.com/*"] }));
+		const { createBuildPlan } = initBuildExtension(deps);
+		const plan = createBuildPlan({
+			config: { target: "chrome109" },
+			projectDir: "/projects/chrome-extension",
+			serverUrl: "http://127.0.0.1:3000",
+		});
+
+		await plan.buildExtension();
+
+		const manifestPath = join("/projects/chrome-extension", "dist-extension-compiled", "manifest.json");
+		const written = writtenFiles.get(manifestPath);
+		expect(written).toBeDefined();
+		const manifest = JSON.parse(written!);
+		expect(manifest.host_permissions).toEqual(["https://hutch-app.com/*", "http://127.0.0.1:3000/*"]);
+	});
+
+	it("adds localhost to permissions for Firefox MV2 dev builds", async () => {
+		const { deps, writtenFiles, setManifestContent } = createInMemoryDeps();
+		setManifestContent(JSON.stringify({ permissions: ["activeTab", "tabs", "https://hutch-app.com/*"] }));
+		const { createBuildPlan } = initBuildExtension(deps);
+		const plan = createBuildPlan({
+			config: { target: "firefox91" },
+			projectDir: "/projects/firefox-extension",
+			serverUrl: "http://127.0.0.1:3000",
+		});
+
+		await plan.buildExtension();
+
+		const manifestPath = join("/projects/firefox-extension", "dist-extension-compiled", "manifest.json");
+		const written = writtenFiles.get(manifestPath);
+		expect(written).toBeDefined();
+		const manifest = JSON.parse(written!);
+		expect(manifest.permissions).toEqual(["activeTab", "tabs", "https://hutch-app.com/*", "http://127.0.0.1:3000/*"]);
+	});
+
+	it("does not modify manifest for production builds", async () => {
+		const { deps, writtenFiles } = createInMemoryDeps();
+		const { createBuildPlan } = initBuildExtension(deps);
+		const plan = createBuildPlan({
+			config: { target: "chrome109" },
+			projectDir: "/projects/chrome-extension",
+			serverUrl: "https://hutch-app.com",
+		});
+
+		await plan.buildExtension();
+
+		expect(writtenFiles.size).toBe(0);
+	});
 });
 
 describe("plan.packExtension", () => {
@@ -273,6 +333,8 @@ describe("plan.packExtension", () => {
 				createdDirs.push({ path, options });
 			},
 			cpSync: () => {},
+			readFileSync: () => "{}",
+			writeFileSync: () => {},
 			resolveCorePackageJson: () => "/projects/browser-extension-core/package.json",
 		};
 
