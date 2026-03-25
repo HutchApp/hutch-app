@@ -517,11 +517,15 @@
 }
 
 @media (max-width: 767px) {
+  .home-comparison__container {
+    overflow-x: auto;
+  }
   .comparison-table {
     font-size: 0.8125rem;
+    min-width: 500px;
   }
   .comparison-table th,
   .comparison-table td {
-    padding: 8px;
+    padding: 8px 12px;
   }
 }
