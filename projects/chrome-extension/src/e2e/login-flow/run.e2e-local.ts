@@ -73,8 +73,9 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 	}
 	options.addArguments(`--load-extension=${EXTENSION_DIR}`);
 	options.addArguments("--disable-search-engine-choice-screen");
-	options.addArguments("--no-sandbox"); // Prevents pnpm check hanging due to "session not created: Chrome instance exited. Examine ChromeDriver verbose log to determine the cause."
+	options.addArguments("--no-sandbox"); // CI container has no user namespace; without this Chrome exits immediately
 	options.addArguments("--disable-dev-shm-usage"); // CI runners have a small /dev/shm partition; without this Chrome crashes with ECONNREFUSED
+	options.addArguments("--disable-gpu"); // CI runners have no GPU drivers; the GPU process crashes intermittently in headless mode
 
 	// Chrome 137+ removed --load-extension in branded Google Chrome.
 	// Use Chrome for Testing which still supports it.
