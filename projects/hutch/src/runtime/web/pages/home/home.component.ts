@@ -151,9 +151,9 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 						"Import links from your email to Hutch queue",
 				},
 				{
-					name: "AI Daily/Weekly Email Digest",
+					name: "Filter your queue using AI based on your preferences",
 					description:
-						"Using AI, send an email to yourself daily/weekly with the links that fit your interests",
+						"Allow Hutch to select the most relevant links for you based on your goals",
 				},
 				{
 					name: "Highlights & Notes",
@@ -168,7 +168,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 				{
 					name: "Offline Reading",
 					description:
-						"Articles auto-download for offline access. Your archive persists even if the original page disappears.",
+						"Articles auto-download for offline access. Your queue persists even if the original page disappears.",
 				},
 				{
 					name: "Text-to-Speech",
