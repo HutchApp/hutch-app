@@ -25,13 +25,11 @@ import type {
 	UpdateArticleStatus,
 } from "./article-store.types";
 
-// DynamoDB stores missing attributes as null, not undefined.
-// .nullish() accepts both so Zod doesn't throw on null values
-// left by previous writes (e.g. articles saved without lastModified).
+/** 1. DynamoDB stores missing attributes as null, not undefined. .nullish() accepts both so Zod doesn't throw on null values left by previous writes (e.g. articles saved without lastModified). */
 const ArticleFreshnessRow = z.object({
-	etag: z.string().nullish(),
-	lastModified: z.string().nullish(),
-	contentFetchedAt: z.string().nullish(),
+	etag: z.string().nullish(), /* 1 */
+	lastModified: z.string().nullish(), /* 1 */
+	contentFetchedAt: z.string().nullish(), /* 1 */
 });
 
 const ArticleRow = z.object({
@@ -363,11 +361,12 @@ export function initDynamoDbArticleStore(deps: {
 			}),
 		);
 		if (!result.Item) return null;
+		/** 1. Convert nullish DynamoDB values to undefined to satisfy the ArticleFreshnessData type contract. */
 		const row = ArticleFreshnessRow.parse(result.Item);
 		return {
-			etag: row.etag ?? undefined,
-			lastModified: row.lastModified ?? undefined,
-			contentFetchedAt: row.contentFetchedAt ?? undefined,
+			etag: row.etag ?? undefined, /* 1 */
+			lastModified: row.lastModified ?? undefined, /* 1 */
+			contentFetchedAt: row.contentFetchedAt ?? undefined, /* 1 */
 		};
 	};
 

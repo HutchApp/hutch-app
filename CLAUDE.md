@@ -80,6 +80,22 @@ export { createHomePageContent } from './home.template';
 robots: 'noindex, nofollow',
 ```
 
+When a comment explains a specific line within a block and fits on one line, use an inline comment:
+
+```typescript
+options.addArguments("--no-sandbox"); // CI container has no user namespace
+```
+
+When a comment explains multiple lines within a block, use indexed references so the explanation stays together and each line is traceable:
+
+```typescript
+/** 1. DynamoDB stores missing attributes as null, not undefined. .nullish() accepts both. */
+const Row = z.object({
+  etag: z.string().nullish(), /* 1 */
+  lastModified: z.string().nullish(), /* 1 */
+});
+```
+
 ### Unused Variables
 
 Use underscore prefix (`_`) to indicate intentionally unused variables. Biome is configured to allow this.
