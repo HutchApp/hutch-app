@@ -6,7 +6,7 @@ import type {
 	SaveUrlResult,
 	RemoveUrlResult,
 } from "browser-extension-core";
-import { filterByUrl, paginateItems } from "browser-extension-core";
+import { filterByUrl, paginateItems, avatarColor, relativeTime } from "browser-extension-core";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 
 const logger = HutchLogger.from(consoleLogger);
@@ -117,6 +117,18 @@ function renderLinks(items: ReadingListItem[]) {
 		const div = document.createElement("div");
 		div.className = "list-view__item";
 
+		let hostname: string;
+		try {
+			hostname = new URL(item.url).hostname;
+		} catch {
+			hostname = item.url;
+		}
+
+		const avatar = document.createElement("div");
+		avatar.className = "list-view__avatar";
+		avatar.textContent = hostname.charAt(0);
+		avatar.style.backgroundColor = avatarColor(hostname);
+
 		const textContainer = document.createElement("div");
 		textContainer.className = "list-view__text";
 
@@ -129,19 +141,20 @@ function renderLinks(items: ReadingListItem[]) {
 
 		const domain = document.createElement("span");
 		domain.className = "list-view__domain";
-		try {
-			domain.textContent = new URL(item.url).hostname;
-		} catch {
-			domain.textContent = item.url;
-		}
+		domain.textContent = hostname;
 
 		textContainer.appendChild(link);
 		textContainer.appendChild(domain);
+
+		const time = document.createElement("span");
+		time.className = "list-view__time";
+		time.textContent = relativeTime(new Date(item.savedAt));
 
 		const deleteButton = document.createElement("button");
 		deleteButton.className = "list-view__delete";
 		deleteButton.textContent = "\u00D7";
 		deleteButton.title = "Remove from list";
+		deleteButton.setAttribute("aria-label", "Remove from list");
 		deleteButton.addEventListener("click", async () => {
 			const result = (await send({
 				type: "remove-item",
@@ -154,7 +167,9 @@ function renderLinks(items: ReadingListItem[]) {
 			}
 		});
 
+		div.appendChild(avatar);
 		div.appendChild(textContainer);
+		div.appendChild(time);
 		div.appendChild(deleteButton);
 		linkList.appendChild(div);
 	}

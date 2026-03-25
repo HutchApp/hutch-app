@@ -26,6 +26,8 @@ export type { SaveUrl, RemoveUrl, FindByUrl, GetAllItems } from "./reading-list/
 export type { PopupMessage } from "./popup-message.types";
 export { filterByUrl } from "./popup/filter-by-url";
 export { paginateItems } from "./popup/paginate-items";
+export { avatarColor } from "./popup/avatar-color";
+export { relativeTime } from "./popup/relative-time";
 export {
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,
