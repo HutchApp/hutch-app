@@ -7,7 +7,7 @@
 
 ## Brand Identity
 
-**Tagline:** A warm, dependable home for your reading list.
+**Tagline:** Where reading still matters.
 
 **What Hutch is:** A read-it-later app that saves articles, blog posts, and web pages for later reading. Born from a personal reading system refined over 10 years.
 

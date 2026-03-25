@@ -1,7 +1,7 @@
 {
   "name": "chrome-extension",
   "version": "1.0.20",
-  "description": "Hutch — Chrome browser extension for saving URLs to a reading list",
+  "description": "Hutch — Where reading still matters",
   "main": "src/infra/index.ts",
   "private": true,
   "exports": {
