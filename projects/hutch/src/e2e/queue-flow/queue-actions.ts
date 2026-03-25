@@ -362,10 +362,10 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       await clickAndWaitForPageReload(page, page.locator('[data-test-filter="unread"]'))
 
       const count = await getArticleCount(page)
-      expect(count).toBe(1)
+      expect(count).toBe(2)
 
       const titles = await getArticleTitles(page)
-      expect(titles).toEqual([TEST_TITLES[1]])
+      expect(titles).toEqual([TEST_TITLES[1], TEST_TITLES[2]])
 
       progress.checkedUnreadTab = true
     },
