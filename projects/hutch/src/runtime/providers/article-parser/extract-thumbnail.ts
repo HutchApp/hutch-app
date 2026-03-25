@@ -1,4 +1,8 @@
-export function extractThumbnail(html: string, baseUrl?: string): string | undefined {
+export function extractThumbnail(params: {
+	html: string;
+	baseUrl?: string;
+}): string | undefined {
+	const { html, baseUrl } = params;
 	const ogImage = matchMetaContent(html, "property", "og:image");
 	const resolvedOg = resolveIfRelative(ogImage, baseUrl);
 	if (resolvedOg && isValidHttpUrl(resolvedOg)) return resolvedOg;

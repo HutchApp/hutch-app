@@ -35,12 +35,35 @@ describe("resolveRelativeUrls", () => {
 		expect(result).toContain('src="https://cdn.example.com/photo.jpg"');
 	});
 
-	it("should resolve source srcset attributes", () => {
+	it("should resolve single-entry source srcset", () => {
 		const html = '<source srcset="/images/photo.webp">';
 		const result = resolveRelativeUrls({ html, baseUrl });
 		expect(result).toContain(
 			'srcset="https://example.com/images/photo.webp"',
 		);
+	});
+
+	it("should resolve multi-entry srcset with width descriptors", () => {
+		const html = '<source srcset="/img/small.jpg 300w, /img/large.jpg 800w">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain(
+			'srcset="https://example.com/img/small.jpg 300w, https://example.com/img/large.jpg 800w"',
+		);
+	});
+
+	it("should resolve img[srcset] attributes", () => {
+		const html = '<img srcset="/img/small.jpg 1x, /img/large.jpg 2x">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain(
+			'srcset="https://example.com/img/small.jpg 1x, https://example.com/img/large.jpg 2x"',
+		);
+	});
+
+	it("should resolve video[src] and audio[src] attributes", () => {
+		const html = '<video src="/media/video.mp4"></video><audio src="/media/audio.mp3"></audio>';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain('src="https://example.com/media/video.mp4"');
+		expect(result).toContain('src="https://example.com/media/audio.mp3"');
 	});
 
 	it("should handle multiple elements with relative URLs", () => {
@@ -64,5 +87,35 @@ describe("resolveRelativeUrls", () => {
 	it("should handle empty content", () => {
 		const result = resolveRelativeUrls({ html: "", baseUrl });
 		expect(result).toBe("");
+	});
+
+	it("should preserve empty src attribute unchanged", () => {
+		const html = '<img src="">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain('src=""');
+	});
+
+	it("should preserve empty srcset attribute unchanged", () => {
+		const html = '<source srcset="">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain('srcset=""');
+	});
+
+	it("should leave malformed absolute URL in src unchanged", () => {
+		const html = '<img src="http://[::1">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain('src="http://[::1"');
+	});
+
+	it("should leave malformed URL in srcset without descriptor unchanged", () => {
+		const html = '<source srcset="http://[::1">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain('srcset="http://[::1"');
+	});
+
+	it("should leave malformed URL in srcset with descriptor unchanged", () => {
+		const html = '<source srcset="http://[::1 300w">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain('srcset="http://[::1 300w"');
 	});
 });

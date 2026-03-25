@@ -14,7 +14,7 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 		return { ok: false, reason: "Invalid URL" };
 	}
 
-	const imageUrl = extractThumbnail(params.html, params.url);
+	const imageUrl = extractThumbnail({ html: params.html, baseUrl: params.url });
 	const { document } = parseHTML(params.html);
 	const reader = new Readability(document);
 	const parsed = reader.parse();

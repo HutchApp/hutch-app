@@ -6,7 +6,7 @@ describe("extractThumbnail", () => {
 			<meta property="og:image" content="https://example.com/og.jpg">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBe("https://example.com/og.jpg");
+		expect(extractThumbnail({ html })).toBe("https://example.com/og.jpg");
 	});
 
 	it("should extract og:image when content comes before property", () => {
@@ -14,7 +14,7 @@ describe("extractThumbnail", () => {
 			<meta content="https://example.com/og.jpg" property="og:image">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBe("https://example.com/og.jpg");
+		expect(extractThumbnail({ html })).toBe("https://example.com/og.jpg");
 	});
 
 	it("should extract twitter:image when og:image is absent", () => {
@@ -22,7 +22,7 @@ describe("extractThumbnail", () => {
 			<meta name="twitter:image" content="https://example.com/twitter.jpg">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBe("https://example.com/twitter.jpg");
+		expect(extractThumbnail({ html })).toBe("https://example.com/twitter.jpg");
 	});
 
 	it("should prefer og:image over twitter:image", () => {
@@ -31,7 +31,7 @@ describe("extractThumbnail", () => {
 			<meta name="twitter:image" content="https://example.com/twitter.jpg">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBe("https://example.com/og.jpg");
+		expect(extractThumbnail({ html })).toBe("https://example.com/og.jpg");
 	});
 
 	it("should fall back to first img tag when no meta tags exist", () => {
@@ -40,7 +40,7 @@ describe("extractThumbnail", () => {
 			<img src="https://example.com/second.jpg" alt="Second">
 		</body></html>`;
 
-		expect(extractThumbnail(html)).toBe("https://example.com/photo.jpg");
+		expect(extractThumbnail({ html })).toBe("https://example.com/photo.jpg");
 	});
 
 	it("should prefer og:image over img tags", () => {
@@ -50,13 +50,13 @@ describe("extractThumbnail", () => {
 			<img src="https://example.com/photo.jpg">
 		</body></html>`;
 
-		expect(extractThumbnail(html)).toBe("https://example.com/og.jpg");
+		expect(extractThumbnail({ html })).toBe("https://example.com/og.jpg");
 	});
 
 	it("should return undefined when no images exist", () => {
 		const html = "<html><head></head><body><p>No images here</p></body></html>";
 
-		expect(extractThumbnail(html)).toBeUndefined();
+		expect(extractThumbnail({ html })).toBeUndefined();
 	});
 
 	it("should handle single-quoted attributes", () => {
@@ -64,7 +64,7 @@ describe("extractThumbnail", () => {
 			<meta property='og:image' content='https://example.com/og.jpg'>
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBe("https://example.com/og.jpg");
+		expect(extractThumbnail({ html })).toBe("https://example.com/og.jpg");
 	});
 
 	it("should reject file: URIs", () => {
@@ -72,7 +72,7 @@ describe("extractThumbnail", () => {
 			<meta property="og:image" content="file:///etc/passwd">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBeUndefined();
+		expect(extractThumbnail({ html })).toBeUndefined();
 	});
 
 	it("should reject javascript: URIs", () => {
@@ -80,7 +80,7 @@ describe("extractThumbnail", () => {
 			<meta property="og:image" content="javascript:alert(1)">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBeUndefined();
+		expect(extractThumbnail({ html })).toBeUndefined();
 	});
 
 	it("should reject data: URIs", () => {
@@ -88,7 +88,7 @@ describe("extractThumbnail", () => {
 			<meta property="og:image" content="data:image/svg+xml,<svg onload=alert(1)>">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBeUndefined();
+		expect(extractThumbnail({ html })).toBeUndefined();
 	});
 
 	it("should reject relative URLs when no base URL provided", () => {
@@ -96,7 +96,7 @@ describe("extractThumbnail", () => {
 			<img src="/images/photo.jpg" alt="Photo">
 		</body></html>`;
 
-		expect(extractThumbnail(html)).toBeUndefined();
+		expect(extractThumbnail({ html })).toBeUndefined();
 	});
 
 	it("should resolve relative og:image when base URL provided", () => {
@@ -104,7 +104,7 @@ describe("extractThumbnail", () => {
 			<meta property="og:image" content="/images/og.jpg">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html, "https://example.com/post")).toBe(
+		expect(extractThumbnail({ html, baseUrl: "https://example.com/post" })).toBe(
 			"https://example.com/images/og.jpg",
 		);
 	});
@@ -114,7 +114,7 @@ describe("extractThumbnail", () => {
 			<img src="/images/photo.jpg" alt="Photo">
 		</body></html>`;
 
-		expect(extractThumbnail(html, "https://example.com/post")).toBe(
+		expect(extractThumbnail({ html, baseUrl: "https://example.com/post" })).toBe(
 			"https://example.com/images/photo.jpg",
 		);
 	});
@@ -124,6 +124,14 @@ describe("extractThumbnail", () => {
 			<meta property="og:image" content="http://example.com/image.jpg">
 		</head><body></body></html>`;
 
-		expect(extractThumbnail(html)).toBe("http://example.com/image.jpg");
+		expect(extractThumbnail({ html })).toBe("http://example.com/image.jpg");
+	});
+
+	it("should return relative URL unchanged when baseUrl is invalid", () => {
+		const html = `<html><body>
+			<img src="/images/photo.jpg" alt="Photo">
+		</body></html>`;
+
+		expect(extractThumbnail({ html, baseUrl: "not-a-url" })).toBeUndefined();
 	});
 });
