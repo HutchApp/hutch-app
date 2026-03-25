@@ -110,7 +110,7 @@
 
 .btn--primary {
   background: var(--color-on-brand);
-  color: var(--secondary-foreground);
+  color: var(--primary-foreground);
 }
 
 .btn--secondary {
