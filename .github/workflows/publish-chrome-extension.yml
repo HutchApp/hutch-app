@@ -42,13 +42,13 @@ jobs:
 
       - name: Deploy extension bucket infrastructure
         run: pulumi up --stack prod --yes
-        working-directory: projects/chrome-extension
+        working-directory: projects/extensions/chrome-extension
 
       - name: Compile bump-version script
         run: pnpm --filter chrome-extension exec tsc --outDir dist --rootDir src --module commonjs --esModuleInterop --skipLibCheck src/bump-version.ts
 
       - name: Bump extension version
-        run: node projects/chrome-extension/scripts/bump-version.js patch
+        run: node projects/extensions/chrome-extension/scripts/bump-version.js patch
 
       - name: Build and package extension
         run: npx nx run-many --target=compile --projects=browser-extension-core,chrome-extension
@@ -59,17 +59,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add projects/chrome-extension/package.json projects/chrome-extension/src/runtime/manifest.json
-          git commit -m "chore: bump chrome extension version to $(node -p "require('./projects/chrome-extension/package.json').version")"
+          git add projects/extensions/chrome-extension/package.json projects/extensions/chrome-extension/src/runtime/manifest.json
+          git commit -m "chore: bump chrome extension version to $(node -p "require('./projects/extensions/chrome-extension/package.json').version")"
           git pull --rebase origin main
           git push origin main
 
       - name: Publish to S3
-        run: node projects/chrome-extension/scripts/publish-to-s3.js
+        run: node projects/extensions/chrome-extension/scripts/publish-to-s3.js
 
       # Uncomment once GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, and CHROME_EXTENSION_ID secrets are configured
       # - name: Submit to Chrome Web Store
-      #   run: node projects/chrome-extension/scripts/submit-to-chrome-web-store.js
+      #   run: node projects/extensions/chrome-extension/scripts/submit-to-chrome-web-store.js
       #   env:
       #     GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       #     GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
