@@ -54,9 +54,9 @@
       {{/if}}
       {{#if showPagination}}
       <nav class="queue__pagination" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-pagination>
-        {{#if hasPrev}}<a class="queue__pagination-link" href="{{prevUrl}}">← Previous</a>{{/if}}
-        <span class="queue__pagination-info">Page {{currentPage}} of {{totalPages}}</span>
-        {{#if hasNext}}<a class="queue__pagination-link" href="{{nextUrl}}">Next →</a>{{/if}}
+        {{#if hasPrev}}<a class="queue__pagination-link" href="{{prevUrl}}" data-test-pagination-prev>← Previous</a>{{/if}}
+        <span class="queue__pagination-info" data-test-pagination-info>Page {{currentPage}} of {{totalPages}}</span>
+        {{#if hasNext}}<a class="queue__pagination-link" href="{{nextUrl}}" data-test-pagination-next>Next →</a>{{/if}}
       </nav>
       {{/if}}
     </main>
