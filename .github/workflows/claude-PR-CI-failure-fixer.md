@@ -67,3 +67,31 @@ CI=true pnpm check
 ```
 
 **Rationale:** Log buffering in CI systems makes the first visible error often not the root cause.
+
+**5. CI step exits with code 1 but no visible error in logs:**
+
+The GitHub Actions runner scans all log output to mask secrets in multiple encoding formats. Single log lines exceeding ~100KB cause severe runner slowdowns, and very large total output (~4MB+) can cause log truncation or process termination.
+
+**Symptoms:**
+- `ELIFECYCLE Command failed with exit code 1` appears at the end of a very long log line (not on its own line)
+- `--log-failed` output is entirely consumed by one task's verbose output, hiding the actual failing task
+- The `Failed tasks:` NX summary is missing from the log (pushed out by verbose output)
+- `gh run view --log` returns fewer lines than expected
+
+**Diagnosis:**
+```bash
+# Download full logs as zip (bypasses streaming truncation)
+gh api repos/OWNER/REPO/actions/runs/<RUN_ID>/logs \
+  -H "Accept: application/vnd.github+json" > logs.zip
+unzip logs.zip -d logs/
+
+# Check the raw step log file size
+wc -c logs/check/6_Run\ pnpm\ check.txt
+
+# Find the actual failing NX task (often hidden by verbose output)
+grep "Failed tasks:" logs/check/6_Run\ pnpm\ check.txt -A 5
+```
+
+**Root cause in this repo:** The dev-mode AI summary stub in `projects/hutch/src/runtime/app.ts` logged the full `params` JSON via `JSON.stringify(params)`. Each call included the entire article text content as the `messages[0].content` field. For Wikipedia articles used in E2E tests, this produced ~100KB per log line. The runner's secret-masking scan on these lines caused the step to exit with code 1 before later NX tasks could report their results. The fix was to log only the model name and content length instead of the full params.
+
+**General rule:** If a CI step fails with exit code 1 and the logs are dominated by a single task's massive output, suspect that the output itself is causing the failure. Reduce the verbosity and re-run before investigating other causes.
