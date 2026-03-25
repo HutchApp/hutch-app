@@ -25,6 +25,9 @@ import type {
 	UpdateArticleStatus,
 } from "./article-store.types";
 
+// DynamoDB stores missing attributes as null, not undefined.
+// .nullish() accepts both so Zod doesn't throw on null values
+// left by previous writes (e.g. articles saved without lastModified).
 const ArticleFreshnessRow = z.object({
 	etag: z.string().nullish(),
 	lastModified: z.string().nullish(),
