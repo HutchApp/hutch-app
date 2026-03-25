@@ -91,8 +91,8 @@ function initProviders() {
 	const summaryCache = initInMemorySummaryCache();
 	const { summarizeArticle } = initClaudeSummarizer({
 		createMessage: (params) => {
-			// Output a log for the call outside prod environment to avoid spending tokens running e2e tests in local machine and CI environments
-			consoleLogger.info(`[AI Summary Called] with params ${JSON.stringify(params)}`);
+			// Log the call without full content to avoid flooding CI logs (Wikipedia articles are 100KB+)
+			consoleLogger.info(`[AI Summary Stub] model=${params.model} content_length=${params.messages[0]?.content?.length ?? 0}`);
 			return Promise.resolve({
 				content: [{
 					type: "text",
