@@ -210,13 +210,18 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     },
     execute: async (page) => {
       const targetCount = TEST_URLS.length
-      let totalText = await page.locator('[data-test-article-count]').textContent()
-      let total = parseInt(totalText ?? '0', 10)
+      const countLocator = page.locator('[data-test-article-count]')
+      await expect(countLocator).toBeVisible()
+      let totalText = await countLocator.textContent()
+      assert.ok(totalText, 'article count element should have text content')
+      let total = parseInt(totalText, 10)
 
       while (total > targetCount) {
         await clickAndWaitForPageReload(page, page.locator('[data-test-action="delete"]').first())
-        totalText = await page.locator('[data-test-article-count]').textContent()
-        total = parseInt(totalText ?? '0', 10)
+        await expect(countLocator).toBeVisible()
+        totalText = await countLocator.textContent()
+        assert.ok(totalText, 'article count element should have text content')
+        total = parseInt(totalText, 10)
       }
 
       progress.paginationArticlesDeleted = true
