@@ -519,7 +519,6 @@
 @media (max-width: 767px) {
   .home-comparison__container {
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
   .comparison-table {
     font-size: 0.8125rem;
