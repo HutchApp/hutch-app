@@ -6,7 +6,7 @@ import type {
 	SaveUrlResult,
 	RemoveUrlResult,
 } from "browser-extension-core";
-import { filterByUrl, paginateItems } from "browser-extension-core";
+import { filterByUrl, paginateItems, avatarColor, relativeTime } from "browser-extension-core";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 
 const logger = HutchLogger.from(consoleLogger);
@@ -25,42 +25,6 @@ function send(message: PopupMessage): Promise<unknown> {
 
 let allItems: ReadingListItem[] = [];
 let currentPage = 1;
-
-const AVATAR_COLORS = [
-	"#6366F1",
-	"#8B5CF6",
-	"#EC4899",
-	"#F59E0B",
-	"#10B981",
-	"#3B82F6",
-	"#EF4444",
-	"#14B8A6",
-	"#F97316",
-	"#06B6D4",
-];
-
-function avatarColor(domain: string): string {
-	let hash = 0;
-	for (let i = 0; i < domain.length; i++) {
-		hash = (hash * 31 + domain.charCodeAt(i)) | 0;
-	}
-	return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function relativeTime(date: Date): string {
-	const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-	if (seconds < 60) return "just now";
-	const minutes = Math.floor(seconds / 60);
-	if (minutes < 60) return `${minutes}m ago`;
-	const hours = Math.floor(minutes / 60);
-	if (hours < 24) return `${hours}h ago`;
-	const days = Math.floor(hours / 24);
-	if (days === 1) return "Yesterday";
-	if (days < 30) return `${days}d ago`;
-	const months = Math.floor(days / 30);
-	if (months < 12) return `${months}mo ago`;
-	return `${Math.floor(months / 12)}y ago`;
-}
 
 function renderPagination(totalPages: number, visiblePages: number[]) {
 	const pagination = document.getElementById("pagination");
