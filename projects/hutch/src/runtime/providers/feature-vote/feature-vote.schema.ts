@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const FEATURE_ID_VALUES = [
+const FEATURE_ID_VALUES = [
 	"email-link-import",
 	"ai-queue-filter",
 	"highlights-notes",
