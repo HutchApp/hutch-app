@@ -5,6 +5,7 @@ import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
+import { buildQueueUrl } from "./queue.url";
 
 const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf-8");
 
@@ -68,7 +69,7 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	const activeStatus = vm.filters.status;
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
 	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
-	const sortUrl = `/queue?order=${nextOrder}${activeStatus !== "unread" ? `&status=${activeStatus}` : ""}`;
+	const sortUrl = buildQueueUrl({ status: activeStatus, order: nextOrder });
 
 	return {
 		total: vm.total,
