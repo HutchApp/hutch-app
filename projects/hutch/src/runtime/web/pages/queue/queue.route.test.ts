@@ -306,6 +306,21 @@ describe("Queue routes", () => {
 			expect(urlLink?.getAttribute("target")).toBe("_blank");
 			expect(urlLink?.textContent).toBe("Example Blog");
 		});
+
+		it("should not render URL link when siteName is empty", async () => {
+			const skipFreshness: RefreshArticleIfStale = async () => ({ action: "skip" });
+			const { app, auth } = createTestApp({ refreshArticleIfStale: skipFreshness });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/existing" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-article-url]")).toBeNull();
+		});
 	});
 
 	describe("Action forms", () => {
