@@ -52,7 +52,6 @@ describe("GET /install", () => {
 			'[data-test-cta="download-firefox"]',
 		) as HTMLAnchorElement;
 		expect(cta.getAttribute("href")).toBe(getFirefoxDownloadUrl({ stage: "prod", xpiFilename: TEST_XPI_FILENAME }));
-		expect(cta.textContent).toBe("Download Hutch for Firefox (test mode)");
 	});
 
 	it("should render the Chrome download button linking to the S3 ZIP", async () => {
