@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { expect, type Page } from '@playwright/test'
 import type { PageAction } from '../hateoas/navigation-handler.types'
 import { isOnPage, clickAndWaitForPageReload } from '../page-interactions'
@@ -6,6 +7,13 @@ import type { AuthProgress } from './auth-actions'
 
 export type QueueProgress = {
   allArticlesAdded: boolean
+  paginationArticlesAdded: boolean
+  verifiedPage1HasNext: boolean
+  navigatedToPage2: boolean
+  verifiedPage2: boolean
+  navigatedBackToPage1: boolean
+  verifiedBackOnPage1: boolean
+  paginationArticlesDeleted: boolean
   verifiedNewestFirst: boolean
   sortedOldestFirst: boolean
   verifiedOldestFirst: boolean
@@ -27,13 +35,14 @@ export const LOCAL_TEST_ARTICLES: TestArticleData = {
     'https://en.wikipedia.org/wiki/URL',
     'https://en.wikipedia.org/wiki/HTML',
   ],
-  // Titles extracted by Readability from the Wikipedia pages above
   titles: ['HTTP', 'Web browser', 'URL', 'HTML'],
+  paginationUrls: Array.from({ length: 17 }, (_, i) => `http://localhost:3100/privacy?p=${i + 1}`),
 }
 
 export type TestArticleData = {
   urls: string[]
   titles: string[]
+  paginationUrls: string[]
 }
 
 async function getArticleCount(page: Page): Promise<number> {
@@ -79,9 +88,149 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     })
   }
 
+  let paginationArticlesAdded = 0
+
+  for (let i = 0; i < testData.paginationUrls.length; i++) {
+    actions.set(`save-pagination-article-${i + 1}`, {
+      isAvailable: async (page) => {
+        if (!progress.allArticlesAdded) return false
+        if (paginationArticlesAdded !== i) return false
+        const onQueue = await isOnPage(page, 'page-queue')
+        if (!onQueue) return false
+        const saveForm = page.locator('[data-test-form="save-article"]')
+        return saveForm.isVisible().catch(() => false)
+      },
+      execute: async (page) => {
+        const input = page.locator('[data-test-form="save-article"] input[name="url"]')
+        await input.fill(testData.paginationUrls[i])
+        await clickAndWaitForPageReload(
+          page,
+          page.locator('[data-test-form="save-article"] button[type="submit"]'),
+        )
+        paginationArticlesAdded = i + 1
+        if (paginationArticlesAdded === testData.paginationUrls.length) {
+          progress.paginationArticlesAdded = true
+        }
+      },
+    })
+  }
+
+  actions.set('verify-page1-has-next', {
+    isAvailable: async (page) => {
+      if (!progress.paginationArticlesAdded) return false
+      if (progress.verifiedPage1HasNext) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      const pagination = page.locator('[data-test-pagination]')
+      await expect(pagination).toBeVisible()
+
+      const info = page.locator('[data-test-pagination-info]')
+      const infoText = await info.textContent()
+      assert.ok(infoText?.includes('Page 1'), `Expected page info to include "Page 1", got "${infoText}"`)
+
+      const nextLink = page.locator('[data-test-pagination-next]')
+      await expect(nextLink).toBeVisible()
+
+      const articleCount = await getArticleCount(page)
+      assert.equal(articleCount, 20, 'Page 1 should show 20 articles')
+
+      progress.verifiedPage1HasNext = true
+    },
+  })
+
+  actions.set('navigate-to-page2', {
+    isAvailable: async (page) => {
+      if (!progress.verifiedPage1HasNext) return false
+      if (progress.navigatedToPage2) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      await clickAndWaitForPageReload(page, page.locator('[data-test-pagination-next]'))
+      progress.navigatedToPage2 = true
+    },
+  })
+
+  actions.set('verify-page2', {
+    isAvailable: async (page) => {
+      if (!progress.navigatedToPage2) return false
+      if (progress.verifiedPage2) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      const info = page.locator('[data-test-pagination-info]')
+      const infoText = await info.textContent()
+      assert.ok(infoText?.includes('Page 2'), `Expected page info to include "Page 2", got "${infoText}"`)
+
+      const prevLink = page.locator('[data-test-pagination-prev]')
+      await expect(prevLink).toBeVisible()
+
+      const articleCount = await getArticleCount(page)
+      assert.equal(articleCount, 1, 'Page 2 should show exactly 1 article (21 total, 20 per page)')
+
+      progress.verifiedPage2 = true
+    },
+  })
+
+  actions.set('navigate-back-to-page1', {
+    isAvailable: async (page) => {
+      if (!progress.verifiedPage2) return false
+      if (progress.navigatedBackToPage1) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      await clickAndWaitForPageReload(page, page.locator('[data-test-pagination-prev]'))
+      progress.navigatedBackToPage1 = true
+    },
+  })
+
+  actions.set('verify-back-on-page1', {
+    isAvailable: async (page) => {
+      if (!progress.navigatedBackToPage1) return false
+      if (progress.verifiedBackOnPage1) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      const info = page.locator('[data-test-pagination-info]')
+      const infoText = await info.textContent()
+      assert.ok(infoText?.includes('Page 1'), `Expected page info to include "Page 1", got "${infoText}"`)
+
+      const articleCount = await getArticleCount(page)
+      assert.equal(articleCount, 20, 'Page 1 should show 20 articles after navigating back')
+
+      progress.verifiedBackOnPage1 = true
+    },
+  })
+
+  actions.set('delete-pagination-articles', {
+    isAvailable: async (page) => {
+      if (!progress.verifiedBackOnPage1) return false
+      if (progress.paginationArticlesDeleted) return false
+      return isOnPage(page, 'page-queue')
+    },
+    execute: async (page) => {
+      const targetCount = TEST_URLS.length
+      const countLocator = page.locator('[data-test-article-count]')
+      await expect(countLocator).toBeVisible()
+      let totalText = await countLocator.textContent()
+      assert.ok(totalText, 'article count element should have text content')
+      let total = parseInt(totalText, 10)
+
+      while (total > targetCount) {
+        await clickAndWaitForPageReload(page, page.locator('[data-test-action="delete"]').first())
+        await expect(countLocator).toBeVisible()
+        totalText = await countLocator.textContent()
+        assert.ok(totalText, 'article count element should have text content')
+        total = parseInt(totalText, 10)
+      }
+
+      progress.paginationArticlesDeleted = true
+    },
+  })
+
   actions.set('verify-newest-first-order', {
     isAvailable: async (page) => {
-      if (!progress.allArticlesAdded) return false
+      if (!progress.paginationArticlesDeleted) return false
       if (progress.verifiedNewestFirst) return false
       return isOnPage(page, 'page-queue')
     },

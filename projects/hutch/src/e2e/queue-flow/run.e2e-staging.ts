@@ -55,7 +55,7 @@ function createStagingCleanupActions(
 }
 
 test.describe('Queue management flow (staging)', () => {
-  test('signup, logout, login, add articles, sort, read, delete, archive, verify tabs', async ({ page, baseURL }) => {
+  test('signup, logout, login, add articles, pagination, sort, read, delete, archive, verify tabs', async ({ page, baseURL }) => {
     const authData: AuthData = {
       email: 'e2e-test@example.com',
       password: 'test-password-123',
@@ -73,6 +73,13 @@ test.describe('Queue management flow (staging)', () => {
 
     const queueProgress: QueueProgress = {
       allArticlesAdded: false,
+      paginationArticlesAdded: false,
+      verifiedPage1HasNext: false,
+      navigatedToPage2: false,
+      verifiedPage2: false,
+      navigatedBackToPage1: false,
+      verifiedBackOnPage1: false,
+      paginationArticlesDeleted: false,
       verifiedNewestFirst: false,
       sortedOldestFirst: false,
       verifiedOldestFirst: false,
@@ -99,6 +106,7 @@ test.describe('Queue management flow (staging)', () => {
         `${baseURL}/privacy?v=4`,
       ],
       titles: ['Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch'],
+      paginationUrls: Array.from({ length: 17 }, (_, i) => `${baseURL}/privacy?p=${i + 1}`),
     }
 
     const allActions = groupOf(
@@ -120,7 +128,7 @@ test.describe('Queue management flow (staging)', () => {
     )
 
     const client = new HATEOASClient(page, navigationHandler)
-    const config: NavigationConfig = { maxNavigations: 60 }
+    const config: NavigationConfig = { maxNavigations: 85 }
 
     assert(baseURL, "baseURL must be defined — set STAGING_URL env var")
     const result = await client.navigate(baseURL, config)
