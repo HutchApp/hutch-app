@@ -119,7 +119,7 @@ function renderLinks(items: ReadingListItem[]) {
 
 		const itemLink = document.createElement("a");
 		itemLink.className = "list-view__item";
-		itemLink.href = item.url;
+		itemLink.href = item.readUrl ?? item.url;
 		itemLink.target = "_blank";
 		itemLink.rel = "noopener noreferrer";
 

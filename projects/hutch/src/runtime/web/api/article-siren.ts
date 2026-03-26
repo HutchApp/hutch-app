@@ -1,7 +1,12 @@
 import type { SavedArticle } from "../../domain/article/article.types";
-import type { SirenEntity, SirenSubEntity } from "./siren";
+import type { SirenEntity, SirenLink, SirenSubEntity } from "./siren";
 
 export function toArticleSubEntity(article: SavedArticle): SirenSubEntity {
+	const links: SirenLink[] = [{ rel: ["self"], href: `/queue/${article.id}` }];
+	if (article.content) {
+		links.push({ rel: ["read"], href: `/queue/${article.id}/read` });
+	}
+
 	return {
 		class: ["article"],
 		rel: ["item"],
@@ -18,7 +23,7 @@ export function toArticleSubEntity(article: SavedArticle): SirenSubEntity {
 			savedAt: article.savedAt.toISOString(),
 			readAt: article.readAt?.toISOString() ?? null,
 		},
-		links: [{ rel: ["self"], href: `/queue/${article.id}` }],
+		links,
 		actions: [
 			{
 				name: "delete",
