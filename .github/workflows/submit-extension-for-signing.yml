@@ -57,6 +57,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add projects/extensions/firefox-extension/package.json projects/extensions/firefox-extension/src/runtime/manifest.json
           git commit -m "chore: bump extension version to $(node -p "require('./projects/extensions/firefox-extension/package.json').version")"
+          git pull --rebase origin main
           git push origin main
 
       - name: Create source code archive for AMO review
