@@ -35,7 +35,7 @@ import { initExportRoutes } from "./web/pages/export/export.page";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage, PLANNED_FEATURE_IDS } from "./web/pages/home";
-import type { CastVote, GetVoteSummaries, RemoveVote } from "./providers/feature-vote/feature-vote.types";
+import type { GetVoteSummaries, ToggleVote } from "./providers/feature-vote/feature-vote.types";
 import { FeatureIdSchema } from "./providers/feature-vote/feature-vote.schema";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
@@ -76,8 +76,7 @@ interface AppDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
-	castVote: CastVote;
-	removeVote: RemoveVote;
+	toggleVote: ToggleVote;
 	getVoteSummaries: GetVoteSummaries;
 }
 
@@ -147,10 +146,15 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.get("/", async (req: Request, res: Response) => {
 		const userCount = await countUsers().catch(() => 0);
 		const isLoggedIn = !!req.userId;
+		const emptyVoteSummaries = PLANNED_FEATURE_IDS.map((featureId) => ({
+			featureId,
+			voteCount: 0,
+			hasVoted: false,
+		}));
 		const voteSummaries = await deps.getVoteSummaries({
 			featureIds: PLANNED_FEATURE_IDS,
 			userId: req.userId,
-		});
+		}).catch(() => emptyVoteSummaries);
 		const result = HomePage({ userCount, staticBaseUrl, isLoggedIn, voteSummaries }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
@@ -164,12 +168,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		const featureId = parsed.data;
 		const userId = req.userId!;
 
-		const [summary] = await deps.getVoteSummaries({ featureIds: [featureId], userId });
-		if (summary?.hasVoted) {
-			await deps.removeVote({ featureId, userId });
-		} else {
-			await deps.castVote({ featureId, userId });
-		}
+		await deps.toggleVote({ featureId, userId });
 		res.redirect(303, "/#roadmap");
 	});
 

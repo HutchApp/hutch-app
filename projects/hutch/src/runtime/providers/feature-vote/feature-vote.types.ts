@@ -19,6 +19,11 @@ export type RemoveVote = (params: {
 	userId: UserId;
 }) => Promise<void>;
 
+export type ToggleVote = (params: {
+	featureId: FeatureId;
+	userId: UserId;
+}) => Promise<void>;
+
 export type GetVoteSummaries = (params: {
 	featureIds: FeatureId[];
 	userId?: UserId;

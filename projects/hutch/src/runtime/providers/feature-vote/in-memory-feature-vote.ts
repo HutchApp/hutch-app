@@ -4,11 +4,13 @@ import type {
 	FeatureId,
 	GetVoteSummaries,
 	RemoveVote,
+	ToggleVote,
 } from "./feature-vote.types";
 
 export function initInMemoryFeatureVote(): {
 	castVote: CastVote;
 	removeVote: RemoveVote;
+	toggleVote: ToggleVote;
 	getVoteSummaries: GetVoteSummaries;
 } {
 	const votes = new Map<string, Set<UserId>>();
@@ -30,6 +32,15 @@ export function initInMemoryFeatureVote(): {
 		voteSet(featureId).delete(userId);
 	};
 
+	const toggleVote: ToggleVote = async ({ featureId, userId }) => {
+		const set = voteSet(featureId);
+		if (set.has(userId)) {
+			set.delete(userId);
+		} else {
+			set.add(userId);
+		}
+	};
+
 	const getVoteSummaries: GetVoteSummaries = async ({ featureIds, userId }) => {
 		return featureIds.map((featureId) => {
 			const set = votes.get(featureId) ?? new Set();
@@ -41,5 +52,5 @@ export function initInMemoryFeatureVote(): {
 		});
 	};
 
-	return { castVote, removeVote, getVoteSummaries };
+	return { castVote, removeVote, toggleVote, getVoteSummaries };
 }

@@ -9,6 +9,7 @@ import type {
 	CastVote,
 	GetVoteSummaries,
 	RemoveVote,
+	ToggleVote,
 } from "./feature-vote.types";
 
 export function initDynamoDbFeatureVote(deps: {
@@ -17,6 +18,7 @@ export function initDynamoDbFeatureVote(deps: {
 }): {
 	castVote: CastVote;
 	removeVote: RemoveVote;
+	toggleVote: ToggleVote;
 	getVoteSummaries: GetVoteSummaries;
 } {
 	const { client, tableName } = deps;
@@ -37,6 +39,27 @@ export function initDynamoDbFeatureVote(deps: {
 				Key: { featureId, userId },
 			}),
 		);
+	};
+
+	const toggleVote: ToggleVote = async ({ featureId, userId }) => {
+		try {
+			await client.send(
+				new PutCommand({
+					TableName: tableName,
+					Item: { featureId, userId },
+					ConditionExpression: "attribute_not_exists(featureId)",
+				}),
+			);
+		} catch (error: unknown) {
+			if (
+				error instanceof Error &&
+				error.name === "ConditionalCheckFailedException"
+			) {
+				await removeVote({ featureId, userId });
+				return;
+			}
+			throw error;
+		}
 	};
 
 	const getVoteSummaries: GetVoteSummaries = async ({ featureIds, userId }) => {
@@ -74,5 +97,5 @@ export function initDynamoDbFeatureVote(deps: {
 		}));
 	};
 
-	return { castVote, removeVote, getVoteSummaries };
+	return { castVote, removeVote, toggleVote, getVoteSummaries };
 }
