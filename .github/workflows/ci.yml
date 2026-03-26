@@ -201,7 +201,7 @@ jobs:
     needs: [all-tests, detect-changes]
     permissions:
       contents: write
-    uses: ./.github/workflows/submit-extension-for-signing.yml
+    uses: ./.github/workflows/submit-ff-extension-for-signing.yml
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
