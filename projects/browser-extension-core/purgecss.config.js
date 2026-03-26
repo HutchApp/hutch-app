@@ -5,6 +5,6 @@ module.exports = {
   ...base,
   content: [
     ...base.content,
-    '../extensions/**/src/**/*.template.html',
+    '../extensions/*/src/**/*.template.html',
   ],
 };

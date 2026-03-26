@@ -2,6 +2,7 @@
 
 // Chrome 137+ removed --load-extension support in branded Google Chrome.
 // E2E tests need Chrome for Testing (CfT) which still supports it.
+// We also install the matching ChromeDriver so Selenium uses a compatible version.
 
 const { execSync } = require("node:child_process");
 const { writeFileSync, mkdirSync } = require("node:fs");
@@ -11,15 +12,26 @@ const projectRoot = join(__dirname, "..");
 const cacheDir = join(projectRoot, ".cache", "chrome");
 mkdirSync(cacheDir, { recursive: true });
 
-const output = execSync(
+const chromeOutput = execSync(
 	`npx @puppeteer/browsers install chrome@stable --path "${cacheDir}"`,
 	{ encoding: "utf8", timeout: 120_000, stdio: ["pipe", "pipe", "inherit"] },
 );
 
 // Output format: "chrome@{version} {path}" — path may contain spaces
-const lastLine = output.trim().split("\n").pop();
-const binaryPath = lastLine.replace(/^chrome@\S+\s+/, "");
+const chromeLastLine = chromeOutput.trim().split("\n").pop();
+const chromeBinaryPath = chromeLastLine.replace(/^chrome@\S+\s+/, "");
+const chromeVersion = chromeLastLine.match(/^chrome@(\S+)/)[1];
 
-writeFileSync(join(cacheDir, "binary-path"), binaryPath, "utf8");
+writeFileSync(join(cacheDir, "binary-path"), chromeBinaryPath, "utf8");
+console.log(`Chrome for Testing: ${chromeBinaryPath}`);
 
-console.log(`Chrome for Testing: ${binaryPath}`);
+const driverOutput = execSync(
+	`npx @puppeteer/browsers install chromedriver@${chromeVersion} --path "${cacheDir}"`,
+	{ encoding: "utf8", timeout: 120_000, stdio: ["pipe", "pipe", "inherit"] },
+);
+
+const driverLastLine = driverOutput.trim().split("\n").pop();
+const driverBinaryPath = driverLastLine.replace(/^chromedriver@\S+\s+/, "");
+
+writeFileSync(join(cacheDir, "driver-path"), driverBinaryPath, "utf8");
+console.log(`ChromeDriver: ${driverBinaryPath}`);
