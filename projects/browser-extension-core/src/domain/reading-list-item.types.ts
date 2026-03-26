@@ -7,4 +7,5 @@ export interface ReadingListItem {
 	url: string;
 	title: string;
 	savedAt: Date;
+	readUrl?: string;
 }
