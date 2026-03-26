@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
@@ -166,7 +167,8 @@ export function createApp(dependencies: AppDependencies): Express {
 			return;
 		}
 		const featureId = parsed.data;
-		const userId = req.userId!;
+		assert(req.userId, "requireAuth middleware must set userId");
+		const userId = req.userId;
 
 		await deps.toggleVote({ featureId, userId });
 		res.redirect(303, "/#roadmap");
