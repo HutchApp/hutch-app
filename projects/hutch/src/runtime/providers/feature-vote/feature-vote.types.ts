@@ -9,16 +9,6 @@ export interface FeatureVoteSummary {
 	hasVoted: boolean;
 }
 
-export type CastVote = (params: {
-	featureId: FeatureId;
-	userId: UserId;
-}) => Promise<void>;
-
-export type RemoveVote = (params: {
-	featureId: FeatureId;
-	userId: UserId;
-}) => Promise<void>;
-
 export type ToggleVote = (params: {
 	featureId: FeatureId;
 	userId: UserId;

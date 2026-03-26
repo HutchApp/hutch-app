@@ -6,40 +6,29 @@ import {
 	BatchGetCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type {
-	CastVote,
+	FeatureId,
 	GetVoteSummaries,
-	RemoveVote,
 	ToggleVote,
 } from "./feature-vote.types";
+import type { UserId } from "../../domain/user/user.types";
 
 export function initDynamoDbFeatureVote(deps: {
 	client: DynamoDBDocumentClient;
 	tableName: string;
 }): {
-	castVote: CastVote;
-	removeVote: RemoveVote;
 	toggleVote: ToggleVote;
 	getVoteSummaries: GetVoteSummaries;
 } {
 	const { client, tableName } = deps;
 
-	const castVote: CastVote = async ({ featureId, userId }) => {
-		await client.send(
-			new PutCommand({
-				TableName: tableName,
-				Item: { featureId, userId },
-			}),
-		);
-	};
-
-	const removeVote: RemoveVote = async ({ featureId, userId }) => {
+	async function removeVote({ featureId, userId }: { featureId: FeatureId; userId: UserId }) {
 		await client.send(
 			new DeleteCommand({
 				TableName: tableName,
 				Key: { featureId, userId },
 			}),
 		);
-	};
+	}
 
 	const toggleVote: ToggleVote = async ({ featureId, userId }) => {
 		try {
@@ -97,5 +86,5 @@ export function initDynamoDbFeatureVote(deps: {
 		}));
 	};
 
-	return { castVote, removeVote, toggleVote, getVoteSummaries };
+	return { toggleVote, getVoteSummaries };
 }

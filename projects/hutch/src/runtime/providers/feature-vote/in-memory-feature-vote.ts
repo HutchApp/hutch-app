@@ -1,15 +1,11 @@
 import type { UserId } from "../../domain/user/user.types";
 import type {
-	CastVote,
 	FeatureId,
 	GetVoteSummaries,
-	RemoveVote,
 	ToggleVote,
 } from "./feature-vote.types";
 
 export function initInMemoryFeatureVote(): {
-	castVote: CastVote;
-	removeVote: RemoveVote;
 	toggleVote: ToggleVote;
 	getVoteSummaries: GetVoteSummaries;
 } {
@@ -23,14 +19,6 @@ export function initInMemoryFeatureVote(): {
 		}
 		return set;
 	}
-
-	const castVote: CastVote = async ({ featureId, userId }) => {
-		voteSet(featureId).add(userId);
-	};
-
-	const removeVote: RemoveVote = async ({ featureId, userId }) => {
-		voteSet(featureId).delete(userId);
-	};
 
 	const toggleVote: ToggleVote = async ({ featureId, userId }) => {
 		const set = voteSet(featureId);
@@ -52,5 +40,5 @@ export function initInMemoryFeatureVote(): {
 		});
 	};
 
-	return { castVote, removeVote, toggleVote, getVoteSummaries };
+	return { toggleVote, getVoteSummaries };
 }
