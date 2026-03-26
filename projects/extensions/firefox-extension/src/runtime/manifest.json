@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Hutch",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Where reading still matters",
   "browser_specific_settings": {
     "gecko": {
