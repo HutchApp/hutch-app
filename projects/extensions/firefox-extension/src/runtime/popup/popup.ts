@@ -113,6 +113,9 @@ function renderLinks(items: ReadingListItem[]) {
 	currentPage = paginated.currentPage;
 
 	for (const item of paginated.items) {
+		const row = document.createElement("div");
+		row.className = "list-view__row";
+
 		const itemLink = document.createElement("a");
 		itemLink.className = "list-view__item";
 		itemLink.href = item.url;
@@ -149,14 +152,16 @@ function renderLinks(items: ReadingListItem[]) {
 		time.className = "list-view__time";
 		time.textContent = relativeTime(new Date(item.savedAt));
 
+		itemLink.appendChild(avatar);
+		itemLink.appendChild(textContainer);
+		itemLink.appendChild(time);
+
 		const deleteButton = document.createElement("button");
 		deleteButton.className = "list-view__delete";
 		deleteButton.textContent = "\u00D7";
 		deleteButton.title = "Remove from list";
 		deleteButton.setAttribute("aria-label", "Remove from list");
-		deleteButton.addEventListener("click", async (e) => {
-			e.preventDefault();
-			e.stopPropagation();
+		deleteButton.addEventListener("click", async () => {
 			const result = (await send({
 				type: "remove-item",
 				id: item.id,
@@ -168,11 +173,9 @@ function renderLinks(items: ReadingListItem[]) {
 			}
 		});
 
-		itemLink.appendChild(avatar);
-		itemLink.appendChild(textContainer);
-		itemLink.appendChild(time);
-		itemLink.appendChild(deleteButton);
-		linkList.appendChild(itemLink);
+		row.appendChild(itemLink);
+		row.appendChild(deleteButton);
+		linkList.appendChild(row);
 	}
 
 	renderPagination(paginated.totalPages, paginated.visiblePages);
