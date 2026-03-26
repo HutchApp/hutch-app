@@ -1,6 +1,7 @@
 import type { UserId } from "../../domain/user/user.types";
+import type { FeatureId } from "./feature-vote.schema";
 
-export type FeatureId = string & { readonly __brand: "FeatureId" };
+export type { FeatureId };
 
 export interface FeatureVoteSummary {
 	featureId: FeatureId;

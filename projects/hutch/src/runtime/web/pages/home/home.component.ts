@@ -4,21 +4,12 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { HOME_PAGE_STYLES } from "./home.styles";
-import type { FeatureId, FeatureVoteSummary } from "../../../providers/feature-vote/feature-vote.types";
+import { FeatureIdSchema, type FeatureId } from "../../../providers/feature-vote/feature-vote.schema";
+import type { FeatureVoteSummary } from "../../../providers/feature-vote/feature-vote.types";
 
 const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8");
 
 const FOUNDING_MEMBER_LIMIT = 100;
-
-export const PLANNED_FEATURE_IDS: FeatureId[] = [
-	"email-link-import" as FeatureId,
-	"ai-queue-filter" as FeatureId,
-	"highlights-notes" as FeatureId,
-	"full-text-search" as FeatureId,
-	"offline-reading" as FeatureId,
-	"text-to-speech" as FeatureId,
-	"newsletter-inbox" as FeatureId,
-];
 
 interface PlannedFeatureDefinition {
 	id: FeatureId;
@@ -28,41 +19,43 @@ interface PlannedFeatureDefinition {
 
 const PLANNED_FEATURES: PlannedFeatureDefinition[] = [
 	{
-		id: "email-link-import" as FeatureId,
+		id: FeatureIdSchema.parse("email-link-import"),
 		name: "Email Link Import",
 		description: "Import links from your email to Hutch queue",
 	},
 	{
-		id: "ai-queue-filter" as FeatureId,
+		id: FeatureIdSchema.parse("ai-queue-filter"),
 		name: "Filter your queue using AI based on your preferences",
 		description: "Allow Hutch to select the most relevant links for you based on your goals",
 	},
 	{
-		id: "highlights-notes" as FeatureId,
+		id: FeatureIdSchema.parse("highlights-notes"),
 		name: "Highlights & Notes",
 		description: "Highlight in multiple colours, add inline notes, export as Markdown.",
 	},
 	{
-		id: "full-text-search" as FeatureId,
+		id: FeatureIdSchema.parse("full-text-search"),
 		name: "Full-Text Search",
 		description: "Search across titles and article body text. Filter by tags, read status, and date.",
 	},
 	{
-		id: "offline-reading" as FeatureId,
+		id: FeatureIdSchema.parse("offline-reading"),
 		name: "Offline Reading",
 		description: "Articles auto-download for offline access. Your queue persists even if the original page disappears.",
 	},
 	{
-		id: "text-to-speech" as FeatureId,
+		id: FeatureIdSchema.parse("text-to-speech"),
 		name: "Text-to-Speech",
 		description: "Listen to articles with natural TTS. Adjustable speed, background playback.",
 	},
 	{
-		id: "newsletter-inbox" as FeatureId,
+		id: FeatureIdSchema.parse("newsletter-inbox"),
 		name: "Newsletter Inbox",
 		description: "Unique email alias routes newsletters straight into your reading queue.",
 	},
 ];
+
+export const PLANNED_FEATURE_IDS: FeatureId[] = PLANNED_FEATURES.map((f) => f.id);
 
 export function HomePage(params: {
 	userCount: number;

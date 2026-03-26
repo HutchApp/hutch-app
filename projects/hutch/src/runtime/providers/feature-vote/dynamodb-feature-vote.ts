@@ -7,7 +7,6 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type {
 	CastVote,
-	FeatureVoteSummary,
 	GetVoteSummaries,
 	RemoveVote,
 } from "./feature-vote.types";
@@ -41,38 +40,38 @@ export function initDynamoDbFeatureVote(deps: {
 	};
 
 	const getVoteSummaries: GetVoteSummaries = async ({ featureIds, userId }) => {
-		const summaries: FeatureVoteSummary[] = [];
+		const countResults = await Promise.all(
+			featureIds.map((featureId) =>
+				client.send(
+					new QueryCommand({
+						TableName: tableName,
+						KeyConditionExpression: "featureId = :fid",
+						ExpressionAttributeValues: { ":fid": featureId },
+						Select: "COUNT",
+					}),
+				),
+			),
+		);
 
-		for (const featureId of featureIds) {
-			const result = await client.send(
-				new QueryCommand({
-					TableName: tableName,
-					KeyConditionExpression: "featureId = :fid",
-					ExpressionAttributeValues: { ":fid": featureId },
-					Select: "COUNT",
+		let votedFeatureIds = new Set<string>();
+		if (userId) {
+			const keys = featureIds.map((featureId) => ({ featureId, userId }));
+			const batchResult = await client.send(
+				new BatchGetCommand({
+					RequestItems: {
+						[tableName]: { Keys: keys },
+					},
 				}),
 			);
-
-			const voteCount = result.Count ?? 0;
-			let hasVoted = false;
-
-			if (userId) {
-				const keys = [{ featureId, userId }];
-				const batchResult = await client.send(
-					new BatchGetCommand({
-						RequestItems: {
-							[tableName]: { Keys: keys },
-						},
-					}),
-				);
-				const items = batchResult.Responses?.[tableName] ?? [];
-				hasVoted = items.length > 0;
-			}
-
-			summaries.push({ featureId, voteCount, hasVoted });
+			const items = batchResult.Responses?.[tableName] ?? [];
+			votedFeatureIds = new Set(items.map((item) => String(item.featureId)));
 		}
 
-		return summaries;
+		return featureIds.map((featureId, index) => ({
+			featureId,
+			voteCount: countResults[index].Count ?? 0,
+			hasVoted: votedFeatureIds.has(featureId),
+		}));
 	};
 
 	return { castVote, removeVote, getVoteSummaries };
