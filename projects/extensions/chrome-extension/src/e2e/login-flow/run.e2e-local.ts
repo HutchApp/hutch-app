@@ -4,7 +4,7 @@ import type http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { Builder, By } from "selenium-webdriver";
-import { Options, type Driver as ChromeDriver } from "selenium-webdriver/chrome";
+import { Options, ServiceBuilder, type Driver as ChromeDriver } from "selenium-webdriver/chrome";
 import { FlowRunner, ExtensionStateHandler } from "browser-extension-core/e2e";
 import { createSeleniumElementQueries, createSeleniumNavigation } from "../selenium-adapter";
 import { createLoginActions } from "./login-actions";
@@ -12,6 +12,7 @@ import { createSaveLinkActions } from "./save-link-actions";
 
 const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
 const CFT_PATH_FILE = path.resolve(__dirname, "../../../.cache/chrome/binary-path");
+const CFT_DRIVER_PATH_FILE = path.resolve(__dirname, "../../../.cache/chrome/driver-path");
 
 const TEST_EMAIL = "e2e-test@example.com";
 const TEST_PASSWORD = "testpassword123";
@@ -104,9 +105,14 @@ async function runTest() {
 		fs.readFileSync(CFT_PATH_FILE, "utf8").trim(),
 	);
 
+	const serviceBuilder = new ServiceBuilder(
+		fs.readFileSync(CFT_DRIVER_PATH_FILE, "utf8").trim(),
+	);
+
 	const driver = (await new Builder()
 		.forBrowser("chrome")
 		.setChromeOptions(options)
+		.setChromeService(serviceBuilder)
 		.build()) as ChromeDriver;
 
 	try {

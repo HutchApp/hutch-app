@@ -1,3 +1,4 @@
 packages:
   - 'projects/*'
+  - 'projects/extensions/*'
   - 'src/packages/*'

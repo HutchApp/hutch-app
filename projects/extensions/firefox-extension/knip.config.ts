@@ -1,4 +1,4 @@
-import baseConfig from "../../knip.config.base";
+import baseConfig from "../../../knip.config.base";
 import type { KnipConfig } from "knip";
 
 const { workspaces: _workspaces, ...base } = baseConfig;
@@ -11,11 +11,7 @@ export default {
 		"src/infra/**",
 		// CLI scripts (not entry points)
 		"scripts/bump-version.js",
-		"scripts/install-chrome-for-testing.js",
-		"scripts/publish-to-s3.js",
-		"scripts/submit-to-chrome-web-store.js",
-		// PurgeCSS config loaded via CLI, not imported in source
-		"purgecss.config.js",
+		"scripts/sync-signed-extension.js",
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),
@@ -24,6 +20,8 @@ export default {
 		// Used by Pulumi infra (compiled separately)
 		"@pulumi/aws",
 		"@pulumi/pulumi",
+		// Used via compile and ext:run scripts
+		"web-ext",
 		// Workspace dependencies — knip can't trace through esbuild-bundled entry points
 		"browser-extension-core",
 		"@packages/hutch-logger",
@@ -33,8 +31,6 @@ export default {
 		"@packages/check-unused-css",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)
 		"@packages/test-phase-runner",
-		// Bundled by esbuild into browser extension entry points
-		"webextension-polyfill",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),
@@ -42,14 +38,17 @@ export default {
 		"nx",
 		// Used via check-infra script
 		"pulumi",
+		// Used via compile and ext:run scripts
+		"web-ext",
 	],
 	entry: [
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)
 		"src/runtime/background/background.ts",
 		"src/runtime/popup/popup.ts",
 		"src/runtime/content/shortcut.ts",
-		"src/runtime/offscreen/offscreen.ts",
 		// E2E test entry points (run via node --test)
 		"src/e2e/**/run.e2e-local.ts",
+		// Exported for use by hutch web app (install page)
+		"s3-config.js",
 	],
 } satisfies KnipConfig;

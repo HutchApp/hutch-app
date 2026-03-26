@@ -260,7 +260,7 @@ Use a **4px base unit** with the following standard increments:
 
 ### Browser Extension
 
-- The toolbar icon is the standalone H mark at 16×16 / 32×32px (see `projects/firefox-extension/src/icons/`).
+- The toolbar icon is the standalone H mark at 16×16 / 32×32px (see `projects/extensions/firefox-extension/src/icons/`).
 - The popup should feel like a utility — fast, minimal, single-purpose. Open → save → close. Width: `350px`.
 - Respect the user's browser theme. Match system light/dark mode via `prefers-color-scheme`.
 - No marketing or upsells inside the extension popup. It's a tool, not a billboard.

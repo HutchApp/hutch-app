@@ -38,13 +38,13 @@ jobs:
 
       - name: Deploy extension bucket infrastructure
         run: pulumi up --stack prod --yes
-        working-directory: projects/firefox-extension
+        working-directory: projects/extensions/firefox-extension
 
       - name: Compile bump-version script
         run: pnpm --filter firefox-extension exec tsc --outDir dist --rootDir src --module commonjs --esModuleInterop --skipLibCheck src/bump-version.ts
 
       - name: Bump extension version
-        run: node projects/firefox-extension/scripts/bump-version.js patch
+        run: node projects/extensions/firefox-extension/scripts/bump-version.js patch
 
       - name: Build and package extension
         run: npx nx run-many --target=compile --projects=browser-extension-core,firefox-extension
@@ -55,17 +55,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add projects/firefox-extension/package.json projects/firefox-extension/src/runtime/manifest.json
-          git commit -m "chore: bump extension version to $(node -p "require('./projects/firefox-extension/package.json').version")"
+          git add projects/extensions/firefox-extension/package.json projects/extensions/firefox-extension/src/runtime/manifest.json
+          git commit -m "chore: bump extension version to $(node -p "require('./projects/extensions/firefox-extension/package.json').version")"
           git push origin main
 
       - name: Create source code archive for AMO review
         run: |
           zip -r /tmp/extension-source.zip \
-            projects/firefox-extension/src/ \
-            projects/firefox-extension/scripts/build-extension.js \
-            projects/firefox-extension/package.json \
-            projects/firefox-extension/tsconfig.json \
+            projects/extensions/firefox-extension/src/ \
+            projects/extensions/firefox-extension/scripts/build-extension.js \
+            projects/extensions/firefox-extension/package.json \
+            projects/extensions/firefox-extension/tsconfig.json \
             projects/browser-extension-core/src/ \
             projects/browser-extension-core/package.json \
             projects/browser-extension-core/tsconfig.json \

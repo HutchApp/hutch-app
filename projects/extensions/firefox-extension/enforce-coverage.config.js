@@ -1,8 +1,8 @@
-const baseConfig = require('../../enforce-coverage.config.base');
+const baseConfig = require('../../../enforce-coverage.config.base');
 const path = require('path')
 
 // All testable business logic moved to browser-extension-core.
-// Chrome-extension only contains browser-specific bootstrap code
+// Firefox-extension only contains browser-specific bootstrap code
 // (entry points excluded below) and *.browser.ts files (excluded by base config).
 const config = {
   ...baseConfig,
@@ -17,7 +17,6 @@ const config = {
     'src/runtime/background/background.ts',
     'src/runtime/popup/popup.ts',
     'src/runtime/content/shortcut.ts',
-    'src/runtime/offscreen/offscreen.ts',
     // E2E tests run with selenium, not covered by c8
     'src/e2e/**',
   ],

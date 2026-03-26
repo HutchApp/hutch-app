@@ -70,27 +70,27 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  projects/chrome-extension:
+  projects/extensions/chrome-extension:
     dependencies:
       '@packages/hutch-logger':
         specifier: workspace:*
-        version: link:../../src/packages/hutch-logger
+        version: link:../../../src/packages/hutch-logger
       browser-extension-core:
         specifier: workspace:*
-        version: link:../browser-extension-core
+        version: link:../../browser-extension-core
       webextension-polyfill:
         specifier: 0.12.0
         version: 0.12.0
     devDependencies:
       '@packages/check-unused-css':
         specifier: workspace:*
-        version: link:../../src/packages/check-unused-css
+        version: link:../../../src/packages/check-unused-css
       '@packages/hutch-test-app':
         specifier: workspace:*
-        version: link:../../src/packages/hutch-test-app
+        version: link:../../../src/packages/hutch-test-app
       '@packages/test-phase-runner':
         specifier: workspace:*
-        version: link:../../src/packages/test-phase-runner
+        version: link:../../../src/packages/test-phase-runner
       '@pulumi/aws':
         specifier: 7.20.0
         version: 7.20.0(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
@@ -128,24 +128,24 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  projects/firefox-extension:
+  projects/extensions/firefox-extension:
     dependencies:
       '@packages/hutch-logger':
         specifier: workspace:*
-        version: link:../../src/packages/hutch-logger
+        version: link:../../../src/packages/hutch-logger
       browser-extension-core:
         specifier: workspace:*
-        version: link:../browser-extension-core
+        version: link:../../browser-extension-core
     devDependencies:
       '@packages/check-unused-css':
         specifier: workspace:*
-        version: link:../../src/packages/check-unused-css
+        version: link:../../../src/packages/check-unused-css
       '@packages/hutch-test-app':
         specifier: workspace:*
-        version: link:../../src/packages/hutch-test-app
+        version: link:../../../src/packages/hutch-test-app
       '@packages/test-phase-runner':
         specifier: workspace:*
-        version: link:../../src/packages/test-phase-runner
+        version: link:../../../src/packages/test-phase-runner
       '@pulumi/aws':
         specifier: 7.20.0
         version: 7.20.0(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
@@ -208,7 +208,7 @@ importers:
         version: link:../../src/packages/hutch-logger
       chrome-extension:
         specifier: workspace:*
-        version: link:../chrome-extension
+        version: link:../extensions/chrome-extension
       compression:
         specifier: 1.8.1
         version: 1.8.1
@@ -223,7 +223,7 @@ importers:
         version: 4.22.1
       firefox-extension:
         specifier: workspace:*
-        version: link:../firefox-extension
+        version: link:../extensions/firefox-extension
       handlebars:
         specifier: 4.7.8
         version: 4.7.8
