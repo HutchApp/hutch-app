@@ -95,9 +95,10 @@ export function createSaveLinkActions(config: {
 			);
 			const items = await driver.findElements(By.css(CSS_SELECTORS.listItemTitle));
 			const hrefs = await Promise.all(items.map(el => el.getAttribute("href")));
+			const readUrlPattern = /\/queue\/[a-f0-9]+\/read$/;
 			assert.ok(
-				hrefs.some(href => href === config.testUrl),
-				`Expected "${config.testUrl}" in list hrefs, but found: ${hrefs.join(", ")}`,
+				hrefs.some(href => href === config.testUrl || readUrlPattern.test(href)),
+				`Expected "${config.testUrl}" or a read URL in list hrefs, but found: ${hrefs.join(", ")}`,
 			);
 			config.progress.listVerified = true;
 		},

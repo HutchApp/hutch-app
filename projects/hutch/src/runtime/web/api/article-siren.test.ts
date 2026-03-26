@@ -49,9 +49,21 @@ describe("toArticleSubEntity", () => {
 				savedAt: "2026-03-04T10:00:00.000Z",
 				readAt: null,
 			},
-			links: [{ rel: ["self"], href: "/queue/test-article-id" }],
+			links: [
+				{ rel: ["self"], href: "/queue/test-article-id" },
+				{ rel: ["read"], href: "/queue/test-article-id/read" },
+			],
 			actions: [{ name: "delete", href: "/queue/test-article-id/delete", method: "POST" }],
 		});
+	});
+
+	it("omits read link when article has no content", () => {
+		const article = makeArticle({ content: undefined });
+		const subEntity = toArticleSubEntity(article);
+
+		expect(subEntity.links).toEqual([
+			{ rel: ["self"], href: "/queue/test-article-id" },
+		]);
 	});
 
 	it("maps readAt when present", () => {

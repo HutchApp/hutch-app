@@ -26,8 +26,14 @@ const SirenPropertiesSchema = z.object({
 	savedAt: z.string(),
 });
 
+interface SirenLink {
+	rel: string[];
+	href: string;
+}
+
 interface SirenSubEntity {
 	properties?: Record<string, unknown>;
+	links?: SirenLink[];
 	actions?: Array<{ name: string; href: string; method: string }>;
 }
 
@@ -41,15 +47,21 @@ export interface SirenReadingListDeps {
 	fetchFn: typeof fetch;
 }
 
-function toReadingListItem(entity: SirenSubEntity): ReadingListItem {
+function findLinkHref(entity: SirenSubEntity, rel: string): string | undefined {
+	return entity.links?.find((link) => link.rel.includes(rel))?.href;
+}
+
+function toReadingListItem(entity: SirenSubEntity, serverUrl: string): ReadingListItem {
 	assert(entity.properties, "Server response entity missing properties");
 	const props = SirenPropertiesSchema.parse(entity.properties);
+	const readHref = findLinkHref(entity, "read");
 	return {
 		// Zod validates id is a string; branded type narrowing is safe after schema validation
 		id: props.id as ReadingListItemId,
 		url: props.url,
 		title: props.title,
 		savedAt: new Date(props.savedAt),
+		readUrl: readHref ? `${serverUrl}${readHref}` : undefined,
 	};
 }
 
@@ -81,7 +93,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		}
 
 		const body = await response.json() as SirenSubEntity;
-		return { ok: true, item: toReadingListItem(body) };
+		return { ok: true, item: toReadingListItem(body, deps.serverUrl) };
 	};
 
 	const removeUrl: RemoveUrl = async (id) => {
@@ -118,7 +130,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 			return null;
 		}
 
-		return toReadingListItem(entities[0]);
+		return toReadingListItem(entities[0], deps.serverUrl);
 	};
 
 	const getAllItems: GetAllItems = async () => {
@@ -133,7 +145,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		}
 
 		const body = await response.json() as SirenResponse;
-		return (body.entities ?? []).map(toReadingListItem);
+		return (body.entities ?? []).map((entity) => toReadingListItem(entity, deps.serverUrl));
 	};
 
 	return { saveUrl, removeUrl, findByUrl, getAllItems };

@@ -35,6 +35,47 @@ describe("initSirenReadingList", () => {
 			expect(item.savedAt).toEqual(new Date(savedAt));
 		});
 
+		it("should include readUrl when server returns a read link", async () => {
+			const fetchFn = async () => new Response(JSON.stringify({
+				class: ["article"],
+				properties: {
+					id: "article-1",
+					url: "https://example.com/article",
+					title: "Article",
+					savedAt: "2026-01-15T10:00:00.000Z",
+				},
+				links: [
+					{ rel: ["self"], href: "/queue/article-1" },
+					{ rel: ["read"], href: "/queue/article-1/read" },
+				],
+			}), { status: 201 });
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			const result = await list.saveUrl({ url: "https://example.com/article", title: "Ignored" });
+			const item = (result as Extract<typeof result, { ok: true }>).item;
+
+			expect(item.readUrl).toBe("http://localhost:3000/queue/article-1/read");
+		});
+
+		it("should have undefined readUrl when server returns no read link", async () => {
+			const fetchFn = async () => new Response(JSON.stringify({
+				class: ["article"],
+				properties: {
+					id: "article-1",
+					url: "https://example.com/article",
+					title: "Article",
+					savedAt: "2026-01-15T10:00:00.000Z",
+				},
+				links: [{ rel: ["self"], href: "/queue/article-1" }],
+			}), { status: 201 });
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			const result = await list.saveUrl({ url: "https://example.com/article", title: "Ignored" });
+			const item = (result as Extract<typeof result, { ok: true }>).item;
+
+			expect(item.readUrl).toBeUndefined();
+		});
+
 		it("should throw when server returns an error", async () => {
 			const fetchFn = async () => new Response(null, { status: 422 });
 			const list = initSirenReadingList(createDeps(fetchFn));
@@ -163,6 +204,27 @@ describe("initSirenReadingList", () => {
 			const items = await list.getAllItems();
 
 			expect(items.map(i => i.url)).toEqual(["https://example.com/a", "https://example.com/b"]);
+		});
+
+		it("should include readUrl for items with read links", async () => {
+			const fetchFn = async () => new Response(JSON.stringify({
+				entities: [
+					{
+						properties: { id: "1", url: "https://example.com/a", title: "A", savedAt: "2026-01-15T10:00:00.000Z" },
+						links: [{ rel: ["self"], href: "/queue/1" }, { rel: ["read"], href: "/queue/1/read" }],
+					},
+					{
+						properties: { id: "2", url: "https://example.com/b", title: "B", savedAt: "2026-01-15T11:00:00.000Z" },
+						links: [{ rel: ["self"], href: "/queue/2" }],
+					},
+				],
+			}), { status: 200 });
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			const items = await list.getAllItems();
+
+			expect(items[0].readUrl).toBe("http://localhost:3000/queue/1/read");
+			expect(items[1].readUrl).toBeUndefined();
 		});
 
 		it("should return empty array when collection is empty", async () => {

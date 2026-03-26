@@ -134,7 +134,7 @@ function renderLinks(items: ReadingListItem[]) {
 
 		const link = document.createElement("a");
 		link.className = "list-view__item-title";
-		link.href = item.url;
+		link.href = item.readUrl ?? item.url;
 		link.textContent = item.title;
 		link.target = "_blank";
 		link.rel = "noopener noreferrer";
