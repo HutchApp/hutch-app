@@ -34,6 +34,8 @@ const driverOutput = execSync(
 );
 
 const driverLastLine = driverOutput.trim().split("\n").pop();
+const driverMatch = driverLastLine.match(/^chromedriver@(\S+)/);
+assert(driverMatch, `Unexpected chromedriver install output: ${driverLastLine}`);
 const driverBinaryPath = driverLastLine.replace(/^chromedriver@\S+\s+/, "");
 
 writeFileSync(join(cacheDir, "driver-path"), driverBinaryPath, "utf8");
