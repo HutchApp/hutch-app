@@ -364,6 +364,31 @@ describe("Queue routes", () => {
 			);
 		});
 
+		it("should link thumbnail to reader view when content exists", async () => {
+			const articleHtml = `
+			<html><head><title>Thumb Article</title><meta property="og:image" content="https://example.com/thumb.jpg"></head>
+			<body><article>
+				<h1>Thumb Article</h1>
+				<p>An article with enough content for readability to parse successfully.</p>
+				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
+			</article></body></html>`;
+
+			const fetchHtml = async (_url: string) => articleHtml;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const thumbnailLink = doc.querySelector(".queue-article__thumbnail")?.closest("a");
+			const titleLink = doc.querySelector("[data-test-article-title]");
+			expect(thumbnailLink?.getAttribute("href")).toBe(titleLink?.getAttribute("href"));
+		});
+
 		it("should not render thumbnail when page has no images", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);

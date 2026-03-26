@@ -25,7 +25,7 @@
       <div class="queue__list" data-test-article-list>
         {{#each articles}}
         <div class="queue-article{{unreadClass}}" data-test-article="{{id}}">
-          {{#if imageUrl}}<img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy">{{/if}}
+          {{#if imageUrl}}<a href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} tabindex="-1" aria-hidden="true"><img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy"></a>{{/if}}
           <div class="queue-article__content">
             <div class="queue-article__title-row">
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}

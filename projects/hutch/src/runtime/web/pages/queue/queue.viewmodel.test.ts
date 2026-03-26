@@ -279,12 +279,14 @@ describe("toQueueViewModel", () => {
 		expect(deleteAction?.url).toBe("/queue/art-1/delete");
 	});
 
-	it("should include status hidden field in status actions", () => {
+	it("should use GET method and reader view URL for mark-read action", () => {
 		const article = makeArticle({ status: "unread" });
 		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
 
 		const markReadAction = vm.articles[0].actions.find(a => a.testAction === "mark-read");
-		expect(markReadAction?.fields).toEqual([{ name: "status", value: "read" }]);
+		expect(markReadAction?.method).toBe("GET");
+		expect(markReadAction?.url).toBe("/queue/art-1/read");
+		expect(markReadAction?.fields).toEqual([]);
 	});
 
 	it("should have no hidden fields in delete action", () => {
@@ -295,11 +297,11 @@ describe("toQueueViewModel", () => {
 		expect(deleteAction?.fields).toEqual([]);
 	});
 
-	it("should set method to POST for all actions", () => {
+	it("should use GET for mark-read and POST for other actions", () => {
 		const article = makeArticle({ status: "unread" });
 		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
 
 		const methods = vm.articles[0].actions.map(a => a.method);
-		expect(methods).toEqual(["POST", "POST"]);
+		expect(methods).toEqual(["GET", "POST"]);
 	});
 });
