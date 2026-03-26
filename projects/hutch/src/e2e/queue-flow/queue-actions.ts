@@ -166,7 +166,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       await expect(prevLink).toBeVisible()
 
       const articleCount = await getArticleCount(page)
-      assert.ok(articleCount > 0, 'Page 2 should have at least 1 article')
+      assert.equal(articleCount, 1, 'Page 2 should show exactly 1 article (21 total, 20 per page)')
 
       progress.verifiedPage2 = true
     },
