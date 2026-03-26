@@ -196,17 +196,17 @@ jobs:
       - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
         working-directory: projects/hutch
 
-  ff-extension-deploy-to-prod:
-    if: needs.detect-changes.outputs.firefox-extension == 'true'
-    needs: [all-tests, detect-changes]
-    permissions:
-      contents: write
-    uses: ./.github/workflows/submit-ff-extension-for-signing.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+  # ff-extension-deploy-to-prod:
+  #   if: needs.detect-changes.outputs.firefox-extension == 'true'
+  #   needs: [all-tests, detect-changes]
+  #   permissions:
+  #     contents: write
+  #   uses: ./.github/workflows/submit-ff-extension-for-signing.yml
+  #   secrets:
+  #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #     AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+  #     AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
 
   chrome-extension-deploy-to-prod:
     if: needs.detect-changes.outputs.chrome-extension == 'true'
