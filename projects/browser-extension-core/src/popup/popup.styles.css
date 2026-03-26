@@ -314,21 +314,36 @@ body {
 }
 
 /* purgecss-ignore-start: applied dynamically in popup.ts when rendering saved links */
-.list-view__item {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--popup-border);
-  display: flex;
+
+/**
+ * 1. Row wrapper keeps the <a> and <button> as siblings (not nested),
+ *    which is valid HTML — buttons inside anchors are spec-invalid.
+ */
+.list-view__row {
+  display: flex; /* 1 */
   align-items: center;
-  gap: 10px;
+  border-bottom: 1px solid var(--popup-border);
   transition: background-color 0.1s ease;
 }
 
-.list-view__item:hover {
+.list-view__row:hover {
   background: var(--popup-item-hover);
 }
 
-.list-view__item:last-child {
+.list-view__row:last-child {
   border-bottom: none;
+}
+
+.list-view__item {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 /**
@@ -368,7 +383,7 @@ body {
   white-space: nowrap;
 }
 
-.list-view__item-title:hover {
+.list-view__row:hover .list-view__item-title {
   color: var(--popup-link-hover);
 }
 
@@ -397,6 +412,7 @@ body {
   color: var(--popup-delete);
   font-size: 16px;
   padding: 2px 6px;
+  margin-right: 10px;
   line-height: 1;
   border: none;
   border-radius: 4px;
@@ -406,8 +422,8 @@ body {
   transition: opacity 0.1s ease, background-color 0.1s ease;
 }
 
-.list-view__item:hover .list-view__delete,
-.list-view__item:focus-within .list-view__delete {
+.list-view__row:hover .list-view__delete,
+.list-view__row:focus-within .list-view__delete {
   opacity: 1;
 }
 

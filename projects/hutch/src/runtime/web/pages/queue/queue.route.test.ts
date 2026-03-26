@@ -286,6 +286,43 @@ describe("Queue routes", () => {
 		});
 	});
 
+	describe("Article URL link", () => {
+		it("should render site name as a link to the original URL", async () => {
+			const fetchHtml = async (_url: string) =>
+				`<html><head><meta property="og:site_name" content="Example Blog"></head><body><article><h1>Post</h1><p>Content here.</p></article></body></html>`;
+
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const urlLink = doc.querySelector("[data-test-article-url]");
+			expect(urlLink?.getAttribute("href")).toBe("https://example.com/article");
+			expect(urlLink?.getAttribute("target")).toBe("_blank");
+			expect(urlLink?.textContent).toBe("Example Blog");
+		});
+
+		it("should not render URL link when siteName is empty", async () => {
+			const skipFreshness: RefreshArticleIfStale = async () => ({ action: "skip" });
+			const { app, auth } = createTestApp({ refreshArticleIfStale: skipFreshness });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/existing" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-article-url]")).toBeNull();
+		});
+	});
+
 	describe("Action forms", () => {
 		it("should render action forms from view model for each article", async () => {
 			const { app, auth } = createTestApp();

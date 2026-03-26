@@ -194,6 +194,16 @@
   color: var(--primary);
 }
 
+.queue-article__url {
+  color: var(--muted-foreground);
+  text-decoration: none;
+}
+
+.queue-article__url:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
 .queue-article__meta {
   font-size: 0.8125rem;
   color: var(--muted-foreground);
@@ -226,11 +236,13 @@
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 8px 16px;
   font-size: 0.75rem;
   color: var(--muted-foreground);
   cursor: pointer;
   transition: background 0.15s ease;
+  min-height: 36px;
+  min-width: 36px;
 }
 
 .queue-article__action-btn:hover {
