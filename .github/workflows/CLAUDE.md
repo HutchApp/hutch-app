@@ -27,7 +27,7 @@ Inspect the `.yml` files in this directory for implementation details. Summary:
 | `claude-PR-code-reviewer.yml` | Automated code review | CI succeeds on PR |
 | `claude-PR-code-review-auto-apply.yml` | Fix HIGH/MEDIUM priority issues | Claude review comment |
 | `claude-PR-conflict-fixer.yml` | Resolve merge conflicts | CI succeeds + conflicts detected |
-| `submit-extension-for-signing.yml` | Submit Firefox extension to AMO for signing | Called by `ci.yml` |
+| `submit-ff-extension-for-signing.yml` | Submit Firefox extension to AMO for signing | Called by `ci.yml` |
 | `sync-signed-extension.yml` | Sync signed Firefox extension from AMO to S3 | Schedule (every 12h) / manual |
 
 ## Prompt Files
