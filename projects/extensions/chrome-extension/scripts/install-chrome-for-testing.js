@@ -4,6 +4,7 @@
 // E2E tests need Chrome for Testing (CfT) which still supports it.
 // We also install the matching ChromeDriver so Selenium uses a compatible version.
 
+const assert = require("node:assert");
 const { execSync } = require("node:child_process");
 const { writeFileSync, mkdirSync } = require("node:fs");
 const { join } = require("node:path");
@@ -20,7 +21,9 @@ const chromeOutput = execSync(
 // Output format: "chrome@{version} {path}" — path may contain spaces
 const chromeLastLine = chromeOutput.trim().split("\n").pop();
 const chromeBinaryPath = chromeLastLine.replace(/^chrome@\S+\s+/, "");
-const chromeVersion = chromeLastLine.match(/^chrome@(\S+)/)[1];
+const chromeMatch = chromeLastLine.match(/^chrome@(\S+)/);
+assert(chromeMatch, `Unexpected chrome install output: ${chromeLastLine}`);
+const chromeVersion = chromeMatch[1];
 
 writeFileSync(join(cacheDir, "binary-path"), chromeBinaryPath, "utf8");
 console.log(`Chrome for Testing: ${chromeBinaryPath}`);
