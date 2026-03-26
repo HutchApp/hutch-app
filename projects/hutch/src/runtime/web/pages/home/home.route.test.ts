@@ -16,18 +16,25 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const heroTitle = doc.querySelector(".home-hero__title");
-		expect(heroTitle?.textContent).toContain("Save now.");
-		expect(heroTitle?.textContent).toContain("Read later.");
-		expect(heroTitle?.textContent).toContain("That's it.");
+		expect(heroTitle?.textContent).toBe("You are what you read.");
 	});
 
-	it("should render the primary CTA linking to extension install", async () => {
+	it("should render the primary CTA linking to Firefox install", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cta = doc.querySelector('[data-test-cta="install-extension"]') as HTMLAnchorElement;
+		const cta = doc.querySelector('[data-test-cta="install-firefox"]') as HTMLAnchorElement;
 		expect(cta.getAttribute("href")).toBe("/install");
-		expect(cta.textContent).toBe("Install the Browser Extension");
+		expect(cta.textContent).toBe("Install for Firefox");
+	});
+
+	it("should render the secondary CTA linking to GitHub", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const cta = doc.querySelector('[data-test-cta="view-github"]') as HTMLAnchorElement;
+		expect(cta.getAttribute("href")).toBe("https://github.com/HutchApp/hutch-app");
+		expect(cta.textContent).toBe("View on GitHub");
 	});
 
 	it("should render the core features section with shipped features only", async () => {
@@ -36,7 +43,7 @@ describe("GET /", () => {
 
 		const coreSection = doc.querySelector('[data-test-section="core-features"]');
 		const features = coreSection?.querySelectorAll(".feature-card");
-		expect(features?.length).toBe(4);
+		expect(features?.length).toBe(9);
 	});
 
 	it("should render three demo videos: Desktop, Firefox Extension, and Chrome Extension", async () => {
@@ -119,6 +126,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		expect(doc.title).toContain("Hutch");
+		expect(doc.title).toContain("You are what you read");
 		const description = doc.querySelector('meta[name="description"]');
 		expect(description?.getAttribute("content")).toContain("read-it-later");
 	});

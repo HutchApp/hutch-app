@@ -15,19 +15,19 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
 		seo: {
-			title: "Hutch — A read-it-later app by <a href=\"https://reddit.com/u/fagnerbrack\">Fayner Brack</a>",
+			title: "Hutch — You are what you read.",
 			description:
-				"Where reading still matters. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click, read them later. Built in Australia by a solo developer.",
+				"Read the web, not the slop. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles, read them in a clean reader view, and organise your reading list. Built in Australia by a solo developer.",
 			canonicalUrl: "https://hutch-app.com",
 			ogType: "website",
 			ogImage: `${staticBaseUrl}/og-image-1200x630.png`,
 			ogImageType: "image/png",
 			ogImageAlt:
-				"Hutch — Where reading still matters. A read-it-later app built in Australia.",
+				"Hutch — You are what you read. A read-it-later app built in Australia.",
 			twitterImage: `${staticBaseUrl}/twitter-card-1200x600.png`,
 				author: "Fayner Brack",
 			keywords:
-				"read it later, save articles, bookmark manager, reading list, Pocket alternative, Omnivore alternative, browser extension, Firefox extension, article reader, distraction free reading",
+				"read it later, save articles, bookmark manager, reading list, Pocket alternative, Omnivore alternative, browser extension, Firefox extension, Chrome extension, article reader, distraction free reading, AI summaries",
 			structuredData: [
 				{
 					"@context": "https://schema.org",
@@ -35,7 +35,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 					name: "Hutch",
 					url: "https://hutch-app.com",
 					description:
-						"Where reading still matters. A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
+						"You are what you read. A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
 					applicationCategory: "ProductivityApplication",
 					operatingSystem: "Web, iOS, Android",
 					browserRequirements: "Requires Firefox or Chrome for browser extension",
@@ -71,7 +71,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 						name: "Fayner Brack",
 					},
 					description:
-						"Where reading still matters. Hutch is a read-it-later app built in Australia by a solo developer.",
+						"You are what you read. Hutch is a read-it-later app built in Australia by a solo developer.",
 				},
 				{
 					"@context": "https://schema.org",
@@ -82,7 +82,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 							name: "What is Hutch?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click using the browser extension for Firefox or Chrome, and read them later in a distraction-free reader view.",
+								text: "Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click using the browser extension for Firefox or Chrome, read them in a clean reader view, and get TL;DR summaries for every article.",
 							},
 						},
 						{
@@ -90,7 +90,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 							name: "Is Hutch free?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Yes. The first 100 founding members get full access free, forever. This includes unlimited article saving, the browser extension, all features as they ship, and direct access to the developer.",
+								text: "The first 100 founding members get full access free, forever. After that, A$3.99/month — includes TL;DR summaries. Personalised AI summaries require a BYOK API key (Anthropic or OpenAI).",
 							},
 						},
 						{
@@ -106,7 +106,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 							name: "What features does Hutch have?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Hutch currently offers browser extensions for Firefox and Chrome for one-click saving, a web app for managing saved articles, and a distraction-free reader view. Planned features include highlights and notes, full-text search, offline reading, text-to-speech, and a newsletter inbox.",
+								text: "Hutch offers browser extensions for Firefox and Chrome, a web app for managing saved articles, a distraction-free reader view, TL;DR summaries, dark mode, and secure OAuth with PKCE. Planned features include personalised AI summaries (BYOK), preference learning, Gmail integration, and highlights and notes.",
 							},
 						},
 					],
@@ -124,61 +124,71 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string }): 
 			allocationExhausted,
 			coreFeatures: [
 				{
-					name: "Browser Extension",
+					name: "Firefox Extension",
 					description:
-						"Save any page in one click from Firefox or Chrome. No friction.",
+						"Save any page with one click, Ctrl/Cmd+D, or right-click.",
 				},
 				{
-					name: "Web App",
+					name: "Chrome Extension",
 					description:
-						"View and manage your saved articles from any browser. Clean, fast, no clutter.",
+						"Same one-click saving, now available in Chrome.",
 				},
 				{
 					name: "Reader View",
 					description:
-						"Distraction-free reading with clean fonts, themes, and typography.",
+						"Clean article view powered by Readability.js. No distractions.",
 				},
 				{
-					name: "TL;DR Summary",
+					name: "Web App",
 					description:
-						"Summaries for every link you save. Get the key points instantly before diving into the full read.",
-				}
+						"Manage and organise your reading list from any browser.",
+				},
+				{
+					name: "TL;DR Summaries",
+					description:
+						"One-line summary per article, generated once, available to all users.",
+				},
+				{
+					name: "Dark Mode",
+					description:
+						"Follows your system preference automatically.",
+				},
+				{
+					name: "Secure Auth",
+					description:
+						"OAuth with PKCE. Tokens stored locally in your browser, not on a server.",
+				},
+				{
+					name: "Self-Updating Extension",
+					description:
+						"No browser store dependency. The extension updates itself.",
+				},
+				{
+					name: "Privacy First",
+					description:
+						"Hosted in Sydney. Australian Privacy Act compliant. No tracking, no ads.",
+				},
 			],
 			plannedFeatures: [
 				{
-					name: "Email Link Import",
+					name: "Personalised Summaries (BYOK)",
 					description:
-						"Import links from your email to Hutch queue",
+						"Summaries tailored to how you learn, powered by your own API key (Anthropic or OpenAI).",
 				},
 				{
-					name: "Filter your queue using AI based on your preferences",
+					name: "Preference Learning",
 					description:
-						"Allow Hutch to select the most relevant links for you based on your goals",
+						"\"More like this\" and \"less like this\" buttons that update a personal preference model, re-ranking your reading list and surfacing articles that match how you actually learn. You can review your preferences.",
+				},
+				{
+					name: "Gmail Integration",
+					description:
+						"Import links from newsletters automatically and process them all. No more 19,577 unread emails.",
 				},
 				{
 					name: "Highlights & Notes",
 					description:
-						"Highlight in multiple colours, add inline notes, export as Markdown.",
-				},
-				{
-					name: "Full-Text Search",
-					description:
-						"Search across titles and article body text. Filter by tags, read status, and date.",
-				},
-				{
-					name: "Offline Reading",
-					description:
-						"Articles auto-download for offline access. Your queue persists even if the original page disappears.",
-				},
-				{
-					name: "Text-to-Speech",
-					description:
-						"Listen to articles with natural TTS. Adjustable speed, background playback.",
-				},
-				{
-					name: "Newsletter Inbox",
-					description:
-						"Unique email alias routes newsletters straight into your reading queue.",
+						"Highlight passages and add notes as you read.",
 				},
 			],
 			trustItems: [

@@ -1,3 +1,27 @@
+.home-hero__title,
+.section-header__title,
+.home-backstory__title,
+.home-cta__title,
+.pricing-card__name {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.section-header__title,
+.home-backstory__title,
+.home-cta__title,
+.pricing-card__name {
+  color: #2B3A55;
+}
+
+@media (prefers-color-scheme: dark) {
+  .section-header__title,
+  .home-backstory__title,
+  .home-cta__title,
+  .pricing-card__name {
+    color: var(--foreground);
+  }
+}
+
 /**
  * Shared Section Header
  *
@@ -500,9 +524,17 @@
 
 .home-cta__actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
+}
+
+.home-cta__github-link {
+  color: var(--primary);
+  text-decoration: underline;
+  font-size: 0.9375rem;
+  font-weight: 500;
 }
 
 /* Responsive */
