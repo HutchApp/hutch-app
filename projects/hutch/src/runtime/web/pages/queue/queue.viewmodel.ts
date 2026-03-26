@@ -40,10 +40,8 @@ export interface QueueViewModel {
 	currentPage: number;
 	total: number;
 	filterUrls: {
-		all: string;
 		unread: string;
 		read: string;
-		archived: string;
 	};
 	paginationUrls: {
 		prev?: string;
@@ -94,17 +92,6 @@ function toArticleActions(
 			title: "Mark as unread",
 			testAction: "mark-unread",
 			fields: [{ name: "status", value: "unread" }],
-		});
-	}
-
-	if (article.status !== "archived") {
-		actions.push({
-			method: "POST",
-			url: `/queue/${article.id}/status${returnQuery}`,
-			text: "Archive",
-			title: "Archive",
-			testAction: "archive",
-			fields: [{ name: "status", value: "archived" }],
 		});
 	}
 
@@ -162,10 +149,8 @@ export function toQueueViewModel(
 		currentPage: result.page,
 		total: result.total,
 		filterUrls: {
-			all: buildQueueUrl(baseFilters),
 			unread: buildQueueUrl({ ...baseFilters, status: "unread" }),
 			read: buildQueueUrl({ ...baseFilters, status: "read" }),
-			archived: buildQueueUrl({ ...baseFilters, status: "archived" }),
 		},
 		paginationUrls: {
 			prev:

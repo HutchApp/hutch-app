@@ -5,6 +5,7 @@ import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
+import { buildQueueUrl } from "./queue.url";
 
 const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf-8");
 
@@ -45,14 +46,10 @@ interface QueueDisplayModel {
 	isEmpty: boolean;
 	hasArticles: boolean;
 	articles: ArticleDisplayModel[];
-	filterAllClass: string;
 	filterUnreadClass: string;
 	filterReadClass: string;
-	filterArchivedClass: string;
-	filterAllUrl: string;
 	filterUnreadUrl: string;
 	filterReadUrl: string;
-	filterArchivedUrl: string;
 	sortUrl: string;
 	sortLabel: string;
 	showPagination: boolean;
@@ -72,7 +69,7 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	const activeStatus = vm.filters.status;
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
 	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
-	const sortUrl = `/queue?order=${nextOrder}${activeStatus ? `&status=${activeStatus}` : ""}`;
+	const sortUrl = buildQueueUrl({ status: activeStatus, order: nextOrder });
 
 	return {
 		total: vm.total,
@@ -81,14 +78,10 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 		isEmpty: vm.isEmpty,
 		hasArticles: !vm.isEmpty,
 		articles: vm.articles.map(toArticleDisplayModel),
-		filterAllClass: filterLinkClass(!activeStatus),
 		filterUnreadClass: filterLinkClass(activeStatus === "unread"),
 		filterReadClass: filterLinkClass(activeStatus === "read"),
-		filterArchivedClass: filterLinkClass(activeStatus === "archived"),
-		filterAllUrl: vm.filterUrls.all,
 		filterUnreadUrl: vm.filterUrls.unread,
 		filterReadUrl: vm.filterUrls.read,
-		filterArchivedUrl: vm.filterUrls.archived,
 		sortUrl,
 		sortLabel,
 		showPagination: vm.totalPages > 1,

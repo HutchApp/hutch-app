@@ -3,13 +3,13 @@ import type { ArticleStatus } from "../../../domain/article/article.types";
 import type { SortOrder } from "../../../providers/article-store/article-store.types";
 
 export interface QueueUrlState {
-	status?: ArticleStatus;
+	status: ArticleStatus;
 	order: SortOrder;
 	page: number;
 }
 
 const QueueQuerySchema = z.object({
-	status: z.enum(["unread", "read", "archived"]).optional().catch(undefined),
+	status: z.enum(["unread", "read"]).optional().catch(undefined),
 	order: z.enum(["asc", "desc"]).optional().catch(undefined),
 	page: z.coerce.number().int().min(1).optional().catch(undefined),
 }).passthrough();
@@ -17,7 +17,7 @@ const QueueQuerySchema = z.object({
 export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 	const parsed = QueueQuerySchema.parse(query);
 	return {
-		status: parsed.status,
+		status: parsed.status ?? "unread",
 		order: parsed.order ?? "desc",
 		page: parsed.page ?? 1,
 	};
@@ -26,7 +26,7 @@ export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 export function buildQueueUrl(state: Partial<QueueUrlState>): string {
 	const params = new URLSearchParams();
 
-	if (state.status) {
+	if (state.status && state.status !== "unread") {
 		params.set("status", state.status);
 	}
 	if (state.order && state.order !== "desc") {

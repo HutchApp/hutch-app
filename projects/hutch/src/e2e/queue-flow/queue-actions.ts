@@ -21,10 +21,8 @@ export type QueueProgress = {
   backFromReader: boolean
   verifiedReadStatus: boolean
   deletedLastArticle: boolean
-  archivedThird: boolean
   checkedReadTab: boolean
   checkedUnreadTab: boolean
-  checkedArchivedTab: boolean
   cleanupDeleted: boolean
 }
 
@@ -315,16 +313,7 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     },
     execute: async (page) => {
       const articleCount = await getArticleCount(page)
-      expect(articleCount).toBe(4)
-
-      const firstArticle = page.locator('[data-test-article]').first()
-      const hasUnreadClass = await firstArticle.evaluate(
-        el => el.classList.contains('queue-article--unread'),
-      )
-      expect(hasUnreadClass).toBe(false)
-
-      const unreadButton = firstArticle.locator('[data-test-action="mark-unread"]')
-      await expect(unreadButton).toBeVisible()
+      expect(articleCount).toBe(3)
 
       progress.verifiedReadStatus = true
     },
@@ -344,22 +333,9 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     },
   })
 
-  actions.set('archive-third-article', {
-    isAvailable: async (page) => {
-      if (!progress.verifiedReadStatus) return false
-      if (progress.archivedThird) return false
-      return isOnPage(page, 'page-queue')
-    },
-    execute: async (page) => {
-      const thirdArticle = page.locator('[data-test-article]').nth(2)
-      await clickAndWaitForPageReload(page, thirdArticle.locator('[data-test-action="archive"]'))
-      progress.archivedThird = true
-    },
-  })
-
   actions.set('check-read-tab', {
     isAvailable: async (page) => {
-      if (!progress.archivedThird) return false
+      if (!progress.deletedLastArticle) return false
       if (progress.checkedReadTab) return false
       return isOnPage(page, 'page-queue')
     },
@@ -386,47 +362,35 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       await clickAndWaitForPageReload(page, page.locator('[data-test-filter="unread"]'))
 
       const count = await getArticleCount(page)
-      expect(count).toBe(1)
+      expect(count).toBe(2)
 
       const titles = await getArticleTitles(page)
-      expect(titles).toEqual([TEST_TITLES[1]])
+      expect(titles).toEqual([TEST_TITLES[1], TEST_TITLES[2]])
 
       progress.checkedUnreadTab = true
     },
   })
 
-  actions.set('check-archived-tab', {
-    isAvailable: async (page) => {
-      if (!progress.checkedUnreadTab) return false
-      if (progress.checkedArchivedTab) return false
-      return isOnPage(page, 'page-queue')
-    },
-    execute: async (page) => {
-      await clickAndWaitForPageReload(page, page.locator('[data-test-filter="archived"]'))
-
-      const count = await getArticleCount(page)
-      expect(count).toBe(1)
-
-      const titles = await getArticleTitles(page)
-      expect(titles).toEqual([TEST_TITLES[2]])
-
-      progress.checkedArchivedTab = true
-    },
-  })
-
   actions.set('cleanup-delete-all', {
     isAvailable: async (page) => {
-      if (!progress.checkedArchivedTab) return false
+      if (!progress.checkedUnreadTab) return false
       if (progress.cleanupDeleted) return false
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
-      await clickAndWaitForPageReload(page, page.locator('[data-test-filter="all"]'))
       let count = await page.locator('[data-test-action="delete"]').count()
       while (count > 0) {
         await clickAndWaitForPageReload(page, page.locator('[data-test-action="delete"]').first())
         count = await page.locator('[data-test-action="delete"]').count()
       }
+
+      await clickAndWaitForPageReload(page, page.locator('[data-test-filter="read"]'))
+      count = await page.locator('[data-test-action="delete"]').count()
+      while (count > 0) {
+        await clickAndWaitForPageReload(page, page.locator('[data-test-action="delete"]').first())
+        count = await page.locator('[data-test-action="delete"]').count()
+      }
+
       progress.cleanupDeleted = true
     },
   })
