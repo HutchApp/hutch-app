@@ -94,6 +94,10 @@ test.describe('Queue management flow (staging)', () => {
       cleanupDeleted: false,
     }
 
+    // Use the staging app's own privacy page — fetched locally by Lambda
+    // (same API Gateway), so no external network dependency or timeout risk.
+    // Each URL must be unique because articles are keyed by userId+url.
+    // Query params make each URL distinct while fetching the same page.
     const stagingArticles: TestArticleData = {
       urls: [
         `${baseURL}/privacy?v=1`,
