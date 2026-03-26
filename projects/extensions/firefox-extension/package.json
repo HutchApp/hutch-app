@@ -11,7 +11,8 @@
     }
   },
   "scripts": {
-    "compile": "tsc && HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js && HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js",
+    "compile": "tsc && HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js",
+    "compile-dev": "tsc && HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js",
     "sign": "web-ext sign --channel=unlisted --source-dir dist-extension-compiled --artifacts-dir /tmp/ext-sign-submit --upload-source-code /tmp/extension-source.zip --api-key=\"$AMO_JWT_ISSUER\" --api-secret=\"$AMO_JWT_SECRET\" --approval-timeout 0",
     "check-unused-css": "node scripts/check-unused-css.js",
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
