@@ -120,6 +120,8 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
       return isOnPage(page, 'page-queue')
     },
     execute: async (page) => {
+      await page.reload({ waitUntil: 'domcontentloaded' })
+
       const pagination = page.locator('[data-test-pagination]')
       await expect(pagination).toBeVisible()
 
