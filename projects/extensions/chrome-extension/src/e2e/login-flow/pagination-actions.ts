@@ -12,7 +12,7 @@ export interface PaginationProgress {
 	verifiedBackOnPage1: boolean;
 }
 
-const PAGINATION_LINK_COUNT = 11;
+const PAGINATION_LINK_COUNT = 10;
 const ACTIVE_PAGE_SELECTOR = `#${ELEMENT_IDS.pagination} .pagination__page--active`;
 const NEXT_PAGE_SELECTOR = `#${ELEMENT_IDS.pagination} button[aria-label="Next page"]`;
 const PREV_PAGE_SELECTOR = `#${ELEMENT_IDS.pagination} button[aria-label="Previous page"]`;
