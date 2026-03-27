@@ -101,7 +101,6 @@ test("should complete OAuth login flow, save links, and paginate the list", asyn
 
 		const paginationActions = createPaginationActions({
 			popupUrl: POPUP_URL,
-			popupWindowHandle,
 			saveLinkProgress,
 			progress: paginationProgress,
 		});

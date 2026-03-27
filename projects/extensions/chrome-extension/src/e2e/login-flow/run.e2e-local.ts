@@ -160,7 +160,6 @@ async function runTest() {
 
 		const paginationActions = createPaginationActions({
 			popupUrl: POPUP_URL,
-			popupWindowHandle,
 			saveLinkProgress,
 			progress: paginationProgress,
 		});

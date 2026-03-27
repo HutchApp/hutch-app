@@ -57,7 +57,6 @@ async function waitForListView(driver: WebDriver): Promise<void> {
 
 export function createPaginationActions(config: {
 	popupUrl: string;
-	popupWindowHandle: string;
 	saveLinkProgress: { linkSaved: boolean; listVerified: boolean };
 	progress: PaginationProgress;
 }): Map<string, FlowAction<WebDriver>> {
