@@ -18,8 +18,6 @@ export default {
 		"browser-extension-core",
 		// Used in infra code (compiled separately)
 		"@packages/hutch-logger",
-		// tsconfig paths alias resolves at compile time; runtime requires the workspace package via node_modules
-		"@packages/hutch-test-app",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)

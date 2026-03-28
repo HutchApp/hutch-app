@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "@packages/hutch-test-app";
+import { createTestApp } from "../../test-app";
 import { initInMemoryAuth } from "../../providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
 import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
