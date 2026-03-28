@@ -59,7 +59,7 @@ describe("Email verification", () => {
 				logError: () => { resolveErrorLogged(); },
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
-				summarizeArticle: async () => null,
+				publishLinkSaved: async () => {},
 				findCachedSummary: async () => "",
 				refreshArticleIfStale: async () => ({ action: "new" as const }),
 				publishLinkSaved: async () => {},
