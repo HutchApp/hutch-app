@@ -9,6 +9,7 @@ import { FlowRunner, ExtensionStateHandler } from "browser-extension-core/e2e";
 import { createSeleniumElementQueries, createSeleniumNavigation } from "../selenium-adapter";
 import { createLoginActions } from "./login-actions";
 import { createSaveLinkActions } from "./save-link-actions";
+import { createPaginationActions, type PaginationProgress } from "./pagination-actions";
 
 const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
 const CFT_PATH_FILE = path.resolve(__dirname, "../../../.cache/chrome/binary-path");
@@ -68,7 +69,7 @@ async function discoverExtensionId(driver: ChromeDriver): Promise<string> {
 // CI resource contention (parallel NX tasks) crashes Chrome intermittently.
 // Retry the full test since the crash can happen at any point mid-execution.
 const MAX_ATTEMPTS = 3;
-test("should complete OAuth login flow and save a link to the list", async () => {
+test("should complete OAuth login flow, save links, and paginate the list", async () => {
 	const server = await startTestServer();
 	try {
 		for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -134,6 +135,14 @@ async function runTest() {
 		const popupWindowHandle = await driver.getWindowHandle();
 
 		const saveLinkProgress = { linkSaved: false, listVerified: false };
+		const paginationProgress: PaginationProgress = {
+			paginationLinksAdded: false,
+			verifiedPage1: false,
+			navigatedToPage2: false,
+			verifiedPage2: false,
+			navigatedBackToPage1: false,
+			verifiedBackOnPage1: false,
+		};
 
 		const loginActions = createLoginActions({
 			testEmail: TEST_EMAIL,
@@ -149,11 +158,17 @@ async function runTest() {
 			progress: saveLinkProgress,
 		});
 
-		const allActions = new Map([...loginActions, ...saveLinkActions]);
+		const paginationActions = createPaginationActions({
+			popupUrl: POPUP_URL,
+			saveLinkProgress,
+			progress: paginationProgress,
+		});
+
+		const allActions = new Map([...loginActions, ...saveLinkActions, ...paginationActions]);
 
 		const stateHandler = new ExtensionStateHandler(
 			driver,
-			async () => saveLinkProgress.listVerified,
+			async () => paginationProgress.verifiedBackOnPage1,
 			allActions,
 			createSeleniumElementQueries(),
 		);
@@ -164,12 +179,13 @@ async function runTest() {
 			createSeleniumNavigation(),
 		);
 		const result = await flowRunner.run(POPUP_URL, {
-			maxSteps: 25,
+			maxSteps: 40,
 		});
 
 		assert.equal(result.success, true, `Flow failed: ${result.error}`);
 		assert.equal(saveLinkProgress.linkSaved, true, "Link should have been saved");
 		assert.equal(saveLinkProgress.listVerified, true, "Link should have been verified in list");
+		assert.equal(paginationProgress.verifiedBackOnPage1, true, "Pagination should have been verified");
 	} finally {
 		await driver.quit();
 	}

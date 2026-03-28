@@ -8,6 +8,7 @@ import { FlowRunner, ExtensionStateHandler } from "browser-extension-core/e2e";
 import { createSeleniumElementQueries, createSeleniumNavigation } from "../selenium-adapter";
 import { createLoginActions } from "./login-actions";
 import { createSaveLinkActions } from "./save-link-actions";
+import { createPaginationActions, type PaginationProgress } from "./pagination-actions";
 
 const ADDON_ID = "hutch-extension@hutch-app.com";
 const ADDON_UUID = "d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12";
@@ -33,7 +34,7 @@ async function startTestServer(): Promise<http.Server> {
 	});
 }
 
-test("should complete OAuth login flow and save a link to the list", async () => {
+test("should complete OAuth login flow, save links, and paginate the list", async () => {
 	const server = await startTestServer();
 
 	const options = new Options();
@@ -75,6 +76,14 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 		const popupWindowHandle = await driver.getWindowHandle();
 
 		const saveLinkProgress = { linkSaved: false, listVerified: false };
+		const paginationProgress: PaginationProgress = {
+			paginationLinksAdded: false,
+			verifiedPage1: false,
+			navigatedToPage2: false,
+			verifiedPage2: false,
+			navigatedBackToPage1: false,
+			verifiedBackOnPage1: false,
+		};
 
 		const loginActions = createLoginActions({
 			testEmail: TEST_EMAIL,
@@ -90,11 +99,17 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 			progress: saveLinkProgress,
 		});
 
-		const allActions = new Map([...loginActions, ...saveLinkActions]);
+		const paginationActions = createPaginationActions({
+			popupUrl: POPUP_URL,
+			saveLinkProgress,
+			progress: paginationProgress,
+		});
+
+		const allActions = new Map([...loginActions, ...saveLinkActions, ...paginationActions]);
 
 		const stateHandler = new ExtensionStateHandler(
 			driver,
-			async () => saveLinkProgress.listVerified,
+			async () => paginationProgress.verifiedBackOnPage1,
 			allActions,
 			createSeleniumElementQueries(),
 		);
@@ -105,12 +120,13 @@ test("should complete OAuth login flow and save a link to the list", async () =>
 			createSeleniumNavigation(),
 		);
 		const result = await flowRunner.run(POPUP_URL, {
-			maxSteps: 25,
+			maxSteps: 40,
 		});
 
 		assert.equal(result.success, true, `Flow failed: ${result.error}`);
 		assert.equal(saveLinkProgress.linkSaved, true, "Link should have been saved");
 		assert.equal(saveLinkProgress.listVerified, true, "Link should have been verified in list");
+		assert.equal(paginationProgress.verifiedBackOnPage1, true, "Pagination should have been verified");
 	} finally {
 		await driver.quit();
 		server.close();
