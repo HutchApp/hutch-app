@@ -5,8 +5,10 @@ import type {
 	SaveUrlResult,
 	RemoveUrlResult,
 } from "browser-extension-core";
-import { filterByUrl, paginateItems, avatarColor, relativeTime } from "browser-extension-core";
+import { filterByUrl, paginateItems, avatarColor, relativeTime, isAppUrl } from "browser-extension-core";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
+
+declare const __SERVER_URL__: string;
 
 const logger = HutchLogger.from(consoleLogger);
 
@@ -222,6 +224,11 @@ async function getActiveTab(): Promise<{ url: string; title: string } | null> {
 async function saveAndShowList() {
 	const activeTab = await getActiveTab();
 	if (!activeTab) {
+		await showListView();
+		return;
+	}
+
+	if (isAppUrl(activeTab.url, __SERVER_URL__)) {
 		await showListView();
 		return;
 	}
