@@ -1,30 +1,30 @@
 import type Handlebars from "handlebars";
 
-interface SwitchContext {
-	__switch_value__?: unknown;
-	__switch_matched__?: boolean;
+interface SwitchState {
+	value: unknown;
+	matched: boolean;
 }
 
-type HelperThis = SwitchContext & Record<string, unknown>;
+const switchState = new WeakMap<object, SwitchState>();
 
 export const switchHelpers: Record<string, Handlebars.HelperDelegate> = {
-	switch(this: HelperThis, value: unknown, options: Handlebars.HelperOptions) {
-		this.__switch_value__ = value;
-		this.__switch_matched__ = false;
+	switch(this: object, value: unknown, options: Handlebars.HelperOptions) {
+		switchState.set(this, { value, matched: false });
 		const result = options.fn(this);
-		delete this.__switch_value__;
-		delete this.__switch_matched__;
+		switchState.delete(this);
 		return result;
 	},
-	case(this: HelperThis, value: unknown, options: Handlebars.HelperOptions) {
-		if (value === this.__switch_value__) {
-			this.__switch_matched__ = true;
+	case(this: object, value: unknown, options: Handlebars.HelperOptions) {
+		const state = switchState.get(this);
+		if (state && value === state.value) {
+			state.matched = true;
 			return options.fn(this);
 		}
 		return "";
 	},
-	default(this: HelperThis, options: Handlebars.HelperOptions) {
-		if (!this.__switch_matched__) {
+	default(this: object, options: Handlebars.HelperOptions) {
+		const state = switchState.get(this);
+		if (!state?.matched) {
 			return options.fn(this);
 		}
 		return "";
