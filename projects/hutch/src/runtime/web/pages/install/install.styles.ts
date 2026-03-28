@@ -22,23 +22,35 @@ export const INSTALL_PAGE_STYLES = `
   margin-bottom: 40px;
 }
 
-.install-page__browser {
-  margin-bottom: 48px;
-  padding-bottom: 48px;
+.install-page__tabs {
+  display: flex;
   border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
 }
 
-.install-page__browser:last-of-type {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
+.install-page__tab {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--muted-foreground);
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  margin-bottom: -1px;
 }
 
-.install-page__browser-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 20px;
+.install-page__tab:hover {
   color: var(--foreground);
+}
+
+.install-page__tab--active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.install-page__panel {
+  padding-top: 8px;
 }
 
 .install-page__download {
@@ -93,5 +105,11 @@ export const INSTALL_PAGE_STYLES = `
   line-height: 1.6;
   color: var(--muted-foreground);
   margin-top: 16px;
+}
+
+.install-page__unavailable {
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  line-height: 1.6;
 }
 `;

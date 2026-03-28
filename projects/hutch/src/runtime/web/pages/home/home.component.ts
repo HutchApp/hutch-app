@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
+import { switchHelpers } from "../../handlebars-switch";
 import { HOME_PAGE_STYLES } from "./home.styles";
 
 const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8");
@@ -118,8 +119,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 		bodyClass: "page-home",
 		content: render(HOME_TEMPLATE, {
 			staticBaseUrl,
-			isFirefox: browser === "firefox",
-			isChrome: browser === "chrome",
+			browserName: browser,
 			userCount,
 			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
 			progressPercent,
@@ -200,6 +200,6 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 						"Export everything, anytime. Your data is yours. Cancel and your saved articles stay available for export.",
 				},
 			],
-		}),
+		}, { helpers: switchHelpers }),
 	});
 }

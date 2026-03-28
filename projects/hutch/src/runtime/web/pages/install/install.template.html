@@ -3,8 +3,22 @@
       <h1 class="install-page__title">Install Hutch</h1>
       <p class="install-page__subtitle">Save articles with a single click or keyboard shortcut.</p>
 
-      <section class="install-page__browser" data-test-section="firefox">
-        <h2 class="install-page__browser-title">Firefox</h2>
+      <nav class="install-page__tabs" aria-label="Browser" data-test-section="tabs">
+        {{#switch browser}}
+        {{#case "firefox"}}
+        <a href="/install?browser=firefox" class="install-page__tab install-page__tab--active" aria-current="page" data-test-tab="firefox">Firefox</a>
+        <a href="/install?browser=chrome" class="install-page__tab" data-test-tab="chrome">Chrome</a>
+        {{/case}}
+        {{#default}}
+        <a href="/install?browser=firefox" class="install-page__tab" data-test-tab="firefox">Firefox</a>
+        <a href="/install?browser=chrome" class="install-page__tab install-page__tab--active" aria-current="page" data-test-tab="chrome">Chrome</a>
+        {{/default}}
+        {{/switch}}
+      </nav>
+
+      {{#switch browser}}
+      {{#case "firefox"}}
+      <section class="install-page__panel" data-test-section="firefox">
         {{#if firefoxDownloadUrl}}
         <a href="{{firefoxDownloadUrl}}" class="install-page__download" data-test-cta="download-firefox">Download Hutch for Firefox</a>
 
@@ -15,15 +29,15 @@
             <li>Firefox will prompt you to allow the installation — click "Continue to Installation"</li>
             <li>Click "Add" to install the extension</li>
           </ol>
-          <p class="install-page__footnote" data-test-section="install-footnote">Login uses your hutch-app.com account via OAuth.</p>
         </div>
         {{else}}
         <p class="install-page__unavailable" data-test-section="firefox-unavailable">The Firefox extension is not available for download yet. Please check back soon.</p>
         {{/if}}
       </section>
+      {{/case}}
 
-      <section class="install-page__browser" data-test-section="chrome">
-        <h2 class="install-page__browser-title">Chrome</h2>
+      {{#default}}
+      <section class="install-page__panel" data-test-section="chrome">
         {{#if chromeDownloadUrl}}
         <a href="{{chromeDownloadUrl}}" class="install-page__download" data-test-cta="download-chrome">Download Hutch for Chrome</a>
 
@@ -39,6 +53,8 @@
         <p class="install-page__unavailable" data-test-section="chrome-unavailable">The Chrome extension is not available for download yet. Please check back soon.</p>
         {{/if}}
       </section>
+      {{/default}}
+      {{/switch}}
 
       <p class="install-page__footnote" data-test-section="install-footnote">Login uses your real hutch-app.com account via OAuth.</p>
     </div>

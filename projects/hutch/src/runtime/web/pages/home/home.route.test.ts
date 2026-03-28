@@ -23,9 +23,9 @@ describe("GET /", () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cta = doc.querySelector('[data-test-cta="install-extension"]') as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe("/install");
-		expect(cta.textContent).toBe("Install Browser Extension");
+		const cta = doc.querySelector('[data-test-cta="install-extension"]');
+		expect(cta?.getAttribute("href")).toBe("/install");
+		expect(cta?.textContent).toBe("Install Browser Extension");
 	});
 
 	it("should render Firefox install CTA when User-Agent is Firefox", async () => {
@@ -36,6 +36,7 @@ describe("GET /", () => {
 
 		const cta = doc.querySelector('[data-test-cta="install-extension"]');
 		expect(cta?.textContent).toBe("Install Firefox Extension");
+		expect(cta?.getAttribute("href")).toBe("/install?browser=firefox");
 
 		const trust = doc.querySelector(".home-hero__trust");
 		expect(trust?.textContent).toBe("Also available for Chrome");
@@ -49,6 +50,7 @@ describe("GET /", () => {
 
 		const cta = doc.querySelector('[data-test-cta="install-extension"]');
 		expect(cta?.textContent).toBe("Install Chrome Extension");
+		expect(cta?.getAttribute("href")).toBe("/install?browser=chrome");
 
 		const trust = doc.querySelector(".home-hero__trust");
 		expect(trust?.textContent).toBe("Also available for Firefox");
@@ -80,15 +82,16 @@ describe("GET /", () => {
 
 		const bottomCta = doc.querySelector('[data-test-cta="bottom-install"]');
 		expect(bottomCta?.textContent).toBe("Install Firefox Extension");
+		expect(bottomCta?.getAttribute("href")).toBe("/install?browser=firefox");
 	});
 
 	it("should render the secondary CTA linking to GitHub", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cta = doc.querySelector('[data-test-cta="view-github"]') as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe("https://github.com/HutchApp/hutch-app");
-		expect(cta.textContent).toBe("View on GitHub");
+		const cta = doc.querySelector('[data-test-cta="view-github"]');
+		expect(cta?.getAttribute("href")).toBe("https://github.com/HutchApp/hutch-app");
+		expect(cta?.textContent).toBe("View on GitHub");
 	});
 
 	it("should render the core features section with shipped features only", async () => {
@@ -137,8 +140,8 @@ describe("GET /", () => {
 		const label = progress?.querySelector(".founding-progress__label");
 		expect(label?.textContent).toBe("0 / 100 founding members");
 
-		const fill = progress?.querySelector(".founding-progress__fill") as HTMLElement;
-		expect(fill.getAttribute("style")).toBe("width: 0%");
+		const fill = progress?.querySelector(".founding-progress__fill");
+		expect(fill?.getAttribute("style")).toBe("width: 0%");
 	});
 
 	it("should not render the exhausted message when under the limit", async () => {
@@ -272,8 +275,8 @@ describe("GET / with exhausted founding allocation", () => {
 		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
 		expect(exhausted?.textContent).toBe("The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.");
 
-		const fill = doc.querySelector(".founding-progress__fill") as HTMLElement;
-		expect(fill.getAttribute("style")).toBe("width: 100%");
+		const fill = doc.querySelector(".founding-progress__fill");
+		expect(fill?.getAttribute("style")).toBe("width: 100%");
 
 		const label = doc.querySelector(".founding-progress__label");
 		expect(label?.textContent).toBe("101 / 100 founding members");

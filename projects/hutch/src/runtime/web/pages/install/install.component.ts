@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
+import { switchHelpers } from "../../handlebars-switch";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
 import { firefoxS3Config, chromeS3Config } from "browser-extension-core/s3-config";
 
@@ -30,7 +31,7 @@ export async function fetchChromeDownloadUrl(): Promise<string | null> {
 	);
 }
 
-export function InstallPage(downloads: { firefox: string | null; chrome: string | null }): Component {
+export function InstallPage(params: { firefox: string | null; chrome: string | null; browser: "firefox" | "chrome" }): Component {
 	return Base({
 		seo: {
 			title: "Install Hutch Browser Extension",
@@ -41,8 +42,9 @@ export function InstallPage(downloads: { firefox: string | null; chrome: string 
 		styles: INSTALL_PAGE_STYLES,
 		bodyClass: "page-install",
 		content: render(INSTALL_TEMPLATE, {
-			firefoxDownloadUrl: downloads.firefox,
-			chromeDownloadUrl: downloads.chrome,
-		}),
+			browser: params.browser,
+			firefoxDownloadUrl: params.firefox,
+			chromeDownloadUrl: params.chrome,
+		}, { helpers: switchHelpers }),
 	});
 }
