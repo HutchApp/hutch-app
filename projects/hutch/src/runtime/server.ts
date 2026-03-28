@@ -160,12 +160,13 @@ export function createApp(dependencies: AppDependencies): Express {
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
-	app.get("/install", async (_req: Request, res: Response) => {
+	app.get("/install", async (req: Request, res: Response) => {
+		const browser = req.query.browser === "firefox" ? "firefox" as const : "chrome" as const;
 		const [firefox, chrome] = await Promise.all([
 			fetchFirefoxDownloadUrl(),
 			fetchChromeDownloadUrl(),
 		]);
-		const result = InstallPage({ firefox, chrome }).to("text/html");
+		const result = InstallPage({ firefox, chrome, browser }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 

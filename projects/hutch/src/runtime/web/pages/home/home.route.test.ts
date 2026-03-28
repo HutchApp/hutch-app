@@ -34,8 +34,9 @@ describe("GET /", () => {
 			.set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cta = doc.querySelector('[data-test-cta="install-extension"]');
+		const cta = doc.querySelector('[data-test-cta="install-extension"]') as HTMLAnchorElement;
 		expect(cta?.textContent).toBe("Install Firefox Extension");
+		expect(cta.getAttribute("href")).toBe("/install?browser=firefox");
 
 		const trust = doc.querySelector(".home-hero__trust");
 		expect(trust?.textContent).toBe("Also available for Chrome");
@@ -47,8 +48,9 @@ describe("GET /", () => {
 			.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cta = doc.querySelector('[data-test-cta="install-extension"]');
+		const cta = doc.querySelector('[data-test-cta="install-extension"]') as HTMLAnchorElement;
 		expect(cta?.textContent).toBe("Install Chrome Extension");
+		expect(cta.getAttribute("href")).toBe("/install?browser=chrome");
 
 		const trust = doc.querySelector(".home-hero__trust");
 		expect(trust?.textContent).toBe("Also available for Firefox");
@@ -78,8 +80,9 @@ describe("GET /", () => {
 			.set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0");
 		const doc = new JSDOM(response.text).window.document;
 
-		const bottomCta = doc.querySelector('[data-test-cta="bottom-install"]');
+		const bottomCta = doc.querySelector('[data-test-cta="bottom-install"]') as HTMLAnchorElement;
 		expect(bottomCta?.textContent).toBe("Install Firefox Extension");
+		expect(bottomCta.getAttribute("href")).toBe("/install?browser=firefox");
 	});
 
 	it("should render the secondary CTA linking to GitHub", async () => {
