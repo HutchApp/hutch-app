@@ -1,6 +1,6 @@
 import type { GmailTokens } from "../../domain/gmail-import/gmail-import.types";
 
-export interface GmailMessageRef {
+interface GmailMessageRef {
 	id: string;
 	threadId: string;
 }
@@ -24,15 +24,6 @@ export interface GmailMessage {
 	payload: GmailMessagePart;
 }
 
-export interface GmailLabel {
-	id: string;
-	name: string;
-	type: "system" | "user";
-}
-
-export interface GmailLabelListResponse {
-	labels: GmailLabel[];
-}
 
 export type ExchangeGmailCode = (params: {
 	code: string;

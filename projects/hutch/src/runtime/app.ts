@@ -102,6 +102,7 @@ function initProviders() {
 			...gmailTokenStore,
 			...gmailApi,
 			googleClientId,
+			qualifyLink,
 		};
 	}
 

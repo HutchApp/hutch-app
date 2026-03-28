@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { z } from "zod";
 import type {
 	ExchangeGmailCode,
 	RefreshGmailAccessToken,
@@ -7,12 +8,61 @@ import type {
 	EnsureGmailLabel,
 	LabelGmailMessage,
 	ListUnreadGmailMessages,
-	GmailMessageListResponse,
-	GmailMessage,
-	GmailLabelListResponse,
-	GmailLabel,
 	GmailEmailPreview,
+	GmailMessagePart,
 } from "./gmail-api.types";
+
+const TokenExchangeResponse = z.object({
+	access_token: z.string(),
+	refresh_token: z.string(),
+	expires_in: z.number(),
+});
+
+const TokenRefreshResponse = z.object({
+	access_token: z.string(),
+	expires_in: z.number(),
+});
+
+const GmailMessageRefSchema = z.object({
+	id: z.string(),
+	threadId: z.string(),
+});
+
+const GmailMessagePartSchema: z.ZodType<GmailMessagePart> = z.object({
+	mimeType: z.string(),
+	body: z.object({ data: z.string().optional(), size: z.number() }),
+	parts: z.lazy(() => GmailMessagePartSchema.array()).optional(),
+});
+
+const GmailMessageSchema = z.object({
+	id: z.string(),
+	threadId: z.string(),
+	labelIds: z.array(z.string()),
+	payload: GmailMessagePartSchema,
+});
+
+const GmailMessageListResponseSchema = z.object({
+	messages: z.array(GmailMessageRefSchema).optional(),
+	nextPageToken: z.string().optional(),
+	resultSizeEstimate: z.number(),
+});
+
+const GmailLabelSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	type: z.enum(["system", "user"]),
+});
+
+const GmailLabelListResponseSchema = z.object({
+	labels: z.array(GmailLabelSchema),
+});
+
+const GmailMessageMetadataSchema = z.object({
+	id: z.string(),
+	payload: z.object({
+		headers: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
+	}),
+});
 
 const GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1/users/me";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
@@ -48,11 +98,7 @@ export function initGmailApi(deps: GmailApiDependencies): {
 		});
 
 		assert(response.ok, `Gmail token exchange failed: ${response.status}`);
-		const data = await response.json() as {
-			access_token: string;
-			refresh_token: string;
-			expires_in: number;
-		};
+		const data = TokenExchangeResponse.parse(await response.json());
 
 		return {
 			accessToken: data.access_token,
@@ -74,10 +120,7 @@ export function initGmailApi(deps: GmailApiDependencies): {
 		});
 
 		assert(response.ok, `Gmail token refresh failed: ${response.status}`);
-		const data = await response.json() as {
-			access_token: string;
-			expires_in: number;
-		};
+		const data = TokenRefreshResponse.parse(await response.json());
 
 		return {
 			accessToken: data.access_token,
@@ -96,7 +139,7 @@ export function initGmailApi(deps: GmailApiDependencies): {
 		});
 
 		assert(response.ok, `Gmail list messages failed: ${response.status}`);
-		return response.json() as Promise<GmailMessageListResponse>;
+		return GmailMessageListResponseSchema.parse(await response.json());
 	};
 
 	const getGmailMessage: GetGmailMessage = async ({ accessToken, messageId }) => {
@@ -107,7 +150,7 @@ export function initGmailApi(deps: GmailApiDependencies): {
 		});
 
 		assert(response.ok, `Gmail get message failed: ${response.status}`);
-		return response.json() as Promise<GmailMessage>;
+		return GmailMessageSchema.parse(await response.json());
 	};
 
 	const ensureGmailLabel: EnsureGmailLabel = async ({ accessToken, labelName }) => {
@@ -116,9 +159,9 @@ export function initGmailApi(deps: GmailApiDependencies): {
 		});
 
 		assert(listResponse.ok, `Gmail list labels failed: ${listResponse.status}`);
-		const { labels } = await listResponse.json() as GmailLabelListResponse;
+		const { labels } = GmailLabelListResponseSchema.parse(await listResponse.json());
 
-		const existing = labels.find((l: GmailLabel) => l.name === labelName);
+		const existing = labels.find((l) => l.name === labelName);
 		if (existing) return existing.id;
 
 		const createResponse = await fetch(`${GMAIL_API_BASE}/labels`, {
@@ -131,7 +174,7 @@ export function initGmailApi(deps: GmailApiDependencies): {
 		});
 
 		assert(createResponse.ok, `Gmail create label failed: ${createResponse.status}`);
-		const created = await createResponse.json() as GmailLabel;
+		const created = GmailLabelSchema.parse(await createResponse.json());
 		return created.id;
 	};
 
@@ -163,7 +206,7 @@ export function initGmailApi(deps: GmailApiDependencies): {
 			});
 
 			assert(listResponse.ok, `Gmail list unread messages failed: ${listResponse.status}`);
-			const listData = await listResponse.json() as GmailMessageListResponse;
+			const listData = GmailMessageListResponseSchema.parse(await listResponse.json());
 
 			if (!listData.messages) break;
 
@@ -175,7 +218,7 @@ export function initGmailApi(deps: GmailApiDependencies): {
 					});
 
 					assert(msgResponse.ok, `Gmail get message metadata failed: ${msgResponse.status}`);
-					const msg = await msgResponse.json() as GmailMessage & { payload: { headers?: Array<{ name: string; value: string }> } };
+					const msg = GmailMessageMetadataSchema.parse(await msgResponse.json());
 
 					const headers = msg.payload.headers ?? [];
 					const subject = headers.find(h => h.name === "Subject")?.value ?? "(no subject)";
