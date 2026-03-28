@@ -8,6 +8,8 @@ import { AUTH_STYLES } from "./auth.styles";
 const LOGIN_TEMPLATE = readFileSync(join(__dirname, "login.template.html"), "utf-8");
 const SIGNUP_TEMPLATE = readFileSync(join(__dirname, "signup.template.html"), "utf-8");
 const VERIFY_EMAIL_TEMPLATE = readFileSync(join(__dirname, "verify-email.template.html"), "utf-8");
+const FORGOT_PASSWORD_TEMPLATE = readFileSync(join(__dirname, "forgot-password.template.html"), "utf-8");
+const RESET_PASSWORD_TEMPLATE = readFileSync(join(__dirname, "reset-password.template.html"), "utf-8");
 
 interface FieldError {
 	field: string;
@@ -99,6 +101,55 @@ export function SignupPage(data?: AuthFormData): Component {
 		},
 		styles: AUTH_STYLES,
 		bodyClass: "page-signup",
+		content,
+	});
+}
+
+export function ForgotPasswordPage(data?: { email?: string; errors?: FieldError[]; globalError?: string; sent?: boolean }): Component {
+	const email = data?.email ?? "";
+	const errors = data?.errors;
+
+	const content = render(FORGOT_PASSWORD_TEMPLATE, {
+		email,
+		globalError: data?.globalError,
+		sent: data?.sent,
+		emailField: toFieldViewModel(errors, "email"),
+	});
+
+	return Base({
+		seo: {
+			title: "Forgot password — Hutch",
+			description: "Reset your Hutch account password.",
+			canonicalUrl: "/forgot-password",
+			robots: "noindex, nofollow",
+		},
+		styles: AUTH_STYLES,
+		bodyClass: "page-forgot-password",
+		content,
+	});
+}
+
+export function ResetPasswordPage(data: { token?: string; errors?: FieldError[]; globalError?: string; success?: boolean; error?: string }): Component {
+	const errors = data.errors;
+
+	const content = render(RESET_PASSWORD_TEMPLATE, {
+		token: data.token,
+		globalError: data.globalError,
+		success: data.success,
+		error: data.error,
+		passwordField: toFieldViewModel(errors, "password"),
+		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),
+	});
+
+	return Base({
+		seo: {
+			title: "Reset password — Hutch",
+			description: "Set a new password for your Hutch account.",
+			canonicalUrl: "/reset-password",
+			robots: "noindex, nofollow",
+		},
+		styles: AUTH_STYLES,
+		bodyClass: "page-reset-password",
 		content,
 	});
 }

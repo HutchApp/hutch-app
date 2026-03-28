@@ -44,7 +44,7 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			const signupLink = doc.querySelector(".auth-card__footer a")?.getAttribute("href");
+			const signupLink = doc.querySelector(".auth-card__footer:not(.auth-card__footer--forgot) a")?.getAttribute("href");
 			expect(signupLink).toContain("/signup?return=");
 		});
 	});
