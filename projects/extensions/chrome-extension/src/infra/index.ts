@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { getBucketName } from "../../s3-config";
+import { chromeS3Config } from "browser-extension-core/s3-config";
+const { getBucketName } = chromeS3Config;
 
 const config = new pulumi.Config();
 const stage = config.require("stage");

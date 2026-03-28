@@ -1,5 +1,4 @@
-import { getExtensionDownloadUrl as getFirefoxDownloadUrl } from "firefox-extension/s3-config";
-import { getExtensionDownloadUrl as getChromeDownloadUrl } from "chrome-extension/s3-config";
+import { firefoxS3Config, chromeS3Config } from "browser-extension-core/s3-config";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "@packages/hutch-test-app";
@@ -51,7 +50,7 @@ describe("GET /install", () => {
 		const cta = doc.querySelector(
 			'[data-test-cta="download-firefox"]',
 		) as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe(getFirefoxDownloadUrl({ stage: "prod", xpiFilename: TEST_XPI_FILENAME }));
+		expect(cta.getAttribute("href")).toBe(firefoxS3Config.getExtensionDownloadUrl({ stage: "prod", filename: TEST_XPI_FILENAME }));
 	});
 
 	it("should render the Chrome download button linking to the S3 ZIP", async () => {
@@ -61,7 +60,7 @@ describe("GET /install", () => {
 		const cta = doc.querySelector(
 			'[data-test-cta="download-chrome"]',
 		) as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe(getChromeDownloadUrl({ stage: "prod", zipFilename: TEST_ZIP_FILENAME }));
+		expect(cta.getAttribute("href")).toBe(chromeS3Config.getExtensionDownloadUrl({ stage: "prod", filename: TEST_ZIP_FILENAME }));
 		expect(cta.textContent).toBe("Download Hutch for Chrome");
 	});
 

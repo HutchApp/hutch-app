@@ -17,11 +17,16 @@
       "types": "./dist/e2e/index.d.ts",
       "default": "./dist/e2e/index.js"
     },
+    "./s3-config": {
+      "types": "./dist/s3-config.d.ts",
+      "default": "./dist/s3-config.js"
+    },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
-      "e2e": ["dist/e2e/index.d.ts"]
+      "e2e": ["dist/e2e/index.d.ts"],
+      "s3-config": ["dist/s3-config.d.ts"]
     }
   },
   "private": true,

@@ -206,9 +206,9 @@ importers:
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../src/packages/hutch-logger
-      chrome-extension:
+      browser-extension-core:
         specifier: workspace:*
-        version: link:../extensions/chrome-extension
+        version: link:../browser-extension-core
       compression:
         specifier: 1.8.1
         version: 1.8.1
@@ -221,9 +221,6 @@ importers:
       express:
         specifier: 4.22.1
         version: 4.22.1
-      firefox-extension:
-        specifier: workspace:*
-        version: link:../extensions/firefox-extension
       handlebars:
         specifier: 4.7.8
         version: 4.7.8
