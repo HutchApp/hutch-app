@@ -19,13 +19,67 @@ describe("GET /", () => {
 		expect(heroTitle?.textContent).toBe("You are what you read.");
 	});
 
-	it("should render the primary CTA linking to Firefox install", async () => {
+	it("should render a generic install CTA when browser is unrecognized", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cta = doc.querySelector('[data-test-cta="install-firefox"]') as HTMLAnchorElement;
+		const cta = doc.querySelector('[data-test-cta="install-extension"]') as HTMLAnchorElement;
 		expect(cta.getAttribute("href")).toBe("/install");
-		expect(cta.textContent).toBe("Install for Firefox");
+		expect(cta.textContent).toBe("Install Browser Extension");
+	});
+
+	it("should render Firefox install CTA when User-Agent is Firefox", async () => {
+		const response = await request(app)
+			.get("/")
+			.set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0");
+		const doc = new JSDOM(response.text).window.document;
+
+		const cta = doc.querySelector('[data-test-cta="install-extension"]');
+		expect(cta?.textContent).toBe("Install Firefox Extension");
+
+		const trust = doc.querySelector(".home-hero__trust");
+		expect(trust?.textContent).toBe("Also available for Chrome");
+	});
+
+	it("should render Chrome install CTA when User-Agent is Chrome", async () => {
+		const response = await request(app)
+			.get("/")
+			.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36");
+		const doc = new JSDOM(response.text).window.document;
+
+		const cta = doc.querySelector('[data-test-cta="install-extension"]');
+		expect(cta?.textContent).toBe("Install Chrome Extension");
+
+		const trust = doc.querySelector(".home-hero__trust");
+		expect(trust?.textContent).toBe("Also available for Firefox");
+	});
+
+	it("should render Chrome install CTA when User-Agent is Edge", async () => {
+		const response = await request(app)
+			.get("/")
+			.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0");
+		const doc = new JSDOM(response.text).window.document;
+
+		const cta = doc.querySelector('[data-test-cta="install-extension"]');
+		expect(cta?.textContent).toBe("Install Chrome Extension");
+	});
+
+	it("should render generic trust line when browser is unrecognized", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const trust = doc.querySelector(".home-hero__trust");
+		expect(trust?.textContent).toBe("Firefox & Chrome");
+	});
+
+	it("should render browser-specific bottom install CTA for Firefox", async () => {
+		const response = await request(app)
+			.get("/")
+			.set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0");
+		const doc = new JSDOM(response.text).window.document;
+
+		const bottomCta = doc.querySelector('[data-test-cta="bottom-install"]');
+		expect(bottomCta?.textContent).toBe("Install Firefox Extension");
 	});
 
 	it("should render the secondary CTA linking to GitHub", async () => {
