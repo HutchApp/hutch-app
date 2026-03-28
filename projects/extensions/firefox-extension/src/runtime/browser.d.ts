@@ -75,6 +75,7 @@ declare namespace browser {
 			imageData?: Record<number, ImageData>;
 		}): Promise<void>;
 
+		function openPopup(): Promise<void>;
 	}
 
 	namespace windows {

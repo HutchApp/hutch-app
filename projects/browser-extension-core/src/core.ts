@@ -102,6 +102,13 @@ export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; lo
 		}
 	}
 
+	async function showSavedIconForActiveTab() {
+		const tab = await shell.getActiveTab();
+		if (tab?.id != null) {
+			await shell.setIcon.showSaved(tab.id);
+		}
+	}
+
 	return {
 		init() {
 			eventBus.emit("pre-init");
@@ -110,7 +117,18 @@ export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; lo
 				const guarded = auth.whenLoggedIn(() => saveFromContextMenu(info, tab));
 				emitResult("saved-current-tab", guarded);
 				if (guarded.ok) {
-					guarded.value.then(() => updateActiveTabIcon()).catch(() => {});
+					guarded.value
+						.then(async (result) => {
+							if (!result?.ok) return;
+							const url = info.menuItemId === "save-link-to-hutch" ? info.linkUrl : (info.pageUrl ?? tab?.url);
+							const title = info.menuItemId === "save-link-to-hutch" ? info.linkUrl : (tab?.title ?? url);
+							if (url) {
+								await shell.setJustSaved({ url, title: title ?? url });
+								await shell.openPopup();
+							}
+							await showSavedIconForActiveTab();
+						})
+						.catch(() => {});
 				}
 			});
 
@@ -137,7 +155,12 @@ export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; lo
 						}
 
 						if (result.action === "saved") {
-							updateActiveTabIcon().catch(() => {});
+							await shell.setJustSaved({
+								url: result.item.url,
+								title: result.item.title,
+							});
+							await shell.openPopup();
+							await showSavedIconForActiveTab();
 						}
 					})
 					.catch((err) => logger.error(err));

@@ -37,6 +37,8 @@ const tokenStorage: TokenStorage = {
 	},
 };
 
+const JUST_SAVED_KEY = "hutch_just_saved";
+
 let loginWindow: { id: number; tabId: number; tabUrl: string } | null = null;
 
 const shell: BrowserShell = {
@@ -47,6 +49,22 @@ const shell: BrowserShell = {
 			}
 			return undefined;
 		});
+	},
+
+	async openPopup() {
+		await browser.browserAction.openPopup();
+	},
+
+	async setJustSaved(data) {
+		await browser.storage.local.set({ [JUST_SAVED_KEY]: data });
+	},
+
+	async getAndClearJustSaved() {
+		const result = await browser.storage.local.get(JUST_SAVED_KEY);
+		const raw = result[JUST_SAVED_KEY];
+		if (!raw) return null;
+		await browser.storage.local.remove(JUST_SAVED_KEY);
+		return raw as { url: string; title: string };
 	},
 
 	openLoginScreen({ url, title }) {

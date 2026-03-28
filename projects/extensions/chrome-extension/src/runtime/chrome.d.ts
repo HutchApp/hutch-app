@@ -1,4 +1,8 @@
 declare namespace chrome {
+	namespace action {
+		function openPopup(): Promise<void>;
+	}
+
 	namespace offscreen {
 		type Reason =
 			| "TESTING"
