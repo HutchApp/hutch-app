@@ -10,6 +10,8 @@ import type {
 	GetSessionUserId,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
+	UpdatePassword,
+	UserExistsByEmail,
 	VerifyCredentials,
 } from "./auth.types";
 import { normalizeEmail } from "./normalize-email";
@@ -36,6 +38,8 @@ export function initInMemoryAuth(): {
 	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
 	markSessionEmailVerified: MarkSessionEmailVerified;
+	userExistsByEmail: UserExistsByEmail;
+	updatePassword: UpdatePassword;
 } {
 	const users = new Map<string, StoredUser>();
 	const sessions = new Map<string, StoredSession>();
@@ -103,6 +107,18 @@ export function initInMemoryAuth(): {
 		}
 	};
 
+	const userExistsByEmail: UserExistsByEmail = async (email) => {
+		const normalizedEmail = normalizeEmail(email);
+		return users.has(normalizedEmail);
+	};
+
+	const updatePassword: UpdatePassword = async ({ email, password }) => {
+		const normalizedEmail = normalizeEmail(email);
+		const user = users.get(normalizedEmail);
+		assert(user, `Cannot update password: no user found for ${normalizedEmail}`);
+		user.passwordHash = await hashPassword(password);
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
@@ -112,5 +128,7 @@ export function initInMemoryAuth(): {
 		countUsers,
 		markEmailVerified,
 		markSessionEmailVerified,
+		userExistsByEmail,
+		updatePassword,
 	};
 }

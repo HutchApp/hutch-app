@@ -9,6 +9,7 @@ import type { FindCachedSummary } from "./providers/article-summary/article-summ
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
+import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -39,6 +40,7 @@ export function createTestApp(options?: {
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
+	const passwordReset = initInMemoryPasswordReset();
 
 	const app = createApp({
 		appOrigin: "http://localhost:3000",
@@ -51,11 +53,12 @@ export function createTestApp(options?: {
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,
 		...email,
 		...emailVerification,
+		...passwordReset,
 		baseUrl: "http://localhost:3000",
 		logError: options?.logError ?? (() => {}),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
 
-	return { app, auth, articleStore, parser, oauthModel, email, emailVerification };
+	return { app, auth, articleStore, parser, oauthModel, email, emailVerification, passwordReset };
 }

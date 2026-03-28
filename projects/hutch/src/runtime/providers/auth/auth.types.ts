@@ -34,3 +34,7 @@ export type CountUsers = () => Promise<number>;
 export type MarkEmailVerified = (email: string) => Promise<void>;
 
 export type MarkSessionEmailVerified = (sessionId: string) => Promise<void>;
+
+export type UserExistsByEmail = (email: string) => Promise<boolean>;
+
+export type UpdatePassword = (args: { email: string; password: string }) => Promise<void>;

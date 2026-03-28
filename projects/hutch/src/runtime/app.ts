@@ -22,6 +22,8 @@ import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
+import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
+import { initDynamoDbPasswordReset } from "./providers/password-reset/dynamodb-password-reset";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
@@ -45,6 +47,7 @@ function initProviders() {
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
+		const passwordResetTokensTable = requireEnv("DYNAMODB_PASSWORD_RESET_TOKENS_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
@@ -75,6 +78,7 @@ function initProviders() {
 			articleStore,
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
+			...initDynamoDbPasswordReset({ client, tableName: passwordResetTokensTable }),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			publishLinkSaved,
@@ -106,6 +110,7 @@ function initProviders() {
 		articleStore,
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
+		...initInMemoryPasswordReset(),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		publishLinkSaved,
