@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "@packages/hutch-test-app";
+import { createTestApp } from "../../../test-app";
 
 async function loginAgent(
 	app: ReturnType<typeof createTestApp>["app"],
