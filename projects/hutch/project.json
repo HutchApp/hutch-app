@@ -3,7 +3,8 @@
   "targets": {
     "compile": {
       "dependsOn": [
-        { "projects": ["@packages/hutch-logger"], "target": "compile" }
+        { "projects": ["@packages/hutch-logger"], "target": "compile" },
+        { "projects": ["browser-extension-core"], "target": "compile" }
       ]
     },
     "check": {
