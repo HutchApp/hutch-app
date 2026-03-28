@@ -39,15 +39,8 @@ function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
 	const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
 	const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
-	const googleClientId = requireEnv("GOOGLE_CLIENT_ID");
-	const googleClientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
-	const gmailApi = initGmailApi({
-		fetch: globalThis.fetch,
-		clientId: googleClientId,
-		clientSecret: googleClientSecret,
-	});
 	const { qualifyLink } = initQualifyLink();
 
 	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch });
@@ -55,6 +48,14 @@ function initProviders() {
 	const staleTtlMs = 86400000;
 
 	if (persistence === "prod") {
+		const googleClientId = requireEnv("GOOGLE_CLIENT_ID");
+		const googleClientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
+		const gmailApi = initGmailApi({
+			fetch: globalThis.fetch,
+			clientId: googleClientId,
+			clientSecret: googleClientSecret,
+		});
+
 		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 		const userArticlesTable = requireEnv("DYNAMODB_USER_ARTICLES_TABLE");
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
@@ -105,6 +106,13 @@ function initProviders() {
 			qualifyLink,
 		};
 	}
+
+	const googleClientId = "dev-google-client-id";
+	const gmailApi = initGmailApi({
+		fetch: globalThis.fetch,
+		clientId: googleClientId,
+		clientSecret: "dev-google-client-secret",
+	});
 
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
