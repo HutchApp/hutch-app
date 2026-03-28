@@ -27,13 +27,13 @@ jobs:
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
       PULUMI_CONFIG_PASSPHRASE: ''
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
