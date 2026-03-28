@@ -1,6 +1,6 @@
 {
   "name": "chrome-extension",
-  "version": "1.0.36",
+  "version": "1.0.37",
   "description": "Hutch — Where reading still matters",
   "main": "src/infra/index.ts",
   "private": true,
