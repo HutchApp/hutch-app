@@ -219,8 +219,6 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const summary = await deps.findCachedSummary(article.url);
 
 		const html = ReaderPage(article, { emailVerified: req.emailVerified, summary }).to("text/html");
-		/* Full page reload when reached via htmx so the reader's own <head> styles load */
-		res.set("HX-Refresh", "true");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

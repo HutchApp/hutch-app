@@ -40,7 +40,7 @@
           </div>
           <div class="queue-article__actions">
             {{#each actions}}
-            <form method="{{method}}" action="{{url}}" class="queue-article__action-form" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
+            <form method="{{method}}" action="{{url}}" class="queue-article__action-form" hx-boost="{{boost}}"{{#if boost}} hx-target="main" hx-select="main" hx-swap="outerHTML show:none"{{/if}}>
               {{#each fields}}<input type="hidden" name="{{name}}" value="{{value}}">{{/each}}
               <button class="{{buttonClass}}" type="submit" title="{{title}}" data-test-action="{{testAction}}">{{text}}</button>
             </form>
