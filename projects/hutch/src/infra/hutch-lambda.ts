@@ -29,6 +29,7 @@ export class HutchLambda {
 	public readonly apiUrl: pulumi.Output<string> | string;
 	public readonly functionName: pulumi.Output<string>;
 	public readonly defaultRoute: aws.apigatewayv2.Route;
+	public readonly lambdaRole: aws.iam.Role;
 
 	constructor(
 		name: string,
@@ -37,6 +38,8 @@ export class HutchLambda {
 			storage: HutchStorage;
 			domainRegistration: DomainRegistration;
 			staticBaseUrl: pulumi.Output<string>;
+			eventBusName: pulumi.Output<string>;
+			eventBusArn: pulumi.Output<string>;
 		},
 	) {
 		const memorySize = 512;
@@ -61,7 +64,7 @@ export class HutchLambda {
 			});
 		});
 
-		const lambdaRole = new aws.iam.Role(`${name}-lambda-role`, {
+		this.lambdaRole = new aws.iam.Role(`${name}-lambda-role`, {
 			assumeRolePolicy: JSON.stringify({
 				Version: "2012-10-17",
 				Statement: [
@@ -75,12 +78,12 @@ export class HutchLambda {
 		});
 
 		new aws.iam.RolePolicyAttachment(`${name}-lambda-basic-execution`, {
-			role: lambdaRole.name,
+			role: this.lambdaRole.name,
 			policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
 		});
 
 		new aws.iam.RolePolicy(`${name}-dynamodb-access`, {
-			role: lambdaRole.name,
+			role: this.lambdaRole.name,
 			policy: pulumi
 				.all([
 					args.storage.articlesTable.arn,
@@ -123,6 +126,20 @@ export class HutchLambda {
 				),
 		});
 
+		new aws.iam.RolePolicy(`${name}-eventbridge-publish`, {
+			role: this.lambdaRole.name,
+			policy: args.eventBusArn.apply((arn) =>
+				JSON.stringify({
+					Version: "2012-10-17",
+					Statement: [{
+						Effect: "Allow",
+						Action: ["events:PutEvents"],
+						Resource: [arn],
+					}],
+				}),
+			),
+		});
+
 		const apiGateway = new aws.apigatewayv2.Api(`${name}-api-gateway`, {
 			protocolType: "HTTP",
 			description: `Hutch API Gateway (${args.stage})`,
@@ -137,7 +154,7 @@ export class HutchLambda {
 		const lambdaFunction = new aws.lambda.Function(`${name}-api`, {
 			runtime: aws.lambda.Runtime.NodeJS22dX,
 			handler: "index.handler",
-			role: lambdaRole.arn,
+			role: this.lambdaRole.arn,
 			code: lambdaCode,
 			memorySize,
 			timeout,
@@ -157,9 +174,7 @@ export class HutchLambda {
 					RESEND_API_KEY: pulumi.runtime.isDryRun()
 						? (getEnv("RESEND_API_KEY") ?? "")
 						: requireEnv("RESEND_API_KEY"),
-					ANTHROPIC_API_KEY: pulumi.runtime.isDryRun()
-						? (getEnv("ANTHROPIC_API_KEY") ?? "")
-						: requireEnv("ANTHROPIC_API_KEY"),
+					EVENT_BUS_NAME: args.eventBusName,
 					STATIC_BASE_URL: args.staticBaseUrl,
 				},
 			},

@@ -17,7 +17,10 @@ export default {
 		// Workspace dependency for S3 config (subpath imports not detected by knip)
 		"browser-extension-core",
 		// Used in infra code (compiled separately)
+		"@packages/hutch-event-bridge",
 		"@packages/hutch-logger",
+		// Event types imported at runtime via workspace dependency
+		"save-link",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)

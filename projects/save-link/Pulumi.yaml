@@ -1,0 +1,5 @@
+name: save-link
+runtime:
+  name: nodejs
+  options:
+    typescript: true

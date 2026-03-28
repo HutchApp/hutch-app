@@ -13,7 +13,8 @@ import type {
 	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
-import type { FindCachedSummary, SummarizeArticle } from "../../../providers/article-summary/article-summary.types";
+import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
@@ -31,7 +32,7 @@ interface QueueDependencies {
 	parseArticle: ParseArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
-	summarizeArticle: SummarizeArticle;
+	publishLinkSaved: PublishLinkSaved;
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
@@ -76,7 +77,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 		}).catch((error) => deps.logError("Failed to update fetch metadata", error instanceof Error ? error : undefined));
 
 		if (article.content) {
-			deps.summarizeArticle({ url, textContent: article.content });
+			await deps.publishLinkSaved({ url, userId });
 		}
 
 		return { ok: true, saved };
@@ -90,7 +91,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	});
 
 	if (freshness.action === "refreshed" && freshness.article.article.content) {
-		deps.summarizeArticle({ url, textContent: freshness.article.article.content });
+		await deps.publishLinkSaved({ url, userId });
 	}
 
 	return { ok: true, saved };
