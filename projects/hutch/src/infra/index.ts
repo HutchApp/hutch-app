@@ -19,6 +19,7 @@ const tableNames = {
 	sessions: config.require("dynamodbSessionsTable"),
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
+	gmailTokens: config.require("dynamodbGmailTokensTable"),
 };
 
 const storage = new HutchStorage("hutch", {

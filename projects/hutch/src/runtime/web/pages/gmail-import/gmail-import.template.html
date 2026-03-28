@@ -1,0 +1,88 @@
+    <main class="gmail-import">
+      <div class="gmail-import__header">
+        <h1 class="gmail-import__title">Gmail Link Import</h1>
+        <p class="gmail-import__subtitle">Import links from your Gmail emails into Hutch.</p>
+      </div>
+
+      {{#if statusMessage}}
+      <div class="gmail-import__status gmail-import__status--info" data-test-status-message>
+        {{statusMessage}}
+      </div>
+      {{/if}}
+
+      {{#if isConnected}}
+      <div class="gmail-import__status gmail-import__status--connected" data-test-connected>
+        Gmail account connected.
+      </div>
+
+      {{#if emailCount}}
+      <form method="POST" action="/gmail-import/start" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
+        <div class="gmail-import__controls">
+          <span class="gmail-import__count" data-test-email-count>{{emailCount}} unread emails</span>
+          <button type="button" class="gmail-import__select-btn" data-test-select-all onclick="document.querySelectorAll('.gmail-import__checkbox').forEach(function(c){c.checked=true})">Select All</button>
+          <button type="button" class="gmail-import__select-btn" data-test-deselect-all onclick="document.querySelectorAll('.gmail-import__checkbox').forEach(function(c){c.checked=false})">Deselect All</button>
+        </div>
+
+        <ul class="gmail-import__email-list" data-test-email-list>
+          {{#each emails}}
+          <li class="gmail-import__email-item">
+            <label class="gmail-import__email-label">
+              <input type="checkbox" name="messageIds" value="{{this.messageId}}" checked class="gmail-import__checkbox" data-test-email-checkbox>
+              <div class="gmail-import__email-content">
+                <span class="gmail-import__email-subject" data-test-email-subject>{{this.subject}}</span>
+                <span class="gmail-import__email-from" data-test-email-from>{{this.from}}</span>
+              </div>
+            </label>
+          </li>
+          {{/each}}
+        </ul>
+
+        <div class="gmail-import__action">
+          <button type="submit" class="gmail-import__btn" data-test-import-btn>Import Selected</button>
+        </div>
+      </form>
+      {{else}}
+      <section class="gmail-import__section">
+        <h2 class="gmail-import__section-title">What happens when you import</h2>
+        <ul class="gmail-import__list">
+          <li>Your unread inbox emails are listed for you to review</li>
+          <li>Select which emails to scan for links</li>
+          <li>Valid links are saved to your reading queue as unread</li>
+          <li>Processed emails are labeled in Gmail with today's date</li>
+        </ul>
+      </section>
+
+      <p class="gmail-import__text gmail-import__no-emails" data-test-no-emails>No unread emails found in your inbox.</p>
+      {{/if}}
+
+      <div class="gmail-import__disconnect">
+        <form method="POST" action="/gmail-import/disconnect" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
+          <button type="submit" class="gmail-import__btn gmail-import__btn--danger" data-test-disconnect-btn>Disconnect Gmail</button>
+        </form>
+      </div>
+
+      {{else}}
+      <div class="gmail-import__status gmail-import__status--disconnected" data-test-disconnected>
+        No Gmail account connected.
+      </div>
+
+      <section class="gmail-import__section">
+        <h2 class="gmail-import__section-title">How it works</h2>
+        <ul class="gmail-import__list">
+          <li>Connect your Gmail account via Google sign-in</li>
+          <li>Review your unread emails — select which to import</li>
+          <li>Hutch extracts links and adds them to your reading queue</li>
+          <li>Processed emails are labeled so you know what was imported</li>
+        </ul>
+      </section>
+
+      <section class="gmail-import__section">
+        <h2 class="gmail-import__section-title">Permissions</h2>
+        <p class="gmail-import__text">Hutch requests permission to read your email content and manage labels. Your emails are never stored — only the links are extracted.</p>
+      </section>
+
+      <div class="gmail-import__action">
+        <a href="/gmail-import/connect" class="gmail-import__btn" data-test-connect-btn>Connect Gmail</a>
+      </div>
+      {{/if}}
+    </main>
