@@ -12,6 +12,7 @@ import {
 	createSaveLinkActions,
 	createPaginationActions,
 	type PaginationProgress,
+	type SaveLinkProgress,
 } from "browser-extension-core/e2e-actions";
 
 const ADDON_ID = "hutch-extension@hutch-app.com";
@@ -79,7 +80,7 @@ test("should complete OAuth login flow, save links, and paginate the list", asyn
 
 		const popupWindowHandle = await driver.getWindowHandle();
 
-		const saveLinkProgress = { linkSaved: false, listVerified: false };
+		const saveLinkProgress: SaveLinkProgress = { linkSaved: false, listVerified: false };
 		const paginationProgress: PaginationProgress = {
 			paginationLinksAdded: false,
 			verifiedPage1: false,

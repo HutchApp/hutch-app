@@ -13,6 +13,7 @@ import {
 	createSaveLinkActions,
 	createPaginationActions,
 	type PaginationProgress,
+	type SaveLinkProgress,
 } from "browser-extension-core/e2e-actions";
 
 const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
@@ -138,7 +139,7 @@ async function runTest() {
 
 		const popupWindowHandle = await driver.getWindowHandle();
 
-		const saveLinkProgress = { linkSaved: false, listVerified: false };
+		const saveLinkProgress: SaveLinkProgress = { linkSaved: false, listVerified: false };
 		const paginationProgress: PaginationProgress = {
 			paginationLinksAdded: false,
 			verifiedPage1: false,
