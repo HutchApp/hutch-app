@@ -1,7 +1,7 @@
 import { firefoxS3Config, chromeS3Config } from "browser-extension-core/s3-config";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "@packages/hutch-test-app";
+import { createTestApp } from "../../../test-app";
 
 const TEST_XPI_FILENAME = "abc123-1.0.0.xpi";
 const TEST_ZIP_FILENAME = "hutch-chrome-1.0.0.zip";

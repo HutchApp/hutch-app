@@ -4,7 +4,7 @@ import type { Minutes } from "../../../domain/article/article.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { fetchAllArticles } from "./export.page";
 import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
-import { createTestApp } from "@packages/hutch-test-app";
+import { createTestApp } from "../../../test-app";
 
 async function loginAgent(
 	app: ReturnType<typeof createTestApp>["app"],

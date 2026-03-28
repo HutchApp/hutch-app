@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "@packages/hutch-test-app";
+import { createTestApp } from "../../../test-app";
 import type { RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {

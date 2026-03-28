@@ -55,24 +55,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
       - id: detect
         run: |
-          AFFECTED=$(NX_BASE=${{ github.event.before }} NX_HEAD=${{ github.sha }} pnpm nx show projects --affected --json)
-          echo "Affected projects: $AFFECTED"
-          echo "hutch=$(echo "$AFFECTED" | jq 'any(. == "hutch")')" >> "$GITHUB_OUTPUT"
-          echo "firefox-extension=$(echo "$AFFECTED" | jq 'any(. == "firefox-extension")')" >> "$GITHUB_OUTPUT"
-          echo "chrome-extension=$(echo "$AFFECTED" | jq 'any(. == "chrome-extension")')" >> "$GITHUB_OUTPUT"
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "First push detected, deploying everything"
+            echo "hutch=true" >> "$GITHUB_OUTPUT"
+            echo "firefox-extension=true" >> "$GITHUB_OUTPUT"
+            echo "chrome-extension=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
+          echo "Changed files:"
+          echo "$CHANGED"
+          echo "hutch=$(echo "$CHANGED" | grep -qE '^(projects/hutch/|src/packages/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "firefox-extension=$(echo "$CHANGED" | grep -qE '^(projects/extensions/firefox-extension/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "chrome-extension=$(echo "$CHANGED" | grep -qE '^(projects/extensions/chrome-extension/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   deploy-staging:
     if: needs.detect-changes.outputs.hutch == 'true'
