@@ -9,20 +9,15 @@ import type {
 	GetGmailMessage,
 	EnsureGmailLabel,
 	LabelGmailMessage,
-	RefreshGmailAccessToken,
 	GmailMessagePart,
 } from "./gmail-api.types";
-import type { SaveGmailTokens, FindGmailTokens } from "./gmail-token-store.types";
-
-const TOKEN_EXPIRY_BUFFER_MS = 60_000;
+import type { EnsureValidAccessToken } from "./ensure-valid-access-token";
 
 interface GmailImportDependencies {
 	getGmailMessage: GetGmailMessage;
 	ensureGmailLabel: EnsureGmailLabel;
 	labelGmailMessage: LabelGmailMessage;
-	refreshGmailAccessToken: RefreshGmailAccessToken;
-	findGmailTokens: FindGmailTokens;
-	saveGmailTokens: SaveGmailTokens;
+	ensureValidAccessToken: EnsureValidAccessToken;
 	saveArticle: SaveArticle;
 	parseArticle: ParseArticle;
 	qualifyLink: QualifyLink;
@@ -75,19 +70,10 @@ export function initGmailImport(deps: GmailImportDependencies): {
 			emailsLabeled: 0,
 		};
 
-		const tokens = await deps.findGmailTokens(userId);
-		if (!tokens) {
+		const accessToken = await deps.ensureValidAccessToken(userId);
+		if (!accessToken) {
 			deps.logError("Gmail import: no tokens found for user");
 			return result;
-		}
-
-		let accessToken = tokens.accessToken;
-		if (tokens.expiresAt < Date.now() + TOKEN_EXPIRY_BUFFER_MS) {
-			const refreshed = await deps.refreshGmailAccessToken({
-				refreshToken: tokens.refreshToken,
-			});
-			accessToken = refreshed.accessToken;
-			await deps.saveGmailTokens({ userId, tokens: refreshed });
 		}
 
 		const labelName = formatImportLabelName(new Date());

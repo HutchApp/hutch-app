@@ -4,19 +4,35 @@ import express from "express";
 import type { RunGmailImport } from "../../../domain/gmail-import/gmail-import.types";
 import type { ExchangeGmailCode, ListUnreadGmailMessages } from "../../../providers/gmail/gmail-api.types";
 import type { FindGmailTokens, SaveGmailTokens, DeleteGmailTokens } from "../../../providers/gmail/gmail-token-store.types";
-import type { RefreshGmailAccessToken } from "../../../providers/gmail/gmail-api.types";
+import type { EnsureValidAccessToken } from "../../../providers/gmail/ensure-valid-access-token";
 import { toGmailImportViewModel } from "./gmail-import.viewmodel";
 import { GmailImportPage } from "./gmail-import.component";
 
 const GMAIL_OAUTH_SCOPE = "https://www.googleapis.com/auth/gmail.modify";
-const TOKEN_EXPIRY_BUFFER_MS = 60_000;
+
+const KNOWN_STATUS_MESSAGES = new Set([
+	"Gmail connected successfully",
+	"Connection cancelled",
+	"Connection failed. Please try again",
+	"Please connect Gmail first",
+	"No emails selected",
+	"Gmail disconnected",
+	"Import failed. Please try again",
+]);
+
+function validateStatusMessage(raw: unknown): string | undefined {
+	if (typeof raw !== "string") return undefined;
+	if (KNOWN_STATUS_MESSAGES.has(raw)) return raw;
+	if (/^Imported \d+ links from \d+ emails\. \d+ skipped$/.test(raw)) return raw;
+	return undefined;
+}
 
 interface GmailImportDependencies {
 	findGmailTokens: FindGmailTokens;
 	saveGmailTokens: SaveGmailTokens;
 	deleteGmailTokens: DeleteGmailTokens;
 	exchangeGmailCode: ExchangeGmailCode;
-	refreshGmailAccessToken: RefreshGmailAccessToken;
+	ensureValidAccessToken: EnsureValidAccessToken;
 	listUnreadGmailMessages: ListUnreadGmailMessages;
 	runGmailImport: RunGmailImport;
 	googleClientId: string;
@@ -39,33 +55,18 @@ export function initGmailImportRoutes(deps: GmailImportDependencies): Router {
 	const router = express.Router();
 	const redirectUri = `${deps.appOrigin}/gmail-import/callback`;
 
-	async function getAccessToken(userId: Parameters<typeof deps.findGmailTokens>[0]) {
-		const tokens = await deps.findGmailTokens(userId);
-		if (!tokens) return null;
-
-		if (tokens.expiresAt < Date.now() + TOKEN_EXPIRY_BUFFER_MS) {
-			const refreshed = await deps.refreshGmailAccessToken({
-				refreshToken: tokens.refreshToken,
-			});
-			await deps.saveGmailTokens({ userId, tokens: refreshed });
-			return refreshed.accessToken;
-		}
-
-		return tokens.accessToken;
-	}
-
 	router.get("/", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
 
 		const tokens = await deps.findGmailTokens(userId);
-		const statusMessage = typeof req.query.status === "string" ? req.query.status : undefined;
+		const statusMessage = validateStatusMessage(req.query.status);
 
 		let emails: Awaited<ReturnType<typeof deps.listUnreadGmailMessages>> = [];
 
 		if (tokens) {
 			try {
-				const accessToken = await getAccessToken(userId);
+				const accessToken = await deps.ensureValidAccessToken(userId);
 				if (accessToken) {
 					emails = await deps.listUnreadGmailMessages({ accessToken });
 				}
@@ -129,11 +130,13 @@ export function initGmailImportRoutes(deps: GmailImportDependencies): Router {
 			return;
 		}
 
-		deps.runGmailImport({ userId, messageIds }).catch((error) => {
+		try {
+			const result = await deps.runGmailImport({ userId, messageIds });
+			res.redirect(303, `/gmail-import?status=Imported+${result.importedCount}+links+from+${messageIds.length}+emails.+${result.skippedCount}+skipped`);
+		} catch (error) {
 			deps.logError("Gmail import failed", error instanceof Error ? error : undefined);
-		});
-
-		res.redirect(303, `/gmail-import?status=Import+started+for+${messageIds.length}+emails.+Links+will+appear+in+your+queue+shortly`);
+			res.redirect(303, "/gmail-import?status=Import+failed.+Please+try+again");
+		}
 	});
 
 	router.post("/disconnect", async (req: Request, res: Response) => {

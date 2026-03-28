@@ -30,7 +30,8 @@ import { initGmailApi } from "./providers/gmail/gmail-api";
 import { initDynamoDbGmailTokenStore } from "./providers/gmail/dynamodb-gmail-token-store";
 import { initInMemoryGmailTokenStore } from "./providers/gmail/in-memory-gmail-token-store";
 import { initGmailImport } from "./providers/gmail/gmail-import";
-import { initQualifyLink } from "./domain/gmail-import/qualify-link";
+import { qualifyLink } from "./domain/gmail-import/qualify-link";
+import { initEnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
@@ -40,8 +41,6 @@ function initProviders() {
 	const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
 	const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
-
-	const { qualifyLink } = initQualifyLink();
 
 	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch });
 	const fetchConditional = initFetchConditional({ fetch: globalThis.fetch });
@@ -103,7 +102,6 @@ function initProviders() {
 			...gmailTokenStore,
 			...gmailApi,
 			googleClientId,
-			qualifyLink,
 		};
 	}
 
@@ -170,19 +168,23 @@ export function createHutchApp(deps: {
 	parseArticle: ParseArticle;
 	appOrigin?: string;
 }) {
-	const { auth, articleStore, oauthModel, validateAccessToken, qualifyLink, ...providers } = initProviders();
+	const { auth, articleStore, oauthModel, validateAccessToken, ...providers } = initProviders();
 
 	const appOrigin = deps.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 	const staticBaseUrl = requireEnv("STATIC_BASE_URL");
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
+	const ensureValidAccessToken = initEnsureValidAccessToken({
+		findGmailTokens: providers.findGmailTokens,
+		saveGmailTokens: providers.saveGmailTokens,
+		refreshGmailAccessToken: providers.refreshGmailAccessToken,
+	});
+
 	const { runGmailImport } = initGmailImport({
 		getGmailMessage: providers.getGmailMessage,
 		ensureGmailLabel: providers.ensureGmailLabel,
 		labelGmailMessage: providers.labelGmailMessage,
-		refreshGmailAccessToken: providers.refreshGmailAccessToken,
-		findGmailTokens: providers.findGmailTokens,
-		saveGmailTokens: providers.saveGmailTokens,
+		ensureValidAccessToken,
 		saveArticle: articleStore.saveArticle,
 		parseArticle: deps.parseArticle,
 		qualifyLink,
@@ -201,6 +203,7 @@ export function createHutchApp(deps: {
 		oauthModel,
 		validateAccessToken,
 		runGmailImport,
+		ensureValidAccessToken,
 	});
 
 	return { app, auth, articleStore, oauthModel };

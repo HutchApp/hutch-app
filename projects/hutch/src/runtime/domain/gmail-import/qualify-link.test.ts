@@ -1,6 +1,4 @@
-import { initQualifyLink } from "./qualify-link";
-
-const { qualifyLink } = initQualifyLink();
+import { qualifyLink } from "./qualify-link";
 
 describe("qualifyLink", () => {
 	it("accepts a valid https URL", () => {

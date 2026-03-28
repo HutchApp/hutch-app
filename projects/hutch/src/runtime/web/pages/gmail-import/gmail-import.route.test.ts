@@ -224,7 +224,7 @@ describe("Gmail Import routes", () => {
 				.send({ messageIds: ["msg-1", "msg-2"] });
 
 			expect(response.status).toBe(303);
-			expect(response.headers.location).toContain("Import+started+for+2+emails");
+			expect(response.headers.location).toContain("Imported+0+links+from+2+emails");
 		});
 	});
 

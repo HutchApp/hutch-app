@@ -167,21 +167,24 @@ export function initGmailApi(deps: GmailApiDependencies): {
 
 			if (!listData.messages) break;
 
-			for (const ref of listData.messages) {
-				const msgUrl = `${GMAIL_API_BASE}/messages/${ref.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From`;
-				const msgResponse = await fetch(msgUrl, {
-					headers: { Authorization: `Bearer ${accessToken}` },
-				});
+			const messagePreviews = await Promise.all(
+				listData.messages.map(async (ref) => {
+					const msgUrl = `${GMAIL_API_BASE}/messages/${ref.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From`;
+					const msgResponse = await fetch(msgUrl, {
+						headers: { Authorization: `Bearer ${accessToken}` },
+					});
 
-				assert(msgResponse.ok, `Gmail get message metadata failed: ${msgResponse.status}`);
-				const msg = await msgResponse.json() as GmailMessage & { payload: { headers?: Array<{ name: string; value: string }> } };
+					assert(msgResponse.ok, `Gmail get message metadata failed: ${msgResponse.status}`);
+					const msg = await msgResponse.json() as GmailMessage & { payload: { headers?: Array<{ name: string; value: string }> } };
 
-				const headers = msg.payload.headers ?? [];
-				const subject = headers.find(h => h.name === "Subject")?.value ?? "(no subject)";
-				const from = headers.find(h => h.name === "From")?.value ?? "(unknown sender)";
+					const headers = msg.payload.headers ?? [];
+					const subject = headers.find(h => h.name === "Subject")?.value ?? "(no subject)";
+					const from = headers.find(h => h.name === "From")?.value ?? "(unknown sender)";
 
-				previews.push({ messageId: ref.id, subject, from });
-			}
+					return { messageId: ref.id, subject, from };
+				})
+			);
+			previews.push(...messagePreviews);
 
 			pageToken = listData.nextPageToken;
 		} while (pageToken);

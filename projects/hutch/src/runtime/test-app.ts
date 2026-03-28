@@ -16,6 +16,7 @@ import { createValidateAccessToken } from "./providers/oauth/validate-access-tok
 import { initInMemoryGmailTokenStore } from "./providers/gmail/in-memory-gmail-token-store";
 import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
 import type { ExchangeGmailCode, RefreshGmailAccessToken, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
+import { initEnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
 import { createApp } from "./server";
 
 const noopSummarize: SummarizeArticle = async () => null;
@@ -58,6 +59,10 @@ export function createTestApp(options?: {
 	};
 
 	const gmailTokenStore = initInMemoryGmailTokenStore();
+	const ensureValidAccessToken = initEnsureValidAccessToken({
+		...gmailTokenStore,
+		refreshGmailAccessToken: stubRefreshGmailAccessToken,
+	});
 
 	const app = createApp({
 		appOrigin: "http://localhost:3000",
@@ -76,9 +81,9 @@ export function createTestApp(options?: {
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		...gmailTokenStore,
 		exchangeGmailCode: stubExchangeGmailCode,
-		refreshGmailAccessToken: stubRefreshGmailAccessToken,
 		listUnreadGmailMessages: stubListUnreadGmailMessages,
 		runGmailImport: noopGmailImport,
+		ensureValidAccessToken,
 		googleClientId: "test-google-client-id",
 	});
 

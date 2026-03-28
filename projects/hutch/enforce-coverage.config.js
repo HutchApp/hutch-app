@@ -29,6 +29,8 @@ config.enforceCoverage({
     'src/runtime/providers/gmail/gmail-api.ts',
     // Gmail import orchestrator — integrates external Gmail API calls, tested via integration tests
     'src/runtime/providers/gmail/gmail-import.ts',
+    // Token refresh coordinator — thin wrapper over find/refresh/save, tested via integration tests
+    'src/runtime/providers/gmail/ensure-valid-access-token.ts',
     // Staging E2E tests — only run in CI against deployed staging, not locally
     '**/*.e2e-staging.ts',
   ],

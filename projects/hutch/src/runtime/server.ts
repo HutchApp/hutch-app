@@ -29,8 +29,9 @@ import type {
 	VerifyEmailToken,
 } from "./providers/email-verification/email-verification.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
-import type { ExchangeGmailCode, RefreshGmailAccessToken, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
+import type { ExchangeGmailCode, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
 import type { FindGmailTokens, SaveGmailTokens, DeleteGmailTokens } from "./providers/gmail/gmail-token-store.types";
+import type { EnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
 import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
@@ -82,9 +83,9 @@ interface AppDependencies {
 	saveGmailTokens: SaveGmailTokens;
 	deleteGmailTokens: DeleteGmailTokens;
 	exchangeGmailCode: ExchangeGmailCode;
-	refreshGmailAccessToken: RefreshGmailAccessToken;
 	listUnreadGmailMessages: ListUnreadGmailMessages;
 	runGmailImport: RunGmailImport;
+	ensureValidAccessToken: EnsureValidAccessToken;
 	googleClientId: string;
 }
 
@@ -234,7 +235,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		saveGmailTokens: deps.saveGmailTokens,
 		deleteGmailTokens: deps.deleteGmailTokens,
 		exchangeGmailCode: deps.exchangeGmailCode,
-		refreshGmailAccessToken: deps.refreshGmailAccessToken,
+		ensureValidAccessToken: deps.ensureValidAccessToken,
 		listUnreadGmailMessages: deps.listUnreadGmailMessages,
 		runGmailImport: deps.runGmailImport,
 		googleClientId: deps.googleClientId,
