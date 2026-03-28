@@ -66,11 +66,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: nrwl/nx-set-shas@v4
-
       - id: detect
         run: |
-          AFFECTED=$(pnpm nx show projects --affected --json)
+          AFFECTED=$(NX_BASE=${{ github.event.before }} NX_HEAD=${{ github.sha }} pnpm nx show projects --affected --json)
           echo "Affected projects: $AFFECTED"
           echo "hutch=$(echo "$AFFECTED" | jq 'any(. == "hutch")')" >> "$GITHUB_OUTPUT"
           echo "firefox-extension=$(echo "$AFFECTED" | jq 'any(. == "firefox-extension")')" >> "$GITHUB_OUTPUT"
