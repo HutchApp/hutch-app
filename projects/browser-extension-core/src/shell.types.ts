@@ -9,7 +9,6 @@ export interface BrowserShell {
 	queryActiveTabs: () => Promise<Array<{ id?: number; url?: string; title?: string }>>;
 	setIcon: SetIcon;
 	setJustSaved: (data: { url: string; title: string }) => Promise<void>;
-	getAndClearJustSaved: () => Promise<{ url: string; title: string } | null>;
 	createContextMenus: () => void;
 	onContextMenuClicked: (handler: (info: {
 		menuItemId: string;

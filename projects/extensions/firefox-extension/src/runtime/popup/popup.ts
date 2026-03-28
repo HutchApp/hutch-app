@@ -4,20 +4,18 @@ import type {
 	GuardedResult,
 	SaveUrlResult,
 	RemoveUrlResult,
+	JustSavedData,
 } from "browser-extension-core";
-import { filterByUrl, paginateItems, avatarColor, relativeTime } from "browser-extension-core";
+import { filterByUrl, paginateItems, avatarColor, relativeTime, getAndClearJustSaved as getAndClearJustSavedFromStorage } from "browser-extension-core";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 
 const logger = HutchLogger.from(consoleLogger);
 
-const JUST_SAVED_KEY = "hutch_just_saved";
-
-async function getAndClearJustSaved(): Promise<{ url: string; title: string } | null> {
-	const result = await browser.storage.local.get(JUST_SAVED_KEY);
-	const raw = result[JUST_SAVED_KEY];
-	if (!raw) return null;
-	await browser.storage.local.remove(JUST_SAVED_KEY);
-	return raw as { url: string; title: string };
+function showSavedData(data: JustSavedData) {
+	const titleEl = document.querySelector(".saved-view__title");
+	const subtitleEl = document.querySelector(".saved-view__subtitle");
+	if (titleEl) titleEl.textContent = data.title;
+	if (subtitleEl) subtitleEl.textContent = data.url;
 }
 
 function showView(id: string) {
@@ -330,10 +328,11 @@ if (shortcutHint) {
 	}
 }
 
-getAndClearJustSaved()
+getAndClearJustSavedFromStorage(browser.storage.local)
 	.then((justSaved) => {
 		if (justSaved) {
 			showView("saved-view");
+			showSavedData(justSaved);
 			return;
 		}
 		return saveAndShowList();
