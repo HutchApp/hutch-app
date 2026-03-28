@@ -141,9 +141,10 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.get("/", async (req: Request, res: Response) => {
 		const ua = req.headers["user-agent"] ?? "";
-		const browser = ua.includes("Firefox/") ? "firefox"
+		const browser: "firefox" | "chrome" | "other" =
+			ua.includes("Firefox/") ? "firefox"
 			: ua.includes("Chrome/") ? "chrome"
-			: "other" as const;
+			: "other";
 		const userCount = await countUsers().catch(() => 0);
 		const result = HomePage({ userCount, staticBaseUrl, browser }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
