@@ -24,7 +24,6 @@ export const INSTALL_PAGE_STYLES = `
 
 .install-page__tabs {
   display: flex;
-  gap: 0;
   border-bottom: 1px solid var(--border);
   margin-bottom: 40px;
 }

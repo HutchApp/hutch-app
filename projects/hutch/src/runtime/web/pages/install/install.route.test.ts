@@ -82,7 +82,8 @@ describe("GET /install", () => {
 		const response = await request(app).get("/install?browser=firefox");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.querySelector('[data-test-section="firefox"]')).not.toBeNull();
+		const firefoxPanel = doc.querySelector('[data-test-section="firefox"]');
+		expect(firefoxPanel?.querySelector('[data-test-cta="download-firefox"]')?.textContent).toBe("Download Hutch for Firefox");
 		expect(doc.querySelector('[data-test-section="chrome"]')).toBeNull();
 	});
 
@@ -90,7 +91,8 @@ describe("GET /install", () => {
 		const response = await request(app).get("/install?browser=chrome");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.querySelector('[data-test-section="chrome"]')).not.toBeNull();
+		const chromePanel = doc.querySelector('[data-test-section="chrome"]');
+		expect(chromePanel?.querySelector('[data-test-cta="download-chrome"]')?.textContent).toBe("Download Hutch for Chrome");
 		expect(doc.querySelector('[data-test-section="firefox"]')).toBeNull();
 	});
 
