@@ -47,35 +47,35 @@ describe("GET /install", () => {
 		const response = await request(app).get("/install");
 		const doc = new JSDOM(response.text).window.document;
 
-		const chromeTab = doc.querySelector('[data-test-tab="chrome"]') as HTMLAnchorElement;
-		expect(chromeTab.classList.contains("install-page__tab--active")).toBe(true);
-		expect(chromeTab.getAttribute("aria-current")).toBe("page");
+		const chromeTab = doc.querySelector('[data-test-tab="chrome"]');
+		expect(chromeTab?.classList.contains("install-page__tab--active")).toBe(true);
+		expect(chromeTab?.getAttribute("aria-current")).toBe("page");
 
-		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]') as HTMLAnchorElement;
-		expect(firefoxTab.classList.contains("install-page__tab--active")).toBe(false);
+		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]');
+		expect(firefoxTab?.classList.contains("install-page__tab--active")).toBe(false);
 	});
 
 	it("should select Firefox tab when browser=firefox", async () => {
 		const response = await request(app).get("/install?browser=firefox");
 		const doc = new JSDOM(response.text).window.document;
 
-		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]') as HTMLAnchorElement;
-		expect(firefoxTab.classList.contains("install-page__tab--active")).toBe(true);
-		expect(firefoxTab.getAttribute("aria-current")).toBe("page");
+		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]');
+		expect(firefoxTab?.classList.contains("install-page__tab--active")).toBe(true);
+		expect(firefoxTab?.getAttribute("aria-current")).toBe("page");
 
-		const chromeTab = doc.querySelector('[data-test-tab="chrome"]') as HTMLAnchorElement;
-		expect(chromeTab.classList.contains("install-page__tab--active")).toBe(false);
+		const chromeTab = doc.querySelector('[data-test-tab="chrome"]');
+		expect(chromeTab?.classList.contains("install-page__tab--active")).toBe(false);
 	});
 
 	it("should select Chrome tab when browser=chrome", async () => {
 		const response = await request(app).get("/install?browser=chrome");
 		const doc = new JSDOM(response.text).window.document;
 
-		const chromeTab = doc.querySelector('[data-test-tab="chrome"]') as HTMLAnchorElement;
-		expect(chromeTab.classList.contains("install-page__tab--active")).toBe(true);
+		const chromeTab = doc.querySelector('[data-test-tab="chrome"]');
+		expect(chromeTab?.classList.contains("install-page__tab--active")).toBe(true);
 
-		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]') as HTMLAnchorElement;
-		expect(firefoxTab.classList.contains("install-page__tab--active")).toBe(false);
+		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]');
+		expect(firefoxTab?.classList.contains("install-page__tab--active")).toBe(false);
 	});
 
 	it("should render Firefox panel content when browser=firefox", async () => {
@@ -100,8 +100,8 @@ describe("GET /install", () => {
 
 		const cta = doc.querySelector(
 			'[data-test-cta="download-firefox"]',
-		) as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe(firefoxS3Config.getExtensionDownloadUrl({ stage: "prod", filename: TEST_XPI_FILENAME }));
+		);
+		expect(cta?.getAttribute("href")).toBe(firefoxS3Config.getExtensionDownloadUrl({ stage: "prod", filename: TEST_XPI_FILENAME }));
 	});
 
 	it("should render the Chrome download button linking to the S3 ZIP", async () => {
@@ -110,9 +110,9 @@ describe("GET /install", () => {
 
 		const cta = doc.querySelector(
 			'[data-test-cta="download-chrome"]',
-		) as HTMLAnchorElement;
-		expect(cta.getAttribute("href")).toBe(chromeS3Config.getExtensionDownloadUrl({ stage: "prod", filename: TEST_ZIP_FILENAME }));
-		expect(cta.textContent).toBe("Download Hutch for Chrome");
+		);
+		expect(cta?.getAttribute("href")).toBe(chromeS3Config.getExtensionDownloadUrl({ stage: "prod", filename: TEST_ZIP_FILENAME }));
+		expect(cta?.textContent).toBe("Download Hutch for Chrome");
 	});
 
 	it("should render Firefox installation steps on Firefox tab", async () => {
@@ -192,10 +192,10 @@ describe("GET /install", () => {
 		const response = await request(app).get("/install?browser=firefox");
 		const doc = new JSDOM(response.text).window.document;
 
-		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]') as HTMLAnchorElement;
-		expect(firefoxTab.getAttribute("href")).toBe("/install?browser=firefox");
+		const firefoxTab = doc.querySelector('[data-test-tab="firefox"]');
+		expect(firefoxTab?.getAttribute("href")).toBe("/install?browser=firefox");
 
-		const chromeTab = doc.querySelector('[data-test-tab="chrome"]') as HTMLAnchorElement;
-		expect(chromeTab.getAttribute("href")).toBe("/install?browser=chrome");
+		const chromeTab = doc.querySelector('[data-test-tab="chrome"]');
+		expect(chromeTab?.getAttribute("href")).toBe("/install?browser=chrome");
 	});
 });

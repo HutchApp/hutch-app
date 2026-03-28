@@ -161,7 +161,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	});
 
 	app.get("/install", async (req: Request, res: Response) => {
-		const browser = req.query.browser === "firefox" ? "firefox" as const : "chrome" as const;
+		const browser = req.query.browser === "firefox" ? "firefox" : "chrome";
 		const [firefox, chrome] = await Promise.all([
 			fetchFirefoxDownloadUrl(),
 			fetchChromeDownloadUrl(),
