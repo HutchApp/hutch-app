@@ -5,10 +5,22 @@
         <h1 class="home-hero__title">You are what you read.</h1>
         <p class="home-hero__subtitle">Read the web, not the slop. Hutch saves articles for when you're ready to actually read them &mdash; built from a personal system I've been running for 10 years.</p>
         <div class="home-hero__actions">
-          <a href="/install" class="btn btn--primary" data-test-cta="install-firefox">Install for Firefox</a>
+          {{#if isFirefox}}
+          <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install Firefox Extension</a>
+          {{else if isChrome}}
+          <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install Chrome Extension</a>
+          {{else}}
+          <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install Browser Extension</a>
+          {{/if}}
           <a href="https://github.com/HutchApp/hutch-app" class="btn btn--secondary" data-test-cta="view-github">View on GitHub</a>
         </div>
+        {{#if isFirefox}}
         <p class="home-hero__trust">Also available for Chrome</p>
+        {{else if isChrome}}
+        <p class="home-hero__trust">Also available for Firefox</p>
+        {{else}}
+        <p class="home-hero__trust">Firefox &amp; Chrome</p>
+        {{/if}}
       </div>
     </section>
 
@@ -187,7 +199,13 @@
         <h2 class="home-cta__title">I'm building this in public.</h2>
         <p class="home-cta__subtitle">Try the extension, tell me what to build next. Hutch gets better with every user who shows up and says what they need.</p>
         <div class="home-cta__actions">
-          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install for Firefox</a>
+          {{#if isFirefox}}
+          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install Firefox Extension</a>
+          {{else if isChrome}}
+          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install Chrome Extension</a>
+          {{else}}
+          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install Browser Extension</a>
+          {{/if}}
           <a href="https://github.com/HutchApp/hutch-app" class="home-cta__github-link" data-test-cta="bottom-github">View on GitHub</a>
         </div>
       </div>
