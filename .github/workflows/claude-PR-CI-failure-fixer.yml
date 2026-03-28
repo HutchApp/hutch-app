@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Remove ci-fix-attempt label
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { owner, repo } = context.repo;
@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: Check if we should attempt a fix and post @claude comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
