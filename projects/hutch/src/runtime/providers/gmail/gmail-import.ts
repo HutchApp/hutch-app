@@ -82,57 +82,69 @@ export function initGmailImport(deps: GmailImportDependencies): {
 			labelName,
 		});
 
-		for (const messageId of messageIds) {
-			const message = await deps.getGmailMessage({
-				accessToken,
-				messageId,
-			});
+		const CONCURRENCY_LIMIT = 5;
+		for (let i = 0; i < messageIds.length; i += CONCURRENCY_LIMIT) {
+			const batch = messageIds.slice(i, i + CONCURRENCY_LIMIT);
+			const batchResults = await Promise.all(batch.map(async (messageId) => {
+				const partial: Pick<GmailImportResult, "importedCount" | "skippedCount"> = { importedCount: 0, skippedCount: 0 };
 
-			result.emailsProcessed++;
+				const message = await deps.getGmailMessage({
+					accessToken,
+					messageId,
+				});
 
-			const htmlBody = extractHtmlBody(message.payload);
-			const textBody = extractTextBody(message.payload);
-			const bodyContent = htmlBody ?? (textBody ? `<html><body>${textBody}</body></html>` : undefined);
+				const htmlBody = extractHtmlBody(message.payload);
+				const textBody = extractTextBody(message.payload);
+				const bodyContent = htmlBody ?? (textBody ? `<html><body>${textBody}</body></html>` : undefined);
 
-			if (!bodyContent) continue;
+				if (bodyContent) {
+					const links = extractLinks(bodyContent);
 
-			const links = extractLinks(bodyContent);
+					for (const link of links) {
+						const qualified = deps.qualifyLink(link);
+						if (!qualified.ok) {
+							partial.skippedCount++;
+							continue;
+						}
 
-			for (const link of links) {
-				const qualified = deps.qualifyLink(link);
-				if (!qualified.ok) {
-					result.skippedCount++;
-					continue;
+						const parseResult = await deps.parseArticle(qualified.url);
+
+						if (parseResult.ok) {
+							await deps.saveArticle({
+								userId,
+								url: qualified.url,
+								metadata: {
+									title: parseResult.article.title,
+									siteName: parseResult.article.siteName,
+									excerpt: parseResult.article.excerpt,
+									wordCount: parseResult.article.wordCount,
+									imageUrl: parseResult.article.imageUrl,
+								},
+								content: parseResult.article.content || undefined,
+								estimatedReadTime: calculateReadTime(parseResult.article.wordCount),
+							});
+							partial.importedCount++;
+						} else {
+							partial.skippedCount++;
+						}
+					}
 				}
 
-				const parseResult = await deps.parseArticle(qualified.url);
+				await deps.labelGmailMessage({
+					accessToken,
+					messageId,
+					labelId,
+				});
 
-				if (parseResult.ok) {
-					await deps.saveArticle({
-						userId,
-						url: qualified.url,
-						metadata: {
-							title: parseResult.article.title,
-							siteName: parseResult.article.siteName,
-							excerpt: parseResult.article.excerpt,
-							wordCount: parseResult.article.wordCount,
-							imageUrl: parseResult.article.imageUrl,
-						},
-						content: parseResult.article.content || undefined,
-						estimatedReadTime: calculateReadTime(parseResult.article.wordCount),
-					});
-					result.importedCount++;
-				} else {
-					result.skippedCount++;
-				}
+				return partial;
+			}));
+
+			for (const partial of batchResults) {
+				result.importedCount += partial.importedCount;
+				result.skippedCount += partial.skippedCount;
+				result.emailsLabeled++;
 			}
-
-			await deps.labelGmailMessage({
-				accessToken,
-				messageId,
-				labelId,
-			});
-			result.emailsLabeled++;
+			result.emailsProcessed += batch.length;
 		}
 
 		return result;

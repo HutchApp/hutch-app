@@ -38,9 +38,9 @@ describe("Gmail Import routes", () => {
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector("h1")?.textContent).toContain("Gmail Link Import");
-			expect(doc.querySelector("[data-test-connect-btn]")).not.toBeNull();
-			expect(doc.querySelector("[data-test-disconnected]")).not.toBeNull();
-			expect(doc.querySelector("[data-test-email-list]")).toBeNull();
+			expect(doc.querySelector("[data-test-connect-btn]")?.getAttribute("href")).toBe("/gmail-import/connect");
+			expect(doc.querySelector("[data-test-disconnected]")?.textContent?.trim()).toBe("No Gmail account connected.");
+			expect(doc.querySelectorAll("[data-test-email-list]").length).toBe(0);
 		});
 	});
 
@@ -58,10 +58,10 @@ describe("Gmail Import routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-connected]")).not.toBeNull();
-			expect(doc.querySelector("[data-test-email-list]")).not.toBeNull();
-			expect(doc.querySelector("[data-test-disconnect-btn]")).not.toBeNull();
-			expect(doc.querySelector("[data-test-connect-btn]")).toBeNull();
+			expect(doc.querySelector("[data-test-connected]")?.textContent?.trim()).toBe("Gmail account connected.");
+			expect(doc.querySelector("[data-test-email-list]")?.tagName.toLowerCase()).toBe("ul");
+			expect(doc.querySelector("[data-test-disconnect-btn]")?.textContent?.trim()).toBe("Disconnect Gmail");
+			expect(doc.querySelectorAll("[data-test-connect-btn]").length).toBe(0);
 		});
 
 		it("should display email subjects and senders", async () => {
@@ -131,8 +131,8 @@ describe("Gmail Import routes", () => {
 			const response = await agent.get("/gmail-import");
 			const doc = new JSDOM(response.text).window.document;
 
-			expect(doc.querySelector("[data-test-select-all]")).not.toBeNull();
-			expect(doc.querySelector("[data-test-deselect-all]")).not.toBeNull();
+			expect(doc.querySelector("[data-test-select-all]")?.textContent?.trim()).toBe("Select All");
+			expect(doc.querySelector("[data-test-deselect-all]")?.textContent?.trim()).toBe("Deselect All");
 		});
 	});
 
