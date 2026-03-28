@@ -3,6 +3,7 @@ import type { KnipConfig } from "knip";
 export default {
 	entry: [
 		"src/e2e/index.ts",
+		"src/e2e-actions/index.ts",
 	],
 	ignore: [
 		// PurgeCSS config loaded via CLI, not imported in source

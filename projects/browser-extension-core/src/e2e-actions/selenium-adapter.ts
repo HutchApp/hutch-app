@@ -4,7 +4,7 @@ import {
 	stateChanged,
 	type ElementQueries,
 	type DriverNavigation,
-} from "browser-extension-core/e2e";
+} from "../e2e";
 
 export function createSeleniumElementQueries(): ElementQueries<WebDriver> {
 	return {

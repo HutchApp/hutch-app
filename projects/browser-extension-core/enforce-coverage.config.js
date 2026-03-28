@@ -14,6 +14,8 @@ const config = {
   extraExcludePatterns: [
     // Wiring module — composes providers and event bus, tested via integration
     'src/core.ts',
+    // E2E action creators — exercised by extension E2E tests, not unit-testable
+    'src/e2e-actions/**',
   ],
 };
 

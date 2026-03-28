@@ -1,6 +1,6 @@
 import { By, until } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
-import { ELEMENT_IDS, CSS_SELECTORS, type FlowAction } from "browser-extension-core/e2e";
+import { ELEMENT_IDS, CSS_SELECTORS, type FlowAction } from "../e2e";
 
 export function createLoginActions(config: {
 	testEmail: string;

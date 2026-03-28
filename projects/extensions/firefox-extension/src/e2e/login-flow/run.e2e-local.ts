@@ -5,10 +5,14 @@ import path from "node:path";
 import { Builder, By } from "selenium-webdriver";
 import { Options } from "selenium-webdriver/firefox";
 import { FlowRunner, ExtensionStateHandler } from "browser-extension-core/e2e";
-import { createSeleniumElementQueries, createSeleniumNavigation } from "../selenium-adapter";
-import { createLoginActions } from "./login-actions";
-import { createSaveLinkActions } from "./save-link-actions";
-import { createPaginationActions, type PaginationProgress } from "./pagination-actions";
+import {
+	createSeleniumElementQueries,
+	createSeleniumNavigation,
+	createLoginActions,
+	createSaveLinkActions,
+	createPaginationActions,
+	type PaginationProgress,
+} from "browser-extension-core/e2e-actions";
 
 const ADDON_ID = "hutch-extension@hutch-app.com";
 const ADDON_UUID = "d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12";
