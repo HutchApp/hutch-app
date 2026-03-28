@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { By } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
-import { CSS_SELECTORS, ELEMENT_IDS, type FlowAction } from "browser-extension-core/e2e";
+import { CSS_SELECTORS, ELEMENT_IDS, type FlowAction } from "../e2e";
 
 export interface PaginationProgress {
 	paginationLinksAdded: boolean;

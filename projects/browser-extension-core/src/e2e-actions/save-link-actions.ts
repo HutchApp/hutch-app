@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { By, until } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
-import { CSS_SELECTORS, type FlowAction } from "browser-extension-core/e2e";
+import { CSS_SELECTORS, type FlowAction } from "../e2e";
 
-interface SaveLinkProgress {
+export interface SaveLinkProgress {
 	linkSaved: boolean;
 	listVerified: boolean;
 }

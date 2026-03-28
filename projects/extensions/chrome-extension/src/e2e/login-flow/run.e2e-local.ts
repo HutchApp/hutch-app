@@ -6,10 +6,15 @@ import path from "node:path";
 import { Builder, By } from "selenium-webdriver";
 import { Options, ServiceBuilder, type Driver as ChromeDriver } from "selenium-webdriver/chrome";
 import { FlowRunner, ExtensionStateHandler } from "browser-extension-core/e2e";
-import { createSeleniumElementQueries, createSeleniumNavigation } from "../selenium-adapter";
-import { createLoginActions } from "./login-actions";
-import { createSaveLinkActions } from "./save-link-actions";
-import { createPaginationActions, type PaginationProgress } from "./pagination-actions";
+import {
+	createSeleniumElementQueries,
+	createSeleniumNavigation,
+	createLoginActions,
+	createSaveLinkActions,
+	createPaginationActions,
+	type PaginationProgress,
+	type SaveLinkProgress,
+} from "browser-extension-core/e2e-actions";
 
 const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
 const CFT_PATH_FILE = path.resolve(__dirname, "../../../.cache/chrome/binary-path");
@@ -134,7 +139,7 @@ async function runTest() {
 
 		const popupWindowHandle = await driver.getWindowHandle();
 
-		const saveLinkProgress = { linkSaved: false, listVerified: false };
+		const saveLinkProgress: SaveLinkProgress = { linkSaved: false, listVerified: false };
 		const paginationProgress: PaginationProgress = {
 			paginationLinksAdded: false,
 			verifiedPage1: false,
