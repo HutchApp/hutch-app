@@ -4,12 +4,11 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
-import { getExtensionDownloadUrl as getFirefoxDownloadUrl, getLatestPointerUrl as getFirefoxLatestUrl } from "firefox-extension/s3-config";
-import { getExtensionDownloadUrl as getChromeDownloadUrl, getLatestPointerUrl as getChromeLatestUrl } from "chrome-extension/s3-config";
+import { firefoxS3Config, chromeS3Config } from "browser-extension-core/s3-config";
 
 const INSTALL_TEMPLATE = readFileSync(join(__dirname, "install.template.html"), "utf-8");
-const FIREFOX_LATEST_POINTER_URL = getFirefoxLatestUrl("prod");
-const CHROME_LATEST_POINTER_URL = getChromeLatestUrl("prod");
+const FIREFOX_LATEST_POINTER_URL = firefoxS3Config.getLatestPointerUrl("prod");
+const CHROME_LATEST_POINTER_URL = chromeS3Config.getLatestPointerUrl("prod");
 
 async function fetchDownloadUrl(latestPointerUrl: string, buildDownloadUrl: (filename: string) => string): Promise<string | null> {
 	const response = await fetch(latestPointerUrl);
@@ -20,14 +19,14 @@ async function fetchDownloadUrl(latestPointerUrl: string, buildDownloadUrl: (fil
 }
 
 export async function fetchFirefoxDownloadUrl(): Promise<string | null> {
-	return fetchDownloadUrl(FIREFOX_LATEST_POINTER_URL, (xpiFilename) =>
-		getFirefoxDownloadUrl({ stage: "prod", xpiFilename }),
+	return fetchDownloadUrl(FIREFOX_LATEST_POINTER_URL, (filename) =>
+		firefoxS3Config.getExtensionDownloadUrl({ stage: "prod", filename }),
 	);
 }
 
 export async function fetchChromeDownloadUrl(): Promise<string | null> {
-	return fetchDownloadUrl(CHROME_LATEST_POINTER_URL, (zipFilename) =>
-		getChromeDownloadUrl({ stage: "prod", zipFilename }),
+	return fetchDownloadUrl(CHROME_LATEST_POINTER_URL, (filename) =>
+		chromeS3Config.getExtensionDownloadUrl({ stage: "prod", filename }),
 	);
 }
 

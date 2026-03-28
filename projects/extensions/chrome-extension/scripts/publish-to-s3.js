@@ -4,7 +4,8 @@ const assert = require("node:assert");
 const { execSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
-const { getBucketName, getBucketBaseUrl } = require("../s3-config");
+const { chromeS3Config } = require("browser-extension-core/s3-config");
+const { getBucketName, getBucketBaseUrl } = chromeS3Config;
 
 const stage = "prod";
 

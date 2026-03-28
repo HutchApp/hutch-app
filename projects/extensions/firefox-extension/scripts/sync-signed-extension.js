@@ -5,7 +5,8 @@ const { execSync } = require("node:child_process");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
-const { getBucketName, getBucketBaseUrl } = require("../s3-config");
+const { firefoxS3Config } = require("browser-extension-core/s3-config");
+const { getBucketName, getBucketBaseUrl } = firefoxS3Config;
 
 const AMO_API_BASE = "https://addons.mozilla.org/api/v5";
 
