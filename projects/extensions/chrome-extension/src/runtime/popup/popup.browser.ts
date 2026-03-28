@@ -14,6 +14,16 @@ declare const __SERVER_URL__: string;
 
 const logger = HutchLogger.from(consoleLogger);
 
+const JUST_SAVED_KEY = "hutch_just_saved";
+
+async function getAndClearJustSaved(): Promise<{ url: string; title: string } | null> {
+	const result = await browser.storage.local.get(JUST_SAVED_KEY);
+	const raw = result[JUST_SAVED_KEY];
+	if (!raw) return null;
+	await browser.storage.local.remove(JUST_SAVED_KEY);
+	return raw as { url: string; title: string };
+}
+
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
 		(view as HTMLElement).hidden = true;
@@ -324,10 +334,18 @@ if (shortcutHint) {
 	}
 }
 
-saveAndShowList().catch((error) => {
-	logger.error("Failed to initialize popup:", error);
-	showView("list-view");
-	const listError = document.getElementById("list-error");
-	if (listError) listError.hidden = false;
-});
+getAndClearJustSaved()
+	.then((justSaved) => {
+		if (justSaved) {
+			showView("saved-view");
+			return;
+		}
+		return saveAndShowList();
+	})
+	.catch((error) => {
+		logger.error("Failed to initialize popup:", error);
+		showView("list-view");
+		const listError = document.getElementById("list-error");
+		if (listError) listError.hidden = false;
+	});
 /* c8 ignore stop */
