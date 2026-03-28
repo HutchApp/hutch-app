@@ -11,7 +11,6 @@ const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf
 
 interface ActionDisplayModel extends ArticleAction {
 	buttonClass: string;
-	isPost: boolean;
 }
 
 interface ArticleDisplayModel extends QueueArticleViewModel {
@@ -27,7 +26,6 @@ function toActionDisplayModel(action: ArticleAction): ActionDisplayModel {
 		buttonClass: action.testAction === "delete"
 			? "queue-article__action-btn queue-article__action-btn--delete"
 			: "queue-article__action-btn",
-		isPost: action.method === "POST",
 	};
 }
 
