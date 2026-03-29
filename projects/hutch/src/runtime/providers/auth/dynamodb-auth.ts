@@ -18,6 +18,8 @@ import type {
 	GetSessionUserId,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
+	UpdatePassword,
+	UserExistsByEmail,
 	VerifyCredentials,
 } from "./auth.types";
 import { normalizeEmail } from "./normalize-email";
@@ -48,6 +50,8 @@ export function initDynamoDbAuth(deps: {
 	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
 	markSessionEmailVerified: MarkSessionEmailVerified;
+	userExistsByEmail: UserExistsByEmail;
+	updatePassword: UpdatePassword;
 } {
 	const { client, usersTableName, sessionsTableName } = deps;
 
@@ -174,6 +178,32 @@ export function initDynamoDbAuth(deps: {
 		);
 	};
 
+	const userExistsByEmail: UserExistsByEmail = async (email) => {
+		const normalizedEmail = normalizeEmail(email);
+		const result = await client.send(
+			new GetCommand({
+				TableName: usersTableName,
+				Key: { email: normalizedEmail },
+				ProjectionExpression: "email",
+			}),
+		);
+		return !!result.Item;
+	};
+
+	const updatePassword: UpdatePassword = async ({ email, password }) => {
+		const normalizedEmail = normalizeEmail(email);
+		const passwordHash = await hashPassword(password);
+		await client.send(
+			new UpdateCommand({
+				TableName: usersTableName,
+				Key: { email: normalizedEmail },
+				UpdateExpression: "SET passwordHash = :hash",
+				ConditionExpression: "attribute_exists(email)",
+				ExpressionAttributeValues: { ":hash": passwordHash },
+			}),
+		);
+	};
+
 	return {
 		createUser,
 		verifyCredentials,
@@ -183,5 +213,7 @@ export function initDynamoDbAuth(deps: {
 		countUsers,
 		markEmailVerified,
 		markSessionEmailVerified,
+		userExistsByEmail,
+		updatePassword,
 	};
 }

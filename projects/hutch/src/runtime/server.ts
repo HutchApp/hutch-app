@@ -10,6 +10,8 @@ import type {
 	GetSessionUserId,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
+	UpdatePassword,
+	UserExistsByEmail,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
@@ -28,8 +30,13 @@ import type {
 	CreateVerificationToken,
 	VerifyEmailToken,
 } from "./providers/email-verification/email-verification.types";
+import type {
+	CreatePasswordResetToken,
+	VerifyPasswordResetToken,
+} from "./providers/password-reset/password-reset.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
+import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
@@ -66,6 +73,10 @@ interface AppDependencies {
 	sendEmail: SendEmail;
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
+	createPasswordResetToken: CreatePasswordResetToken;
+	verifyPasswordResetToken: VerifyPasswordResetToken;
+	userExistsByEmail: UserExistsByEmail;
+	updatePassword: UpdatePassword;
 	baseUrl: string;
 	logError: (message: string, error?: Error) => void;
 	oauthModel: OAuthModel;
@@ -184,6 +195,17 @@ export function createApp(dependencies: AppDependencies): Express {
 		logError: deps.logError,
 	});
 	app.use(authRouter);
+
+	const forgotPasswordRouter = initForgotPasswordRoutes({
+		sendEmail: deps.sendEmail,
+		userExistsByEmail: deps.userExistsByEmail,
+		updatePassword: deps.updatePassword,
+		createPasswordResetToken: deps.createPasswordResetToken,
+		verifyPasswordResetToken: deps.verifyPasswordResetToken,
+		baseUrl: deps.baseUrl,
+		logError: deps.logError,
+	});
+	app.use(forgotPasswordRouter);
 
 	const extensionCors = cors({
 		origin: (origin, callback) => {
