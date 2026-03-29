@@ -25,6 +25,12 @@ config.enforceCoverage({
     'src/runtime/providers/**/dynamodb-*.ts',
     // Resend adapter — thin SDK wrapper, same rationale as DynamoDB adapters
     'src/runtime/providers/email/resend-email.ts',
+    // Gmail API adapter — thin fetch wrapper around Gmail REST API, same rationale as Resend
+    'src/runtime/providers/gmail/gmail-api.ts',
+    // Gmail import orchestrator — integrates external Gmail API calls, tested via integration tests
+    'src/runtime/providers/gmail/gmail-import.ts',
+    // Token refresh coordinator — thin wrapper over find/refresh/save, tested via integration tests
+    'src/runtime/providers/gmail/ensure-valid-access-token.ts',
     // Staging E2E tests — only run in CI against deployed staging, not locally
     '**/*.e2e-staging.ts',
   ],

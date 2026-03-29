@@ -26,6 +26,12 @@ import { initClaudeSummarizer } from "./providers/article-summary/claude-summari
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
 import { stripHtml } from "./providers/article-summary/strip-html";
+import { initGmailApi } from "./providers/gmail/gmail-api";
+import { initDynamoDbGmailTokenStore } from "./providers/gmail/dynamodb-gmail-token-store";
+import { initInMemoryGmailTokenStore } from "./providers/gmail/in-memory-gmail-token-store";
+import { initGmailImport } from "./providers/gmail/gmail-import";
+import { qualifyLink } from "./domain/gmail-import/qualify-link";
+import { initEnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
@@ -39,12 +45,21 @@ function initProviders() {
 	const staleTtlMs = 86400000;
 
 	if (persistence === "prod") {
+		const googleClientId = requireEnv("GOOGLE_CLIENT_ID");
+		const googleClientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
+		const gmailApi = initGmailApi({
+			fetch: globalThis.fetch,
+			clientId: googleClientId,
+			clientSecret: googleClientSecret,
+		});
+
 		const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 		const userArticlesTable = requireEnv("DYNAMODB_USER_ARTICLES_TABLE");
 		const usersTable = requireEnv("DYNAMODB_USERS_TABLE");
 		const sessionsTable = requireEnv("DYNAMODB_SESSIONS_TABLE");
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
+		const gmailTokensTable = requireEnv("DYNAMODB_GMAIL_TOKENS_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
@@ -74,6 +89,8 @@ function initProviders() {
 			now: () => new Date(),
 			staleTtlMs,
 		});
+		const gmailTokenStore = initDynamoDbGmailTokenStore({ client, tableName: gmailTokensTable });
+
 		return {
 			auth,
 			articleStore,
@@ -84,8 +101,19 @@ function initProviders() {
 			summarizeArticle,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
+			...gmailTokenStore,
+			...gmailApi,
+			googleClientId,
+			qualifyLink,
 		};
 	}
+
+	const googleClientId = "dev-google-client-id";
+	const gmailApi = initGmailApi({
+		fetch: globalThis.fetch,
+		clientId: googleClientId,
+		clientSecret: "dev-google-client-secret",
+	});
 
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
@@ -120,6 +148,8 @@ function initProviders() {
 		staleTtlMs,
 	});
 
+	const gmailTokenStore = initInMemoryGmailTokenStore();
+
 	return {
 		auth,
 		articleStore,
@@ -130,6 +160,10 @@ function initProviders() {
 		summarizeArticle,
 		findCachedSummary: summaryCache.findCachedSummary,
 		refreshArticleIfStale,
+		...gmailTokenStore,
+		...gmailApi,
+		googleClientId,
+		qualifyLink,
 	};
 }
 
@@ -141,6 +175,24 @@ export function createHutchApp(deps: {
 
 	const appOrigin = deps.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 	const staticBaseUrl = requireEnv("STATIC_BASE_URL");
+	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
+
+	const ensureValidAccessToken = initEnsureValidAccessToken({
+		findGmailTokens: providers.findGmailTokens,
+		saveGmailTokens: providers.saveGmailTokens,
+		refreshGmailAccessToken: providers.refreshGmailAccessToken,
+	});
+
+	const { runGmailImport } = initGmailImport({
+		getGmailMessage: providers.getGmailMessage,
+		ensureGmailLabel: providers.ensureGmailLabel,
+		labelGmailMessage: providers.labelGmailMessage,
+		ensureValidAccessToken,
+		saveArticle: articleStore.saveArticle,
+		parseArticle: deps.parseArticle,
+		qualifyLink,
+		logError,
+	});
 
 	const app = createApp({
 		appOrigin,
@@ -150,9 +202,11 @@ export function createHutchApp(deps: {
 		parseArticle: deps.parseArticle,
 		...providers,
 		baseUrl: appOrigin,
-		logError: (message, error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack })),
+		logError,
 		oauthModel,
 		validateAccessToken,
+		runGmailImport,
+		ensureValidAccessToken,
 	});
 
 	return { app, auth, articleStore, oauthModel };

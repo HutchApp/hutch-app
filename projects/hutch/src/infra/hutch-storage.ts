@@ -7,6 +7,7 @@ export class HutchStorage {
 	public readonly sessionsTable: aws.dynamodb.Table;
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
+	public readonly gmailTokensTable: aws.dynamodb.Table;
 
 	constructor(_name: string, args: { deletionProtection: boolean; tableNames: {
 		articles: string;
@@ -15,6 +16,7 @@ export class HutchStorage {
 		sessions: string;
 		oauth: string;
 		verificationTokens: string;
+		gmailTokens: string;
 	} }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			name: args.tableNames.articles,
@@ -114,6 +116,14 @@ export class HutchStorage {
 				attributeName: "expiresAt",
 				enabled: true,
 			},
+		});
+
+		this.gmailTokensTable = new aws.dynamodb.Table(`hutch-gmail-tokens`, {
+			name: args.tableNames.gmailTokens,
+			billingMode: "PAY_PER_REQUEST",
+			deletionProtectionEnabled: args.deletionProtection,
+			hashKey: "userId",
+			attributes: [{ name: "userId", type: "S" }],
 		});
 	}
 }

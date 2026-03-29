@@ -29,9 +29,14 @@ import type {
 	VerifyEmailToken,
 } from "./providers/email-verification/email-verification.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
+import type { ExchangeGmailCode, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
+import type { FindGmailTokens, SaveGmailTokens, DeleteGmailTokens } from "./providers/gmail/gmail-token-store.types";
+import type { EnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
+import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
+import { initGmailImportRoutes } from "./web/pages/gmail-import/gmail-import.page";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage } from "./web/pages/home";
@@ -74,6 +79,14 @@ interface AppDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	findGmailTokens: FindGmailTokens;
+	saveGmailTokens: SaveGmailTokens;
+	deleteGmailTokens: DeleteGmailTokens;
+	exchangeGmailCode: ExchangeGmailCode;
+	listUnreadGmailMessages: ListUnreadGmailMessages;
+	runGmailImport: RunGmailImport;
+	ensureValidAccessToken: EnsureValidAccessToken;
+	googleClientId: string;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -112,6 +125,7 @@ export function createApp(dependencies: AppDependencies): Express {
 				"Disallow: /queue",
 				"Disallow: /export",
 				"Disallow: /oauth",
+				"Disallow: /gmail-import",
 				"Disallow: /forgot-password",
 				"",
 				`Sitemap: ${dependencies.baseUrl}/sitemap.xml`,
@@ -221,6 +235,20 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticlesByUser: deps.findArticlesByUser,
 	});
 	app.use("/export", requireAuth, exportRouter);
+
+	const gmailImportRouter = initGmailImportRoutes({
+		findGmailTokens: deps.findGmailTokens,
+		saveGmailTokens: deps.saveGmailTokens,
+		deleteGmailTokens: deps.deleteGmailTokens,
+		exchangeGmailCode: deps.exchangeGmailCode,
+		ensureValidAccessToken: deps.ensureValidAccessToken,
+		listUnreadGmailMessages: deps.listUnreadGmailMessages,
+		runGmailImport: deps.runGmailImport,
+		googleClientId: deps.googleClientId,
+		appOrigin,
+		logError: deps.logError,
+	});
+	app.use("/gmail-import", requireAuth, gmailImportRouter);
 
 	const oauthRouter = initOAuthRoutes({
 		model: deps.oauthModel,

@@ -89,8 +89,9 @@ export class HutchLambda {
 					args.storage.sessionsTable.arn,
 					args.storage.oauthTable.arn,
 					args.storage.verificationTokensTable.arn,
+					args.storage.gmailTokensTable.arn,
 				])
-				.apply(([articlesArn, userArticlesArn, usersArn, sessionsArn, oauthArn, verificationTokensArn]) =>
+				.apply(([articlesArn, userArticlesArn, usersArn, sessionsArn, oauthArn, verificationTokensArn, gmailTokensArn]) =>
 					JSON.stringify({
 						Version: "2012-10-17",
 						Statement: [
@@ -116,6 +117,7 @@ export class HutchLambda {
 									oauthArn,
 									`${oauthArn}/index/*`,
 									verificationTokensArn,
+									gmailTokensArn,
 								],
 							},
 						],
@@ -154,12 +156,19 @@ export class HutchLambda {
 					DYNAMODB_SESSIONS_TABLE: args.storage.sessionsTable.name,
 					DYNAMODB_OAUTH_TABLE: args.storage.oauthTable.name,
 					DYNAMODB_VERIFICATION_TOKENS_TABLE: args.storage.verificationTokensTable.name,
+					DYNAMODB_GMAIL_TOKENS_TABLE: args.storage.gmailTokensTable.name,
 					RESEND_API_KEY: pulumi.runtime.isDryRun()
 						? (getEnv("RESEND_API_KEY") ?? "")
 						: requireEnv("RESEND_API_KEY"),
 					ANTHROPIC_API_KEY: pulumi.runtime.isDryRun()
 						? (getEnv("ANTHROPIC_API_KEY") ?? "")
 						: requireEnv("ANTHROPIC_API_KEY"),
+					GOOGLE_CLIENT_ID: pulumi.runtime.isDryRun()
+						? (getEnv("GOOGLE_CLIENT_ID") ?? "")
+						: requireEnv("GOOGLE_CLIENT_ID"),
+					GOOGLE_CLIENT_SECRET: pulumi.runtime.isDryRun()
+						? (getEnv("GOOGLE_CLIENT_SECRET") ?? "")
+						: requireEnv("GOOGLE_CLIENT_SECRET"),
 					STATIC_BASE_URL: args.staticBaseUrl,
 				},
 			},
