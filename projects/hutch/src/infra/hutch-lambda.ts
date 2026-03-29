@@ -157,9 +157,9 @@ export class HutchLambda {
 					RESEND_API_KEY: pulumi.runtime.isDryRun()
 						? (getEnv("RESEND_API_KEY") ?? "")
 						: requireEnv("RESEND_API_KEY"),
-					ANTHROPIC_API_KEY: pulumi.runtime.isDryRun()
-						? (getEnv("ANTHROPIC_API_KEY") ?? "")
-						: requireEnv("ANTHROPIC_API_KEY"),
+					DEEPSEEK_API_KEY: pulumi.runtime.isDryRun()
+						? (getEnv("DEEPSEEK_API_KEY") ?? "")
+						: requireEnv("DEEPSEEK_API_KEY"),
 					STATIC_BASE_URL: args.staticBaseUrl,
 				},
 			},
