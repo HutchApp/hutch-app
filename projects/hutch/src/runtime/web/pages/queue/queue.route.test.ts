@@ -341,6 +341,25 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Read");
 			expect(doc.querySelector("[data-test-action='delete']")?.textContent).toBe("×");
 		});
+
+		it("should disable htmx boost on the read action form", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const readForm = doc.querySelector("[data-test-action='mark-read']")?.closest("form");
+
+			expect(readForm?.getAttribute("hx-boost")).toBe("false");
+			expect(readForm?.hasAttribute("hx-target")).toBe(false);
+			expect(readForm?.hasAttribute("hx-select")).toBe(false);
+			expect(readForm?.hasAttribute("hx-swap")).toBe(false);
+		});
 	});
 
 	describe("Thumbnail", () => {

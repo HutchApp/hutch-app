@@ -14,6 +14,7 @@ export interface ArticleAction {
 	text: string;
 	title: string;
 	testAction: string;
+	pageReload: boolean;
 	fields: ArticleActionField[];
 }
 
@@ -80,6 +81,7 @@ function toArticleActions(
 			text: "Read",
 			title: "Mark as read",
 			testAction: "mark-read",
+			pageReload: true,
 			fields: [],
 		});
 	}
@@ -91,6 +93,7 @@ function toArticleActions(
 			text: "Unread",
 			title: "Mark as unread",
 			testAction: "mark-unread",
+			pageReload: false,
 			fields: [{ name: "status", value: "unread" }],
 		});
 	}
@@ -101,6 +104,7 @@ function toArticleActions(
 		text: "×",
 		title: "Delete",
 		testAction: "delete",
+		pageReload: false,
 		fields: [],
 	});
 
