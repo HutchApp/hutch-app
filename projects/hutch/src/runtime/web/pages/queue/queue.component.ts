@@ -27,7 +27,7 @@ function toActionDisplayModel(action: ArticleAction): ActionDisplayModel {
 		buttonClass: action.testAction === "delete"
 			? "queue-article__action-btn queue-article__action-btn--delete"
 			: "queue-article__action-btn",
-		boost: action.testAction !== "mark-read",
+		boost: !action.pageReload,
 	};
 }
 

@@ -32,8 +32,6 @@ import { getEnv, requireEnv } from "./require-env";
 
 function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
-	const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
-	const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
 	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch });
@@ -55,7 +53,11 @@ function initProviders() {
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
 		const { summarizeArticle } = initClaudeSummarizer({
-			createMessage: (params) => anthropicClient.messages.create(params),
+			createMessage: (params) => {
+				const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
+				const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
+				return anthropicClient.messages.create(params)
+			},
 			logger: consoleLogger,
 			cleanContent: stripHtml,
 			...summaryCache,
