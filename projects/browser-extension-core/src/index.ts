@@ -32,3 +32,5 @@ export {
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,
 } from "./save-from-context-menu";
+export { JUST_SAVED_KEY, getAndClearJustSaved } from "./just-saved";
+export type { JustSavedData, StorageApi } from "./just-saved";

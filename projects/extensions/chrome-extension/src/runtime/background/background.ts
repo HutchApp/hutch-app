@@ -3,6 +3,7 @@ import {
 	BrowserExtensionCore,
 	initOAuthAuth,
 	initSirenReadingList,
+	JUST_SAVED_KEY,
 	type BrowserShell,
 	type OAuthTokens,
 	type PopupMessage,
@@ -47,6 +48,14 @@ const shell: BrowserShell = {
 			}
 			return undefined;
 		});
+	},
+
+	async openPopup() {
+		await chrome.action.openPopup();
+	},
+
+	async setJustSaved(data) {
+		await browser.storage.local.set({ [JUST_SAVED_KEY]: data });
 	},
 
 	openLoginScreen({ url, title }) {

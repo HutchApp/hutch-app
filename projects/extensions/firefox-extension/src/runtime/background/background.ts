@@ -4,6 +4,7 @@ import {
 	initSirenReadingList,
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,
+	JUST_SAVED_KEY,
 	type BrowserShell,
 	type OAuthTokens,
 	type PopupMessage,
@@ -47,6 +48,14 @@ const shell: BrowserShell = {
 			}
 			return undefined;
 		});
+	},
+
+	async openPopup() {
+		await browser.browserAction.openPopup();
+	},
+
+	async setJustSaved(data) {
+		await browser.storage.local.set({ [JUST_SAVED_KEY]: data });
 	},
 
 	openLoginScreen({ url, title }) {

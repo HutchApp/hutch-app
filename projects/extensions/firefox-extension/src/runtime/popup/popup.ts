@@ -4,11 +4,19 @@ import type {
 	GuardedResult,
 	SaveUrlResult,
 	RemoveUrlResult,
+	JustSavedData,
 } from "browser-extension-core";
-import { filterByUrl, paginateItems, avatarColor, relativeTime } from "browser-extension-core";
+import { filterByUrl, paginateItems, avatarColor, relativeTime, getAndClearJustSaved as getAndClearJustSavedFromStorage } from "browser-extension-core";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 
 const logger = HutchLogger.from(consoleLogger);
+
+function showSavedData(data: JustSavedData) {
+	const titleEl = document.querySelector(".saved-view__title");
+	const subtitleEl = document.querySelector(".saved-view__subtitle");
+	if (titleEl) titleEl.textContent = data.title;
+	if (subtitleEl) subtitleEl.textContent = data.url;
+}
 
 function showView(id: string) {
 	for (const view of document.querySelectorAll(".view")) {
@@ -320,9 +328,18 @@ if (shortcutHint) {
 	}
 }
 
-saveAndShowList().catch((error) => {
-	logger.error("Failed to initialize popup:", error);
-	showView("list-view");
-	const listError = document.getElementById("list-error");
-	if (listError) listError.hidden = false;
-});
+getAndClearJustSavedFromStorage(browser.storage.local)
+	.then((justSaved) => {
+		if (justSaved) {
+			showView("saved-view");
+			showSavedData(justSaved);
+			return;
+		}
+		return saveAndShowList();
+	})
+	.catch((error) => {
+		logger.error("Failed to initialize popup:", error);
+		showView("list-view");
+		const listError = document.getElementById("list-error");
+		if (listError) listError.hidden = false;
+	});
