@@ -12,6 +12,7 @@ const deletionProtection = config.requireBoolean("deletionProtection");
 const staticDomains = config.requireObject<string[]>("staticDomains");
 assert(staticDomains.length > 0, "staticDomains must have at least one entry");
 const staticBucketName = config.require("staticBucketName");
+const platformStack = config.require("platformStack");
 const tableNames = {
 	articles: config.require("dynamodbArticlesTable"),
 	userArticles: config.require("dynamodbUserArticlesTable"),
@@ -20,6 +21,10 @@ const tableNames = {
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
 };
+
+const platform = new pulumi.StackReference(platformStack);
+const eventBusName = platform.requireOutput("hutchEventBusName") as pulumi.Output<string>;
+const eventBusArn = platform.requireOutput("hutchEventBusArn") as pulumi.Output<string>;
 
 const storage = new HutchStorage("hutch", {
 	deletionProtection,
@@ -40,6 +45,8 @@ const hutch = new HutchLambda("hutch", {
 	storage,
 	domainRegistration,
 	staticBaseUrl: staticAssets.baseUrl,
+	eventBusName,
+	eventBusArn,
 });
 
 export const apiUrl = hutch.apiUrl;
