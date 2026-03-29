@@ -21,8 +21,8 @@ import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
-import Anthropic from "@anthropic-ai/sdk";
-import { initClaudeSummarizer } from "./providers/article-summary/claude-summarizer";
+import OpenAI from "openai";
+import { initDeepseekSummarizer } from "./providers/article-summary/deepseek-summarizer";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
 import { stripHtml } from "./providers/article-summary/strip-html";
@@ -52,11 +52,18 @@ function initProviders() {
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
-		const { summarizeArticle } = initClaudeSummarizer({
-			createMessage: (params) => {
-				const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
-				const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
-				return anthropicClient.messages.create(params)
+		const deepseekApiKey = requireEnv("DEEPSEEK_API_KEY");
+		const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com" });
+		const { summarizeArticle } = initDeepseekSummarizer({
+			createChatCompletion: async (params) => {
+				const response = await deepseekClient.chat.completions.create(params);
+				return {
+					content: response.choices[0]?.message?.content ?? null,
+					usage: {
+						prompt_tokens: response.usage?.prompt_tokens ?? 0,
+						completion_tokens: response.usage?.completion_tokens ?? 0,
+					},
+				};
 			},
 			logger: consoleLogger,
 			cleanContent: stripHtml,
@@ -91,17 +98,13 @@ function initProviders() {
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const summaryCache = initInMemorySummaryCache();
-	const { summarizeArticle } = initClaudeSummarizer({
-		createMessage: (params) => {
-			// Log the call without full content to avoid flooding CI logs (Wikipedia articles are 100KB+)
-			consoleLogger.info(`[AI Summary Stub] model=${params.model} content_length=${params.messages[0]?.content?.length ?? 0}`);
+	const { summarizeArticle } = initDeepseekSummarizer({
+		createChatCompletion: (params) => {
+			consoleLogger.info(`[AI Summary Stub] model=${params.model} content_length=${params.messages[1]?.content?.length ?? 0}`);
 			return Promise.resolve({
-				content: [{
-					type: "text",
-					text: JSON.stringify({ summary: `[AI Summary Stub] for model ${params.model}` })
-				}],
-				usage: { input_tokens: 0, output_tokens: 0 }
-			})
+				content: `[AI Summary Stub] for model ${params.model}`,
+				usage: { prompt_tokens: 0, completion_tokens: 0 },
+			});
 		},
 		logger: consoleLogger,
 		cleanContent: stripHtml,
