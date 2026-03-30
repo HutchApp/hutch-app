@@ -3,3 +3,4 @@ config:
   aws:allowedAccountIds:
     - '278728209435'
   save-link:platformStack: organization/platform/production
+encryptionsalt: v1:wtDgBy80qGM=:v1:blQ7pAjXgW+f/NKU:eQnkrsxqXh9Nnvo+fQ/ofy4bxQK7/Q==
