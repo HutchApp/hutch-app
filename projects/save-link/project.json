@@ -1,12 +1,8 @@
 {
-  "name": "platform",
+  "name": "save-link",
   "targets": {
     "deploy": {
       "command": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
-      "options": { "cwd": "{projectRoot}" }
-    },
-    "check": {
-      "command": "pnpm check-infra",
       "options": { "cwd": "{projectRoot}" }
     }
   }

@@ -10,7 +10,7 @@
     "test": "echo 'No tests yet — handlers are logging stubs'",
     "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
     "check": "pnpm lint",
-    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\""
+    "deploy": "nx run deploy"
   },
   "dependencies": {
     "@aws-sdk/client-eventbridge": "3.1001.0",

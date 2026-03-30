@@ -3,10 +3,6 @@ name: Publish Chrome Extension
 on:
   workflow_call:
     secrets:
-      AWS_ACCESS_KEY_ID:
-        required: true
-      AWS_SECRET_ACCESS_KEY:
-        required: true
       GOOGLE_CLIENT_ID:
         required: false
       GOOGLE_CLIENT_SECRET:
@@ -21,11 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
-      PULUMI_CONFIG_PASSPHRASE: ''
     steps:
       - uses: actions/checkout@v6
 
@@ -39,13 +31,6 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
-      - name: Compile infrastructure dependencies
-        run: npx nx compile browser-extension-core
-
-      - name: Deploy extension bucket infrastructure
-        run: pulumi up --stack prod --yes
-        working-directory: projects/extensions/chrome-extension
 
       - name: Compile bump-version script
         run: pnpm --filter chrome-extension exec tsc --outDir dist --rootDir src --module commonjs --esModuleInterop --skipLibCheck src/bump-version.ts

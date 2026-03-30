@@ -8,6 +8,11 @@
         { "projects": ["browser-extension-core"], "target": "compile" }
       ]
     },
+    "deploy": {
+      "command": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
+      "options": { "cwd": "{projectRoot}" },
+      "dependsOn": ["compile"]
+    },
     "check": {
       "command": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
       "options": { "cwd": "{projectRoot}" }

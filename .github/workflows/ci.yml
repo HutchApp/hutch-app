@@ -43,178 +43,84 @@ jobs:
 
       - run: pnpm check
 
-  detect-changes:
+  detect-projects:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
-      hutch: ${{ steps.detect.outputs.hutch }}
-      firefox-extension: ${{ steps.detect.outputs.firefox-extension }}
-      chrome-extension: ${{ steps.detect.outputs.chrome-extension }}
+      platform-affected: ${{ steps.detect.outputs.platform-affected }}
+      non-platform-projects: ${{ steps.detect.outputs.non-platform-projects }}
+      has-non-platform: ${{ steps.detect.outputs.has-non-platform }}
+      ff-affected: ${{ steps.detect.outputs.ff-affected }}
+      chrome-affected: ${{ steps.detect.outputs.chrome-affected }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
+      - uses: nrwl/nx-set-shas@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
       - id: detect
         run: |
-          BEFORE="${{ github.event.before }}"
-          AFTER="${{ github.sha }}"
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            echo "First push detected, deploying everything"
-            echo "hutch=true" >> "$GITHUB_OUTPUT"
-            echo "firefox-extension=true" >> "$GITHUB_OUTPUT"
-            echo "chrome-extension=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
-          echo "Changed files:"
-          echo "$CHANGED"
-          echo "hutch=$(echo "$CHANGED" | grep -qE '^(projects/hutch/|src/packages/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "firefox-extension=$(echo "$CHANGED" | grep -qE '^(projects/extensions/firefox-extension/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "chrome-extension=$(echo "$CHANGED" | grep -qE '^(projects/extensions/chrome-extension/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          AFFECTED=$(pnpm nx show projects --affected --json)
+          echo "Affected projects: $AFFECTED"
 
-  deploy-staging:
-    if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [all-tests, detect-changes]
-    runs-on: ubuntu-latest
-    environment: staging
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
-      PULUMI_STACK: staging
-      PULUMI_CONFIG_PASSPHRASE: ''
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-    steps:
-      - uses: actions/checkout@v6
+          DEPLOYABLE=$(pnpm nx show projects --with-target deploy --json)
+          PROJECTS=$(echo "$AFFECTED" "$DEPLOYABLE" | jq -s '.[0] as $a | .[1] | map(select(. as $p | $a | index($p)))')
+          NON_PLATFORM=$(echo "$PROJECTS" | jq -c '[.[] | select(. != "platform")]')
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
+          echo "Deployable affected: $PROJECTS"
+          echo "Non-platform: $NON_PLATFORM"
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
+          echo "platform-affected=$(echo "$PROJECTS" | jq -e 'index("platform")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "non-platform-projects=$NON_PLATFORM" >> "$GITHUB_OUTPUT"
+          echo "has-non-platform=$(echo "$NON_PLATFORM" | jq -e 'length > 0' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "ff-affected=$(echo "$PROJECTS" | jq -e 'index("firefox-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "chrome-affected=$(echo "$PROJECTS" | jq -e 'index("chrome-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-      - run: pnpm install --frozen-lockfile
+  deploy-platform:
+    if: needs.detect-projects.outputs.platform-affected == 'true'
+    needs: [all-tests, detect-projects]
+    uses: ./.github/workflows/project-deployment.yaml
+    secrets: inherit
+    with:
+      project: platform
 
-      - run: npx nx compile hutch
+  pipeline:
+    name: ${{ matrix.project }}
+    if: needs.detect-projects.outputs.has-non-platform == 'true'
+    needs: [all-tests, detect-projects, deploy-platform]
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.detect-projects.outputs.non-platform-projects) }}
+    uses: ./.github/workflows/project-deployment.yaml
+    secrets: inherit
+    with:
+      project: ${{ matrix.project }}
 
-      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
-        working-directory: projects/hutch
-
-  post-deploy-staging:
-    if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [all-tests, detect-changes, deploy-staging]
-    runs-on: ubuntu-latest
-    environment: staging
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
-      PULUMI_CONFIG_PASSPHRASE: ''
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Get staging URL from Pulumi outputs
-        id: staging-url
-        run: |
-          RAW_URL=$(pulumi stack output apiUrl --stack staging)
-          STAGING_URL="${RAW_URL%/\$default}"
-          echo "url=$STAGING_URL" >> "$GITHUB_OUTPUT"
-        working-directory: projects/hutch
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        working-directory: projects/hutch
-
-      - name: Verify staging is reachable
-        run: |
-          echo "Staging URL: ${{ steps.staging-url.outputs.url }}"
-          curl --fail --silent --show-error --max-time 30 "${{ steps.staging-url.outputs.url }}" | head -50
-
-      - name: Run E2E tests against staging
-        run: STAGING_URL=${{ steps.staging-url.outputs.url }} pnpm test:e2e:staging
-        working-directory: projects/hutch
-
-      - name: Upload test artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: e2e-staging-results
-          path: projects/hutch/test-results-staging/
-          retention-days: 7
-
-  deploy-prod:
-    if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [all-tests, detect-changes, deploy-staging, post-deploy-staging]
-    runs-on: ubuntu-latest
-    environment: prod
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
-      PULUMI_STACK: prod
-      PULUMI_CONFIG_PASSPHRASE: ''
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: npx nx compile hutch
-
-      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
-        working-directory: projects/hutch
-
-  ff-extension-deploy-to-prod:
-    if: needs.detect-changes.outputs.firefox-extension == 'true'
-    needs: [all-tests, detect-changes]
+  ff-extension-publish:
+    if: needs.detect-projects.outputs.ff-affected == 'true'
+    needs: [detect-projects, pipeline]
     permissions:
       contents: write
     uses: ./.github/workflows/submit-ff-extension-for-signing.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+    secrets: inherit
 
-  chrome-extension-deploy-to-prod:
-    if: needs.detect-changes.outputs.chrome-extension == 'true'
-    needs: [all-tests, detect-changes]
+  chrome-extension-publish:
+    if: needs.detect-projects.outputs.chrome-affected == 'true'
+    needs: [detect-projects, pipeline]
     permissions:
       contents: write
     uses: ./.github/workflows/publish-chrome-extension.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-      GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
-      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+    secrets: inherit

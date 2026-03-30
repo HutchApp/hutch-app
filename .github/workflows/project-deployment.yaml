@@ -1,0 +1,112 @@
+name: Project Deployment
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
+      PULUMI_STACK: staging
+      PULUMI_CONFIG_PASSPHRASE: ''
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy ${{ inputs.project }} to staging
+        run: pnpm nx run ${{ inputs.project }}:deploy
+
+  post-deploy-staging:
+    if: inputs.project == 'hutch'
+    needs: [deploy-staging]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
+      PULUMI_CONFIG_PASSPHRASE: ''
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Get staging URL from Pulumi outputs
+        id: staging-url
+        run: |
+          RAW_URL=$(pulumi stack output apiUrl --stack staging)
+          STAGING_URL="${RAW_URL%/\$default}"
+          echo "url=$STAGING_URL" >> "$GITHUB_OUTPUT"
+        working-directory: projects/hutch
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: projects/hutch
+
+      - name: Verify staging is reachable
+        run: |
+          echo "Staging URL: ${{ steps.staging-url.outputs.url }}"
+          curl --fail --silent --show-error --max-time 30 "${{ steps.staging-url.outputs.url }}" | head -50
+
+      - name: Run E2E tests against staging
+        run: STAGING_URL=${{ steps.staging-url.outputs.url }} pnpm test:e2e:staging
+        working-directory: projects/hutch
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-staging-results
+          path: projects/hutch/test-results-staging/
+          retention-days: 7
+
+  deploy-prod:
+    needs: [deploy-staging, post-deploy-staging]
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
+      PULUMI_STACK: prod
+      PULUMI_CONFIG_PASSPHRASE: ''
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy ${{ inputs.project }} to prod
+        run: pnpm nx run ${{ inputs.project }}:deploy
