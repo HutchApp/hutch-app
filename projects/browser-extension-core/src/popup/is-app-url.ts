@@ -1,7 +1,7 @@
-export function isAppUrl(tabUrl: string, serverUrl: string): boolean {
+export function isAppUrl(urls: { tabUrl: string; serverUrl: string }): boolean {
 	try {
-		const tabOrigin = new URL(tabUrl).origin;
-		const serverOrigin = new URL(serverUrl).origin;
+		const tabOrigin = new URL(urls.tabUrl).origin;
+		const serverOrigin = new URL(urls.serverUrl).origin;
 		return tabOrigin === serverOrigin;
 	} catch {
 		return false;

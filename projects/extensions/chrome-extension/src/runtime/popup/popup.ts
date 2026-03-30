@@ -229,7 +229,7 @@ async function saveAndShowList() {
 		return;
 	}
 
-	if (isAppUrl(activeTab.url, __SERVER_URL__)) {
+	if (isAppUrl({ tabUrl: activeTab.url, serverUrl: __SERVER_URL__ })) {
 		await showListView();
 		return;
 	}
