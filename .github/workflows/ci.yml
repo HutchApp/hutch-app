@@ -43,9 +43,11 @@ jobs:
 
       - run: pnpm check
 
+  # Only detect and deploy on pushes to main (not on PRs)
   detect-projects:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    # Expose detection results so downstream jobs can conditionally run
     outputs:
       platform-affected: ${{ steps.detect.outputs.platform-affected }}
       non-platform-projects: ${{ steps.detect.outputs.non-platform-projects }}
@@ -55,8 +57,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          # Full history needed for nx affected to compare commits
           fetch-depth: 0
 
+      # Sets NX_BASE and NX_HEAD so nx affected knows what commits to compare
       - uses: nrwl/nx-set-shas@v4
 
       - uses: pnpm/action-setup@v4
@@ -72,22 +76,30 @@ jobs:
 
       - id: detect
         run: |
+          # Get the list of projects affected by the push (uses NX_BASE..NX_HEAD)
           AFFECTED=$(pnpm nx show projects --affected --json)
           echo "Affected projects: $AFFECTED"
 
+          # Dynamically discover all projects that have a "deploy" target in project.json
+          # This avoids maintaining a hardcoded list when new deployable projects are added
           DEPLOYABLE=$(pnpm nx show projects --with-target deploy --json)
+          # Intersect: keep only projects that are both affected AND deployable
           PROJECTS=$(echo "$AFFECTED" "$DEPLOYABLE" | jq -s '.[0] as $a | .[1] | map(select(. as $p | $a | index($p)))')
+          # Platform deploys first (shared infra), so separate it from the rest
           NON_PLATFORM=$(echo "$PROJECTS" | jq -c '[.[] | select(. != "platform")]')
 
           echo "Deployable affected: $PROJECTS"
           echo "Non-platform: $NON_PLATFORM"
 
+          # Set outputs for downstream jobs to use in their `if:` conditions
           echo "platform-affected=$(echo "$PROJECTS" | jq -e 'index("platform")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "non-platform-projects=$NON_PLATFORM" >> "$GITHUB_OUTPUT"
           echo "has-non-platform=$(echo "$NON_PLATFORM" | jq -e 'length > 0' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "ff-affected=$(echo "$PROJECTS" | jq -e 'index("firefox-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "chrome-affected=$(echo "$PROJECTS" | jq -e 'index("chrome-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
+  # Platform (EventBridge bus, shared infra) must deploy before any other project
+  # because other projects depend on platform resources (e.g. event bus ARN)
   deploy-platform:
     if: needs.detect-projects.outputs.platform-affected == 'true'
     needs: [all-tests, detect-projects]
@@ -96,12 +108,19 @@ jobs:
     with:
       project: platform
 
+  # Deploy all non-platform projects in parallel using a dynamic matrix
+  # Each project goes through staging → post-deploy verification → prod
+  # via the reusable project-deployment.yaml workflow
   pipeline:
+    # Display the project name instead of "pipeline" in the GitHub Actions UI
     name: ${{ matrix.project }}
     if: needs.detect-projects.outputs.has-non-platform == 'true'
+    # Waits for platform to finish first (shared infra must exist before app deploys)
     needs: [all-tests, detect-projects, deploy-platform]
     strategy:
+      # Don't cancel other project deploys if one fails
       fail-fast: false
+      # Build the matrix dynamically from the detected affected projects
       matrix:
         project: ${{ fromJSON(needs.detect-projects.outputs.non-platform-projects) }}
     uses: ./.github/workflows/project-deployment.yaml
@@ -109,6 +128,7 @@ jobs:
     with:
       project: ${{ matrix.project }}
 
+  # Submit Firefox extension to AMO for signing (runs after pipeline deploys infra)
   ff-extension-publish:
     if: needs.detect-projects.outputs.ff-affected == 'true'
     needs: [detect-projects, pipeline]
@@ -117,6 +137,7 @@ jobs:
     uses: ./.github/workflows/submit-ff-extension-for-signing.yml
     secrets: inherit
 
+  # Publish Chrome extension to Chrome Web Store (runs after pipeline deploys infra)
   chrome-extension-publish:
     if: needs.detect-projects.outputs.chrome-affected == 'true'
     needs: [detect-projects, pipeline]
