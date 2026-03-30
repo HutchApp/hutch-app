@@ -1,0 +1,9 @@
+{
+  "name": "platform",
+  "targets": {
+    "check": {
+      "command": "pnpm check-infra",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}
