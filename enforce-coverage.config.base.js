@@ -96,19 +96,23 @@ function validateC8Config(projectRoot) {
   }
 }
 
-function shouldIncludeFile(filePath, includePatterns, excludePatterns) {
+// c8 with source-map should report original TS paths, but handle
+// dist/ paths as fallback (map back to src/)
+function toRelativePath(filePath) {
   let relativePath = path.relative(process.cwd(), filePath)
-
-  // c8 with source-map should report original TS paths, but handle
-  // dist/ paths as fallback (map back to src/)
   if (relativePath.startsWith('dist/')) {
     relativePath = relativePath.replace(/^dist\//, 'src/')
-    // Only convert .js to .ts for compiled TypeScript files
-    // Keep .client.js as-is (they're JavaScript, not compiled from TS)
     if (!relativePath.endsWith('.client.js')) {
       relativePath = relativePath.replace(/\.js$/, '.ts')
     }
   }
+  return relativePath
+}
+
+const METRICS = ['statements', 'branches', 'functions', 'lines']
+
+function shouldIncludeFile(filePath, includePatterns, excludePatterns) {
+  const relativePath = toRelativePath(filePath)
 
   const included = includePatterns.some(pattern =>
     minimatch(relativePath, pattern, { dot: true })
@@ -121,7 +125,17 @@ function shouldIncludeFile(filePath, includePatterns, excludePatterns) {
   return !excluded
 }
 
-function calculateTotals(coverage, includePatterns, excludePatterns) {
+function getIncludedFiles(coverage, includePatterns, excludePatterns) {
+  const files = []
+  for (const [filePath, data] of Object.entries(coverage)) {
+    if (filePath === 'total') continue
+    if (!shouldIncludeFile(filePath, includePatterns, excludePatterns)) continue
+    files.push({ filePath, data })
+  }
+  return files
+}
+
+function calculateTotals(includedFiles) {
   const totals = {
     statements: { total: 0, covered: 0 },
     branches: { total: 0, covered: 0 },
@@ -129,22 +143,82 @@ function calculateTotals(coverage, includePatterns, excludePatterns) {
     lines: { total: 0, covered: 0 },
   }
 
-  for (const [filePath, data] of Object.entries(coverage)) {
-    if (filePath === 'total') continue
-    if (!shouldIncludeFile(filePath, includePatterns, excludePatterns)) continue
-
-    for (const metric of ['statements', 'branches', 'functions', 'lines']) {
+  for (const { data } of includedFiles) {
+    for (const metric of METRICS) {
       totals[metric].total += data[metric].total
       totals[metric].covered += data[metric].covered
     }
   }
 
   const result = {}
-  for (const metric of ['statements', 'branches', 'functions', 'lines']) {
+  for (const metric of METRICS) {
     const { total, covered } = totals[metric]
     result[metric] = { pct: total > 0 ? (covered / total) * 100 : 100 }
   }
   return result
+}
+
+function isFullyCovered(fileData) {
+  return METRICS.every(m => fileData[m].total === 0 || fileData[m].pct === 100)
+}
+
+function hasC8IgnoreComment(filePath, projectRoot) {
+  const relativePath = toRelativePath(filePath)
+  const sourcePath = path.join(projectRoot, relativePath)
+  try {
+    const content = fs.readFileSync(sourcePath, 'utf8')
+    return /\/\*\s*c8 ignore|\/\/\s*c8 ignore|\/\*\s*istanbul ignore|\/\/\s*istanbul ignore/.test(content)
+  } catch {
+    return false
+  }
+}
+
+function printFileReport(includedFiles, projectRoot) {
+  const fullyCovered = []
+  const partiallyCovered = []
+
+  for (const { filePath, data } of includedFiles) {
+    const relativePath = toRelativePath(filePath)
+    if (isFullyCovered(data)) {
+      fullyCovered.push(relativePath)
+    } else {
+      const hasIgnore = hasC8IgnoreComment(filePath, projectRoot)
+      partiallyCovered.push({ relativePath, data, hasIgnore })
+    }
+  }
+
+  partiallyCovered.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
+  fullyCovered.sort()
+
+  if (partiallyCovered.length > 0) {
+    console.log('\n📋 Files With Incomplete Coverage')
+    console.log('─'.repeat(100))
+    console.log(
+      'File'.padEnd(60) +
+      'Stmts'.padStart(8) +
+      'Branch'.padStart(8) +
+      'Funcs'.padStart(8) +
+      'Lines'.padStart(8) +
+      '  Note'
+    )
+    console.log('─'.repeat(100))
+
+    for (const { relativePath, data, hasIgnore } of partiallyCovered) {
+      const stmts = data.statements.pct.toFixed(1).padStart(7) + '%'
+      const branch = data.branches.pct.toFixed(1).padStart(7) + '%'
+      const funcs = data.functions.pct.toFixed(1).padStart(7) + '%'
+      const lines = data.lines.pct.toFixed(1).padStart(7) + '%'
+      const note = hasIgnore ? '  has c8 ignore' : ''
+      console.log(relativePath.padEnd(60) + stmts + branch + funcs + lines + note)
+    }
+
+    console.log('─'.repeat(100))
+  }
+
+  console.log(`\n✅ ${fullyCovered.length} file(s) at 100% coverage`)
+  if (partiallyCovered.length > 0) {
+    console.log(`⚠️  ${partiallyCovered.length} file(s) with incomplete coverage`)
+  }
 }
 
 /**
@@ -177,7 +251,13 @@ function enforceCoverage(options = {}) {
     }
 
     const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'))
-    const totals = calculateTotals(coverage, INCLUDE_PATTERNS, excludePatterns)
+    const includedFiles = getIncludedFiles(coverage, INCLUDE_PATTERNS, excludePatterns)
+    const totals = calculateTotals(includedFiles)
+
+    printFileReport(includedFiles, projectRoot)
+
+    console.log('\n📊 Aggregate Thresholds')
+    console.log('================================')
 
     let failed = false
     const results = []
