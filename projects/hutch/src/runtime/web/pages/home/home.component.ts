@@ -133,12 +133,12 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					name: "Chrome Extension",
 					description:
-						"Same one-click saving, now available in Chrome.",
+						"Same one-click saving, also available in Google Chrome.",
 				},
 				{
 					name: "Reader View",
 					description:
-						"Clean article view powered by Readability.js. No distractions.",
+						"Clean article view powered by Mozilla Firefox's reader view. No distractions.",
 				},
 				{
 					name: "Web App",
@@ -148,17 +148,17 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					name: "TL;DR Summaries",
 					description:
-						"One-line summary per article, generated once, available to all users.",
+						"A TL;DR per article outlining the most important points.",
 				},
 				{
-					name: "Dark Mode",
+					name: "Auto Dark Mode",
 					description:
 						"Follows your system preference automatically.",
 				},
 				{
 					name: "Secure Auth",
 					description:
-						"OAuth with PKCE. Tokens stored locally in your browser, not on a server.",
+						"OAuth with PKCE. Tokens stored locally in your browser.",
 				},
 				{
 					name: "Self-Updating Extension",
@@ -173,19 +173,19 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 			],
 			plannedFeatures: [
 				{
-					name: "Personalised Summaries (BYOK)",
+					name: "Personalised Summaries",
 					description:
-						"Summaries tailored to how you learn, powered by your own API key (Anthropic or OpenAI).",
+						"Summaries tailored to what you prefer to learn.",
 				},
 				{
 					name: "Preference Learning",
 					description:
-						"\"More like this\" and \"less like this\" buttons that update a personal preference model, re-ranking your reading list and surfacing articles that match how you actually learn. You can review your preferences.",
+						"\"More like this\" and \"less like this\" buttons that update a personal preference model, re-ranking your reading list and surfacing articles that match what's interesting to you. You can review your preferences.",
 				},
 				{
 					name: "Gmail Integration",
 					description:
-						"Import links from newsletters automatically and process them all. No more 19,577 unread emails.",
+						"Import ALL links from your existing unread newsletters automatically and process them all. No more 19,577 unread emails.",
 				},
 				{
 					name: "Highlights & Notes",
