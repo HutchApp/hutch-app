@@ -121,6 +121,72 @@ function shouldIncludeFile(filePath, includePatterns, excludePatterns) {
   return !excluded
 }
 
+function formatCoverageTable(coverage, includePatterns, excludePatterns) {
+  const rows = []
+
+  for (const [filePath, data] of Object.entries(coverage)) {
+    if (filePath === 'total') continue
+    if (!shouldIncludeFile(filePath, includePatterns, excludePatterns)) continue
+
+    rows.push({
+      file: path.relative(process.cwd(), filePath),
+      stmts: data.statements.pct,
+      branch: data.branches.pct,
+      funcs: data.functions.pct,
+      lines: data.lines.pct,
+    })
+  }
+
+  rows.sort((a, b) => a.file.localeCompare(b.file))
+
+  const totals = calculateTotals(coverage, includePatterns, excludePatterns)
+
+  const summaryLabel = `All files (${rows.length})`
+  const fileWidth = Math.max(
+    'File'.length,
+    summaryLabel.length,
+    ...rows.map(r => r.file.length)
+  )
+
+  const fmt = (pct) => String(Number(pct.toFixed(2))).padStart(8)
+
+  const sep = '-'.repeat(fileWidth + 1) + '|' +
+    '-'.repeat(9) + '|' +
+    '-'.repeat(10) + '|' +
+    '-'.repeat(9) + '|' +
+    '-'.repeat(9) + '|'
+
+  const header = ' ' + 'File'.padEnd(fileWidth) + '|' +
+    ' % Stmts' + ' |' +
+    '  % Branch' + ' |' +
+    ' % Funcs' + ' |' +
+    ' % Lines' + ' |'
+
+  const lines = [sep, header, sep]
+
+  for (const row of rows) {
+    lines.push(
+      ' ' + row.file.padEnd(fileWidth) + '|' +
+      fmt(row.stmts) + ' |' +
+      fmt(row.branch).padStart(10) + ' |' +
+      fmt(row.funcs) + ' |' +
+      fmt(row.lines) + ' |'
+    )
+  }
+
+  lines.push(sep)
+  lines.push(
+    ' ' + summaryLabel.padEnd(fileWidth) + '|' +
+    fmt(totals.statements.pct) + ' |' +
+    fmt(totals.branches.pct).padStart(10) + ' |' +
+    fmt(totals.functions.pct) + ' |' +
+    fmt(totals.lines.pct) + ' |'
+  )
+  lines.push(sep)
+
+  return lines.join('\n')
+}
+
 function calculateTotals(coverage, includePatterns, excludePatterns) {
   const totals = {
     statements: { total: 0, covered: 0 },
@@ -154,12 +220,14 @@ function calculateTotals(coverage, includePatterns, excludePatterns) {
  * @param {string} options.projectRoot - Absolute path to the project directory
  * @param {Object} [options.thresholds] - Override default thresholds
  * @param {string[]} [options.extraExcludePatterns] - Additional exclude patterns beyond base
+ * @param {boolean} [options.showTextTable] - Print a per-file coverage table (filtered by include/exclude patterns)
  */
 function enforceCoverage(options = {}) {
   const {
     projectRoot = process.cwd(),
     thresholds = DEFAULT_THRESHOLDS,
     extraExcludePatterns = [],
+    showTextTable = false,
   } = options
 
   const excludePatterns = [...BASE_EXCLUDE_PATTERNS, ...extraExcludePatterns]
@@ -177,6 +245,12 @@ function enforceCoverage(options = {}) {
     }
 
     const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'))
+
+    if (showTextTable) {
+      console.log(formatCoverageTable(coverage, INCLUDE_PATTERNS, excludePatterns))
+      console.log('')
+    }
+
     const totals = calculateTotals(coverage, INCLUDE_PATTERNS, excludePatterns)
 
     let failed = false
