@@ -5,11 +5,11 @@ import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { switchHelpers } from "../../handlebars-switch";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
-import { firefoxS3Config, chromeS3Config } from "browser-extension-core/s3-config";
+import { firefoxS3Config } from "browser-extension-core/s3-config";
 
 const INSTALL_TEMPLATE = readFileSync(join(__dirname, "install.template.html"), "utf-8");
 const FIREFOX_LATEST_POINTER_URL = firefoxS3Config.getLatestPointerUrl("prod");
-const CHROME_LATEST_POINTER_URL = chromeS3Config.getLatestPointerUrl("prod");
+const CHROME_WEB_STORE_URL = "https://chromewebstore.google.com/detail/hutch/klblengmhlfnmjoagchagfcdbpbocgbf";
 
 async function fetchDownloadUrl(latestPointerUrl: string, buildDownloadUrl: (filename: string) => string): Promise<string | null> {
 	const response = await fetch(latestPointerUrl);
@@ -26,9 +26,7 @@ export async function fetchFirefoxDownloadUrl(): Promise<string | null> {
 }
 
 export async function fetchChromeDownloadUrl(): Promise<string | null> {
-	return fetchDownloadUrl(CHROME_LATEST_POINTER_URL, (filename) =>
-		chromeS3Config.getExtensionDownloadUrl({ stage: "prod", filename }),
-	);
+	return CHROME_WEB_STORE_URL;
 }
 
 export function InstallPage(params: { firefox: string | null; chrome: string | null; browser: "firefox" | "chrome" }): Component {

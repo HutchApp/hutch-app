@@ -4,20 +4,18 @@ on:
   workflow_call:
     secrets:
       GOOGLE_CLIENT_ID:
-        required: false
+        required: true
       GOOGLE_CLIENT_SECRET:
-        required: false
+        required: true
       GOOGLE_REFRESH_TOKEN:
-        required: false
+        required: true
       CHROME_EXTENSION_ID:
-        required: false
+        required: true
 
 jobs:
   publish-chrome-extension-prod:
     runs-on: ubuntu-latest
     environment: prod
-    env:
-      AWS_REGION: ap-southeast-2
     steps:
       - uses: actions/checkout@v6
 
@@ -52,14 +50,10 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Publish to S3
-        run: node projects/extensions/chrome-extension/scripts/publish-to-s3.js
-
-      # Uncomment once GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, and CHROME_EXTENSION_ID secrets are configured
-      # - name: Submit to Chrome Web Store
-      #   run: node projects/extensions/chrome-extension/scripts/submit-to-chrome-web-store.js
-      #   env:
-      #     GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-      #     GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-      #     GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
-      #     CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+      - name: Submit to Chrome Web Store
+        run: node projects/extensions/chrome-extension/scripts/submit-to-chrome-web-store.js
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}

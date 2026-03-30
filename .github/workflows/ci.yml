@@ -137,7 +137,7 @@ jobs:
     uses: ./.github/workflows/submit-ff-extension-for-signing.yml
     secrets: inherit
 
-  # Publish Chrome extension to Chrome Web Store (runs after pipeline deploys infra)
+  # Publish Chrome extension to Chrome Web Store
   chrome-extension-publish:
     if: needs.detect-projects.outputs.chrome-affected == 'true'
     needs: [detect-projects, pipeline]
