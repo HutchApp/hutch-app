@@ -39,65 +39,19 @@ jobs:
       - name: Deploy ${{ inputs.project }} to staging
         run: pnpm nx run ${{ inputs.project }}:deploy
 
-  post-deploy-staging:
-    if: inputs.project == 'hutch'
-    needs: [deploy-staging]
-    runs-on: ubuntu-latest
-    environment: staging
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
-      PULUMI_CONFIG_PASSPHRASE: ''
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      # Strip /$default suffix that API Gateway appends to the URL
-      - name: Get staging URL from Pulumi outputs
-        id: staging-url
-        run: |
-          RAW_URL=$(pulumi stack output apiUrl --stack staging)
-          STAGING_URL="${RAW_URL%/\$default}"
-          echo "url=$STAGING_URL" >> "$GITHUB_OUTPUT"
-        working-directory: projects/hutch
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        working-directory: projects/hutch
-
-      - name: Verify staging is reachable
-        run: |
-          echo "Staging URL: ${{ steps.staging-url.outputs.url }}"
-          curl --fail --silent --show-error --max-time 30 "${{ steps.staging-url.outputs.url }}" | head -50
-
-      - name: Run E2E tests against staging
-        run: STAGING_URL=${{ steps.staging-url.outputs.url }} pnpm test:e2e:staging
-        working-directory: projects/hutch
+      - name: Post-deploy staging
+        run: pnpm nx run ${{ inputs.project }}:post-deploy
 
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-staging-results
-          path: projects/hutch/test-results-staging/
+          name: e2e-staging-results-${{ inputs.project }}
+          path: projects/${{ inputs.project }}/test-results-staging/
           retention-days: 7
 
-  # For non-hutch projects, post-deploy-staging is skipped and GitHub treats
-  # skipped jobs in `needs` as satisfied, so this runs directly after deploy-staging
   deploy-prod:
-    needs: [deploy-staging, post-deploy-staging]
+    needs: [deploy-staging]
     runs-on: ubuntu-latest
     environment: prod
     env:
@@ -125,3 +79,6 @@ jobs:
 
       - name: Deploy ${{ inputs.project }} to prod
         run: pnpm nx run ${{ inputs.project }}:deploy
+
+      - name: Post-deploy prod
+        run: pnpm nx run ${{ inputs.project }}:post-deploy

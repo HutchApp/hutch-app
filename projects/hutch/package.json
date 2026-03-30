@@ -31,7 +31,8 @@
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\" \"pnpm check-unused-css\"",
     "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
     "check": "nx run hutch:check",
-    "deploy": "nx run deploy"
+    "deploy": "nx run deploy",
+    "post-deploy": "nx run post-deploy"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.80.0",

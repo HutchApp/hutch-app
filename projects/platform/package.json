@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
-    "deploy": "nx run deploy"
+    "deploy": "nx run deploy",
+    "post-deploy": "echo 'No post-deploy steps'"
   },
   "dependencies": {
     "@packages/hutch-event-bridge": "workspace:*"

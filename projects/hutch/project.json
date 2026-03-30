@@ -13,6 +13,10 @@
       "options": { "cwd": "{projectRoot}" },
       "dependsOn": ["compile"]
     },
+    "post-deploy": {
+      "command": "bash scripts/post-deploy.sh",
+      "options": { "cwd": "{projectRoot}" }
+    },
     "check": {
       "command": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
       "options": { "cwd": "{projectRoot}" }
