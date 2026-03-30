@@ -37,6 +37,8 @@ export class HutchLambda {
 			storage: HutchStorage;
 			domainRegistration: DomainRegistration;
 			staticBaseUrl: pulumi.Output<string>;
+			eventBusName: pulumi.Output<string>;
+			eventBusArn: pulumi.Output<string>;
 		},
 	) {
 		const memorySize = 512;
@@ -123,6 +125,22 @@ export class HutchLambda {
 				),
 		});
 
+		new aws.iam.RolePolicy(`${name}-eventbridge-publish`, {
+			role: lambdaRole.name,
+			policy: args.eventBusArn.apply((arn) =>
+				JSON.stringify({
+					Version: "2012-10-17",
+					Statement: [
+						{
+							Effect: "Allow",
+							Action: ["events:PutEvents"],
+							Resource: [arn],
+						},
+					],
+				}),
+			),
+		});
+
 		const apiGateway = new aws.apigatewayv2.Api(`${name}-api-gateway`, {
 			protocolType: "HTTP",
 			description: `Hutch API Gateway (${args.stage})`,
@@ -161,6 +179,7 @@ export class HutchLambda {
 						? (getEnv("ANTHROPIC_API_KEY") ?? "")
 						: requireEnv("ANTHROPIC_API_KEY"),
 					STATIC_BASE_URL: args.staticBaseUrl,
+					EVENT_BUS_NAME: args.eventBusName,
 				},
 			},
 		});

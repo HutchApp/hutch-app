@@ -62,6 +62,7 @@ describe("Email verification", () => {
 				summarizeArticle: async () => null,
 				findCachedSummary: async () => "",
 				refreshArticleIfStale: async () => ({ action: "new" as const }),
+				publishLinkSaved: async () => {},
 			});
 
 			const response = await request(app).post("/signup").type("form").send({

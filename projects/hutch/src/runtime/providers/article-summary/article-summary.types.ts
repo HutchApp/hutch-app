@@ -12,7 +12,7 @@ export type SaveCachedSummary = (params: {
 	outputTokens: number;
 }) => Promise<void>;
 
-export type CreateAiMessage = (params: {
+export type CreateAiMessageParams = {
 	model: string;
 	max_tokens: number;
 	system: string;
@@ -23,7 +23,8 @@ export type CreateAiMessage = (params: {
 			schema: Record<string, unknown>;
 		};
 	};
-}) => Promise<{
+}
+export type CreateAiMessage = (params: CreateAiMessageParams) => Promise<{
 	content: Array<{ type: string; text?: string }>;
 	usage: { input_tokens: number; output_tokens: number };
 }>;

@@ -24,6 +24,8 @@ import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
 import { ReaderPage } from "../reader/reader.component";
 
+type PublishLinkSaved = (params: { url: string; userId: UserId }) => Promise<void>;
+
 interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
 	findArticleById: FindArticleById;
@@ -35,6 +37,7 @@ interface QueueDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	publishLinkSaved: PublishLinkSaved;
 	logError: (message: string, error?: Error) => void;
 }
 
@@ -78,6 +81,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 		if (article.content) {
 			deps.summarizeArticle({ url, textContent: article.content });
 		}
+		await deps.publishLinkSaved({ url, userId });
 
 		return { ok: true, saved };
 	}
@@ -92,6 +96,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	if (freshness.action === "refreshed" && freshness.article.article.content) {
 		deps.summarizeArticle({ url, textContent: freshness.article.article.content });
 	}
+	await deps.publishLinkSaved({ url, userId });
 
 	return { ok: true, saved };
 }

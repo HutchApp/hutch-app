@@ -7,6 +7,10 @@ import { HutchLambda } from "./hutch-lambda";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
+const platformStackName = config.require("platformStack");
+const platformStack = new pulumi.StackReference(platformStackName);
+const eventBusName = platformStack.requireOutput("hutchEventBusName").apply(String);
+const eventBusArn = platformStack.requireOutput("hutchEventBusArn").apply(String);
 const domains = config.getObject<string[]>("domains") ?? [];
 const deletionProtection = config.requireBoolean("deletionProtection");
 const staticDomains = config.requireObject<string[]>("staticDomains");
@@ -40,6 +44,8 @@ const hutch = new HutchLambda("hutch", {
 	storage,
 	domainRegistration,
 	staticBaseUrl: staticAssets.baseUrl,
+	eventBusName,
+	eventBusArn,
 });
 
 export const apiUrl = hutch.apiUrl;

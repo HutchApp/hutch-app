@@ -36,6 +36,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "0.80.0",
     "@aws-sdk/client-dynamodb": "3.1001.0",
+    "@aws-sdk/client-eventbridge": "3.1001.0",
     "@aws-sdk/lib-dynamodb": "3.1001.0",
     "@mozilla/readability": "0.6.0",
     "@node-oauth/express-oauth-server": "4.1.5",
@@ -47,6 +48,7 @@
     "browser-extension-core": "workspace:*",
     "handlebars": "4.7.8",
     "helmet": "8.1.0",
+    "@packages/hutch-event-bridge": "workspace:*",
     "@packages/hutch-logger": "workspace:*",
     "linkedom": "0.18.12",
     "resend": "6.9.3",

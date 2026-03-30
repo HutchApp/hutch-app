@@ -1,0 +1,19 @@
+{
+  "name": "platform",
+  "version": "1.0.0",
+  "description": "Shared platform infrastructure — EventBridge bus",
+  "main": "src/infra/index.ts",
+  "private": true,
+  "scripts": {
+    "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
+    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\""
+  },
+  "dependencies": {
+    "@packages/hutch-event-bridge": "workspace:*"
+  },
+  "devDependencies": {
+    "@pulumi/aws": "7.20.0",
+    "@pulumi/pulumi": "3.224.0",
+    "typescript": "5.9.3"
+  }
+}

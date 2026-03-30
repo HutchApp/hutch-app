@@ -3,6 +3,7 @@ config:
   aws:allowedAccountIds:
     - '278728209435'
   hutch:stage: production
+  hutch:platformStack: organization/platform/production
   hutch:domains:
     - hutch-app.com
   hutch:deletionProtection: true

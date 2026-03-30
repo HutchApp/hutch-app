@@ -21,11 +21,13 @@ import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
-import Anthropic from "@anthropic-ai/sdk";
+import { createAIMessageUsingClaude, createAIMessageUsingLoggerOutput } from "./providers/article-summary/create-ai-message-using-claude"
+import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import { initClaudeSummarizer } from "./providers/article-summary/claude-summarizer";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
 import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
 import { stripHtml } from "./providers/article-summary/strip-html";
+import { initEventPublisher, events, type PublishEvent } from "@packages/hutch-event-bridge";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
@@ -46,18 +48,20 @@ function initProviders() {
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
+		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const publishLinkSaved = initEventPublisher({
+			client: new EventBridgeClient({}),
+			eventBusName,
+			event: events.LINK_SAVED,
+		});
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
 		const { summarizeArticle } = initClaudeSummarizer({
-			createMessage: (params) => {
-				const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
-				const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
-				return anthropicClient.messages.create(params)
-			},
+			createMessage: createAIMessageUsingClaude(),
 			logger: consoleLogger,
 			cleanContent: stripHtml,
 			...summaryCache,
@@ -84,6 +88,7 @@ function initProviders() {
 			summarizeArticle,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
+			publishLinkSaved,
 		};
 	}
 
@@ -92,17 +97,7 @@ function initProviders() {
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const summaryCache = initInMemorySummaryCache();
 	const { summarizeArticle } = initClaudeSummarizer({
-		createMessage: (params) => {
-			// Log the call without full content to avoid flooding CI logs (Wikipedia articles are 100KB+)
-			consoleLogger.info(`[AI Summary Stub] model=${params.model} content_length=${params.messages[0]?.content?.length ?? 0}`);
-			return Promise.resolve({
-				content: [{
-					type: "text",
-					text: JSON.stringify({ summary: `[AI Summary Stub] for model ${params.model}` })
-				}],
-				usage: { input_tokens: 0, output_tokens: 0 }
-			})
-		},
+		createMessage: createAIMessageUsingLoggerOutput({ logger: consoleLogger }),
 		logger: consoleLogger,
 		cleanContent: stripHtml,
 		...summaryCache,
@@ -120,6 +115,10 @@ function initProviders() {
 		staleTtlMs,
 	});
 
+	const publishLinkSaved: PublishEvent<typeof events.LINK_SAVED.schema> = async (detail) => {
+		console.log("[publishLinkSaved] dev noop", JSON.stringify(detail));
+	};
+
 	return {
 		auth,
 		articleStore,
@@ -130,6 +129,7 @@ function initProviders() {
 		summarizeArticle,
 		findCachedSummary: summaryCache.findCachedSummary,
 		refreshArticleIfStale,
+		publishLinkSaved,
 	};
 }
 

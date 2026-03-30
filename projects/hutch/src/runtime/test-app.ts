@@ -17,6 +17,7 @@ import { createApp } from "./server";
 
 const noopSummarize: SummarizeArticle = async () => null;
 const noopCheckFreshness: RefreshArticleIfStale = async () => ({ action: "new" });
+const noopPublishLinkSaved = async () => {};
 
 const stubFetchHtml: FetchHtml = async (url) => {
 	const hostname = new URL(url).hostname;
@@ -55,6 +56,7 @@ export function createTestApp(options?: {
 		summarizeArticle,
 		findCachedSummary: summaryCache.findCachedSummary,
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,
+		publishLinkSaved: noopPublishLinkSaved,
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",
