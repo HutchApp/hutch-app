@@ -3,11 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "paths": {
-      "@packages/hutch-event-bridge/runtime": ["../../src/packages/hutch-event-bridge/dist/runtime/index.d.ts"],
-      "@packages/hutch-logger": ["../../src/packages/hutch-logger/dist/index.d.ts"]
-    }
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules", "src/infra/**"]

@@ -19,7 +19,6 @@ import { noopLogger } from "@packages/hutch-logger";
 
 const { publishLinkSaved: defaultPublishLinkSaved } = initInMemoryLinkSaved({ logger: noopLogger });
 const noopCheckFreshness: RefreshArticleIfStale = async () => ({ action: "new" });
-const noopPublishLinkSaved = async () => {};
 
 const stubFetchHtml: FetchHtml = async (url) => {
 	const hostname = new URL(url).hostname;
@@ -49,7 +48,6 @@ export function createTestApp(options?: {
 		publishLinkSaved: options?.publishLinkSaved ?? defaultPublishLinkSaved,
 		findCachedSummary: options?.findCachedSummary ?? (async () => ""),
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,
-		publishLinkSaved: noopPublishLinkSaved,
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",

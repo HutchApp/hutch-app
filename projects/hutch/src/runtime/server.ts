@@ -75,7 +75,6 @@ interface AppDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
-	publishLinkSaved: (params: { url: string; userId: import("./domain/user/user.types").UserId }) => Promise<void>;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -215,7 +214,6 @@ export function createApp(dependencies: AppDependencies): Express {
 		findCachedSummary: deps.findCachedSummary,
 		refreshArticleIfStale: deps.refreshArticleIfStale,
 		updateArticleFetchMetadata: deps.updateArticleFetchMetadata,
-		publishLinkSaved: deps.publishLinkSaved,
 		logError: deps.logError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);

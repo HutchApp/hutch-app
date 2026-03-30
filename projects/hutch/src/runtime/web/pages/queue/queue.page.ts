@@ -25,8 +25,6 @@ import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
 import { ReaderPage } from "../reader/reader.component";
 
-type PublishLinkSaved = (params: { url: string; userId: UserId }) => Promise<void>;
-
 interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
 	findArticleById: FindArticleById;
@@ -38,7 +36,6 @@ interface QueueDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
-	publishLinkSaved: PublishLinkSaved;
 	logError: (message: string, error?: Error) => void;
 }
 

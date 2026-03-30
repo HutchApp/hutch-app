@@ -194,9 +194,6 @@ importers:
       '@aws-sdk/client-dynamodb':
         specifier: 3.1001.0
         version: 3.1001.0
-      '@aws-sdk/client-eventbridge':
-        specifier: 3.1001.0
-        version: 3.1001.0
       '@aws-sdk/lib-dynamodb':
         specifier: 3.1001.0
         version: 3.1001.0(@aws-sdk/client-dynamodb@3.1001.0)
@@ -401,6 +398,9 @@ importers:
       '@aws-sdk/client-eventbridge':
         specifier: 3.1001.0
         version: 3.1001.0
+      zod:
+        specifier: 4.1.13
+        version: 4.1.13
     devDependencies:
       '@pulumi/aws':
         specifier: 7.20.0
@@ -408,6 +408,12 @@ importers:
       '@pulumi/pulumi':
         specifier: 3.224.0
         version: 3.224.0(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))(typescript@5.9.3)
+      '@types/aws-lambda':
+        specifier: 8.10.161
+        version: 8.10.161
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
       typescript:
         specifier: 5.9.3
         version: 5.9.3

@@ -3,13 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "paths": {
-      "save-link/save-link": ["../save-link/dist/save-link/index.d.ts"],
-      "save-link/generate-summary": ["../save-link/dist/generate-summary/index.d.ts"],
-      "@packages/hutch-event-bridge/runtime": ["../../src/packages/hutch-event-bridge/dist/runtime/index.d.ts"],
-      "browser-extension-core/s3-config": ["../browser-extension-core/dist/s3-config.d.ts"]
-    }
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules", "src/infra/**"]
