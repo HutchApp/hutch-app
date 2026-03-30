@@ -26,3 +26,4 @@ export const noopLogger: HutchLogger = {
 	warn: () => {},
 	debug: () => {},
 };
+

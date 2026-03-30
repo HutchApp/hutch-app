@@ -46,3 +46,4 @@ const bucketPolicy = new aws.s3.BucketPolicy("hutch-extension-policy", {
 
 export const bucketUrl = pulumi.interpolate`https://${bucket.bucketRegionalDomainName}`;
 export const _dependencies = [bucketPolicy];
+

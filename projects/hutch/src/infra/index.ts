@@ -52,3 +52,4 @@ export const apiUrl = hutch.apiUrl;
 export const functionName = hutch.functionName;
 export const staticBaseUrl = staticAssets.baseUrl;
 export const _dependencies = [hutch.defaultRoute];
+

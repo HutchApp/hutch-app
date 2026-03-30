@@ -272,3 +272,4 @@ export const summaryGeneratedQueueUrl = summaryGeneratedQueue.queueUrl;
 export const linkSavedFunctionName = linkSavedLambda.name;
 export const generateSummaryFunctionName = generateSummaryLambda.name;
 export const summaryGeneratedFunctionName = summaryGeneratedLambda.name;
+

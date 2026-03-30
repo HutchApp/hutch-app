@@ -5,3 +5,4 @@ const eventBus = new HutchEventBus("hutch");
 
 export const hutchEventBusName: pulumi.Output<string> = eventBus.eventBusName;
 export const hutchEventBusArn: pulumi.Output<string> = eventBus.eventBusArn;
+
