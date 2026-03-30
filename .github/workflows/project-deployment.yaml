@@ -1,11 +1,3 @@
-# Reusable workflow for deploying a single project through staging → prod.
-# Called from ci.yml via `uses: ./.github/workflows/project-deployment.yaml`
-# with a project name (e.g. "hutch", "platform", "save-link").
-#
-# Flow: deploy-staging → post-deploy-staging (hutch only) → deploy-prod
-#
-# Each environment (staging/prod) has its own GitHub Actions environment
-# with separate AWS credentials and secrets.
 name: Project Deployment
 
 on:
@@ -16,12 +8,8 @@ on:
         type: string
 
 jobs:
-  # Step 1: Deploy to staging using the project's nx deploy target
-  # The deploy target is defined in each project's project.json and runs
-  # pulumi up against the staging stack
   deploy-staging:
     runs-on: ubuntu-latest
-    # Pulls secrets (AWS keys, API keys) from the "staging" GitHub environment
     environment: staging
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -48,14 +36,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # nx resolves the deploy target from project.json, which runs pulumi up.
-      # nx also runs any dependsOn targets first (e.g. compile for hutch)
       - name: Deploy ${{ inputs.project }} to staging
         run: pnpm nx run ${{ inputs.project }}:deploy
 
-  # Step 2: Post-deploy verification — only runs for hutch
-  # Fetches the staging URL from Pulumi outputs and runs E2E tests against it
-  # to verify the deployment before promoting to prod
   post-deploy-staging:
     if: inputs.project == 'hutch'
     needs: [deploy-staging]
@@ -65,7 +48,6 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ap-southeast-2
-      # AWS creds needed to read Pulumi state and get the staging URL
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
       PULUMI_CONFIG_PASSPHRASE: ''
     steps:
@@ -82,8 +64,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Read the API Gateway URL from Pulumi stack outputs, stripping the
-      # /$default suffix that API Gateway appends
+      # Strip /$default suffix that API Gateway appends to the URL
       - name: Get staging URL from Pulumi outputs
         id: staging-url
         run: |
@@ -96,7 +77,6 @@ jobs:
         run: npx playwright install --with-deps chromium
         working-directory: projects/hutch
 
-      # Smoke test: confirm the staging endpoint responds before running E2E
       - name: Verify staging is reachable
         run: |
           echo "Staging URL: ${{ steps.staging-url.outputs.url }}"
@@ -106,7 +86,6 @@ jobs:
         run: STAGING_URL=${{ steps.staging-url.outputs.url }} pnpm test:e2e:staging
         working-directory: projects/hutch
 
-      # Always upload test artifacts (screenshots, traces) even if tests fail
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v7
@@ -115,20 +94,16 @@ jobs:
           path: projects/hutch/test-results-staging/
           retention-days: 7
 
-  # Step 3: Deploy to prod
-  # For hutch: runs after staging deploy AND post-deploy E2E verification
-  # For other projects: post-deploy-staging is skipped (if: inputs.project == 'hutch'),
-  # so this runs directly after deploy-staging
+  # For non-hutch projects, post-deploy-staging is skipped and GitHub treats
+  # skipped jobs in `needs` as satisfied, so this runs directly after deploy-staging
   deploy-prod:
     needs: [deploy-staging, post-deploy-staging]
     runs-on: ubuntu-latest
-    # Pulls secrets from the "prod" GitHub environment (different AWS account)
     environment: prod
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ap-southeast-2
-      # Prod uses a different AWS account (278728209435) than staging (572337278115)
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
       PULUMI_STACK: prod
       PULUMI_CONFIG_PASSPHRASE: ''
