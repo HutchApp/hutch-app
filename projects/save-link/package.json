@@ -26,7 +26,7 @@
     "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\"",
     "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
     "check": "pnpm lint",
-    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"",
+    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
     "post-deploy": "echo 'No post-deploy steps'"
   },
   "dependencies": {
