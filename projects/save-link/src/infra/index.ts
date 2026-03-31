@@ -1,4 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
+import * as aws from "@pulumi/aws";
 import {
 	HutchEventRule,
 	HutchLambda,
@@ -17,6 +18,7 @@ import { getEnv } from "../require-env";
 
 const config = new pulumi.Config();
 const platformStack = config.require("platformStack");
+const alertEmail = config.require("alertEmail");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
 
@@ -160,6 +162,41 @@ new HutchEventRule("summary-generated", {
 	targetQueueArn: summaryGeneratedSqs.queueArn,
 	targetQueueUrl: summaryGeneratedSqs.queueUrl,
 });
+
+// --- DLQ Alarms ---
+
+const dlqAlarmTopic = new aws.sns.Topic("save-link-dlq-alarm-topic");
+
+new aws.sns.TopicSubscription("save-link-dlq-alarm-email", {
+	topic: dlqAlarmTopic.arn,
+	protocol: "email",
+	endpoint: alertEmail,
+});
+
+const dlqQueues = [
+	{ name: "link-saved", sqs: linkSavedSqs },
+	{ name: "generate-summary", sqs: generateSummarySqs },
+	{ name: "summary-generated", sqs: summaryGeneratedSqs },
+];
+
+for (const { name, sqs } of dlqQueues) {
+	new aws.cloudwatch.MetricAlarm(`save-link-${name}-dlq-alarm`, {
+		comparisonOperator: "GreaterThanOrEqualToThreshold",
+		evaluationPeriods: 1,
+		metricName: "ApproximateNumberOfMessagesVisible",
+		namespace: "AWS/SQS",
+		period: 300,
+		statistic: "Sum",
+		threshold: 1,
+		alarmDescription: `Message entered save-link-${name} dead letter queue`,
+		dimensions: {
+			QueueName: sqs.dlqName,
+		},
+		alarmActions: [dlqAlarmTopic.arn],
+	});
+}
+
+// --- Exports ---
 
 export const linkSavedQueueUrl = linkSavedSqs.queueUrl;
 export const linkSavedDlqUrl = linkSavedSqs.dlqUrl;

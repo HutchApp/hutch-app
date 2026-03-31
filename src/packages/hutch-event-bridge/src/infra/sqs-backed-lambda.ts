@@ -6,6 +6,7 @@ export class SQSBackedLambda {
 	public readonly queueArn: HutchSqsQueue["queueArn"];
 	public readonly queueUrl: HutchSqsQueue["queueUrl"];
 	public readonly dlqUrl: HutchSqsQueue["dlqUrl"];
+	public readonly dlqName: HutchSqsQueue["dlqName"];
 
 	constructor(
 		name: string,
@@ -42,5 +43,6 @@ export class SQSBackedLambda {
 		this.queueArn = queue.queueArn;
 		this.queueUrl = queue.queueUrl;
 		this.dlqUrl = queue.dlqUrl;
+		this.dlqName = queue.dlqName;
 	}
 }

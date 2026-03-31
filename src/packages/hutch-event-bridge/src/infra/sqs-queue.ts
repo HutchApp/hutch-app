@@ -7,6 +7,7 @@ export class HutchSqsQueue {
 	public readonly queueName: aws.sqs.Queue["name"];
 	public readonly dlqArn: aws.sqs.Queue["arn"];
 	public readonly dlqUrl: aws.sqs.Queue["url"];
+	public readonly dlqName: aws.sqs.Queue["name"];
 
 	constructor(
 		name: string,
@@ -37,5 +38,6 @@ export class HutchSqsQueue {
 		this.queueName = queue.name;
 		this.dlqArn = dlq.arn;
 		this.dlqUrl = dlq.url;
+		this.dlqName = dlq.name;
 	}
 }

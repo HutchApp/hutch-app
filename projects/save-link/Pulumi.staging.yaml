@@ -3,6 +3,7 @@ config:
   aws:allowedAccountIds:
     - '572337278115'
   save-link:platformStack: organization/platform/staging
+  save-link:alertEmail: hutch+staging@hutch-app.com
   save-link:articlesTableName: hutch-articles-cda0a08
   save-link:articlesTableArn: arn:aws:dynamodb:ap-southeast-2:572337278115:table/hutch-articles-cda0a08
 
