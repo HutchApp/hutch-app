@@ -91,7 +91,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 							name: "Is Hutch free?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "The first 100 founding members get full access free, forever. After that, A$3.99/month — includes TL;DR summaries. Personalised AI summaries require a BYOK API key (Anthropic or OpenAI).",
+								text: "The first 100 founding members get full access free, forever. After that, A$3.99/month — includes TL;DR summaries.",
 							},
 						},
 						{
@@ -107,7 +107,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 							name: "What features does Hutch have?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Hutch offers browser extensions for Firefox and Chrome, a web app for managing saved articles, a distraction-free reader view, TL;DR summaries, dark mode, and secure OAuth with PKCE. Planned features include personalised AI summaries (BYOK), preference learning, Gmail integration, and highlights and notes.",
+								text: "Hutch offers browser extensions for Firefox and Chrome, a web app for managing saved articles, a distraction-free reader view, TL;DR summaries, dark mode, and secure OAuth with PKCE. Planned features include personalised AI summaries, preference learning, Gmail integration, and highlights and notes.",
 							},
 						},
 					],
