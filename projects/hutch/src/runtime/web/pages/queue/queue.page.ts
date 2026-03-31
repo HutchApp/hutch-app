@@ -133,7 +133,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const vm = toQueueViewModel(result, urlState);
+		const unreadCount = urlState.status === "unread"
+			? result.total
+			: (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
+		const vm = toQueueViewModel(result, urlState, { unreadCount });
 		const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
@@ -176,8 +179,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		if (!parsedBody.success) {
 			const urlState = parseQueueUrl({});
 			const result = await deps.findArticlesByUser({ userId });
+			const unreadCount = (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 			const vm = toQueueViewModel(result, urlState, {
 				saveError: "Please enter a valid URL",
+				unreadCount,
 			});
 			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);
@@ -190,8 +195,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		if (!result.ok) {
 			const urlState = parseQueueUrl({});
 			const articlesResult = await deps.findArticlesByUser({ userId });
+			const unreadCount = (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 			const vm = toQueueViewModel(articlesResult, urlState, {
 				saveError: `Could not parse article: ${result.reason}`,
+				unreadCount,
 			});
 			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);

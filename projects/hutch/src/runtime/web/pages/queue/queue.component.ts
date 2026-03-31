@@ -49,6 +49,7 @@ interface QueueDisplayModel {
 	hasArticles: boolean;
 	articles: ArticleDisplayModel[];
 	filterUnreadClass: string;
+	filterUnreadLabel: string;
 	filterReadClass: string;
 	filterUnreadUrl: string;
 	filterReadUrl: string;
@@ -67,6 +68,10 @@ function filterLinkClass(isActive: boolean): string {
 	return `queue__filter-link${isActive ? " queue__filter-link--active" : ""}`;
 }
 
+export function formatUnreadLabel(count: number): string {
+	return count > 99 ? "Unread (99+)" : `Unread (${count})`;
+}
+
 function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	const activeStatus = vm.filters.status;
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
@@ -81,6 +86,7 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 		hasArticles: !vm.isEmpty,
 		articles: vm.articles.map(toArticleDisplayModel),
 		filterUnreadClass: filterLinkClass(activeStatus === "unread"),
+		filterUnreadLabel: formatUnreadLabel(vm.unreadCount),
 		filterReadClass: filterLinkClass(activeStatus === "read"),
 		filterUnreadUrl: vm.filterUrls.unread,
 		filterReadUrl: vm.filterUrls.read,

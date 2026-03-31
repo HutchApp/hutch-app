@@ -304,4 +304,19 @@ describe("toQueueViewModel", () => {
 		const methods = vm.articles[0].actions.map(a => a.method);
 		expect(methods).toEqual(["GET", "POST"]);
 	});
+
+	it("should include unreadCount from options", () => {
+		const vm = toQueueViewModel(makeResult([]), DEFAULT_FILTERS, {
+			now: NOW,
+			unreadCount: 42,
+		});
+
+		expect(vm.unreadCount).toBe(42);
+	});
+
+	it("should default unreadCount to result total when not provided", () => {
+		const vm = toQueueViewModel(makeResult([], 7), DEFAULT_FILTERS, { now: NOW });
+
+		expect(vm.unreadCount).toBe(7);
+	});
 });

@@ -791,6 +791,60 @@ describe("Queue routes", () => {
 		});
 	});
 
+	describe("Unread tab count", () => {
+		it("should show unread count on the Unread tab", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/1" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/2" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const unreadTab = doc.querySelector('[data-test-filter="unread"]');
+			expect(unreadTab?.textContent).toBe("Unread (2)");
+		});
+
+		it("should show unread count when viewing read tab", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/1" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/2" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/3" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+			await agent.post(`/queue/${articleId}/status`).type("form").send({ status: "read" });
+
+			const readResponse = await agent.get("/queue?status=read");
+			const readDoc = new JSDOM(readResponse.text).window.document;
+			const unreadTab = readDoc.querySelector('[data-test-filter="unread"]');
+			expect(unreadTab?.textContent).toBe("Unread (2)");
+		});
+
+		it("should not show count on the Read tab", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const readTab = doc.querySelector('[data-test-filter="read"]');
+			expect(readTab?.textContent).toBe("Read");
+		});
+
+		it("should show zero unread count on empty queue", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const unreadTab = doc.querySelector('[data-test-filter="unread"]');
+			expect(unreadTab?.textContent).toBe("Unread (0)");
+		});
+	});
+
 	describe("CORS for browser extensions", () => {
 		it("should allow requests from browser extensions", async () => {
 			const { app, auth } = createTestApp();
