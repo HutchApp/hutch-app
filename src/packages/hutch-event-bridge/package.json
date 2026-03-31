@@ -12,11 +12,16 @@
     "./infra": {
       "types": "./dist/infra/index.d.ts",
       "default": "./dist/infra/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "default": "./dist/runtime/index.js"
     }
   },
   "typesVersions": {
     "*": {
-      "infra": ["./dist/infra/index.d.ts"]
+      "infra": ["./dist/infra/index.d.ts"],
+      "runtime": ["./dist/runtime/index.d.ts"]
     }
   },
   "private": true,

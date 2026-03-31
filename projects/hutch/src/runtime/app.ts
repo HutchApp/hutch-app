@@ -21,13 +21,10 @@ import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
-import { createAIMessageUsingClaude, createAIMessageUsingLoggerOutput } from "./providers/article-summary/create-ai-message-using-claude"
-import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
-import { initClaudeSummarizer } from "./providers/article-summary/claude-summarizer";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
-import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
-import { stripHtml } from "./providers/article-summary/strip-html";
-import { initEventPublisher, events, type PublishEvent } from "@packages/hutch-event-bridge";
+import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-event-bridge/runtime";
+import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
+import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
@@ -50,22 +47,16 @@ function initProviders() {
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-		const publishLinkSaved = initEventPublisher({
-			client: new EventBridgeClient({}),
-			eventBusName,
-			event: events.LINK_SAVED,
-		});
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
-		const { summarizeArticle } = initClaudeSummarizer({
-			createMessage: createAIMessageUsingClaude(),
-			logger: consoleLogger,
-			cleanContent: stripHtml,
-			...summaryCache,
+		const { publishEvent } = initEventBridgePublisher({
+			client: new EventBridgeClient({}),
+			eventBusName,
 		});
+		const { publishLinkSaved } = initEventBridgeLinkSaved({ publishEvent });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
 			fetchConditional,
@@ -85,23 +76,17 @@ function initProviders() {
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
-			summarizeArticle,
+			publishLinkSaved,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
-			publishLinkSaved,
 		};
 	}
 
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
-	const summaryCache = initInMemorySummaryCache();
-	const { summarizeArticle } = initClaudeSummarizer({
-		createMessage: createAIMessageUsingLoggerOutput({ logger: consoleLogger }),
-		logger: consoleLogger,
-		cleanContent: stripHtml,
-		...summaryCache,
-	});
+	const { publishLinkSaved } = initInMemoryLinkSaved({ logger: consoleLogger });
+	const stubFindCachedSummary = async (_url: string) => "";
 	const { refreshArticleIfStale } = initRefreshArticleIfStale({
 		findArticleFreshness: articleStore.findArticleFreshness,
 		fetchConditional,
@@ -115,10 +100,6 @@ function initProviders() {
 		staleTtlMs,
 	});
 
-	const publishLinkSaved: PublishEvent<typeof events.LINK_SAVED.schema> = async (detail) => {
-		console.log("[publishLinkSaved] dev noop", JSON.stringify(detail));
-	};
-
 	return {
 		auth,
 		articleStore,
@@ -126,10 +107,9 @@ function initProviders() {
 		...initInMemoryEmailVerification(),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
-		summarizeArticle,
-		findCachedSummary: summaryCache.findCachedSummary,
-		refreshArticleIfStale,
 		publishLinkSaved,
+		findCachedSummary: stubFindCachedSummary,
+		refreshArticleIfStale,
 	};
 }
 

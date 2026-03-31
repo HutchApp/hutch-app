@@ -35,9 +35,7 @@
     "post-deploy": "nx run post-deploy"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.80.0",
     "@aws-sdk/client-dynamodb": "3.1001.0",
-    "@aws-sdk/client-eventbridge": "3.1001.0",
     "@aws-sdk/lib-dynamodb": "3.1001.0",
     "@mozilla/readability": "0.6.0",
     "@node-oauth/express-oauth-server": "4.1.5",
@@ -53,6 +51,7 @@
     "@packages/hutch-logger": "workspace:*",
     "linkedom": "0.18.12",
     "resend": "6.9.3",
+    "save-link": "workspace:*",
     "serverless-http": "4.0.0",
     "zod": "4.1.13"
   },

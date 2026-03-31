@@ -1,12 +1,15 @@
 {
   "name": "platform",
   "version": "1.0.0",
-  "description": "Shared platform infrastructure — EventBridge bus",
+  "description": "Shared platform infrastructure (EventBridge bus)",
   "main": "src/infra/index.ts",
   "private": true,
   "scripts": {
+    "compile": "echo 'Infra-only project — no compile step'",
+    "lint": "echo 'Infra-only project — no lint step'",
+    "test": "echo 'Infra-only project — no tests'",
     "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
-    "deploy": "nx run deploy",
+    "deploy": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"",
     "post-deploy": "echo 'No post-deploy steps'"
   },
   "dependencies": {

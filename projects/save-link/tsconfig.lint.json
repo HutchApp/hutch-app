@@ -1,6 +1,14 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.config.base.json",
   "compilerOptions": {
-    "noEmit": true
-  }
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noEmit": true,
+    "paths": {
+      "@packages/hutch-event-bridge/runtime": ["../../src/packages/hutch-event-bridge/dist/runtime/index.d.ts"],
+      "@packages/hutch-logger": ["../../src/packages/hutch-logger/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules", "src/infra/**"]
 }

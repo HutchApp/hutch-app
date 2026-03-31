@@ -1,8 +1,10 @@
-import type * as pulumi from "@pulumi/pulumi";
+import * as pulumi from "@pulumi/pulumi";
 import { HutchEventBus } from "@packages/hutch-event-bridge/infra";
 
-const eventBus = new HutchEventBus("hutch");
+const config = new pulumi.Config();
+const eventBusName = config.require("eventBusName");
 
-export const hutchEventBusName: pulumi.Output<string> = eventBus.eventBusName;
-export const hutchEventBusArn: pulumi.Output<string> = eventBus.eventBusArn;
+const eventBus = new HutchEventBus("platform", { eventBusName });
 
+export const hutchEventBusName = eventBus.eventBusName;
+export const hutchEventBusArn = eventBus.eventBusArn;

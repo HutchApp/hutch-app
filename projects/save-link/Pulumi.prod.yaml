@@ -2,5 +2,8 @@ config:
   aws:region: ap-southeast-2
   aws:allowedAccountIds:
     - '278728209435'
-  save-link:platformStack: organization/platform/prod
+  save-link:platformStack: organization/platform/production
+  save-link:articlesTableName: hutch-articles-cda0a08
+  save-link:articlesTableArn: arn:aws:dynamodb:ap-southeast-2:278728209435:table/hutch-articles-cda0a08
+  save-link:summarizerMaxConcurrency: 5
 encryptionsalt: v1:wtDgBy80qGM=:v1:blQ7pAjXgW+f/NKU:eQnkrsxqXh9Nnvo+fQ/ofy4bxQK7/Q==
