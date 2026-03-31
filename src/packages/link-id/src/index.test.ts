@@ -1,4 +1,4 @@
-import { LinkId } from "./link-id";
+import { LinkId } from "./index";
 
 describe("LinkId.from", () => {
 	it("strips https scheme", () => {

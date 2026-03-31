@@ -212,6 +212,9 @@ importers:
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../src/packages/hutch-logger
+      '@packages/link-id':
+        specifier: workspace:*
+        version: link:../../src/packages/link-id
       browser-extension-core:
         specifier: workspace:*
         version: link:../browser-extension-core
@@ -352,6 +355,9 @@ importers:
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../src/packages/hutch-logger
+      '@packages/link-id':
+        specifier: workspace:*
+        version: link:../../src/packages/link-id
       linkedom:
         specifier: 0.18.12
         version: 0.18.12
@@ -420,6 +426,21 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  src/packages/link-id:
+    devDependencies:
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
       typescript:
         specifier: 5.9.3
         version: 5.9.3

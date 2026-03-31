@@ -1,0 +1,9 @@
+{
+  "name": "@packages/link-id",
+  "targets": {
+    "check": {
+      "command": "pnpm lint",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

@@ -49,6 +49,7 @@
     "helmet": "8.1.0",
     "@packages/hutch-event-bridge": "workspace:*",
     "@packages/hutch-logger": "workspace:*",
+    "@packages/link-id": "workspace:*",
     "linkedom": "0.18.12",
     "resend": "6.9.3",
     "save-link": "workspace:*",

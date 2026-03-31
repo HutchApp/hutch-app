@@ -13,14 +13,16 @@ import {
 	GLOBAL_SUMMARY_GENERATED_SOURCE,
 	GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
 } from "../generate-summary/index";
+import { getEnv } from "../require-env";
 
 const config = new pulumi.Config();
 const platformStack = config.require("platformStack");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
 
-const anthropicApiKey = process.env.ANTHROPIC_API_KEY
-	? pulumi.secret(process.env.ANTHROPIC_API_KEY)
+const anthropicApiKeyValue = getEnv("ANTHROPIC_API_KEY");
+const anthropicApiKey = anthropicApiKeyValue
+	? pulumi.secret(anthropicApiKeyValue)
 	: undefined;
 
 const platform = new pulumi.StackReference(platformStack);

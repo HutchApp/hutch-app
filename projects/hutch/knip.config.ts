@@ -23,6 +23,8 @@ export default {
 		"@packages/hutch-event-bridge",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
+		// Used in normalize-article-url.ts (knip doesn't resolve workspace subpath)
+		"@packages/link-id",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)
 		"@packages/test-phase-runner",
 	],
