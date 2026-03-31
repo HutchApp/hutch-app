@@ -4,12 +4,13 @@
   "private": true,
   "description": "Hutch monorepo — read-it-later app",
   "scripts": {
-    "test": "nx run-many --target=test --all",
-    "compile": "nx run-many --target=compile --all",
-    "lint": "nx run-many --target=lint --all",
+    "test": "NX_TUI=true nx run-many --target=test --all",
+    "compile": "NX_TUI=true nx run-many --target=compile --all",
+    "lint": "NX_TUI=true nx run-many --target=lint --all",
     "dev": "nx run hutch:dev",
     "check": "NX_TUI=true nx run-many --target=check --all",
-    "deploy": "nx run hutch:deploy",
+    "check-infra": "NX_TUI=true nx run-many --target=check-infra --all",
+    "deploy-infra": "NX_TUI=true nx run-many --target=deploy --all",
     "prepare": "husky"
   },
   "devDependencies": {
