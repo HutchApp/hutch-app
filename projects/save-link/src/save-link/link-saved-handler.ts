@@ -1,12 +1,12 @@
 import assert from "node:assert";
 import type { SQSHandler } from "aws-lambda";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { HutchLogger } from "@packages/hutch-logger";
 import { LinkSavedDetailSchema } from "./index";
 import type { FindArticleContent } from "./find-article-content";
 
 export function initLinkSavedHandler(deps: {
-	sqsClient: SQSClient;
+	sqsClient: { send: (command: SendMessageCommand) => Promise<unknown> };
 	queueUrl: string;
 	findArticleContent: FindArticleContent;
 	logger: HutchLogger;

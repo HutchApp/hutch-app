@@ -17,8 +17,10 @@ const config = new pulumi.Config();
 const platformStack = config.require("platformStack");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
-const summarizerMaxConcurrency = config.requireNumber("summarizerMaxConcurrency");
-const anthropicApiKey = config.requireSecret("anthropicApiKey");
+
+const anthropicApiKey = process.env.ANTHROPIC_API_KEY
+	? pulumi.secret(process.env.ANTHROPIC_API_KEY)
+	: undefined;
 
 const platform = new pulumi.StackReference(platformStack);
 const eventBusName = platform.requireOutput("hutchEventBusName").apply(String);
@@ -38,22 +40,22 @@ function copyAssetFiles(dirs: { src: string; dest: string }) {
 	}
 }
 
-function buildLambda(entryPoint: string, outputDir: string) {
+function buildLambda(params: { entryPoint: string; outputDir: string }) {
 	return build({
-		entryPoints: [entryPoint],
+		entryPoints: [params.entryPoint],
 		bundle: true,
 		sourcemap: true,
 		platform: "node",
 		format: "cjs",
 		minify: true,
-		outfile: `${outputDir}/index.js`,
+		outfile: `${params.outputDir}/index.js`,
 		target: ["node22"],
 		loader: esbuildLoaders,
 	}).then(() => {
-		mkdirSync(outputDir, { recursive: true });
-		copyAssetFiles({ src: "./src", dest: outputDir });
+		mkdirSync(params.outputDir, { recursive: true });
+		copyAssetFiles({ src: "./src", dest: params.outputDir });
 		return new pulumi.asset.AssetArchive({
-			".": new pulumi.asset.FileArchive(outputDir),
+			".": new pulumi.asset.FileArchive(params.outputDir),
 		});
 	});
 }
@@ -132,7 +134,7 @@ const linkSavedLambda = new aws.lambda.Function("link-saved-handler", {
 	runtime: aws.lambda.Runtime.NodeJS22dX,
 	handler: "index.handler",
 	role: linkSavedRole.arn,
-	code: buildLambda("./src/infra/link-saved-lambda.ts", ".lib/link-saved"),
+	code: buildLambda({ entryPoint: "./src/infra/link-saved-lambda.ts", outputDir: ".lib/link-saved" }),
 	memorySize: 256,
 	timeout: 30,
 	environment: {
@@ -207,14 +209,14 @@ const generateSummaryLambda = new aws.lambda.Function("generate-summary-handler"
 	runtime: aws.lambda.Runtime.NodeJS22dX,
 	handler: "index.handler",
 	role: generateSummaryRole.arn,
-	code: buildLambda("./src/infra/generate-summary-lambda.ts", ".lib/generate-summary"),
+	code: buildLambda({ entryPoint: "./src/infra/generate-summary-lambda.ts", outputDir: ".lib/generate-summary" }),
 	memorySize: 512,
 	timeout: 45,
-	reservedConcurrentExecutions: summarizerMaxConcurrency,
+
 	environment: {
 		variables: {
 			DYNAMODB_ARTICLES_TABLE: articlesTableName,
-			ANTHROPIC_API_KEY: anthropicApiKey,
+			...(anthropicApiKey ? { ANTHROPIC_API_KEY: anthropicApiKey } : {}),
 			EVENT_BUS_NAME: eventBusName,
 		},
 	},
@@ -270,7 +272,7 @@ const summaryGeneratedLambda = new aws.lambda.Function("summary-generated-handle
 	runtime: aws.lambda.Runtime.NodeJS22dX,
 	handler: "index.handler",
 	role: summaryGeneratedRole.arn,
-	code: buildLambda("./src/infra/summary-generated-lambda.ts", ".lib/summary-generated"),
+	code: buildLambda({ entryPoint: "./src/infra/summary-generated-lambda.ts", outputDir: ".lib/summary-generated" }),
 	memorySize: 128,
 	timeout: 10,
 });

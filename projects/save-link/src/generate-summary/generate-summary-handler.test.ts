@@ -3,7 +3,29 @@ import { initGenerateSummaryHandler } from "./generate-summary-handler";
 import type { SummarizeArticle } from "./article-summary.types";
 import type { FindArticleContent } from "../save-link/find-article-content";
 import type { PublishEvent } from "@packages/hutch-event-bridge/runtime";
-import type { SQSEvent } from "aws-lambda";
+import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
+
+const stubAttributes: SQSRecordAttributes = {
+	ApproximateReceiveCount: "1",
+	SentTimestamp: "1620000000000",
+	SenderId: "TESTID",
+	ApproximateFirstReceiveTimestamp: "1620000000001",
+};
+
+const stubContext: Context = {
+	callbackWaitsForEmptyEventLoop: true,
+	functionName: "test",
+	functionVersion: "1",
+	invokedFunctionArn: "arn:aws:lambda:ap-southeast-2:123456789:function:test",
+	memoryLimitInMB: "128",
+	awsRequestId: "test-request-id",
+	logGroupName: "/aws/lambda/test",
+	logStreamName: "test-stream",
+	getRemainingTimeInMillis: () => 30000,
+	done: () => {},
+	fail: () => {},
+	succeed: () => {},
+};
 
 function createSqsEvent(command: { url: string }): SQSEvent {
 	return {
@@ -11,7 +33,7 @@ function createSqsEvent(command: { url: string }): SQSEvent {
 			messageId: "msg-1",
 			receiptHandle: "receipt-1",
 			body: JSON.stringify(command),
-			attributes: {} as SQSEvent["Records"][0]["attributes"],
+			attributes: stubAttributes,
 			messageAttributes: {},
 			md5OfBody: "",
 			eventSource: "aws:sqs",
@@ -38,7 +60,7 @@ describe("initGenerateSummaryHandler", () => {
 			logger: noopLogger,
 		});
 
-		await handler(createSqsEvent({ url: "https://example.com/article" }), {} as never, () => {});
+		await handler(createSqsEvent({ url: "https://example.com/article" }), stubContext, () => {});
 
 		expect(publishEvent).toHaveBeenCalledWith({
 			source: "hutch.save-link",
@@ -64,7 +86,7 @@ describe("initGenerateSummaryHandler", () => {
 		});
 
 		await expect(
-			handler(createSqsEvent({ url: "https://example.com/missing" }), {} as never, () => {}),
+			handler(createSqsEvent({ url: "https://example.com/missing" }), stubContext, () => {}),
 		).rejects.toThrow("Article content not found");
 	});
 
@@ -80,7 +102,7 @@ describe("initGenerateSummaryHandler", () => {
 			logger: noopLogger,
 		});
 
-		await handler(createSqsEvent({ url: "https://example.com/cached" }), {} as never, () => {});
+		await handler(createSqsEvent({ url: "https://example.com/cached" }), stubContext, () => {});
 
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
@@ -102,7 +124,7 @@ describe("initGenerateSummaryHandler", () => {
 				messageId: "msg-1",
 				receiptHandle: "receipt-1",
 				body: JSON.stringify({ invalid: true }),
-				attributes: {} as SQSEvent["Records"][0]["attributes"],
+				attributes: stubAttributes,
 				messageAttributes: {},
 				md5OfBody: "",
 				eventSource: "aws:sqs",
@@ -112,7 +134,7 @@ describe("initGenerateSummaryHandler", () => {
 		};
 
 		await expect(
-			handler(invalidEvent, {} as never, () => {}),
+			handler(invalidEvent, stubContext, () => {}),
 		).rejects.toThrow();
 	});
 });

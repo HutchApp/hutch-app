@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { z } from "zod";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type {
 	CreateAiMessage,
@@ -63,7 +64,7 @@ export function initClaudeSummarizer(deps: {
 			return null;
 		}
 
-		const parsed = JSON.parse(textBlock.text) as { summary: string };
+		const parsed = z.object({ summary: z.string() }).parse(JSON.parse(textBlock.text));
 		const summary = parsed.summary.trim();
 		if (summary === "Summary not available.") {
 			deps.logger.info("[summarize] Claude returned unavailable", { url: params.url });

@@ -5,5 +5,5 @@ config:
   save-link:platformStack: organization/platform/staging
   save-link:articlesTableName: hutch-articles-cda0a08
   save-link:articlesTableArn: arn:aws:dynamodb:ap-southeast-2:572337278115:table/hutch-articles-cda0a08
-  save-link:summarizerMaxConcurrency: 5
+
 encryptionsalt: v1:UOuPAPopzKA=:v1:R9v//2alhEYfLugF:HuZRBtgwdPawWU7VHPvdJ9bsYqJR9w==

@@ -1,8 +1,14 @@
 import { parseHTML } from "linkedom";
 
-function extractText(node: { nodeType: number; textContent: string | null; childNodes: Iterable<unknown> }): string {
+interface DomNode {
+	nodeType: number;
+	textContent: string | null;
+	childNodes: Iterable<DomNode>;
+}
+
+function extractText(node: DomNode): string {
 	if (node.nodeType === 3) return node.textContent ?? "";
-	return Array.from(node.childNodes).map((child) => extractText(child as typeof node)).join(" ");
+	return Array.from(node.childNodes).map(extractText).join(" ");
 }
 
 export function stripHtml(html: string): string {
