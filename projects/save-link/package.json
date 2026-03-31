@@ -34,7 +34,7 @@
     "@aws-sdk/client-dynamodb": "3.1001.0",
     "@aws-sdk/client-sqs": "3.1001.0",
     "@aws-sdk/lib-dynamodb": "3.1001.0",
-    "@packages/hutch-event-bridge": "workspace:*",
+    "@packages/hutch-infra-components": "workspace:*",
     "@packages/link-id": "workspace:*",
     "@packages/hutch-logger": "workspace:*",
     "linkedom": "0.18.12",

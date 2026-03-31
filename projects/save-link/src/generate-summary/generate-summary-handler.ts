@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
-import type { PublishEvent } from "@packages/hutch-event-bridge/runtime";
+import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import {
 	GenerateGlobalSummaryCommandSchema,
 	GLOBAL_SUMMARY_GENERATED_SOURCE,

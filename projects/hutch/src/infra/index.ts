@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import assert from "node:assert";
-import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess } from "@packages/hutch-event-bridge/infra";
+import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess } from "@packages/hutch-infra-components/infra";
 import { DomainRegistration } from "./domain-registration";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";

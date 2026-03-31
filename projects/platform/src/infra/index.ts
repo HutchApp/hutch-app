@@ -1,5 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
-import { HutchEventBus } from "@packages/hutch-event-bridge/infra";
+import { HutchEventBus } from "@packages/hutch-infra-components/infra";
 
 const config = new pulumi.Config();
 const eventBusName = config.require("eventBusName");

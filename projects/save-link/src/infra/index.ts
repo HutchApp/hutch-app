@@ -5,7 +5,7 @@ import {
 	HutchLambda,
 	HutchDynamoDBAccess,
 	SQSBackedLambda,
-} from "@packages/hutch-event-bridge/infra";
+} from "@packages/hutch-infra-components/infra";
 import {
 	LINK_SAVED_SOURCE,
 	LINK_SAVED_DETAIL_TYPE,

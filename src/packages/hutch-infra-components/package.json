@@ -1,5 +1,5 @@
 {
-  "name": "@packages/hutch-event-bridge",
+  "name": "@packages/hutch-infra-components",
   "version": "1.0.0",
   "description": "Shared EventBridge infrastructure and runtime utilities for Hutch",
   "main": "dist/index.js",

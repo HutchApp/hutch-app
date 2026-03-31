@@ -47,7 +47,7 @@
     "browser-extension-core": "workspace:*",
     "handlebars": "4.7.8",
     "helmet": "8.1.0",
-    "@packages/hutch-event-bridge": "workspace:*",
+    "@packages/hutch-infra-components": "workspace:*",
     "@packages/hutch-logger": "workspace:*",
     "@packages/link-id": "workspace:*",
     "linkedom": "0.18.12",

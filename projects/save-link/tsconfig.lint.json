@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "noEmit": true,
     "paths": {
-      "@packages/hutch-event-bridge/runtime": ["../../src/packages/hutch-event-bridge/dist/runtime/index.d.ts"],
+      "@packages/hutch-infra-components/runtime": ["../../src/packages/hutch-infra-components/dist/runtime/index.d.ts"],
       "@packages/hutch-logger": ["../../src/packages/hutch-logger/dist/index.d.ts"]
     }
   },

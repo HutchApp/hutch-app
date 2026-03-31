@@ -2,7 +2,7 @@ import { noopLogger } from "@packages/hutch-logger";
 import { initGenerateSummaryHandler } from "./generate-summary-handler";
 import type { SummarizeArticle } from "./article-summary.types";
 import type { FindArticleContent } from "../save-link/find-article-content";
-import type { PublishEvent } from "@packages/hutch-event-bridge/runtime";
+import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
 const stubAttributes: SQSRecordAttributes = {

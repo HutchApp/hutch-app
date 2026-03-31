@@ -22,7 +22,7 @@ import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
-import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-event-bridge/runtime";
+import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { consoleLogger } from "@packages/hutch-logger";

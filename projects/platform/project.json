@@ -5,7 +5,7 @@
       "command": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
       "options": { "cwd": "{projectRoot}" },
       "dependsOn": [
-        { "projects": ["@packages/hutch-event-bridge"], "target": "compile" }
+        { "projects": ["@packages/hutch-infra-components"], "target": "compile" }
       ]
     },
     "check": {

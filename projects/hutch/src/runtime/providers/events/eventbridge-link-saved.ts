@@ -1,4 +1,4 @@
-import type { PublishEvent } from "@packages/hutch-event-bridge/runtime";
+import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import {
 	LINK_SAVED_SOURCE,
 	LINK_SAVED_DETAIL_TYPE,

@@ -2,7 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import Anthropic from "@anthropic-ai/sdk";
 import { consoleLogger } from "@packages/hutch-logger";
-import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-event-bridge/runtime";
+import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { requireEnv } from "../require-env";
 import { initFindArticleContent } from "../save-link/find-article-content";
 import { initClaudeSummarizer } from "../generate-summary/claude-summarizer";

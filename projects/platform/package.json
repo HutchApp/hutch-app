@@ -13,7 +13,7 @@
     "post-deploy": "echo 'No post-deploy steps'"
   },
   "dependencies": {
-    "@packages/hutch-event-bridge": "workspace:*"
+    "@packages/hutch-infra-components": "workspace:*"
   },
   "devDependencies": {
     "@pulumi/aws": "7.20.0",
