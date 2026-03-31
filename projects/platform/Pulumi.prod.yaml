@@ -2,4 +2,5 @@ config:
   aws:region: ap-southeast-2
   aws:allowedAccountIds:
     - '278728209435'
+  platform:eventBusName: hutch-event-bus-4202fdd
 encryptionsalt: v1:4m/IXkkTgU4=:v1:DIISQI4Xxy+S/adO:GmFcMjR0SqoxPTeF6H6wDxcpBcFaXg==

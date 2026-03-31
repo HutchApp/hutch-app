@@ -42,7 +42,8 @@
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-with-coverage": "c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
-    "check": "nx run browser-extension-core:check"
+    "check": "nx run browser-extension-core:check",
+    "check-infra": "echo 'No infrastructure — shared library'"
   },
   "dependencies": {
     "@packages/hutch-logger": "workspace:*",

@@ -1,9 +1,11 @@
 import * as pulumi from "@pulumi/pulumi";
+import * as aws from "@pulumi/aws";
 import assert from "node:assert";
+import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess } from "@packages/hutch-event-bridge/infra";
 import { DomainRegistration } from "./domain-registration";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
-import { HutchLambda } from "./hutch-lambda";
+import { getEnv, requireEnv } from "../runtime/require-env";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
@@ -39,17 +41,85 @@ const staticAssets = new HutchStaticAssets("hutch-static", {
 	zoneId: domainRegistration.zoneId,
 });
 
-const hutch = new HutchLambda("hutch", {
-	stage,
-	storage,
-	domainRegistration,
-	staticBaseUrl: staticAssets.baseUrl,
-	eventBusName,
-	eventBusArn,
+const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
+	tables: [
+		{ arn: storage.articlesTable.arn, includeIndexes: true },
+		{ arn: storage.userArticlesTable.arn, includeIndexes: true },
+		{ arn: storage.usersTable.arn, includeIndexes: true },
+		{ arn: storage.sessionsTable.arn, includeIndexes: false },
+		{ arn: storage.oauthTable.arn, includeIndexes: true },
+		{ arn: storage.verificationTokensTable.arn, includeIndexes: false },
+	],
+	actions: [
+		"dynamodb:GetItem",
+		"dynamodb:BatchGetItem",
+		"dynamodb:PutItem",
+		"dynamodb:UpdateItem",
+		"dynamodb:DeleteItem",
+		"dynamodb:Query",
+		"dynamodb:Scan",
+	],
 });
 
-export const apiUrl = hutch.apiUrl;
+const api = new aws.apigatewayv2.Api("hutch-api-gateway", {
+	protocolType: "HTTP",
+	description: `Hutch API Gateway (${stage})`,
+});
+
+const appOrigin: pulumi.Input<string> = domainRegistration.domains.length > 0
+	? `https://${domainRegistration.primaryDomain!}`
+	: api.apiEndpoint;
+
+const hutch = new HutchLambda("hutch", {
+	entryPoint: "./src/infra/lambda.ts",
+	outputDir: ".lib/hutch-api",
+	assetDir: "./src/runtime",
+	memorySize: 512,
+	timeout: 30,
+	environment: {
+		NODE_ENV: "production",
+		PERSISTENCE: "prod",
+		APP_ORIGIN: appOrigin,
+		DYNAMODB_ARTICLES_TABLE: storage.articlesTable.name,
+		DYNAMODB_USER_ARTICLES_TABLE: storage.userArticlesTable.name,
+		DYNAMODB_USERS_TABLE: storage.usersTable.name,
+		DYNAMODB_SESSIONS_TABLE: storage.sessionsTable.name,
+		DYNAMODB_OAUTH_TABLE: storage.oauthTable.name,
+		DYNAMODB_VERIFICATION_TOKENS_TABLE: storage.verificationTokensTable.name,
+		RESEND_API_KEY: pulumi.runtime.isDryRun()
+			? (getEnv("RESEND_API_KEY") ?? "")
+			: requireEnv("RESEND_API_KEY"),
+		STATIC_BASE_URL: staticAssets.baseUrl,
+		EVENT_BUS_NAME: eventBusName,
+	},
+	policies: [
+		...dynamodb.policies,
+		{
+			name: "hutch-eventbridge-publish",
+			policy: eventBusArn.apply((arn) =>
+				JSON.stringify({
+					Version: "2012-10-17",
+					Statement: [{
+						Effect: "Allow",
+						Action: ["events:PutEvents"],
+						Resource: [arn],
+					}],
+				}),
+			),
+		},
+	],
+});
+
+const gateway = new HutchAPIGateway("hutch", {
+	api,
+	lambda: hutch,
+	stage,
+	domains,
+	zoneId: domainRegistration.zoneId,
+	certificateArn: domainRegistration.certificateArn,
+});
+
+export const apiUrl = gateway.apiUrl;
 export const functionName = hutch.functionName;
 export const staticBaseUrl = staticAssets.baseUrl;
-export const _dependencies = [hutch.defaultRoute];
-
+export const _dependencies = [gateway.defaultRoute];

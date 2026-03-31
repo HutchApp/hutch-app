@@ -191,13 +191,7 @@ importers:
 
   projects/hutch:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: 0.80.0
-        version: 0.80.0(zod@4.1.13)
       '@aws-sdk/client-dynamodb':
-        specifier: 3.1001.0
-        version: 3.1001.0
-      '@aws-sdk/client-eventbridge':
         specifier: 3.1001.0
         version: 3.1001.0
       '@aws-sdk/lib-dynamodb':
@@ -218,6 +212,9 @@ importers:
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../src/packages/hutch-logger
+      '@packages/link-id':
+        specifier: workspace:*
+        version: link:../../src/packages/link-id
       browser-extension-core:
         specifier: workspace:*
         version: link:../browser-extension-core
@@ -245,6 +242,9 @@ importers:
       resend:
         specifier: 6.9.3
         version: 6.9.3
+      save-link:
+        specifier: workspace:*
+        version: link:../save-link
       serverless-http:
         specifier: 4.0.0
         version: 4.0.0
@@ -300,9 +300,6 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
-      esbuild:
-        specifier: 0.25.4
-        version: 0.25.4
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.15.21)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.9.3))
@@ -340,15 +337,30 @@ importers:
 
   projects/save-link:
     dependencies:
-      '@aws-sdk/client-eventbridge':
+      '@anthropic-ai/sdk':
+        specifier: 0.80.0
+        version: 0.80.0(zod@4.1.13)
+      '@aws-sdk/client-dynamodb':
         specifier: 3.1001.0
         version: 3.1001.0
       '@aws-sdk/client-sqs':
         specifier: 3.1001.0
         version: 3.1001.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: 3.1001.0
+        version: 3.1001.0(@aws-sdk/client-dynamodb@3.1001.0)
       '@packages/hutch-event-bridge':
         specifier: workspace:*
         version: link:../../src/packages/hutch-event-bridge
+      '@packages/hutch-logger':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-logger
+      '@packages/link-id':
+        specifier: workspace:*
+        version: link:../../src/packages/link-id
+      linkedom:
+        specifier: 0.18.12
+        version: 0.18.12
       zod:
         specifier: 4.1.13
         version: 4.1.13
@@ -362,12 +374,15 @@ importers:
       '@types/aws-lambda':
         specifier: 8.10.161
         version: 8.10.161
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
-      esbuild:
-        specifier: 0.25.4
-        version: 0.25.4
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -399,6 +414,9 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
+      esbuild:
+        specifier: 0.25.4
+        version: 0.25.4
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -408,6 +426,21 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  src/packages/link-id:
+    devDependencies:
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -5431,7 +5464,7 @@ snapshots:
   '@aws-crypto/sha256-js@5.2.0':
     dependencies:
       '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.973.4
+      '@aws-sdk/types': 3.973.6
       tslib: 2.8.1
 
   '@aws-crypto/supports-web-crypto@5.2.0':
@@ -5448,7 +5481,7 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 5.2.0
       '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/core': 3.973.17
+      '@aws-sdk/core': 3.973.25
       '@aws-sdk/credential-provider-node': 3.972.16
       '@aws-sdk/dynamodb-codec': 3.972.18
       '@aws-sdk/middleware-endpoint-discovery': 3.972.6
@@ -5457,33 +5490,33 @@ snapshots:
       '@aws-sdk/middleware-recursion-detection': 3.972.6
       '@aws-sdk/middleware-user-agent': 3.972.17
       '@aws-sdk/region-config-resolver': 3.972.6
-      '@aws-sdk/types': 3.973.4
+      '@aws-sdk/types': 3.973.6
       '@aws-sdk/util-endpoints': 3.996.3
       '@aws-sdk/util-user-agent-browser': 3.972.6
       '@aws-sdk/util-user-agent-node': 3.973.2
       '@smithy/config-resolver': 4.4.10
-      '@smithy/core': 3.23.8
-      '@smithy/fetch-http-handler': 5.3.13
+      '@smithy/core': 3.23.12
+      '@smithy/fetch-http-handler': 5.3.15
       '@smithy/hash-node': 4.2.11
       '@smithy/invalid-dependency': 4.2.11
       '@smithy/middleware-content-length': 4.2.11
-      '@smithy/middleware-endpoint': 4.4.22
+      '@smithy/middleware-endpoint': 4.4.27
       '@smithy/middleware-retry': 4.4.39
-      '@smithy/middleware-serde': 4.2.12
-      '@smithy/middleware-stack': 4.2.11
-      '@smithy/node-config-provider': 4.3.11
-      '@smithy/node-http-handler': 4.4.14
-      '@smithy/protocol-http': 5.3.11
-      '@smithy/smithy-client': 4.12.2
-      '@smithy/types': 4.13.0
-      '@smithy/url-parser': 4.2.11
+      '@smithy/middleware-serde': 4.2.15
+      '@smithy/middleware-stack': 4.2.12
+      '@smithy/node-config-provider': 4.3.12
+      '@smithy/node-http-handler': 4.5.0
+      '@smithy/protocol-http': 5.3.12
+      '@smithy/smithy-client': 4.12.7
+      '@smithy/types': 4.13.1
+      '@smithy/url-parser': 4.2.12
       '@smithy/util-base64': 4.3.2
       '@smithy/util-body-length-browser': 4.2.2
       '@smithy/util-body-length-node': 4.2.3
       '@smithy/util-defaults-mode-browser': 4.3.38
       '@smithy/util-defaults-mode-node': 4.2.41
       '@smithy/util-endpoints': 3.3.2
-      '@smithy/util-middleware': 4.2.11
+      '@smithy/util-middleware': 4.2.12
       '@smithy/util-retry': 4.2.11
       '@smithy/util-utf8': 4.2.2
       '@smithy/util-waiter': 4.2.11
@@ -5720,10 +5753,10 @@ snapshots:
 
   '@aws-sdk/dynamodb-codec@3.972.18':
     dependencies:
-      '@aws-sdk/core': 3.973.17
-      '@smithy/core': 3.23.8
-      '@smithy/smithy-client': 4.12.2
-      '@smithy/types': 4.13.0
+      '@aws-sdk/core': 3.973.25
+      '@smithy/core': 3.23.12
+      '@smithy/smithy-client': 4.12.7
+      '@smithy/types': 4.13.1
       '@smithy/util-base64': 4.3.2
       tslib: 2.8.1
 
@@ -5735,20 +5768,20 @@ snapshots:
   '@aws-sdk/lib-dynamodb@3.1001.0(@aws-sdk/client-dynamodb@3.1001.0)':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.1001.0
-      '@aws-sdk/core': 3.973.17
+      '@aws-sdk/core': 3.973.25
       '@aws-sdk/util-dynamodb': 3.996.1(@aws-sdk/client-dynamodb@3.1001.0)
-      '@smithy/core': 3.23.8
-      '@smithy/smithy-client': 4.12.2
-      '@smithy/types': 4.13.0
+      '@smithy/core': 3.23.12
+      '@smithy/smithy-client': 4.12.7
+      '@smithy/types': 4.13.1
       tslib: 2.8.1
 
   '@aws-sdk/middleware-endpoint-discovery@3.972.6':
     dependencies:
       '@aws-sdk/endpoint-cache': 3.972.3
-      '@aws-sdk/types': 3.973.4
-      '@smithy/node-config-provider': 4.3.11
-      '@smithy/protocol-http': 5.3.11
-      '@smithy/types': 4.13.0
+      '@aws-sdk/types': 3.973.6
+      '@smithy/node-config-provider': 4.3.12
+      '@smithy/protocol-http': 5.3.12
+      '@smithy/types': 4.13.1
       tslib: 2.8.1
 
   '@aws-sdk/middleware-host-header@3.972.6':
@@ -7659,8 +7692,8 @@ snapshots:
 
   '@smithy/util-waiter@4.2.11':
     dependencies:
-      '@smithy/abort-controller': 4.2.11
-      '@smithy/types': 4.13.0
+      '@smithy/abort-controller': 4.2.12
+      '@smithy/types': 4.13.1
       tslib: 2.8.1
 
   '@smithy/uuid@1.1.2':

@@ -1,6 +1,12 @@
 import { parseHTML } from "linkedom";
 
-function extractText(node: ChildNode): string {
+interface DomNode {
+	nodeType: number;
+	textContent: string | null;
+	childNodes: Iterable<DomNode>;
+}
+
+function extractText(node: DomNode): string {
 	if (node.nodeType === 3) return node.textContent ?? "";
 	return Array.from(node.childNodes).map(extractText).join(" ");
 }

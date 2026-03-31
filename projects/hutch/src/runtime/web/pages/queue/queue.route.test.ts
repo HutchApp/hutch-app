@@ -534,7 +534,7 @@ describe("Queue routes", () => {
 			expect(titleLink?.getAttribute("href")).toContain("/read");
 		});
 
-		it("should display AI summary when summarizeArticle returns text", async () => {
+		it("should display AI summary when cached summary exists", async () => {
 			const articleHtml = `
 			<html><head><title>Summarized Post</title><meta property="og:site_name" content="Example Blog"></head>
 			<body><article>
@@ -543,8 +543,8 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const fetchHtml = async (_url: string) => articleHtml;
-			const summarizeArticle = async () => "Key points from the article distilled into a brief summary.";
-			const { app, auth } = createTestApp({ fetchHtml, summarizeArticle });
+			const findCachedSummary = async () => "Key points from the article distilled into a brief summary.";
+			const { app, auth } = createTestApp({ fetchHtml, findCachedSummary });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -564,7 +564,7 @@ describe("Queue routes", () => {
 			expect(doc.querySelector(".reader__summary-label")?.textContent).toBe("TL;DR");
 		});
 
-		it("should not display summary block when summarizeArticle returns null", async () => {
+		it("should not display summary block when no cached summary exists", async () => {
 			const articleHtml = `
 			<html><head><title>No Summary Post</title></head>
 			<body><article>
@@ -573,8 +573,7 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const fetchHtml = async (_url: string) => articleHtml;
-			const summarizeArticle = async () => null;
-			const { app, auth } = createTestApp({ fetchHtml, summarizeArticle });
+			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -761,8 +760,8 @@ describe("Queue routes", () => {
 			expect(response.status).toBe(303);
 		});
 
-		it("should trigger re-summarization for refreshed content", async () => {
-			let summarizeCalled = false;
+		it("should publish LinkSaved event for refreshed content", async () => {
+			let linkSavedPublished = false;
 			const refreshedFreshness: RefreshArticleIfStale = async () => ({
 				action: "refreshed",
 				article: {
@@ -778,7 +777,7 @@ describe("Queue routes", () => {
 			});
 			const { app, auth } = createTestApp({
 				refreshArticleIfStale: refreshedFreshness,
-				summarizeArticle: async () => { summarizeCalled = true; return null; },
+				publishLinkSaved: async () => { linkSavedPublished = true; },
 			});
 			const agent = await loginAgent(app, auth);
 
@@ -788,7 +787,7 @@ describe("Queue routes", () => {
 				.send({ url: "https://example.com/existing" });
 
 			expect(response.status).toBe(303);
-			expect(summarizeCalled).toBe(true);
+			expect(linkSavedPublished).toBe(true);
 		});
 	});
 

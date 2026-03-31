@@ -22,7 +22,8 @@ import type {
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
-import type { FindCachedSummary, SummarizeArticle } from "./providers/article-summary/article-summary.types";
+import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
+import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
 	CreateVerificationToken,
@@ -70,11 +71,10 @@ interface AppDependencies {
 	logError: (message: string, error?: Error) => void;
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
-	summarizeArticle: SummarizeArticle;
+	publishLinkSaved: PublishLinkSaved;
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
-	publishLinkSaved: (params: { url: string; userId: import("./domain/user/user.types").UserId }) => Promise<void>;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -210,11 +210,10 @@ export function createApp(dependencies: AppDependencies): Express {
 		parseArticle: deps.parseArticle,
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
-		summarizeArticle: deps.summarizeArticle,
+		publishLinkSaved: deps.publishLinkSaved,
 		findCachedSummary: deps.findCachedSummary,
 		refreshArticleIfStale: deps.refreshArticleIfStale,
 		updateArticleFetchMetadata: deps.updateArticleFetchMetadata,
-		publishLinkSaved: deps.publishLinkSaved,
 		logError: deps.logError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);

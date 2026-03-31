@@ -1,11 +1,10 @@
 import { createHash } from "node:crypto";
+import { LinkId } from "@packages/link-id";
 import { ArticleIdSchema } from "./article.schema";
 import type { ArticleId } from "./article.types";
 
 export function normalizeArticleUrl(url: string): string {
-	const parsed = new URL(url);
-	const port = parsed.port ? `:${parsed.port}` : "";
-	return `${parsed.hostname}${port}${parsed.pathname}${parsed.search}`;
+	return LinkId.from(url);
 }
 
 export function routeIdFromUrl(url: string): ArticleId {

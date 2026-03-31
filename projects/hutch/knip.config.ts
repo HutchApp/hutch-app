@@ -14,14 +14,17 @@ export default {
 		"helmet",
 		"compression",
 		"@types/compression",
-		// Workspace dependency for S3 config (subpath imports not detected by knip)
+		// Workspace dependencies with subpath imports not detected by knip
 		"browser-extension-core",
+		"save-link",
 		// Used in infra code (compiled separately)
 		"@packages/hutch-logger",
 		// Used in app.ts (reached via infra entry point which knip ignores)
 		"@packages/hutch-event-bridge",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
+		// Used in normalize-article-url.ts (knip doesn't resolve workspace subpath)
+		"@packages/link-id",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)
 		"@packages/test-phase-runner",
 	],
