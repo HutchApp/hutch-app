@@ -34,5 +34,3 @@ export function initLinkSavedHandler(deps: {
 		}
 	};
 }
-
-export { SQSClient };

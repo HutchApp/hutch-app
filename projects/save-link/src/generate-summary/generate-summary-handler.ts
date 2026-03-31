@@ -34,7 +34,10 @@ export function initGenerateSummaryHandler(deps: {
 				textContent: content,
 			});
 
-			assert(result, `Summarization returned null for: ${command.url}`);
+			if (!result) {
+				logger.info("[GenerateGlobalSummary] already summarized, skipping", { url: command.url });
+				continue;
+			}
 
 			await publishEvent({
 				source: GLOBAL_SUMMARY_GENERATED_SOURCE,

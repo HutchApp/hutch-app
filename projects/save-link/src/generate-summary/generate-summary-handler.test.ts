@@ -68,7 +68,7 @@ describe("initGenerateSummaryHandler", () => {
 		).rejects.toThrow("Article content not found");
 	});
 
-	it("should throw when summarization returns null", async () => {
+	it("should skip publishing when summarization returns null (cache hit)", async () => {
 		const summarizeArticle: SummarizeArticle = async () => null;
 		const findArticleContent: FindArticleContent = async () => "<p>Content</p>";
 		const publishEvent: PublishEvent = jest.fn();
@@ -80,9 +80,9 @@ describe("initGenerateSummaryHandler", () => {
 			logger: noopLogger,
 		});
 
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/fail" }), {} as never, () => {}),
-		).rejects.toThrow("Summarization returned null");
+		await handler(createSqsEvent({ url: "https://example.com/cached" }), {} as never, () => {});
+
+		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
 	it("should throw on invalid command schema", async () => {
