@@ -79,7 +79,6 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 		if (article.content) {
 			await deps.publishLinkSaved({ url, userId });
 		}
-		await deps.publishLinkSaved({ url, userId });
 
 		return { ok: true, saved };
 	}
@@ -94,7 +93,6 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	if (freshness.action === "refreshed" && freshness.article.article.content) {
 		await deps.publishLinkSaved({ url, userId });
 	}
-	await deps.publishLinkSaved({ url, userId });
 
 	return { ok: true, saved };
 }

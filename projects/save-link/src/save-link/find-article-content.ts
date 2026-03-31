@@ -1,7 +1,12 @@
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
+import { z } from "zod";
 
 export type FindArticleContent = (url: string) => Promise<string | undefined>;
+
+const ArticleContentRow = z.object({
+	content: z.string().optional(),
+});
 
 export function initFindArticleContent(deps: {
 	client: DynamoDBDocumentClient;
@@ -17,7 +22,9 @@ export function initFindArticleContent(deps: {
 				ProjectionExpression: "content",
 			}),
 		);
-		return result.Item?.content as string | undefined;
+		if (!result.Item) return undefined;
+		const parsed = ArticleContentRow.parse(result.Item);
+		return parsed.content;
 	};
 
 	return { findArticleContent };
