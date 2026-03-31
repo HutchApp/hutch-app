@@ -1,6 +1,7 @@
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
+import { LinkId } from "./link-id";
 
 export type FindArticleContent = (url: string) => Promise<string | undefined>;
 
@@ -18,7 +19,7 @@ export function initFindArticleContent(deps: {
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
-				Key: { url },
+				Key: { url: LinkId.from(url) },
 				ProjectionExpression: "content",
 			}),
 		);
