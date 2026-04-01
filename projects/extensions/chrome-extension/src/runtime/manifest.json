@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Hutch",
-  "version": "1.0.43",
+  "version": "1.0.44",
   "description": "Where reading still matters",
   "permissions": [
     "activeTab",
