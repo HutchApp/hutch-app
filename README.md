@@ -49,14 +49,15 @@ Each workflow has a companion `.md` file (e.g. `claude-PR-CI-failure-fixer.md`) 
 
 ### Setup
 
-You need one secret: `ANTHROPIC_API_KEY`.
+You need two secrets:
 
-Add it to your repo's Actions secrets and the workflows work as-is. The Claude integration uses [`claude-code-action`](https://github.com/anthropics/claude-code-action).
+- `DEEPSEEK_API_KEY` — for article summarization via the DeepSeek API
+- `ANTHROPIC_API_KEY` — for Claude Code Action (code review, CI fixing, conflict resolution)
+
+Add them to your repo's Actions secrets and the workflows work as-is. The Claude integration uses [`claude-code-action`](https://github.com/anthropics/claude-code-action).
 
 ```
 Settings → Secrets and variables → Actions → New repository secret
-Name: ANTHROPIC_API_KEY
-Value: sk-ant-...
 ```
 
 ### What it looks like in practice

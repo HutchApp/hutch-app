@@ -12,18 +12,11 @@ export type SaveCachedSummary = (params: {
 	outputTokens: number;
 }) => Promise<void>;
 
-export type CreateAiMessage = (params: {
+export type CreateChatCompletion = (params: {
 	model: string;
 	max_tokens: number;
-	system: string;
-	messages: Array<{ role: "user" | "assistant"; content: string }>;
-	output_config?: {
-		format: {
-			type: "json_schema";
-			schema: Record<string, unknown>;
-		};
-	};
+	messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
 }) => Promise<{
-	content: Array<{ type: string; text?: string }>;
-	usage: { input_tokens: number; output_tokens: number };
+	content: string | null;
+	usage: { prompt_tokens: number; completion_tokens: number };
 }>;

@@ -22,9 +22,9 @@ const alertEmail = config.require("alertEmail");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
 
-const anthropicApiKeyValue = getEnv("ANTHROPIC_API_KEY");
-const anthropicApiKey = anthropicApiKeyValue
-	? pulumi.secret(anthropicApiKeyValue)
+const deepseekApiKeyValue = getEnv("DEEPSEEK_API_KEY");
+const deepseekApiKey = deepseekApiKeyValue
+	? pulumi.secret(deepseekApiKeyValue)
 	: undefined;
 
 const platform = new pulumi.StackReference(platformStack);
@@ -51,7 +51,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
-		...(anthropicApiKey ? { ANTHROPIC_API_KEY: anthropicApiKey } : {}),
+		...(deepseekApiKey ? { DEEPSEEK_API_KEY: deepseekApiKey } : {}),
 		EVENT_BUS_NAME: eventBusName,
 	},
 	policies: [

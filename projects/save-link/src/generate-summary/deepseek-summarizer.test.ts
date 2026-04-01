@@ -1,15 +1,15 @@
 import { noopLogger } from "@packages/hutch-logger";
-import { initLinkSummariser } from "./link-summariser";
+import { initDeepseekSummarizer } from "./deepseek-summarizer";
 import type {
-	CreateAiMessage,
+	CreateChatCompletion,
 	FindCachedSummary,
 	SaveCachedSummary,
 } from "./article-summary.types";
 
-function createStubCreateMessage(summary: string): CreateAiMessage {
+function createStubCreateChatCompletion(summary: string): CreateChatCompletion {
 	return async () => ({
-		content: [{ type: "text", text: JSON.stringify({ summary }) }],
-		usage: { input_tokens: 50, output_tokens: 10 },
+		content: summary,
+		usage: { prompt_tokens: 50, completion_tokens: 10 },
 	});
 }
 
@@ -17,12 +17,12 @@ const noCache: FindCachedSummary = async () => "";
 const noopSave: SaveCachedSummary = async () => {};
 const identity = (text: string) => text;
 
-describe("initLinkSummariser", () => {
+describe("initDeepseekSummarizer", () => {
 	it("should skip summarisation when isTooShortToSummarize returns true", async () => {
-		const createMessage = jest.fn();
+		const createChatCompletion = jest.fn();
 
-		const { summarizeArticle } = initLinkSummariser({
-			createMessage,
+		const { summarizeArticle } = initDeepseekSummarizer({
+			createChatCompletion,
 			findCachedSummary: noCache,
 			saveCachedSummary: noopSave,
 			logger: noopLogger,
@@ -36,14 +36,14 @@ describe("initLinkSummariser", () => {
 		});
 
 		expect(result).toBeNull();
-		expect(createMessage).not.toHaveBeenCalled();
+		expect(createChatCompletion).not.toHaveBeenCalled();
 	});
 
-	it("should call createMessage when isTooShortToSummarize returns false", async () => {
-		const createMessage = createStubCreateMessage("A good summary.");
+	it("should call createChatCompletion when isTooShortToSummarize returns false", async () => {
+		const createChatCompletion = createStubCreateChatCompletion("A good summary.");
 
-		const { summarizeArticle } = initLinkSummariser({
-			createMessage,
+		const { summarizeArticle } = initDeepseekSummarizer({
+			createChatCompletion,
 			findCachedSummary: noCache,
 			saveCachedSummary: noopSave,
 			logger: noopLogger,
@@ -63,12 +63,12 @@ describe("initLinkSummariser", () => {
 		});
 	});
 
-	it("should return null on cache hit without calling createMessage", async () => {
-		const createMessage = jest.fn();
+	it("should return null on cache hit without calling createChatCompletion", async () => {
+		const createChatCompletion = jest.fn();
 		const cachedSummary: FindCachedSummary = async () => "cached summary";
 
-		const { summarizeArticle } = initLinkSummariser({
-			createMessage,
+		const { summarizeArticle } = initDeepseekSummarizer({
+			createChatCompletion,
 			findCachedSummary: cachedSummary,
 			saveCachedSummary: noopSave,
 			logger: noopLogger,
@@ -82,14 +82,14 @@ describe("initLinkSummariser", () => {
 		});
 
 		expect(result).toBeNull();
-		expect(createMessage).not.toHaveBeenCalled();
+		expect(createChatCompletion).not.toHaveBeenCalled();
 	});
 
-	it("should return null when Claude returns 'Summary not available.'", async () => {
-		const createMessage = createStubCreateMessage("Summary not available.");
+	it("should return null when DeepSeek returns 'Summary not available.'", async () => {
+		const createChatCompletion = createStubCreateChatCompletion("Summary not available.");
 
-		const { summarizeArticle } = initLinkSummariser({
-			createMessage,
+		const { summarizeArticle } = initDeepseekSummarizer({
+			createChatCompletion,
 			findCachedSummary: noCache,
 			saveCachedSummary: noopSave,
 			logger: noopLogger,
