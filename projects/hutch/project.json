@@ -1,14 +1,7 @@
 {
   "name": "hutch",
   "targets": {
-    "compile": {
-      "dependsOn": [
-        { "projects": ["@packages/hutch-logger"], "target": "compile" },
-        { "projects": ["@packages/hutch-infra-components"], "target": "compile" },
-        { "projects": ["browser-extension-core"], "target": "compile" },
-        { "projects": ["save-link"], "target": "compile" }
-      ]
-    },
+    "compile": {},
     "deploy": {
       "command": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
       "options": { "cwd": "{projectRoot}" },
