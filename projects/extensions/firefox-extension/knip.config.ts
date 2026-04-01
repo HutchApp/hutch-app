@@ -12,6 +12,7 @@ export default {
 		// CLI scripts (not entry points)
 		"scripts/bump-version.js",
 		"scripts/sync-signed-extension.js",
+		"scripts/submit-to-amo.js",
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),

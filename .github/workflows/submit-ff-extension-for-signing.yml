@@ -66,7 +66,7 @@ jobs:
             pnpm-workspace.yaml
 
       - name: Submit extension to AMO for signing
-        run: npx nx run firefox-extension:sign
+        run: node projects/extensions/firefox-extension/scripts/submit-to-amo.js
         env:
           AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
           AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
