@@ -79,7 +79,7 @@ describe("GET /install", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const firefoxPanel = doc.querySelector('[data-test-section="firefox"]');
-		expect(firefoxPanel?.querySelector('[data-test-cta="download-firefox"]')?.textContent).toBe("Download Hutch for Firefox");
+		expect(firefoxPanel?.querySelector('[data-test-cta="download-firefox"]')?.textContent).toBe("Install Hutch for Firefox");
 		expect(doc.querySelector('[data-test-section="chrome"]')).toBeNull();
 	});
 
@@ -88,7 +88,7 @@ describe("GET /install", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const chromePanel = doc.querySelector('[data-test-section="chrome"]');
-		expect(chromePanel?.querySelector('[data-test-cta="download-chrome"]')?.textContent).toBe("Get Hutch for Chrome");
+		expect(chromePanel?.querySelector('[data-test-cta="download-chrome"]')?.textContent).toBe("Install Hutch for Chrome");
 		expect(doc.querySelector('[data-test-section="firefox"]')).toBeNull();
 	});
 
@@ -110,23 +110,7 @@ describe("GET /install", () => {
 			'[data-test-cta="download-chrome"]',
 		);
 		expect(cta?.getAttribute("href")).toBe("https://chromewebstore.google.com/detail/hutch/klblengmhlfnmjoagchagfcdbpbocgbf");
-		expect(cta?.textContent).toBe("Get Hutch for Chrome");
-	});
-
-	it("should render Firefox installation steps on Firefox tab", async () => {
-		const response = await request(app).get("/install?browser=firefox");
-		const doc = new JSDOM(response.text).window.document;
-
-		const steps = doc.querySelector('[data-test-section="firefox-steps"]');
-		const items = steps?.querySelectorAll("li");
-		expect(items?.length).toBe(3);
-	});
-
-	it("should not render Chrome installation steps since Chrome is on the Web Store", async () => {
-		const response = await request(app).get("/install?browser=chrome");
-		const doc = new JSDOM(response.text).window.document;
-
-		expect(doc.querySelector('[data-test-section="chrome-steps"]')).toBeNull();
+		expect(cta?.textContent).toBe("Install Hutch for Chrome");
 	});
 
 	it("should set appropriate SEO metadata", async () => {
