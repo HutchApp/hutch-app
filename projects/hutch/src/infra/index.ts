@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import assert from "node:assert";
-import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBridgePublishAccess } from "@packages/hutch-infra-components/infra";
+import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus } from "@packages/hutch-infra-components/infra";
 import { DomainRegistration } from "./domain-registration";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
@@ -41,6 +41,8 @@ const staticAssets = new HutchStaticAssets("hutch-static", {
 	zoneId: domainRegistration.zoneId,
 });
 
+const eventBus = HutchEventBus.fromExisting({ eventBusName, eventBusArn });
+
 const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 	tables: [
 		{ arn: storage.articlesTable.arn, includeIndexes: true },
@@ -70,7 +72,7 @@ const appOrigin: pulumi.Input<string> = domainRegistration.domains.length > 0
 	? `https://${domainRegistration.primaryDomain!}`
 	: api.apiEndpoint;
 
-const hutch = new HutchLambda("hutch", {
+const lambda = new HutchLambda("hutch", {
 	entryPoint: "./src/infra/lambda.ts",
 	outputDir: ".lib/hutch-api",
 	assetDir: "./src/runtime",
@@ -94,13 +96,14 @@ const hutch = new HutchLambda("hutch", {
 	},
 	policies: [
 		...dynamodb.policies,
-		...new HutchEventBridgePublishAccess("hutch-eventbridge-publish", { eventBusArn }).policies,
 	],
 });
 
+eventBus.grantPublish("hutch-eventbridge-publish", lambda);
+
 const gateway = new HutchAPIGateway("hutch", {
 	api,
-	lambda: hutch,
+	lambda: lambda,
 	stage,
 	domains,
 	zoneId: domainRegistration.zoneId,
@@ -108,6 +111,6 @@ const gateway = new HutchAPIGateway("hutch", {
 });
 
 export const apiUrl = gateway.apiUrl;
-export const functionName = hutch.functionName;
+export const functionName = lambda.functionName;
 export const staticBaseUrl = staticAssets.baseUrl;
 export const _dependencies = [gateway.defaultRoute];

@@ -4,7 +4,7 @@ import { HutchEventBus } from "@packages/hutch-infra-components/infra";
 const config = new pulumi.Config();
 const eventBusName = config.require("eventBusName");
 
-const eventBus = new HutchEventBus("hutch", { eventBusName });
+const eventBus = HutchEventBus.create("hutch", { eventBusName });
 
 export const hutchEventBusName = eventBus.eventBusName;
 export const hutchEventBusArn = eventBus.eventBusArn;

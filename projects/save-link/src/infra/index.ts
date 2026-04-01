@@ -1,9 +1,8 @@
 import * as pulumi from "@pulumi/pulumi";
 import {
-	HutchEventRule,
+	HutchEventBus,
 	HutchLambda,
 	HutchDynamoDBAccess,
-	HutchEventBridgePublishAccess,
 	HutchSQS,
 	HutchSQSBackedLambda,
 } from "@packages/hutch-infra-components/infra";
@@ -29,6 +28,8 @@ const anthropicApiKey = anthropicApiKeyValue
 const platform = new pulumi.StackReference(platformStack);
 const eventBusName = platform.requireOutput("hutchEventBusName").apply(String);
 const eventBusArn = platform.requireOutput("hutchEventBusArn").apply(String);
+
+const eventBus = HutchEventBus.fromExisting({ eventBusName, eventBusArn });
 
 // --- Queues ---
 
@@ -69,9 +70,10 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	},
 	policies: [
 		...generateSummaryDynamodb.policies,
-		...new HutchEventBridgePublishAccess("generate-summary-eventbridge", { eventBusArn }).policies,
 	],
 });
+
+eventBus.grantPublish("generate-summary-eventbridge", generateSummaryLambda);
 
 new HutchSQSBackedLambda("generate-summary", {
 	lambda: generateSummaryLambda,
@@ -113,11 +115,9 @@ new HutchSQSBackedLambda("link-saved", {
 	alertEmailDLQEntry: alertEmail,
 });
 
-new HutchEventRule("link-saved", {
-	eventBusName,
+eventBus.subscribe("link-saved", linkSavedQueue, {
 	source: LINK_SAVED_SOURCE,
 	detailType: LINK_SAVED_DETAIL_TYPE,
-	targetQueue: linkSavedQueue,
 });
 
 // --- SummaryGenerated handler ---
@@ -143,11 +143,9 @@ new HutchSQSBackedLambda("summary-generated", {
 	alertEmailDLQEntry: alertEmail,
 });
 
-new HutchEventRule("summary-generated", {
-	eventBusName,
+eventBus.subscribe("summary-generated", summaryGeneratedQueue, {
 	source: GLOBAL_SUMMARY_GENERATED_SOURCE,
 	detailType: GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
-	targetQueue: summaryGeneratedQueue,
 });
 
 // --- Exports ---
