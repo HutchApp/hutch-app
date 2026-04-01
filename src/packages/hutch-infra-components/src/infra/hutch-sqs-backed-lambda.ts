@@ -11,7 +11,8 @@ export class HutchSQSBackedLambda {
 			alertEmailDLQEntry: string;
 		},
 	) {
-		new aws.iam.RolePolicy(`${name}-sqs-receive`, {
+		new aws.iam.RolePolicy(`${name}-sqs-recv`, {
+			name: `${name}-sqs-recv`,
 			role: args.lambda.role.name,
 			policy: args.queue.queueArn.apply((arn) =>
 				JSON.stringify({
@@ -31,7 +32,9 @@ export class HutchSQSBackedLambda {
 			batchSize: 1,
 		});
 
-		const topic = new aws.sns.Topic(`${name}-dlq-alarm-topic`);
+		const topic = new aws.sns.Topic(`${name}-dlq-topic`, {
+			name: `${name}-dlq-topic`,
+		});
 
 		new aws.sns.TopicSubscription(`${name}-dlq-alarm-email`, {
 			topic: topic.arn,
@@ -40,6 +43,7 @@ export class HutchSQSBackedLambda {
 		});
 
 		new aws.cloudwatch.MetricAlarm(`${name}-dlq-alarm`, {
+			name: `${name}-dlq-alarm`,
 			comparisonOperator: "GreaterThanOrEqualToThreshold",
 			evaluationPeriods: 1,
 			metricName: "ApproximateNumberOfMessagesVisible",

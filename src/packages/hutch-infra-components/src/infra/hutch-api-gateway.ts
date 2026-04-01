@@ -43,7 +43,8 @@ export class HutchAPIGateway {
 			},
 		);
 
-		new aws.lambda.Permission(`${name}-api-gateway-permission`, {
+		new aws.lambda.Permission(`${name}-api-gw-perm`, {
+			statementId: `${name}-api-gw-perm`,
 			action: "lambda:InvokeFunction",
 			function: args.lambda.functionName,
 			principal: "apigateway.amazonaws.com",

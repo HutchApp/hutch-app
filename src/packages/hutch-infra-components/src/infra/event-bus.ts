@@ -32,6 +32,7 @@ export class HutchEventBus {
 
 	grantPublish(name: string, lambda: { role: aws.iam.Role }): void {
 		new aws.iam.RolePolicy(`${name}-pol`, {
+			name: `${name}-pol`,
 			role: lambda.role.name,
 			policy: pulumi.output(this.eventBusArn).apply((arn) =>
 				JSON.stringify({
@@ -52,6 +53,7 @@ export class HutchEventBus {
 		filter: { source: string; detailType: string },
 	): void {
 		const rule = new aws.cloudwatch.EventRule(`${name}-rule`, {
+			name: `${name}-rule`,
 			eventBusName: this.eventBusName,
 			eventPattern: JSON.stringify({
 				source: [filter.source],
@@ -60,6 +62,7 @@ export class HutchEventBus {
 		});
 
 		new aws.cloudwatch.EventTarget(`${name}-target`, {
+			targetId: `${name}-target`,
 			rule: rule.name,
 			eventBusName: this.eventBusName,
 			arn: target.queueArn,

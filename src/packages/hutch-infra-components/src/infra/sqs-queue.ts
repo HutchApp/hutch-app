@@ -22,10 +22,12 @@ export class HutchSqsQueue {
 		const dlqRetention = args?.dlqRetentionSeconds ?? 1209600; // 14 days
 
 		const dlq = new aws.sqs.Queue(`${name}-dlq`, {
+			name: `${name}-dlq`,
 			messageRetentionSeconds: dlqRetention,
 		});
 
-		const queue = new aws.sqs.Queue(`${name}-queue`, {
+		const queue = new aws.sqs.Queue(`${name}-q`, {
+			name: `${name}-q`,
 			visibilityTimeoutSeconds: visibilityTimeout,
 			redrivePolicy: pulumi.jsonStringify({
 				deadLetterTargetArn: dlq.arn,

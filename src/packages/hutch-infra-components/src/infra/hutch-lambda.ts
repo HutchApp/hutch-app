@@ -69,6 +69,7 @@ export class HutchLambda {
 		});
 
 		this.role = new aws.iam.Role(roleName, {
+			name: roleName,
 			assumeRolePolicy: JSON.stringify({
 				Version: "2012-10-17",
 				Statement: [{
@@ -86,6 +87,7 @@ export class HutchLambda {
 
 		for (const p of args.policies) {
 			new aws.iam.RolePolicy(p.name, {
+				name: p.name,
 				role: this.role.name,
 				policy: p.policy,
 			});
@@ -93,6 +95,7 @@ export class HutchLambda {
 
 		const hasEnvironment = Object.keys(args.environment).length > 0;
 		const lambdaFunction = new aws.lambda.Function(lambdaName, {
+			name: lambdaName,
 			runtime: aws.lambda.Runtime.NodeJS22dX,
 			handler: "index.handler",
 			role: this.role.arn,
