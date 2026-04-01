@@ -2,7 +2,7 @@
   "name": "save-link",
   "targets": {
     "check": {
-      "command": "pnpm lint && pnpm test",
+      "command": "pnpm lint && pnpm test-with-coverage",
       "options": { "cwd": "{projectRoot}" }
     }
   }
