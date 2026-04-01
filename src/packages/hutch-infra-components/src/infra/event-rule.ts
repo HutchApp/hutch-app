@@ -1,5 +1,6 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
+import type { HutchSQS } from "./hutch-sqs";
 
 export class HutchEventRule {
 	public readonly rule: aws.cloudwatch.EventRule;
@@ -10,8 +11,7 @@ export class HutchEventRule {
 			eventBusName: pulumi.Input<string>;
 			source: string;
 			detailType: string;
-			targetQueueArn: pulumi.Input<string>;
-			targetQueueUrl: pulumi.Input<string>;
+			targetQueue: HutchSQS;
 		},
 	) {
 		this.rule = new aws.cloudwatch.EventRule(`${name}-rule`, {
@@ -25,13 +25,13 @@ export class HutchEventRule {
 		new aws.cloudwatch.EventTarget(`${name}-target`, {
 			rule: this.rule.name,
 			eventBusName: args.eventBusName,
-			arn: args.targetQueueArn,
+			arn: args.targetQueue.queueArn,
 		});
 
 		new aws.sqs.QueuePolicy(`${name}-queue-policy`, {
-			queueUrl: args.targetQueueUrl,
+			queueUrl: args.targetQueue.queueUrl,
 			policy: pulumi
-				.all([args.targetQueueArn, this.rule.arn])
+				.all([args.targetQueue.queueArn, this.rule.arn])
 				.apply(([queueArn, ruleArn]) =>
 					JSON.stringify({
 						Version: "2012-10-17",

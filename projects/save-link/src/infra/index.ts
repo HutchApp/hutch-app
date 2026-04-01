@@ -117,8 +117,7 @@ new HutchEventRule("link-saved", {
 	eventBusName,
 	source: LINK_SAVED_SOURCE,
 	detailType: LINK_SAVED_DETAIL_TYPE,
-	targetQueueArn: linkSavedQueue.queueArn,
-	targetQueueUrl: linkSavedQueue.queueUrl,
+	targetQueue: linkSavedQueue,
 });
 
 // --- SummaryGenerated handler ---
@@ -148,8 +147,7 @@ new HutchEventRule("summary-generated", {
 	eventBusName,
 	source: GLOBAL_SUMMARY_GENERATED_SOURCE,
 	detailType: GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
-	targetQueueArn: summaryGeneratedQueue.queueArn,
-	targetQueueUrl: summaryGeneratedQueue.queueUrl,
+	targetQueue: summaryGeneratedQueue,
 });
 
 // --- Exports ---
