@@ -10,7 +10,7 @@
     "dev": "nx run hutch:dev",
     "check": "NX_TUI=true nx run-many --target=check --all",
     "check-infra": "NX_TUI=true nx run-many --target=check-infra --all",
-    "deploy-infra": "NX_TUI=true nx run-many --target=deploy --all",
+    "deploy-infra": "NX_TUI=true nx run-many --target=deploy-infra --all",
     "prepare": "husky"
   },
   "devDependencies": {

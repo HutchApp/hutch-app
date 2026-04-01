@@ -37,7 +37,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Deploy ${{ inputs.project }} to staging
-        run: pnpm nx run ${{ inputs.project }}:deploy
+        run: pnpm nx run ${{ inputs.project }}:deploy-infra
 
       - name: Post-deploy staging
         run: pnpm nx run ${{ inputs.project }}:post-deploy
@@ -78,7 +78,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Deploy ${{ inputs.project }} to prod
-        run: pnpm nx run ${{ inputs.project }}:deploy
+        run: pnpm nx run ${{ inputs.project }}:deploy-infra
 
       - name: Post-deploy prod
         run: pnpm nx run ${{ inputs.project }}:post-deploy

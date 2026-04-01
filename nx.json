@@ -42,7 +42,7 @@
       "dependsOn": ["^compile"],
       "cache": false
     },
-    "deploy": {
+    "deploy-infra": {
       "inputs": ["production", "^production"],
       "dependsOn": ["^compile"],
       "cache": false

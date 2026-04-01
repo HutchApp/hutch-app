@@ -88,8 +88,8 @@ jobs:
           AFFECTED=$(pnpm nx show projects --affected --json)
           echo "Affected projects: $AFFECTED"
 
-          # Dynamically discover all projects that have a "deploy" target
-          DEPLOYABLE=$(pnpm nx show projects --with-target deploy --json)
+          # Dynamically discover all projects that have a "deploy-infra" target
+          DEPLOYABLE=$(pnpm nx show projects --with-target deploy-infra --json)
 
           # Intersect: projects that are both affected AND deployable
           ALREADY_DEPLOY=$(echo "$AFFECTED" "$DEPLOYABLE" | jq -s '.[0] as $a | .[1] | map(select(. as $p | $a | index($p)))')
