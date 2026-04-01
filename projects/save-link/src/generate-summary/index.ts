@@ -5,12 +5,9 @@ export const GenerateGlobalSummaryCommandSchema = z.object({
 });
 export type GenerateGlobalSummaryCommand = z.infer<typeof GenerateGlobalSummaryCommandSchema>;
 
-export const GLOBAL_SUMMARY_GENERATED_SOURCE = "hutch.save-link";
-export const GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE = "GlobalSummaryGenerated";
-
-export const GlobalSummaryGeneratedDetailSchema = z.object({
-	url: z.string(),
-	inputTokens: z.number(),
-	outputTokens: z.number(),
-});
-export type GlobalSummaryGeneratedDetail = z.infer<typeof GlobalSummaryGeneratedDetailSchema>;
+export {
+	GLOBAL_SUMMARY_GENERATED_SOURCE,
+	GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
+	GlobalSummaryGeneratedDetailSchema,
+	type GlobalSummaryGeneratedDetail,
+} from "@packages/hutch-infra-components";

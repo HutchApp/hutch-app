@@ -31,6 +31,6 @@ export class HutchDynamoDBAccess {
 			});
 		});
 
-		this.policies = [{ name, policy }];
+		this.policies = [{ name: `${name}-pol`, policy }];
 	}
 }

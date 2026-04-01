@@ -1,19 +1,19 @@
 import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
 import {
 	HutchEventRule,
 	HutchLambda,
 	HutchDynamoDBAccess,
+	HutchEventBridgePublishAccess,
+	HutchSqsSendAccess,
+	HutchDlqAlarm,
 	SQSBackedLambda,
 } from "@packages/hutch-infra-components/infra";
 import {
 	LINK_SAVED_SOURCE,
 	LINK_SAVED_DETAIL_TYPE,
-} from "../save-link/index";
-import {
 	GLOBAL_SUMMARY_GENERATED_SOURCE,
 	GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
-} from "../generate-summary/index";
+} from "@packages/hutch-infra-components";
 import { getEnv } from "../require-env";
 
 const config = new pulumi.Config();
@@ -56,19 +56,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	},
 	policies: [
 		...generateSummaryDynamodb.policies,
-		{
-			name: "generate-summary-eventbridge",
-			policy: eventBusArn.apply((arn) =>
-				JSON.stringify({
-					Version: "2012-10-17",
-					Statement: [{
-						Effect: "Allow",
-						Action: ["events:PutEvents"],
-						Resource: [arn],
-					}],
-				}),
-			),
-		},
+		...new HutchEventBridgePublishAccess("generate-summary-eventbridge", { eventBusArn }).policies,
 	],
 });
 
@@ -102,19 +90,7 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	},
 	policies: [
 		...linkSavedDynamodb.policies,
-		{
-			name: "link-saved-sqs-send",
-			policy: generateSummarySqs.queueArn.apply((arn) =>
-				JSON.stringify({
-					Version: "2012-10-17",
-					Statement: [{
-						Effect: "Allow",
-						Action: ["sqs:SendMessage"],
-						Resource: [arn],
-					}],
-				}),
-			),
-		},
+		...new HutchSqsSendAccess("link-saved-sqs-send", { queueArn: generateSummarySqs.queueArn }).policies,
 	],
 });
 
@@ -165,36 +141,14 @@ new HutchEventRule("summary-generated", {
 
 // --- DLQ Alarms ---
 
-const dlqAlarmTopic = new aws.sns.Topic("save-link-dlq-alarm-topic");
-
-new aws.sns.TopicSubscription("save-link-dlq-alarm-email", {
-	topic: dlqAlarmTopic.arn,
-	protocol: "email",
-	endpoint: alertEmail,
+new HutchDlqAlarm("save-link", {
+	queues: [
+		{ name: "link-saved", dlqName: linkSavedSqs.dlqName },
+		{ name: "generate-summary", dlqName: generateSummarySqs.dlqName },
+		{ name: "summary-generated", dlqName: summaryGeneratedSqs.dlqName },
+	],
+	alertEmail,
 });
-
-const dlqQueues = [
-	{ name: "link-saved", sqs: linkSavedSqs },
-	{ name: "generate-summary", sqs: generateSummarySqs },
-	{ name: "summary-generated", sqs: summaryGeneratedSqs },
-];
-
-for (const { name, sqs } of dlqQueues) {
-	new aws.cloudwatch.MetricAlarm(`save-link-${name}-dlq-alarm`, {
-		comparisonOperator: "GreaterThanOrEqualToThreshold",
-		evaluationPeriods: 1,
-		metricName: "ApproximateNumberOfMessagesVisible",
-		namespace: "AWS/SQS",
-		period: 300,
-		statistic: "Sum",
-		threshold: 1,
-		alarmDescription: `Message entered save-link-${name} dead letter queue`,
-		dimensions: {
-			QueueName: sqs.dlqName,
-		},
-		alarmActions: [dlqAlarmTopic.arn],
-	});
-}
 
 // --- Exports ---
 

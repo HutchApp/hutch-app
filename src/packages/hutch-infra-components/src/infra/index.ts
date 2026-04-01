@@ -5,4 +5,8 @@ export { HutchLambda } from "./hutch-lambda";
 export type { LambdaPolicy } from "./hutch-lambda";
 export { HutchAPIGateway } from "./hutch-api-gateway";
 export { HutchDynamoDBAccess } from "./hutch-dynamodb-access";
+export { HutchEventBridgePublishAccess } from "./hutch-eventbridge-publish-access";
+export { HutchSqsSendAccess } from "./hutch-sqs-send-access";
+export { HutchCertificate } from "./hutch-certificate";
+export { HutchDlqAlarm } from "./hutch-dlq-alarm";
 export { SQSBackedLambda } from "./sqs-backed-lambda";

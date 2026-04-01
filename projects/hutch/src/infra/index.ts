@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import assert from "node:assert";
-import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess } from "@packages/hutch-infra-components/infra";
+import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBridgePublishAccess } from "@packages/hutch-infra-components/infra";
 import { DomainRegistration } from "./domain-registration";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
@@ -94,19 +94,7 @@ const hutch = new HutchLambda("hutch", {
 	},
 	policies: [
 		...dynamodb.policies,
-		{
-			name: "hutch-eventbridge-publish",
-			policy: eventBusArn.apply((arn) =>
-				JSON.stringify({
-					Version: "2012-10-17",
-					Statement: [{
-						Effect: "Allow",
-						Action: ["events:PutEvents"],
-						Resource: [arn],
-					}],
-				}),
-			),
-		},
+		...new HutchEventBridgePublishAccess("hutch-eventbridge-publish", { eventBusArn }).policies,
 	],
 });
 

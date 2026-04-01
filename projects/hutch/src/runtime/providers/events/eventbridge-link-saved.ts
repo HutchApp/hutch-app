@@ -2,7 +2,7 @@ import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import {
 	LINK_SAVED_SOURCE,
 	LINK_SAVED_DETAIL_TYPE,
-} from "save-link/save-link";
+} from "@packages/hutch-infra-components";
 import type { PublishLinkSaved } from "./publish-link-saved.types";
 
 export function initEventBridgeLinkSaved(deps: {
