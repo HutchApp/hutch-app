@@ -25,7 +25,7 @@ export function initCreateDeepseekMessage(deps: {
 		];
 		const response = await deps.createChatCompletion({
 			model: "deepseek-chat",
-			max_tokens: params.max_tokens,
+			max_tokens: Math.min(params.max_tokens, 8192),
 			messages,
 		});
 		const text = response.choices[0]?.message?.content?.trim();

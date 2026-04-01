@@ -62,6 +62,25 @@ describe("initCreateDeepseekMessage", () => {
 		})).rejects.toThrow("DeepSeek response missing message content");
 	});
 
+	it("should cap max_tokens to 8192", async () => {
+		const createChatCompletion = jest.fn().mockResolvedValue({
+			choices: [{ message: { content: "summary" } }],
+			usage: { prompt_tokens: 10, completion_tokens: 5 },
+		});
+
+		const createMessage = initCreateDeepseekMessage({ createChatCompletion });
+		await createMessage({
+			model: "any",
+			max_tokens: 10240,
+			system: "system",
+			messages: [{ role: "user", content: "hello" }],
+		});
+
+		expect(createChatCompletion).toHaveBeenCalledWith(
+			expect.objectContaining({ max_tokens: 8192 }),
+		);
+	});
+
 	it("should throw when response has no usage data", async () => {
 		const createChatCompletion = jest.fn().mockResolvedValue({
 			choices: [{ message: { content: "some text" } }],
