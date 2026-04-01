@@ -31,6 +31,7 @@ export function createTestApp(options?: {
 	publishLinkSaved?: PublishLinkSaved;
 	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
+	logError?: (message: string, error?: Error) => void;
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
@@ -51,7 +52,7 @@ export function createTestApp(options?: {
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",
-		logError: () => {},
+		logError: options?.logError ?? (() => {}),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	});

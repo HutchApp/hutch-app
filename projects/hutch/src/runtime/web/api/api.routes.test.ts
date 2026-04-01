@@ -255,7 +255,7 @@ describe("POST /queue (Siren save article)", () => {
 		expect(response.status).toBe(406);
 	});
 
-	it("returns 422 when article parsing fails", async () => {
+	it("returns 201 with fallback article when fetch fails", async () => {
 		const fetchHtml = async (_url: string): Promise<undefined> => undefined;
 		const testApp = createTestApp({ fetchHtml });
 		const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
@@ -271,8 +271,8 @@ describe("POST /queue (Siren save article)", () => {
 			.set("Content-Type", "application/json")
 			.send({ url: "https://example.com/broken" });
 
-		expect(response.status).toBe(422);
-		expect(response.body.properties.code).toBe("parse-failed");
+		expect(response.status).toBe(201);
+		expect(response.body.properties.title).toBe("Article from example.com");
 	});
 
 	it("includes delete action on saved article", async () => {

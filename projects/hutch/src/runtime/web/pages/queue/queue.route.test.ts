@@ -615,7 +615,7 @@ describe("Queue routes", () => {
 	});
 
 	describe("Parse failure", () => {
-		it("should show error when article parsing fails", async () => {
+		it("should save article without content when fetch fails", async () => {
 			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
 			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
@@ -625,9 +625,60 @@ describe("Queue routes", () => {
 				.type("form")
 				.send({ url: "https://example.com/broken" });
 
-			expect(response.status).toBe(422);
-			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-save-error]")?.textContent).toContain("Could not parse article");
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should show fallback title from hostname when fetch fails", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			expect(doc.querySelector("[data-test-article-title]")?.textContent).toContain("Article from example.com");
+		});
+
+		it("should show no-content template on read page when fetch fails", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-no-content]")).not.toBeNull();
+		});
+
+		it("should log error when article parsing fails", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const logError = jest.fn();
+			const { app, auth } = createTestApp({ fetchHtml, logError });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			expect(logError).toHaveBeenCalledWith(
+				expect.stringContaining("[FetchArticle]"),
+			);
 		});
 	});
 

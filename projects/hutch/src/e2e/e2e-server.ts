@@ -6,7 +6,8 @@ import { initReadabilityParser } from '../runtime/providers/article-parser/reada
 const PORT = 3100
 const logger = HutchLogger.from(consoleLogger)
 
-const fetchHtml = initFetchHtml({ fetch: globalThis.fetch })
+const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }))
+const fetchHtml = initFetchHtml({ fetch: globalThis.fetch, logError })
 const { parseArticle } = initReadabilityParser({ fetchHtml })
 const { app } = createHutchApp({ parseArticle, appOrigin: `http://localhost:${PORT}` })
 

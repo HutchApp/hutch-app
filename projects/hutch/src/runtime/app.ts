@@ -33,7 +33,7 @@ function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
-	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch });
+	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch, logError });
 	const fetchConditional = initFetchConditional({ fetch: globalThis.fetch });
 	const staleTtlMs = 86400000;
 

@@ -53,7 +53,20 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	if (freshness.action === "new") {
 		const parseResult = await deps.parseArticle(url);
 		if (!parseResult.ok) {
-			return { ok: false, reason: parseResult.reason };
+			deps.logError(`[FetchArticle] Could not fetch ${url}: ${parseResult.reason}`);
+			const hostname = new URL(url).hostname;
+			const saved = await deps.saveArticle({
+				userId,
+				url,
+				metadata: {
+					title: `Article from ${hostname}`,
+					siteName: hostname,
+					excerpt: `Saved from ${hostname}.`,
+					wordCount: 0,
+				},
+				estimatedReadTime: calculateReadTime(0),
+			});
+			return { ok: true, saved };
 		}
 
 		const { article } = parseResult;
