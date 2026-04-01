@@ -23,22 +23,6 @@ async function getAccessToken({ clientId, clientSecret, refreshToken }) {
 	return JSON.parse(body).access_token;
 }
 
-async function getItemStatus({ extensionId, accessToken }) {
-	const response = await fetch(
-		`${CWS_API_BASE}/chromewebstore/v1.1/items/${extensionId}?projection=DRAFT`,
-		{
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
-				"x-goog-api-version": "2",
-			},
-		},
-	);
-
-	const body = await response.text();
-	assert.ok(response.ok, `CWS status check failed: ${response.status} ${body}`);
-	return JSON.parse(body);
-}
-
 async function uploadExtension({ extensionId, zipPath, accessToken }) {
 	const zipBuffer = fs.readFileSync(zipPath);
 
@@ -58,6 +42,14 @@ async function uploadExtension({ extensionId, zipPath, accessToken }) {
 	assert.ok(response.ok, `CWS upload failed: ${response.status} ${body}`);
 
 	const result = JSON.parse(body);
+
+	const notUpdatable = (result.itemError ?? []).some(
+		(e) => e.error_code === "ITEM_NOT_UPDATABLE",
+	);
+	if (notUpdatable) {
+		return { skipped: true };
+	}
+
 	assert.ok(
 		result.uploadState === "SUCCESS",
 		`CWS upload state: ${result.uploadState}. Errors: ${JSON.stringify(result.itemError ?? [])}`,
@@ -110,17 +102,13 @@ async function main() {
 	console.log("Refreshing OAuth2 access token...");
 	const accessToken = await getAccessToken({ clientId, clientSecret, refreshToken });
 
-	console.log("Checking extension status...");
-	const item = await getItemStatus({ extensionId, accessToken });
-	console.log(`Extension status: ${item.status}`);
+	console.log(`Uploading ${prodZip} to Chrome Web Store...`);
+	const uploadResult = await uploadExtension({ extensionId, zipPath, accessToken });
 
-	if (item.status === "PENDING_REVIEW") {
-		console.warn("Extension is currently pending review. Skipping upload — the previously submitted version is still being reviewed by Google.");
+	if (uploadResult.skipped) {
+		console.warn("Extension is not updatable (pending review or ready to publish). Skipping — the previously submitted version is still being processed by Google.");
 		process.exit(0);
 	}
-
-	console.log(`Uploading ${prodZip} to Chrome Web Store...`);
-	await uploadExtension({ extensionId, zipPath, accessToken });
 
 	console.log("Publishing extension...");
 	await publishExtension({ extensionId, accessToken });
