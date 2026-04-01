@@ -114,7 +114,13 @@ jobs:
   pipeline:
     # Display the project name instead of "pipeline" in the GitHub Actions UI
     name: ${{ matrix.project }}
-    if: needs.detect-projects.outputs.has-non-platform == 'true'
+    # Runs when platform deploy succeeds OR is skipped (platform not affected)
+    if: >-
+      always()
+      && needs.all-tests.result == 'success'
+      && needs.detect-projects.result == 'success'
+      && needs.deploy-platform.result != 'failure'
+      && needs.detect-projects.outputs.has-non-platform == 'true'
     # Waits for platform to finish first (shared infra must exist before app deploys)
     needs: [all-tests, detect-projects, deploy-platform]
     strategy:
