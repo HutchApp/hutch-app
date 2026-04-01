@@ -10,7 +10,7 @@ import {
 	LinkSavedEvent,
 	SummaryGeneratedEvent,
 } from "@packages/hutch-infra-components";
-import { getEnv } from "../require-env";
+import { requireEnv } from "../require-env";
 
 const config = new pulumi.Config();
 const platformStack = config.require("platformStack");
@@ -18,10 +18,8 @@ const alertEmail = config.require("alertEmail");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
 
-const anthropicApiKeyValue = getEnv("ANTHROPIC_API_KEY");
-const anthropicApiKey = anthropicApiKeyValue
-	? pulumi.secret(anthropicApiKeyValue)
-	: undefined;
+const anthropicApiKey = pulumi.secret(requireEnv("ANTHROPIC_API_KEY"));
+const deepseekApiKey = pulumi.secret(requireEnv("DEEPSEEK_API_KEY"));
 
 const platform = new pulumi.StackReference(platformStack);
 const eventBusName = platform.requireOutput("hutchEventBusName").apply(String);
@@ -63,7 +61,8 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
-		...(anthropicApiKey ? { ANTHROPIC_API_KEY: anthropicApiKey } : {}),
+		ANTHROPIC_API_KEY: anthropicApiKey,
+		DEEPSEEK_API_KEY: deepseekApiKey,
 		EVENT_BUS_NAME: eventBusName,
 	},
 	policies: [

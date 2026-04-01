@@ -1,11 +1,15 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import Anthropic from "@anthropic-ai/sdk";
+import Anthropic, { RateLimitError, APIError } from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { requireEnv } from "../require-env";
 import { initFindArticleContent } from "../save-link/find-article-content";
 import { initLinkSummariser } from "../generate-summary/link-summariser";
+import { initCreateMessageWithFallback } from "../generate-summary/create-message-with-fallback";
+import { initCreateDeepseekMessage } from "../generate-summary/create-deepseek-message";
+import type { CreateAiMessage } from "../generate-summary/article-summary.types";
 import { MAX_SUMMARY_LENGTH } from "../generate-summary/max-summary-length";
 import { initDynamoDbSummaryCache } from "../generate-summary/dynamodb-summary-cache";
 import { stripHtml } from "../generate-summary/strip-html";
@@ -13,10 +17,18 @@ import { initGenerateSummaryHandler } from "../generate-summary/generate-summary
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
+const deepseekApiKey = requireEnv("DEEPSEEK_API_KEY");
 const eventBusName = requireEnv("EVENT_BUS_NAME");
 
 const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
+const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com" });
+
+const claudeAdapter: CreateAiMessage = (params) => anthropicClient.messages.create(params);
+
+const deepseekAdapter = initCreateDeepseekMessage({
+	createChatCompletion: (params) => deepseekClient.chat.completions.create(params),
+});
 
 const { findArticleContent } = initFindArticleContent({
 	client,
@@ -28,8 +40,17 @@ const summaryCache = initDynamoDbSummaryCache({
 	tableName: articlesTable,
 });
 
+const createMessage = initCreateMessageWithFallback({
+	primary: claudeAdapter,
+	fallback: deepseekAdapter,
+	isQuotaError: (error) =>
+		error instanceof RateLimitError ||
+		(error instanceof APIError && error.status === 529),
+	logger: consoleLogger,
+});
+
 const { summarizeArticle } = initLinkSummariser({
-	createMessage: (params) => anthropicClient.messages.create(params),
+	createMessage,
 	logger: consoleLogger,
 	cleanContent: stripHtml,
 	isTooShortToSummarize: (cleanedText) => {
