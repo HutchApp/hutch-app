@@ -20,42 +20,50 @@ const fallbackResult: Awaited<ReturnType<CreateAiMessage>> = {
 };
 
 describe("initCreateMessageWithFallback", () => {
-	it("should return primary result when primary succeeds", async () => {
+	it("should log primary start/end and return primary result when primary succeeds", async () => {
 		const primary = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockResolvedValue(primaryResult);
 		const fallback = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>();
+		const logger = { ...noopLogger, info: jest.fn() };
 
 		const createMessage = initCreateMessageWithFallback({
 			primary,
 			fallback,
-			isQuotaError: () => false,
-			logger: noopLogger,
+			shouldFallback: () => false,
+			logger,
 		});
 
 		const result = await createMessage(messageParams);
 
 		expect(result).toEqual(primaryResult);
 		expect(fallback).not.toHaveBeenCalled();
+		expect(logger.info).toHaveBeenCalledWith("[summarize] primary AI starting");
+		expect(logger.info).toHaveBeenCalledWith("[summarize] primary AI completed");
 	});
 
-	it("should call fallback when primary throws a quota error", async () => {
-		const quotaError = new Error("rate limited");
-		const primary = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(quotaError);
+	it("should log primary start, error, fallback start/end when falling back", async () => {
+		const apiError = new Error("overloaded");
+		const primary = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(apiError);
 		const fallback = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockResolvedValue(fallbackResult);
+		const logger = { ...noopLogger, info: jest.fn() };
 
 		const createMessage = initCreateMessageWithFallback({
 			primary,
 			fallback,
-			isQuotaError: (error) => error === quotaError,
-			logger: noopLogger,
+			shouldFallback: () => true,
+			logger,
 		});
 
 		const result = await createMessage(messageParams);
 
 		expect(result).toEqual(fallbackResult);
 		expect(fallback).toHaveBeenCalledWith(messageParams);
+		expect(logger.info).toHaveBeenCalledWith("[summarize] primary AI starting");
+		expect(logger.info).toHaveBeenCalledWith("[summarize] primary AI error, falling back", apiError);
+		expect(logger.info).toHaveBeenCalledWith("[summarize] fallback AI starting");
+		expect(logger.info).toHaveBeenCalledWith("[summarize] fallback AI completed");
 	});
 
-	it("should propagate non-quota errors without calling fallback", async () => {
+	it("should propagate errors when shouldFallback returns false", async () => {
 		const otherError = new Error("network failure");
 		const primary = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(otherError);
 		const fallback = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>();
@@ -63,7 +71,7 @@ describe("initCreateMessageWithFallback", () => {
 		const createMessage = initCreateMessageWithFallback({
 			primary,
 			fallback,
-			isQuotaError: () => false,
+			shouldFallback: () => false,
 			logger: noopLogger,
 		});
 
@@ -72,15 +80,15 @@ describe("initCreateMessageWithFallback", () => {
 	});
 
 	it("should propagate fallback errors when fallback also throws", async () => {
-		const quotaError = new Error("rate limited");
+		const apiError = new Error("rate limited");
 		const fallbackError = new Error("fallback also failed");
-		const primary = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(quotaError);
+		const primary = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(apiError);
 		const fallback = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(fallbackError);
 
 		const createMessage = initCreateMessageWithFallback({
 			primary,
 			fallback,
-			isQuotaError: (error) => error === quotaError,
+			shouldFallback: (error: unknown) => error === apiError,
 			logger: noopLogger,
 		});
 

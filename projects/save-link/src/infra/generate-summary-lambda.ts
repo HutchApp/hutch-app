@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import Anthropic, { RateLimitError, APIError } from "@anthropic-ai/sdk";
+import Anthropic, { APIError } from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
@@ -43,9 +43,7 @@ const summaryCache = initDynamoDbSummaryCache({
 const createMessage = initCreateMessageWithFallback({
 	primary: claudeAdapter,
 	fallback: deepseekAdapter,
-	isQuotaError: (error) =>
-		error instanceof RateLimitError ||
-		(error instanceof APIError && error.status === 529),
+	shouldFallback: (error) => error instanceof APIError,
 	logger: consoleLogger,
 });
 

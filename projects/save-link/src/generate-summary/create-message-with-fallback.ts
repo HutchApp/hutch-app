@@ -4,16 +4,22 @@ import type { CreateAiMessage } from "./article-summary.types";
 export function initCreateMessageWithFallback(deps: {
 	primary: CreateAiMessage;
 	fallback: CreateAiMessage;
-	isQuotaError: (error: unknown) => boolean;
+	shouldFallback: (error: unknown) => boolean;
 	logger: HutchLogger;
 }): CreateAiMessage {
 	return async (params) => {
 		try {
-			return await deps.primary(params);
+			deps.logger.info("[summarize] primary AI starting");
+			const result = await deps.primary(params);
+			deps.logger.info("[summarize] primary AI completed");
+			return result;
 		} catch (error) {
-			if (deps.isQuotaError(error)) {
-				deps.logger.info("[summarize] primary AI quota exceeded, falling back");
-				return deps.fallback(params);
+			if (deps.shouldFallback(error)) {
+				deps.logger.info("[summarize] primary AI error, falling back", error);
+				deps.logger.info("[summarize] fallback AI starting");
+				const result = await deps.fallback(params);
+				deps.logger.info("[summarize] fallback AI completed");
+				return result;
 			}
 			throw error;
 		}
