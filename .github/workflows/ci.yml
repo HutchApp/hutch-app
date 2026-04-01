@@ -47,6 +47,14 @@ jobs:
   detect-projects:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
+      PULUMI_STACK: staging
+      PULUMI_CONFIG_PASSPHRASE: ''
     # Expose detection results so downstream jobs can conditionally run
     outputs:
       platform-affected: ${{ steps.detect.outputs.platform-affected }}
@@ -80,15 +88,44 @@ jobs:
           AFFECTED=$(pnpm nx show projects --affected --json)
           echo "Affected projects: $AFFECTED"
 
-          # Dynamically discover all projects that have a "deploy" target in project.json
-          # This avoids maintaining a hardcoded list when new deployable projects are added
+          # Dynamically discover all projects that have a "deploy" target
           DEPLOYABLE=$(pnpm nx show projects --with-target deploy --json)
-          # Intersect: keep only projects that are both affected AND deployable
-          PROJECTS=$(echo "$AFFECTED" "$DEPLOYABLE" | jq -s '.[0] as $a | .[1] | map(select(. as $p | $a | index($p)))')
-          # Platform deploys first (shared infra), so separate it from the rest
+
+          # Intersect: projects that are both affected AND deployable
+          ALREADY_DEPLOY=$(echo "$AFFECTED" "$DEPLOYABLE" | jq -s '.[0] as $a | .[1] | map(select(. as $p | $a | index($p)))')
+          echo "Code-affected deployable: $ALREADY_DEPLOY"
+
+          # Deployable projects NOT in the affected list — check for infra drift
+          UNCHECKED=$(echo "$DEPLOYABLE" "$ALREADY_DEPLOY" | jq -s '.[0] as $d | .[1] as $a | $d | map(select(. as $p | $a | index($p) | not))')
+          echo "Checking infra drift for: $UNCHECKED"
+
+          # Compile dependencies so check-infra can evaluate Pulumi programs
+          UNCHECKED_CSV=$(echo "$UNCHECKED" | jq -r 'join(",")')
+          if [ -n "$UNCHECKED_CSV" ]; then
+            pnpm nx run-many --target=compile --projects="$UNCHECKED_CSV" 2>&1 || true
+          fi
+
+          # Run check-infra for each unchecked project, detect drift from pulumi output
+          DRIFTED='[]'
+          for project in $(echo "$UNCHECKED" | jq -r '.[]'); do
+            echo "::group::check-infra $project"
+            INFRA_OUTPUT=$(pnpm nx run "$project:check-infra" 2>&1) || true
+            echo "$INFRA_OUTPUT"
+            if echo "$INFRA_OUTPUT" | grep -qE 'to (update|create|delete|replace)'; then
+              echo "Drift detected in: $project"
+              DRIFTED=$(echo "$DRIFTED" | jq --arg p "$project" '. + [$p]')
+            else
+              echo "No drift in: $project"
+            fi
+            echo "::endgroup::"
+          done
+          echo "Drifted projects: $DRIFTED"
+
+          # Final deploy list: code-affected + infra-drifted
+          PROJECTS=$(echo "$ALREADY_DEPLOY" "$DRIFTED" | jq -s '.[0] + .[1] | unique')
           NON_PLATFORM=$(echo "$PROJECTS" | jq -c '[.[] | select(. != "platform")]')
 
-          echo "Deployable affected: $PROJECTS"
+          echo "Final deploy list: $PROJECTS"
           echo "Non-platform: $NON_PLATFORM"
 
           # Set outputs for downstream jobs to use in their `if:` conditions

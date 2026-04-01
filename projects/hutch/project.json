@@ -19,7 +19,7 @@
       "options": { "cwd": "{projectRoot}" }
     },
     "check": {
-      "command": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+      "command": "pnpm lint && pnpm test-with-coverage",
       "options": { "cwd": "{projectRoot}" }
     },
     "test": {},

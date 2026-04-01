@@ -1,4 +1,9 @@
 {
   "name": "save-link",
-  "targets": {}
+  "targets": {
+    "check": {
+      "command": "pnpm lint && pnpm test",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
 }

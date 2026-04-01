@@ -9,7 +9,7 @@
       ]
     },
     "check": {
-      "command": "pnpm check-infra",
+      "command": "echo 'Infra-only project - No check step'",
       "options": { "cwd": "{projectRoot}" }
     }
   }

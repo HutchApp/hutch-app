@@ -16,7 +16,7 @@
     "test:e2e": "HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js && node --test dist/e2e/login-flow/run.e2e-local.js",
     "deploy": "nx run deploy",
     "post-deploy": "echo 'No post-deploy steps'",
-    "check-infra": "if [ \"$CLAUDECODE\" = 1 ]; then echo 'Skipping check-infra in Claude Code environment'; else PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"; fi",
+    "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"",
     "check": "nx run firefox-extension:check",
     "ext:run": "HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js && web-ext run --source-dir dist-extension-compiled"
   },
