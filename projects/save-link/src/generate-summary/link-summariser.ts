@@ -33,13 +33,14 @@ export function initLinkSummariser(deps: {
 		}
 
 		const cleanedContent = deps.cleanContent(params.textContent);
+		const visibleLength = cleanedContent.replace(/\s/g, "").length;
 
 		if (deps.isTooShortToSummarize(cleanedContent)) {
-			deps.logger.info("[summarize] content too short, skipping", { url: params.url });
+			deps.logger.info("[summarize] content too short, skipping", { url: params.url, visibleLength });
 			return null;
 		}
 
-		deps.logger.info("[summarize] cache miss, calling AI", { url: params.url });
+		deps.logger.info("[summarize] cache miss, calling AI", { url: params.url, visibleLength });
 
 		const response = await deps.createMessage({
 			model: "claude-sonnet-4-6",
