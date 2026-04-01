@@ -4,9 +4,8 @@ import {
 	HutchLambda,
 	HutchDynamoDBAccess,
 	HutchEventBridgePublishAccess,
-	HutchSqsSendAccess,
-	HutchDlqAlarm,
-	SQSBackedLambda,
+	HutchSQS,
+	HutchSQSBackedLambda,
 } from "@packages/hutch-infra-components/infra";
 import {
 	LINK_SAVED_SOURCE,
@@ -31,7 +30,21 @@ const platform = new pulumi.StackReference(platformStack);
 const eventBusName = platform.requireOutput("hutchEventBusName").apply(String);
 const eventBusArn = platform.requireOutput("hutchEventBusArn").apply(String);
 
-// --- GenerateSummary handler (created first — link-saved needs its queue URL) ---
+// --- Queues ---
+
+const generateSummaryQueue = new HutchSQS("generate-summary", {
+	visibilityTimeoutSeconds: 300,
+});
+
+const linkSavedQueue = new HutchSQS("link-saved", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const summaryGeneratedQueue = new HutchSQS("summary-generated", {
+	visibilityTimeoutSeconds: 60,
+});
+
+// --- GenerateSummary handler ---
 
 const generateSummaryDynamodb = new HutchDynamoDBAccess("generate-summary-dynamodb", {
 	tables: [{ arn: articlesTableArn, includeIndexes: false }],
@@ -60,10 +73,10 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	],
 });
 
-const generateSummarySqs = new SQSBackedLambda("generate-summary", {
+new HutchSQSBackedLambda("generate-summary", {
 	lambda: generateSummaryLambda,
-	visibilityTimeoutSeconds: 300,
-	batchSize: 1,
+	queue: generateSummaryQueue,
+	alertEmailDLQEntry: alertEmail,
 });
 
 // --- LinkSaved handler ---
@@ -86,26 +99,26 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
-		GENERATE_SUMMARY_QUEUE_URL: generateSummarySqs.queueUrl,
+		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
 	},
 	policies: [
 		...linkSavedDynamodb.policies,
-		...new HutchSqsSendAccess("link-saved-sqs-send", { queueArn: generateSummarySqs.queueArn }).policies,
+		...generateSummaryQueue.policies,
 	],
 });
 
-const linkSavedSqs = new SQSBackedLambda("link-saved", {
+new HutchSQSBackedLambda("link-saved", {
 	lambda: linkSavedLambda,
-	visibilityTimeoutSeconds: 60,
-	batchSize: 1,
+	queue: linkSavedQueue,
+	alertEmailDLQEntry: alertEmail,
 });
 
 new HutchEventRule("link-saved", {
 	eventBusName,
 	source: LINK_SAVED_SOURCE,
 	detailType: LINK_SAVED_DETAIL_TYPE,
-	targetQueueArn: linkSavedSqs.queueArn,
-	targetQueueUrl: linkSavedSqs.queueUrl,
+	targetQueueArn: linkSavedQueue.queueArn,
+	targetQueueUrl: linkSavedQueue.queueUrl,
 });
 
 // --- SummaryGenerated handler ---
@@ -125,36 +138,25 @@ const summaryGeneratedLambda = new HutchLambda("summary-generated", {
 	policies: [],
 });
 
-const summaryGeneratedSqs = new SQSBackedLambda("summary-generated", {
+new HutchSQSBackedLambda("summary-generated", {
 	lambda: summaryGeneratedLambda,
-	visibilityTimeoutSeconds: 60,
-	batchSize: 1,
+	queue: summaryGeneratedQueue,
+	alertEmailDLQEntry: alertEmail,
 });
 
 new HutchEventRule("summary-generated", {
 	eventBusName,
 	source: GLOBAL_SUMMARY_GENERATED_SOURCE,
 	detailType: GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
-	targetQueueArn: summaryGeneratedSqs.queueArn,
-	targetQueueUrl: summaryGeneratedSqs.queueUrl,
-});
-
-// --- DLQ Alarms ---
-
-new HutchDlqAlarm("save-link", {
-	queues: [
-		{ name: "link-saved", dlqName: linkSavedSqs.dlqName },
-		{ name: "generate-summary", dlqName: generateSummarySqs.dlqName },
-		{ name: "summary-generated", dlqName: summaryGeneratedSqs.dlqName },
-	],
-	alertEmail,
+	targetQueueArn: summaryGeneratedQueue.queueArn,
+	targetQueueUrl: summaryGeneratedQueue.queueUrl,
 });
 
 // --- Exports ---
 
-export const linkSavedQueueUrl = linkSavedSqs.queueUrl;
-export const linkSavedDlqUrl = linkSavedSqs.dlqUrl;
-export const generateSummaryQueueUrl = generateSummarySqs.queueUrl;
-export const generateSummaryDlqUrl = generateSummarySqs.dlqUrl;
-export const summaryGeneratedQueueUrl = summaryGeneratedSqs.queueUrl;
-export const summaryGeneratedDlqUrl = summaryGeneratedSqs.dlqUrl;
+export const linkSavedQueueUrl = linkSavedQueue.queueUrl;
+export const linkSavedDlqUrl = linkSavedQueue.dlqUrl;
+export const generateSummaryQueueUrl = generateSummaryQueue.queueUrl;
+export const generateSummaryDlqUrl = generateSummaryQueue.dlqUrl;
+export const summaryGeneratedQueueUrl = summaryGeneratedQueue.queueUrl;
+export const summaryGeneratedDlqUrl = summaryGeneratedQueue.dlqUrl;
