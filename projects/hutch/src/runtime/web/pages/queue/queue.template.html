@@ -25,11 +25,11 @@
       <div class="queue__list" data-test-article-list>
         {{#each articles}}
         <div class="queue-article{{unreadClass}}" data-test-article="{{id}}">
-          {{#if imageUrl}}<a href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} tabindex="-1" aria-hidden="true"><img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy"></a>{{/if}}
+          {{#if imageUrl}}<a href="{{linkUrl}}" tabindex="-1" aria-hidden="true"><img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy"></a>{{/if}}
           <div class="queue-article__content">
             <div class="queue-article__title-row">
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
-              <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} data-test-article-title>{{title}}</a>
+              <a class="queue-article__title" href="{{linkUrl}}" data-test-article-title>{{title}}</a>
             </div>
             <div class="queue-article__meta">
               {{#if siteName}}<a class="queue-article__url" href="{{url}}" target="_blank" rel="noopener" data-test-article-url>{{siteName}}</a>{{/if}}

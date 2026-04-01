@@ -665,6 +665,22 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-no-content]")).not.toBeNull();
 		});
 
+		it("should link article title to reader view when article has no content", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const titleLink = doc.querySelector("[data-test-article-title]");
+			expect(titleLink?.getAttribute("href")).toContain("/read");
+		});
+
 		it("should log error when article parsing fails", async () => {
 			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
 			const logError = jest.fn();

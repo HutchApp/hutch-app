@@ -16,7 +16,6 @@ interface ActionDisplayModel extends ArticleAction {
 
 interface ArticleDisplayModel extends QueueArticleViewModel {
 	linkUrl: string;
-	isExternalLink: boolean;
 	unreadClass: string;
 	actions: ActionDisplayModel[];
 }
@@ -34,8 +33,7 @@ function toActionDisplayModel(action: ArticleAction): ActionDisplayModel {
 function toArticleDisplayModel(article: QueueArticleViewModel): ArticleDisplayModel {
 	return {
 		...article,
-		linkUrl: article.hasContent ? `/queue/${article.id}/read` : article.url,
-		isExternalLink: !article.hasContent,
+		linkUrl: `/queue/${article.id}/read`,
 		unreadClass: article.isUnread ? " queue-article--unread" : "",
 		actions: article.actions.map(toActionDisplayModel),
 	};
