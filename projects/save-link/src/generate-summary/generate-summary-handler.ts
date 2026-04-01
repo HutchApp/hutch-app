@@ -3,9 +3,8 @@ import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import {
-	GenerateGlobalSummaryCommandSchema,
-	GLOBAL_SUMMARY_GENERATED_SOURCE,
-	GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
+	GenerateSummaryCommand,
+	SummaryGeneratedEvent,
 } from "./index";
 import type { SummarizeArticle } from "./article-summary.types";
 import type { FindArticleContent } from "../save-link/find-article-content";
@@ -20,7 +19,7 @@ export function initGenerateSummaryHandler(deps: {
 
 	return async (event) => {
 		for (const record of event.Records) {
-			const command = GenerateGlobalSummaryCommandSchema.parse(
+			const command = GenerateSummaryCommand.detailSchema.parse(
 				JSON.parse(record.body),
 			);
 
@@ -40,8 +39,8 @@ export function initGenerateSummaryHandler(deps: {
 			}
 
 			await publishEvent({
-				source: GLOBAL_SUMMARY_GENERATED_SOURCE,
-				detailType: GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
+				source: SummaryGeneratedEvent.source,
+				detailType: SummaryGeneratedEvent.detailType,
 				detail: JSON.stringify({
 					url: command.url,
 					inputTokens: result.inputTokens,

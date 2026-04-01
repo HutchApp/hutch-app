@@ -3,6 +3,9 @@ import type { HutchLambda } from "./hutch-lambda";
 import type { HutchSQS } from "./hutch-sqs";
 
 export class HutchSQSBackedLambda {
+	public readonly queueArn: HutchSQS["queueArn"];
+	public readonly queueUrl: HutchSQS["queueUrl"];
+
 	constructor(
 		name: string,
 		args: {
@@ -11,6 +14,8 @@ export class HutchSQSBackedLambda {
 			alertEmailDLQEntry: string;
 		},
 	) {
+		this.queueArn = args.queue.queueArn;
+		this.queueUrl = args.queue.queueUrl;
 		new aws.iam.RolePolicy(`${name}-sqs-recv`, {
 			name: `${name}-sqs-recv`,
 			role: args.lambda.role.name,

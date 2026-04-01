@@ -2,7 +2,7 @@ import assert from "node:assert";
 import type { SQSHandler } from "aws-lambda";
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { HutchLogger } from "@packages/hutch-logger";
-import { LinkSavedDetailSchema } from "./index";
+import { LinkSavedEvent } from "./index";
 import type { FindArticleContent } from "./find-article-content";
 
 export function initLinkSavedHandler(deps: {
@@ -16,7 +16,7 @@ export function initLinkSavedHandler(deps: {
 	return async (event) => {
 		for (const record of event.Records) {
 			const envelope = JSON.parse(record.body);
-			const detail = LinkSavedDetailSchema.parse(envelope.detail);
+			const detail = LinkSavedEvent.detailSchema.parse(envelope.detail);
 
 			logger.info("[LinkSaved] processing", { url: detail.url, userId: detail.userId });
 

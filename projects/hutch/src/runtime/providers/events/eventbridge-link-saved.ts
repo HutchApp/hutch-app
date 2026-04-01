@@ -1,8 +1,5 @@
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
-import {
-	LINK_SAVED_SOURCE,
-	LINK_SAVED_DETAIL_TYPE,
-} from "@packages/hutch-infra-components";
+import { LinkSavedEvent } from "@packages/hutch-infra-components";
 import type { PublishLinkSaved } from "./publish-link-saved.types";
 
 export function initEventBridgeLinkSaved(deps: {
@@ -12,8 +9,8 @@ export function initEventBridgeLinkSaved(deps: {
 
 	const publishLinkSaved: PublishLinkSaved = async (params) => {
 		await publishEvent({
-			source: LINK_SAVED_SOURCE,
-			detailType: LINK_SAVED_DETAIL_TYPE,
+			source: LinkSavedEvent.source,
+			detailType: LinkSavedEvent.detailType,
 			detail: JSON.stringify({
 				url: params.url,
 				userId: params.userId,

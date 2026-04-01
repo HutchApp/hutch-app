@@ -1,5 +1,6 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
+import type { HutchSQSBackedLambda } from "./hutch-sqs-backed-lambda";
 
 export class HutchEventBus {
 	public readonly eventBusName: pulumi.Output<string>;
@@ -48,16 +49,17 @@ export class HutchEventBus {
 	}
 
 	subscribe(
-		name: string,
-		target: { queueArn: pulumi.Input<string>; queueUrl: pulumi.Input<string> },
-		filter: { source: string; detailType: string },
+		event: { name: string; source: string; detailType: string },
+		target: HutchSQSBackedLambda,
 	): void {
+		const { name } = event;
+
 		const rule = new aws.cloudwatch.EventRule(`${name}-rule`, {
 			name: `${name}-rule`,
 			eventBusName: this.eventBusName,
 			eventPattern: JSON.stringify({
-				source: [filter.source],
-				"detail-type": [filter.detailType],
+				source: [event.source],
+				"detail-type": [event.detailType],
 			}),
 		});
 

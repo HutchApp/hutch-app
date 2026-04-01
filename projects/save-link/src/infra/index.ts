@@ -7,10 +7,8 @@ import {
 	HutchSQSBackedLambda,
 } from "@packages/hutch-infra-components/infra";
 import {
-	LINK_SAVED_SOURCE,
-	LINK_SAVED_DETAIL_TYPE,
-	GLOBAL_SUMMARY_GENERATED_SOURCE,
-	GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
+	LinkSavedEvent,
+	SummaryGeneratedEvent,
 } from "@packages/hutch-infra-components";
 import { getEnv } from "../require-env";
 
@@ -109,16 +107,13 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	],
 });
 
-new HutchSQSBackedLambda("link-saved", {
+const linkSavedLambdaWithSQS = new HutchSQSBackedLambda("link-saved", {
 	lambda: linkSavedLambda,
 	queue: linkSavedQueue,
 	alertEmailDLQEntry: alertEmail,
 });
 
-eventBus.subscribe("link-saved", linkSavedQueue, {
-	source: LINK_SAVED_SOURCE,
-	detailType: LINK_SAVED_DETAIL_TYPE,
-});
+eventBus.subscribe(LinkSavedEvent, linkSavedLambdaWithSQS);
 
 // --- SummaryGenerated handler ---
 
@@ -137,16 +132,13 @@ const summaryGeneratedLambda = new HutchLambda("summary-generated", {
 	policies: [],
 });
 
-new HutchSQSBackedLambda("summary-generated", {
+const summaryGeneratedLambdaWithSQS = new HutchSQSBackedLambda("summary-generated", {
 	lambda: summaryGeneratedLambda,
 	queue: summaryGeneratedQueue,
 	alertEmailDLQEntry: alertEmail,
 });
 
-eventBus.subscribe("summary-generated", summaryGeneratedQueue, {
-	source: GLOBAL_SUMMARY_GENERATED_SOURCE,
-	detailType: GLOBAL_SUMMARY_GENERATED_DETAIL_TYPE,
-});
+eventBus.subscribe(SummaryGeneratedEvent, summaryGeneratedLambdaWithSQS);
 
 // --- Exports ---
 
