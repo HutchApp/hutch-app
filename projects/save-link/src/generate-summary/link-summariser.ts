@@ -8,18 +8,20 @@ import type {
 	SaveCachedSummary,
 	SummarizeArticle,
 } from "./article-summary.types";
+import { MAX_SUMMARY_LENGTH } from "./max-summary-length";
 
 const SUMMARIZE_PROMPT = readFileSync(
 	join(__dirname, "summarize-prompt.md"),
 	"utf-8",
-);
+).replace("{{MAX_SUMMARY_LENGTH}}", String(MAX_SUMMARY_LENGTH));
 
-export function initClaudeSummarizer(deps: {
+export function initLinkSummariser(deps: {
 	createMessage: CreateAiMessage;
 	findCachedSummary: FindCachedSummary;
 	saveCachedSummary: SaveCachedSummary;
 	logger: HutchLogger;
 	cleanContent: (html: string) => string;
+	isTooShortToSummarize: (cleanedText: string) => boolean;
 }): { summarizeArticle: SummarizeArticle } {
 	const summarizeArticle: SummarizeArticle = async (params) => {
 		deps.logger.info("[summarize] starting", { url: params.url });
@@ -30,8 +32,14 @@ export function initClaudeSummarizer(deps: {
 			return null;
 		}
 
-		deps.logger.info("[summarize] cache miss, calling Claude", { url: params.url });
 		const cleanedContent = deps.cleanContent(params.textContent);
+
+		if (deps.isTooShortToSummarize(cleanedContent)) {
+			deps.logger.info("[summarize] content too short, skipping", { url: params.url });
+			return null;
+		}
+
+		deps.logger.info("[summarize] cache miss, calling AI", { url: params.url });
 
 		const response = await deps.createMessage({
 			model: "claude-sonnet-4-6",
@@ -46,7 +54,7 @@ export function initClaudeSummarizer(deps: {
 						properties: {
 							summary: {
 								type: "string",
-								description: "Plain text summary, max 750 characters",
+								description: `Plain text summary, max ${MAX_SUMMARY_LENGTH} characters`,
 							},
 						},
 						required: ["summary"],

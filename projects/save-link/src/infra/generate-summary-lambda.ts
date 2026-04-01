@@ -5,7 +5,8 @@ import { consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { requireEnv } from "../require-env";
 import { initFindArticleContent } from "../save-link/find-article-content";
-import { initClaudeSummarizer } from "../generate-summary/claude-summarizer";
+import { initLinkSummariser } from "../generate-summary/link-summariser";
+import { MAX_SUMMARY_LENGTH } from "../generate-summary/max-summary-length";
 import { initDynamoDbSummaryCache } from "../generate-summary/dynamodb-summary-cache";
 import { stripHtml } from "../generate-summary/strip-html";
 import { initGenerateSummaryHandler } from "../generate-summary/generate-summary-handler";
@@ -27,10 +28,14 @@ const summaryCache = initDynamoDbSummaryCache({
 	tableName: articlesTable,
 });
 
-const { summarizeArticle } = initClaudeSummarizer({
+const { summarizeArticle } = initLinkSummariser({
 	createMessage: (params) => anthropicClient.messages.create(params),
 	logger: consoleLogger,
 	cleanContent: stripHtml,
+	isTooShortToSummarize: (cleanedText) => {
+		const visibleLength = cleanedText.replace(/\s/g, "").length;
+		return visibleLength <= MAX_SUMMARY_LENGTH * 3;
+	},
 	...summaryCache,
 });
 
