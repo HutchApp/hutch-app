@@ -17,9 +17,14 @@ export function initCreateMessageWithFallback(deps: {
 			if (deps.shouldFallback(error)) {
 				deps.logger.info("[summarize] primary AI error, falling back", error);
 				deps.logger.info("[summarize] fallback AI starting");
-				const result = await deps.fallback(params);
-				deps.logger.info("[summarize] fallback AI completed");
-				return result;
+				try {
+					const result = await deps.fallback(params);
+					deps.logger.info("[summarize] fallback AI completed");
+					return result;
+				} catch (fallbackError) {
+					deps.logger.error("[summarize] fallback AI failed", fallbackError);
+					throw fallbackError;
+				}
 			}
 			throw error;
 		}

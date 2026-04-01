@@ -79,19 +79,21 @@ describe("initCreateMessageWithFallback", () => {
 		expect(fallback).not.toHaveBeenCalled();
 	});
 
-	it("should propagate fallback errors when fallback also throws", async () => {
+	it("should log and re-throw when fallback also throws", async () => {
 		const apiError = new Error("rate limited");
 		const fallbackError = new Error("fallback also failed");
 		const primary = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(apiError);
 		const fallback = jest.fn<ReturnType<CreateAiMessage>, Parameters<CreateAiMessage>>().mockRejectedValue(fallbackError);
+		const logger = { ...noopLogger, info: jest.fn(), error: jest.fn() };
 
 		const createMessage = initCreateMessageWithFallback({
 			primary,
 			fallback,
 			shouldFallback: (error: unknown) => error === apiError,
-			logger: noopLogger,
+			logger,
 		});
 
 		await expect(createMessage(messageParams)).rejects.toThrow("fallback also failed");
+		expect(logger.error).toHaveBeenCalledWith("[summarize] fallback AI failed", fallbackError);
 	});
 });

@@ -22,7 +22,7 @@ const eventBusName = requireEnv("EVENT_BUS_NAME");
 
 const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
-const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com" });
+const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com", timeout: 60_000 });
 
 const claudeAdapter: CreateAiMessage = (params) => anthropicClient.messages.create(params);
 
