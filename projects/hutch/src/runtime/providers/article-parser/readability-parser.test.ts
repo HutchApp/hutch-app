@@ -198,4 +198,24 @@ describe("initReadabilityParser", () => {
 			);
 		}
 	});
+
+	it("should return error for invalid URL passed to parseHtml directly", () => {
+		const result = parseHtml({ url: "not-a-url", html: "<html><body></body></html>" });
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.reason).toBe("Invalid URL");
+		}
+	});
+
+	it("should use fallback values when readability returns empty fields", () => {
+		const minimalHtml = `<html><head></head><body>${"<p>word </p>".repeat(100)}</body></html>`;
+		const result = parseHtml({ url: "https://example.com/page", html: minimalHtml });
+
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.article.siteName).toBe("example.com");
+			expect(typeof result.article.excerpt).toBe("string");
+		}
+	});
 });

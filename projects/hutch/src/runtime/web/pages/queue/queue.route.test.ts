@@ -936,4 +936,32 @@ describe("Queue routes", () => {
 			expect(response.headers["access-control-allow-origin"]).toBeUndefined();
 		});
 	});
+
+	describe("save article without content", () => {
+		it("should save article without publishing link-saved when parse returns no content", async () => {
+			let publishCalled = false;
+			const { app, auth } = createTestApp({
+				parseArticle: async () => ({
+					ok: true as const,
+					article: {
+						title: "No Content",
+						siteName: "example.com",
+						excerpt: "Test excerpt",
+						wordCount: 0,
+						content: "",
+						imageUrl: undefined,
+					},
+				}),
+				publishLinkSaved: async () => { publishCalled = true; },
+			});
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/no-content" });
+
+			expect(publishCalled).toBe(false);
+		});
+	});
 });

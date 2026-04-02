@@ -11,6 +11,8 @@ export default {
 		"scripts/bump-version.js",
 		"scripts/sync-signed-extension.js",
 		"scripts/submit-to-amo.js",
+		// PurgeCSS config loaded via CLI, not imported in source
+		"purgecss.config.js",
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),

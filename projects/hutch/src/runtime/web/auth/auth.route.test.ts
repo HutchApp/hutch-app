@@ -354,6 +354,65 @@ describe("Auth routes", () => {
 		});
 	});
 
+	describe("GET /verify-email", () => {
+		it("should show error when no token is provided", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/verify-email");
+
+			expect(response.status).toBe(400);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-card__subtitle")?.textContent).toContain(
+				"No verification token provided",
+			);
+		});
+
+		it("should show error for invalid token", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/verify-email?token=invalid-token");
+
+			expect(response.status).toBe(400);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-card__subtitle")?.textContent).toContain(
+				"invalid or has already been used",
+			);
+		});
+
+		it("should verify email with valid token", async () => {
+			const { app, auth, emailVerification } = createTestApp();
+			const createResult = await auth.createUser({ email: "verify@example.com", password: "password123" });
+			expect(createResult.ok).toBe(true);
+			if (!createResult.ok) return;
+
+			const token = await emailVerification.createVerificationToken({
+				userId: createResult.userId,
+				email: "verify@example.com",
+			});
+
+			const response = await request(app).get(`/verify-email?token=${token}`);
+
+			expect(response.status).toBe(200);
+		});
+
+		it("should mark session email verified when user is logged in during verification", async () => {
+			const { app, auth, emailVerification } = createTestApp();
+			const createResult = await auth.createUser({ email: "session@example.com", password: "password123" });
+			expect(createResult.ok).toBe(true);
+			if (!createResult.ok) return;
+
+			const token = await emailVerification.createVerificationToken({
+				userId: createResult.userId,
+				email: "session@example.com",
+			});
+
+			const agent = request.agent(app);
+			await agent.post("/login").type("form").send({ email: "session@example.com", password: "password123" });
+
+			const response = await agent.get(`/verify-email?token=${token}`);
+
+			expect(response.status).toBe(200);
+		});
+	});
+
 	describe("POST /logout", () => {
 		it("should clear session and redirect to /", async () => {
 			const { app, auth } = createTestApp();
@@ -366,6 +425,15 @@ describe("Auth routes", () => {
 				.send({ email: "test@example.com", password: "password123" });
 
 			const response = await agent.post("/logout");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/");
+		});
+
+		it("should handle logout when no session cookie exists", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app).post("/logout");
 
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/");

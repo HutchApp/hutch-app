@@ -206,4 +206,31 @@ describe("initFetchHtmlWithHeaders", () => {
 
 		expect(logError).toHaveBeenCalledWith("[FetchArticle] Network error for https://example.com", networkError);
 	});
+
+	it("should return undefined when content-type header is missing", async () => {
+		const fakeFetch = async (): Promise<Partial<Response>> => {
+			const headers = new Headers();
+			return { status: 200, ok: true, headers, text: async () => "<html>Content</html>" };
+		};
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith('[FetchArticle] Unexpected Content-Type "" for https://example.com');
+	});
+
+	it("should pass undefined to logError when fetch throws a non-Error value", async () => {
+		const fakeFetch = async () => { throw "string error"; };
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith(
+			"[FetchArticle] Network error for https://example.com",
+			undefined,
+		);
+	});
 });

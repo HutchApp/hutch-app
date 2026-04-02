@@ -5,7 +5,7 @@ const config = {
   ...baseConfig,
   thresholds: {
     statements: 99,
-    branches: 95,
+    branches: 97,
     functions: 100,
     lines: 99,
   },
@@ -17,6 +17,7 @@ config.enforceCoverage({
   showTextTable: true,
   extraExcludePatterns: [
     ...(config.extraExcludePatterns || []),
+
     'src/infra/**',
     // Composition roots — no logic to test, only wiring
     'src/runtime/app.ts',

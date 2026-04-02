@@ -52,6 +52,9 @@ const BASE_EXCLUDE_PATTERNS = [
 
   // Barrel re-exports — no logic, just re-export statements
   '**/index.ts',
+
+  // Entry points — side-effectful bootstrap code with no logic to unit test
+  '**/*.main.ts',
 ]
 
 function validateC8Config(projectRoot) {

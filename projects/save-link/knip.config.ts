@@ -13,9 +13,6 @@ export default {
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),
-		// Used only in infra code (Lambda handlers, compiled separately)
-		"@anthropic-ai/sdk",
-		"openai",
 		// Workspace dependencies with subpath imports not detected by knip
 		"@packages/hutch-infra-components",
 		"@packages/link-id",
