@@ -18,8 +18,6 @@ config.enforceCoverage({
   extraExcludePatterns: [
     ...(config.extraExcludePatterns || []),
     // Infrastructure — Pulumi IaC and Lambda entry points
-    'src/infra/**',
-    // DynamoDB adapters — thin AWS SDK wrappers tested via integration against real DynamoDB
-    'src/generate-summary/dynamodb-summary-cache.ts'
+    'src/infra/**'
   ],
 });
