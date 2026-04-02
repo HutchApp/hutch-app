@@ -20,7 +20,6 @@ config.enforceCoverage({
     // Infrastructure — Pulumi IaC and Lambda entry points
     'src/infra/**',
     // DynamoDB adapters — thin AWS SDK wrappers tested via integration against real DynamoDB
-    'src/generate-summary/dynamodb-summary-cache.ts',
-    'src/save-link/find-article-content.ts',
+    'src/generate-summary/dynamodb-summary-cache.ts'
   ],
 });

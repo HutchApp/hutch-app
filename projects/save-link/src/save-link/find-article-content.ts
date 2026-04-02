@@ -1,3 +1,4 @@
+import assert from 'node:assert'
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
@@ -23,7 +24,7 @@ export function initFindArticleContent(deps: {
 				ProjectionExpression: "content",
 			}),
 		);
-		if (!result.Item) return undefined;
+		assert(result.Item, 'result.Item must exist')
 		const parsed = ArticleContentRow.parse(result.Item);
 		return parsed.content;
 	};

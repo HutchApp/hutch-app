@@ -7,5 +7,10 @@ module.exports = {
       testMatch: '**/dist/**/*.test.js',
       timeout: 10000,
     },
+    {
+      type: 'node-test',
+      name: 'Running integration tests',
+      glob: 'dist/**/*.integration.js',
+    },
   ],
 };

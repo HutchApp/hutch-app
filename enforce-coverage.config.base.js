@@ -121,12 +121,53 @@ function shouldIncludeFile(filePath, includePatterns, excludePatterns) {
   return !excluded
 }
 
-function formatCoverageTable(coverage, includePatterns, excludePatterns) {
+function getUncoveredLineRanges(fileDetail) {
+  if (!fileDetail || !fileDetail.statementMap || !fileDetail.s) return ''
+
+  const uncoveredLines = new Set()
+  for (const [id, count] of Object.entries(fileDetail.s)) {
+    if (count === 0) {
+      const loc = fileDetail.statementMap[id]
+      if (!loc) continue
+      for (let line = loc.start.line; line <= loc.end.line; line++) {
+        uncoveredLines.add(line)
+      }
+    }
+  }
+
+  if (uncoveredLines.size === 0) return ''
+
+  const sorted = [...uncoveredLines].sort((a, b) => a - b)
+  const ranges = []
+  let rangeStart = sorted[0]
+  let rangeEnd = sorted[0]
+
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === rangeEnd + 1) {
+      rangeEnd = sorted[i]
+    } else {
+      ranges.push(rangeStart === rangeEnd ? `${rangeStart}` : `${rangeStart}-${rangeEnd}`)
+      rangeStart = sorted[i]
+      rangeEnd = sorted[i]
+    }
+  }
+  ranges.push(rangeStart === rangeEnd ? `${rangeStart}` : `${rangeStart}-${rangeEnd}`)
+
+  return ranges.join(',')
+}
+
+function formatCoverageTable(coverage, includePatterns, excludePatterns, detailedCoverage) {
   const rows = []
 
   for (const [filePath, data] of Object.entries(coverage)) {
     if (filePath === 'total') continue
     if (!shouldIncludeFile(filePath, includePatterns, excludePatterns)) continue
+
+    const hasGap = data.statements.pct < 100 || data.branches.pct < 100 ||
+      data.functions.pct < 100 || data.lines.pct < 100
+    const uncoveredLines = hasGap && detailedCoverage
+      ? getUncoveredLineRanges(detailedCoverage[filePath])
+      : ''
 
     rows.push({
       file: path.relative(process.cwd(), filePath),
@@ -134,12 +175,14 @@ function formatCoverageTable(coverage, includePatterns, excludePatterns) {
       branch: data.branches.pct,
       funcs: data.functions.pct,
       lines: data.lines.pct,
+      uncoveredLines,
     })
   }
 
   rows.sort((a, b) => a.file.localeCompare(b.file))
 
   const totals = calculateTotals(coverage, includePatterns, excludePatterns)
+  const hasAnyUncovered = rows.some(r => r.uncoveredLines)
 
   const summaryLabel = `All files (${rows.length})`
   const fileWidth = Math.max(
@@ -148,19 +191,25 @@ function formatCoverageTable(coverage, includePatterns, excludePatterns) {
     ...rows.map(r => r.file.length)
   )
 
+  const uncoveredWidth = hasAnyUncovered
+    ? Math.max('Uncovered Lines'.length, ...rows.map(r => r.uncoveredLines.length))
+    : 0
+
   const fmt = (pct) => String(Number(pct.toFixed(2))).padStart(8)
 
   const sep = '-'.repeat(fileWidth + 1) + '|' +
     '-'.repeat(9) + '|' +
     '-'.repeat(10) + '|' +
     '-'.repeat(9) + '|' +
-    '-'.repeat(9) + '|'
+    '-'.repeat(9) + '|' +
+    (hasAnyUncovered ? '-'.repeat(uncoveredWidth + 2) + '|' : '')
 
   const header = ' ' + 'File'.padEnd(fileWidth) + '|' +
     ' % Stmts' + ' |' +
     '  % Branch' + ' |' +
     ' % Funcs' + ' |' +
-    ' % Lines' + ' |'
+    ' % Lines' + ' |' +
+    (hasAnyUncovered ? ' ' + 'Uncovered Lines'.padEnd(uncoveredWidth) + ' |' : '')
 
   const lines = [sep, header, sep]
 
@@ -170,7 +219,8 @@ function formatCoverageTable(coverage, includePatterns, excludePatterns) {
       fmt(row.stmts) + ' |' +
       fmt(row.branch).padStart(10) + ' |' +
       fmt(row.funcs) + ' |' +
-      fmt(row.lines) + ' |'
+      fmt(row.lines) + ' |' +
+      (hasAnyUncovered ? ' ' + row.uncoveredLines.padEnd(uncoveredWidth) + ' |' : '')
     )
   }
 
@@ -180,7 +230,8 @@ function formatCoverageTable(coverage, includePatterns, excludePatterns) {
     fmt(totals.statements.pct) + ' |' +
     fmt(totals.branches.pct).padStart(10) + ' |' +
     fmt(totals.functions.pct) + ' |' +
-    fmt(totals.lines.pct) + ' |'
+    fmt(totals.lines.pct) + ' |' +
+    (hasAnyUncovered ? ' '.repeat(uncoveredWidth + 2) + '|' : '')
   )
   lines.push(sep)
 
@@ -246,8 +297,13 @@ function enforceCoverage(options = {}) {
 
     const coverage = JSON.parse(fs.readFileSync(coverageFile, 'utf8'))
 
+    const detailedCoverageFile = path.join(projectRoot, 'coverage/coverage-final.json')
+    const detailedCoverage = fs.existsSync(detailedCoverageFile)
+      ? JSON.parse(fs.readFileSync(detailedCoverageFile, 'utf8'))
+      : null
+
     if (showTextTable) {
-      console.log(formatCoverageTable(coverage, INCLUDE_PATTERNS, excludePatterns))
+      console.log(formatCoverageTable(coverage, INCLUDE_PATTERNS, excludePatterns, detailedCoverage))
       console.log('')
     }
 
