@@ -6,12 +6,10 @@ const { workspaces: _workspaces, ...base } = baseConfig;
 export default {
 	...base,
 	entry: [
-		// Consumed by infra Lambda handlers (src/infra/** is ignored)
-		"src/save-link/find-article-content.ts",
+		"**/*.main.ts",
 	],
 	ignore: [
 		...(base.ignore ?? []),
-		"src/infra/**",
 		// Used only from infra code (compiled separately by Lambda handler)
 		"src/generate-summary/dynamodb-summary-cache.ts",
 	],
