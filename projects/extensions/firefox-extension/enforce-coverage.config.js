@@ -25,5 +25,6 @@ const config = {
 config.enforceCoverage({
   projectRoot: path.resolve(__dirname),
   thresholds: config.thresholds,
+  showTextTable: true,
   extraExcludePatterns: config.extraExcludePatterns,
 })

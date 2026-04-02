@@ -6,6 +6,7 @@ const FETCH_TIMEOUT_MS = 5000;
 
 export function initFetchHtmlWithHeaders(deps: {
 	fetch: typeof globalThis.fetch;
+	logError: (message: string, error?: Error) => void;
 }): FetchHtmlWithHeaders {
 	return async (url) => {
 		try {
@@ -13,16 +14,23 @@ export function initFetchHtmlWithHeaders(deps: {
 				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
 				headers: { accept: "text/html" },
 			});
-			if (!response.ok) return undefined;
+			if (!response.ok) {
+				deps.logError(`[FetchArticle] HTTP ${response.status} for ${url}`);
+				return undefined;
+			}
 			const contentType = response.headers.get("content-type") ?? "";
-			if (!contentType.includes("text/html")) return undefined;
+			if (!contentType.includes("text/html")) {
+				deps.logError(`[FetchArticle] Unexpected Content-Type "${contentType}" for ${url}`);
+				return undefined;
+			}
 			const html = await response.text();
 			return {
 				html,
 				etag: headerOrUndefined(response.headers, "etag"),
 				lastModified: headerOrUndefined(response.headers, "last-modified"),
 			};
-		} catch {
+		} catch (error) {
+			deps.logError(`[FetchArticle] Network error for ${url}`, error instanceof Error ? error : undefined);
 			return undefined;
 		}
 	};
@@ -30,6 +38,7 @@ export function initFetchHtmlWithHeaders(deps: {
 
 export function initFetchHtml(deps: {
 	fetch: typeof globalThis.fetch;
+	logError: (message: string, error?: Error) => void;
 }): FetchHtml {
 	const fetchWithHeaders = initFetchHtmlWithHeaders(deps);
 	return async (url) => {

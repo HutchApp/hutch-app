@@ -28,7 +28,9 @@ export { filterByUrl } from "./popup/filter-by-url";
 export { paginateItems } from "./popup/paginate-items";
 export { avatarColor } from "./popup/avatar-color";
 export { relativeTime } from "./popup/relative-time";
+export { isAppUrl } from "./popup/is-app-url";
 export {
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,
 } from "./save-from-context-menu";
+

@@ -1,5 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nrwl/nx/master/packages/nx/schemas/nx-schema.json",
+  "tui": {
+    "enabled": false
+  },
   "plugins": [
     {
       "plugin": "nx/plugins/package-json"
@@ -39,8 +42,9 @@
       "dependsOn": ["^compile"],
       "cache": false
     },
-    "deploy": {
+    "deploy-infra": {
       "inputs": ["production", "^production"],
+      "dependsOn": ["^compile"],
       "cache": false
     }
   },

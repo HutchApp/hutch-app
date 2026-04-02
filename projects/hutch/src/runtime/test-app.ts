@@ -3,8 +3,9 @@ import { initInMemoryArticleStore } from "./providers/article-store/in-memory-ar
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
-import type { SummarizeArticle } from "./providers/article-summary/article-summary.types";
-import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
+import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
+import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
+import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
@@ -18,8 +19,9 @@ import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
 import type { ExchangeGmailCode, RefreshGmailAccessToken, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
 import { initEnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
 import { createApp } from "./server";
+import { noopLogger } from "@packages/hutch-logger";
 
-const noopSummarize: SummarizeArticle = async () => null;
+const { publishLinkSaved: defaultPublishLinkSaved } = initInMemoryLinkSaved({ logger: noopLogger });
 const noopCheckFreshness: RefreshArticleIfStale = async () => ({ action: "new" });
 const noopGmailImport: RunGmailImport = async () => ({ importedCount: 0, skippedCount: 0, emailsProcessed: 0, emailsLabeled: 0 });
 const stubExchangeGmailCode: ExchangeGmailCode = async () => ({ accessToken: "stub-access", refreshToken: "stub-refresh", expiresAt: Date.now() + 3600000 });
@@ -38,8 +40,10 @@ const stubFetchHtml: FetchHtml = async (url) => {
 export function createTestApp(options?: {
 	parseArticle?: ParseArticle;
 	fetchHtml?: FetchHtml;
-	summarizeArticle?: SummarizeArticle;
+	publishLinkSaved?: PublishLinkSaved;
+	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
+	logError?: (message: string, error?: Error) => void;
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
@@ -47,16 +51,6 @@ export function createTestApp(options?: {
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
-	const summaryCache = initInMemorySummaryCache();
-
-	const baseSummarize = options?.summarizeArticle ?? noopSummarize;
-	const summarizeArticle: SummarizeArticle = async (params) => {
-		const summary = await baseSummarize(params);
-		if (summary) {
-			await summaryCache.saveCachedSummary({ url: params.url, summary, inputTokens: 0, outputTokens: 0 });
-		}
-		return summary;
-	};
 
 	const gmailTokenStore = initInMemoryGmailTokenStore();
 	const ensureValidAccessToken = initEnsureValidAccessToken({
@@ -70,13 +64,13 @@ export function createTestApp(options?: {
 		...auth,
 		...articleStore,
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
-		summarizeArticle,
-		findCachedSummary: summaryCache.findCachedSummary,
+		publishLinkSaved: options?.publishLinkSaved ?? defaultPublishLinkSaved,
+		findCachedSummary: options?.findCachedSummary ?? (async () => ""),
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,
 		...email,
 		...emailVerification,
 		baseUrl: "http://localhost:3000",
-		logError: () => {},
+		logError: options?.logError ?? (() => {}),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		...gmailTokenStore,

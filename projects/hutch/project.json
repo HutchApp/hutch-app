@@ -1,14 +1,18 @@
 {
   "name": "hutch",
   "targets": {
-    "compile": {
-      "dependsOn": [
-        { "projects": ["@packages/hutch-logger"], "target": "compile" },
-        { "projects": ["browser-extension-core"], "target": "compile" }
-      ]
+    "compile": {},
+    "deploy-infra": {
+      "command": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
+      "options": { "cwd": "{projectRoot}" },
+      "dependsOn": ["compile"]
+    },
+    "post-deploy": {
+      "command": "bash scripts/post-deploy.sh",
+      "options": { "cwd": "{projectRoot}" }
     },
     "check": {
-      "command": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+      "command": "pnpm lint && pnpm test-with-coverage",
       "options": { "cwd": "{projectRoot}" }
     },
     "test": {},

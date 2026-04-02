@@ -1,0 +1,13 @@
+{
+  "name": "platform",
+  "targets": {
+    "deploy-infra": {
+      "command": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "check": {
+      "command": "echo 'Infra-only project - No check step'",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

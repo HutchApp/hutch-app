@@ -31,9 +31,9 @@ export const LOCAL_TEST_ARTICLES: TestArticleData = {
     'https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol',
     'https://en.wikipedia.org/wiki/Web_browser',
     'https://en.wikipedia.org/wiki/URL',
-    'https://en.wikipedia.org/wiki/HTML',
+    'https://en.wikipedia.org/wiki/World_Wide_Web',
   ],
-  titles: ['HTTP', 'Web browser', 'URL', 'HTML'],
+  titles: ['HTTP', 'Web browser', 'URL', 'World Wide Web'],
   paginationUrls: Array.from({ length: 17 }, (_, i) => `http://localhost:3100/privacy?p=${i + 1}`),
 }
 

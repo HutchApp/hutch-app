@@ -67,3 +67,13 @@ If tests fail after your changes, update the tests to match the new behavior rat
 ### Never Bypass Hooks Without User Approval
 
 Only ask to bypass with `--no-verify` after completing the diagnostic steps above and confirming the issue is genuinely pre-existing.
+
+## Post-Push CI Watch (Main Branch Only)
+
+When a commit is pushed directly to the `main` branch, watch the GitHub Actions CI run to ensure it passes:
+
+1. After pushing, check the CI status using `gh run list --branch main --limit 1` and `gh run watch`
+2. If CI fails, read the logs with `gh run view <run-id> --log-failed`, diagnose the failure, fix it, and push a new commit
+3. Repeat until CI passes
+
+This only applies to commits pushed directly to `main`. For commits on feature branches, the existing PR workflows (CI fixer, code review) handle failures automatically.

@@ -11,11 +11,11 @@ const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf
 
 interface ActionDisplayModel extends ArticleAction {
 	buttonClass: string;
+	boost: boolean;
 }
 
 interface ArticleDisplayModel extends QueueArticleViewModel {
 	linkUrl: string;
-	isExternalLink: boolean;
 	unreadClass: string;
 	actions: ActionDisplayModel[];
 }
@@ -26,14 +26,14 @@ function toActionDisplayModel(action: ArticleAction): ActionDisplayModel {
 		buttonClass: action.testAction === "delete"
 			? "queue-article__action-btn queue-article__action-btn--delete"
 			: "queue-article__action-btn",
+		boost: !action.pageReload,
 	};
 }
 
 function toArticleDisplayModel(article: QueueArticleViewModel): ArticleDisplayModel {
 	return {
 		...article,
-		linkUrl: article.hasContent ? `/queue/${article.id}/read` : article.url,
-		isExternalLink: !article.hasContent,
+		linkUrl: `/queue/${article.id}/read`,
 		unreadClass: article.isUnread ? " queue-article--unread" : "",
 		actions: article.actions.map(toActionDisplayModel),
 	};
@@ -47,6 +47,7 @@ interface QueueDisplayModel {
 	hasArticles: boolean;
 	articles: ArticleDisplayModel[];
 	filterUnreadClass: string;
+	filterUnreadLabel: string;
 	filterReadClass: string;
 	filterUnreadUrl: string;
 	filterReadUrl: string;
@@ -65,6 +66,10 @@ function filterLinkClass(isActive: boolean): string {
 	return `queue__filter-link${isActive ? " queue__filter-link--active" : ""}`;
 }
 
+export function formatUnreadLabel(count: number): string {
+	return count > 99 ? "Unread (99+)" : `Unread (${count})`;
+}
+
 function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	const activeStatus = vm.filters.status;
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
@@ -79,6 +84,7 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 		hasArticles: !vm.isEmpty,
 		articles: vm.articles.map(toArticleDisplayModel),
 		filterUnreadClass: filterLinkClass(activeStatus === "unread"),
+		filterUnreadLabel: formatUnreadLabel(vm.unreadCount),
 		filterReadClass: filterLinkClass(activeStatus === "read"),
 		filterUnreadUrl: vm.filterUrls.unread,
 		filterReadUrl: vm.filterUrls.read,

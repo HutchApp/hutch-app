@@ -41,11 +41,6 @@ function createS3Config(options: S3ConfigOptions) {
 	};
 }
 
-export const chromeS3Config = createS3Config({
-	bucketNamePrefix: "hutch-chrome-extension",
-	region: "ap-southeast-2",
-});
-
 export const firefoxS3Config = createS3Config({
 	bucketNamePrefix: "hutch-extension",
 	region: "ap-southeast-2",

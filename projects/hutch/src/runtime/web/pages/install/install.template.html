@@ -20,16 +20,7 @@
       {{#case "firefox"}}
       <section class="install-page__panel" data-test-section="firefox">
         {{#if firefoxDownloadUrl}}
-        <a href="{{firefoxDownloadUrl}}" class="install-page__download" data-test-cta="download-firefox">Download Hutch for Firefox</a>
-
-        <div class="install-page__steps" data-test-section="firefox-steps">
-          <h3>Installation steps</h3>
-          <ol>
-            <li>Download <code>hutch.xpi</code> using the button above</li>
-            <li>Firefox will prompt you to allow the installation — click "Continue to Installation"</li>
-            <li>Click "Add" to install the extension</li>
-          </ol>
-        </div>
+        <a href="{{firefoxDownloadUrl}}" class="install-page__download" data-test-cta="download-firefox">Install Hutch for Firefox</a>
         {{else}}
         <p class="install-page__unavailable" data-test-section="firefox-unavailable">The Firefox extension is not available for download yet. Please check back soon.</p>
         {{/if}}
@@ -39,16 +30,7 @@
       {{#default}}
       <section class="install-page__panel" data-test-section="chrome">
         {{#if chromeDownloadUrl}}
-        <a href="{{chromeDownloadUrl}}" class="install-page__download" data-test-cta="download-chrome">Download Hutch for Chrome</a>
-
-        <div class="install-page__steps" data-test-section="chrome-steps">
-          <h3>Installation steps</h3>
-          <ol>
-            <li>Download <code>hutch.zip</code> using the button above</li>
-            <li>Open <code>chrome://extensions</code> and enable "Developer mode"</li>
-            <li>Drag and drop the downloaded zip onto the extensions page</li>
-          </ol>
-        </div>
+        <a href="{{chromeDownloadUrl}}" class="install-page__download" data-test-cta="download-chrome">Install Hutch for Chrome</a>
         {{else}}
         <p class="install-page__unavailable" data-test-section="chrome-unavailable">The Chrome extension is not available for download yet. Please check back soon.</p>
         {{/if}}
@@ -56,6 +38,5 @@
       {{/default}}
       {{/switch}}
 
-      <p class="install-page__footnote" data-test-section="install-footnote">Login uses your real hutch-app.com account via OAuth.</p>
     </div>
   </main>

@@ -12,7 +12,6 @@ export default {
 		// CLI scripts (not entry points)
 		"scripts/bump-version.js",
 		"scripts/install-chrome-for-testing.js",
-		"scripts/publish-to-s3.js",
 		"scripts/submit-to-chrome-web-store.js",
 		// PurgeCSS config loaded via CLI, not imported in source
 		"purgecss.config.js",

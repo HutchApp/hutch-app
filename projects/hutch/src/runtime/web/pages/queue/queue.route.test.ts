@@ -341,6 +341,25 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Read");
 			expect(doc.querySelector("[data-test-action='delete']")?.textContent).toBe("×");
 		});
+
+		it("should disable htmx boost on the read action form", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const readForm = doc.querySelector("[data-test-action='mark-read']")?.closest("form");
+
+			expect(readForm?.getAttribute("hx-boost")).toBe("false");
+			expect(readForm?.hasAttribute("hx-target")).toBe(false);
+			expect(readForm?.hasAttribute("hx-select")).toBe(false);
+			expect(readForm?.hasAttribute("hx-swap")).toBe(false);
+		});
 	});
 
 	describe("Thumbnail", () => {
@@ -515,7 +534,7 @@ describe("Queue routes", () => {
 			expect(titleLink?.getAttribute("href")).toContain("/read");
 		});
 
-		it("should display AI summary when summarizeArticle returns text", async () => {
+		it("should display AI summary when cached summary exists", async () => {
 			const articleHtml = `
 			<html><head><title>Summarized Post</title><meta property="og:site_name" content="Example Blog"></head>
 			<body><article>
@@ -524,8 +543,8 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const fetchHtml = async (_url: string) => articleHtml;
-			const summarizeArticle = async () => "Key points from the article distilled into a brief summary.";
-			const { app, auth } = createTestApp({ fetchHtml, summarizeArticle });
+			const findCachedSummary = async () => "Key points from the article distilled into a brief summary.";
+			const { app, auth } = createTestApp({ fetchHtml, findCachedSummary });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -545,7 +564,7 @@ describe("Queue routes", () => {
 			expect(doc.querySelector(".reader__summary-label")?.textContent).toBe("TL;DR");
 		});
 
-		it("should not display summary block when summarizeArticle returns null", async () => {
+		it("should not display summary block when no cached summary exists", async () => {
 			const articleHtml = `
 			<html><head><title>No Summary Post</title></head>
 			<body><article>
@@ -554,8 +573,7 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const fetchHtml = async (_url: string) => articleHtml;
-			const summarizeArticle = async () => null;
-			const { app, auth } = createTestApp({ fetchHtml, summarizeArticle });
+			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -597,7 +615,7 @@ describe("Queue routes", () => {
 	});
 
 	describe("Parse failure", () => {
-		it("should show error when article parsing fails", async () => {
+		it("should save article without content when fetch fails", async () => {
 			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
 			const { app, auth } = createTestApp({ fetchHtml });
 			const agent = await loginAgent(app, auth);
@@ -607,9 +625,76 @@ describe("Queue routes", () => {
 				.type("form")
 				.send({ url: "https://example.com/broken" });
 
-			expect(response.status).toBe(422);
-			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-save-error]")?.textContent).toContain("Could not parse article");
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should show fallback title from hostname when fetch fails", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			expect(doc.querySelector("[data-test-article-title]")?.textContent).toContain("Article from example.com");
+		});
+
+		it("should show no-content template on read page when fetch fails", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-no-content]")).not.toBeNull();
+		});
+
+		it("should link article title to reader view when article has no content", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const { app, auth } = createTestApp({ fetchHtml });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const titleLink = doc.querySelector("[data-test-article-title]");
+			expect(titleLink?.getAttribute("href")).toContain("/read");
+		});
+
+		it("should log error when article parsing fails", async () => {
+			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const logError = jest.fn();
+			const { app, auth } = createTestApp({ fetchHtml, logError });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/broken" });
+
+			expect(logError).toHaveBeenCalledWith(
+				expect.stringContaining("[FetchArticle]"),
+			);
 		});
 	});
 
@@ -742,8 +827,8 @@ describe("Queue routes", () => {
 			expect(response.status).toBe(303);
 		});
 
-		it("should trigger re-summarization for refreshed content", async () => {
-			let summarizeCalled = false;
+		it("should publish LinkSaved event for refreshed content", async () => {
+			let linkSavedPublished = false;
 			const refreshedFreshness: RefreshArticleIfStale = async () => ({
 				action: "refreshed",
 				article: {
@@ -759,7 +844,7 @@ describe("Queue routes", () => {
 			});
 			const { app, auth } = createTestApp({
 				refreshArticleIfStale: refreshedFreshness,
-				summarizeArticle: async () => { summarizeCalled = true; return null; },
+				publishLinkSaved: async () => { linkSavedPublished = true; },
 			});
 			const agent = await loginAgent(app, auth);
 
@@ -769,7 +854,61 @@ describe("Queue routes", () => {
 				.send({ url: "https://example.com/existing" });
 
 			expect(response.status).toBe(303);
-			expect(summarizeCalled).toBe(true);
+			expect(linkSavedPublished).toBe(true);
+		});
+	});
+
+	describe("Unread tab count", () => {
+		it("should show unread count on the Unread tab", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/1" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/2" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const unreadTab = doc.querySelector('[data-test-filter="unread"]');
+			expect(unreadTab?.textContent).toBe("Unread (2)");
+		});
+
+		it("should show unread count when viewing read tab", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/1" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/2" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/3" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+			await agent.post(`/queue/${articleId}/status`).type("form").send({ status: "read" });
+
+			const readResponse = await agent.get("/queue?status=read");
+			const readDoc = new JSDOM(readResponse.text).window.document;
+			const unreadTab = readDoc.querySelector('[data-test-filter="unread"]');
+			expect(unreadTab?.textContent).toBe("Unread (2)");
+		});
+
+		it("should not show count on the Read tab", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const readTab = doc.querySelector('[data-test-filter="read"]');
+			expect(readTab?.textContent).toBe("Read");
+		});
+
+		it("should show zero unread count on empty queue", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const unreadTab = doc.querySelector('[data-test-filter="unread"]');
+			expect(unreadTab?.textContent).toBe("Unread (0)");
 		});
 	});
 

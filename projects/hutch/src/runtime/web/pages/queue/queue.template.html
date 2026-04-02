@@ -9,7 +9,7 @@
       </form>
       {{#if saveError}}<p class="queue__save-error" data-test-save-error>{{saveError}}</p>{{/if}}
       <nav class="queue__filters" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-filters>
-        <a class="{{filterUnreadClass}}" href="{{filterUnreadUrl}}" data-test-filter="unread">Unread</a>
+        <a class="{{filterUnreadClass}}" href="{{filterUnreadUrl}}" data-test-filter="unread">{{filterUnreadLabel}}</a>
         <a class="{{filterReadClass}}" href="{{filterReadUrl}}" data-test-filter="read">Read</a>
       </nav>
       <div class="queue__sort" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
@@ -25,11 +25,11 @@
       <div class="queue__list" data-test-article-list>
         {{#each articles}}
         <div class="queue-article{{unreadClass}}" data-test-article="{{id}}">
-          {{#if imageUrl}}<a href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} tabindex="-1" aria-hidden="true"><img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy"></a>{{/if}}
+          {{#if imageUrl}}<a href="{{linkUrl}}" tabindex="-1" aria-hidden="true"><img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy"></a>{{/if}}
           <div class="queue-article__content">
             <div class="queue-article__title-row">
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
-              <a class="queue-article__title" href="{{linkUrl}}"{{#if isExternalLink}} target="_blank" rel="noopener"{{/if}} data-test-article-title>{{title}}</a>
+              <a class="queue-article__title" href="{{linkUrl}}" data-test-article-title>{{title}}</a>
             </div>
             <div class="queue-article__meta">
               {{#if siteName}}<a class="queue-article__url" href="{{url}}" target="_blank" rel="noopener" data-test-article-url>{{siteName}}</a>{{/if}}
@@ -40,7 +40,7 @@
           </div>
           <div class="queue-article__actions">
             {{#each actions}}
-            <form method="{{method}}" action="{{url}}" class="queue-article__action-form" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
+            <form method="{{method}}" action="{{url}}" class="queue-article__action-form" hx-boost="{{boost}}"{{#if boost}} hx-target="main" hx-select="main" hx-swap="outerHTML show:none"{{/if}}>
               {{#each fields}}<input type="hidden" name="{{name}}" value="{{value}}">{{/each}}
               <button class="{{buttonClass}}" type="submit" title="{{title}}" data-test-action="{{testAction}}">{{text}}</button>
             </form>

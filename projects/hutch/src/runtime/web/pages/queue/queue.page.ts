@@ -13,7 +13,8 @@ import type {
 	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
-import type { FindCachedSummary, SummarizeArticle } from "../../../providers/article-summary/article-summary.types";
+import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
@@ -31,7 +32,7 @@ interface QueueDependencies {
 	parseArticle: ParseArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
-	summarizeArticle: SummarizeArticle;
+	publishLinkSaved: PublishLinkSaved;
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
@@ -52,7 +53,20 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	if (freshness.action === "new") {
 		const parseResult = await deps.parseArticle(url);
 		if (!parseResult.ok) {
-			return { ok: false, reason: parseResult.reason };
+			deps.logError(`[FetchArticle] Could not fetch ${url}: ${parseResult.reason}`);
+			const hostname = new URL(url).hostname;
+			const saved = await deps.saveArticle({
+				userId,
+				url,
+				metadata: {
+					title: `Article from ${hostname}`,
+					siteName: hostname,
+					excerpt: `Saved from ${hostname}.`,
+					wordCount: 0,
+				},
+				estimatedReadTime: calculateReadTime(0),
+			});
+			return { ok: true, saved };
 		}
 
 		const { article } = parseResult;
@@ -76,7 +90,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 		}).catch((error) => deps.logError("Failed to update fetch metadata", error instanceof Error ? error : undefined));
 
 		if (article.content) {
-			deps.summarizeArticle({ url, textContent: article.content });
+			await deps.publishLinkSaved({ url, userId });
 		}
 
 		return { ok: true, saved };
@@ -90,7 +104,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	});
 
 	if (freshness.action === "refreshed" && freshness.article.article.content) {
-		deps.summarizeArticle({ url, textContent: freshness.article.article.content });
+		await deps.publishLinkSaved({ url, userId });
 	}
 
 	return { ok: true, saved };
@@ -132,7 +146,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const vm = toQueueViewModel(result, urlState);
+		const unreadCount = urlState.status === "unread"
+			? result.total
+			: (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
+		const vm = toQueueViewModel(result, urlState, { unreadCount });
 		const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
@@ -175,8 +192,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		if (!parsedBody.success) {
 			const urlState = parseQueueUrl({});
 			const result = await deps.findArticlesByUser({ userId });
+			const unreadCount = (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 			const vm = toQueueViewModel(result, urlState, {
 				saveError: "Please enter a valid URL",
+				unreadCount,
 			});
 			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);
@@ -189,8 +208,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		if (!result.ok) {
 			const urlState = parseQueueUrl({});
 			const articlesResult = await deps.findArticlesByUser({ userId });
+			const unreadCount = (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 			const vm = toQueueViewModel(articlesResult, urlState, {
 				saveError: `Could not parse article: ${result.reason}`,
+				unreadCount,
 			});
 			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
 			res.status(422).type("html").send(html.body);

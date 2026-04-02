@@ -1,11 +1,13 @@
 import { initFetchHtml, initFetchHtmlWithHeaders } from "./fetch-html";
 import { createFakeResponse } from "./fake-response.testutil";
 
+const noopLogError = () => {};
+
 describe("initFetchHtml", () => {
 	it("should return HTML text for a successful response", async () => {
 		const fakeFetch = async () =>
 			createFakeResponse({ text: "<html>Hello</html>" });
-		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
@@ -14,32 +16,64 @@ describe("initFetchHtml", () => {
 
 	it("should return undefined when response is not ok", async () => {
 		const fakeFetch = async () => createFakeResponse({ ok: false });
-		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
 		expect(result).toBeUndefined();
 	});
 
+	it("should call logError with HTTP status when response is not ok", async () => {
+		const fakeFetch = async () => createFakeResponse({ ok: false, status: 403 });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] HTTP 403 for https://example.com");
+	});
+
 	it("should return undefined when content-type is not text/html", async () => {
 		const fakeFetch = async () =>
 			createFakeResponse({ contentType: "application/json" });
-		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
 		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with content-type when content-type is not text/html", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ contentType: "application/json" });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith('[FetchArticle] Unexpected Content-Type "application/json" for https://example.com');
 	});
 
 	it("should return undefined when fetch throws", async () => {
 		const fakeFetch = async () => {
 			throw new Error("network error");
 		};
-		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
 		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with error when fetch throws", async () => {
+		const networkError = new Error("network error");
+		const fakeFetch = async () => { throw networkError; };
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] Network error for https://example.com", networkError);
 	});
 
 	it("should pass the URL to the fetch function", async () => {
@@ -48,7 +82,7 @@ describe("initFetchHtml", () => {
 			capturedUrl = input as string;
 			return createFakeResponse({ text: "<html></html>" });
 		};
-		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		await fetchHtml("https://example.com/article");
 
@@ -64,7 +98,7 @@ describe("initFetchHtml", () => {
 			capturedInit = init;
 			return createFakeResponse({ text: "<html></html>" });
 		};
-		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		await fetchHtml("https://example.com");
 
@@ -79,7 +113,7 @@ describe("initFetchHtmlWithHeaders", () => {
 				text: "<html>Hello</html>",
 				etag: '"abc123"',
 			});
-		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
@@ -93,7 +127,7 @@ describe("initFetchHtmlWithHeaders", () => {
 				text: "<html>Hello</html>",
 				lastModified: "Wed, 21 Oct 2025 07:28:00 GMT",
 			});
-		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
@@ -104,7 +138,7 @@ describe("initFetchHtmlWithHeaders", () => {
 	it("should return undefined for missing optional headers", async () => {
 		const fakeFetch = async () =>
 			createFakeResponse({ text: "<html>Hello</html>" });
-		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
@@ -115,29 +149,61 @@ describe("initFetchHtmlWithHeaders", () => {
 
 	it("should return undefined when response is not ok", async () => {
 		const fakeFetch = async () => createFakeResponse({ ok: false });
-		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
 		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with HTTP status when response is not ok", async () => {
+		const fakeFetch = async () => createFakeResponse({ ok: false, status: 403 });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] HTTP 403 for https://example.com");
 	});
 
 	it("should return undefined when content-type is not text/html", async () => {
 		const fakeFetch = async () =>
 			createFakeResponse({ contentType: "application/json" });
-		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
 		expect(result).toBeUndefined();
 	});
 
+	it("should call logError with content-type when content-type is not text/html", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ contentType: "application/json" });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith('[FetchArticle] Unexpected Content-Type "application/json" for https://example.com');
+	});
+
 	it("should return undefined when fetch throws", async () => {
 		const fakeFetch = async () => { throw new Error("network error"); };
-		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
 
 		const result = await fetchHtml("https://example.com");
 
 		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with error when fetch throws", async () => {
+		const networkError = new Error("network error");
+		const fakeFetch = async () => { throw networkError; };
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] Network error for https://example.com", networkError);
 	});
 });

@@ -21,11 +21,10 @@ import { initLogEmail } from "./providers/email/log-email";
 import { initResendEmail } from "./providers/email/resend-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
-import Anthropic from "@anthropic-ai/sdk";
-import { initClaudeSummarizer } from "./providers/article-summary/claude-summarizer";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
-import { initInMemorySummaryCache } from "./providers/article-summary/in-memory-summary-cache";
-import { stripHtml } from "./providers/article-summary/strip-html";
+import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
+import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
+import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { initGmailApi } from "./providers/gmail/gmail-api";
 import { initDynamoDbGmailTokenStore } from "./providers/gmail/dynamodb-gmail-token-store";
 import { initInMemoryGmailTokenStore } from "./providers/gmail/in-memory-gmail-token-store";
@@ -38,11 +37,9 @@ import { getEnv, requireEnv } from "./require-env";
 
 function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
-	const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
-	const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
-	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch });
+	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch, logError });
 	const fetchConditional = initFetchConditional({ fetch: globalThis.fetch });
 	const staleTtlMs = 86400000;
 
@@ -63,18 +60,18 @@ function initProviders() {
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
 		const gmailTokensTable = requireEnv("DYNAMODB_GMAIL_TOKENS_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
+		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
-		const { summarizeArticle } = initClaudeSummarizer({
-			createMessage: (params) => anthropicClient.messages.create(params),
-			logger: consoleLogger,
-			cleanContent: stripHtml,
-			...summaryCache,
+		const { publishEvent } = initEventBridgePublisher({
+			client: new EventBridgeClient({}),
+			eventBusName,
 		});
+		const { publishLinkSaved } = initEventBridgeLinkSaved({ publishEvent });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
 			fetchConditional,
@@ -96,7 +93,7 @@ function initProviders() {
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
-			summarizeArticle,
+			publishLinkSaved,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
 			...gmailTokenStore,
@@ -116,23 +113,8 @@ function initProviders() {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
-	const summaryCache = initInMemorySummaryCache();
-	const { summarizeArticle } = initClaudeSummarizer({
-		createMessage: (params) => {
-			// Log the call without full content to avoid flooding CI logs (Wikipedia articles are 100KB+)
-			consoleLogger.info(`[AI Summary Stub] model=${params.model} content_length=${params.messages[0]?.content?.length ?? 0}`);
-			return Promise.resolve({
-				content: [{
-					type: "text",
-					text: JSON.stringify({ summary: `[AI Summary Stub] for model ${params.model}` })
-				}],
-				usage: { input_tokens: 0, output_tokens: 0 }
-			})
-		},
-		logger: consoleLogger,
-		cleanContent: stripHtml,
-		...summaryCache,
-	});
+	const { publishLinkSaved } = initInMemoryLinkSaved({ logger: consoleLogger });
+	const stubFindCachedSummary = async (_url: string) => "";
 	const { refreshArticleIfStale } = initRefreshArticleIfStale({
 		findArticleFreshness: articleStore.findArticleFreshness,
 		fetchConditional,
@@ -155,8 +137,8 @@ function initProviders() {
 		...initInMemoryEmailVerification(),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
-		summarizeArticle,
-		findCachedSummary: summaryCache.findCachedSummary,
+		publishLinkSaved,
+		findCachedSummary: stubFindCachedSummary,
 		refreshArticleIfStale,
 		...gmailTokenStore,
 		...gmailApi,

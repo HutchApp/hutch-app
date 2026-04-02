@@ -44,3 +44,13 @@ config:
 |--------|----------|
 | `config.require` / `config.requireBoolean` | The value must be set in every environment |
 | `config.getObject` / `config.get` | The value is optional and absence is meaningful (e.g., empty domains = no custom domain) |
+
+## Events vs Commands
+
+An **event** is a fact — something that already happened. Events are named in past tense (`LinkSavedEvent`, `SummaryGeneratedEvent`). Use events when multiple independent consumers may react to the same fact (fan-out).
+
+A **command** is an action request — it can be validated, prevented, or retried. Commands are named in imperative (`GenerateSummaryCommand`). Use commands when exactly one handler must process the action.
+
+## Wire-Format Values Are Deployment Contracts
+
+The `source` and `detailType` strings in event definitions are stored in deployed EventBridge rules. Renaming them requires coordinated redeployment of all stacks that publish or subscribe. Change TypeScript identifiers freely, but treat wire values as immutable unless you coordinate the deployment.

@@ -43,39 +43,9 @@ jobs:
 
       - run: pnpm check
 
-  detect-changes:
+  # Only detect and deploy on pushes to main (not on PRs)
+  detect-projects:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    outputs:
-      hutch: ${{ steps.detect.outputs.hutch }}
-      firefox-extension: ${{ steps.detect.outputs.firefox-extension }}
-      chrome-extension: ${{ steps.detect.outputs.chrome-extension }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - id: detect
-        run: |
-          BEFORE="${{ github.event.before }}"
-          AFTER="${{ github.sha }}"
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            echo "First push detected, deploying everything"
-            echo "hutch=true" >> "$GITHUB_OUTPUT"
-            echo "firefox-extension=true" >> "$GITHUB_OUTPUT"
-            echo "chrome-extension=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          CHANGED=$(git diff --name-only "$BEFORE" "$AFTER")
-          echo "Changed files:"
-          echo "$CHANGED"
-          echo "hutch=$(echo "$CHANGED" | grep -qE '^(projects/hutch/|src/packages/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "firefox-extension=$(echo "$CHANGED" | grep -qE '^(projects/extensions/firefox-extension/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "chrome-extension=$(echo "$CHANGED" | grep -qE '^(projects/extensions/chrome-extension/|projects/browser-extension-core/)' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-  deploy-staging:
-    if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [all-tests, detect-changes]
     runs-on: ubuntu-latest
     environment: staging
     env:
@@ -85,10 +55,21 @@ jobs:
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
       PULUMI_STACK: staging
       PULUMI_CONFIG_PASSPHRASE: ''
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    # Expose detection results so downstream jobs can conditionally run
+    outputs:
+      platform-affected: ${{ steps.detect.outputs.platform-affected }}
+      non-platform-projects: ${{ steps.detect.outputs.non-platform-projects }}
+      has-non-platform: ${{ steps.detect.outputs.has-non-platform }}
+      ff-affected: ${{ steps.detect.outputs.ff-affected }}
+      chrome-affected: ${{ steps.detect.outputs.chrome-affected }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Full history needed for nx affected to compare commits
+          fetch-depth: 0
+
+      # Sets NX_BASE and NX_HEAD so nx affected knows what commits to compare
+      - uses: nrwl/nx-set-shas@v4
 
       - uses: pnpm/action-setup@v4
         with:
@@ -101,120 +82,109 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: npx nx compile hutch
-
-      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
-        working-directory: projects/hutch
-
-  post-deploy-staging:
-    if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [all-tests, detect-changes, deploy-staging]
-    runs-on: ubuntu-latest
-    environment: staging
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
-      PULUMI_CONFIG_PASSPHRASE: ''
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Get staging URL from Pulumi outputs
-        id: staging-url
+      - id: detect
         run: |
-          RAW_URL=$(pulumi stack output apiUrl --stack staging)
-          STAGING_URL="${RAW_URL%/\$default}"
-          echo "url=$STAGING_URL" >> "$GITHUB_OUTPUT"
-        working-directory: projects/hutch
+          # Get the list of projects affected by the push (uses NX_BASE..NX_HEAD)
+          AFFECTED=$(pnpm nx show projects --affected --json)
+          echo "Affected projects: $AFFECTED"
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        working-directory: projects/hutch
+          # Dynamically discover all projects that have a "deploy-infra" target
+          DEPLOYABLE=$(pnpm nx show projects --with-target deploy-infra --json)
 
-      - name: Verify staging is reachable
-        run: |
-          echo "Staging URL: ${{ steps.staging-url.outputs.url }}"
-          curl --fail --silent --show-error --max-time 30 "${{ steps.staging-url.outputs.url }}" | head -50
+          # Intersect: projects that are both affected AND deployable
+          ALREADY_DEPLOY=$(echo "$AFFECTED" "$DEPLOYABLE" | jq -s '.[0] as $a | .[1] | map(select(. as $p | $a | index($p)))')
+          echo "Code-affected deployable: $ALREADY_DEPLOY"
 
-      - name: Run E2E tests against staging
-        run: STAGING_URL=${{ steps.staging-url.outputs.url }} pnpm test:e2e:staging
-        working-directory: projects/hutch
+          # Deployable projects NOT in the affected list — check for infra drift
+          UNCHECKED=$(echo "$DEPLOYABLE" "$ALREADY_DEPLOY" | jq -s '.[0] as $d | .[1] as $a | $d | map(select(. as $p | $a | index($p) | not))')
+          echo "Checking infra drift for: $UNCHECKED"
 
-      - name: Upload test artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: e2e-staging-results
-          path: projects/hutch/test-results-staging/
-          retention-days: 7
+          # Compile dependencies so check-infra can evaluate Pulumi programs
+          UNCHECKED_CSV=$(echo "$UNCHECKED" | jq -r 'join(",")')
+          if [ -n "$UNCHECKED_CSV" ]; then
+            pnpm nx run-many --target=compile --projects="$UNCHECKED_CSV" 2>&1 || true
+          fi
 
-  deploy-prod:
-    if: needs.detect-changes.outputs.hutch == 'true'
-    needs: [all-tests, detect-changes, deploy-staging, post-deploy-staging]
-    runs-on: ubuntu-latest
-    environment: prod
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ap-southeast-2
-      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
-      PULUMI_STACK: prod
-      PULUMI_CONFIG_PASSPHRASE: ''
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-    steps:
-      - uses: actions/checkout@v6
+          # Run check-infra for each unchecked project, detect drift from pulumi output
+          DRIFTED='[]'
+          for project in $(echo "$UNCHECKED" | jq -r '.[]'); do
+            echo "::group::check-infra $project"
+            INFRA_OUTPUT=$(pnpm nx run "$project:check-infra" 2>&1) || true
+            echo "$INFRA_OUTPUT"
+            if echo "$INFRA_OUTPUT" | grep -qE 'to (update|create|delete|replace)'; then
+              echo "Drift detected in: $project"
+              DRIFTED=$(echo "$DRIFTED" | jq --arg p "$project" '. + [$p]')
+            else
+              echo "No drift in: $project"
+            fi
+            echo "::endgroup::"
+          done
+          echo "Drifted projects: $DRIFTED"
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
+          # Final deploy list: code-affected + infra-drifted
+          PROJECTS=$(echo "$ALREADY_DEPLOY" "$DRIFTED" | jq -s '.[0] + .[1] | unique')
+          NON_PLATFORM=$(echo "$PROJECTS" | jq -c '[.[] | select(. != "platform")]')
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: pnpm
+          echo "Final deploy list: $PROJECTS"
+          echo "Non-platform: $NON_PLATFORM"
 
-      - run: pnpm install --frozen-lockfile
+          # Set outputs for downstream jobs to use in their `if:` conditions
+          echo "platform-affected=$(echo "$PROJECTS" | jq -e 'index("platform")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "non-platform-projects=$NON_PLATFORM" >> "$GITHUB_OUTPUT"
+          echo "has-non-platform=$(echo "$NON_PLATFORM" | jq -e 'length > 0' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "ff-affected=$(echo "$PROJECTS" | jq -e 'index("firefox-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "chrome-affected=$(echo "$PROJECTS" | jq -e 'index("chrome-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-      - run: npx nx compile hutch
+  # Platform (EventBridge bus, shared infra) must deploy before any other project
+  # because other projects depend on platform resources (e.g. event bus ARN)
+  deploy-platform:
+    if: needs.detect-projects.outputs.platform-affected == 'true'
+    needs: [all-tests, detect-projects]
+    uses: ./.github/workflows/project-deployment.yaml
+    secrets: inherit
+    with:
+      project: platform
 
-      - run: PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack "$PULUMI_STACK" --yes
-        working-directory: projects/hutch
+  # Deploy all non-platform projects in parallel using a dynamic matrix
+  # Each project goes through staging → post-deploy verification → prod
+  # via the reusable project-deployment.yaml workflow
+  pipeline:
+    # Display the project name instead of "pipeline" in the GitHub Actions UI
+    name: ${{ matrix.project }}
+    # Runs when platform deploy succeeds OR is skipped (platform not affected)
+    if: >-
+      always()
+      && needs.all-tests.result == 'success'
+      && needs.detect-projects.result == 'success'
+      && needs.deploy-platform.result != 'failure'
+      && needs.detect-projects.outputs.has-non-platform == 'true'
+    # Waits for platform to finish first (shared infra must exist before app deploys)
+    needs: [all-tests, detect-projects, deploy-platform]
+    strategy:
+      # Don't cancel other project deploys if one fails
+      fail-fast: false
+      # Build the matrix dynamically from the detected affected projects
+      matrix:
+        project: ${{ fromJSON(needs.detect-projects.outputs.non-platform-projects) }}
+    uses: ./.github/workflows/project-deployment.yaml
+    secrets: inherit
+    with:
+      project: ${{ matrix.project }}
 
-  ff-extension-deploy-to-prod:
-    if: needs.detect-changes.outputs.firefox-extension == 'true'
-    needs: [all-tests, detect-changes]
+  # Submit Firefox extension to AMO for signing (runs after pipeline deploys infra)
+  ff-extension-publish:
+    if: needs.detect-projects.outputs.ff-affected == 'true'
+    needs: [detect-projects, pipeline]
     permissions:
       contents: write
     uses: ./.github/workflows/submit-ff-extension-for-signing.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+    secrets: inherit
 
-  chrome-extension-deploy-to-prod:
-    if: needs.detect-changes.outputs.chrome-extension == 'true'
-    needs: [all-tests, detect-changes]
+  # Publish Chrome extension to Chrome Web Store
+  chrome-extension-publish:
+    if: needs.detect-projects.outputs.chrome-affected == 'true'
+    needs: [detect-projects, pipeline]
     permissions:
       contents: write
     uses: ./.github/workflows/publish-chrome-extension.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-      GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
-      CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+    secrets: inherit

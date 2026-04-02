@@ -1,11 +1,15 @@
 {
   "name": "firefox-extension",
   "targets": {
+    "deploy-infra": {
+      "command": "PULUMI_CONFIG_PASSPHRASE='' pulumi up --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\" $([ \"$CI\" = true ] && echo --yes)",
+      "options": { "cwd": "{projectRoot}" }
+    },
     "compile": {
       "outputs": ["{projectRoot}/dist-extension-compiled", "{projectRoot}/dist-extension-files"]
     },
     "check": {
-      "command": "pnpm lint && pnpm test-with-coverage && pnpm check-infra",
+      "command": "pnpm lint && pnpm test-with-coverage",
       "options": { "cwd": "{projectRoot}" }
     }
   }

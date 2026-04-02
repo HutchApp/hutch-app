@@ -14,19 +14,18 @@ export default {
 		"helmet",
 		"compression",
 		"@types/compression",
-		// Workspace dependency for S3 config (subpath imports not detected by knip)
+		// Workspace dependencies with subpath imports not detected by knip
 		"browser-extension-core",
-		// Used in infra code (compiled separately)
-		"@packages/hutch-logger",
+		"save-link",
+		// Used in app.ts (reached via infra entry point which knip ignores)
+		"@packages/hutch-infra-components",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
-		// Used via scripts/run-tests-with-coverage.js (not a source import)
-		"@packages/test-phase-runner",
+		// Used in normalize-article-url.ts (knip doesn't resolve workspace subpath)
+		"@packages/link-id",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),
-		// Used via check script to delegate to Nx
-		"nx",
 		// Used via deploy script, installed globally or via npx
 		"pulumi",
 	],

@@ -1,0 +1,84 @@
+name: Project Deployment
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
+      PULUMI_STACK: staging
+      PULUMI_CONFIG_PASSPHRASE: ''
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy ${{ inputs.project }} to staging
+        run: pnpm nx run ${{ inputs.project }}:deploy-infra
+
+      - name: Post-deploy staging
+        run: pnpm nx run ${{ inputs.project }}:post-deploy
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-staging-results-${{ inputs.project }}
+          path: projects/${{ inputs.project }}/test-results-staging/
+          retention-days: 7
+
+  deploy-prod:
+    needs: [deploy-staging]
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
+      PULUMI_STACK: prod
+      PULUMI_CONFIG_PASSPHRASE: ''
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy ${{ inputs.project }} to prod
+        run: pnpm nx run ${{ inputs.project }}:deploy-infra
+
+      - name: Post-deploy prod
+        run: pnpm nx run ${{ inputs.project }}:post-deploy

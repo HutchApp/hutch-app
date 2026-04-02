@@ -71,35 +71,6 @@ export const INSTALL_PAGE_STYLES = `
   opacity: 0.9;
 }
 
-.install-page__steps {
-  margin-bottom: 32px;
-}
-
-.install-page__steps h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: var(--foreground);
-}
-
-.install-page__steps ol {
-  padding-left: 20px;
-}
-
-.install-page__steps li {
-  font-size: 1rem;
-  line-height: 1.7;
-  color: var(--muted-foreground);
-  margin-bottom: 8px;
-}
-
-.install-page__steps code {
-  background: var(--muted);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.875rem;
-}
-
 .install-page__footnote {
   font-size: 0.875rem;
   line-height: 1.6;

@@ -42,6 +42,14 @@ async function uploadExtension({ extensionId, zipPath, accessToken }) {
 	assert.ok(response.ok, `CWS upload failed: ${response.status} ${body}`);
 
 	const result = JSON.parse(body);
+
+	const notUpdatable = (result.itemError ?? []).some(
+		(e) => e.error_code === "ITEM_NOT_UPDATABLE",
+	);
+	if (notUpdatable) {
+		return { skipped: true };
+	}
+
 	assert.ok(
 		result.uploadState === "SUCCESS",
 		`CWS upload state: ${result.uploadState}. Errors: ${JSON.stringify(result.itemError ?? [])}`,
@@ -95,7 +103,12 @@ async function main() {
 	const accessToken = await getAccessToken({ clientId, clientSecret, refreshToken });
 
 	console.log(`Uploading ${prodZip} to Chrome Web Store...`);
-	await uploadExtension({ extensionId, zipPath, accessToken });
+	const uploadResult = await uploadExtension({ extensionId, zipPath, accessToken });
+
+	if (uploadResult.skipped) {
+		console.warn("Extension is not updatable (pending review or ready to publish). Skipping — the previously submitted version is still being processed by Google.");
+		process.exit(0);
+	}
 
 	console.log("Publishing extension...");
 	await publishExtension({ extensionId, accessToken });

@@ -14,6 +14,7 @@ export interface ArticleAction {
 	text: string;
 	title: string;
 	testAction: string;
+	pageReload: boolean;
 	fields: ArticleActionField[];
 }
 
@@ -39,6 +40,7 @@ export interface QueueViewModel {
 	totalPages: number;
 	currentPage: number;
 	total: number;
+	unreadCount: number;
 	filterUrls: {
 		unread: string;
 		read: string;
@@ -80,6 +82,7 @@ function toArticleActions(
 			text: "Read",
 			title: "Mark as read",
 			testAction: "mark-read",
+			pageReload: true,
 			fields: [],
 		});
 	}
@@ -91,6 +94,7 @@ function toArticleActions(
 			text: "Unread",
 			title: "Mark as unread",
 			testAction: "mark-unread",
+			pageReload: false,
 			fields: [{ name: "status", value: "unread" }],
 		});
 	}
@@ -101,6 +105,7 @@ function toArticleActions(
 		text: "×",
 		title: "Delete",
 		testAction: "delete",
+		pageReload: false,
 		fields: [],
 	});
 
@@ -132,7 +137,7 @@ function toArticleViewModel(
 export function toQueueViewModel(
 	result: FindArticlesResult,
 	filters: QueueUrlState,
-	options?: { now?: Date; saveError?: string },
+	options?: { now?: Date; saveError?: string; unreadCount?: number },
 ): QueueViewModel {
 	const now = options?.now ?? new Date();
 	const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
@@ -148,6 +153,7 @@ export function toQueueViewModel(
 		totalPages,
 		currentPage: result.page,
 		total: result.total,
+		unreadCount: options?.unreadCount ?? result.total,
 		filterUrls: {
 			unread: buildQueueUrl({ ...baseFilters, status: "unread" }),
 			read: buildQueueUrl({ ...baseFilters, status: "read" }),
