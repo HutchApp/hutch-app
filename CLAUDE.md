@@ -300,6 +300,12 @@ console.log('\n=== Running E2E tests ===\n')
 console.log('\n=== Hutch - Running E2E tests ===\n')
 ```
 
+## Static Analysis Configuration
+
+### Never Add Excludes or Ignore Patterns to Coverage, Lint, Knip, etc. Without Approval
+
+Never add exclude patterns to any `enforce-coverage.config.js` or `enforce-coverage.config.base.js` including knip, biome, etc. without explicit human approval. When coverage fails because a file needs to be excluded, present the situation and ask before adding the pattern.
+
 ## CI/CD Guidelines
 
 ### Never Bypass Git Commit Hooks

@@ -6,18 +6,17 @@ import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { initFindArticleContent } from "./find-article-content";
 import { LinkId } from "./link-id";
 
-// process.env used directly — same exception as Playwright configs:
-// importing requireEnv causes the node-test process to load require-env.ts
-// outside Jest V8 coverage, creating uncovered function entries that break thresholds
-const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
-assert(tableName, "DYNAMODB_ARTICLES_TABLE must be set");
-
-const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-
-const { findArticleContent } = initFindArticleContent({ client, tableName });
-
 describe("findArticleContent (integration)", () => {
 	it("retrieves content for a saved article", async () => {
+		// process.env used directly — same exception as Playwright configs:
+		// importing requireEnv causes the node-test process to load require-env.ts
+		// outside Jest V8 coverage, creating uncovered function entries that break thresholds
+		const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
+		assert(tableName);
+
+		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const { findArticleContent } = initFindArticleContent({ client, tableName });
+
 		const uniqueUrl = `https://example.com/${randomUUID()}`;
 		const expectedContent = "<p>Integration test content</p>";
 
