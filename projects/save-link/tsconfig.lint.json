@@ -10,5 +10,5 @@
     }
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "node_modules", "src/infra/**"]
+  "exclude": ["dist", "node_modules"]
 }
