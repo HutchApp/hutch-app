@@ -9,9 +9,7 @@ export default {
 		"**/*.main.ts",
 	],
 	ignore: [
-		...(base.ignore ?? []),
-		// Used only from infra code (compiled separately by Lambda handler)
-		"src/generate-summary/dynamodb-summary-cache.ts",
+		...(base.ignore ?? [])
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),
