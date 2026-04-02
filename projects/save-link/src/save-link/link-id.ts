@@ -1,1 +1,1 @@
-export { LinkId, type LinkId as LinkIdType } from "@packages/link-id";
+export { LinkId } from "@packages/link-id";

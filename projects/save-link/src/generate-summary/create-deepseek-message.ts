@@ -6,7 +6,7 @@ type ChatCompletionResponse = {
 	usage?: { prompt_tokens: number; completion_tokens: number } | null;
 };
 
-export type CreateChatCompletion = (params: {
+type CreateChatCompletion = (params: {
 	model: string;
 	max_tokens: number;
 	messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
