@@ -209,7 +209,18 @@ const sydneyToMelbourneParams = { ... };
 
 ### Coverage Over Legibility
 
-100% code coverage is more important than code legibility. When V8 coverage instrumentation requires restructuring code, make those changes with explanatory comments linking to verified online resources.
+100% code coverage is more important than code legibility. When a code path cannot be exercised by tests — whether due to V8 engine instrumentation quirks (e.g., `??` creating unreachable branches) or because the fallback is unreachable by design — remove the dead code OR rewrite it to eliminate the untestable path. Do not leave dead fallbacks in place and lower thresholds to accommodate them.
+
+```typescript
+// ❌ BAD - ?? creates a V8 branch for a null case that never happens
+const wrapper = document.querySelector("div") ?? document.documentElement;
+
+// ✅ GOOD - assert eliminates the untestable branch (no V8 branch in caller)
+const wrapper = document.querySelector("div");
+assert(wrapper, "parseHTML('<div>...') must produce a <div>");
+```
+
+When V8 coverage instrumentation requires restructuring code, make those changes with explanatory comments linking to verified online resources.
 
 ### No Coverage Ignore Comments
 

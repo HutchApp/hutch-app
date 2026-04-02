@@ -85,6 +85,29 @@ describe("initLinkSummariser", () => {
 		expect(createMessage).not.toHaveBeenCalled();
 	});
 
+	it("should return null when response has no text block", async () => {
+		const createMessage: CreateAiMessage = async () => ({
+			content: [{ type: "tool_use" }],
+			usage: { input_tokens: 50, output_tokens: 10 },
+		});
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findCachedSummary: noCache,
+			saveCachedSummary: noopSave,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		const result = await summarizeArticle({
+			url: "https://example.com/no-text-block",
+			textContent: "Some article content.",
+		});
+
+		expect(result).toBeNull();
+	});
+
 	it("should return null when Claude returns 'Summary not available.'", async () => {
 		const createMessage = createStubCreateMessage("Summary not available.");
 
