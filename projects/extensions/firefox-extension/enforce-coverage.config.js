@@ -13,6 +13,8 @@ const config = {
     lines: 100,
   },
   extraExcludePatterns: [
+    // Browser code — Canvas API, not runnable in Node.js
+    '**/*.browser.ts',
     // esbuild entry points — bootstrap code for browser extension
     'src/runtime/background/background.ts',
     'src/runtime/popup/popup.ts',

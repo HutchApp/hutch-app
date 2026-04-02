@@ -14,13 +14,6 @@ export default {
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),
-		// Used via c8 CLI wrapper in test-with-coverage script
-		"c8",
-		// Used by Pulumi infra (compiled separately)
-		"@pulumi/aws",
-		"@pulumi/pulumi",
-		// Used via compile and ext:run scripts
-		"web-ext",
 		// Workspace dependencies — knip can't trace through esbuild-bundled entry points
 		"browser-extension-core",
 		"@packages/hutch-logger",
@@ -37,8 +30,6 @@ export default {
 		"nx",
 		// Used via check-infra script
 		"pulumi",
-		// Used via compile and ext:run scripts
-		"web-ext",
 	],
 	entry: [
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)

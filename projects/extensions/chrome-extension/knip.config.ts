@@ -16,8 +16,6 @@ export default {
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),
-		// Used via c8 CLI wrapper in test-with-coverage script
-		"c8",
 		// Used by Pulumi infra (compiled separately)
 		"@pulumi/aws",
 		"@pulumi/pulumi",
@@ -30,8 +28,6 @@ export default {
 		"@packages/check-unused-css",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)
 		"@packages/test-phase-runner",
-		// Bundled by esbuild into browser extension entry points
-		"webextension-polyfill",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),

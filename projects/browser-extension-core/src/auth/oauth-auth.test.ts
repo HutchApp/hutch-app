@@ -287,6 +287,22 @@ describe("initOAuthAuth", () => {
 				expect(result.error).toBe(thrownError);
 			}
 		});
+
+		it("should wrap non-Error thrown values in an Error", async () => {
+			const deps = createInMemoryOAuthDeps();
+			const auth = await initOAuthAuth(deps);
+			await auth.login();
+
+			const result = auth.whenLoggedIn(() => {
+				throw 42;
+			});
+
+			expect(result.ok).toBe(false);
+			if (!result.ok && result.reason === "error") {
+				expect(result.error).toBeInstanceOf(Error);
+				expect(result.error.message).toBe("42");
+			}
+		});
 	});
 
 	describe("session restoration", () => {

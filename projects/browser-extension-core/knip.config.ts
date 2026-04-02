@@ -1,10 +1,7 @@
 import type { KnipConfig } from "knip";
 
 export default {
-	entry: [
-		"src/e2e/index.ts",
-		"src/e2e-actions/index.ts",
-	],
+	entry: [],
 	ignore: [
 		// PurgeCSS config loaded via CLI, not imported in source
 		"purgecss.config.js",

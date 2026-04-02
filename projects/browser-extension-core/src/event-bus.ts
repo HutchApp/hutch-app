@@ -16,15 +16,14 @@ export function createEventBus(): EventBus {
 			listeners.set(event, existing);
 		},
 		once(event, handler) {
+			const existing = listeners.get(event) ?? [];
 			const wrapper: EventCallback = (...args) => {
-				const handlers = listeners.get(event) ?? [];
-				const index = handlers.indexOf(wrapper);
+				const index = existing.indexOf(wrapper);
 				if (index !== -1) {
-					handlers.splice(index, 1);
+					existing.splice(index, 1);
 				}
 				handler(...args);
 			};
-			const existing = listeners.get(event) ?? [];
 			existing.push(wrapper);
 			listeners.set(event, existing);
 		},

@@ -71,4 +71,6 @@ describe("createEventBus", () => {
 
 		expect(calls).toEqual(["persistent", "once", "persistent"]);
 	});
+
+
 });

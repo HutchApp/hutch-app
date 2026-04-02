@@ -1,8 +1,6 @@
 /** @type {import('knip').KnipConfig} */
 module.exports = {
   ignore: [
-    // Client-side scripts loaded dynamically via readFileSync in tests
-    '**/*.client.js',
     // Integration test files are entry points for jest
     '**/*.integration.ts',
     // Test utilities used by integration tests

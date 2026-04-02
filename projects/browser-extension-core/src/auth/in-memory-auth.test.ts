@@ -42,6 +42,21 @@ describe("initInMemoryAuth", () => {
 				expect(result.error).toBe(thrownError);
 			}
 		});
+
+		it("should wrap non-Error thrown values in an Error", async () => {
+			const auth = initInMemoryAuth();
+			await auth.login();
+
+			const result = auth.whenLoggedIn(() => {
+				throw "string-error";
+			});
+
+			expect(result.ok).toBe(false);
+			if (!result.ok && result.reason === "error") {
+				expect(result.error).toBeInstanceOf(Error);
+				expect(result.error.message).toBe("string-error");
+			}
+		});
 	});
 
 	describe("refreshTokens", () => {
