@@ -16,8 +16,6 @@ config.enforceCoverage({
   thresholds: config.thresholds,
   showTextTable: true,
   extraExcludePatterns: [
-    ...(config.extraExcludePatterns || []),
-    // Infrastructure — Pulumi IaC and Lambda entry points
-    'src/infra/**'
+    ...(config.extraExcludePatterns || [])
   ],
 });

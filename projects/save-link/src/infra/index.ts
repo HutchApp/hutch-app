@@ -49,7 +49,7 @@ const generateSummaryDynamodb = new HutchDynamoDBAccess("generate-summary-dynamo
 });
 
 const generateSummaryLambda = new HutchLambda("generate-summary", {
-	entryPoint: "./src/infra/generate-summary-lambda.ts",
+	entryPoint: "./src/infra/generate-summary.main.ts",
 	outputDir: ".lib/generate-summary",
 	assetDir: "./src",
 	memorySize: 512,
@@ -86,7 +86,7 @@ const linkSavedDynamodb = new HutchDynamoDBAccess("link-saved-dynamodb", {
 });
 
 const linkSavedLambda = new HutchLambda("link-saved", {
-	entryPoint: "./src/infra/link-saved-lambda.ts",
+	entryPoint: "./src/infra/link-saved.main.ts",
 	outputDir: ".lib/link-saved",
 	assetDir: "./src",
 	memorySize: 256,
@@ -117,7 +117,7 @@ eventBus.subscribe(LinkSavedEvent, linkSavedLambdaWithSQS);
 // --- SummaryGenerated handler ---
 
 const summaryGeneratedLambda = new HutchLambda("summary-generated", {
-	entryPoint: "./src/infra/summary-generated-lambda.ts",
+	entryPoint: "./src/infra/summary-generated.main.ts",
 	outputDir: ".lib/summary-generated",
 	assetDir: "./src",
 	memorySize: 128,
