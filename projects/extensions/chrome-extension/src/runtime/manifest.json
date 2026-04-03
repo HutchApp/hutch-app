@@ -32,7 +32,7 @@
     }
   },
   "background": {
-    "service_worker": "background/background.js"
+    "service_worker": "background/background.browser.js"
   },
   "content_scripts": [
     {
@@ -40,7 +40,7 @@
         "<all_urls>"
       ],
       "js": [
-        "content/shortcut.js"
+        "content/shortcut.browser.js"
       ],
       "run_at": "document_start"
     }

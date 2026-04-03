@@ -40,9 +40,9 @@ describe("createBuildPlan", () => {
 		});
 
 		expect(plan.esbuildOptions.entryPoints).toEqual([
-			join(projectDir, "src", "runtime", "background", "background.ts"),
-			join(projectDir, "src", "runtime", "popup", "popup.ts"),
-			join(projectDir, "src", "runtime", "content", "shortcut.ts"),
+			join(projectDir, "src", "runtime", "background", "background.browser.ts"),
+			join(projectDir, "src", "runtime", "popup", "popup.browser.ts"),
+			join(projectDir, "src", "runtime", "content", "shortcut.browser.ts"),
 		]);
 	});
 

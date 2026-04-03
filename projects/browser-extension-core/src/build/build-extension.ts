@@ -60,9 +60,9 @@ function createPlanData(input: { config: ExtensionBuildConfig; projectDir: strin
 
 	const esbuildOptions: EsbuildOptions = {
 		entryPoints: [
-			join(srcDir, "runtime", "background", "background.ts"),
-			join(srcDir, "runtime", "popup", "popup.ts"),
-			join(srcDir, "runtime", "content", "shortcut.ts"),
+			join(srcDir, "runtime", "background", "background.browser.ts"),
+			join(srcDir, "runtime", "popup", "popup.browser.ts"),
+			join(srcDir, "runtime", "content", "shortcut.browser.ts"),
 		],
 		bundle: true,
 		format: "iife",

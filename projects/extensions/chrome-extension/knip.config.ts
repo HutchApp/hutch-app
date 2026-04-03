@@ -38,10 +38,10 @@ export default {
 	],
 	entry: [
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)
-		"src/runtime/background/background.ts",
-		"src/runtime/popup/popup.ts",
-		"src/runtime/content/shortcut.ts",
-		"src/runtime/offscreen/offscreen.ts",
+		"src/runtime/background/background.browser.ts",
+		"src/runtime/popup/popup.browser.ts",
+		"src/runtime/content/shortcut.browser.ts",
+		"src/runtime/offscreen/offscreen.browser.ts",
 		// E2E test entry points (run via node --test)
 		"src/e2e/**/run.e2e-local.main.ts",
 	],

@@ -42,7 +42,7 @@
   },
   "background": {
     "scripts": [
-      "background/background.js"
+      "background/background.browser.js"
     ]
   },
   "content_scripts": [
@@ -51,7 +51,7 @@
         "<all_urls>"
       ],
       "js": [
-        "content/shortcut.js"
+        "content/shortcut.browser.js"
       ],
       "run_at": "document_start"
     }
