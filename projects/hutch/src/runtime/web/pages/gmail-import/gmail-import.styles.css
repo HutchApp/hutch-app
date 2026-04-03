@@ -1,0 +1,198 @@
+.gmail-import {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+.gmail-import__header {
+  margin-bottom: 32px;
+}
+
+.gmail-import__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0 0 4px;
+}
+
+.gmail-import__subtitle {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.gmail-import__section {
+  margin-bottom: 24px;
+}
+
+.gmail-import__section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 8px;
+}
+
+.gmail-import__text {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.gmail-import__status {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  font-size: 0.9375rem;
+}
+
+.gmail-import__status--connected {
+  background: var(--success-bg, hsl(142 71% 95%));
+  color: var(--success-fg, hsl(142 71% 29%));
+}
+
+.gmail-import__status--disconnected {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.gmail-import__status--info {
+  background: var(--info-bg, hsl(210 100% 95%));
+  color: var(--info-fg, hsl(210 100% 29%));
+}
+
+.gmail-import__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border, hsl(0 0% 90%));
+}
+
+.gmail-import__count {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-right: auto;
+}
+
+.gmail-import__select-btn {
+  background: none;
+  border: 1px solid var(--border, hsl(0 0% 80%));
+  border-radius: var(--radius);
+  padding: 4px 12px;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.gmail-import__select-btn:hover {
+  background: var(--muted);
+}
+
+.gmail-import__email-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 480px;
+  overflow-y: auto;
+  border: 1px solid var(--border, hsl(0 0% 90%));
+  border-radius: var(--radius);
+}
+
+.gmail-import__email-item {
+  border-bottom: 1px solid var(--border, hsl(0 0% 94%));
+}
+
+.gmail-import__email-item:last-child {
+  border-bottom: none;
+}
+
+.gmail-import__email-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.gmail-import__email-label:hover {
+  background: var(--muted, hsl(0 0% 97%));
+}
+
+.gmail-import__checkbox {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.gmail-import__email-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gmail-import__email-subject {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmail-import__email-from {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmail-import__no-emails {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.gmail-import__action {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.gmail-import__btn {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.gmail-import__btn:hover {
+  opacity: 0.9;
+}
+
+.gmail-import__btn--danger {
+  background: var(--destructive, hsl(0 84% 60%));
+  color: var(--destructive-foreground, #fff);
+  font-size: 0.875rem;
+  padding: 8px 20px;
+}
+
+.gmail-import__disconnect {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.gmail-import__list {
+  margin: 0;
+  padding-left: 24px;
+  color: var(--muted-foreground);
+  line-height: 1.8;
+}

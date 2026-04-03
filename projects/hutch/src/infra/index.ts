@@ -25,6 +25,7 @@ const tableNames = {
 	sessions: config.require("dynamodbSessionsTable"),
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
+	gmailTokens: config.require("dynamodbGmailTokensTable"),
 };
 
 const storage = new HutchStorage("hutch", {
@@ -51,6 +52,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 		{ arn: storage.sessionsTable.arn, includeIndexes: false },
 		{ arn: storage.oauthTable.arn, includeIndexes: true },
 		{ arn: storage.verificationTokensTable.arn, includeIndexes: false },
+		{ arn: storage.gmailTokensTable.arn, includeIndexes: false },
 	],
 	actions: [
 		"dynamodb:GetItem",
@@ -89,6 +91,13 @@ const lambda = new HutchLambda("hutch", {
 		DYNAMODB_SESSIONS_TABLE: storage.sessionsTable.name,
 		DYNAMODB_OAUTH_TABLE: storage.oauthTable.name,
 		DYNAMODB_VERIFICATION_TOKENS_TABLE: storage.verificationTokensTable.name,
+		DYNAMODB_GMAIL_TOKENS_TABLE: storage.gmailTokensTable.name,
+		GOOGLE_CLIENT_ID: pulumi.runtime.isDryRun()
+			? (getEnv("GOOGLE_CLIENT_ID") ?? "")
+			: requireEnv("GOOGLE_CLIENT_ID"),
+		GOOGLE_CLIENT_SECRET: pulumi.runtime.isDryRun()
+			? (getEnv("GOOGLE_CLIENT_SECRET") ?? "")
+			: requireEnv("GOOGLE_CLIENT_SECRET"),
 		RESEND_API_KEY: pulumi.runtime.isDryRun()
 			? (getEnv("RESEND_API_KEY") ?? "")
 			: requireEnv("RESEND_API_KEY"),

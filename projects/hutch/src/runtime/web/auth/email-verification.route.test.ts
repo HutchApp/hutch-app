@@ -9,6 +9,7 @@ import type { FetchHtml } from "../../providers/article-parser/readability-parse
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
+import { initInMemoryGmailTokenStore } from "../../providers/gmail/in-memory-gmail-token-store";
 import { createApp } from "../../server";
 
 const stubFetchHtml: FetchHtml = async (url) => {
@@ -62,6 +63,12 @@ describe("Email verification", () => {
 				publishLinkSaved: async () => {},
 				findCachedSummary: async () => "",
 				refreshArticleIfStale: async () => ({ action: "new" as const }),
+				...initInMemoryGmailTokenStore(),
+				exchangeGmailCode: async () => ({ accessToken: "stub", refreshToken: "stub", expiresAt: Date.now() + 3600000 }),
+				listUnreadGmailMessages: async () => [],
+				runGmailImport: async () => ({ importedCount: 0, skippedCount: 0, emailsProcessed: 0, emailsLabeled: 0 }),
+				ensureValidAccessToken: async () => "stub-access-token",
+				googleClientId: "test-google-client-id",
 			});
 
 			const response = await request(app).post("/signup").type("form").send({

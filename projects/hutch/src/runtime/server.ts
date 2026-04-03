@@ -30,6 +30,10 @@ import type {
 	VerifyEmailToken,
 } from "./providers/email-verification/email-verification.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
+import type { ExchangeGmailCode, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
+import type { FindGmailTokens, SaveGmailTokens, DeleteGmailTokens } from "./providers/gmail/gmail-token-store.types";
+import type { EnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
+import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
@@ -39,6 +43,7 @@ import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
+import { initGmailImportRoutes } from "./web/pages/gmail-import/gmail-import.page";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
@@ -75,6 +80,14 @@ interface AppDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	findGmailTokens: FindGmailTokens;
+	saveGmailTokens: SaveGmailTokens;
+	deleteGmailTokens: DeleteGmailTokens;
+	exchangeGmailCode: ExchangeGmailCode;
+	listUnreadGmailMessages: ListUnreadGmailMessages;
+	runGmailImport: RunGmailImport;
+	ensureValidAccessToken: EnsureValidAccessToken;
+	googleClientId: string;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -113,6 +126,7 @@ export function createApp(dependencies: AppDependencies): Express {
 				"Disallow: /queue",
 				"Disallow: /export",
 				"Disallow: /oauth",
+				"Disallow: /gmail-import",
 				"Disallow: /forgot-password",
 				"",
 				`Sitemap: ${dependencies.baseUrl}/sitemap.xml`,
@@ -229,6 +243,20 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/oauth/token", extensionCors);
 	app.use("/oauth/revoke", extensionCors);
 	app.use("/oauth", oauthRouter);
+
+	const gmailImportRouter = initGmailImportRoutes({
+		findGmailTokens: deps.findGmailTokens,
+		saveGmailTokens: deps.saveGmailTokens,
+		deleteGmailTokens: deps.deleteGmailTokens,
+		exchangeGmailCode: deps.exchangeGmailCode,
+		ensureValidAccessToken: deps.ensureValidAccessToken,
+		listUnreadGmailMessages: deps.listUnreadGmailMessages,
+		runGmailImport: deps.runGmailImport,
+		googleClientId: deps.googleClientId,
+		appOrigin,
+		logError: deps.logError,
+	});
+	app.use("/gmail-import", requireAuth, gmailImportRouter);
 
 	app.use((_req: Request, res: Response) => {
 		const result = NotFoundPage().to("text/html");
