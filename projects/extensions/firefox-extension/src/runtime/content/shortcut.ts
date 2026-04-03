@@ -1,3 +1,4 @@
+/* c8 ignore start -- content script, runs in browser page context only */
 // Firefox won't let extensions override Cmd+D via the commands API — it silently
 // refuses to assign shortcuts that conflict with native browser shortcuts.
 // browserAction.openPopup() only works from specific user action contexts
@@ -15,3 +16,4 @@ document.addEventListener(
 	},
 	true,
 );
+/* c8 ignore stop */

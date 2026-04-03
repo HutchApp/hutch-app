@@ -1,3 +1,4 @@
+/* c8 ignore start -- content script, runs in browser page context only */
 import browser from "webextension-polyfill";
 
 // Chrome won't let extensions override Cmd+D via the commands API — it silently
@@ -17,3 +18,4 @@ document.addEventListener(
 	},
 	true,
 );
+/* c8 ignore stop */

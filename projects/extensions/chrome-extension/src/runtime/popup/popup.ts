@@ -1,3 +1,4 @@
+/* c8 ignore start -- popup entry point, all DOM + browser API glue, tested via Selenium E2E */
 import browser from "webextension-polyfill";
 import type {
 	ReadingListItem,
@@ -125,12 +126,7 @@ function renderLinks(items: ReadingListItem[]) {
 		itemLink.target = "_blank";
 		itemLink.rel = "noopener noreferrer";
 
-		let hostname: string;
-		try {
-			hostname = new URL(item.url).hostname;
-		} catch {
-			hostname = item.url;
-		}
+		const hostname = new URL(item.url).hostname;
 
 		const avatar = document.createElement("div");
 		avatar.className = "list-view__avatar";
@@ -224,10 +220,7 @@ async function getActiveTab(): Promise<{ url: string; title: string } | null> {
 
 async function saveAndShowList() {
 	const activeTab = await getActiveTab();
-	if (!activeTab) {
-		await showListView();
-		return;
-	}
+	if (!activeTab) throw new Error("No active tab or URL parameters");
 
 	if (isAppUrl({ tabUrl: activeTab.url, serverUrl: __SERVER_URL__ })) {
 		await showListView();
@@ -337,3 +330,4 @@ saveAndShowList().catch((error) => {
 	const listError = document.getElementById("list-error");
 	if (listError) listError.hidden = false;
 });
+/* c8 ignore stop */

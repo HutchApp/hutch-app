@@ -28,7 +28,7 @@ module.exports = {
     {
       type: 'node-test',
       name: 'Running E2E tests',
-      files: ['dist/e2e/login-flow/run.e2e-local.js'],
+      files: ['dist/e2e/login-flow/run.e2e-local.main.js'],
       timeout: 90000,
       env: { HEADLESS: 'true' },
     },

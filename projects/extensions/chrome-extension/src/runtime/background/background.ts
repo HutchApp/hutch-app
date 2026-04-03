@@ -1,3 +1,4 @@
+/* c8 ignore start -- composition root, all browser API glue, tested via Selenium E2E */
 import browser from "webextension-polyfill";
 import {
 	BrowserExtensionCore,
@@ -276,3 +277,4 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 
 	return true;
 });
+/* c8 ignore stop */

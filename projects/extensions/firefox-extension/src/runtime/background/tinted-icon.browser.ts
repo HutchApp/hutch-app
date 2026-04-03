@@ -1,3 +1,4 @@
+/* c8 ignore start -- Canvas + browser.browserAction APIs, not runnable in Node.js */
 import type { SetIcon } from "browser-extension-core";
 
 const SAVED_COLOR = "#3D8B6E";
@@ -54,3 +55,4 @@ export function createBrowserSetIcon(): SetIcon {
 		},
 	};
 }
+/* c8 ignore stop */

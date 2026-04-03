@@ -39,6 +39,6 @@ export default {
 		"src/runtime/popup/popup.ts",
 		"src/runtime/content/shortcut.ts",
 		// E2E test entry points (run via node --test)
-		"src/e2e/**/run.e2e-local.ts",
+		"src/e2e/**/run.e2e-local.main.ts",
 	],
 } satisfies KnipConfig;

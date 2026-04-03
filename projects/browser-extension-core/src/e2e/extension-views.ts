@@ -36,4 +36,5 @@ export const CSS_SELECTORS = {
 	approveButton: 'button[value="approve"]',
 	listItem: "#link-list .list-view__item",
 	listItemTitle: "#link-list .list-view__item-title",
+	deleteButton: "#link-list .list-view__delete",
 } as const;

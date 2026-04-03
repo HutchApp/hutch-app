@@ -1,3 +1,4 @@
+/* c8 ignore start -- Canvas + chrome.offscreen APIs, not runnable in Node.js */
 import browser from "webextension-polyfill";
 import type { SetIcon } from "browser-extension-core";
 
@@ -66,3 +67,4 @@ export function createBrowserSetIcon(): SetIcon {
 		},
 	};
 }
+/* c8 ignore stop */
