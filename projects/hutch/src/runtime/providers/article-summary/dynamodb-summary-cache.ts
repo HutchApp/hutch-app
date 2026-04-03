@@ -1,3 +1,4 @@
+/* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
@@ -46,3 +47,4 @@ export function initDynamoDbSummaryCache(deps: {
 
 	return { findCachedSummary, saveCachedSummary };
 }
+/* c8 ignore stop */

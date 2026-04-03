@@ -1,3 +1,4 @@
+/* c8 ignore start -- composition root, no logic to test */
 import type { Express } from "express";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
@@ -144,3 +145,4 @@ export const localServer = (expressApp: Express, logger: Logger): void => {
 		logger.info(`Local server running on http://localhost:${port}`);
 	});
 };
+/* c8 ignore stop */

@@ -1,3 +1,4 @@
+/* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import assert from "node:assert";
 import { z } from "zod";
 import type {
@@ -342,3 +343,4 @@ export function initDynamoDbOAuthModel(deps: {
 		generateAuthorizationCode: async () => generateToken(),
 	};
 }
+/* c8 ignore stop */

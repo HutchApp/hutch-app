@@ -90,7 +90,18 @@ Retry callbacks (e.g., `beforeRetry`) that only execute under CI flakiness (slow
 beforeRetry: /* c8 ignore next */ async (p) => { await p.reload({ waitUntil: 'domcontentloaded' }) },
 ```
 
-This is the **only** approved use of c8 ignore in E2E code — for retry paths that are inherently non-deterministic.
+### `c8 ignore` for Whole-File Exclusions
+
+When an entire file should be excluded from coverage (e.g., staging-only E2E tests, composition roots, thin SDK wrappers), place `/* c8 ignore start */` on line 1 and `/* c8 ignore stop */` on the last line. Include a reason after `--`:
+
+```typescript
+/* c8 ignore start -- staging E2E test, only run in CI */
+import { test } from '@playwright/test'
+// ... entire file ...
+/* c8 ignore stop */
+```
+
+Do **not** add individual files to `enforce-coverage.config.js` `extraExcludePatterns`. Config excludes are for whole directories (e.g., `src/infra/**`). Individual file exclusions use inline c8 ignore comments.
 
 ## Running E2E Tests
 

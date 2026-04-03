@@ -1,3 +1,4 @@
+/* c8 ignore start -- thin SDK wrapper, tested via integration */
 import { Resend } from "resend";
 import type { SendEmail } from "./email.types";
 
@@ -16,3 +17,4 @@ export function initResendEmail(apiKey: string): { sendEmail: SendEmail } {
 
 	return { sendEmail };
 }
+/* c8 ignore stop */

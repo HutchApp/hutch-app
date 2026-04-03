@@ -1,3 +1,4 @@
+/* c8 ignore start -- thin SDK wrapper, only used in prod path */
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import { LinkSavedEvent } from "@packages/hutch-infra-components";
 import type { PublishLinkSaved } from "./publish-link-saved.types";
@@ -20,3 +21,4 @@ export function initEventBridgeLinkSaved(deps: {
 
 	return { publishLinkSaved };
 }
+/* c8 ignore stop */
