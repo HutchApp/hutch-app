@@ -146,7 +146,6 @@ export function initDynamoDbArticleStore(deps: {
 						wordCount: params.metadata.wordCount,
 						imageUrl: params.metadata.imageUrl,
 						content: params.content,
-
 						estimatedReadTime: params.estimatedReadTime,
 					},
 					ConditionExpression: "attribute_not_exists(#url)",

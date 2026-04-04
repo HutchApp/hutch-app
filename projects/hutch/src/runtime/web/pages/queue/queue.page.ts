@@ -79,7 +79,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 				wordCount: article.wordCount,
 				imageUrl: article.imageUrl,
 			},
-			content: fitContent(article.content || undefined),
+			content: fitContent(article.content),
 			estimatedReadTime: calculateReadTime(article.wordCount),
 		});
 

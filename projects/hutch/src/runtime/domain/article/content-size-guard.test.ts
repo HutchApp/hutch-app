@@ -15,6 +15,14 @@ describe("fitContent", () => {
 		expect(fitContent(undefined)).toBeUndefined();
 	});
 
+	it("returns undefined for null input", () => {
+		expect(fitContent(null)).toBeUndefined();
+	});
+
+	it("returns undefined for empty string input", () => {
+		expect(fitContent("")).toBeUndefined();
+	});
+
 	it("returns content at exactly the byte limit", () => {
 		const content = "a".repeat(350_000);
 		expect(fitContent(content)).toBe(content);
