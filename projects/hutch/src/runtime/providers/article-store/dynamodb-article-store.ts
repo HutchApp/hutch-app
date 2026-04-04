@@ -43,6 +43,7 @@ const ArticleRow = z.object({
 	wordCount: z.number(),
 	imageUrl: z.string().optional(),
 	content: z.string().optional(),
+
 	estimatedReadTime: MinutesSchema,
 });
 
@@ -70,6 +71,7 @@ function toSavedArticle(
 			imageUrl: article.imageUrl,
 		},
 		content: article.content,
+
 		estimatedReadTime: article.estimatedReadTime,
 		status: userArticle.status,
 		savedAt: new Date(userArticle.savedAt),
@@ -144,6 +146,7 @@ export function initDynamoDbArticleStore(deps: {
 						wordCount: params.metadata.wordCount,
 						imageUrl: params.metadata.imageUrl,
 						content: params.content,
+
 						estimatedReadTime: params.estimatedReadTime,
 					},
 					ConditionExpression: "attribute_not_exists(#url)",

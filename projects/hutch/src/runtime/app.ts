@@ -66,6 +66,7 @@ function initProviders() {
 			updateArticleContent: articleStore.updateArticleContent,
 			updateArticleFetchMetadata: articleStore.updateArticleFetchMetadata,
 			clearArticleSummary: articleStore.clearArticleSummary,
+
 			logError,
 			now: () => new Date(),
 			staleTtlMs,
@@ -73,6 +74,7 @@ function initProviders() {
 		return {
 			auth,
 			articleStore,
+	
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			oauthModel,
@@ -96,6 +98,7 @@ function initProviders() {
 		updateArticleContent: articleStore.updateArticleContent,
 		updateArticleFetchMetadata: articleStore.updateArticleFetchMetadata,
 		clearArticleSummary: articleStore.clearArticleSummary,
+
 		logError,
 		now: () => new Date(),
 		staleTtlMs,
@@ -104,6 +107,7 @@ function initProviders() {
 	return {
 		auth,
 		articleStore,
+
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
 		oauthModel,

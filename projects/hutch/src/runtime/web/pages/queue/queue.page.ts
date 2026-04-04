@@ -3,6 +3,7 @@ import type { Request, Response, Router } from "express";
 import express from "express";
 import { SaveArticleInputSchema, ArticleIdSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
+import { fitContent } from "../../../domain/article/content-size-guard";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type {
@@ -78,7 +79,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 				wordCount: article.wordCount,
 				imageUrl: article.imageUrl,
 			},
-			content: article.content || undefined,
+			content: fitContent(article.content || undefined),
 			estimatedReadTime: calculateReadTime(article.wordCount),
 		});
 
@@ -169,10 +170,16 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const freshness = await deps.refreshArticleIfStale({ url: parsed.data.url });
-		const result = await saveArticleFromUrl(deps, { userId, url: parsed.data.url, freshness });
-
-		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
+		try {
+			const freshness = await deps.refreshArticleIfStale({ url: parsed.data.url });
+			const result = await saveArticleFromUrl(deps, { userId, url: parsed.data.url, freshness });
+			res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
+		} catch (error) {
+			deps.logError("Failed to save article", error instanceof Error ? error : undefined);
+			res.status(500).type(SIREN_MEDIA_TYPE).json(
+				sirenError({ code: "save-failed", message: "Could not save article" }),
+			);
+		}
 	});
 
 	router.post("/save", async (req: Request, res: Response) => {
@@ -193,10 +200,14 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const freshness = await deps.refreshArticleIfStale({ url: parsedBody.data.url });
-		await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
-
-		res.redirect(303, "/queue");
+		try {
+			const freshness = await deps.refreshArticleIfStale({ url: parsedBody.data.url });
+			await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
+			res.redirect(303, "/queue");
+		} catch (error) {
+			deps.logError("Failed to save article", error instanceof Error ? error : undefined);
+			res.redirect(303, "/queue");
+		}
 	});
 
 	router.get("/:id/read", async (req: Request, res: Response) => {
