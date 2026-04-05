@@ -25,6 +25,7 @@ const tableNames = {
 	sessions: config.require("dynamodbSessionsTable"),
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
+	passwordResetTokens: config.require("dynamodbPasswordResetTokensTable"),
 };
 
 const storage = new HutchStorage("hutch", {
@@ -51,6 +52,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 		{ arn: storage.sessionsTable.arn, includeIndexes: false },
 		{ arn: storage.oauthTable.arn, includeIndexes: true },
 		{ arn: storage.verificationTokensTable.arn, includeIndexes: false },
+		{ arn: storage.passwordResetTokensTable.arn, includeIndexes: false },
 	],
 	actions: [
 		"dynamodb:GetItem",
@@ -89,6 +91,7 @@ const lambda = new HutchLambda("hutch", {
 		DYNAMODB_SESSIONS_TABLE: storage.sessionsTable.name,
 		DYNAMODB_OAUTH_TABLE: storage.oauthTable.name,
 		DYNAMODB_VERIFICATION_TOKENS_TABLE: storage.verificationTokensTable.name,
+		DYNAMODB_PASSWORD_RESET_TOKENS_TABLE: storage.passwordResetTokensTable.name,
 		RESEND_API_KEY: pulumi.runtime.isDryRun()
 			? (getEnv("RESEND_API_KEY") ?? "")
 			: requireEnv("RESEND_API_KEY"),

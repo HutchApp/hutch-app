@@ -7,6 +7,7 @@ export class HutchStorage {
 	public readonly sessionsTable: aws.dynamodb.Table;
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
+	public readonly passwordResetTokensTable: aws.dynamodb.Table;
 
 	constructor(_name: string, args: { deletionProtection: boolean; tableNames: {
 		articles: string;
@@ -15,6 +16,7 @@ export class HutchStorage {
 		sessions: string;
 		oauth: string;
 		verificationTokens: string;
+		passwordResetTokens: string;
 	} }) {
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			name: args.tableNames.articles,
@@ -107,6 +109,17 @@ export class HutchStorage {
 
 		this.verificationTokensTable = new aws.dynamodb.Table(`hutch-verification-tokens`, {
 			name: args.tableNames.verificationTokens,
+			billingMode: "PAY_PER_REQUEST",
+			hashKey: "token",
+			attributes: [{ name: "token", type: "S" }],
+			ttl: {
+				attributeName: "expiresAt",
+				enabled: true,
+			},
+		});
+
+		this.passwordResetTokensTable = new aws.dynamodb.Table(`hutch-password-reset-tokens`, {
+			name: args.tableNames.passwordResetTokens,
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "token",
 			attributes: [{ name: "token", type: "S" }],
