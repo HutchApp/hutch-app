@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import type { CreateAiMessage } from "./article-summary.types";
+import type { CreateAiMessage, DocumentBlock } from "./article-summary.types";
 
 type ChatCompletionResponse = {
 	choices: Array<{ message?: { content?: string | null } }>;
@@ -15,16 +15,21 @@ type CreateChatCompletion = (params: {
 // https://api-docs.deepseek.com/quick_start/pricing — deepseek-chat max output is 8K
 const DEEPSEEK_MAX_OUTPUT_TOKENS = 8192;
 
-// DeepSeek does not support output_config (structured output), so the adapter
-// ignores it and wraps the plain-text response in JSON to match the schema
-// expected by the consumer (link-summariser parses JSON with { summary: string }).
+function extractTextContent(content: string | Array<DocumentBlock>): string {
+	if (typeof content === "string") return content;
+	return content.map((block) => block.source.data).join("\n");
+}
+
+// DeepSeek does not support output_config (structured output) or document
+// content blocks, so the adapter extracts plain text from document blocks and
+// wraps the response in JSON to match the schema expected by the consumer.
 export function initCreateDeepseekMessage(deps: {
 	createChatCompletion: CreateChatCompletion;
 }): CreateAiMessage {
 	return async (params) => {
 		const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
 			{ role: "system", content: params.system },
-			...params.messages,
+			...params.messages.map((msg) => ({ ...msg, content: extractTextContent(msg.content) })),
 		];
 		const response = await deps.createChatCompletion({
 			model: "deepseek-chat",
