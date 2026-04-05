@@ -10,6 +10,7 @@ export interface SaveArticleParams {
 	url: string;
 	metadata: SavedArticle["metadata"];
 	content?: string;
+
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 }
 
@@ -44,6 +45,7 @@ export interface GlobalArticleData {
 	url: string;
 	metadata: SavedArticle["metadata"];
 	content?: string;
+
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 }
 
@@ -80,6 +82,7 @@ export type UpdateArticleContent = (params: {
 	url: string;
 	metadata: SavedArticle["metadata"];
 	content?: string;
+
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 	etag?: string;
 	lastModified?: string;

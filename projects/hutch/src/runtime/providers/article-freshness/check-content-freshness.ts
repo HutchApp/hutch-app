@@ -13,6 +13,7 @@ import type {
 	UpdateArticleFetchMetadata,
 } from "../article-store/article-store.types";
 import { calculateReadTime } from "../../domain/article/estimated-read-time";
+import { fitContent } from "../../domain/article/content-size-guard";
 
 export type ContentFreshnessResult =
 	| { action: "new" }
@@ -118,7 +119,7 @@ export function initRefreshArticleIfStale(deps: {
 					wordCount: parsed.article.wordCount,
 					imageUrl: parsed.article.imageUrl,
 				},
-				content: parsed.article.content,
+				content: fitContent(parsed.article.content),
 				estimatedReadTime: calculateReadTime(parsed.article.wordCount),
 				etag: result.etag,
 				lastModified: result.lastModified,

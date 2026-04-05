@@ -30,6 +30,7 @@ interface GlobalArticle {
 	routeId: ArticleId;
 	metadata: ArticleMetadata;
 	content?: string;
+
 	estimatedReadTime: Minutes;
 	summary?: string;
 	etag?: string;
@@ -52,6 +53,7 @@ function toSavedArticle(article: GlobalArticle, userArticle: UserArticle): Saved
 		url: article.originalUrl,
 		metadata: article.metadata,
 		content: article.content,
+
 		estimatedReadTime: article.estimatedReadTime,
 		status: userArticle.status,
 		savedAt: userArticle.savedAt,
@@ -96,6 +98,7 @@ export function initInMemoryArticleStore(): {
 				routeId,
 				metadata: params.metadata,
 				content: params.content,
+	
 				estimatedReadTime: params.estimatedReadTime,
 			});
 		}
@@ -137,6 +140,7 @@ export function initInMemoryArticleStore(): {
 			url: article.originalUrl,
 			metadata: article.metadata,
 			content: article.content,
+	
 			estimatedReadTime: article.estimatedReadTime,
 		};
 	};

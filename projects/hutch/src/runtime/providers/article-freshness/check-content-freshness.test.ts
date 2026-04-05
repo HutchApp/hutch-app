@@ -18,6 +18,7 @@ function createDeps(overrides?: Record<string, unknown>) {
 		updateArticleContent: async () => {},
 		updateArticleFetchMetadata: async () => {},
 		clearArticleSummary: async () => {},
+
 		logError: () => {},
 		now: () => new Date("2026-03-20T10:00:00Z"),
 		staleTtlMs: 86400000,
