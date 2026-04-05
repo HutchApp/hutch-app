@@ -1,4 +1,5 @@
 import type { PageAction } from '../hateoas/navigation-handler.types'
+import type { PasswordResetProgress } from './password-reset-actions'
 import { isOnPage, clickAndWaitForPageReload } from '../page-interactions'
 
 export type AuthData = {
@@ -12,7 +13,7 @@ export type AuthProgress = {
   loggedIn: boolean
 }
 
-export function createAuthActions(data: AuthData, progress: AuthProgress): Map<string, PageAction> {
+export function createAuthActions(data: AuthData, progress: AuthProgress, passwordResetProgress?: PasswordResetProgress): Map<string, PageAction> {
   const actions = new Map<string, PageAction>()
 
   actions.set('navigate-to-signup', {
@@ -75,6 +76,8 @@ export function createAuthActions(data: AuthData, progress: AuthProgress): Map<s
     isAvailable: async (page) => {
       if (!progress.loggedOut) return false
       if (progress.loggedIn) return false
+      // Wait for password reset to complete before navigating to login
+      if (passwordResetProgress && !passwordResetProgress.loggedInWithNewPassword) return false
       return isOnPage(page, 'page-home')
     },
     execute: async (page) => {
@@ -86,6 +89,8 @@ export function createAuthActions(data: AuthData, progress: AuthProgress): Map<s
     isAvailable: async (page) => {
       if (!progress.loggedOut) return false
       if (progress.loggedIn) return false
+      // Wait for password reset to complete before logging in
+      if (passwordResetProgress && !passwordResetProgress.loggedInWithNewPassword) return false
       return isOnPage(page, 'page-login')
     },
     execute: async (page) => {

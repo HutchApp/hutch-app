@@ -2,20 +2,40 @@ import { test, expect } from '@playwright/test'
 import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../hateoas'
 import { groupOf } from '../hateoas/action-composer'
 import { createAuthActions, type AuthData, type AuthProgress } from './auth-actions'
+import { createPasswordResetActions, type PasswordResetData, type PasswordResetProgress } from './password-reset-actions'
 import { createQueueActions, LOCAL_TEST_ARTICLES, type QueueProgress } from './queue-actions'
 
+const BASE_URL = 'http://localhost:3100'
+
 test.describe('Queue management flow (local)', () => {
-  test('signup, logout, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page }) => {
+  test('signup, logout, reset password, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page }) => {
 
     const authData: AuthData = {
       email: 'e2e-test@example.com',
       password: 'test-password-123',
     }
 
+    const newPassword = 'reset-password-456'
+
+    const passwordResetData: PasswordResetData = {
+      email: authData.email,
+      oldPassword: authData.password,
+      newPassword,
+      baseUrl: BASE_URL,
+    }
+
     const authProgress: AuthProgress = {
       accountCreated: false,
       loggedOut: false,
       loggedIn: false,
+    }
+
+    const passwordResetProgress: PasswordResetProgress = {
+      navigatedToForgotPassword: false,
+      submittedForgotPassword: false,
+      navigatedToResetPassword: false,
+      submittedResetPassword: false,
+      loggedInWithNewPassword: false,
     }
 
     const queueProgress: QueueProgress = {
@@ -40,7 +60,8 @@ test.describe('Queue management flow (local)', () => {
     }
 
     const allActions = groupOf(
-      createAuthActions(authData, authProgress),
+      createAuthActions(authData, authProgress, passwordResetProgress),
+      createPasswordResetActions(passwordResetData, authProgress, passwordResetProgress),
       createQueueActions(authProgress, queueProgress, LOCAL_TEST_ARTICLES),
     )
 
@@ -48,16 +69,18 @@ test.describe('Queue management flow (local)', () => {
       page,
       {
         successDetector: async () => {
-          return Object.values(authProgress).every(Boolean) && Object.values(queueProgress).every(Boolean)
+          return Object.values(authProgress).every(Boolean)
+            && Object.values(passwordResetProgress).every(Boolean)
+            && Object.values(queueProgress).every(Boolean)
         },
       },
       allActions,
     )
 
     const client = new HATEOASClient(page, navigationHandler)
-    const config: NavigationConfig = { maxNavigations: 65 }
+    const config: NavigationConfig = { maxNavigations: 75 }
 
-    const result = await client.navigate('http://localhost:3100/', config)
+    const result = await client.navigate(`${BASE_URL}/`, config)
 
     expect(result.success).toBe(true)
   })
