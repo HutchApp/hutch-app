@@ -144,4 +144,19 @@ describe("initFetchConditional", () => {
 
 		expect(result).toEqual({ changed: false });
 	});
+
+	it("should return changed: false when content-type header is missing", async () => {
+		const fakeFetch = async (): Promise<Partial<Response>> => {
+			const headers = new Headers();
+			return { status: 200, ok: true, headers, text: async () => "<html>Content</html>" };
+		};
+		const fetchConditional = initFetchConditional({ fetch: fakeFetch as typeof fetch });
+
+		const result = await fetchConditional({
+			url: "https://example.com",
+			etag: '"abc123"',
+		});
+
+		expect(result).toEqual({ changed: false });
+	});
 });

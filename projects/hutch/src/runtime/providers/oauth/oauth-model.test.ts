@@ -95,7 +95,7 @@ describe("createOAuthModel", () => {
 			expect(retrieved.user.id).toBe(TEST_USER_ID);
 		});
 
-		it("rejects expired authorization codes", async () => {
+		it("rejects expired authorization codes and removes them from storage", async () => {
 			const deps = initInMemoryOAuthModel();
 			const model = createOAuthModel(deps);
 
@@ -112,6 +112,16 @@ describe("createOAuthModel", () => {
 			);
 
 			const retrieved = await model.getAuthorizationCode("expired-code");
+
+			expect(retrieved).toBeNull();
+			expect(deps.codes.has("expired-code")).toBe(false);
+		});
+
+		it("returns falsy for non-existent authorization code", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			const retrieved = await model.getAuthorizationCode("never-saved-code");
 
 			expect(retrieved).toBeNull();
 		});
@@ -154,6 +164,50 @@ describe("createOAuthModel", () => {
 			assert(retrieved, "Code should be retrievable");
 
 			expect(retrieved.codeChallengeMethod).toBe("S256");
+		});
+
+		it("preserves plain codeChallengeMethod when explicitly set", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
+
+			await model.saveAuthorizationCode(
+				createTestAuthCode({
+					authorizationCode: "plain-method-code",
+					codeChallengeMethod: "plain",
+				}),
+				client,
+				{ id: TEST_USER_ID },
+			);
+
+			const retrieved = await model.getAuthorizationCode("plain-method-code");
+			assert(retrieved, "Code should be retrievable");
+
+			expect(retrieved.codeChallengeMethod).toBe("plain");
+		});
+
+		it("saves and retrieves authorization code with scope", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps);
+
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Test client must exist");
+
+			await model.saveAuthorizationCode(
+				createTestAuthCode({
+					authorizationCode: "scoped-code",
+					scope: ["read", "write"],
+				}),
+				client,
+				{ id: TEST_USER_ID },
+			);
+
+			const retrieved = await model.getAuthorizationCode("scoped-code");
+			assert(retrieved, "Code should be retrievable");
+
+			expect(retrieved.scope).toEqual(["read", "write"]);
 		});
 
 		it("throws error when code_challenge is missing", async () => {

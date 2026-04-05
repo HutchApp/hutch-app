@@ -169,4 +169,57 @@ describe("refreshArticleIfStale", () => {
 
 		expect(result.action).toBe("skip");
 	});
+
+	it("logs undefined when conditional fetch throws a non-Error value", async () => {
+		const loggedErrors: (Error | undefined)[] = [];
+		const deps = createDeps({
+			findArticleFreshness: async () => ({
+				etag: '"abc"',
+				contentFetchedAt: "2026-03-19T00:00:00Z",
+			}),
+			fetchConditional: async () => { throw "string error"; },
+			logError: (_msg: string, error?: Error) => { loggedErrors.push(error); },
+		});
+		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
+
+		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
+
+		expect(result.action).toBe("skip");
+		expect(loggedErrors[0]).toBeUndefined();
+	});
+
+	it("logs undefined when full fetch throws a non-Error value", async () => {
+		const loggedErrors: (Error | undefined)[] = [];
+		const deps = createDeps({
+			findArticleFreshness: async () => ({
+				contentFetchedAt: "2026-03-19T00:00:00Z",
+			}),
+			fetchHtmlWithHeaders: async () => { throw "string error"; },
+			logError: (_msg: string, error?: Error) => { loggedErrors.push(error); },
+		});
+		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
+
+		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
+
+		expect(result.action).toBe("skip");
+		expect(loggedErrors[0]).toBeUndefined();
+	});
+
+	it("returns action 'skip' when parseHtml returns not ok after full fetch", async () => {
+		const deps = createDeps({
+			findArticleFreshness: async () => ({
+				contentFetchedAt: "2026-03-19T00:00:00Z",
+			}),
+			fetchHtmlWithHeaders: async () => ({
+				html: "<html>Bad content</html>",
+				etag: '"new"',
+			}),
+			parseHtml: () => ({ ok: false as const, reason: "could not parse" }),
+		});
+		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
+
+		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
+
+		expect(result.action).toBe("skip");
+	});
 });

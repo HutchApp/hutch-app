@@ -39,9 +39,7 @@ interface QueueDependencies {
 	logError: (message: string, error?: Error) => void;
 }
 
-type SaveArticleFromUrlResult =
-	| { ok: true; saved: Awaited<ReturnType<SaveArticle>> }
-	| { ok: false; reason: string };
+type SaveArticleFromUrlResult = { ok: true; saved: Awaited<ReturnType<SaveArticle>> };
 
 async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	userId: UserId;
@@ -174,13 +172,6 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const freshness = await deps.refreshArticleIfStale({ url: parsed.data.url });
 		const result = await saveArticleFromUrl(deps, { userId, url: parsed.data.url, freshness });
 
-		if (!result.ok) {
-			res.status(422).type(SIREN_MEDIA_TYPE).json(
-				sirenError({ code: "parse-failed", message: `Could not parse article: ${result.reason}` }),
-			);
-			return;
-		}
-
 		res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
 	});
 
@@ -203,20 +194,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		const freshness = await deps.refreshArticleIfStale({ url: parsedBody.data.url });
-		const result = await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
-
-		if (!result.ok) {
-			const urlState = parseQueueUrl({});
-			const articlesResult = await deps.findArticlesByUser({ userId });
-			const unreadCount = (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
-			const vm = toQueueViewModel(articlesResult, urlState, {
-				saveError: `Could not parse article: ${result.reason}`,
-				unreadCount,
-			});
-			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
-			res.status(422).type("html").send(html.body);
-			return;
-		}
+		await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
 
 		res.redirect(303, "/queue");
 	});

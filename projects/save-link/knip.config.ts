@@ -6,20 +6,13 @@ const { workspaces: _workspaces, ...base } = baseConfig;
 export default {
 	...base,
 	entry: [
-		// Consumed by infra Lambda handlers (src/infra/** is ignored)
-		"src/save-link/find-article-content.ts",
+		"**/*.main.ts",
 	],
 	ignore: [
-		...(base.ignore ?? []),
-		"src/infra/**",
-		// Used only from infra code (compiled separately by Lambda handler)
-		"src/generate-summary/dynamodb-summary-cache.ts",
+		...(base.ignore ?? [])
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),
-		// Used only in infra code (Lambda handlers, compiled separately)
-		"@anthropic-ai/sdk",
-		"openai",
 		// Workspace dependencies with subpath imports not detected by knip
 		"@packages/hutch-infra-components",
 		"@packages/link-id",

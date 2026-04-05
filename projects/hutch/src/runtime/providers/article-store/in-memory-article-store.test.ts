@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { ArticleIdSchema } from "../../domain/article/article.schema";
 import type { Minutes } from "../../domain/article/article.types";
 import type { UserId } from "../../domain/user/user.types";
 import type { SaveArticleParams } from "./article-store.types";
@@ -43,6 +44,26 @@ describe("initInMemoryArticleStore", () => {
 			const found = await store.findArticleById(saved.id, USER_B);
 
 			expect(found).toBeNull();
+		});
+	});
+
+	describe("findArticleByUrl", () => {
+		it("should return null for unknown URL", async () => {
+			const store = initInMemoryArticleStore();
+
+			const found = await store.findArticleByUrl("https://unknown.com/page");
+
+			expect(found).toBeNull();
+		});
+
+		it("should return article data for known URL", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams());
+
+			const found = await store.findArticleByUrl("https://example.com/article");
+
+			expect(found?.url).toBe("https://example.com/article");
+			expect(found?.metadata.title).toBe("Test Article");
 		});
 	});
 
@@ -218,6 +239,15 @@ describe("initInMemoryArticleStore", () => {
 
 			expect(deleted).toBe(false);
 		});
+
+		it("should return false when deleting a non-existent article", async () => {
+			const store = initInMemoryArticleStore();
+			const fakeId = ArticleIdSchema.parse("nonexistent-id");
+
+			const deleted = await store.deleteArticle(fakeId, USER_A);
+
+			expect(deleted).toBe(false);
+		});
 	});
 
 	describe("freshness operations", () => {
@@ -275,6 +305,29 @@ describe("initInMemoryArticleStore", () => {
 			expect(freshness?.contentFetchedAt).toBe("2026-03-20T10:00:00Z");
 		});
 
+		it("updateArticleContent without etag or lastModified preserves existing values", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams());
+
+			await store.updateArticleContent({
+				url: "https://example.com/article",
+				metadata: {
+					title: "No Headers",
+					siteName: "example.com",
+					excerpt: "No headers excerpt",
+					wordCount: 50,
+				},
+				content: "<p>Content without headers</p>",
+				estimatedReadTime: 1 as Minutes,
+				contentFetchedAt: "2026-03-20T12:00:00Z",
+			});
+
+			const freshness = await store.findArticleFreshness("https://example.com/article");
+			expect(freshness?.contentFetchedAt).toBe("2026-03-20T12:00:00Z");
+			expect(freshness?.etag).toBeUndefined();
+			expect(freshness?.lastModified).toBeUndefined();
+		});
+
 		it("clearArticleSummary sets summary to undefined", async () => {
 			const store = initInMemoryArticleStore();
 			await store.saveArticle(makeArticleParams());
@@ -319,6 +372,15 @@ describe("initInMemoryArticleStore", () => {
 			expect(updated).toBe(false);
 			const found = await store.findArticleById(saved.id, USER_A);
 			expect(found?.status).toBe("unread");
+		});
+
+		it("should return false when updating status of a non-existent article", async () => {
+			const store = initInMemoryArticleStore();
+			const fakeId = ArticleIdSchema.parse("nonexistent-id");
+
+			const updated = await store.updateArticleStatus(fakeId, USER_A, "read");
+
+			expect(updated).toBe(false);
 		});
 	});
 });

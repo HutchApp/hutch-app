@@ -43,26 +43,21 @@ const INCLUDE_PATTERNS = ['src/**/*.ts']
 
 // Base exclusion patterns shared across all projects
 const BASE_EXCLUDE_PATTERNS = [
-  // Browser code — runs in browser, not testable in Node.js coverage
-  '**/*.client.js',
-  '**/*.browser.ts',
-
-  // Type definitions — no runtime code to cover
+  // Type definitions — compile to empty module boilerplate, no runtime logic
   '**/*.types.ts',
 
   // Test files — c8's V8 coverage instrumentation doesn't work with Jest's worker model
   // See: https://github.com/bcoe/c8/issues/126 and https://github.com/jestjs/jest/issues/11188
   '**/*.test.ts',
-  'src/**/*.integration.ts',
-
-  // Test utilities — support files for tests, not production code
-  '**/test-utils.ts',
-
-  // Entry points — bootstrap code with no testable logic
-  '**/*.main.ts',
 
   // Barrel re-exports — no logic, just re-export statements
   '**/index.ts',
+
+  // Entry points — side-effectful bootstrap code with no logic to unit test
+  '**/*.main.ts',
+
+  // Browser-only code — WebExtension APIs, Canvas, DOM; not runnable in Node.js
+  '**/*.browser.ts',
 ]
 
 function validateC8Config(projectRoot) {

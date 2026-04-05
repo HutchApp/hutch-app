@@ -144,6 +144,15 @@ describe("initSirenReadingList", () => {
 			expect(found).toBeNull();
 		});
 
+		it("should return null when response has no entities property", async () => {
+			const fetchFn = async () => new Response(JSON.stringify({}), { status: 200 });
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			const found = await list.findByUrl("https://example.com/missing");
+
+			expect(found).toBeNull();
+		});
+
 		it("should return null when server returns an error", async () => {
 			const fetchFn = async () => new Response(null, { status: 401 });
 			const list = initSirenReadingList(createDeps(fetchFn));
@@ -229,6 +238,15 @@ describe("initSirenReadingList", () => {
 
 		it("should return empty array when collection is empty", async () => {
 			const fetchFn = async () => new Response(JSON.stringify({ entities: [] }), { status: 200 });
+			const list = initSirenReadingList(createDeps(fetchFn));
+
+			const items = await list.getAllItems();
+
+			expect(items).toEqual([]);
+		});
+
+		it("should return empty array when response has no entities property", async () => {
+			const fetchFn = async () => new Response(JSON.stringify({}), { status: 200 });
 			const list = initSirenReadingList(createDeps(fetchFn));
 
 			const items = await list.getAllItems();

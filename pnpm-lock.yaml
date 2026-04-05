@@ -444,6 +444,9 @@ importers:
       '@types/jest':
         specifier: 29.5.14
         version: 29.5.14
+      c8:
+        specifier: 10.1.3
+        version: 10.1.3
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
@@ -456,6 +459,9 @@ importers:
 
   src/packages/test-phase-runner:
     devDependencies:
+      c8:
+        specifier: 10.1.3
+        version: 10.1.3
       concurrently:
         specifier: 9.2.1
         version: 9.2.1

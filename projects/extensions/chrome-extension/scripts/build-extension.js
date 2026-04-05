@@ -35,7 +35,7 @@ const plan = createBuildPlan({
   mkdirSync(join(outDir, 'offscreen'), { recursive: true });
 
   await build({
-    entryPoints: [join(srcDir, 'runtime', 'offscreen', 'offscreen.ts')],
+    entryPoints: [join(srcDir, 'runtime', 'offscreen', 'offscreen.browser.ts')],
     bundle: true,
     format: 'iife',
     outdir: outDir,

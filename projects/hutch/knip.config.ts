@@ -3,17 +3,15 @@ import type { KnipConfig } from "knip";
 
 export default {
 	...baseConfig,
-	ignore: [...(baseConfig.ignore || []), "src/infra/**"],
+	ignore: [
+		...(baseConfig.ignore || []),
+		// PurgeCSS config loaded via CLI, not imported in source
+		"purgecss.config.js",
+	],
 	ignoreDependencies: [
 		...(baseConfig.ignoreDependencies || []),
-		// Deployment infra runs outside the main build (Lambda handler + Pulumi IaC)
-		"serverless-http",
-		"@pulumi/pulumi",
-		"@pulumi/aws",
-		"@types/aws-lambda",
-		"helmet",
-		"compression",
-		"@types/compression",
+		// Used via CLI in dev script
+		"livereload",
 		// Workspace dependencies with subpath imports not detected by knip
 		"browser-extension-core",
 		"save-link",

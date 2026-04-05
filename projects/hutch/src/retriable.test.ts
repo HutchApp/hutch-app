@@ -218,4 +218,23 @@ describe('retriable', () => {
       expect(result).toBe('hello-42')
     })
   })
+
+  describe('retry without beforeRetry', () => {
+    it('retries without calling beforeRetry when it is not provided', async () => {
+      let callCount = 0
+      const fetchItems = async () => {
+        callCount++
+        return callCount >= 2 ? ['done'] : []
+      }
+
+      const result = await retriable(fetchItems, {
+        maxAttempts: 3,
+        retryDelayMs: 0,
+        shouldRetry: (items) => items.length === 0,
+      })()
+
+      expect(result).toEqual(['done'])
+      expect(callCount).toBe(2)
+    })
+  })
 })

@@ -1,3 +1,4 @@
+/* c8 ignore start -- composition root, all browser API glue, tested via Selenium E2E */
 import {
 	BrowserExtensionCore,
 	initOAuthAuth,
@@ -283,3 +284,4 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 
 	return true;
 });
+/* c8 ignore stop */

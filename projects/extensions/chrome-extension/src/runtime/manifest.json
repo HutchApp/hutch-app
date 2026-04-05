@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Hutch",
-  "version": "1.0.57",
-  "description": "Where reading still matters",
+  "name": "Hutch — Save Articles & Read Later",
+  "version": "1.0.59",
+  "description": "Save articles with one click. A privacy-first read-it-later app and Pocket alternative.",
   "permissions": [
     "activeTab",
     "tabs",
@@ -32,7 +32,7 @@
     }
   },
   "background": {
-    "service_worker": "background/background.js"
+    "service_worker": "background/background.browser.js"
   },
   "content_scripts": [
     {
@@ -40,7 +40,7 @@
         "<all_urls>"
       ],
       "js": [
-        "content/shortcut.js"
+        "content/shortcut.browser.js"
       ],
       "run_at": "document_start"
     }

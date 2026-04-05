@@ -1,3 +1,4 @@
+/* c8 ignore start -- offscreen document, uses OffscreenCanvas + browser APIs, not runnable in Node.js */
 import browser from "webextension-polyfill";
 
 const SAVED_COLOR = "#3D8B6E";
@@ -58,3 +59,4 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 
 	return undefined;
 });
+/* c8 ignore stop */

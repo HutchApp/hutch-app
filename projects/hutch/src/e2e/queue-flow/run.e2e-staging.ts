@@ -1,3 +1,4 @@
+/* c8 ignore start -- staging E2E test, only run in CI */
 import assert from 'node:assert'
 import { test, expect } from '@playwright/test'
 import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../hateoas'
@@ -134,3 +135,4 @@ test.describe('Queue management flow (staging)', () => {
     expect(result.success).toBe(true)
   })
 })
+/* c8 ignore stop */

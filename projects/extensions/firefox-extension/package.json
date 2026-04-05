@@ -1,6 +1,6 @@
 {
   "name": "firefox-extension",
-  "version": "1.0.33",
+  "version": "1.0.35",
   "description": "Hutch — Where reading still matters",
   "main": "src/infra/index.ts",
   "private": true,
@@ -13,7 +13,7 @@
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --passWithNoTests",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand --passWithNoTests",
     "test-with-coverage": "c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
-    "test:e2e": "HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js && node --test dist/e2e/login-flow/run.e2e-local.js",
+    "test:e2e": "HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js && node --test dist/e2e/login-flow/run.e2e-local.main.js",
     "deploy-infra": "nx run deploy-infra",
     "post-deploy": "echo 'No post-deploy steps'",
     "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"",

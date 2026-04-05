@@ -1,3 +1,4 @@
+/* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
@@ -81,3 +82,4 @@ export function initDynamoDbEmailVerification(deps: {
 
 	return { createVerificationToken, verifyEmailToken };
 }
+/* c8 ignore stop */

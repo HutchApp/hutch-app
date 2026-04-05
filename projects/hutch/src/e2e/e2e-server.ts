@@ -1,3 +1,4 @@
+/* c8 ignore start -- composition root, no logic to test */
 import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
 import { createHutchApp } from '../runtime/app'
 import { initFetchHtml } from '../runtime/providers/article-parser/fetch-html'
@@ -18,3 +19,4 @@ process.on('SIGINT', () => process.exit(0))
 app.listen(PORT, () => {
   logger.info(`E2E server running on http://localhost:${PORT}`)
 })
+/* c8 ignore stop */

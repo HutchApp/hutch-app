@@ -7,8 +7,6 @@ export default {
 	...base,
 	ignore: [
 		...(base.ignore ?? []),
-		// Pulumi infra is compiled separately with its own tsconfig
-		"src/infra/**",
 		// CLI scripts (not entry points)
 		"scripts/bump-version.js",
 		"scripts/install-chrome-for-testing.js",
@@ -18,8 +16,6 @@ export default {
 	],
 	ignoreDependencies: [
 		...(base.ignoreDependencies ?? []),
-		// Used via c8 CLI wrapper in test-with-coverage script
-		"c8",
 		// Used by Pulumi infra (compiled separately)
 		"@pulumi/aws",
 		"@pulumi/pulumi",
@@ -32,8 +28,6 @@ export default {
 		"@packages/check-unused-css",
 		// Used via scripts/run-tests-with-coverage.js (not a source import)
 		"@packages/test-phase-runner",
-		// Bundled by esbuild into browser extension entry points
-		"webextension-polyfill",
 	],
 	ignoreBinaries: [
 		...(base.ignoreBinaries ?? []),
@@ -44,11 +38,11 @@ export default {
 	],
 	entry: [
 		// Extension entry points compiled by esbuild (scripts/build-extension.js)
-		"src/runtime/background/background.ts",
-		"src/runtime/popup/popup.ts",
-		"src/runtime/content/shortcut.ts",
-		"src/runtime/offscreen/offscreen.ts",
+		"src/runtime/background/background.browser.ts",
+		"src/runtime/popup/popup.browser.ts",
+		"src/runtime/content/shortcut.browser.ts",
+		"src/runtime/offscreen/offscreen.browser.ts",
 		// E2E test entry points (run via node --test)
-		"src/e2e/**/run.e2e-local.ts",
+		"src/e2e/**/run.e2e-local.main.ts",
 	],
 } satisfies KnipConfig;

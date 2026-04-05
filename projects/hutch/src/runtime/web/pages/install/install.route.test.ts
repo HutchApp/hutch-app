@@ -138,6 +138,22 @@ describe("GET /install", () => {
 		);
 	});
 
+	it("should show Firefox unavailable message when latest.txt returns empty body", async () => {
+		jest.restoreAllMocks();
+		jest.spyOn(globalThis, "fetch").mockImplementation(async () => {
+			return new Response("", { status: 200 });
+		});
+
+		const response = await request(app).get("/install?browser=firefox");
+		const doc = new JSDOM(response.text).window.document;
+
+		expect(doc.querySelector('[data-test-cta="download-firefox"]')).toBeNull();
+		const unavailable = doc.querySelector('[data-test-section="firefox-unavailable"]');
+		expect(unavailable?.textContent).toBe(
+			"The Firefox extension is not available for download yet. Please check back soon.",
+		);
+	});
+
 	it("should link tabs to the correct URLs", async () => {
 		const response = await request(app).get("/install?browser=firefox");
 		const doc = new JSDOM(response.text).window.document;

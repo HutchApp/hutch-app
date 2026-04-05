@@ -12,8 +12,12 @@ import {
 	createLoginActions,
 	createSaveLinkActions,
 	createPaginationActions,
+	createFilterActions,
+	createLogoutActions,
 	type PaginationProgress,
 	type SaveLinkProgress,
+	type FilterProgress,
+	type LogoutProgress,
 } from "browser-extension-core/e2e-actions";
 
 const EXTENSION_DIR = path.resolve(__dirname, "../../../dist-extension-compiled");
@@ -148,6 +152,14 @@ async function runTest() {
 			navigatedBackToPage1: false,
 			verifiedBackOnPage1: false,
 		};
+		const filterProgress: FilterProgress = {
+			filteredWithMatch: false,
+			filteredNoMatch: false,
+			filterCleared: false,
+		};
+		const logoutProgress: LogoutProgress = {
+			loggedOut: false,
+		};
 
 		const loginActions = createLoginActions({
 			testEmail: TEST_EMAIL,
@@ -169,11 +181,21 @@ async function runTest() {
 			progress: paginationProgress,
 		});
 
-		const allActions = new Map([...loginActions, ...saveLinkActions, ...paginationActions]);
+		const filterActions = createFilterActions({
+			paginationVerified: paginationProgress,
+			progress: filterProgress,
+		});
+
+		const logoutActions = createLogoutActions({
+			filterProgress,
+			progress: logoutProgress,
+		});
+
+		const allActions = new Map([...loginActions, ...saveLinkActions, ...paginationActions, ...filterActions, ...logoutActions]);
 
 		const stateHandler = new ExtensionStateHandler(
 			driver,
-			async () => paginationProgress.verifiedBackOnPage1,
+			async () => logoutProgress.loggedOut,
 			allActions,
 			createSeleniumElementQueries(),
 		);
@@ -184,13 +206,15 @@ async function runTest() {
 			createSeleniumNavigation(),
 		);
 		const result = await flowRunner.run(POPUP_URL, {
-			maxSteps: 40,
+			maxSteps: 55,
 		});
 
 		assert.equal(result.success, true, `Flow failed: ${result.error}`);
 		assert.equal(saveLinkProgress.linkSaved, true, "Link should have been saved");
 		assert.equal(saveLinkProgress.listVerified, true, "Link should have been verified in list");
 		assert.equal(paginationProgress.verifiedBackOnPage1, true, "Pagination should have been verified");
+		assert.equal(filterProgress.filterCleared, true, "Filter should have been tested");
+		assert.equal(logoutProgress.loggedOut, true, "Logout should have been completed");
 	} finally {
 		await driver.quit();
 	}

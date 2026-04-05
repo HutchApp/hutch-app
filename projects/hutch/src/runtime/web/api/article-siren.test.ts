@@ -50,19 +50,18 @@ describe("toArticleSubEntity", () => {
 				readAt: null,
 			},
 			links: [
-				{ rel: ["self"], href: "/queue/test-article-id" },
 				{ rel: ["read"], href: "/queue/test-article-id/read" },
 			],
 			actions: [{ name: "delete", href: "/queue/test-article-id/delete", method: "POST" }],
 		});
 	});
 
-	it("omits read link when article has no content", () => {
+	it("includes read link when article has no content", () => {
 		const article = makeArticle({ content: undefined });
 		const subEntity = toArticleSubEntity(article);
 
 		expect(subEntity.links).toEqual([
-			{ rel: ["self"], href: "/queue/test-article-id" },
+			{ rel: ["read"], href: "/queue/test-article-id/read" },
 		]);
 	});
 
