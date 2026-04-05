@@ -16,15 +16,15 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
 		seo: {
-			title: "Hutch — You are what you read.",
+			title: "Hutch — Read-It-Later App | Save Articles, Read Them Later",
 			description:
-				"Read the web, not the slop. Hutch is a read-it-later app built from a 10-year personal reading system. Save articles, read them in a clean reader view, and organise your reading list. Built in Australia by a solo developer.",
+				"A read-it-later app and Pocket alternative. Save articles with one click, read them later. Privacy-first, built in Australia by the creator of js-cookie.",
 			canonicalUrl: "https://hutch-app.com",
 			ogType: "website",
 			ogImage: `${staticBaseUrl}/og-image-1200x630.png`,
 			ogImageType: "image/png",
 			ogImageAlt:
-				"Hutch — You are what you read. A read-it-later app built in Australia.",
+				"Hutch — A read-it-later app and Pocket alternative. Save articles, read them later.",
 			twitterImage: `${staticBaseUrl}/twitter-card-1200x600.png`,
 				author: "Fayner Brack",
 			keywords:
@@ -36,7 +36,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					name: "Hutch",
 					url: "https://hutch-app.com",
 					description:
-						"You are what you read. A read-it-later app built from a 10-year personal reading system. Save articles, read them later.",
+						"A privacy-first read-it-later app and Pocket alternative. Save articles with one click, read them later.",
 					applicationCategory: "ProductivityApplication",
 					operatingSystem: "Web, iOS, Android",
 					browserRequirements: "Requires Firefox or Chrome for browser extension",
@@ -72,7 +72,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 						name: "Fayner Brack",
 					},
 					description:
-						"You are what you read. Hutch is a read-it-later app built in Australia by a solo developer.",
+						"A privacy-first read-it-later app and Pocket alternative built in Australia by a solo developer.",
 				},
 				{
 					"@context": "https://schema.org",

@@ -16,7 +16,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const heroTitle = doc.querySelector(".home-hero__title");
-		expect(heroTitle?.textContent).toBe("You are what you read.");
+		expect(heroTitle?.textContent).toBe("A read-it-later app that won't shut down.");
 	});
 
 	it("should render a generic install CTA when browser is unrecognized", async () => {
@@ -183,7 +183,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		expect(doc.title).toContain("Hutch");
-		expect(doc.title).toContain("You are what you read");
+		expect(doc.title).toContain("Read-It-Later App");
 		const description = doc.querySelector('meta[name="description"]');
 		expect(description?.getAttribute("content")).toContain("read-it-later");
 	});
