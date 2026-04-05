@@ -90,11 +90,6 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	assetDir: "./src",
 	memorySize: 256,
 	timeout: 30,
-	resourceNames: {
-		role: "save-link-command-handler-role",
-		basicExecution: "save-link-command-basic-execution",
-		lambda: "save-link-command-handler",
-	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
@@ -129,11 +124,6 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	assetDir: "./src",
 	memorySize: 512,
 	timeout: 45,
-	resourceNames: {
-		role: "generate-summary-handler-role",
-		basicExecution: "generate-summary-basic-execution",
-		lambda: "generate-summary-handler",
-	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		ANTHROPIC_API_KEY: anthropicApiKey,
@@ -167,11 +157,6 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	assetDir: "./src",
 	memorySize: 256,
 	timeout: 30,
-	resourceNames: {
-		role: "link-saved-handler-role",
-		basicExecution: "link-saved-basic-execution",
-		lambda: "link-saved-handler",
-	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
@@ -199,11 +184,6 @@ const summaryGeneratedLambda = new HutchLambda("summary-generated", {
 	assetDir: "./src",
 	memorySize: 128,
 	timeout: 10,
-	resourceNames: {
-		role: "summary-generated-handler-role",
-		basicExecution: "summary-generated-basic-execution",
-		lambda: "summary-generated-handler",
-	},
 	environment: {},
 	policies: [],
 });

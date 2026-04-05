@@ -38,16 +38,11 @@ export class HutchLambda {
 			timeout: number;
 			environment: Record<string, pulumi.Input<string>>;
 			policies: LambdaPolicy[];
-			resourceNames?: {
-				role?: string;
-				basicExecution?: string;
-				lambda?: string;
-			};
 		},
 	) {
-		const roleName = args.resourceNames?.role ?? `${name}-lambda-role`;
-		const basicExecutionName = args.resourceNames?.basicExecution ?? `${name}-lambda-basic-execution`;
-		const lambdaName = args.resourceNames?.lambda ?? `${name}-api`;
+		const lambdaName = `${name}-handler`;
+		const roleName = `${lambdaName}-role`;
+		const basicExecutionName = `${name}-basic-execution`;
 
 		mkdirSync(args.outputDir, { recursive: true });
 
