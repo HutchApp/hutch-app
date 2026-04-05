@@ -1,6 +1,6 @@
 import type { PageAction } from '../hateoas/navigation-handler.types'
 import { isOnPage, clickAndWaitForPageReload } from '../page-interactions'
-import type { AuthProgress } from './auth-actions'
+import type { AuthData, AuthProgress } from './auth-actions'
 
 export type PasswordResetProgress = {
   navigatedToForgotPassword: boolean
@@ -19,6 +19,7 @@ export type PasswordResetData = {
 
 export function createPasswordResetActions(
   data: PasswordResetData,
+  authData: AuthData,
   authProgress: AuthProgress,
   resetProgress: PasswordResetProgress,
 ): Map<string, PageAction> {
@@ -98,17 +99,10 @@ export function createPasswordResetActions(
       return isOnPage(page, 'page-reset-password')
     },
     execute: async (page) => {
-      await page.locator('a[href="/login"]').click()
-      await page.waitForSelector('body.page-login')
-      await page.locator('#email').fill(data.email)
-      await page.locator('#password').fill(data.newPassword)
-      await clickAndWaitForPageReload(
-        page,
-        page.locator('[data-test-form="login"] button[type="submit"]'),
-      )
-      await page.waitForSelector('body.page-queue')
+      await page.locator('.header__brand').click()
+      await page.waitForSelector('body.page-home')
+      authData.password = data.newPassword
       resetProgress.loggedInWithNewPassword = true
-      authProgress.loggedIn = true
     },
   })
 

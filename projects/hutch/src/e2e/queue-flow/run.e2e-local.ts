@@ -61,7 +61,7 @@ test.describe('Queue management flow (local)', () => {
 
     const allActions = groupOf(
       createAuthActions(authData, authProgress, passwordResetProgress),
-      createPasswordResetActions(passwordResetData, authProgress, passwordResetProgress),
+      createPasswordResetActions(passwordResetData, authData, authProgress, passwordResetProgress),
       createQueueActions(authProgress, queueProgress, LOCAL_TEST_ARTICLES),
     )
 
