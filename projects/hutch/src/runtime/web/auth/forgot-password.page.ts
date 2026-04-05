@@ -11,6 +11,7 @@ import { z } from "zod";
 import { ForgotPasswordSchema, ResetPasswordSchema } from "./auth.schema";
 import { ForgotPasswordPage, ResetPasswordPage } from "./auth.component";
 import { buildPasswordResetEmailHtml } from "./password-reset-email";
+import { flattenZodErrors } from "./flatten-zod-errors";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
@@ -24,15 +25,6 @@ interface ForgotPasswordDependencies {
 	verifyPasswordResetToken: VerifyPasswordResetToken;
 	baseUrl: string;
 	logError: (message: string, error?: Error) => void;
-}
-
-function flattenZodErrors(
-	issues: { path: PropertyKey[]; message: string }[],
-): { field: string; message: string }[] {
-	return issues.map((issue) => ({
-		field: String(issue.path[issue.path.length - 1]),
-		message: issue.message,
-	}));
 }
 
 export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Router {
