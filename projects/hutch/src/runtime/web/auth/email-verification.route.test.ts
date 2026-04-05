@@ -7,6 +7,7 @@ import { initInMemoryArticleStore } from "../../providers/article-store/in-memor
 import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
 import type { FetchHtml } from "../../providers/article-parser/readability-parser";
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
+import { initInMemoryPasswordReset } from "../../providers/password-reset/in-memory-password-reset";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
@@ -41,6 +42,7 @@ describe("Email verification", () => {
 			const parser = initReadabilityParser({ fetchHtml: stubFetchHtml });
 			const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 			const emailVerification = initInMemoryEmailVerification();
+			const passwordReset = initInMemoryPasswordReset();
 
 			let resolveErrorLogged: () => void;
 			const errorLogged = new Promise<void>((resolve) => {
@@ -54,6 +56,7 @@ describe("Email verification", () => {
 				...articleStore,
 				...parser,
 				...emailVerification,
+				...passwordReset,
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
 				logError: () => { resolveErrorLogged(); },
