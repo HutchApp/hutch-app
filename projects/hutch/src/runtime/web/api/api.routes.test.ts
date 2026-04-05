@@ -171,6 +171,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			"order",
 			"page",
 			"pageSize",
+			"url",
 		]);
 	});
 

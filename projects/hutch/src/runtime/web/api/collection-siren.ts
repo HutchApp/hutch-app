@@ -77,6 +77,7 @@ export function toArticleCollectionEntity(
 					{ name: "order", type: "text" },
 					{ name: "page", type: "number" },
 					{ name: "pageSize", type: "number" },
+					{ name: "url", type: "url" },
 				],
 			},
 		],

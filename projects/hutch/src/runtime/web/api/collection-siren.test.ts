@@ -220,6 +220,7 @@ describe("toArticleCollectionEntity", () => {
 			"order",
 			"page",
 			"pageSize",
+			"url",
 		]);
 	});
 });

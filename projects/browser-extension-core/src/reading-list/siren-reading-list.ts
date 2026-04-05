@@ -31,14 +31,26 @@ interface SirenLink {
 	href: string;
 }
 
+interface SirenAction {
+	name: string;
+	href: string;
+	method: string;
+	type?: string;
+	fields?: Array<{ name: string; type: string }>;
+}
+
 interface SirenSubEntity {
 	properties?: Record<string, unknown>;
 	links?: SirenLink[];
-	actions?: Array<{ name: string; href: string; method: string }>;
+	actions?: SirenAction[];
 }
 
-interface SirenResponse {
+interface SirenCollectionResponse {
+	class?: string[];
+	properties?: Record<string, unknown>;
 	entities?: SirenSubEntity[];
+	links?: SirenLink[];
+	actions?: SirenAction[];
 }
 
 export interface SirenReadingListDeps {
@@ -49,6 +61,12 @@ export interface SirenReadingListDeps {
 
 function findLinkHref(entity: SirenSubEntity, rel: string): string | undefined {
 	return entity.links?.find((link) => link.rel.includes(rel))?.href;
+}
+
+function findAction(actions: SirenAction[], name: string): SirenAction {
+	const action = actions.find((a) => a.name === name);
+	assert(action, `Expected Siren action "${name}" not found in response`);
+	return action;
 }
 
 function toReadingListItem(entity: SirenSubEntity, serverUrl: string): ReadingListItem {
@@ -71,6 +89,9 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 	findByUrl: FindByUrl;
 	getAllItems: GetAllItems;
 } {
+	let cachedActions: SirenAction[] | null = null;
+	const deleteActions = new Map<string, SirenAction>();
+
 	async function authHeaders(): Promise<Record<string, string>> {
 		const token = await deps.getAccessToken();
 		assert(token, "No access token available");
@@ -80,11 +101,33 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		};
 	}
 
-	const saveUrl: SaveUrl = async ({ url }) => {
+	async function getCollectionActions(): Promise<SirenAction[]> {
+		if (cachedActions) return cachedActions;
 		const headers = await authHeaders();
 		const response = await deps.fetchFn(`${deps.serverUrl}/queue`, {
-			method: "POST",
-			headers: { ...headers, "Content-Type": "application/json" },
+			method: "GET",
+			headers,
+		});
+		if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+		const body = await response.json() as SirenCollectionResponse;
+		cachedActions = body.actions ?? [];
+		return cachedActions;
+	}
+
+	function trackDeleteAction(entity: SirenSubEntity, itemId: string): void {
+		const action = entity.actions?.find((a) => a.name === "delete");
+		if (action) {
+			deleteActions.set(itemId, action);
+		}
+	}
+
+	const saveUrl: SaveUrl = async ({ url }) => {
+		const actions = await getCollectionActions();
+		const saveAction = findAction(actions, "save-article");
+		const headers = await authHeaders();
+		const response = await deps.fetchFn(`${deps.serverUrl}${saveAction.href}`, {
+			method: saveAction.method,
+			headers: { ...headers, "Content-Type": saveAction.type ?? "application/json" },
 			body: JSON.stringify({ url }),
 		});
 
@@ -93,13 +136,39 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		}
 
 		const body = await response.json() as SirenSubEntity;
-		return { ok: true, item: toReadingListItem(body, deps.serverUrl) };
+		const item = toReadingListItem(body, deps.serverUrl);
+		trackDeleteAction(body, item.id);
+		return { ok: true, item };
 	};
 
 	const removeUrl: RemoveUrl = async (id) => {
+		let action = deleteActions.get(id);
+
+		if (!action) {
+			const headers = await authHeaders();
+			const response = await deps.fetchFn(`${deps.serverUrl}/queue`, {
+				method: "GET",
+				headers,
+			});
+			if (response.ok) {
+				const body = await response.json() as SirenCollectionResponse;
+				for (const entity of body.entities ?? []) {
+					if (entity.properties) {
+						const props = SirenPropertiesSchema.safeParse(entity.properties);
+						if (props.success) {
+							trackDeleteAction(entity, props.data.id);
+						}
+					}
+				}
+				action = deleteActions.get(id);
+			}
+		}
+
+		assert(action, `No delete action found for item ${id}`);
+
 		const headers = await authHeaders();
-		const response = await deps.fetchFn(`${deps.serverUrl}/queue/${id}/delete`, {
-			method: "POST",
+		const response = await deps.fetchFn(`${deps.serverUrl}${action.href}`, {
+			method: action.method,
 			headers,
 			redirect: "manual",
 		});
@@ -112,10 +181,14 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 	};
 
 	const findByUrl: FindByUrl = async (url) => {
+		const actions = await getCollectionActions();
+		const filterAction = findAction(actions, "filter-by-status");
+		const filterUrl = new URL(`${deps.serverUrl}${filterAction.href}`);
+		filterUrl.searchParams.set("url", url);
+
 		const headers = await authHeaders();
-		const encoded = encodeURIComponent(url);
-		const response = await deps.fetchFn(`${deps.serverUrl}/queue?url=${encoded}`, {
-			method: "GET",
+		const response = await deps.fetchFn(filterUrl.toString(), {
+			method: filterAction.method,
 			headers,
 		});
 
@@ -123,14 +196,16 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 			return null;
 		}
 
-		const body = await response.json() as SirenResponse;
+		const body = await response.json() as SirenCollectionResponse;
 		const entities = body.entities ?? [];
 
 		if (entities.length === 0) {
 			return null;
 		}
 
-		return toReadingListItem(entities[0], deps.serverUrl);
+		const item = toReadingListItem(entities[0], deps.serverUrl);
+		trackDeleteAction(entities[0], item.id);
+		return item;
 	};
 
 	const getAllItems: GetAllItems = async () => {
@@ -144,8 +219,14 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 			throw new Error(`Fetch failed: ${response.status}`);
 		}
 
-		const body = await response.json() as SirenResponse;
-		return (body.entities ?? []).map((entity) => toReadingListItem(entity, deps.serverUrl));
+		const body = await response.json() as SirenCollectionResponse;
+		cachedActions = body.actions ?? [];
+
+		return (body.entities ?? []).map((entity) => {
+			const item = toReadingListItem(entity, deps.serverUrl);
+			trackDeleteAction(entity, item.id);
+			return item;
+		});
 	};
 
 	return { saveUrl, removeUrl, findByUrl, getAllItems };
