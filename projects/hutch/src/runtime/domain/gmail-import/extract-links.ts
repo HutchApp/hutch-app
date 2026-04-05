@@ -12,7 +12,7 @@ export function extractLinks(html: string): string[] {
 		const href = anchor.getAttribute("href")?.trim();
 		if (!href || href === "#" || href.startsWith("#")) continue;
 
-		const protocol = href.split(":")[0] + ":";
+		const protocol = `${href.split(":")[0]}:`;
 		if (IGNORED_PROTOCOLS.has(protocol.toLowerCase())) continue;
 
 		if (!seen.has(href)) {

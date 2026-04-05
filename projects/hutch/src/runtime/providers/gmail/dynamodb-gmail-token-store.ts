@@ -1,3 +1,4 @@
+/* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { PutCommand, GetCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
@@ -57,3 +58,4 @@ export function initDynamoDbGmailTokenStore(deps: {
 
 	return { saveGmailTokens, findGmailTokens, deleteGmailTokens };
 }
+/* c8 ignore stop */

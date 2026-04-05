@@ -66,8 +66,8 @@ describe("Email verification", () => {
 				...initInMemoryGmailTokenStore(),
 				exchangeGmailCode: async () => ({ accessToken: "stub", refreshToken: "stub", expiresAt: Date.now() + 3600000 }),
 				listUnreadGmailMessages: async () => [],
-				ensureValidAccessToken: async () => "stub-access-token",
 				runGmailImport: async () => ({ importedCount: 0, skippedCount: 0, emailsProcessed: 0, emailsLabeled: 0 }),
+				ensureValidAccessToken: async () => "stub-access-token",
 				googleClientId: "test-google-client-id",
 			});
 

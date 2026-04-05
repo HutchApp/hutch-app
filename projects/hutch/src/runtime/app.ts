@@ -86,7 +86,6 @@ function initProviders() {
 			staleTtlMs,
 		});
 		const gmailTokenStore = initDynamoDbGmailTokenStore({ client, tableName: gmailTokensTable });
-
 		return {
 			auth,
 			articleStore,
@@ -128,7 +127,6 @@ function initProviders() {
 		now: () => new Date(),
 		staleTtlMs,
 	});
-
 	const gmailTokenStore = initInMemoryGmailTokenStore();
 
 	return {
