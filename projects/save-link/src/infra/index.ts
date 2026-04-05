@@ -63,25 +63,19 @@ const summaryGeneratedQueue = new HutchSQS("summary-generated", {
 	visibilityTimeoutSeconds: 60,
 });
 
-const contentBucketS3ReadPolicy = {
-	name: "content-bucket-s3-read-pol",
-	policy: contentBucket.arn.apply((arn) =>
-		JSON.stringify({
-			Version: "2012-10-17",
-			Statement: [{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `${arn}/*` }],
-		}),
-	),
-};
+const contentBucketReadStatement = contentBucket.arn.apply((arn) =>
+	JSON.stringify({
+		Version: "2012-10-17",
+		Statement: [{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `${arn}/*` }],
+	}),
+);
 
-const contentBucketS3WritePolicy = {
-	name: "content-bucket-s3-write-pol",
-	policy: contentBucket.arn.apply((arn) =>
-		JSON.stringify({
-			Version: "2012-10-17",
-			Statement: [{ Effect: "Allow", Action: ["s3:PutObject"], Resource: `${arn}/*` }],
-		}),
-	),
-};
+const contentBucketWriteStatement = contentBucket.arn.apply((arn) =>
+	JSON.stringify({
+		Version: "2012-10-17",
+		Statement: [{ Effect: "Allow", Action: ["s3:PutObject"], Resource: `${arn}/*` }],
+	}),
+);
 
 // --- SaveLinkCommand handler ---
 
@@ -108,7 +102,7 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,
-		contentBucketS3WritePolicy,
+		{ name: "save-link-command-s3-write-pol", policy: contentBucketWriteStatement },
 	],
 });
 
@@ -148,7 +142,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	},
 	policies: [
 		...generateSummaryDynamodb.policies,
-		contentBucketS3ReadPolicy,
+		{ name: "generate-summary-s3-read-pol", policy: contentBucketReadStatement },
 	],
 });
 
@@ -185,7 +179,7 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	policies: [
 		...linkSavedDynamodb.policies,
 		...generateSummaryQueue.policies,
-		contentBucketS3ReadPolicy,
+		{ name: "link-saved-s3-read-pol", policy: contentBucketReadStatement },
 	],
 });
 
