@@ -24,6 +24,7 @@ export type LambdaPolicy = {
 };
 
 export class HutchLambda {
+	public readonly name: string;
 	public readonly functionName: pulumi.Output<string>;
 	public readonly arn: pulumi.Output<string>;
 	public readonly role: aws.iam.Role;
@@ -40,6 +41,7 @@ export class HutchLambda {
 			policies: LambdaPolicy[];
 		},
 	) {
+		this.name = name;
 		const lambdaName = `${name}-handler`;
 		const roleName = `${lambdaName}-role`;
 		const basicExecutionName = `${name}-basic-execution`;

@@ -31,9 +31,10 @@ export class HutchEventBus {
 		);
 	}
 
-	grantPublish(name: string, lambda: { role: aws.iam.Role }): void {
-		new aws.iam.RolePolicy(`${name}-pol`, {
-			name: `${name}-pol`,
+	grantPublish(lambda: { name: string; role: aws.iam.Role }): void {
+		const resourceName = `${lambda.name}-eventbridge-publish-pol`;
+		new aws.iam.RolePolicy(resourceName, {
+			name: resourceName,
 			role: lambda.role.name,
 			policy: pulumi.output(this.eventBusArn).apply((arn) =>
 				JSON.stringify({

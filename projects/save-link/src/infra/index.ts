@@ -78,7 +78,7 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	],
 });
 
-eventBus.grantPublish("save-link-command-eventbridge", saveLinkCommandLambda);
+eventBus.grantPublish(saveLinkCommandLambda);
 
 const saveLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-command", {
 	lambda: saveLinkCommandLambda,
@@ -113,7 +113,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	],
 });
 
-eventBus.grantPublish("generate-summary-eventbridge", generateSummaryLambda);
+eventBus.grantPublish(generateSummaryLambda);
 
 new HutchSQSBackedLambda("generate-summary", {
 	lambda: generateSummaryLambda,

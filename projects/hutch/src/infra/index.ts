@@ -100,7 +100,7 @@ const lambda = new HutchLambda("hutch", {
 	],
 });
 
-eventBus.grantPublish("hutch-eventbridge-publish", lambda);
+eventBus.grantPublish(lambda);
 
 const gateway = new HutchAPIGateway("hutch", {
 	api,
