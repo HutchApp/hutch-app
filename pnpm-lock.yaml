@@ -136,6 +136,9 @@ importers:
 
   projects/extensions/firefox-extension:
     dependencies:
+      '@packages/hutch-infra-components':
+        specifier: workspace:*
+        version: link:../../../src/packages/hutch-infra-components
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../../src/packages/hutch-logger
