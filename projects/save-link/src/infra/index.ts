@@ -15,7 +15,6 @@ import {
 import { requireEnv } from "../require-env";
 
 const config = new pulumi.Config();
-const platformStack = config.require("platformStack");
 const alertEmail = config.require("alertEmail");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
@@ -30,11 +29,7 @@ const contentBucket = new HutchS3ReadWrite("content-bucket", {
 const anthropicApiKey = pulumi.secret(requireEnv("ANTHROPIC_API_KEY"));
 const deepseekApiKey = pulumi.secret(requireEnv("DEEPSEEK_API_KEY"));
 
-const platform = new pulumi.StackReference(platformStack);
-const eventBusName = platform.requireOutput("hutchEventBusName").apply(String);
-const eventBusArn = platform.requireOutput("hutchEventBusArn").apply(String);
-
-const eventBus = HutchEventBus.fromExisting({ eventBusName, eventBusArn });
+const eventBus = HutchEventBus.fromPlatformStack(config);
 
 // --- Queues ---
 
@@ -70,7 +65,7 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
-		EVENT_BUS_NAME: eventBusName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,
@@ -105,7 +100,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		ANTHROPIC_API_KEY: anthropicApiKey,
 		DEEPSEEK_API_KEY: deepseekApiKey,
-		EVENT_BUS_NAME: eventBusName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
 	},
 	policies: [
 		...generateSummaryDynamodb.policies,
