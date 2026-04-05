@@ -11,4 +11,4 @@ const publicBucket = new HutchS3PublicRead("hutch-extension", {
 });
 
 export const bucketUrl = pulumi.interpolate`https://${publicBucket.bucketRegionalDomainName}`;
-export const _dependencies = [publicBucket.bucketPolicy];
+export const _dependencies: pulumi.Resource[] = [publicBucket.bucketPolicy];
