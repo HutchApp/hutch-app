@@ -1,11 +1,11 @@
 import * as pulumi from "@pulumi/pulumi";
-import * as aws from "@pulumi/aws";
 import {
 	HutchEventBus,
 	HutchLambda,
 	HutchDynamoDBAccess,
 	HutchSQS,
 	HutchSQSBackedLambda,
+	HutchS3ReadWrite,
 } from "@packages/hutch-infra-components/infra";
 import {
 	SaveLinkCommand,
@@ -23,17 +23,8 @@ const contentBucketName = config.require("contentBucketName");
 
 // --- Content S3 Bucket ---
 
-const contentBucket = new aws.s3.Bucket("content-bucket", {
-	bucket: contentBucketName,
-	forceDestroy: false,
-});
-
-new aws.s3.BucketPublicAccessBlock("content-bucket-public-access", {
-	bucket: contentBucket.id,
-	blockPublicAcls: true,
-	blockPublicPolicy: true,
-	ignorePublicAcls: true,
-	restrictPublicBuckets: true,
+const contentBucket = new HutchS3ReadWrite("content-bucket", {
+	bucketName: contentBucketName,
 });
 
 const anthropicApiKey = pulumi.secret(requireEnv("ANTHROPIC_API_KEY"));
@@ -63,20 +54,6 @@ const summaryGeneratedQueue = new HutchSQS("summary-generated", {
 	visibilityTimeoutSeconds: 60,
 });
 
-const contentBucketReadStatement = contentBucket.arn.apply((arn) =>
-	JSON.stringify({
-		Version: "2012-10-17",
-		Statement: [{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `${arn}/*` }],
-	}),
-);
-
-const contentBucketWriteStatement = contentBucket.arn.apply((arn) =>
-	JSON.stringify({
-		Version: "2012-10-17",
-		Statement: [{ Effect: "Allow", Action: ["s3:PutObject"], Resource: `${arn}/*` }],
-	}),
-);
-
 // --- SaveLinkCommand handler ---
 
 const saveLinkCommandDynamodb = new HutchDynamoDBAccess("save-link-command-dynamodb", {
@@ -97,7 +74,7 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,
-		{ name: "save-link-command-s3-write-pol", policy: contentBucketWriteStatement },
+		...contentBucket.writePolicies("save-link-command-s3"),
 	],
 });
 
@@ -132,7 +109,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	},
 	policies: [
 		...generateSummaryDynamodb.policies,
-		{ name: "generate-summary-s3-read-pol", policy: contentBucketReadStatement },
+		...contentBucket.readPolicies("generate-summary-s3"),
 	],
 });
 
@@ -164,7 +141,7 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	policies: [
 		...linkSavedDynamodb.policies,
 		...generateSummaryQueue.policies,
-		{ name: "link-saved-s3-read-pol", policy: contentBucketReadStatement },
+		...contentBucket.readPolicies("link-saved-s3"),
 	],
 });
 
