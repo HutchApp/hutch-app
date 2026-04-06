@@ -1,3 +1,4 @@
+/* c8 ignore start -- staging-only actions, not exercised by local E2E */
 import type { PageAction } from '../hateoas/navigation-handler.types'
 import { isOnPage } from '../page-interactions'
 import type { AuthProgress } from './auth-actions'
