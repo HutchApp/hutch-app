@@ -2,7 +2,7 @@
     <section class="omnivore-hero" data-test-section="hero" aria-label="Introduction">
       <div class="omnivore-hero__container">
         <p class="omnivore-hero__tagline">Where reading still matters.</p>
-        <h1 class="omnivore-hero__title">Omnivore shut down. Your reading system shouldn't depend on someone else's exit.</h1>
+        <h1 class="omnivore-hero__title">Omnivore shut down. Your reading list shouldn't depend on someone else's exit.</h1>
         <p class="omnivore-hero__subtitle">Two weeks. That's how much notice Omnivore gave before deleting everything. Hutch is a read-it-later app built by a developer, funded by subscriptions, with no investors to sell to.</p>
         <div class="omnivore-hero__actions">
           {{#switch browserName}}
@@ -38,8 +38,8 @@
         <div class="omnivore-shutdown__content">
           <p>On November 1, 2024, ElevenLabs acquired Omnivore. On November 15, the service shut down and data deletion began. Users had two weeks to export years of saved articles, highlights, and notes.</p>
           <p>Omnivore was open source, community-loved, and had a clear mission. None of that mattered once the acquisition closed. The codebase went read-only. The API stopped responding. The newsletters stopped arriving.</p>
-          <p>The problem wasn't Omnivore's intentions. The problem was the business model. Venture-funded apps need an exit. When the exit comes, users are an afterthought.</p>
-          <p>Hutch has no investors. Revenue comes from subscriptions. There's no one to sell to and no reason to shut down. If Hutch ever stops working, the source code is AGPL-licensed and the export is always available.</p>
+          <p>The problem was not Omnivore's intentions. The problem was the business model. Venture-funded apps need an exit. When the exit comes, users are an afterthought.</p>
+          <p>Hutch has no investors. Revenue comes from subscriptions. There is no one to sell to and no reason to shut down. If Hutch ever stops working, the source code is AGPL-licensed and the export is always available.</p>
         </div>
       </div>
     </section>
@@ -49,8 +49,8 @@
         <h2 class="omnivore-backstory__title">Built by a developer who reads</h2>
         <div class="omnivore-backstory__content">
           <p>I'm <a href="https://www.linkedin.com/in/fagnerbrack/">Fayner Brack</a>. I created <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a>, a JavaScript library with 22 billion+ downloads per year on jsDelivr. I've been building for the web for a long time.</p>
-          <p>For 10 years I maintained a personal reading pipeline &mdash; Gmail filters, DynamoDB tables, Reddit automations &mdash; that helped me save, organise, and actually read technical articles. That system generated 300,000+ Reddit karma across developer communities.</p>
-          <p>When Pocket was abandoned and Omnivore disappeared, I turned that personal system into Hutch. One developer, building in public, one feature at a time.</p>
+          <p>For 10 years I maintained a personal reading pipeline. Gmail filters, DynamoDB tables, and Reddit automations helped me save, organise, and read technical articles. That system generated 300,000+ Reddit karma across developer communities.</p>
+          <p>Pocket was abandoned. Omnivore disappeared. I turned that personal system into Hutch. One developer, building in public, one feature at a time.</p>
           <p><a href="/">Read the full story on the home page.</a></p>
         </div>
       </div>
@@ -76,8 +76,8 @@
       <div class="omnivore-comparison__container">
         <div class="section-header">
           <p class="section-header__label">Honest Comparison</p>
-          <h2 class="section-header__title">What Omnivore had &mdash; and where Hutch stands</h2>
-          <p class="section-header__subtitle">Omnivore had years of development. Hutch is newer. Here's an honest comparison.</p>
+          <h2 class="section-header__title">What Omnivore had, and where Hutch stands</h2>
+          <p class="section-header__subtitle">Omnivore had years of development. Hutch is newer. Here is an honest look at the gaps.</p>
         </div>
         <table class="comparison-table" data-test-comparison-table>
           <thead>
@@ -175,7 +175,7 @@
             </tr>
           </tbody>
         </table>
-        <p class="omnivore-comparison__note">Hutch is younger than Omnivore was. I'd rather be honest about gaps than pretend they don't exist. Features ship one at a time, and the roadmap is public.</p>
+        <p class="omnivore-comparison__note">Hutch is younger than Omnivore was. I would rather be honest about gaps than pretend they don't exist. Features ship one at a time, and the roadmap is public.</p>
       </div>
     </section>
 
@@ -192,7 +192,7 @@
           </div>
           <div class="trust-card" data-test-trust="export">
             <h3 class="trust-card__name">Full Export, Always</h3>
-            <p class="trust-card__description">Export all your data anytime &mdash; even after you cancel. No two-week countdown. No scrambling for backups.</p>
+            <p class="trust-card__description">Export all your data anytime, even after you cancel. No two-week countdown. No scrambling for backups.</p>
           </div>
           <div class="trust-card" data-test-trust="hosting">
             <h3 class="trust-card__name">Australian Hosting</h3>
@@ -211,7 +211,7 @@
         <div class="section-header">
           <p class="section-header__label">Simple Pricing</p>
           <h2 class="section-header__title">A$3.99/month. No tiers. No upsells.</h2>
-          <p class="section-header__subtitle">Readwise Reader is excellent for power users at $12.99/month. Hutch is simpler and cheaper &mdash; a focused read-it-later tool with AI summaries included.</p>
+          <p class="section-header__subtitle">Readwise Reader is a great choice for power users at $12.99/month. Hutch is simpler and cheaper. A focused read-it-later tool with AI summaries included.</p>
         </div>
         <div class="founding-progress" data-test-founding-progress>
           <div class="founding-progress__bar">
@@ -219,7 +219,7 @@
           </div>
           <p class="founding-progress__label">{{userCount}} / {{foundingMemberLimit}} founding members</p>
           {{#if allocationExhausted}}
-          <p class="founding-progress__exhausted" data-test-founding-exhausted>The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.</p>
+          <p class="founding-progress__exhausted" data-test-founding-exhausted>The free allocation has been used up. You might still be able to create an account for free while I develop the pricing system, but it may require payment in a few months.</p>
           {{/if}}
         </div>
         <div class="pricing-grid">
@@ -227,7 +227,7 @@
             <span class="pricing-card__badge">First 100 Users</span>
             <h3 class="pricing-card__name">Founding Member</h3>
             <p class="pricing-card__price">A$0<span class="pricing-card__price-suffix"> forever</span></p>
-            <p class="pricing-card__description">Be one of the first 100 users. Get full access free, forever. A$3.99/month for everyone else &mdash; includes TL;DR summaries.</p>
+            <p class="pricing-card__description">Be one of the first 100 users. Get full access free, forever. A$3.99/month for everyone else. TL;DR summaries are included.</p>
             <ul class="pricing-card__features">
               <li class="pricing-card__feature">Save unlimited articles</li>
               <li class="pricing-card__feature">Firefox and Chrome extensions</li>
@@ -251,19 +251,19 @@
           <details class="faq-item" data-test-faq="what-happened">
             <summary class="faq-item__question">What happened to Omnivore?</summary>
             <div class="faq-item__answer">
-              <p>ElevenLabs acquired Omnivore on November 1, 2024, and shut it down on November 15. Users had roughly two weeks to export their data before deletion began. The open-source repository was archived. The team moved to ElevenLabs to work on text-to-speech, not reading tools. Omnivore is not coming back.</p>
+              <p>ElevenLabs acquired Omnivore on November 1, 2024, and shut it down on November 15. Users had about two weeks to export their data before deletion began. The open-source repository was archived. The team moved to ElevenLabs to work on text-to-speech, not reading tools. Omnivore is not coming back.</p>
             </div>
           </details>
           <details class="faq-item" data-test-faq="free-alternative">
             <summary class="faq-item__question">Is there a free Omnivore alternative?</summary>
             <div class="faq-item__answer">
-              <p>Hutch is free for the first 100 founding members &mdash; full access, forever. After that, it's A$3.99/month (roughly US$2.60). Self-hosted alternatives like Karakeep and Wallabag are free but require you to run your own server. Readwise Reader is the most feature-complete alternative at $12.99/month.</p>
+              <p>Hutch is free for the first 100 founding members. Full access, forever. After that, it costs A$3.99/month (about US$2.60). Self-hosted alternatives like Karakeep and Wallabag are free but require you to run your own server. Readwise Reader is the most feature-complete option at $12.99/month.</p>
             </div>
           </details>
           <details class="faq-item" data-test-faq="import-data">
             <summary class="faq-item__question">Can I import my Omnivore data into Hutch?</summary>
             <div class="faq-item__answer">
-              <p>Not yet. Omnivore export import is on the roadmap. If you exported your data before the shutdown, hold onto that file. In the meantime, you can start fresh with the browser extension &mdash; save any article with one click.</p>
+              <p>Not yet. Omnivore export import is on the roadmap. If you exported your data before the shutdown, keep that file. You can start fresh right now with the browser extension. Save any article with one click.</p>
             </div>
           </details>
         </div>
@@ -272,7 +272,7 @@
 
     <section class="omnivore-cta" data-test-section="cta" aria-label="Get started">
       <div class="omnivore-cta__container">
-        <h2 class="omnivore-cta__title">Your reading list shouldn't have an expiry date.</h2>
+        <h2 class="omnivore-cta__title">Your reading list should not have an expiry date.</h2>
         <p class="omnivore-cta__subtitle">Install the extension. Save an article. See if it fits how you read.</p>
         <div class="omnivore-cta__actions">
           {{#switch browserName}}
