@@ -1,8 +1,8 @@
   <main>
     <section class="alt-hero" data-test-section="hero" aria-label="Introduction">
       <div class="alt-hero__container">
-        <h1 class="alt-hero__title">A Pocket alternative that won't disappear</h1>
-        <p class="alt-hero__subtitle">On July 8, 2025, Mozilla shut down Pocket. Millions of saved articles, gone. Hutch is a read-it-later app I built from a personal reading system I've maintained for 10 years. Save articles with one click, read them in a clean reader view, get a TL;DR for every article. Your data is always exportable.</p>
+        <h1 class="alt-hero__title">A Pocket alternative that won't shut down</h1>
+        <p class="alt-hero__subtitle">Mozilla shut down Pocket on July 8, 2025. Millions of reading lists vanished overnight. Hutch is a read-it-later app I built from a personal system I ran for 10 years. Save articles in one click, read them in a clean reader view, and get a TL;DR for each one. Your data is yours to export at any time.</p>
         <div class="alt-hero__actions">
           <a href="/install" class="btn btn--primary" data-test-cta="hero-install">Install the Extension</a>
         </div>
@@ -12,7 +12,7 @@
     <section class="alt-features" data-test-section="what-works" aria-label="What works today">
       <div class="alt-features__container">
         <h2 class="alt-features__title">What works today</h2>
-        <p class="alt-features__intro">Everything listed here is shipped and working. No waitlists, no "coming soon" asterisks.</p>
+        <p class="alt-features__intro">Everything here is shipped and working. No waitlists.</p>
         <div class="alt-features__grid">
           {{#each currentFeatures}}
           <div class="alt-feature-card" data-test-feature="{{name}}">
@@ -27,12 +27,12 @@
     <section class="alt-roadmap" data-test-section="whats-coming" aria-label="What is coming">
       <div class="alt-roadmap__container">
         <h2 class="alt-roadmap__title">What's coming</h2>
-        <p class="alt-roadmap__intro">These are planned, not promised. I ship one feature at a time and I'm building in public.</p>
+        <p class="alt-roadmap__intro">These are planned, not promised. I ship one feature at a time and I build in public.</p>
         <ul class="alt-roadmap__list">
           {{#each plannedFeatures}}
           <li class="alt-roadmap__item" data-test-planned="{{name}}">
-            <span class="alt-roadmap__item-name">{{name}}</span>
-            <span class="alt-roadmap__item-description"> &mdash; {{description}}</span>
+            <span class="alt-roadmap__item-name">{{name}}:</span>
+            <span class="alt-roadmap__item-description"> {{description}}</span>
           </li>
           {{/each}}
         </ul>
@@ -43,10 +43,10 @@
       <div class="alt-trust__container">
         <h2 class="alt-trust__title">Why Hutch won't shut down</h2>
         <div class="alt-trust__content">
-          <p>Pocket was acquired by Mozilla, then abandoned. Omnivore was acquired by ElevenLabs, then shut down overnight. The pattern is the same: a VC-funded company gets acquired and the product disappears.</p>
-          <p>Hutch has no venture capital. It's funded by a simple subscription: A$3.99/month after the founding member allocation fills up. That's the entire business model. No growth targets, no acquisition strategy, no board to answer to.</p>
-          <p>I'm <a href="https://www.linkedin.com/in/fagnerbrack/">Fayner Brack</a>, the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a> (22 billion+ annual CDN hits on jsDelivr). I've been shipping open source for over a decade. Hutch is AGPL source-available, so even if something happened to me, the code is public.</p>
-          <p>Your data is always exportable. Even if you cancel. I call it the "Even If You Cancel" promise.</p>
+          <p>Pocket was acquired by Mozilla, then abandoned. Omnivore was acquired by ElevenLabs, then shut down with one week's notice. The pattern repeats: a company takes venture capital, gets acquired, and the product disappears.</p>
+          <p>Hutch has no venture capital. It runs on a subscription: A$3.99/month after the first 100 founding members. That is the entire business model. No growth targets, no acquisition plan, no board.</p>
+          <p>I'm <a href="https://www.linkedin.com/in/fagnerbrack/">Fayner Brack</a>, the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a> (22 billion+ annual CDN hits on jsDelivr). I have shipped open source software for over 10 years. Hutch is AGPL source-available. The code is public.</p>
+          <p>You can export your data at any time. Cancel your account and your articles are still there to download. I call this the "Even If You Cancel" promise.</p>
         </div>
       </div>
     </section>
@@ -57,19 +57,19 @@
         <ol class="alt-migration__steps">
           <li class="alt-migration__step">
             <span class="alt-migration__step-title">Export your Pocket data.</span>
-            Before the shutdown, Pocket offered a data export at getpocket.com/export. If you already exported your list as an HTML file, you're set. If you missed the window, check your email — Mozilla sent export reminders before July 8.
+            Pocket had a data export at getpocket.com/export. Your export is an HTML file. Check your email for Mozilla's export reminders if you missed the window.
           </li>
           <li class="alt-migration__step">
             <span class="alt-migration__step-title">Create a Hutch account.</span>
-            <a href="/signup">Sign up</a> — it takes 30 seconds. The first 100 founding members get full access free, forever.
+            <a href="/signup">Sign up here</a>. It takes 30 seconds. The first 100 founding members get full access free, forever.
           </li>
           <li class="alt-migration__step">
             <span class="alt-migration__step-title">Install the browser extension.</span>
             Available for <a href="/install?browser=firefox">Firefox</a> and <a href="/install?browser=chrome">Chrome</a>. Save any page with one click, Ctrl/Cmd+D, or right-click.
           </li>
           <li class="alt-migration__step">
-            <span class="alt-migration__step-title">Import your Pocket articles (coming soon).</span>
-            I'm building a Pocket import tool that reads the standard Pocket HTML export file. It's not ready yet, but it's on the roadmap. For now, you can start fresh and save new articles immediately.
+            <span class="alt-migration__step-title">Import your Pocket articles (planned).</span>
+            I am building a Pocket import tool for the standard HTML export file. It is not ready yet. You can start fresh and save new articles right away.
           </li>
         </ol>
       </div>
@@ -77,10 +77,10 @@
 
     <section class="alt-pricing" data-test-section="pricing" aria-label="Pricing">
       <div class="alt-pricing__container">
-        <h2 class="alt-pricing__title">Simple pricing</h2>
+        <h2 class="alt-pricing__title">Pricing</h2>
         <div class="alt-pricing__card">
           <p class="alt-pricing__amount">A$0<span class="alt-pricing__suffix"> for founding members</span></p>
-          <p class="alt-pricing__detail">The first 100 users get full access free, forever. After that, A$3.99/month. One plan. No tiers. TL;DR summaries included.</p>
+          <p class="alt-pricing__detail">The first 100 users get full access free, forever. A$3.99/month after that. One plan. No tiers. TL;DR summaries included.</p>
           <a href="/signup" class="btn btn--brand alt-pricing__cta" data-test-cta="pricing-signup">Become a Founding Member</a>
         </div>
       </div>
@@ -89,7 +89,7 @@
     <section class="alt-cta" data-test-section="cta" aria-label="Get started">
       <div class="alt-cta__container">
         <h2 class="alt-cta__title">Start saving articles again</h2>
-        <p class="alt-cta__subtitle">Install the extension, save your first article, read it when you're ready. That's it.</p>
+        <p class="alt-cta__subtitle">Install the extension and save your first article. Read it later. That is all there is to it.</p>
         <div class="alt-cta__actions">
           <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install Browser Extension</a>
         </div>

@@ -16,7 +16,7 @@ describe("GET /pocket-alternatives", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const title = doc.querySelector(".alt-hero__title");
-		expect(title?.textContent).toBe("A Pocket alternative that won't disappear");
+		expect(title?.textContent).toBe("A Pocket alternative that won't shut down");
 	});
 
 	it("should render six current feature cards", async () => {
@@ -61,19 +61,22 @@ describe("GET /pocket-alternatives", () => {
 		expect(pricing?.textContent).toContain("A$3.99/month");
 	});
 
-	it("should set SEO metadata with Pocket alternative keywords", async () => {
+	it("should set SEO metadata derived from frontmatter", async () => {
 		const response = await request(app).get("/pocket-alternatives");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.title).toContain("Pocket Alternative");
+		expect(doc.title).toBe("A Pocket Alternative That Won't Shut Down — Hutch");
 		const description = doc.querySelector('meta[name="description"]');
-		expect(description?.getAttribute("content")).toContain("read-it-later");
+		expect(description?.getAttribute("content")).toContain("Pocket shut down");
 
 		const keywords = doc.querySelector('meta[name="keywords"]');
-		expect(keywords?.getAttribute("content")).toContain("Pocket alternative");
+		expect(keywords?.getAttribute("content")).toContain("pocket alternative");
+
+		const author = doc.querySelector('meta[name="author"]');
+		expect(author?.getAttribute("content")).toBe("Fayner Brack");
 	});
 
-	it("should include Article and FAQPage structured data", async () => {
+	it("should include BlogPosting and FAQPage structured data", async () => {
 		const response = await request(app).get("/pocket-alternatives");
 		const doc = new JSDOM(response.text).window.document;
 
@@ -81,8 +84,13 @@ describe("GET /pocket-alternatives", () => {
 		const schemas = Array.from(scripts).map((s) => JSON.parse(s.textContent ?? "{}"));
 
 		const types = schemas.map((s: { "@type": string }) => s["@type"]);
-		expect(types).toContain("Article");
+		expect(types).toContain("BlogPosting");
 		expect(types).toContain("FAQPage");
+
+		const blogPosting = schemas.find((s: { "@type": string }) => s["@type"] === "BlogPosting");
+		expect(blogPosting.headline).toBe("A Pocket Alternative That Won't Shut Down");
+		expect(blogPosting.author.name).toBe("Fayner Brack");
+		expect(blogPosting.datePublished).toBe("2026-04-06");
 
 		const faq = schemas.find((s: { "@type": string }) => s["@type"] === "FAQPage");
 		expect(faq.mainEntity.length).toBe(3);
