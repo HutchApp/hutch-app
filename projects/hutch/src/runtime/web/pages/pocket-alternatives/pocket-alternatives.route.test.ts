@@ -16,49 +16,64 @@ describe("GET /pocket-alternatives", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const title = doc.querySelector(".alt-hero__title");
-		expect(title?.textContent).toBe("7 Best Pocket Alternatives in 2026");
+		expect(title?.textContent).toBe("A Pocket alternative that won't disappear");
 	});
 
-	it("should render seven alternative cards", async () => {
+	it("should render six current feature cards", async () => {
 		const response = await request(app).get("/pocket-alternatives");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cards = doc.querySelectorAll("[data-test-alternative]");
-		expect(cards.length).toBe(7);
+		const features = doc.querySelectorAll("[data-test-feature]");
+		expect(features.length).toBe(6);
 	});
 
-	it("should render Hutch as the first alternative with a featured badge", async () => {
+	it("should render four planned features", async () => {
 		const response = await request(app).get("/pocket-alternatives");
 		const doc = new JSDOM(response.text).window.document;
 
-		const hutchCard = doc.querySelector('[data-test-alternative="Hutch"]');
-		expect(hutchCard?.classList.contains("alt-card--hutch")).toBe(true);
-
-		const badge = hutchCard?.querySelector(".alt-card__badge");
-		expect(badge?.textContent).toBe("Built by the author of this page");
+		const planned = doc.querySelectorAll("[data-test-planned]");
+		expect(planned.length).toBe(4);
 	});
 
-	it("should render the comparison table with six app columns", async () => {
+	it("should render the trust section addressing sustainability", async () => {
 		const response = await request(app).get("/pocket-alternatives");
 		const doc = new JSDOM(response.text).window.document;
 
-		const colHeaders = doc.querySelectorAll("[data-test-comparison-table] thead th[scope=\"col\"]");
-		expect(colHeaders.length).toBe(7);
+		const trust = doc.querySelector('[data-test-section="why-wont-shut-down"]');
+		expect(trust).not.toBeNull();
+		expect(trust?.textContent).toContain("Even If You Cancel");
 	});
 
-	it("should set SEO metadata for the article", async () => {
+	it("should render four migration steps", async () => {
 		const response = await request(app).get("/pocket-alternatives");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.title).toContain("Pocket Alternatives");
+		const steps = doc.querySelectorAll(".alt-migration__step");
+		expect(steps.length).toBe(4);
+	});
+
+	it("should render the pricing section with founding member offer", async () => {
+		const response = await request(app).get("/pocket-alternatives");
+		const doc = new JSDOM(response.text).window.document;
+
+		const pricing = doc.querySelector('[data-test-section="pricing"]');
+		expect(pricing?.textContent).toContain("A$0");
+		expect(pricing?.textContent).toContain("A$3.99/month");
+	});
+
+	it("should set SEO metadata with Pocket alternative keywords", async () => {
+		const response = await request(app).get("/pocket-alternatives");
+		const doc = new JSDOM(response.text).window.document;
+
+		expect(doc.title).toContain("Pocket Alternative");
 		const description = doc.querySelector('meta[name="description"]');
 		expect(description?.getAttribute("content")).toContain("read-it-later");
 
 		const keywords = doc.querySelector('meta[name="keywords"]');
-		expect(keywords?.getAttribute("content")).toContain("Pocket alternatives");
+		expect(keywords?.getAttribute("content")).toContain("Pocket alternative");
 	});
 
-	it("should include Article and ItemList structured data", async () => {
+	it("should include Article and FAQPage structured data", async () => {
 		const response = await request(app).get("/pocket-alternatives");
 		const doc = new JSDOM(response.text).window.document;
 
@@ -67,10 +82,10 @@ describe("GET /pocket-alternatives", () => {
 
 		const types = schemas.map((s: { "@type": string }) => s["@type"]);
 		expect(types).toContain("Article");
-		expect(types).toContain("ItemList");
+		expect(types).toContain("FAQPage");
 
-		const itemList = schemas.find((s: { "@type": string }) => s["@type"] === "ItemList");
-		expect(itemList.numberOfItems).toBe(7);
+		const faq = schemas.find((s: { "@type": string }) => s["@type"] === "FAQPage");
+		expect(faq.mainEntity.length).toBe(3);
 	});
 
 	it("should have page-pocket-alternatives body class", async () => {
@@ -87,8 +102,11 @@ describe("GET /pocket-alternatives", () => {
 		const hero = doc.querySelector('[data-test-section="hero"]');
 		expect(hero?.getAttribute("aria-label")).toBe("Introduction");
 
-		const alternatives = doc.querySelector('[data-test-section="alternatives"]');
-		expect(alternatives?.getAttribute("aria-label")).toBe("Pocket alternatives");
+		const features = doc.querySelector('[data-test-section="what-works"]');
+		expect(features?.getAttribute("aria-label")).toBe("What works today");
+
+		const migration = doc.querySelector('[data-test-section="how-to-switch"]');
+		expect(migration?.getAttribute("aria-label")).toBe("How to switch from Pocket");
 	});
 
 	it("should include the page in the sitemap", async () => {

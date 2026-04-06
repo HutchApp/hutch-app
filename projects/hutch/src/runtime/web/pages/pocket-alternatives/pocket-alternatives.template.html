@@ -1,157 +1,97 @@
   <main>
     <section class="alt-hero" data-test-section="hero" aria-label="Introduction">
       <div class="alt-hero__container">
-        <p class="alt-hero__label">Updated April 2026</p>
-        <h1 class="alt-hero__title">7 Best Pocket Alternatives in 2026</h1>
-        <p class="alt-hero__subtitle">Pocket was acquired by Mozilla, then slowly abandoned. If you're looking for a read-it-later app that's still actively maintained, here are the best options — including the one I built after my own reading system outgrew Pocket years ago.</p>
+        <h1 class="alt-hero__title">A Pocket alternative that won't disappear</h1>
+        <p class="alt-hero__subtitle">On July 8, 2025, Mozilla shut down Pocket. Millions of saved articles, gone. Hutch is a read-it-later app I built from a personal reading system I've maintained for 10 years. Save articles with one click, read them in a clean reader view, get a TL;DR for every article. Your data is always exportable.</p>
         <div class="alt-hero__actions">
-          <a href="/signup" class="btn btn--primary" data-test-cta="hero-signup">Try Hutch Free</a>
+          <a href="/install" class="btn btn--primary" data-test-cta="hero-install">Install the Extension</a>
         </div>
       </div>
     </section>
 
-    <section class="alt-context" data-test-section="context" aria-label="Context">
-      <div class="alt-context__container">
-        <div class="alt-context__content">
-          <p>Pocket was one of the first read-it-later apps. It worked well for years. Then Mozilla acquired it in 2017 and development slowed to a crawl. Omnivore launched as an open-source alternative, gained traction, then <a href="https://blog.omnivore.app/p/details-on-omnivore-shutting-down">shut down overnight in November 2024</a> after being acquired by ElevenLabs.</p>
-          <p>The pattern is clear: read-it-later apps get acquired and abandoned. That's why data portability and long-term sustainability matter more than feature counts when choosing an alternative.</p>
-          <p>I've tested each of these apps and evaluated them on what actually matters for daily reading: save-and-forget simplicity, reading experience, and whether you can get your data out if the service disappears.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="alt-list" data-test-section="alternatives" aria-label="Pocket alternatives">
-      <div class="alt-section-header">
-        <p class="alt-section-header__label">The List</p>
-        <h2 class="alt-section-header__title">Pocket alternatives worth considering</h2>
-        <p class="alt-section-header__subtitle">Ranked by how well they replace Pocket's core workflow: save from browser, read later, don't lose your data.</p>
-      </div>
-      <div class="alt-list__grid">
-        {{#each alternatives}}
-        <div class="alt-card{{#if featured}} alt-card--hutch{{/if}}" data-test-alternative="{{name}}">
-          {{#if badge}}<span class="alt-card__badge">{{badge}}</span>{{/if}}
-          <h3 class="alt-card__name">{{position}}. {{name}}</h3>
-          <p class="alt-card__tagline">{{tagline}}</p>
-          <div class="alt-card__details">
-            <div class="alt-card__detail">
-              <span class="alt-card__detail-label">Price: </span>
-              <span class="alt-card__detail-value">{{price}}</span>
-            </div>
-            <div class="alt-card__detail">
-              <span class="alt-card__detail-label">Platforms: </span>
-              <span class="alt-card__detail-value">{{platforms}}</span>
-            </div>
-            <div class="alt-card__detail">
-              <span class="alt-card__detail-label">Browser extension: </span>
-              <span class="alt-card__detail-value">{{extension}}</span>
-            </div>
-            <div class="alt-card__detail">
-              <span class="alt-card__detail-label">Open source: </span>
-              <span class="alt-card__detail-value">{{openSource}}</span>
-            </div>
+    <section class="alt-features" data-test-section="what-works" aria-label="What works today">
+      <div class="alt-features__container">
+        <h2 class="alt-features__title">What works today</h2>
+        <p class="alt-features__intro">Everything listed here is shipped and working. No waitlists, no "coming soon" asterisks.</p>
+        <div class="alt-features__grid">
+          {{#each currentFeatures}}
+          <div class="alt-feature-card" data-test-feature="{{name}}">
+            <h3 class="alt-feature-card__name">{{name}}</h3>
+            <p class="alt-feature-card__description">{{description}}</p>
           </div>
-          <p class="alt-card__summary">{{summary}}</p>
+          {{/each}}
         </div>
-        {{/each}}
       </div>
     </section>
 
-    <section class="alt-comparison" data-test-section="comparison" aria-label="Feature comparison">
-      <div class="alt-comparison__container">
-        <div class="alt-section-header">
-          <p class="alt-section-header__label">Side by Side</p>
-          <h2 class="alt-section-header__title">Quick comparison</h2>
-        </div>
-        <table class="alt-comparison__table" data-test-comparison-table>
-          <thead>
-            <tr>
-              <th scope="col"></th>
-              <th scope="col" class="alt-comparison__hutch">Hutch</th>
-              <th scope="col">Readwise Reader</th>
-              <th scope="col">Instapaper</th>
-              <th scope="col">Wallabag</th>
-              <th scope="col">GoodLinks</th>
-              <th scope="col">Raindrop.io</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">Price</th>
-              <td class="alt-comparison__hutch">Free (first 100)</td>
-              <td>$9.99/mo</td>
-              <td>$5.99/mo</td>
-              <td>Free (self-host)</td>
-              <td>$9.99 once</td>
-              <td>Free / $2.40/mo</td>
-            </tr>
-            <tr>
-              <th scope="row">Browser extension</th>
-              <td class="alt-comparison__hutch"><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Reader view</th>
-              <td class="alt-comparison__hutch"><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-            </tr>
-            <tr>
-              <th scope="row">AI summaries</th>
-              <td class="alt-comparison__hutch"><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Data export</th>
-              <td class="alt-comparison__hutch"><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Open source</th>
-              <td class="alt-comparison__hutch"><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__check" aria-label="Yes">&#10003;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-              <td><span class="alt-comparison__cross" aria-label="No">&#10007;</span></td>
-            </tr>
-          </tbody>
-        </table>
+    <section class="alt-roadmap" data-test-section="whats-coming" aria-label="What is coming">
+      <div class="alt-roadmap__container">
+        <h2 class="alt-roadmap__title">What's coming</h2>
+        <p class="alt-roadmap__intro">These are planned, not promised. I ship one feature at a time and I'm building in public.</p>
+        <ul class="alt-roadmap__list">
+          {{#each plannedFeatures}}
+          <li class="alt-roadmap__item" data-test-planned="{{name}}">
+            <span class="alt-roadmap__item-name">{{name}}</span>
+            <span class="alt-roadmap__item-description"> &mdash; {{description}}</span>
+          </li>
+          {{/each}}
+        </ul>
       </div>
     </section>
 
-    <section class="alt-why" data-test-section="why-hutch" aria-label="Why Hutch">
-      <div class="alt-why__container">
-        <h2 class="alt-why__title">Why I built Hutch as a Pocket alternative</h2>
-        <div class="alt-why__content">
-          <p>I maintained a personal reading system for 10 years — Gmail filters, DynamoDB tables, Reddit automations. When Pocket stagnated and Omnivore disappeared, I turned that system into a product anyone can use.</p>
-          <p>Hutch is built in Australia by a solo developer. It's open source, it includes an "Even If You Cancel" promise (your data is always exportable), and it's designed to be sustainable long-term rather than optimised for acquisition.</p>
-          <p>It doesn't have every feature yet. But everything that's shipped works, and I'm building the rest in public.</p>
+    <section class="alt-trust" data-test-section="why-wont-shut-down" aria-label="Why Hutch will not shut down">
+      <div class="alt-trust__container">
+        <h2 class="alt-trust__title">Why Hutch won't shut down</h2>
+        <div class="alt-trust__content">
+          <p>Pocket was acquired by Mozilla, then abandoned. Omnivore was acquired by ElevenLabs, then shut down overnight. The pattern is the same: a VC-funded company gets acquired and the product disappears.</p>
+          <p>Hutch has no venture capital. It's funded by a simple subscription: A$3.99/month after the founding member allocation fills up. That's the entire business model. No growth targets, no acquisition strategy, no board to answer to.</p>
+          <p>I'm <a href="https://www.linkedin.com/in/fagnerbrack/">Fayner Brack</a>, the creator of <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a> (22 billion+ annual CDN hits on jsDelivr). I've been shipping open source for over a decade. Hutch is AGPL source-available, so even if something happened to me, the code is public.</p>
+          <p>Your data is always exportable. Even if you cancel. I call it the "Even If You Cancel" promise.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="alt-migration" data-test-section="how-to-switch" aria-label="How to switch from Pocket">
+      <div class="alt-migration__container">
+        <h2 class="alt-migration__title">How to switch from Pocket</h2>
+        <ol class="alt-migration__steps">
+          <li class="alt-migration__step">
+            <span class="alt-migration__step-title">Export your Pocket data.</span>
+            Before the shutdown, Pocket offered a data export at getpocket.com/export. If you already exported your list as an HTML file, you're set. If you missed the window, check your email — Mozilla sent export reminders before July 8.
+          </li>
+          <li class="alt-migration__step">
+            <span class="alt-migration__step-title">Create a Hutch account.</span>
+            <a href="/signup">Sign up</a> — it takes 30 seconds. The first 100 founding members get full access free, forever.
+          </li>
+          <li class="alt-migration__step">
+            <span class="alt-migration__step-title">Install the browser extension.</span>
+            Available for <a href="/install?browser=firefox">Firefox</a> and <a href="/install?browser=chrome">Chrome</a>. Save any page with one click, Ctrl/Cmd+D, or right-click.
+          </li>
+          <li class="alt-migration__step">
+            <span class="alt-migration__step-title">Import your Pocket articles (coming soon).</span>
+            I'm building a Pocket import tool that reads the standard Pocket HTML export file. It's not ready yet, but it's on the roadmap. For now, you can start fresh and save new articles immediately.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="alt-pricing" data-test-section="pricing" aria-label="Pricing">
+      <div class="alt-pricing__container">
+        <h2 class="alt-pricing__title">Simple pricing</h2>
+        <div class="alt-pricing__card">
+          <p class="alt-pricing__amount">A$0<span class="alt-pricing__suffix"> for founding members</span></p>
+          <p class="alt-pricing__detail">The first 100 users get full access free, forever. After that, A$3.99/month. One plan. No tiers. TL;DR summaries included.</p>
+          <a href="/signup" class="btn btn--brand alt-pricing__cta" data-test-cta="pricing-signup">Become a Founding Member</a>
         </div>
       </div>
     </section>
 
     <section class="alt-cta" data-test-section="cta" aria-label="Get started">
       <div class="alt-cta__container">
-        <h2 class="alt-cta__title">Ready to switch from Pocket?</h2>
-        <p class="alt-cta__subtitle">The first 100 users get full access free, forever. Install the browser extension and start saving articles in under a minute.</p>
+        <h2 class="alt-cta__title">Start saving articles again</h2>
+        <p class="alt-cta__subtitle">Install the extension, save your first article, read it when you're ready. That's it.</p>
         <div class="alt-cta__actions">
-          <a href="/signup" class="btn btn--brand" data-test-cta="bottom-signup">Create Free Account</a>
-          <a href="/install" class="alt-cta__link" data-test-cta="bottom-install">Install Browser Extension</a>
+          <a href="/install" class="btn btn--brand" data-test-cta="bottom-install">Install Browser Extension</a>
         </div>
       </div>
     </section>
