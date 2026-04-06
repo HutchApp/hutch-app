@@ -47,6 +47,7 @@ import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
+import { AiReadingAssistantPage } from "./web/pages/ai-reading-assistant";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv } from "./require-env";
@@ -188,6 +189,11 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.get("/terms", (_req: Request, res: Response) => {
 		const result = TermsPage().to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
+	});
+
+	app.get("/ai-reading-assistant", (_req: Request, res: Response) => {
+		const result = AiReadingAssistantPage().to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
