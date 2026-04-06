@@ -11,6 +11,7 @@ export class HutchS3PublicRead {
 		name: string,
 		args: {
 			bucketName: pulumi.Input<string>;
+			allowListBucket?: boolean;
 			bucketOpts?: pulumi.CustomResourceOptions;
 		},
 	) {
@@ -31,27 +32,32 @@ export class HutchS3PublicRead {
 			`${name}-policy`,
 			{
 				bucket: bucket.id,
-				policy: bucket.arn.apply((arn) =>
-					JSON.stringify({
+				policy: bucket.arn.apply((arn) => {
+					const statements = [
+						{
+							Sid: "PublicReadGetObject",
+							Effect: "Allow",
+							Principal: "*",
+							Action: "s3:GetObject",
+							Resource: `${arn}/*`,
+						},
+					];
+
+					if (args.allowListBucket) {
+						statements.push({
+							Sid: "PublicListBucket",
+							Effect: "Allow",
+							Principal: "*",
+							Action: "s3:ListBucket",
+							Resource: arn,
+						});
+					}
+
+					return JSON.stringify({
 						Version: "2012-10-17",
-						Statement: [
-							{
-								Sid: "PublicReadGetObject",
-								Effect: "Allow",
-								Principal: "*",
-								Action: "s3:GetObject",
-								Resource: `${arn}/*`,
-							},
-							{
-								Sid: "PublicListBucket",
-								Effect: "Allow",
-								Principal: "*",
-								Action: "s3:ListBucket",
-								Resource: arn,
-							},
-						],
-					}),
-				),
+						Statement: statements,
+					});
+				}),
 			},
 			{ dependsOn: [publicAccessBlock] },
 		);

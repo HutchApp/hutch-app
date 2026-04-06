@@ -8,6 +8,7 @@ const stage = config.require("stage");
 
 const publicBucket = new HutchS3PublicRead("hutch-extension", {
 	bucketName: getBucketName(stage),
+	allowListBucket: true,
 });
 
 export const bucketUrl = pulumi.interpolate`https://${publicBucket.bucketRegionalDomainName}`;
