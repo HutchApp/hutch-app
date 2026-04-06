@@ -1,3 +1,23 @@
+---
+title: "Read the Web, Not the Slop"
+description: "Save articles and get AI summaries in 2-3 sentences. Decide what's worth reading. Skip the rest. A$3.99/month."
+slug: "homepage-ai-tldr-variant"
+date: "2026-04-06"
+author: "Fagner Brack"
+keywords: "ai summary, read it later, pocket alternative, article summary, omnivore alternative"
+---
+
+BlogPostPage:
+- seo.title: "${post.title} — Hutch Blog"
+- seo.description: post.description
+- seo.canonicalUrl: "https://hutch-app.com/blog/${post.slug}"
+- seo.ogType: "article"
+- seo.author: post.author
+- seo.keywords: post.keywords
+- seo.robots: "index, follow"
+- seo.structuredData: BlogPosting schema with headline, description, datePublished, author (Person), publisher (Organization), url
+- bodyClass: "page-blog-post"
+
 # Homepage Variant: AI TL;DR Lead
 
 ## Hero
@@ -14,11 +34,11 @@
 
 ## AI TL;DR for every article
 
-You save an article. Hutch gives you a 2–3 sentence summary automatically.
+You save an article. Hutch gives you a 2-3 sentence summary right away.
 
-No prompting, no setup. Just a plain-language TL;DR that tells you what the article actually says — so you can decide if it's worth 10 minutes of your afternoon or if you can skip it.
+No prompting. No setup. Just a plain-language TL;DR that tells you what the article says. Then you decide if it's worth 10 minutes of your afternoon, or if you can skip it.
 
-Save from any tab with the browser extension. The summary is waiting by the time you open Hutch.
+Save from any tab with the browser extension. The summary is ready by the time you open Hutch.
 
 ---
 
@@ -26,41 +46,41 @@ Save from any tab with the browser extension. The summary is waiting by the time
 
 When something is worth your time, Hutch gives you a clean reading experience.
 
-Reader view strips out ads, pop-ups, and sidebar clutter. Dark mode works automatically based on your system settings. Just the article, the way the author wrote it.
+Reader view strips out ads, pop-ups, and sidebar clutter. Dark mode matches your system settings. You get the article the way the author wrote it.
 
-No infinite feed. No recommendations. No "you might also like." You picked the article. Hutch stays out of the way while you read it.
+No infinite feed. No recommendations. No "you might also like." You picked the article. Hutch stays out of the way.
 
 ---
 
 ## Not another AI slop machine
 
-Most AI reading tools want to replace reading. Summarise everything, never open the article, move faster.
+Most AI reading tools want to replace reading. Summarise everything. Never open the article. Move faster.
 
-That's not what Hutch does.
+Hutch does not work that way.
 
-The TL;DR helps you choose what to read. It's triage, not a replacement. You still read the article. You just stop wasting time on articles that weren't worth opening in the first place.
+The TL;DR helps you pick what to read. It's triage, not a replacement. You still read the article. You just stop wasting time on pieces that were not worth opening.
 
-I built this because I was drowning in saved articles I never got back to. The summary isn't the product — it's the filter that makes the product work.
+I built this because I had 200+ saved articles I never got back to. The summary is not the product. It's the filter that makes the product work.
 
 ---
 
 ## Built by someone who actually reads
 
-I'm Fagner Brack. I created [js-cookie](https://www.jsdelivr.com/package/npm/js-cookie), a JavaScript library with over 22 billion downloads per year on jsDelivr.
+I'm Fagner Brack. I created [js-cookie](https://www.jsdelivr.com/package/npm/js-cookie), a JavaScript library with 22 billion downloads per year on jsDelivr.
 
-For 10 years I've maintained a personal reading system — Gmail filters, DynamoDB tables, Reddit automations — that helped me save, process, and actually read the articles I cared about. That system generated 300,000+ Reddit karma across technical communities.
+For 10 years I ran a personal reading system. Gmail filters, DynamoDB tables, and Reddit automations helped me save, sort, and read the articles I cared about. That system built up 300,000+ Reddit karma across technical communities.
 
-When Pocket was acquired and abandoned, and Omnivore shut down overnight, I turned my personal system into Hutch. Solo-built in Australia, one feature at a time.
+Pocket was acquired and abandoned. Omnivore shut down overnight. I turned my personal system into Hutch. Solo-built in Australia, one feature at a time.
 
 ---
 
 ## Simple Pricing
 
-**Founding Member — A$0 forever**
+**Founding Member: A$0 forever**
 
 Be one of the first 100 users. Get full access free, forever.
 
-A$3.99/month for everyone else.
+A$3.99/month for everyone after that.
 
 What you get:
 
@@ -79,6 +99,6 @@ What you get:
 
 **H2:** Stop saving articles you'll never read.
 
-**Subhead:** Install the extension, save something, and let the TL;DR tell you if it's worth your time.
+**Subhead:** Install the extension. Save something. Let the TL;DR tell you if it's worth your time.
 
 **CTA:** Install Browser Extension | View on GitHub
