@@ -46,7 +46,15 @@ export function initLinkSummariser(deps: {
 			model: "claude-sonnet-4-6",
 			max_tokens: 10240,
 			system: SUMMARIZE_PROMPT,
-			messages: [{ role: "user", content: cleanedContent }],
+			messages: [{
+				role: "user",
+				content: [{
+					type: "document",
+					source: { type: "text", media_type: "text/plain", data: cleanedContent },
+					title: "Article to summarize",
+					citations: { enabled: true },
+				}],
+			}],
 			output_config: {
 				format: {
 					type: "json_schema",
