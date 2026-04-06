@@ -1,59 +1,81 @@
+---
+title: "TL;DR Is a Feature, Not a Product"
+description: "Standalone summary tools replace reading instead of supporting it. Hutch treats TL;DR as triage — two sentences to help you choose what to read, not skip it."
+slug: "tldr-is-a-feature-not-a-product"
+date: "2026-04-06"
+author: "Fagner Brack"
+keywords: "tldr, read it later, article summary, reading tools, hutch"
+---
+
+<!--
+BlogPostPage:
+- seo.title: "${post.title} — Hutch Blog"
+- seo.description: post.description
+- seo.canonicalUrl: "https://hutch-app.com/blog/${post.slug}"
+- seo.ogType: "article"
+- seo.author: post.author
+- seo.keywords: post.keywords
+- seo.robots: "index, follow"
+- seo.structuredData: BlogPosting schema with headline, description, datePublished, author (Person), publisher (Organization), url
+- bodyClass: "page-blog-post"
+-->
+
 # TL;DR Is a Feature, Not a Product
 
-You've seen the tools. Paste a URL, get a summary. Ten bullet points. Key takeaways. "Save 15 minutes of reading." Some of them are genuinely good at what they do.
+You have seen the tools. Paste a URL, get a summary. Ten bullet points. Key takeaways. "Save 15 minutes of reading."
 
-But what they do is the problem.
+Some of these tools are good at what they do. But what they do is the problem.
 
 ## The summary trap
 
-Standalone TL;DR tools solve a real pain: "I don't have time to read this right now." Fair enough. Nobody has time. There are more articles published every day than any person could read in a lifetime, and the pile keeps growing.
+Standalone TL;DR tools solve a real pain point: "I don't have time to read this right now." Fair enough. Nobody has time. Publishers push out more articles every day than any person can read in a lifetime. The pile keeps growing.
 
-So you paste the link. You get the summary. You nod along. And then you close the tab.
+So you paste the link. You get the summary. You nod along. You close the tab.
 
-The article never gets read. Not today, not tomorrow, not ever. The summary *was* the reading. You've moved on. You've formed an opinion about something you never actually engaged with. You've got the takeaway without the texture — the conclusion without the argument that led to it.
+The article never gets read. Not today, not tomorrow, not ever. The summary *was* the reading. You moved on. You formed an opinion about something you never engaged with. You got the compressed version and missed the argument that built toward it.
 
-This is not a reading tool. It's a reading replacement tool.
+This is not a reading tool. It is a reading replacement tool.
 
-And the more you use it, the more your information diet looks like a buffet of headlines with slightly more words.
+The more you use it, the more your information diet becomes headlines with extra words.
 
-## Summaries aren't the problem. Replacing reading is.
+## Summaries are not the problem. Replacing reading is.
 
-I'm not against summaries. Summaries are useful. The question is: useful for *what*?
+I am not against summaries. Summaries are useful. But useful for *what*?
 
-A standalone summariser treats the summary as the destination. You came for the TL;DR, you got the TL;DR, transaction complete. The original article is an afterthought — a footnote you'll never click.
+A standalone summarizer treats the summary as the destination. You came for the TL;DR. You got the TL;DR. Transaction complete. The original article becomes a footnote you never click.
 
-But there's a better model. One where the summary is a *filter*, not a *finish line*.
+There is a better model. One where the summary works as a *filter*, not a finish line.
 
-Think about how you'd browse a bookshop. You pick up a book, read the back cover, maybe skim the first page. That blurb isn't trying to replace the book. It's helping you decide: is this worth my time?
+Think about browsing a bookshop. You pick up a book. You read the back cover. You skim the first page. That blurb is not trying to replace the book. It helps you decide: is this worth my time?
 
-That's what a TL;DR should do. Help you *choose*, not help you *skip*.
+That is what a TL;DR should do. Help you *choose*, not help you *skip*.
 
 ## Triage, not replacement
 
-Hutch generates a TL;DR for every article you save. Deliberately short — two or three sentences. Not ten bullet points. Not a comprehensive breakdown. Just enough to answer one question: *Do I want to read this?*
+Hutch generates a TL;DR for every article you save. Two or three sentences. Not ten bullet points. Not a full breakdown. Just enough to answer one question: *Do I want to read this?*
 
 That constraint is intentional.
 
-A longer summary feels complete. It gives you the illusion that you've absorbed the piece. A short one doesn't. It's obviously incomplete. It's a trailer, not the film. You can't mistake it for the real thing.
+A longer summary feels complete. It gives you the illusion that you absorbed the piece. A short one does not. It is too brief to mistake for the real thing. It works like a trailer, not the film.
 
-When you're looking at a queue of thirty saved articles and you have twenty minutes, a two-sentence summary helps you pick the three that matter *right now*. The rest stay saved. They'll still be there. But you made an informed choice about what to read, instead of reading nothing because the list was too long and everything looked equally important.
+Picture this: you have thirty saved articles and twenty minutes. A two-sentence summary helps you pick the three that matter right now. The rest stay saved. They will be there tomorrow. But you made an informed choice about what to read, instead of reading nothing because the list felt too long.
 
 ## The real reading crisis
 
-The problem isn't that articles are too long. Some are. Most aren't. The average longform piece is a ten-minute read. People spend more time than that scrolling feeds that leave them with nothing.
+The problem is not that articles are too long. Some are. Most are not. The average longform piece takes about ten minutes. People spend more time than that scrolling feeds that leave them with nothing.
 
-The real problem is there are too many articles and no system for choosing between them. So people default to one of two strategies: read nothing, or skim everything. Neither works.
+The real problem is volume. Too many articles. No system for choosing between them. So people fall into one of two patterns: read nothing, or skim everything. Neither works.
 
-A standalone TL;DR tool optimises for the second strategy. Skim more, faster. Hutch optimises for a third option: *read less, but actually read it*.
+A standalone TL;DR tool pushes you toward the second pattern. Skim more, faster. Hutch pushes you toward a third option: *read less, but actually read it*.
 
-The TL;DR isn't there to save you from reading. It's there to make your reading count.
+The TL;DR is not there to save you from reading. It is there to make your reading count.
 
 ## TL;DR as triage
 
-Every feature in a reading tool should serve reading. Not replace it, not shortcut around it, not make you feel like you read when you didn't.
+Every feature in a reading tool should serve reading. Not replace it. Not shortcut around it. Not make you feel like you read something you did not.
 
-A summary that helps you decide what's worth your attention? That's a feature.
+A summary that helps you decide what deserves your attention? That is a feature.
 
-A summary that becomes the only thing you ever read? That's a product solving the wrong problem.
+A summary that becomes the only thing you ever read? That is a product solving the wrong problem.
 
-Hutch builds the TL;DR into the reading workflow — not as the end of the journey, but as the beginning of it. Because the goal was never to read less. It was to read *better*.
+Hutch builds the TL;DR into the reading workflow. Not as the end, but as the starting point. The goal was never to read less. It was to read *better*.
