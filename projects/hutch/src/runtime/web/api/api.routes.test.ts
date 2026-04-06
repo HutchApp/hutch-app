@@ -511,6 +511,31 @@ describe("Article sub-entity actions", () => {
 	});
 });
 
+describe("GET / (Siren entry point)", () => {
+	it("redirects Siren clients to /queue", async () => {
+		const testApp = createTestApp();
+
+		const response = await request(testApp.app)
+			.get("/")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.redirects(0);
+
+		expect(response.status).toBe(303);
+		expect(response.headers.location).toBe("/queue");
+	});
+
+	it("returns home page HTML when Accept is not Siren", async () => {
+		const testApp = createTestApp();
+
+		const response = await request(testApp.app)
+			.get("/")
+			.set("Accept", "text/html");
+
+		expect(response.status).toBe(200);
+		expect(response.type).toContain("text/html");
+	});
+});
+
 describe("Content negotiation", () => {
 	it("returns HTML when Accept header is text/html", async () => {
 		const testApp = createTestApp();
