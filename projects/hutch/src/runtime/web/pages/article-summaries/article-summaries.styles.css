@@ -1,0 +1,141 @@
+.summaries-hero__title,
+.summaries-section__title,
+.summaries-cta__title {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.summaries-section__title,
+.summaries-cta__title {
+  color: #2B3A55;
+}
+
+@media (prefers-color-scheme: dark) {
+  .summaries-section__title,
+  .summaries-cta__title {
+    color: var(--foreground);
+  }
+}
+
+/* Hero */
+.summaries-hero {
+  background: linear-gradient(135deg, hsl(27 65% 47%) 0%, hsl(27 50% 35%) 100%);
+  color: var(--color-on-brand);
+  padding: 80px 20px 60px;
+  text-align: center;
+}
+
+.summaries-hero__container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.summaries-hero__title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .summaries-hero__title {
+    font-size: 3rem;
+  }
+}
+
+/* Content Sections */
+.summaries-section {
+  padding: 60px 20px;
+}
+
+.summaries-section--alt {
+  background: var(--muted);
+}
+
+.summaries-section__container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.summaries-section__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 16px;
+}
+
+.summaries-section p {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+
+/* Steps */
+.summaries-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: step;
+}
+
+.summaries-steps__item {
+  counter-increment: step;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  padding: 8px 0;
+}
+
+.summaries-steps__item::before {
+  content: counter(step) ". ";
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.summaries-steps__item strong {
+  color: var(--foreground);
+}
+
+/* CTA */
+.summaries-cta {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.summaries-cta__container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.summaries-cta__title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 24px;
+}
+
+.summaries-cta__actions {
+  display: flex;
+  justify-content: center;
+}
+
+/* Buttons (reuse from home) */
+.btn {
+  display: inline-block;
+  padding: 16px 28px;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn--brand {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
