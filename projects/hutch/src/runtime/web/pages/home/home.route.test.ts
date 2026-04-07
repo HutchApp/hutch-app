@@ -309,11 +309,13 @@ describe("GET /sitemap.xml", () => {
 		expect(urls).toEqual([
 			"http://localhost:3000/",
 			"http://localhost:3000/blog",
+			"http://localhost:3000/developer",
 			"http://localhost:3000/install",
 			"http://localhost:3000/login",
 			"http://localhost:3000/signup",
 			"http://localhost:3000/privacy",
 			"http://localhost:3000/terms",
+			"http://localhost:3000/blog/hutch-developer-landing",
 			"http://localhost:3000/blog/alternative-to-pocket",
 		]);
 	});

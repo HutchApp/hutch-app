@@ -1,0 +1,88 @@
+  <main>
+    <section class="dev-hero" data-test-section="hero" aria-label="Introduction">
+      <div class="dev-hero__container">
+        <p class="dev-hero__tagline">From the creator of js-cookie</p>
+        <h1 class="dev-hero__title">A reading app built by a developer who reads.</h1>
+        <p class="dev-hero__subtitle">For 10 years I maintained a personal reading system &mdash; Gmail filters, DynamoDB tables, Reddit automations that fed r/programming and r/webdev. 300,000+ karma from sharing what I read. Hutch is that system turned into a product.</p>
+        <p class="dev-hero__story-link"><a href="https://www.reddit.com/user/fagnerbrack/">The full story</a></p>
+        <div class="dev-hero__actions">
+          {{#switch browserName}}
+          {{#case "firefox"}}
+          <a href="/install?browser=firefox" class="btn btn--primary" data-test-cta="install-extension">Install Firefox Extension</a>
+          {{/case}}
+          {{#case "chrome"}}
+          <a href="/install?browser=chrome" class="btn btn--primary" data-test-cta="install-extension">Install Chrome Extension</a>
+          {{/case}}
+          {{#default}}
+          <a href="/install" class="btn btn--primary" data-test-cta="install-extension">Install Browser Extension</a>
+          {{/default}}
+          {{/switch}}
+          <a href="https://github.com/HutchApp/hutch-app" class="btn btn--secondary" data-test-cta="view-github">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="dev-section" data-test-section="save-anything" aria-label="Save anything technical">
+      <div class="dev-section__container">
+        <h2 class="dev-section__title">Save anything technical</h2>
+        <p class="dev-section__body">The browser extension saves any page in one click. Blog posts explaining a tricky algorithm. GitHub READMEs you want to revisit. Stack Overflow answers that actually solved your problem. RFC documents. Conference talk transcripts. HN threads with 400 comments where the real insight is buried at comment #47.</p>
+        <p class="dev-section__body">Ctrl/Cmd+D or right-click. The page is saved, content extracted, and available in your reading queue. No copy-pasting URLs into yet another app.</p>
+      </div>
+    </section>
+
+    <section class="dev-section dev-section--alt" data-test-section="ai-triage" aria-label="AI TL;DR for triage">
+      <div class="dev-section__container">
+        <h2 class="dev-section__title">AI TL;DR for triage</h2>
+        <p class="dev-section__body">You saved 30 articles this week. You have time to deep-read maybe 5. The TL;DR summary for each article lets you scan your queue and decide what is worth your time &mdash; and what can wait or be discarded.</p>
+        <p class="dev-section__body">Powered by DeepSeek. Summaries are generated automatically when you save an article. Included in the price, not gated behind an upsell tier.</p>
+      </div>
+    </section>
+
+    <section class="dev-section" data-test-section="reader-view" aria-label="Reader view">
+      <div class="dev-section__container">
+        <h2 class="dev-section__title">Reader view</h2>
+        <p class="dev-section__body">Clean reading without cookie consent banners, newsletter popups, sticky nav bars, and sidebar ads. Just the article content with good typography.</p>
+        <p class="dev-section__body">Dark mode follows your system preference. Built on Mozilla's Readability engine &mdash; the same one behind Firefox Reader View. Good for late-night reading sessions when you finally get to that article about distributed consensus you saved three weeks ago.</p>
+      </div>
+    </section>
+
+    <section class="dev-section dev-section--alt" data-test-section="open-source" aria-label="Built in the open">
+      <div class="dev-section__container">
+        <h2 class="dev-section__title">Built in the open</h2>
+        <ul class="dev-list">
+          <li><strong>AGPL source-available.</strong> The full codebase is on <a href="https://github.com/HutchApp/hutch-app">GitHub</a>. Read the code that handles your data.</li>
+          <li><strong>Australian Privacy Act.</strong> Hosted in Sydney. Your data is not subject to US jurisdiction or the CLOUD Act.</li>
+          <li><strong>Full data export.</strong> JSON export of everything, anytime. No lock-in. If you leave, your data leaves with you.</li>
+          <li><strong>No VC funding.</strong> No growth targets. No pivot pressure. No "acqui-hire" exit that shuts down the product. Built to last, not to fundraise.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="dev-section" data-test-section="credibility" aria-label="From the creator of js-cookie">
+      <div class="dev-section__container">
+        <h2 class="dev-section__title">From the creator of js-cookie</h2>
+        <p class="dev-section__body">I'm <a href="https://www.linkedin.com/in/fagnerbrack/">Fayner Brack</a>. I created and maintain <a href="https://www.jsdelivr.com/package/npm/js-cookie">js-cookie</a> &mdash; a JavaScript cookie library with over 22 billion annual CDN hits on jsDelivr. It runs on millions of websites. I've been maintaining open-source software for over 10 years.</p>
+        <p class="dev-section__body">Hutch is not a weekend hackathon project. It is the product of a decade of thinking about how developers read and a track record of shipping software that other developers rely on.</p>
+      </div>
+    </section>
+
+    <section id="pricing" class="dev-pricing" data-test-section="pricing" aria-label="Pricing">
+      <div class="dev-pricing__container">
+        <h2 class="dev-pricing__title">Pricing</h2>
+        <div class="founding-progress" data-test-founding-progress>
+          <div class="founding-progress__bar">
+            <div class="founding-progress__fill" style="width: {{progressPercent}}%"></div>
+          </div>
+          <p class="founding-progress__label">{{userCount}} / {{foundingMemberLimit}} founding members</p>
+          {{#if allocationExhausted}}
+          <p class="founding-progress__exhausted" data-test-founding-exhausted>The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.</p>
+          {{/if}}
+        </div>
+        <div class="dev-pricing__card">
+          <p class="dev-pricing__price">A$0<span class="dev-pricing__price-suffix"> forever</span></p>
+          <p class="dev-pricing__desc">First 100 founding members get full access free, forever. TL;DR summaries included. After that, A$3.99/month.</p>
+          <a href="/signup" class="btn btn--brand dev-pricing__cta" data-test-cta="signup">Become a Founding Member</a>
+        </div>
+      </div>
+    </section>
+  </main>
