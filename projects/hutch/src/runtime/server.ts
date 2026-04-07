@@ -45,7 +45,6 @@ import { getAllSlugs } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage } from "./web/pages/home";
-import { OmnivoreAlternativePage } from "./web/pages/omnivore-alternative";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
@@ -150,7 +149,6 @@ export function createApp(dependencies: AppDependencies): Express {
 		const pages = [
 			{ loc: "/", priority: "1.0", changefreq: "weekly" },
 			{ loc: "/blog", priority: "0.8", changefreq: "weekly" },
-			{ loc: "/omnivore-alternative", priority: "0.8", changefreq: "monthly" },
 			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
 			{ loc: "/login", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
@@ -180,17 +178,6 @@ export function createApp(dependencies: AppDependencies): Express {
 			: "other";
 		const userCount = await countUsers().catch(() => 0);
 		const result = HomePage({ userCount, staticBaseUrl, browser }).to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
-	});
-
-	app.get("/omnivore-alternative", async (req: Request, res: Response) => {
-		const ua = req.headers["user-agent"] ?? "";
-		const browser: "firefox" | "chrome" | "other" =
-			ua.includes("Firefox/") ? "firefox"
-			: ua.includes("Chrome/") ? "chrome"
-			: "other";
-		const userCount = await countUsers().catch(() => 0);
-		const result = OmnivoreAlternativePage({ userCount, staticBaseUrl, browser }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
