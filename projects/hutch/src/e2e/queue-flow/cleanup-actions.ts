@@ -1,22 +1,22 @@
-/* c8 ignore start -- staging-only actions, not exercised by local E2E */
 import type { PageAction } from '../hateoas/navigation-handler.types'
 import { isOnPage } from '../page-interactions'
 import type { AuthProgress } from './auth-actions'
 
-export type StagingCleanupProgress = {
+export type CleanupProgress = {
   previousArticlesDeleted: boolean
 }
 
-export function createStagingCleanupActions(
-  stagingProgress: StagingCleanupProgress,
+export function createCleanupActions(
+  cleanupProgress: CleanupProgress,
 ): (authProgress: AuthProgress) => Map<string, PageAction> {
   return (authProgress) => {
     const actions = new Map<string, PageAction>()
 
+    /* c8 ignore start -- only activates when pre-existing articles are present (staging) */
     actions.set('cleanup-previous-articles', {
       isAvailable: async (page) => {
         if (!authProgress.loggedIn) return false
-        if (stagingProgress.previousArticlesDeleted) return false
+        if (cleanupProgress.previousArticlesDeleted) return false
         if (!(await isOnPage(page, 'page-queue'))) return false
         const count = await page.locator('[data-test-action="delete"]').count()
         return count > 0
@@ -33,20 +33,21 @@ export function createStagingCleanupActions(
           )
           count = await page.locator('[data-test-action="delete"]').count()
         }
-        stagingProgress.previousArticlesDeleted = true
+        cleanupProgress.previousArticlesDeleted = true
       },
     })
+    /* c8 ignore stop */
 
     actions.set('mark-cleanup-done', {
       isAvailable: async (page) => {
         if (!authProgress.loggedIn) return false
-        if (stagingProgress.previousArticlesDeleted) return false
+        if (cleanupProgress.previousArticlesDeleted) return false
         if (!(await isOnPage(page, 'page-queue'))) return false
         const count = await page.locator('[data-test-action="delete"]').count()
         return count === 0
       },
       execute: async () => {
-        stagingProgress.previousArticlesDeleted = true
+        cleanupProgress.previousArticlesDeleted = true
       },
     })
 

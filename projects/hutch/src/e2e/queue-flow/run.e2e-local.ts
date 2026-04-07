@@ -1,4 +1,5 @@
 import { test } from '@playwright/test'
+import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
 import { createPasswordResetActions, type PasswordResetProgress } from './password-reset-actions'
 import { LOCAL_TEST_ARTICLES } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
@@ -11,6 +12,10 @@ test.describe('Queue management flow (local)', () => {
     const authData = {
       email: 'e2e-test@example.com',
       password: 'test-password-123',
+    }
+
+    const cleanupProgress: CleanupProgress = {
+      previousArticlesDeleted: false,
     }
 
     const passwordResetProgress: PasswordResetProgress = {
@@ -27,6 +32,7 @@ test.describe('Queue management flow (local)', () => {
       authData,
       passwordResetProgress,
       preQueueActionFactories: [
+        createCleanupActions(cleanupProgress),
         (authProgress) => createPasswordResetActions(
           { email: authData.email, oldPassword: authData.password, newPassword: 'reset-password-456', baseUrl: BASE_URL },
           authData,
@@ -34,7 +40,7 @@ test.describe('Queue management flow (local)', () => {
           passwordResetProgress,
         ),
       ],
-      preQueueProgressObjects: [passwordResetProgress],
+      preQueueProgressObjects: [cleanupProgress, passwordResetProgress],
       maxNavigations: 75,
     })
   })

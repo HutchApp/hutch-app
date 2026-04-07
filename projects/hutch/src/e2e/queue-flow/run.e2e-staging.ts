@@ -1,7 +1,7 @@
 /* c8 ignore start -- staging E2E test, only run in CI */
 import assert from 'node:assert'
 import { test } from '@playwright/test'
-import { createStagingCleanupActions, type StagingCleanupProgress } from './staging-cleanup-actions'
+import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
 import type { TestArticleData } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
 
@@ -9,7 +9,7 @@ test.describe('Queue management flow (staging)', () => {
   test('signup, logout, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page, baseURL }) => {
     assert(baseURL, "baseURL must be defined — set STAGING_URL env var")
 
-    const stagingProgress: StagingCleanupProgress = {
+    const cleanupProgress: CleanupProgress = {
       previousArticlesDeleted: false,
     }
 
@@ -32,9 +32,9 @@ test.describe('Queue management flow (staging)', () => {
         password: 'test-password-123',
       },
       preQueueActionFactories: [
-        createStagingCleanupActions(stagingProgress),
+        createCleanupActions(cleanupProgress),
       ],
-      preQueueProgressObjects: [stagingProgress],
+      preQueueProgressObjects: [cleanupProgress],
       maxNavigations: 85,
     })
   })

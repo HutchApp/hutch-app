@@ -72,7 +72,7 @@ export async function runQueueFlow(page: Page, config: QueueFlowConfig): Promise
   const client = new HATEOASClient(page, navigationHandler)
   const navConfig: NavigationConfig = { maxNavigations: config.maxNavigations ?? 75 }
 
-  const startURL = config.baseURL.replace(/\/+$/, '') + '/'
+  const startURL = `${config.baseURL.replace(/\/+$/, '')}/`
   const result = await client.navigate(startURL, navConfig)
 
   expect(result.success).toBe(true)
