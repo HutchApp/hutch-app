@@ -29,7 +29,7 @@ No Hutch account yet? [Create one](/signup). It takes about 30 seconds.
 A Pocket import tool is in development. For now, you have two options:
 
 - **Save articles one at a time** with the browser extension. Click the Hutch icon on any page you want to keep.
-- **Send your export file** to [support@hutch-app.com](mailto:support@hutch-app.com). Include the HTML file from Pocket. I'll migrate your articles by hand.
+- **Send your export file** to [hutch+migrate@hutch-app.com](mailto:hutch+migrate@hutch-app.com). Include the HTML file from Pocket. I'll migrate your articles by hand.
 
 ## Step 4: Check your articles
 
