@@ -3,7 +3,7 @@ title: "Hutch: An AI Reading Assistant That Helps You Read More, Not Less"
 description: "Most AI reading tools replace reading with summaries and auto-curation. Hutch uses AI to help you read more of the right things, not less of everything."
 slug: "ai-reading-assistant"
 date: "2026-04-07"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "AI reading assistant, read it later, AI summaries, reading tool, article triage, Pocket alternative"
 ---
 

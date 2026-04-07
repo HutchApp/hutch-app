@@ -3,7 +3,7 @@ title: "Read the Web, Not the Slop"
 description: "Save articles and get a short AI summary for each one. Hutch helps you decide what to read, then gives you a clean page to read it on."
 slug: "read-the-web-not-the-slop"
 date: "2026-04-07"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "ai summary, read it later, pocket alternative, omnivore alternative, article reader, tldr"
 ---
 
@@ -35,7 +35,7 @@ The TL;DR is a filter, not a replacement. If you wanted AI-generated slop, you w
 
 ## Why I built this
 
-I'm Fagner Brack. I created [js-cookie](https://github.com/js-cookie/js-cookie), a JavaScript library with 22 billion downloads per year on jsDelivr.
+I'm Fayner Brack. I created [js-cookie](https://github.com/js-cookie/js-cookie), a JavaScript library with 22 billion downloads per year on jsDelivr.
 
 For 10 years I ran a personal reading system. Gmail filters, DynamoDB tables, Reddit automations. All built to save, sort, and read the articles I cared about. That system produced 300,000+ Reddit karma across technical communities. Not from memes. From reading articles and writing about what I learned.
 
@@ -43,7 +43,7 @@ Pocket got abandoned. Omnivore shut down overnight. I turned my personal system 
 
 ## Pricing
 
-A$3.99/month. TL;DR summaries included.
+$3.99/month. TL;DR summaries included.
 
 The first 100 users get full access free, forever. No credit card required. After that, one plan, one price. No tiers. No upsells.
 

@@ -3,7 +3,7 @@ title: "How to Move Your Reading List from Pocket to Hutch"
 description: "Pocket shut down last year on July 8, 2025. Export your saved articles and import them into Hutch in four steps."
 slug: "pocket-migration"
 date: "2026-04-05"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "Pocket migration, Pocket export, Pocket alternative, move from Pocket, Pocket shut down"
 ---
 

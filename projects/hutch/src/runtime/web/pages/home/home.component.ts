@@ -91,7 +91,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 							name: "Is Hutch free?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "The first 100 founding members get full access free, forever. After that, A$3.99/month — includes TL;DR summaries.",
+								text: "The first 100 founding members get full access free, forever. After that, $3.99/month — includes TL;DR summaries.",
 							},
 						},
 						{

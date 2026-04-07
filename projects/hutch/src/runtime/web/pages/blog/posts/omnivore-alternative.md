@@ -3,7 +3,7 @@ title: "Omnivore Shut Down. Here's a Read-It-Later App That Won't."
 description: "Omnivore shut down with two weeks notice. Hutch is a privacy-first read-it-later app built by a developer and no VC funding."
 slug: "omnivore-alternative"
 date: "2026-04-04"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "Omnivore alternative, Omnivore replacement, Omnivore shut down, read it later app, ElevenLabs Omnivore, Readwise Reader alternative"
 ---
 

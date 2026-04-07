@@ -3,7 +3,7 @@ title: "Hutch vs Instapaper: Two Different Approaches to Read-It-Later"
 description: "A fair comparison of two read-it-later apps that took different paths after Pocket shut down. One is familiar and stable. The other bets on AI and active development."
 slug: "hutch-vs-instapaper"
 date: "2026-04-07"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "instapaper alternative, read it later, hutch vs instapaper, pocket replacement, AI summaries"
 ---
 
@@ -45,7 +45,7 @@ Hutch is browser-first. It's a web app with a browser extension, not a native mo
 
 Hutch is hosted in Australia. Your reading data stays on Australian infrastructure under Australian privacy law. That matters if you care about where your data lives.
 
-On pricing: the first 100 Hutch members got a free founding-member tier. After that, the price is A$3.99 per month. There's no ongoing free tier the way Instapaper offers one. Hutch is a paid product from the start.
+On pricing: the first 100 Hutch members got a free founding-member tier. After that, the price is $3.99 per month. There's no ongoing free tier the way Instapaper offers one. Hutch is a paid product from the start.
 
 The other side of that trade-off: Hutch ships new features every week. It's a product you can watch evolve in real time. That momentum is real, but so is the risk that comes with any newer product.
 
@@ -58,7 +58,7 @@ The other side of that trade-off: Hutch ships new features every week. It's a pr
 | **Mobile apps** | iOS and Android | Browser-based (no native apps) |
 | **Browser extension** | Yes | Yes (Firefox, Chrome) |
 | **Free tier** | Yes | Founding members only (first 100) |
-| **Paid price** | US$5.99/mo or US$59.99/yr | A$3.99/mo |
+| **Paid price** | US$5.99/mo or US$59.99/yr | $3.99/mo |
 | **E-reader integration** | Kobo (built-in) | No |
 | **Pocket import** | Yes | Yes |
 | **Data hosting** | United States | Australia |

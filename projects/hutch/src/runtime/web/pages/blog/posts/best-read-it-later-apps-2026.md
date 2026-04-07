@@ -3,7 +3,7 @@ title: "Best Read-It-Later Apps in 2026 (Honest Comparison)"
 description: "Honest comparison of read-it-later apps in 2026: Hutch, Readwise Reader, Instapaper, Raindrop.io, Karakeep, Wallabag, and Matter."
 slug: "best-read-it-later-apps-2026"
 date: "2026-04-03"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "read it later apps, Pocket alternative, Omnivore alternative, best read it later 2026, Readwise Reader, Instapaper, Karakeep, Wallabag, Raindrop, Matter, Hutch"
 ---
 

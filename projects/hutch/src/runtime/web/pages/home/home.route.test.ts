@@ -130,7 +130,7 @@ describe("GET /", () => {
 		const plans = pricingSection?.querySelectorAll(".pricing-card");
 		expect(plans?.length).toBe(1);
 		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__name')?.textContent).toBe("Founding Member");
-		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("A$0");
+		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("$0");
 	});
 
 	it("should render the founding members progress bar with zero users", async () => {

@@ -292,7 +292,7 @@ Use a **4px base unit** with the following standard increments:
 - HTML emails should use the warm amber palette.
 - Keep emails short. One purpose per email, one CTA.
 - Always include a plain-text version.
-- Sender name: "Fagner from Hutch" (personal, not corporate).
+- Sender name: "Fayner from Hutch" (personal, not corporate).
 
 ---
 

@@ -3,7 +3,7 @@ title: "An Alternative to Pocket That Won't Shut Down"
 description: "After Pocket was abandoned and Omnivore shut down overnight, I built Hutch — a read-it-later app designed to last."
 slug: "alternative-to-pocket"
 date: "2026-04-06"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "pocket alternative, read it later, omnivore alternative"
 ---
 
