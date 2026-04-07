@@ -48,7 +48,6 @@ import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
-import { ArticleSummariesPage } from "./web/pages/article-summaries";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
@@ -153,7 +152,6 @@ export function createApp(dependencies: AppDependencies): Express {
 			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
 			{ loc: "/login", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
-			{ loc: "/article-summaries", priority: "0.7", changefreq: "monthly" },
 			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
 			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
 		];
@@ -190,11 +188,6 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.get("/terms", (_req: Request, res: Response) => {
 		const result = TermsPage().to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
-	});
-
-	app.get("/article-summaries", (_req: Request, res: Response) => {
-		const result = ArticleSummariesPage({ staticBaseUrl }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
