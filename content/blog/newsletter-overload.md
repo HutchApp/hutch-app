@@ -7,8 +7,6 @@ author: "Fagner Brack"
 keywords: "newsletter overload, developer newsletters, read it later, email newsletters, reading system"
 ---
 
-# You're Subscribed to 30 Newsletters. You Read 3. Here's a Better System.
-
 Your inbox has unread issues of JavaScript Weekly, TLDR, Pointer, Bytes, Changelog, and four others you forgot about. You won't read them. You know it. I know it. Tomorrow a new one lands, you skim two links, close it, and feel behind.
 
 Most developers I talk to are stuck in the same loop.
