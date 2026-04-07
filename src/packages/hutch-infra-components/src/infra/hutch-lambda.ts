@@ -35,18 +35,15 @@ function createDirnamePlugin(assetDir: string): Plugin {
 			pluginBuild.onLoad({ filter: /\.ts$/ }, (args) => {
 				if (!args.path.startsWith(assetDirAbs)) return;
 
-				const contents = readFileSync(args.path, "utf-8");
-				if (!contents.includes("__dirname")) return;
-
 				const relPath = relative(assetDirAbs, dirname(args.path));
-				if (!relPath) return;
-
-				const rewritten = contents.replace(
-					/__dirname/g,
-					`require("node:path").join(__dirname, ${JSON.stringify(relPath)})`,
-				);
-
-				return { contents: rewritten, loader: "ts" };
+				const contents = readFileSync(args.path, "utf-8");
+				return {
+					contents: contents.replace(
+						/__dirname/g,
+						`require("node:path").join(__dirname, ${JSON.stringify(relPath)})`,
+					),
+					loader: "ts" as const,
+				};
 			});
 		},
 	};
