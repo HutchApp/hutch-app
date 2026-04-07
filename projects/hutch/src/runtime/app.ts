@@ -93,7 +93,6 @@ function initProviders() {
 		return {
 			auth,
 			articleStore,
-	
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			...initDynamoDbPasswordReset({ client, tableName: passwordResetTokensTable }),
@@ -139,7 +138,6 @@ function initProviders() {
 	return {
 		auth,
 		articleStore,
-
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
 		...initInMemoryPasswordReset(),

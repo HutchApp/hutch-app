@@ -16,9 +16,5 @@ export const qualifyLink: QualifyLink = (url: string): QualifyLinkResult => {
 		return { ok: false, reason: "unsupported-protocol" };
 	}
 
-	if (!parsed.hostname) {
-		return { ok: false, reason: "missing-hostname" };
-	}
-
 	return { ok: true, url: parsed.href };
 };
