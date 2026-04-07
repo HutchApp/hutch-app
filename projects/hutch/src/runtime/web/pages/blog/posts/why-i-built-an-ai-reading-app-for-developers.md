@@ -2,23 +2,10 @@
 title: "Why I Built an AI Reading App for Developers"
 description: "A 10-year personal reading system, rebuilt as an app. How AI summaries changed the way I process my technical reading queue."
 slug: "why-i-built-an-ai-reading-app-for-developers"
-date: "2026-04-06"
+date: "2026-04-07"
 author: "Fagner Brack"
 keywords: "AI reading app for developers, read it later, developer tools, AI summaries"
 ---
-
-BlogPostPage:
-- seo.title: "${post.title} — Hutch Blog"
-- seo.description: post.description
-- seo.canonicalUrl: "https://hutch-app.com/blog/${post.slug}"
-- seo.ogType: "article"
-- seo.author: post.author
-- seo.keywords: post.keywords
-- seo.robots: "index, follow"
-- seo.structuredData: BlogPosting schema with headline, description, datePublished, author (Person), publisher (Organization), url
-- bodyClass: "page-blog-post"
-
-# Why I Built an AI Reading App for Developers
 
 I've been reading programming articles for over 10 years.
 
