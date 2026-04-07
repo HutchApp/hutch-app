@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, basename } from "node:path";
 import { z } from "zod";
 import matter from "gray-matter";
@@ -31,20 +31,33 @@ function formatDate(isoDate: string): string {
 	});
 }
 
-const postsDir = join(__dirname, "posts");
+function discoverPostFiles(): { filePath: string; fileName: string }[] {
+	const postsSubdir = join(__dirname, "posts");
+	if (existsSync(postsSubdir)) {
+		return readdirSync(postsSubdir)
+			.filter((f) => f.endsWith(".md"))
+			.map((f) => ({ filePath: join(postsSubdir, f), fileName: f }));
+	}
+	/* Lambda asset bundler flattens all files into __dirname */
+	return readdirSync(__dirname)
+		.filter((f) => f.endsWith(".md"))
+		.map((f) => ({ filePath: join(__dirname, f), fileName: f }));
+}
 
-const files = readdirSync(postsDir).filter((f) => f.endsWith(".md"));
+const postFiles = discoverPostFiles();
 
-const posts: BlogPost[] = files
-	.map((file) => {
-		const raw = readFileSync(join(postsDir, file), "utf-8");
+const posts: BlogPost[] = postFiles
+	.map(({ filePath, fileName }) => {
+		const raw = readFileSync(filePath, "utf-8");
 		const { data, content } = matter(raw);
-		const frontmatter = BlogFrontmatter.parse(data);
+		const result = BlogFrontmatter.safeParse(data);
+		if (!result.success) return null;
+		const frontmatter = result.data;
 
-		const expectedSlug = basename(file, ".md");
+		const expectedSlug = basename(fileName, ".md");
 		assert(
 			frontmatter.slug === expectedSlug,
-			`Slug "${frontmatter.slug}" in ${file} does not match filename "${expectedSlug}"`,
+			`Slug "${frontmatter.slug}" in ${fileName} does not match filename "${expectedSlug}"`,
 		);
 
 		return {
@@ -53,6 +66,7 @@ const posts: BlogPost[] = files
 			formattedDate: formatDate(frontmatter.date),
 		};
 	})
+	.filter((post): post is BlogPost => post !== null)
 	.sort((a, b) => b.date.localeCompare(a.date));
 
 const slugSet = new Set(posts.map((p) => p.slug));
