@@ -7,8 +7,6 @@ author: "Fagner Brack"
 keywords: "AI summary, summarize web page, article summarizer, browser extension, read it later, TL;DR"
 ---
 
-# How to Get an AI Summary of Any Web Page (Without Leaving Your Browser)
-
 You found an article. It's 4,000 words. You have two minutes before your next meeting. You need to know if it's worth reading.
 
 This happens a dozen times a day. Someone drops a link in Slack. A newsletter lands with five longform pieces. A promising headline catches your eye. You can't read them all right now. But you need to decide: save it, skip it, or skim it.
