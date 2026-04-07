@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { HutchCertificate } from "@packages/hutch-infra-components/infra";
+import { HutchCertificate, HutchS3PublicRead } from "@packages/hutch-infra-components/infra";
 
 export class HutchStaticAssets {
 	public readonly baseUrl: pulumi.Output<string>;
@@ -14,39 +14,10 @@ export class HutchStaticAssets {
 			zoneId?: Promise<string>;
 		},
 	) {
-		const bucket = new aws.s3.Bucket(`${name}-bucket`, {
-			bucket: args.bucketName,
-			forceDestroy: true,
+		const publicBucket = new HutchS3PublicRead(name, {
+			bucketName: args.bucketName,
+			bucketOpts: { aliases: [{ name: `${name}-bucket` }] },
 		});
-
-		const publicAccessBlock = new aws.s3.BucketPublicAccessBlock(`${name}-public-access`, {
-			bucket: bucket.id,
-			blockPublicAcls: false,
-			blockPublicPolicy: false,
-			ignorePublicAcls: false,
-			restrictPublicBuckets: false,
-		});
-
-		new aws.s3.BucketPolicy(
-			`${name}-policy`,
-			{
-				bucket: bucket.id,
-				policy: bucket.arn.apply((arn) =>
-					JSON.stringify({
-						Version: "2012-10-17",
-						Statement: [
-							{
-								Effect: "Allow",
-								Principal: "*",
-								Action: "s3:GetObject",
-								Resource: `${arn}/*`,
-							},
-						],
-					}),
-				),
-			},
-			{ dependsOn: [publicAccessBlock] },
-		);
 
 		let viewerCertificate: aws.types.input.cloudfront.DistributionViewerCertificate;
 		let aliases: pulumi.Input<string>[] | undefined;
@@ -105,7 +76,7 @@ export class HutchStaticAssets {
 				origins: [
 					{
 						originId: "s3",
-						domainName: bucket.bucketRegionalDomainName,
+						domainName: publicBucket.bucketRegionalDomainName,
 					},
 				],
 				defaultCacheBehavior: {

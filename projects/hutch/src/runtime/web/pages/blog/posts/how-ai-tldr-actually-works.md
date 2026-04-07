@@ -7,8 +7,6 @@ author: "Fagner Brack"
 keywords: "ai summary, read it later, article tl;dr, deepseek, ai slop, hutch app"
 ---
 
-# How AI TL;DR Actually Works in Hutch (And Why It's Not Slop)
-
 The word "slop" exists for a reason. Most AI-generated content is garbage. SEO articles say nothing in 2,000 words. LinkedIn posts read like they came from a tube. "Key takeaways" listicles flatten every nuance into five bullets nobody asked for.
 
 The term fits. And it means your scepticism about "AI summaries" in a read-it-later app is fair.

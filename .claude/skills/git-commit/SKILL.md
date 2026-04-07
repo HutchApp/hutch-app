@@ -52,7 +52,11 @@ pnpm check  # Run on clean main
 - If clean main passes: The issue is with your changes. Restore with `git stash pop` and investigate.
 - If clean main fails: The issue is pre-existing. Report this to the user.
 
-### Step 3: Handle Stale Coverage Data
+### Step 3: Handle Missing Module Errors
+
+If the hook fails with `TS2307: Cannot find module` for a workspace package, the symlink in `node_modules` may be stale. Run `pnpm install` to re-link workspace packages, then retry.
+
+### Step 4: Handle Stale Coverage Data
 
 If coverage shows 0% for new files, run a fresh test cycle:
 
@@ -60,7 +64,11 @@ If coverage shows 0% for new files, run a fresh test cycle:
 pnpm compile && pnpm test
 ```
 
-### Step 4: Fix Failing Tests
+### Step 5: Handle Stale Nx Cache
+
+If tests pass when run directly with `--skip-nx-cache` but fail during the hook, the Nx cache may be stale. Run `pnpm nx reset` to clear the cache, then retry the commit.
+
+### Step 6: Fix Failing Tests
 
 If tests fail after your changes, update the tests to match the new behavior rather than asking to bypass hooks.
 
