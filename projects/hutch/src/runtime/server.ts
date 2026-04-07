@@ -48,7 +48,6 @@ import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
-import { PocketMigrationPage } from "./web/pages/pocket-migration";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv } from "./require-env";
 import "./web/session.types";
@@ -153,7 +152,6 @@ export function createApp(dependencies: AppDependencies): Express {
 			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
 			{ loc: "/login", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
-			{ loc: "/pocket-migration", priority: "0.6", changefreq: "monthly" },
 			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
 			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
 		];
@@ -190,11 +188,6 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.get("/terms", (_req: Request, res: Response) => {
 		const result = TermsPage().to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
-	});
-
-	app.get("/pocket-migration", (_req: Request, res: Response) => {
-		const result = PocketMigrationPage().to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 

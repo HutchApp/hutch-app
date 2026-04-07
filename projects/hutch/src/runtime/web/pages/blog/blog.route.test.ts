@@ -31,9 +31,13 @@ describe("GET /blog", () => {
 		const response = await request(app).get("/blog");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cardTitle = doc.querySelector(".blog-card__title");
-		expect(cardTitle?.textContent).toBe(
+		const cardTitles = doc.querySelectorAll(".blog-card__title");
+		const titles = Array.from(cardTitles).map((el) => el.textContent);
+		expect(titles).toContain(
 			"An Alternative to Pocket That Won't Shut Down",
+		);
+		expect(titles).toContain(
+			"How to Move Your Reading List from Pocket to Hutch",
 		);
 	});
 
