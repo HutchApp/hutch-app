@@ -4,7 +4,7 @@
 
 Hutch provides browser extensions for Firefox and Chrome, a distraction-free reader view, TL;DR summaries, auto dark mode, and secure OAuth authentication with PKCE. User data is hosted in Sydney, Australia under the Australian Privacy Act. No third-party tracking or ads.
 
-Free for the first 100 founding members (lifetime). A$3.99/month after that, including TL;DR summaries.
+Free for the first 100 founding members (lifetime). $3.99/month after that, including TL;DR summaries.
 
 ## Pages
 

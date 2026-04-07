@@ -3,7 +3,7 @@ title: "The Best Way to Save Hacker News Articles for Later"
 description: "You open 15 tabs from the HN front page and read 3. The rest haunt your browser for weeks. There's a better system."
 slug: "save-hacker-news-articles-for-later"
 date: "2026-04-07"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "hacker news, save articles, read it later, hn reader, hutch"
 ---
 

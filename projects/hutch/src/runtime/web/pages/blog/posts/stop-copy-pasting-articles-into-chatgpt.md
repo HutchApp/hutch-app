@@ -3,7 +3,7 @@ title: "Stop Copy-Pasting Articles into ChatGPT. There's a Better Way."
 description: "You copy articles into ChatGPT for summaries. It works, but it's slow, manual, and nothing gets saved. Hutch does it in one click."
 slug: "stop-copy-pasting-articles-into-chatgpt"
 date: "2026-04-06"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "chatgpt article summary, read it later, article summarizer, chatgpt alternative for articles"
 ---
 

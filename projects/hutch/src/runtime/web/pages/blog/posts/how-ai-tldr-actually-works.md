@@ -3,7 +3,7 @@ title: "How AI TL;DR Actually Works in Hutch (And Why It's Not Slop)"
 description: "Hutch uses AI to generate short article summaries for triage, not replacement. Here's how it works technically, and why it avoids the usual AI content problems."
 slug: "how-ai-tldr-actually-works"
 date: "2026-04-06"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "ai summary, read it later, article tl;dr, deepseek, ai slop, hutch app"
 ---
 

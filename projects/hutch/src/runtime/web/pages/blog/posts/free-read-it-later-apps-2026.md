@@ -3,7 +3,7 @@ title: "Free Read-It-Later Apps in 2026: What You Actually Get"
 description: "An honest look at what free really means for read-it-later apps, from hosted tiers to self-hosted options to paying a few dollars a month."
 slug: "free-read-it-later-apps-2026"
 date: "2026-04-06"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "free read it later app, read it later free, instapaper free, wallabag, karakeep, raindrop free tier"
 ---
 
@@ -55,7 +55,7 @@ That's not a criticism of the people who built Pocket or Omnivore. They made goo
 
 Karakeep and Wallabag are legitimately free software. You own your data. Nobody can shut down your instance. That's real and valuable.
 
-But self-hosting costs time. You need a server. A VPS runs A$5 to A$15 a month. You handle updates, backups, security patches, and SSL certificates. You debug things at 2am when something breaks.
+But self-hosting costs time. You need a server. A VPS runs $5 to $15 a month. You handle updates, backups, security patches, and SSL certificates. You debug things at 2am when something breaks.
 
 If you're a developer who enjoys this, great. If you just want to save articles and read them, it's overhead you didn't sign up for.
 
@@ -65,7 +65,7 @@ Self-hosting trades money for time and expertise. That's a legitimate choice. Ju
 
 I built Hutch because I needed a read-it-later app I could trust to still exist in ten years. The approach is simple. You pay for the product, and the product stays alive.
 
-Hutch is free for the first 100 founding members. After that, it's A$3.99/month.
+Hutch is free for the first 100 founding members. After that, it's $3.99/month.
 
 The price is the business model. There's no venture capital to run out. No acqui-hire that pulls the team onto someone else's priorities. No ad network that needs your reading data. Subscriptions pay for servers and development. If the product is good enough that people keep paying, it keeps running.
 
@@ -80,6 +80,6 @@ That's not the right choice for everyone. If you want free and you're comfortabl
 | Karakeep | $0 + server + time | Full control, self-hosted | Your own maintenance burden |
 | Wallabag | $0 + server + time | Full control, self-hosted | Your own maintenance burden |
 | Browser bookmarks | $0 | Zero dependencies | No reader view, no offline, no organisation |
-| Hutch | Free (founding), then A$3.99/mo | Hosted, maintained, no ads | Paying money for software |
+| Hutch | Free (founding), then $3.99/mo | Hosted, maintained, no ads | Paying money for software |
 
 Pick the tradeoff you're comfortable with. Just make sure you know what it is.
