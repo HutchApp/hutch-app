@@ -40,6 +40,8 @@ import { initAuthRoutes } from "./web/auth/auth.page";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
+import { initBlogRoutes } from "./web/pages/blog";
+import { getAllSlugs } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage } from "./web/pages/home";
@@ -146,12 +148,17 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.get("/sitemap.xml", (_req: Request, res: Response) => {
 		const pages = [
 			{ loc: "/", priority: "1.0", changefreq: "weekly" },
+			{ loc: "/blog", priority: "0.8", changefreq: "weekly" },
 			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
 			{ loc: "/login", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
 			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
 		];
+
+		for (const slug of getAllSlugs()) {
+			pages.push({ loc: `/blog/${slug}`, priority: "0.7", changefreq: "monthly" });
+		}
 		const urls = pages
 			.map(
 				(p) =>
@@ -193,6 +200,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		const result = InstallPage({ firefox, chrome, browser }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
+
+	const blogRouter = initBlogRoutes();
+	app.use("/blog", blogRouter);
 
 	const authRouter = initAuthRoutes({
 		createUser: deps.createUser,

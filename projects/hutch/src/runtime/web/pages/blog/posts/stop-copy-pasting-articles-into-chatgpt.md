@@ -7,21 +7,6 @@ author: "Fagner Brack"
 keywords: "chatgpt article summary, read it later, article summarizer, chatgpt alternative for articles"
 ---
 
-<!--
-BlogPostPage:
-- seo.title: "${post.title} — Hutch Blog"
-- seo.description: post.description
-- seo.canonicalUrl: "https://hutch-app.com/blog/${post.slug}"
-- seo.ogType: "article"
-- seo.author: post.author
-- seo.keywords: post.keywords
-- seo.robots: "index, follow"
-- seo.structuredData: BlogPosting schema with headline, description, datePublished, author (Person), publisher (Organization), url
-- bodyClass: "page-blog-post"
--->
-
-# Stop Copy-Pasting Articles into ChatGPT. There's a Better Way.
-
 You find a 2,400-word article. You don't have time to read it now. You want the gist.
 
 So you do the thing:
@@ -51,7 +36,7 @@ Seven steps. Two apps. Zero record of what you read.
 
 ## What if it took one click?
 
-Here's the same scenario with [Hutch](https://hutch.sh):
+Here's the same scenario with [Hutch](https://hutch-app.com/install):
 
 1. Click the browser extension.
 
@@ -81,4 +66,4 @@ Hutch does it in one.
 
 Save the article. Get the summary. Keep both. Move on.
 
-[Try Hutch](https://hutch.sh)
+[Try Hutch](https://hutch-app.com/install)

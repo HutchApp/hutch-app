@@ -1,8 +1,8 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { build, type Loader } from "esbuild";
-import { copyFileSync, mkdirSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { build, type Loader, type Plugin } from "esbuild";
+import { copyFileSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 
 const esbuildLoaders: Record<string, Loader> = { ".ts": "ts" };
 const bundledExtensions = Object.keys(esbuildLoaders);
@@ -11,11 +11,42 @@ function copyAssetFiles(dirs: { src: string; dest: string }) {
 	for (const entry of readdirSync(dirs.src, { withFileTypes: true })) {
 		const srcPath = join(dirs.src, entry.name);
 		if (entry.isDirectory()) {
-			copyAssetFiles({ src: srcPath, dest: dirs.dest });
+			const destSubdir = join(dirs.dest, entry.name);
+			mkdirSync(destSubdir, { recursive: true });
+			copyAssetFiles({ src: srcPath, dest: destSubdir });
 		} else if (!bundledExtensions.some((ext) => entry.name.endsWith(ext))) {
 			copyFileSync(srcPath, join(dirs.dest, entry.name));
 		}
 	}
+}
+
+/**
+ * esbuild bundles all code into a single index.js, so __dirname resolves to the
+ * bundle root for every source module. This plugin rewrites __dirname in files
+ * within the asset directory to include the file's relative path from the asset
+ * root, so readFileSync(join(__dirname, "file")) resolves to the correct
+ * subdirectory where copyAssetFiles placed the asset.
+ */
+function createDirnamePlugin(assetDir: string): Plugin {
+	const assetDirAbs = resolve(assetDir);
+	return {
+		name: "dirname-rewrite",
+		setup(pluginBuild) {
+			pluginBuild.onLoad({ filter: /\.ts$/ }, (args) => {
+				if (!args.path.startsWith(assetDirAbs)) return;
+
+				const relPath = relative(assetDirAbs, dirname(args.path));
+				const contents = readFileSync(args.path, "utf-8");
+				return {
+					contents: contents.replace(
+						/__dirname/g,
+						`require("node:path").join(__dirname, ${JSON.stringify(relPath)})`,
+					),
+					loader: "ts" as const,
+				};
+			});
+		},
+	};
 }
 
 export type LambdaPolicy = {
@@ -58,6 +89,7 @@ export class HutchLambda {
 			outfile: `${args.outputDir}/index.js`,
 			target: ["node22"],
 			loader: esbuildLoaders,
+			plugins: [createDirnamePlugin(args.assetDir)],
 		}).then(() => {
 			copyAssetFiles({ src: args.assetDir, dest: args.outputDir });
 			return new pulumi.asset.AssetArchive({

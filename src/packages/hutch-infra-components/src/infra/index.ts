@@ -7,3 +7,4 @@ export { HutchCertificate } from "./hutch-certificate";
 export { HutchSQS } from "./hutch-sqs";
 export { HutchSQSBackedLambda } from "./hutch-sqs-backed-lambda";
 export { HutchS3ReadWrite } from "./hutch-s3-read-write";
+export { HutchS3PublicRead } from "./hutch-s3-public-read";
