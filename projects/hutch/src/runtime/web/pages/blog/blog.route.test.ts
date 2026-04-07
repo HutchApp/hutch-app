@@ -33,7 +33,7 @@ describe("GET /blog", () => {
 
 		const cardTitle = doc.querySelector(".blog-card__title");
 		expect(cardTitle?.textContent).toBe(
-			"An Alternative to Pocket That Won't Shut Down",
+			"Hutch: An AI Reading Assistant That Helps You Read More, Not Less",
 		);
 	});
 
