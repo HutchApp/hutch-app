@@ -33,7 +33,7 @@ describe("GET /blog", () => {
 
 		const cardTitle = doc.querySelector(".blog-card__title");
 		expect(cardTitle?.textContent).toBe(
-			"An Alternative to Pocket That Won't Shut Down",
+			"A Reading App Built by a Developer Who Reads",
 		);
 	});
 
