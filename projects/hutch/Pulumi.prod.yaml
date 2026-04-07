@@ -17,4 +17,5 @@ config:
   hutch:dynamodbOauthTable: hutch-oauth-ecd3db9
   hutch:dynamodbVerificationTokensTable: hutch-verification-tokens-3f85043
   hutch:dynamodbGmailTokensTable: hutch-gmail-tokens
+  hutch:dynamodbPasswordResetTokensTable: hutch-password-reset-tokens
 encryptionsalt: v1:l9Qbc2Rjk0w=:v1:atrW398hQVu5eMhu:NQ2XG9vAOXAa+XxkU2+ksKYFAJJLTA==

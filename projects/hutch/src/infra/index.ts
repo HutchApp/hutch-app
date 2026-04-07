@@ -9,10 +9,6 @@ import { getEnv, requireEnv } from "../runtime/require-env";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
-const platformStackName = config.require("platformStack");
-const platformStack = new pulumi.StackReference(platformStackName);
-const eventBusName = platformStack.requireOutput("hutchEventBusName").apply(String);
-const eventBusArn = platformStack.requireOutput("hutchEventBusArn").apply(String);
 const domains = config.getObject<string[]>("domains") ?? [];
 const deletionProtection = config.requireBoolean("deletionProtection");
 const staticDomains = config.requireObject<string[]>("staticDomains");
@@ -26,6 +22,7 @@ const tableNames = {
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
 	gmailTokens: config.require("dynamodbGmailTokensTable"),
+	passwordResetTokens: config.require("dynamodbPasswordResetTokensTable"),
 };
 
 const storage = new HutchStorage("hutch", {
@@ -42,7 +39,7 @@ const staticAssets = new HutchStaticAssets("hutch-static", {
 	zoneId: domainRegistration.zoneId,
 });
 
-const eventBus = HutchEventBus.fromExisting({ eventBusName, eventBusArn });
+const eventBus = HutchEventBus.fromPlatformStack(config);
 
 const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 	tables: [
@@ -53,6 +50,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 		{ arn: storage.oauthTable.arn, includeIndexes: true },
 		{ arn: storage.verificationTokensTable.arn, includeIndexes: false },
 		{ arn: storage.gmailTokensTable.arn, includeIndexes: false },
+		{ arn: storage.passwordResetTokensTable.arn, includeIndexes: false },
 	],
 	actions: [
 		"dynamodb:GetItem",
@@ -92,6 +90,7 @@ const lambda = new HutchLambda("hutch", {
 		DYNAMODB_OAUTH_TABLE: storage.oauthTable.name,
 		DYNAMODB_VERIFICATION_TOKENS_TABLE: storage.verificationTokensTable.name,
 		DYNAMODB_GMAIL_TOKENS_TABLE: storage.gmailTokensTable.name,
+		DYNAMODB_PASSWORD_RESET_TOKENS_TABLE: storage.passwordResetTokensTable.name,
 		GOOGLE_CLIENT_ID: pulumi.runtime.isDryRun()
 			? (getEnv("GOOGLE_CLIENT_ID") ?? "")
 			: requireEnv("GOOGLE_CLIENT_ID"),
@@ -102,14 +101,14 @@ const lambda = new HutchLambda("hutch", {
 			? (getEnv("RESEND_API_KEY") ?? "")
 			: requireEnv("RESEND_API_KEY"),
 		STATIC_BASE_URL: staticAssets.baseUrl,
-		EVENT_BUS_NAME: eventBusName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
 	},
 	policies: [
 		...dynamodb.policies,
 	],
 });
 
-eventBus.grantPublish("hutch-eventbridge-publish", lambda);
+eventBus.grantPublish(lambda);
 
 const gateway = new HutchAPIGateway("hutch", {
 	api,

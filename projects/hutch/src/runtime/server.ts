@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
@@ -10,6 +12,8 @@ import type {
 	GetSessionUserId,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
+	UpdatePassword,
+	UserExistsByEmail,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
@@ -29,15 +33,22 @@ import type {
 	CreateVerificationToken,
 	VerifyEmailToken,
 } from "./providers/email-verification/email-verification.types";
+import type {
+	CreatePasswordResetToken,
+	VerifyPasswordResetToken,
+} from "./providers/password-reset/password-reset.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import type { ExchangeGmailCode, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
 import type { FindGmailTokens, SaveGmailTokens, DeleteGmailTokens } from "./providers/gmail/gmail-token-store.types";
 import type { EnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
 import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
 import { initAuthRoutes } from "./web/auth/auth.page";
+import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initGmailImportRoutes } from "./web/pages/gmail-import/gmail-import.page";
+import { initBlogRoutes } from "./web/pages/blog";
+import { getAllSlugs } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage } from "./web/pages/home";
@@ -72,6 +83,10 @@ interface AppDependencies {
 	sendEmail: SendEmail;
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
+	createPasswordResetToken: CreatePasswordResetToken;
+	verifyPasswordResetToken: VerifyPasswordResetToken;
+	userExistsByEmail: UserExistsByEmail;
+	updatePassword: UpdatePassword;
 	baseUrl: string;
 	logError: (message: string, error?: Error) => void;
 	oauthModel: OAuthModel;
@@ -97,6 +112,9 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 	}
 	next();
 }
+
+const LLMS_TXT = readFileSync(join(__dirname, "llms.txt"), "utf-8");
+const LLMS_FULL_TXT = readFileSync(join(__dirname, "llms-full.txt"), "utf-8");
 
 export function createApp(dependencies: AppDependencies): Express {
 	const { appOrigin, staticBaseUrl, getSessionUserId, countUsers, ...deps } = dependencies;
@@ -146,15 +164,30 @@ export function createApp(dependencies: AppDependencies): Express {
 		);
 	});
 
+	app.get("/llms.txt", (_req: Request, res: Response) => {
+		res.type("text/plain").send(LLMS_TXT);
+	});
+
+	app.get("/llms-full.txt", (_req: Request, res: Response) => {
+		res.type("text/plain").send(LLMS_FULL_TXT);
+	});
+
 	app.get("/sitemap.xml", (_req: Request, res: Response) => {
 		const pages = [
 			{ loc: "/", priority: "1.0", changefreq: "weekly" },
+			{ loc: "/blog", priority: "0.8", changefreq: "weekly" },
 			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
 			{ loc: "/login", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
 			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
+			{ loc: "/llms.txt", priority: "0.3", changefreq: "monthly" },
+			{ loc: "/llms-full.txt", priority: "0.3", changefreq: "monthly" },
 		];
+
+		for (const slug of getAllSlugs()) {
+			pages.push({ loc: `/blog/${slug}`, priority: "0.7", changefreq: "monthly" });
+		}
 		const urls = pages
 			.map(
 				(p) =>
@@ -197,6 +230,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
+	const blogRouter = initBlogRoutes();
+	app.use("/blog", blogRouter);
+
 	const authRouter = initAuthRoutes({
 		createUser: deps.createUser,
 		verifyCredentials: deps.verifyCredentials,
@@ -211,6 +247,17 @@ export function createApp(dependencies: AppDependencies): Express {
 		logError: deps.logError,
 	});
 	app.use(authRouter);
+
+	const forgotPasswordRouter = initForgotPasswordRoutes({
+		sendEmail: deps.sendEmail,
+		userExistsByEmail: deps.userExistsByEmail,
+		updatePassword: deps.updatePassword,
+		createPasswordResetToken: deps.createPasswordResetToken,
+		verifyPasswordResetToken: deps.verifyPasswordResetToken,
+		baseUrl: deps.baseUrl,
+		logError: deps.logError,
+	});
+	app.use(forgotPasswordRouter);
 
 	const extensionCors = cors({
 		origin: (origin, callback) => {

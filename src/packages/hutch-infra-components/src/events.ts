@@ -26,6 +26,17 @@ function defineCommand<T extends z.ZodTypeAny>(definition: {
 	return Object.freeze(definition);
 }
 
+export const SaveLinkCommand = defineEvent({
+	name: "save-link-command",
+	source: "hutch.api",
+	detailType: "SaveLinkCommand",
+	detailSchema: z.object({
+		url: z.string(),
+		userId: z.string(),
+	}),
+});
+export type SaveLinkDetail = z.infer<typeof SaveLinkCommand.detailSchema>;
+
 export const LinkSavedEvent = defineEvent({
 	name: "link-saved",
 	source: "hutch.save-link",

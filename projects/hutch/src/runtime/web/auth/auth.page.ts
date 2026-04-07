@@ -19,6 +19,7 @@ import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { buildVerificationEmailHtml } from "./verification-email";
+import { flattenZodErrors } from "./flatten-zod-errors";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
@@ -44,15 +45,6 @@ interface AuthDependencies {
 	verifyEmailToken: VerifyEmailToken;
 	baseUrl: string;
 	logError: (message: string, error?: Error) => void;
-}
-
-function flattenZodErrors(
-	issues: { path: PropertyKey[]; message: string }[],
-): { field: string; message: string }[] {
-	return issues.map((issue) => ({
-		field: String(issue.path[issue.path.length - 1]),
-		message: issue.message,
-	}));
 }
 
 export function initAuthRoutes(deps: AuthDependencies): Router {

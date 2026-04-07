@@ -5,27 +5,31 @@ import {
 	HutchDynamoDBAccess,
 	HutchSQS,
 	HutchSQSBackedLambda,
+	HutchS3ReadWrite,
 } from "@packages/hutch-infra-components/infra";
 import {
+	SaveLinkCommand,
 	LinkSavedEvent,
 	SummaryGeneratedEvent,
 } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 
 const config = new pulumi.Config();
-const platformStack = config.require("platformStack");
 const alertEmail = config.require("alertEmail");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
+const contentBucketName = config.require("contentBucketName");
+
+// --- Content S3 Bucket ---
+
+const contentBucket = new HutchS3ReadWrite("content-bucket", {
+	bucketName: contentBucketName,
+});
 
 const anthropicApiKey = pulumi.secret(requireEnv("ANTHROPIC_API_KEY"));
 const deepseekApiKey = pulumi.secret(requireEnv("DEEPSEEK_API_KEY"));
 
-const platform = new pulumi.StackReference(platformStack);
-const eventBusName = platform.requireOutput("hutchEventBusName").apply(String);
-const eventBusArn = platform.requireOutput("hutchEventBusArn").apply(String);
-
-const eventBus = HutchEventBus.fromExisting({ eventBusName, eventBusArn });
+const eventBus = HutchEventBus.fromPlatformStack(config);
 
 // --- Queues ---
 
@@ -37,9 +41,47 @@ const linkSavedQueue = new HutchSQS("link-saved", {
 	visibilityTimeoutSeconds: 60,
 });
 
+const saveLinkCommandQueue = new HutchSQS("save-link-command", {
+	visibilityTimeoutSeconds: 60,
+});
+
 const summaryGeneratedQueue = new HutchSQS("summary-generated", {
 	visibilityTimeoutSeconds: 60,
 });
+
+// --- SaveLinkCommand handler ---
+
+const saveLinkCommandDynamodb = new HutchDynamoDBAccess("save-link-command-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+});
+
+const saveLinkCommandLambda = new HutchLambda("save-link-command", {
+	entryPoint: "./src/infra/save-link-command.main.ts",
+	outputDir: ".lib/save-link-command",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: 30,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+		CONTENT_BUCKET_NAME: contentBucketName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
+	},
+	policies: [
+		...saveLinkCommandDynamodb.policies,
+		...contentBucket.writePolicies("save-link-command-s3"),
+	],
+});
+
+eventBus.grantPublish(saveLinkCommandLambda);
+
+const saveLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-command", {
+	lambda: saveLinkCommandLambda,
+	queue: saveLinkCommandQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(SaveLinkCommand, saveLinkCommandLambdaWithSQS);
 
 // --- GenerateSummary handler ---
 
@@ -54,23 +96,19 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	assetDir: "./src",
 	memorySize: 512,
 	timeout: 45,
-	resourceNames: {
-		role: "generate-summary-handler-role",
-		basicExecution: "generate-summary-basic-execution",
-		lambda: "generate-summary-handler",
-	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		ANTHROPIC_API_KEY: anthropicApiKey,
 		DEEPSEEK_API_KEY: deepseekApiKey,
-		EVENT_BUS_NAME: eventBusName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
 	},
 	policies: [
 		...generateSummaryDynamodb.policies,
+		...contentBucket.readPolicies("generate-summary-s3"),
 	],
 });
 
-eventBus.grantPublish("generate-summary-eventbridge", generateSummaryLambda);
+eventBus.grantPublish(generateSummaryLambda);
 
 new HutchSQSBackedLambda("generate-summary", {
 	lambda: generateSummaryLambda,
@@ -91,11 +129,6 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	assetDir: "./src",
 	memorySize: 256,
 	timeout: 30,
-	resourceNames: {
-		role: "link-saved-handler-role",
-		basicExecution: "link-saved-basic-execution",
-		lambda: "link-saved-handler",
-	},
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
@@ -103,6 +136,7 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	policies: [
 		...linkSavedDynamodb.policies,
 		...generateSummaryQueue.policies,
+		...contentBucket.readPolicies("link-saved-s3"),
 	],
 });
 
@@ -122,11 +156,6 @@ const summaryGeneratedLambda = new HutchLambda("summary-generated", {
 	assetDir: "./src",
 	memorySize: 128,
 	timeout: 10,
-	resourceNames: {
-		role: "summary-generated-handler-role",
-		basicExecution: "summary-generated-basic-execution",
-		lambda: "summary-generated-handler",
-	},
 	environment: {},
 	policies: [],
 });
@@ -141,9 +170,13 @@ eventBus.subscribe(SummaryGeneratedEvent, summaryGeneratedLambdaWithSQS);
 
 // --- Exports ---
 
+export const saveLinkCommandQueueUrl = saveLinkCommandQueue.queueUrl;
+export const saveLinkCommandDlqUrl = saveLinkCommandQueue.dlqUrl;
 export const linkSavedQueueUrl = linkSavedQueue.queueUrl;
 export const linkSavedDlqUrl = linkSavedQueue.dlqUrl;
 export const generateSummaryQueueUrl = generateSummaryQueue.queueUrl;
 export const generateSummaryDlqUrl = generateSummaryQueue.dlqUrl;
 export const summaryGeneratedQueueUrl = summaryGeneratedQueue.queueUrl;
 export const summaryGeneratedDlqUrl = summaryGeneratedQueue.dlqUrl;
+export const contentBucketOutputName = contentBucket.bucket;
+export const contentBucketOutputArn = contentBucket.arn;

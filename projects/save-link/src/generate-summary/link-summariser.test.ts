@@ -39,6 +39,41 @@ describe("initLinkSummariser", () => {
 		expect(createMessage).not.toHaveBeenCalled();
 	});
 
+	it("should pass article content as a document block to createMessage", async () => {
+		const createMessage = jest.fn().mockResolvedValue({
+			content: [{ type: "text", text: JSON.stringify({ summary: "A summary." }) }],
+			usage: { input_tokens: 50, output_tokens: 10 },
+		});
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findCachedSummary: noCache,
+			saveCachedSummary: noopSave,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		await summarizeArticle({
+			url: "https://example.com/article",
+			textContent: "Some article content about prompt injection.",
+		});
+
+		expect(createMessage).toHaveBeenCalledWith(
+			expect.objectContaining({
+				messages: [{
+					role: "user",
+					content: [{
+						type: "document",
+						source: { type: "text", media_type: "text/plain", data: "Some article content about prompt injection." },
+						title: "Article to summarize",
+						citations: { enabled: true },
+					}],
+				}],
+			}),
+		);
+	});
+
 	it("should call createMessage when isTooShortToSummarize returns false", async () => {
 		const createMessage = createStubCreateMessage("A good summary.");
 

@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
+import { getAllSlugs } from "../blog/blog.posts";
 
 describe("GET /", () => {
 	const { app } = createTestApp();
@@ -129,7 +130,7 @@ describe("GET /", () => {
 		const plans = pricingSection?.querySelectorAll(".pricing-card");
 		expect(plans?.length).toBe(1);
 		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__name')?.textContent).toBe("Founding Member");
-		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("A$0");
+		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("$0");
 	});
 
 	it("should render the founding members progress bar with zero users", async () => {
@@ -297,6 +298,33 @@ describe("GET /robots.txt", () => {
 	});
 });
 
+describe("GET /llms.txt", () => {
+	const { app } = createTestApp();
+
+	it("should return a text response with the product overview", async () => {
+		const response = await request(app).get("/llms.txt");
+		expect(response.status).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/text\/plain/);
+		expect(response.text).toContain("# Hutch");
+		expect(response.text).toContain("read-it-later");
+		expect(response.text).toContain("## Pages");
+	});
+});
+
+describe("GET /llms-full.txt", () => {
+	const { app } = createTestApp();
+
+	it("should return a text response with the full product details", async () => {
+		const response = await request(app).get("/llms-full.txt");
+		expect(response.status).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/text\/plain/);
+		expect(response.text).toContain("# Hutch");
+		expect(response.text).toContain("## Features");
+		expect(response.text).toContain("## About");
+		expect(response.text).toContain("## Privacy");
+	});
+});
+
 describe("GET /sitemap.xml", () => {
 	const { app } = createTestApp();
 
@@ -306,13 +334,18 @@ describe("GET /sitemap.xml", () => {
 		expect(response.headers["content-type"]).toMatch(/application\/xml/);
 
 		const urls = Array.from(response.text.matchAll(/<loc>([^<]+)<\/loc>/g)).map((m) => m[1]);
+		const blogPostUrls = getAllSlugs().map((slug) => `http://localhost:3000/blog/${slug}`);
 		expect(urls).toEqual([
 			"http://localhost:3000/",
+			"http://localhost:3000/blog",
 			"http://localhost:3000/install",
 			"http://localhost:3000/login",
 			"http://localhost:3000/signup",
 			"http://localhost:3000/privacy",
 			"http://localhost:3000/terms",
+			"http://localhost:3000/llms.txt",
+			"http://localhost:3000/llms-full.txt",
+			...blogPostUrls,
 		]);
 	});
 });

@@ -120,6 +120,10 @@
   font-weight: 500;
 }
 
+.auth-card__footer--forgot {
+  margin-bottom: 0;
+}
+
 .auth-card__footer a:hover {
   text-decoration: underline;
 }

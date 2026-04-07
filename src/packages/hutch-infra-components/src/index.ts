@@ -1,4 +1,6 @@
 export {
+	SaveLinkCommand,
+	type SaveLinkDetail,
 	LinkSavedEvent,
 	type LinkSavedDetail,
 	SummaryGeneratedEvent,

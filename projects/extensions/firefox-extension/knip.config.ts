@@ -19,6 +19,10 @@ export default {
 		// Workspace dependencies — knip can't trace through esbuild-bundled entry points
 		"browser-extension-core",
 		"@packages/hutch-logger",
+		// Workspace dependency — knip can't resolve subpath imports (@packages/hutch-infra-components/infra)
+		"@packages/hutch-infra-components",
+		// Type-only dependency — needed for TypeScript inference of HutchS3PublicRead properties, not directly imported
+		"@pulumi/aws",
 		// Dynamic import in E2E test — knip can't trace dynamic imports
 		"hutch",
 		// Used by scripts/check-unused-css.js (not a source-level import)
