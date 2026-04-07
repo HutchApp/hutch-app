@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
@@ -98,6 +100,9 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 	next();
 }
 
+const LLMS_TXT = readFileSync(join(__dirname, "llms.txt"), "utf-8");
+const LLMS_FULL_TXT = readFileSync(join(__dirname, "llms-full.txt"), "utf-8");
+
 export function createApp(dependencies: AppDependencies): Express {
 	const { appOrigin, staticBaseUrl, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
@@ -145,6 +150,14 @@ export function createApp(dependencies: AppDependencies): Express {
 		);
 	});
 
+	app.get("/llms.txt", (_req: Request, res: Response) => {
+		res.type("text/plain").send(LLMS_TXT);
+	});
+
+	app.get("/llms-full.txt", (_req: Request, res: Response) => {
+		res.type("text/plain").send(LLMS_FULL_TXT);
+	});
+
 	app.get("/sitemap.xml", (_req: Request, res: Response) => {
 		const pages = [
 			{ loc: "/", priority: "1.0", changefreq: "weekly" },
@@ -154,6 +167,8 @@ export function createApp(dependencies: AppDependencies): Express {
 			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
 			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
 			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
+			{ loc: "/llms.txt", priority: "0.3", changefreq: "monthly" },
+			{ loc: "/llms-full.txt", priority: "0.3", changefreq: "monthly" },
 		];
 
 		for (const slug of getAllSlugs()) {
