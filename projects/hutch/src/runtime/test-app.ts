@@ -10,6 +10,10 @@ import type { RefreshArticleIfStale } from "./providers/article-freshness/check-
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
+import { initInMemoryGmailTokenStore } from "./providers/gmail/in-memory-gmail-token-store";
+import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
+import type { ExchangeGmailCode, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
+import type { EnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -20,6 +24,14 @@ import { noopLogger } from "@packages/hutch-logger";
 
 const { publishLinkSaved: defaultPublishLinkSaved } = initInMemoryLinkSaved({ logger: noopLogger });
 const noopCheckFreshness: RefreshArticleIfStale = async () => ({ action: "new" });
+const noopGmailImport: RunGmailImport = async () => ({ importedCount: 0, skippedCount: 0, emailsProcessed: 0, emailsLabeled: 0 });
+const stubExchangeGmailCode: ExchangeGmailCode = async () => ({ accessToken: "stub-access", refreshToken: "stub-refresh", expiresAt: Date.now() + 3600000 });
+const stubListUnreadGmailMessages: ListUnreadGmailMessages = async () => [
+	{ messageId: "msg-1", subject: "Weekly Newsletter", from: "newsletter@example.com" },
+	{ messageId: "msg-2", subject: "Your order shipped", from: "orders@shop.com" },
+	{ messageId: "msg-3", subject: "Q4 Review", from: "boss@work.com" },
+];
+const stubEnsureValidAccessToken: EnsureValidAccessToken = async () => "stub-access-token";
 
 const stubFetchHtml: FetchHtml = async (url) => {
 	const hostname = new URL(url).hostname;
@@ -33,6 +45,10 @@ export function createTestApp(options?: {
 	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
 	logError?: (message: string, error?: Error) => void;
+	exchangeGmailCode?: ExchangeGmailCode;
+	listUnreadGmailMessages?: ListUnreadGmailMessages;
+	runGmailImport?: RunGmailImport;
+	ensureValidAccessToken?: EnsureValidAccessToken;
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
@@ -41,6 +57,7 @@ export function createTestApp(options?: {
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
+	const gmailTokenStore = initInMemoryGmailTokenStore();
 
 	const app = createApp({
 		appOrigin: "http://localhost:3000",
@@ -58,7 +75,13 @@ export function createTestApp(options?: {
 		logError: options?.logError ?? (() => {}),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
+		...gmailTokenStore,
+		exchangeGmailCode: options?.exchangeGmailCode ?? stubExchangeGmailCode,
+		listUnreadGmailMessages: options?.listUnreadGmailMessages ?? stubListUnreadGmailMessages,
+		runGmailImport: options?.runGmailImport ?? noopGmailImport,
+		ensureValidAccessToken: options?.ensureValidAccessToken ?? stubEnsureValidAccessToken,
+		googleClientId: "test-google-client-id",
 	});
 
-	return { app, auth, articleStore, parser, oauthModel, email, emailVerification, passwordReset };
+	return { app, auth, articleStore, parser, oauthModel, email, emailVerification, passwordReset, gmailTokenStore };
 }
