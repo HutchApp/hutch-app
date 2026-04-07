@@ -298,6 +298,33 @@ describe("GET /robots.txt", () => {
 	});
 });
 
+describe("GET /llms.txt", () => {
+	const { app } = createTestApp();
+
+	it("should return a text response with the product overview", async () => {
+		const response = await request(app).get("/llms.txt");
+		expect(response.status).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/text\/plain/);
+		expect(response.text).toContain("# Hutch");
+		expect(response.text).toContain("read-it-later");
+		expect(response.text).toContain("## Pages");
+	});
+});
+
+describe("GET /llms-full.txt", () => {
+	const { app } = createTestApp();
+
+	it("should return a text response with the full product details", async () => {
+		const response = await request(app).get("/llms-full.txt");
+		expect(response.status).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/text\/plain/);
+		expect(response.text).toContain("# Hutch");
+		expect(response.text).toContain("## Features");
+		expect(response.text).toContain("## About");
+		expect(response.text).toContain("## Privacy");
+	});
+});
+
 describe("GET /sitemap.xml", () => {
 	const { app } = createTestApp();
 
@@ -316,6 +343,8 @@ describe("GET /sitemap.xml", () => {
 			"http://localhost:3000/signup",
 			"http://localhost:3000/privacy",
 			"http://localhost:3000/terms",
+			"http://localhost:3000/llms.txt",
+			"http://localhost:3000/llms-full.txt",
 			...blogPostUrls,
 		]);
 	});

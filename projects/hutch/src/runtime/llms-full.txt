@@ -1,0 +1,60 @@
+# Hutch
+
+> Hutch is a read-it-later app and browser extension that lets you save articles with one click and read them later. A privacy-first Pocket and Omnivore alternative, built in Australia by the creator of js-cookie.
+
+Hutch provides browser extensions for Firefox and Chrome, a distraction-free reader view, TL;DR summaries, auto dark mode, and secure OAuth authentication with PKCE. User data is hosted in Sydney, Australia under the Australian Privacy Act. No third-party tracking or ads.
+
+Free for the first 100 founding members (lifetime). A$3.99/month after that, including TL;DR summaries.
+
+## Features
+
+- **Firefox Extension**: Save articles from Firefox with one click or keyboard shortcut
+- **Chrome Extension**: Save articles from Chrome with one click or keyboard shortcut
+- **Reader View**: Distraction-free reading experience that strips away clutter
+- **Web App**: Access your reading queue from any browser
+- **TL;DR Summaries**: AI-generated article summaries to help you decide what to read
+- **Auto Dark Mode**: Automatically adapts to your system colour scheme
+- **Secure Auth**: OAuth 2.0 with PKCE for browser extension authentication
+- **Self-Updating Extension**: Browser extension updates itself without manual intervention
+- **Privacy First**: Hosted in Sydney, Australian Privacy Act compliant, no tracking, no ads
+
+## Planned Features
+
+- Personalised Summaries
+- Preference Learning
+- Gmail Integration
+- Highlights & Notes
+
+## Pages
+
+- [Home](https://hutch-app.com/): Landing page with features, pricing, and product overview
+- [Install Browser Extension](https://hutch-app.com/install): Download the Hutch extension for Firefox or Chrome
+- [Sign Up](https://hutch-app.com/signup): Create a free account and start saving articles
+- [Log In](https://hutch-app.com/login): Sign in to your Hutch account
+- [Privacy Policy](https://hutch-app.com/privacy): How Hutch handles your data
+- [Terms of Service](https://hutch-app.com/terms): Terms governing your use of Hutch
+
+## About
+
+Hutch was built by Fayner Brack, the creator of the js-cookie library (22 billion+ annual npm downloads). After Pocket was acquired and Omnivore shut down, he turned his personal reading system — maintained for over 10 years — into a product anyone can use.
+
+Operated by Proficient Pty Ltd, Australia. Building in public.
+
+## Privacy
+
+Hutch collects only what is necessary to run the service:
+
+- Email address for authentication
+- Saved article URLs
+- Basic server logs
+
+Hutch does NOT use third-party analytics, does NOT sell data, and does NOT read article content. Data is stored in the AWS Sydney region. A single session cookie is used — no tracking cookies. Users can export or delete their data at any time from the export page.
+
+## Terms
+
+The service is provided as-is. Users retain ownership of their content and can export or delete it at any time. Governed by Australian law (Victoria courts). Users must not use the service for unlawful purposes, attempt unauthorized access, or abuse the system with automated requests.
+
+## Optional
+
+- [Privacy Policy](https://hutch-app.com/privacy): Data handling, storage location (AWS Sydney), cookies, and user rights
+- [Terms of Service](https://hutch-app.com/terms): Agreement, acceptable use, liability, governing law (Australia)
