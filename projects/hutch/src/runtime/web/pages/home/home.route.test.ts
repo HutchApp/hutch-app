@@ -314,6 +314,7 @@ describe("GET /sitemap.xml", () => {
 			"http://localhost:3000/signup",
 			"http://localhost:3000/privacy",
 			"http://localhost:3000/terms",
+			"http://localhost:3000/blog/ai-reading-assistant",
 			"http://localhost:3000/blog/alternative-to-pocket",
 		]);
 	});
