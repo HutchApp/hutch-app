@@ -30,6 +30,9 @@ describe("GET /blog", () => {
 			`a[href="/blog/${firstPost.slug}"]`,
 		);
 		expect(link).not.toBeNull();
+
+		const pocketLink = doc.querySelector('a[href="/blog/pocket-alternatives"]');
+		expect(pocketLink).not.toBeNull();
 	});
 
 	it("should render post titles in the listing", async () => {
@@ -39,6 +42,7 @@ describe("GET /blog", () => {
 		const cardTitles = doc.querySelectorAll(".blog-card__title");
 		const texts = Array.from(cardTitles).map((el) => el.textContent);
 		expect(texts).toContain(firstPost.title);
+		expect(texts).toContain("A Pocket Alternative That Won't Shut Down");
 	});
 
 	it("should have correct SEO title", async () => {
@@ -174,6 +178,9 @@ describe("GET /sitemap.xml", () => {
 		const response = await request(app).get("/sitemap.xml");
 		expect(response.text).toContain(
 			`<loc>http://localhost:3000/blog/${firstPost.slug}</loc>`,
+		);
+		expect(response.text).toContain(
+			"<loc>http://localhost:3000/blog/pocket-alternatives</loc>",
 		);
 	});
 });

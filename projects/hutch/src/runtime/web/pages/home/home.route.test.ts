@@ -311,7 +311,6 @@ describe("GET /sitemap.xml", () => {
 		expect(urls).toEqual([
 			"http://localhost:3000/",
 			"http://localhost:3000/blog",
-			"http://localhost:3000/pocket-alternatives",
 			"http://localhost:3000/install",
 			"http://localhost:3000/login",
 			"http://localhost:3000/signup",
