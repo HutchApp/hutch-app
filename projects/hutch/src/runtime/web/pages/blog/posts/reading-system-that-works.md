@@ -2,25 +2,10 @@
 title: "A System for Technical Reading That Actually Works"
 description: "You save 50 articles and read 5. After 10 years of refining a personal reading system, here's what actually fixed it."
 slug: "reading-system-that-works"
-date: "2026-04-06"
+date: "2026-04-07"
 author: "Fagner Brack"
 keywords: "technical reading, read it later, reading habits, developer productivity, reading system"
 ---
-
-<!--
-BlogPostPage:
-- seo.title: "${post.title} — Hutch Blog"
-- seo.description: post.description
-- seo.canonicalUrl: "https://hutch-app.com/blog/${post.slug}"
-- seo.ogType: "article"
-- seo.author: post.author
-- seo.keywords: post.keywords
-- seo.robots: "index, follow"
-- seo.structuredData: BlogPosting schema with headline, description, datePublished, author (Person), publisher (Organization), url
-- bodyClass: "page-blog-post"
--->
-
-# A System for Technical Reading That Actually Works
 
 You have a bookmark folder called "To Read." You last opened it in 2023. There are 47 articles in it. Maybe 53. You stopped counting.
 
