@@ -308,11 +308,13 @@ describe("GET /sitemap.xml", () => {
 		const urls = Array.from(response.text.matchAll(/<loc>([^<]+)<\/loc>/g)).map((m) => m[1]);
 		expect(urls).toEqual([
 			"http://localhost:3000/",
+			"http://localhost:3000/blog",
 			"http://localhost:3000/install",
 			"http://localhost:3000/login",
 			"http://localhost:3000/signup",
 			"http://localhost:3000/privacy",
 			"http://localhost:3000/terms",
+			"http://localhost:3000/blog/alternative-to-pocket",
 		]);
 	});
 });
