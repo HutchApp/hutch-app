@@ -7,17 +7,6 @@ author: "Fagner Brack"
 keywords: "ai summary, read it later, pocket alternative, article summary, omnivore alternative"
 ---
 
-BlogPostPage:
-- seo.title: "${post.title} — Hutch Blog"
-- seo.description: post.description
-- seo.canonicalUrl: "https://hutch-app.com/blog/${post.slug}"
-- seo.ogType: "article"
-- seo.author: post.author
-- seo.keywords: post.keywords
-- seo.robots: "index, follow"
-- seo.structuredData: BlogPosting schema with headline, description, datePublished, author (Person), publisher (Organization), url
-- bodyClass: "page-blog-post"
-
 # Homepage Variant: AI TL;DR Lead
 
 ## Hero
