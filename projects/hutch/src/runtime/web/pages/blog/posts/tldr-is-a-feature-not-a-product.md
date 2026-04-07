@@ -2,23 +2,10 @@
 title: "TL;DR Is a Feature, Not a Product"
 description: "Standalone summary tools replace reading instead of supporting it. Hutch treats TL;DR as triage — two sentences to help you choose what to read, not skip it."
 slug: "tldr-is-a-feature-not-a-product"
-date: "2026-04-06"
+date: "2026-04-07"
 author: "Fagner Brack"
 keywords: "tldr, read it later, article summary, reading tools, hutch"
 ---
-
-<!--
-BlogPostPage:
-- seo.title: "${post.title} — Hutch Blog"
-- seo.description: post.description
-- seo.canonicalUrl: "https://hutch-app.com/blog/${post.slug}"
-- seo.ogType: "article"
-- seo.author: post.author
-- seo.keywords: post.keywords
-- seo.robots: "index, follow"
-- seo.structuredData: BlogPosting schema with headline, description, datePublished, author (Person), publisher (Organization), url
-- bodyClass: "page-blog-post"
--->
 
 # TL;DR Is a Feature, Not a Product
 
