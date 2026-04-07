@@ -49,11 +49,10 @@ describe("blog posts", () => {
 
 describe("findPostBySlug", () => {
 	it("should return a post for a known slug", () => {
-		const post = findPostBySlug("alternative-to-pocket");
+		const firstPost = getAllPosts()[0];
+		const post = findPostBySlug(firstPost.slug);
 		expect(post).toBeDefined();
-		expect(post?.title).toBe(
-			"An Alternative to Pocket That Won't Shut Down",
-		);
+		expect(post?.title).toBe(firstPost.title);
 	});
 
 	it("should return undefined for an unknown slug", () => {

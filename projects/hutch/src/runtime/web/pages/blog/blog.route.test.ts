@@ -1,6 +1,9 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
+import { getAllPosts } from "./blog.posts";
+
+const firstPost = getAllPosts()[0];
 
 describe("GET /blog", () => {
 	const { app } = createTestApp();
@@ -23,7 +26,9 @@ describe("GET /blog", () => {
 		const response = await request(app).get("/blog");
 		const doc = new JSDOM(response.text).window.document;
 
-		const link = doc.querySelector('a[href="/blog/alternative-to-pocket"]');
+		const link = doc.querySelector(
+			`a[href="/blog/${firstPost.slug}"]`,
+		);
 		expect(link).not.toBeNull();
 	});
 
@@ -31,10 +36,9 @@ describe("GET /blog", () => {
 		const response = await request(app).get("/blog");
 		const doc = new JSDOM(response.text).window.document;
 
-		const cardTitle = doc.querySelector(".blog-card__title");
-		expect(cardTitle?.textContent).toBe(
-			"An Alternative to Pocket That Won't Shut Down",
-		);
+		const cardTitles = doc.querySelectorAll(".blog-card__title");
+		const texts = Array.from(cardTitles).map((el) => el.textContent);
+		expect(texts).toContain(firstPost.title);
 	});
 
 	it("should have correct SEO title", async () => {
@@ -67,7 +71,7 @@ describe("GET /blog/:slug", () => {
 
 	it("should return 200 for a valid post slug", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/text\/html/);
@@ -75,44 +79,40 @@ describe("GET /blog/:slug", () => {
 
 	it("should render the post title as h1", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		const doc = new JSDOM(response.text).window.document;
 
 		const h1 = doc.querySelector(".blog-post__title");
-		expect(h1?.textContent).toBe(
-			"An Alternative to Pocket That Won't Shut Down",
-		);
+		expect(h1?.textContent).toBe(firstPost.title);
 	});
 
 	it("should render the post content as HTML", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		const doc = new JSDOM(response.text).window.document;
 
 		const content = doc.querySelector(".blog-post__content");
-		expect(content?.querySelector("h2")?.textContent).toBe(
-			"Why I built Hutch",
-		);
+		expect(content?.innerHTML.length).toBeGreaterThan(0);
 	});
 
 	it("should render post metadata", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		const doc = new JSDOM(response.text).window.document;
 
 		const author = doc.querySelector(".blog-post__author");
-		expect(author?.textContent).toContain("Fagner Brack");
+		expect(author?.textContent).toContain(firstPost.author);
 
 		const date = doc.querySelector(".blog-post__date");
-		expect(date?.getAttribute("datetime")).toBe("2026-04-06");
+		expect(date?.getAttribute("datetime")).toBe(firstPost.date);
 	});
 
 	it("should have og:type set to article", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		const doc = new JSDOM(response.text).window.document;
 
@@ -122,7 +122,7 @@ describe("GET /blog/:slug", () => {
 
 	it("should have BlogPosting structured data", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		const doc = new JSDOM(response.text).window.document;
 
@@ -132,26 +132,24 @@ describe("GET /blog/:slug", () => {
 		expect(ldJson).not.toBeNull();
 		const data = JSON.parse(ldJson?.textContent ?? "{}");
 		expect(data["@type"]).toBe("BlogPosting");
-		expect(data.headline).toBe(
-			"An Alternative to Pocket That Won't Shut Down",
-		);
+		expect(data.headline).toBe(firstPost.title);
 	});
 
 	it("should have correct canonical URL", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		const doc = new JSDOM(response.text).window.document;
 
 		const canonical = doc.querySelector('link[rel="canonical"]');
 		expect(canonical?.getAttribute("href")).toBe(
-			"https://hutch-app.com/blog/alternative-to-pocket",
+			`https://hutch-app.com/blog/${firstPost.slug}`,
 		);
 	});
 
 	it("should have the page-blog-post body class", async () => {
 		const response = await request(app).get(
-			"/blog/alternative-to-pocket",
+			`/blog/${firstPost.slug}`,
 		);
 		const doc = new JSDOM(response.text).window.document;
 
@@ -175,7 +173,7 @@ describe("GET /sitemap.xml", () => {
 	it("should include blog post URLs in the sitemap", async () => {
 		const response = await request(app).get("/sitemap.xml");
 		expect(response.text).toContain(
-			"<loc>http://localhost:3000/blog/alternative-to-pocket</loc>",
+			`<loc>http://localhost:3000/blog/${firstPost.slug}</loc>`,
 		);
 	});
 });

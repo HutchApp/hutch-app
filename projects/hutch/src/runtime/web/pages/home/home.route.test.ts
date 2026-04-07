@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
+import { getAllSlugs } from "../blog/blog.posts";
 
 describe("GET /", () => {
 	const { app } = createTestApp();
@@ -306,6 +307,7 @@ describe("GET /sitemap.xml", () => {
 		expect(response.headers["content-type"]).toMatch(/application\/xml/);
 
 		const urls = Array.from(response.text.matchAll(/<loc>([^<]+)<\/loc>/g)).map((m) => m[1]);
+		const blogPostUrls = getAllSlugs().map((slug) => `http://localhost:3000/blog/${slug}`);
 		expect(urls).toEqual([
 			"http://localhost:3000/",
 			"http://localhost:3000/blog",
@@ -314,7 +316,7 @@ describe("GET /sitemap.xml", () => {
 			"http://localhost:3000/signup",
 			"http://localhost:3000/privacy",
 			"http://localhost:3000/terms",
-			"http://localhost:3000/blog/alternative-to-pocket",
+			...blogPostUrls,
 		]);
 	});
 });
