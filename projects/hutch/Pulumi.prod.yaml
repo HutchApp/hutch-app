@@ -7,10 +7,11 @@ config:
   hutch:domains:
     - readplace.com
   hutch:redirectDomains:
+    - hutch-app.com
     - read.place
     - savearticles.app
     - savearticle.app
-  hutch:redirectTarget: hutch-app.com
+  hutch:redirectTarget: readplace.com
   hutch:deletionProtection: true
   hutch:staticDomains:
     - static.readplace.com
