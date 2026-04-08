@@ -1,10 +1,10 @@
 ---
 title: "Readplace vs Readwise Reader: Which Read-It-Later App Is Right for You?"
 description: "A fair look at two read-it-later apps with AI. Where Readwise wins, where Readplace wins, and how to pick the right one for you."
-slug: "hutch-vs-readwise-reader"
+slug: "hutch-vs-readwise-reader" # preserving old slug to avoid breaking backlinks and SEO
 date: "2026-04-06"
 author: "Fayner Brack"
-keywords: "hutch vs readwise, read it later app, readwise alternative, read it later AI"
+keywords: "readplace vs readwise, read it later app, readwise alternative, read it later AI"
 ---
 
 # Readplace vs Readwise Reader: Which Read-It-Later App Is Right for You?

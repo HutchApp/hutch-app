@@ -1,10 +1,10 @@
 ---
 title: "Readplace vs Karakeep: Hosted vs Self-Hosted Read-It-Later"
 description: "A fair comparison of two developer-focused read-it-later tools, one self-hosted and one managed, and the tradeoffs each makes."
-slug: "hutch-vs-karakeep-hosted-vs-self-hosted-read-it-later"
+slug: "hutch-vs-karakeep-hosted-vs-self-hosted-read-it-later" # preserving old slug to avoid breaking backlinks and SEO
 date: "2026-04-06"
 author: "Fayner Brack"
-keywords: "karakeep, hoarder, hutch, read it later, self-hosted, pocket alternative"
+keywords: "karakeep, hoarder, readplace, read it later, self-hosted, pocket alternative"
 ---
 
 Pocket is dying. Omnivore sold to ElevenLabs and shut down overnight. If you're a developer looking for a read-it-later tool you control, two names keep coming up: **Karakeep** (formerly Hoarder) and **Readplace**.

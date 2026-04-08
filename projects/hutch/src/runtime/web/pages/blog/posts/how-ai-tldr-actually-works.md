@@ -4,7 +4,7 @@ description: "Readplace uses AI to generate short article summaries for triage, 
 slug: "how-ai-tldr-actually-works"
 date: "2026-04-06"
 author: "Fayner Brack"
-keywords: "ai summary, read it later, article tl;dr, deepseek, ai slop, hutch app"
+keywords: "ai summary, read it later, article tl;dr, deepseek, ai slop, readplace"
 ---
 
 The word "slop" exists for a reason. Most AI-generated content is garbage. LinkedIn posts read like they came from a tube. "Key takeaways" listicles flatten every nuance into five bullets nobody asked for.

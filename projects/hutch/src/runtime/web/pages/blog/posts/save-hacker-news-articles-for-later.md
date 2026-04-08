@@ -4,7 +4,7 @@ description: "You open 15 tabs from the HN front page and read 3. The rest haunt
 slug: "save-hacker-news-articles-for-later"
 date: "2026-04-07"
 author: "Fayner Brack"
-keywords: "hacker news, save articles, read it later, hn reader, hutch"
+keywords: "hacker news, save articles, read it later, hn reader, readplace"
 ---
 
 It's 8am. Coffee in hand. You open news.ycombinator.com. Fifteen minutes later you have 12 tabs open. A deep dive into SQLite internals. Someone's war story about migrating off Kubernetes. A Show HN doing something clever with WebAssembly. A comment thread better than the article it's attached to.

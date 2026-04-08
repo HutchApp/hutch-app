@@ -1,10 +1,10 @@
 ---
 title: "Readplace vs Instapaper: Two Different Approaches to Read-It-Later"
 description: "A fair comparison of two read-it-later apps that took different paths after Pocket shut down. One is familiar and stable. The other bets on AI and active development."
-slug: "hutch-vs-instapaper"
+slug: "hutch-vs-instapaper" # preserving old slug to avoid breaking backlinks and SEO
 date: "2026-04-07"
 author: "Fayner Brack"
-keywords: "instapaper alternative, read it later, hutch vs instapaper, pocket replacement, AI summaries"
+keywords: "instapaper alternative, read it later, readplace vs instapaper, pocket replacement, AI summaries"
 ---
 
 # Readplace vs Instapaper: Two Different Approaches to Read-It-Later
