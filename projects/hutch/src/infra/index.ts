@@ -3,6 +3,7 @@ import * as aws from "@pulumi/aws";
 import assert from "node:assert";
 import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus } from "@packages/hutch-infra-components/infra";
 import { DomainRegistration } from "./domain-registration";
+import { DomainRedirect } from "./domain-redirect";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
 import { getEnv, requireEnv } from "../runtime/require-env";
@@ -10,6 +11,8 @@ import { getEnv, requireEnv } from "../runtime/require-env";
 const config = new pulumi.Config();
 const stage = config.require("stage");
 const domains = config.getObject<string[]>("domains") ?? [];
+const redirectDomains = config.getObject<string[]>("redirectDomains") ?? [];
+const redirectTarget = config.get("redirectTarget") ?? "";
 const deletionProtection = config.requireBoolean("deletionProtection");
 const staticDomains = config.requireObject<string[]>("staticDomains");
 assert(staticDomains.length > 0, "staticDomains must have at least one entry");
@@ -30,6 +33,11 @@ const storage = new HutchStorage("hutch", {
 });
 
 const domainRegistration = new DomainRegistration("hutch-domain", { domains });
+
+new DomainRedirect("hutch-redirect", {
+	domains: redirectDomains,
+	target: redirectTarget,
+});
 
 const staticAssets = new HutchStaticAssets("hutch-static", {
 	bucketName: staticBucketName,

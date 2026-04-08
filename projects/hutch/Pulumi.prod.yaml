@@ -6,6 +6,11 @@ config:
   hutch:platformStack: organization/platform/prod
   hutch:domains:
     - readplace.com
+  hutch:redirectDomains:
+    - read.place
+    - savearticles.app
+    - savearticle.app
+  hutch:redirectTarget: hutch-app.com
   hutch:deletionProtection: true
   hutch:staticDomains:
     - static.readplace.com
