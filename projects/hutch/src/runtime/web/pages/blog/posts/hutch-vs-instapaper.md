@@ -58,7 +58,7 @@ The other side of that trade-off: Hutch ships new features every week. It's a pr
 | **Mobile apps** | iOS and Android | Browser-based (no native apps) |
 | **Browser extension** | Yes | Yes (Firefox, Chrome) |
 | **Free tier** | Yes | Founding members only (first 100) |
-| **Paid price** | US$5.99/mo or US$59.99/yr | $3.99/mo |
+| **Paid price** | $5.99/mo or $59.99/yr | $3.99/mo |
 | **E-reader integration** | Kobo (built-in) | No |
 | **Pocket import** | Yes | Yes |
 | **Data hosting** | United States | Australia |

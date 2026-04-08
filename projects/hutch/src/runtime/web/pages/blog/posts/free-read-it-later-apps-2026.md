@@ -13,13 +13,13 @@ You want a free read-it-later app. You have options. But "free" means different 
 
 ### Instapaper (Free Tier)
 
-Instapaper's free tier covers the basics. Save articles. Read them later. Sync across devices. The premium tier adds full-text search and text-to-speech for US$2.99/month.
+Instapaper's free tier covers the basics. Save articles. Read them later. Sync across devices. The premium tier adds full-text search and text-to-speech for $2.99/month.
 
 Instapaper has been around since 2008. It changed hands from Betaworks to Pinterest to Instant Paper Inc. It has survived longer than most apps in this category. Whether it will still be around in five years, nobody knows.
 
 ### Raindrop.io (Free Tier)
 
-Raindrop is a bookmarking tool first, read-it-later app second. The free tier gives you unlimited bookmarks, basic collections, and a decent web clipper. The Pro tier at US$2.49/month adds permanent copies of saved pages and nested collections.
+Raindrop is a bookmarking tool first, read-it-later app second. The free tier gives you unlimited bookmarks, basic collections, and a decent web clipper. The Pro tier at $2.49/month adds permanent copies of saved pages and nested collections.
 
 If your needs lean more toward "organise links" than "read long articles distraction-free," Raindrop's free tier is solid.
 

@@ -90,7 +90,7 @@ function toArticleActions(
 	if (article.status !== "unread") {
 		actions.push({
 			method: "POST",
-			url: `/queue/${article.id}/status${returnQuery}`,
+			url: `/queue/${article.id}/stat${returnQuery}`,
 			text: "Unread",
 			title: "Mark as unread",
 			testAction: "mark-unread",

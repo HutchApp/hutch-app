@@ -43,7 +43,7 @@ import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
-import { getAllSlugs } from "./web/pages/blog/blog.posts";
+import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { HomePage } from "./web/pages/home";
@@ -51,7 +51,7 @@ import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
 import { NotFoundPage } from "./web/pages/not-found";
-import { requireEnv } from "./require-env";
+import { requireEnv, getEnv } from "./require-env";
 import "./web/session.types";
 
 export const PORT = requireEnv("PORT", { defaultValue: "3000" });
@@ -102,6 +102,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
 
 const LLMS_TXT = readFileSync(join(__dirname, "llms.txt"), "utf-8");
 const LLMS_FULL_TXT = readFileSync(join(__dirname, "llms-full.txt"), "utf-8");
+const INDEXNOW_KEY = getEnv("INDEXNOW_KEY");
 
 export function createApp(dependencies: AppDependencies): Express {
 	const { appOrigin, staticBaseUrl, getSessionUserId, countUsers, ...deps } = dependencies;
@@ -158,26 +159,45 @@ export function createApp(dependencies: AppDependencies): Express {
 		res.type("text/plain").send(LLMS_FULL_TXT);
 	});
 
+	if (INDEXNOW_KEY) {
+		app.get(`/${INDEXNOW_KEY}.txt`, (_req: Request, res: Response) => {
+			res.type("text/plain").send(INDEXNOW_KEY);
+		});
+	}
+
 	app.get("/sitemap.xml", (_req: Request, res: Response) => {
-		const pages = [
-			{ loc: "/", priority: "1.0", changefreq: "weekly" },
-			{ loc: "/blog", priority: "0.8", changefreq: "weekly" },
-			{ loc: "/install", priority: "0.8", changefreq: "monthly" },
-			{ loc: "/login", priority: "0.5", changefreq: "yearly" },
-			{ loc: "/signup", priority: "0.5", changefreq: "yearly" },
-			{ loc: "/privacy", priority: "0.3", changefreq: "yearly" },
-			{ loc: "/terms", priority: "0.3", changefreq: "yearly" },
-			{ loc: "/llms.txt", priority: "0.3", changefreq: "monthly" },
-			{ loc: "/llms-full.txt", priority: "0.3", changefreq: "monthly" },
+		const blogPriorityMap: Record<string, string> = {
+			"best-read-it-later-apps-2026": "0.9",
+			"alternative-to-pocket": "0.9",
+			"omnivore-alternative": "0.9",
+			"hutch-vs-readwise-reader": "0.8",
+			"hutch-vs-instapaper": "0.8",
+		};
+
+		const pages: { loc: string; priority: string; changefreq: string; lastmod: string }[] = [
+			{ loc: "/", priority: "1.0", changefreq: "weekly", lastmod: "2026-04-08" },
+			{ loc: "/blog", priority: "0.8", changefreq: "weekly", lastmod: "2026-04-07" },
+			{ loc: "/install", priority: "0.8", changefreq: "monthly", lastmod: "2026-03-01" },
+			{ loc: "/login", priority: "0.5", changefreq: "yearly", lastmod: "2026-03-01" },
+			{ loc: "/signup", priority: "0.5", changefreq: "yearly", lastmod: "2026-03-01" },
+			{ loc: "/privacy", priority: "0.3", changefreq: "yearly", lastmod: "2026-03-01" },
+			{ loc: "/terms", priority: "0.3", changefreq: "yearly", lastmod: "2026-03-01" },
+			{ loc: "/llms.txt", priority: "0.3", changefreq: "monthly", lastmod: "2026-04-08" },
+			{ loc: "/llms-full.txt", priority: "0.3", changefreq: "monthly", lastmod: "2026-04-08" },
 		];
 
-		for (const slug of getAllSlugs()) {
-			pages.push({ loc: `/blog/${slug}`, priority: "0.7", changefreq: "monthly" });
+		for (const post of getAllPostMetadata()) {
+			pages.push({
+				loc: `/blog/${post.slug}`,
+				priority: blogPriorityMap[post.slug] ?? "0.7",
+				changefreq: "weekly",
+				lastmod: post.date,
+			});
 		}
 		const urls = pages
 			.map(
 				(p) =>
-					`  <url>\n    <loc>${dependencies.baseUrl}${p.loc}</loc>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>`,
+					`  <url>\n    <loc>${dependencies.baseUrl}${p.loc}</loc>\n    <lastmod>${p.lastmod}</lastmod>\n    <changefreq>${p.changefreq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>`,
 			)
 			.join("\n");
 		res.type("application/xml").send(

@@ -282,7 +282,7 @@
 }
 
 .home-comparison__container {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -554,7 +554,7 @@
   }
   .comparison-table {
     font-size: 0.8125rem;
-    min-width: 500px;
+    min-width: 700px;
   }
   .comparison-table th,
   .comparison-table td {
