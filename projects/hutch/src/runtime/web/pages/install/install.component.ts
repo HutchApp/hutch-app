@@ -32,10 +32,10 @@ export async function fetchChromeDownloadUrl(): Promise<string | null> {
 export function InstallPage(params: { firefox: string | null; chrome: string | null; browser: "firefox" | "chrome" }): Component {
 	return Base({
 		seo: {
-			title: "Install Hutch Browser Extension",
+			title: "Install Readplace Browser Extension",
 			description:
-				"Where reading still matters. Download the Hutch browser extension for Firefox or Chrome and save articles with one click.",
-			canonicalUrl: "https://hutch-app.com/install",
+				"Where reading still matters. Download the Readplace browser extension for Firefox or Chrome and save articles with one click.",
+			canonicalUrl: "https://readplace.com/install",
 		},
 		styles: INSTALL_PAGE_STYLES,
 		bodyClass: "page-install",

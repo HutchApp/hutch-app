@@ -1,5 +1,5 @@
 module.exports = {
-  projectName: 'Hutch',
+  projectName: 'Readplace',
   phases: [
     {
       type: 'jest',

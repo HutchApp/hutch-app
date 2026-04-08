@@ -31,7 +31,7 @@ const COOKIE_OPTIONS = {
 	path: "/",
 };
 
-const EMAIL_FROM = "Hutch <hutch@hutch-app.com>";
+const EMAIL_FROM = "Readplace <hutch@hutch-app.com>";
 
 interface AuthDependencies {
 	createUser: CreateUser;
@@ -141,7 +141,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 					from: EMAIL_FROM,
 					to: email,
 					bcc: "hutch+account_verifications@hutch-app.com",
-					subject: "Verify your email — Hutch",
+					subject: "Verify your email — Readplace",
 					html,
 				});
 			})

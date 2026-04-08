@@ -1,6 +1,6 @@
 ---
 title: "Stop Copy-Pasting Articles into ChatGPT. There's a Better Way."
-description: "You copy articles into ChatGPT for summaries. It works, but it's slow, manual, and nothing gets saved. Hutch does it in one click."
+description: "You copy articles into ChatGPT for summaries. It works, but it's slow, manual, and nothing gets saved. Readplace does it in one click."
 slug: "stop-copy-pasting-articles-into-chatgpt"
 date: "2026-04-06"
 author: "Fayner Brack"
@@ -36,7 +36,7 @@ Seven steps. Two apps. Zero record of what you read.
 
 ## What if it took one click?
 
-Here's the same scenario with [Hutch](https://hutch-app.com/install):
+Here's the same scenario with [Readplace](https://readplace.com/install):
 
 1. Click the browser extension.
 
@@ -52,18 +52,18 @@ The difference is not just speed. It's whether your reading adds up to something
 
 With copy-paste, every article is disposable. You extract a summary and throw away the source. There's no trail. No library. No way to revisit what you read last month.
 
-With Hutch, every saved article becomes part of your personal archive. Summaries are there for a quick scan. Full articles are there when you want depth. Your reading list is a queue you can manage, not a pile of browser tabs about to crash.
+With Readplace, every saved article becomes part of your personal archive. Summaries are there for a quick scan. Full articles are there when you want depth. Your reading list is a queue you can manage, not a pile of browser tabs about to crash.
 
 ## Summaries are cached
 
-Hutch caches summaries by URL. If fifty people save the same article, it gets summarised once. Your summary is ready the moment you open the article. No loading spinner. No extra API call.
+Readplace caches summaries by URL. If fifty people save the same article, it gets summarised once. Your summary is ready the moment you open the article. No loading spinner. No extra API call.
 
 ## The point
 
 ChatGPT is a great tool. But using it as a manual article summariser is seven steps too many.
 
-Hutch does it in one.
+Readplace does it in one.
 
 Save the article. Get the summary. Keep both. Move on.
 
-[Try Hutch](https://hutch-app.com/install)
+[Try Readplace](https://readplace.com/install)

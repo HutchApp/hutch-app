@@ -1,6 +1,6 @@
-# Hutch — Brand & Design Guidelines
+# Readplace — Brand & Design Guidelines
 
-> Internal reference for anyone building Hutch — developers, designers, contributors.
+> Internal reference for anyone building Readplace — developers, designers, contributors.
 > Consult this before shipping UI, writing copy, or producing any public-facing asset.
 
 ---
@@ -9,9 +9,9 @@
 
 **Tagline:** Where reading still matters.
 
-**What Hutch is:** A read-it-later app that saves articles, blog posts, and web pages for later reading. Born from a personal reading system refined over 10 years.
+**What Readplace is:** A read-it-later app that saves articles, blog posts, and web pages for later reading. Born from a personal reading system refined over 10 years.
 
-**What Hutch feels like:** A well-made tool built by someone who uses it every day. A private reading nook in a home library — warm wood, good lighting, no distractions. Not a co-working space. Not a productivity dashboard. A quiet place that's yours.
+**What Readplace feels like:** A well-made tool built by someone who uses it every day. A private reading nook in a home library — warm wood, good lighting, no distractions. Not a co-working space. Not a productivity dashboard. A quiet place that's yours.
 
 ### Brand Attributes
 
@@ -233,7 +233,7 @@ Use a **4px base unit** with the following standard increments:
 ### Writing Principles
 
 - **Talk like a person.** Imagine explaining the feature to a friend who's a developer. No marketing speak, no superlatives, no corporate filler.
-- **Use "I" not "we."** Hutch is solo-built. "I" is more honest and personal.
+- **Use "I" not "we."** Readplace is solo-built. "I" is more honest and personal.
 - **Be specific over vague.** "Your article is saved" beats "Action completed." "Import your 847 Pocket articles" beats "Migrate your data."
 - **Modest language.** Never say "best", "revolutionary", "game-changing", "reimagined". The product speaks for itself.
 - **Acknowledge limitations honestly.** "This feature isn't ready yet" is always better than hiding it or over-promising.
@@ -251,7 +251,7 @@ Use a **4px base unit** with the following standard increments:
 ### Tone Rules
 
 - **No emojis in UI.** Emojis are fine in social posts or community replies, never in the product interface.
-- **No exclamation marks in confirmations or status messages.** Save those for moments that actually warrant excitement (e.g., "Import complete — 1,247 articles are now in Hutch!").
+- **No exclamation marks in confirmations or status messages.** Save those for moments that actually warrant excitement (e.g., "Import complete — 1,247 articles are now in Readplace!").
 - **No self-deprecating humour in error states.** Errors are frustrating. Be clear and helpful, not cute.
 
 ---
@@ -278,7 +278,7 @@ Use a **4px base unit** with the following standard increments:
 - Touch targets minimum 44×44px.
 - The save flow should be possible via share sheet / system share — no need to open the app.
 - Offline reading is a first-class feature. Design for it from day one.
-- Respect platform conventions (iOS Human Interface Guidelines, Material Design) while maintaining Hutch's visual identity. Don't fight the platform.
+- Respect platform conventions (iOS Human Interface Guidelines, Material Design) while maintaining Readplace's visual identity. Don't fight the platform.
 
 ### CLI (Future)
 
@@ -292,7 +292,7 @@ Use a **4px base unit** with the following standard increments:
 - HTML emails should use the warm amber palette.
 - Keep emails short. One purpose per email, one CTA.
 - Always include a plain-text version.
-- Sender name: "Fayner from Hutch" (personal, not corporate).
+- Sender name: "Fayner from Readplace" (personal, not corporate).
 
 ---
 
@@ -313,7 +313,7 @@ Use a **4px base unit** with the following standard increments:
 
 - Use pure black, neon colours, or heavy gradients.
 - Add emojis, exclamation marks, or playful copy to the product UI.
-- Use "we" — Hutch is solo-built; use "I" or speak from the product's perspective.
+- Use "we" — Readplace is solo-built; use "I" or speak from the product's perspective.
 - Clutter the reading surface with chrome, toolbars, or feature promotions.
 - Copy any competitor's visual language (especially Pocket's red or Readwise's yellow).
 - Sacrifice legibility for aesthetics.

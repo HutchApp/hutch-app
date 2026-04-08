@@ -11,7 +11,7 @@ const storage = new HutchStorage("hutch", {
     deletionProtection: isProduction,
 });
 const domainRegistration = isProduction
-    ? new DomainRegistration("hutch-domain", { domains: ["hutch-app.com"] })
+    ? new DomainRegistration("hutch-domain", { domains: ["readplace.com"] })
     : undefined;
 
 // GOOD - Config-driven, no environment conditionals
@@ -27,7 +27,7 @@ Each environment YAML declares its own values:
 # Pulumi.prod.yaml
 config:
   hutch:domains:
-    - hutch-app.com
+    - readplace.com
   hutch:deletionProtection: true
 
 # Pulumi.staging.yaml

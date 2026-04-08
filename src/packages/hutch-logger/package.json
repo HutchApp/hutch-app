@@ -1,7 +1,7 @@
 {
   "name": "@packages/hutch-logger",
   "version": "1.0.0",
-  "description": "Shared logging abstraction for Hutch projects",
+  "description": "Shared logging abstraction for Readplace projects",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "private": true,

@@ -64,7 +64,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 const api = new aws.apigatewayv2.Api("hutch-api-gateway", {
 	name: "hutch-api-gateway",
 	protocolType: "HTTP",
-	description: `Hutch API Gateway (${stage})`,
+	description: `Readplace API Gateway (${stage})`,
 });
 
 const appOrigin: pulumi.Input<string> = domainRegistration.domains.length > 0

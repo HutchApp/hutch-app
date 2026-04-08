@@ -11,10 +11,10 @@ const BLOG_INDEX_TEMPLATE = readFileSync(join(__dirname, "blog-index.template.ht
 export function BlogIndexPage(params: { posts: BlogPost[] }): Component {
 	return Base({
 		seo: {
-			title: "Blog — Hutch",
+			title: "Blog — Readplace",
 			description:
-				"Articles about reading, building software, and the tools behind Hutch.",
-			canonicalUrl: "https://hutch-app.com/blog",
+				"Articles about reading, building software, and the tools behind Readplace.",
+			canonicalUrl: "https://readplace.com/blog",
 			ogType: "website",
 		},
 		styles: BLOG_STYLES,

@@ -10,10 +10,10 @@ const PRIVACY_TEMPLATE = readFileSync(join(__dirname, "privacy.template.html"), 
 export function PrivacyPage(): Component {
 	return Base({
 		seo: {
-			title: "Privacy Policy — Hutch",
+			title: "Privacy Policy — Readplace",
 			description:
-				"How Hutch handles your data. I collect only what's necessary to run the service and never sell your information.",
-			canonicalUrl: "https://hutch-app.com/privacy",
+				"How Readplace handles your data. I collect only what's necessary to run the service and never sell your information.",
+			canonicalUrl: "https://readplace.com/privacy",
 			robots: "noindex, follow",
 		},
 		styles: LEGAL_PAGE_STYLES,

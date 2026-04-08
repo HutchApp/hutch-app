@@ -57,11 +57,11 @@ Does that 25-minute article on event sourcing cover ground you already know? A t
 
 Think of it as `head -20` for articles. Just enough to decide if you want to `cat` the whole thing.
 
-## Why I built Hutch for this
+## Why I built Readplace for this
 
-I built my reading system over a decade of processing thousands of articles from r/programming, r/webdev, and HN. The pattern was always the same: save fast, read later, triage hard, keep what matters. Hutch is that system turned into a product.
+I built my reading system over a decade of processing thousands of articles from r/programming, r/webdev, and HN. The pattern was always the same: save fast, read later, triage hard, keep what matters. Readplace is that system turned into a product.
 
-The Hutch browser extension works on news.ycombinator.com. Save any article or comment thread directly from the page. One click during your morning scan, and it lands in your queue for when you have time to read.
+The Readplace browser extension works on news.ycombinator.com. Save any article or comment thread directly from the page. One click during your morning scan, and it lands in your queue for when you have time to read.
 
 No tab guilt. No lost links. No "I read something about this last week, where was it?" Just a clean list of things worth reading, ready when you are.
 

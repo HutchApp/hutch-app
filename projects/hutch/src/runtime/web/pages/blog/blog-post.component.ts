@@ -13,9 +13,9 @@ export function BlogPostPage(params: { post: BlogPost }): Component {
 
 	return Base({
 		seo: {
-			title: `${post.title} — Hutch Blog`,
+			title: `${post.title} — Readplace Blog`,
 			description: post.description,
-			canonicalUrl: `https://hutch-app.com/blog/${post.slug}`,
+			canonicalUrl: `https://readplace.com/blog/${post.slug}`,
 			ogType: "article",
 			author: post.author,
 			keywords: post.keywords,
@@ -32,15 +32,15 @@ export function BlogPostPage(params: { post: BlogPost }): Component {
 						name: post.author,
 						url: "https://www.linkedin.com/in/fagnerbrack/",
 					},
-					url: `https://hutch-app.com/blog/${post.slug}`,
+					url: `https://readplace.com/blog/${post.slug}`,
 					mainEntityOfPage: {
 						"@type": "WebPage",
-						"@id": `https://hutch-app.com/blog/${post.slug}`,
+						"@id": `https://readplace.com/blog/${post.slug}`,
 					},
 					publisher: {
 						"@type": "Organization",
-						name: "Hutch",
-						url: "https://hutch-app.com",
+						name: "Readplace",
+						url: "https://readplace.com",
 					},
 				},
 			],

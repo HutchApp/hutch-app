@@ -1,11 +1,11 @@
 {
   "name": "firefox-extension",
   "version": "1.0.42",
-  "description": "Hutch — Where reading still matters",
+  "description": "Readplace — Where reading still matters",
   "main": "src/infra/index.ts",
   "private": true,
   "scripts": {
-    "compile": "tsc && HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js",
+    "compile": "tsc && HUTCH_SERVER_URL=https://readplace.com node scripts/build-extension.js",
     "compile-dev": "tsc && HUTCH_SERVER_URL=http://127.0.0.1:3000 node scripts/build-extension.js",
     "sign": "web-ext sign --channel=unlisted --source-dir dist-extension-compiled --artifacts-dir /tmp/ext-sign-submit --upload-source-code /tmp/extension-source.zip --api-key=\"$AMO_JWT_ISSUER\" --api-secret=\"$AMO_JWT_SECRET\" --approval-timeout 0",
     "check-unused-css": "node scripts/check-unused-css.js",
@@ -18,7 +18,7 @@
     "post-deploy": "echo 'No post-deploy steps'",
     "check-infra": "PULUMI_CONFIG_PASSPHRASE='' pulumi preview --stack \"${PULUMI_STACK:?PULUMI_STACK is not set}\"",
     "check": "nx run firefox-extension:check",
-    "ext:run": "HUTCH_SERVER_URL=https://hutch-app.com node scripts/build-extension.js && web-ext run --source-dir dist-extension-compiled"
+    "ext:run": "HUTCH_SERVER_URL=https://readplace.com node scripts/build-extension.js && web-ext run --source-dir dist-extension-compiled"
   },
   "dependencies": {
     "browser-extension-core": "workspace:*",

@@ -100,7 +100,7 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 
 	return {
 		createBuildPlan(input: BuildPlanInput) {
-			assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)");
+			assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://readplace.com)");
 			const serverUrl = input.serverUrl;
 
 			const planData = createPlanData({

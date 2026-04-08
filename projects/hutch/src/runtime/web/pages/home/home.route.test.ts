@@ -91,7 +91,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const cta = doc.querySelector('[data-test-cta="view-github"]');
-		expect(cta?.getAttribute("href")).toBe("https://github.com/HutchApp/hutch-app");
+		expect(cta?.getAttribute("href")).toBe("https://github.com/Readplace/readplace");
 		expect(cta?.textContent).toBe("View on GitHub");
 	});
 
@@ -183,7 +183,7 @@ describe("GET /", () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.title).toContain("Hutch");
+		expect(doc.title).toContain("Readplace");
 		expect(doc.title).toContain("Read-It-Later App");
 		const description = doc.querySelector('meta[name="description"]');
 		expect(description?.getAttribute("content")).toContain("read-it-later");
@@ -205,7 +205,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const ogImageAlt = doc.querySelector('meta[property="og:image:alt"]');
-		expect(ogImageAlt?.getAttribute("content")).toContain("Hutch");
+		expect(ogImageAlt?.getAttribute("content")).toContain("Readplace");
 	});
 
 	it("should not include twitter:site when no handle is configured", async () => {
@@ -236,7 +236,7 @@ describe("GET /", () => {
 		const faq = schemas.find((s: { "@type": string }) => s["@type"] === "FAQPage");
 
 		expect(faq.mainEntity.length).toBe(4);
-		expect(faq.mainEntity[0].name).toBe("What is Hutch?");
+		expect(faq.mainEntity[0].name).toBe("What is Readplace?");
 	});
 
 	it("should render section landmarks with aria-labels", async () => {
@@ -305,7 +305,7 @@ describe("GET /llms.txt", () => {
 		const response = await request(app).get("/llms.txt");
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/text\/plain/);
-		expect(response.text).toContain("# Hutch");
+		expect(response.text).toContain("# Readplace");
 		expect(response.text).toContain("read-it-later");
 		expect(response.text).toContain("## Pages");
 	});
@@ -318,7 +318,7 @@ describe("GET /llms-full.txt", () => {
 		const response = await request(app).get("/llms-full.txt");
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/text\/plain/);
-		expect(response.text).toContain("# Hutch");
+		expect(response.text).toContain("# Readplace");
 		expect(response.text).toContain("## Features");
 		expect(response.text).toContain("## About");
 		expect(response.text).toContain("## Privacy");

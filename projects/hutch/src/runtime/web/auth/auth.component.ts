@@ -53,8 +53,8 @@ export function LoginPage(data?: AuthFormData): Component {
 
 	return Base({
 		seo: {
-			title: "Sign in — Hutch",
-			description: "Sign in to your Hutch read-it-later account.",
+			title: "Sign in — Readplace",
+			description: "Sign in to your Readplace read-it-later account.",
 			canonicalUrl: "/login",
 		},
 		styles: AUTH_STYLES,
@@ -68,8 +68,8 @@ export function VerifyEmailPage(data: { success: boolean; error?: string }): Com
 
 	return Base({
 		seo: {
-			title: "Verify email — Hutch",
-			description: "Email verification for your Hutch account.",
+			title: "Verify email — Readplace",
+			description: "Email verification for your Readplace account.",
 			canonicalUrl: "/verify-email",
 			robots: "noindex, nofollow",
 		},
@@ -94,9 +94,9 @@ export function SignupPage(data?: AuthFormData): Component {
 
 	return Base({
 		seo: {
-			title: "Sign up — Hutch",
+			title: "Sign up — Readplace",
 			description:
-				"Create a free Hutch account and start saving articles to read later.",
+				"Create a free Readplace account and start saving articles to read later.",
 			canonicalUrl: "/signup",
 		},
 		styles: AUTH_STYLES,
@@ -118,8 +118,8 @@ export function ForgotPasswordPage(data?: { email?: string; errors?: FieldError[
 
 	return Base({
 		seo: {
-			title: "Forgot password — Hutch",
-			description: "Reset your Hutch account password.",
+			title: "Forgot password — Readplace",
+			description: "Reset your Readplace account password.",
 			canonicalUrl: "/forgot-password",
 			robots: "noindex, nofollow",
 		},
@@ -143,8 +143,8 @@ export function ResetPasswordPage(data: { token?: string; errors?: FieldError[];
 
 	return Base({
 		seo: {
-			title: "Reset password — Hutch",
-			description: "Set a new password for your Hutch account.",
+			title: "Reset password — Readplace",
+			description: "Set a new password for your Readplace account.",
 			canonicalUrl: "/reset-password",
 			robots: "noindex, nofollow",
 		},

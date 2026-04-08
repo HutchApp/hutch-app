@@ -242,7 +242,7 @@ describe("playwright phase resolution", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -264,7 +264,7 @@ describe("playwright phase resolution", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -286,7 +286,7 @@ describe("playwright phase resolution", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -308,7 +308,7 @@ describe("playwright phase resolution", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -330,7 +330,7 @@ describe("playwright phase resolution", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -352,7 +352,7 @@ describe("playwright phase resolution", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -374,7 +374,7 @@ describe("playwright phase resolution", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -472,7 +472,7 @@ describe("runAllPhases execution", () => {
 		const runner = createRunner(deps);
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -506,7 +506,7 @@ describe("runAllPhases execution", () => {
 		const runner = createRunner(deps);
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -553,7 +553,7 @@ describe("runAllPhases execution", () => {
 		const runner = createRunner(deps);
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{
 						type: "playwright",
@@ -576,7 +576,7 @@ describe("runAllPhases execution", () => {
 		const runner = createRunner(deps);
 		const plan = runner.createTestPlan({
 			config: {
-				projectName: "Hutch",
+				projectName: "Readplace",
 				phases: [
 					{ type: "jest", name: "unit tests", testMatch: "**/dist/**/*.test.js", timeout: 10000 },
 					{ type: "jest", name: "integration tests", testMatch: "**/dist/**/*.integration.js", timeout: 30000, passWithNoTests: true },

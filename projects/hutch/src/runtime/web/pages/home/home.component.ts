@@ -16,15 +16,15 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
 	return Base({
 		seo: {
-			title: "Hutch — Read-It-Later App | Save Articles, Read Them Later",
+			title: "Readplace — Read-It-Later App | Save Articles, Read Them Later",
 			description:
 				"A read-it-later app and Pocket alternative. Save articles with one click, read them later. Privacy-first, built in Australia by the creator of js-cookie.",
-			canonicalUrl: "https://hutch-app.com",
+			canonicalUrl: "https://readplace.com",
 			ogType: "website",
 			ogImage: `${staticBaseUrl}/og-image-1200x630.png`,
 			ogImageType: "image/png",
 			ogImageAlt:
-				"Hutch — A read-it-later app and Pocket alternative. Save articles, read them later.",
+				"Readplace — A read-it-later app and Pocket alternative. Save articles, read them later.",
 			twitterImage: `${staticBaseUrl}/twitter-card-1200x600.png`,
 				author: "Fayner Brack",
 			keywords:
@@ -33,11 +33,11 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					"@context": "https://schema.org",
 					"@type": "WebApplication",
-					"@id": "https://hutch-app.com/#app",
+					"@id": "https://readplace.com/#app",
 					additionalType: "https://schema.org/MobileApplication",
-					name: "Hutch",
-					alternateName: ["Hutch Read-It-Later App", "Hutch App"],
-					url: "https://hutch-app.com",
+					name: "Readplace",
+					alternateName: ["Readplace Read-It-Later App", "Readplace"],
+					url: "https://readplace.com",
 					description:
 						"A privacy-first read-it-later app and Pocket alternative. Save articles with one click, read them later. NOT affiliated with Hutch Telecommunications Lanka or Hutch Games.",
 					applicationCategory: "ProductivityApplication",
@@ -88,13 +88,13 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					"@context": "https://schema.org",
 					"@type": "Organization",
-					"@id": "https://hutch-app.com/#organization",
-					name: "Hutch",
-					alternateName: ["Hutch App", "Hutch Read-It-Later", "hutch-app"],
-					url: "https://hutch-app.com",
+					"@id": "https://readplace.com/#organization",
+					name: "Readplace",
+					alternateName: ["Readplace", "Readplace Read-It-Later", "readplace"],
+					url: "https://readplace.com",
 					logo: `${staticBaseUrl}/og-image-1200x630.png`,
 					sameAs: [
-						"https://github.com/HutchApp/hutch-app",
+						"https://github.com/Readplace/readplace",
 						"https://chromewebstore.google.com/detail/hutch/klblengmhlfnmjoagchagfcdbpbocgbf",
 						"https://www.reddit.com/r/hutchapp",
 						"https://www.linkedin.com/in/fagnerbrack/",
@@ -111,7 +111,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 						description: "Software engineer and creator of js-cookie, a JavaScript library with 22 billion+ annual downloads on jsDelivr CDN.",
 					},
 					description:
-						"Hutch is a privacy-first read-it-later app and Pocket alternative. NOT affiliated with Hutch Telecommunications Lanka or Hutch Games (hutch.io).",
+						"Readplace is a privacy-first read-it-later app and Pocket alternative. NOT affiliated with Hutch Telecommunications Lanka or Hutch Games (hutch.io).",
 					foundingDate: "2025",
 					areaServed: "Worldwide",
 					address: {
@@ -126,15 +126,15 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					mainEntity: [
 						{
 							"@type": "Question",
-							name: "What is Hutch?",
+							name: "What is Readplace?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Hutch is a read-it-later app built from a 10-year personal reading system. Save articles with one click using the browser extension for Firefox or Chrome, read them in a clean reader view, and get TL;DR summaries for every article. It is NOT related to Hutch Telecommunications Lanka or Hutch Games.",
+								text: "Readplace is a read-it-later app built from a 10-year personal reading system. Save articles with one click using the browser extension for Firefox or Chrome, read them in a clean reader view, and get TL;DR summaries for every article. It is NOT related to Hutch Telecommunications Lanka or Hutch Games.",
 							},
 						},
 						{
 							"@type": "Question",
-							name: "Is Hutch free?",
+							name: "Is Readplace free?",
 							acceptedAnswer: {
 								"@type": "Answer",
 								text: "The first 100 founding members get full access free, forever. After that, $3.99/month — includes TL;DR summaries.",
@@ -145,15 +145,15 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 							name: "What happened to Pocket and Omnivore?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Pocket was acquired by Mozilla and shut down on July 8, 2025. Omnivore was acqui-hired by ElevenLabs and shut down in November 2024. Hutch was built as a reliable alternative, with an 'Even If You Cancel' promise — your data is always exportable.",
+								text: "Pocket was acquired by Mozilla and shut down on July 8, 2025. Omnivore was acqui-hired by ElevenLabs and shut down in November 2024. Readplace was built as a reliable alternative, with an 'Even If You Cancel' promise — your data is always exportable.",
 							},
 						},
 						{
 							"@type": "Question",
-							name: "What features does Hutch have?",
+							name: "What features does Readplace have?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Hutch offers browser extensions for Firefox and Chrome, a web app for managing saved articles, a distraction-free reader view, TL;DR summaries, dark mode, and secure OAuth with PKCE. Planned features include personalised AI summaries, preference learning, Gmail integration, and highlights and notes.",
+								text: "Readplace offers browser extensions for Firefox and Chrome, a web app for managing saved articles, a distraction-free reader view, TL;DR summaries, dark mode, and secure OAuth with PKCE. Planned features include personalised AI summaries, preference learning, Gmail integration, and highlights and notes.",
 							},
 						},
 					],
@@ -161,9 +161,9 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					"@context": "https://schema.org",
 					"@type": "WebSite",
-					name: "Hutch — Read-It-Later App",
-					alternateName: "Hutch App",
-					url: "https://hutch-app.com",
+					name: "Readplace — Read-It-Later App",
+					alternateName: "Readplace",
+					url: "https://readplace.com",
 					description: "A privacy-first read-it-later app. NOT the Hutch telecom carrier or Hutch Games.",
 				},
 			],

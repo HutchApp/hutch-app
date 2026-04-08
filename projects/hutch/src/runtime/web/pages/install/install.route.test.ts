@@ -79,7 +79,7 @@ describe("GET /install", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const firefoxPanel = doc.querySelector('[data-test-section="firefox"]');
-		expect(firefoxPanel?.querySelector('[data-test-cta="download-firefox"]')?.textContent).toBe("Install Hutch for Firefox");
+		expect(firefoxPanel?.querySelector('[data-test-cta="download-firefox"]')?.textContent).toBe("Install Readplace for Firefox");
 		expect(doc.querySelector('[data-test-section="chrome"]')).toBeNull();
 	});
 
@@ -88,7 +88,7 @@ describe("GET /install", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const chromePanel = doc.querySelector('[data-test-section="chrome"]');
-		expect(chromePanel?.querySelector('[data-test-cta="download-chrome"]')?.textContent).toBe("Install Hutch for Chrome");
+		expect(chromePanel?.querySelector('[data-test-cta="download-chrome"]')?.textContent).toBe("Install Readplace for Chrome");
 		expect(doc.querySelector('[data-test-section="firefox"]')).toBeNull();
 	});
 
@@ -110,7 +110,7 @@ describe("GET /install", () => {
 			'[data-test-cta="download-chrome"]',
 		);
 		expect(cta?.getAttribute("href")).toBe("https://chromewebstore.google.com/detail/hutch/klblengmhlfnmjoagchagfcdbpbocgbf");
-		expect(cta?.textContent).toBe("Install Hutch for Chrome");
+		expect(cta?.textContent).toBe("Install Readplace for Chrome");
 	});
 
 	it("should set appropriate SEO metadata", async () => {

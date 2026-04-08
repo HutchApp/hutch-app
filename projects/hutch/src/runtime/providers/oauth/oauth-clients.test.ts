@@ -5,7 +5,7 @@ describe("getClient", () => {
 		const client = getClient("hutch-firefox-extension");
 
 		expect(client).toBeDefined();
-		expect(client?.name).toBe("Hutch Firefox Extension");
+		expect(client?.name).toBe("Readplace Firefox Extension");
 		expect(client?.grants).toContain("authorization_code");
 		expect(client?.grants).toContain("refresh_token");
 	});
@@ -14,7 +14,7 @@ describe("getClient", () => {
 		const client = getClient("hutch-chrome-extension");
 
 		expect(client).toBeDefined();
-		expect(client?.name).toBe("Hutch Chrome Extension");
+		expect(client?.name).toBe("Readplace Chrome Extension");
 		expect(client?.grants).toContain("authorization_code");
 		expect(client?.grants).toContain("refresh_token");
 	});

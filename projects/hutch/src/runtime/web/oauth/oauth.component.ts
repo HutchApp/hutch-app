@@ -92,8 +92,8 @@ export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
 
 	return Base({
 		seo: {
-			title: `Authorize ${params.clientName} — Hutch`,
-			description: `${params.clientName} is requesting access to your Hutch account.`,
+			title: `Authorize ${params.clientName} — Readplace`,
+			description: `${params.clientName} is requesting access to your Readplace account.`,
 			canonicalUrl: "/oauth/authorize",
 			robots: "noindex, nofollow",
 		},
@@ -108,7 +108,7 @@ export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
 export function OAuthCallbackPage(options?: { emailVerified?: boolean }): Component {
 	return Base({
 		seo: {
-			title: "Authorization Complete — Hutch",
+			title: "Authorization Complete — Readplace",
 			description: "OAuth authorization is complete.",
 			canonicalUrl: "/oauth/callback",
 			robots: "noindex, nofollow",

@@ -10,8 +10,8 @@ const EXPORT_TEMPLATE = readFileSync(join(__dirname, "export.template.html"), "u
 export function ExportPage(options?: { emailVerified?: boolean }): Component {
 	return Base({
 		seo: {
-			title: "Export Your Data — Hutch",
-			description: "Download all your saved articles and data from Hutch.",
+			title: "Export Your Data — Readplace",
+			description: "Download all your saved articles and data from Readplace.",
 			canonicalUrl: "/export",
 			robots: "noindex, nofollow",
 		},

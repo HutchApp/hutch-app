@@ -1,7 +1,7 @@
 {
   "name": "browser-extension-core",
   "version": "1.0.0",
-  "description": "Browser-agnostic core logic for Hutch browser extensions",
+  "description": "Browser-agnostic core logic for Readplace browser extensions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

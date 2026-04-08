@@ -10,9 +10,9 @@ const NOT_FOUND_TEMPLATE = readFileSync(join(__dirname, "not-found.template.html
 export function NotFoundPage(): Component {
 	return Base({
 		seo: {
-			title: "Page Not Found — Hutch",
+			title: "Page Not Found — Readplace",
 			description: "The page you are looking for does not exist.",
-			canonicalUrl: "https://hutch-app.com",
+			canonicalUrl: "https://readplace.com",
 			robots: "noindex, nofollow",
 		},
 		styles: NOT_FOUND_STYLES,

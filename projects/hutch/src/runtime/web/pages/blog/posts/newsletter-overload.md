@@ -45,13 +45,13 @@ This turns newsletters from a guilt source into a curated feed. Each issue costs
 
 ## What I'm building
 
-I'm working on this exact problem with Hutch.
+I'm working on this exact problem with Readplace.
 
-The plan: a Gmail import feature. You connect your Gmail account and select which newsletters to import. Hutch extracts the links from each issue, generates a short summary for each one, and saves them to your reading list. No opening newsletters in your inbox. No skimming and forgetting. The links show up in Hutch, ready to triage.
+The plan: a Gmail import feature. You connect your Gmail account and select which newsletters to import. Readplace extracts the links from each issue, generates a short summary for each one, and saves them to your reading list. No opening newsletters in your inbox. No skimming and forgetting. The links show up in Readplace, ready to triage.
 
-I want to be direct about where things stand. Gmail import is in development. It's not shipped yet. Hutch already works as a read-it-later app. You can save articles, read them later, and keep a clean reading list. But the newsletter workflow I described above is manual today. You open the newsletter, find the links that interest you, and save them one by one.
+I want to be direct about where things stand. Gmail import is in development. It's not shipped yet. Readplace already works as a read-it-later app. You can save articles, read them later, and keep a clean reading list. But the newsletter workflow I described above is manual today. You open the newsletter, find the links that interest you, and save them one by one.
 
-The Gmail integration will automate that process. Connect once. Your newsletter links flow into Hutch with AI-generated summaries to help you sort fast.
+The Gmail integration will automate that process. Connect once. Your newsletter links flow into Readplace with AI-generated summaries to help you sort fast.
 
 ## Try this today
 
@@ -61,6 +61,6 @@ You don't need automation to start. If newsletters are piling up, do three thing
 - When an issue arrives, open it, save the 2 or 3 links that catch your eye to any read-it-later app, and archive the email.
 - Read from your reading list, not your inbox.
 
-That alone breaks the guilt cycle. When Hutch's Gmail import ships, it handles the whole thing for you.
+That alone breaks the guilt cycle. When Readplace's Gmail import ships, it handles the whole thing for you.
 
 Your inbox was never meant to be a reading list. Stop using it as one.

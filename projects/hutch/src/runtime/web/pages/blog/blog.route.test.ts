@@ -19,7 +19,7 @@ describe("GET /blog", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const title = doc.querySelector(".blog__title");
-		expect(title?.textContent).toBe("Open Hutch");
+		expect(title?.textContent).toBe("Open Readplace");
 	});
 
 	it("should render links to blog posts", async () => {
@@ -45,7 +45,7 @@ describe("GET /blog", () => {
 		const response = await request(app).get("/blog");
 		const doc = new JSDOM(response.text).window.document;
 
-		expect(doc.title).toBe("Blog — Hutch");
+		expect(doc.title).toBe("Blog — Readplace");
 	});
 
 	it("should have canonical URL", async () => {
@@ -54,7 +54,7 @@ describe("GET /blog", () => {
 
 		const canonical = doc.querySelector('link[rel="canonical"]');
 		expect(canonical?.getAttribute("href")).toBe(
-			"https://hutch-app.com/blog",
+			"https://readplace.com/blog",
 		);
 	});
 
@@ -143,7 +143,7 @@ describe("GET /blog/:slug", () => {
 
 		const canonical = doc.querySelector('link[rel="canonical"]');
 		expect(canonical?.getAttribute("href")).toBe(
-			`https://hutch-app.com/blog/${firstPost.slug}`,
+			`https://readplace.com/blog/${firstPost.slug}`,
 		);
 	});
 
