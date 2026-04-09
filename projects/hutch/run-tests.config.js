@@ -1,3 +1,7 @@
+const assert = require('node:assert');
+assert(process.env.E2E_PORT, 'E2E_PORT is required');
+const port = process.env.E2E_PORT;
+
 module.exports = {
   projectName: 'Hutch',
   phases: [
@@ -21,10 +25,10 @@ module.exports = {
       browsers: ['chromium'],
       server: {
         command: ['node', 'dist/e2e/e2e-server.js'],
-        url: 'http://localhost:3100',
+        url: `http://localhost:${port}`,
         stripCoverage: true,
       },
-      env: { HEADLESS: 'true' },
+      env: { HEADLESS: 'true', E2E_PORT: port },
     },
   ],
 };

@@ -26,15 +26,17 @@ export type QueueProgress = {
   cleanupDeleted: boolean
 }
 
-export const LOCAL_TEST_ARTICLES: TestArticleData = {
-  urls: [
-    'https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol',
-    'https://en.wikipedia.org/wiki/Web_browser',
-    'https://en.wikipedia.org/wiki/URL',
-    'https://en.wikipedia.org/wiki/World_Wide_Web',
-  ],
-  titles: ['HTTP', 'Web browser', 'URL', 'World Wide Web'],
-  paginationUrls: Array.from({ length: 17 }, (_, i) => `http://localhost:3100/privacy?p=${i + 1}`),
+export function createLocalTestArticles(baseUrl: string): TestArticleData {
+  return {
+    urls: [
+      'https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol',
+      'https://en.wikipedia.org/wiki/Web_browser',
+      'https://en.wikipedia.org/wiki/URL',
+      'https://en.wikipedia.org/wiki/World_Wide_Web',
+    ],
+    titles: ['HTTP', 'Web browser', 'URL', 'World Wide Web'],
+    paginationUrls: Array.from({ length: 17 }, (_, i) => `${baseUrl}/privacy?p=${i + 1}`),
+  }
 }
 
 export type TestArticleData = {

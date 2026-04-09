@@ -35,5 +35,6 @@ export function validateRedirectUri(params: {
 }): boolean {
 	const client = REGISTERED_CLIENTS[params.clientId];
 	if (!client) return false;
+	if (/^http:\/\/127\.0\.0\.1:\d+\/oauth\/callback$/.test(params.redirectUri)) return true;
 	return client.redirectUris.includes(params.redirectUri);
 }

@@ -70,6 +70,16 @@ describe("createOAuthModel", () => {
 
 			expect(unknownClient).toBeNull();
 		});
+
+		it("includes localhost redirect URI when appOrigin is a localhost URL", async () => {
+			const deps = initInMemoryOAuthModel();
+			const model = createOAuthModel(deps, { appOrigin: "http://127.0.0.1:49999" });
+
+			const client = await model.getClient(TEST_CLIENT_ID, "");
+			assert(client, "Client should be returned");
+
+			expect(client.redirectUris).toContain("http://127.0.0.1:49999/oauth/callback");
+		});
 	});
 
 	describe("authorization code flow", () => {

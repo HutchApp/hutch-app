@@ -68,10 +68,20 @@ export type OAuthModel = AuthorizationCodeModel &
 		revokeAllUserTokens(userId: UserId): Promise<void>;
 	};
 
-export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
+export function createOAuthModel(deps: OAuthModelDeps, options?: { appOrigin?: string }): OAuthModel {
+	function resolveClient(clientId: string) {
+		const client = getClient(clientId);
+		if (!client) return null;
+		if (!options?.appOrigin?.includes("127.0.0.1")) return client;
+		return {
+			...client,
+			redirectUris: [...client.redirectUris, `${options.appOrigin}/oauth/callback`],
+		};
+	}
+
 	return {
 		async getClient(clientId: string, _clientSecret: string): Promise<Client | Falsey> {
-			const client = getClient(clientId);
+			const client = resolveClient(clientId);
 			if (!client) return null;
 
 			return {
@@ -116,7 +126,7 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 				return null;
 			}
 
-			const client = getClient(stored.clientId);
+			const client = resolveClient(stored.clientId);
 			if (!client) return null;
 
 			return {
@@ -182,7 +192,7 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 				return null;
 			}
 
-			const client = getClient(stored.clientId);
+			const client = resolveClient(stored.clientId);
 			if (!client) return null;
 
 			return {
@@ -211,7 +221,7 @@ export function createOAuthModel(deps: OAuthModelDeps): OAuthModel {
 				return null;
 			}
 
-			const client = getClient(stored.clientId);
+			const client = resolveClient(stored.clientId);
 			if (!client) return null;
 
 			return {

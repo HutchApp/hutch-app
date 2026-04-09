@@ -1,10 +1,12 @@
+import assert from 'node:assert'
 import { test } from '@playwright/test'
 import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
 import { createPasswordResetActions, type PasswordResetProgress } from './password-reset-actions'
-import { LOCAL_TEST_ARTICLES } from './queue-actions'
+import { createLocalTestArticles } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
 
-const BASE_URL = 'http://localhost:3100'
+assert(process.env.E2E_PORT, "E2E_PORT is required")
+const BASE_URL = `http://localhost:${process.env.E2E_PORT}`
 
 test.describe('Queue management flow (local)', () => {
   test('signup, logout, reset password, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page }) => {
@@ -28,7 +30,7 @@ test.describe('Queue management flow (local)', () => {
 
     await runQueueFlow(page, {
       baseURL: BASE_URL,
-      testArticles: LOCAL_TEST_ARTICLES,
+      testArticles: createLocalTestArticles(BASE_URL),
       authData,
       passwordResetProgress,
       preQueueActionFactories: [

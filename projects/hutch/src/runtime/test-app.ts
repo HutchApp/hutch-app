@@ -34,16 +34,18 @@ export function createTestApp(options?: {
 	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
 	logError?: (message: string, error?: Error) => void;
+	appOrigin?: string;
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const parser = initReadabilityParser({ fetchHtml: options?.fetchHtml ?? stubFetchHtml });
-	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const appOrigin = options?.appOrigin ?? "http://localhost:3000";
+	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin });
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
 	const app = createApp({
-		appOrigin: "http://localhost:3000",
+		appOrigin,
 		staticBaseUrl: "",
 		...auth,
 		...articleStore,
@@ -55,7 +57,7 @@ export function createTestApp(options?: {
 		...email,
 		...emailVerification,
 		...passwordReset,
-		baseUrl: "http://localhost:3000",
+		baseUrl: appOrigin,
 		logError: options?.logError ?? (() => {}),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),

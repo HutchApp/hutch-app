@@ -1,16 +1,22 @@
 #!/usr/bin/env node
 const { join } = require('node:path');
-const { initTestPhaseRunner, defaultDeps } = require('@packages/test-phase-runner');
-const config = require('../run-tests.config.js');
+const { initTestPhaseRunner, defaultDeps, getFreePort } = require('@packages/test-phase-runner');
 
-const { createTestPlan } = initTestPhaseRunner(defaultDeps);
+async function main() {
+  process.env.E2E_PORT = String(await getFreePort());
 
-const plan = createTestPlan({
-  config,
-  projectRoot: join(__dirname, '..'),
-});
+  const config = require('../run-tests.config.js');
+  const { createTestPlan } = initTestPhaseRunner(defaultDeps);
 
-plan.runAllPhases().catch((error) => {
+  const plan = createTestPlan({
+    config,
+    projectRoot: join(__dirname, '..'),
+  });
+
+  await plan.runAllPhases();
+}
+
+main().catch((error) => {
   console.error('Test run failed:', error.message);
   process.exit(1);
 });

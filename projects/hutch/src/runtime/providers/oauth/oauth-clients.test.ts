@@ -53,4 +53,13 @@ describe("validateRedirectUri", () => {
 
 		expect(valid).toBe(false);
 	});
+
+	it("accepts any localhost port for development", () => {
+		const valid = validateRedirectUri({
+			clientId: "hutch-firefox-extension",
+			redirectUri: "http://127.0.0.1:49999/oauth/callback",
+		});
+
+		expect(valid).toBe(true);
+	});
 });

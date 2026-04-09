@@ -26,14 +26,16 @@ const POPUP_URL = `moz-extension://${ADDON_UUID}/popup/popup.template.html`;
 
 const TEST_EMAIL = "e2e-test@example.com";
 const TEST_PASSWORD = "testpassword123";
-const TEST_PORT = 3000;
+assert(process.env.E2E_PORT, "E2E_PORT is required");
+const TEST_PORT = Number(process.env.E2E_PORT);
 
 const TEST_LINK_URL = "https://example.com/test-article";
 const TEST_LINK_TITLE = "Test Article";
 
 async function startTestServer(): Promise<http.Server> {
 	const { createTestApp } = await import("hutch/test-app");
-	const { app, auth } = createTestApp();
+	const origin = `http://127.0.0.1:${TEST_PORT}`;
+	const { app, auth } = createTestApp({ appOrigin: origin });
 	await auth.createUser({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
 	return new Promise((resolve) => {

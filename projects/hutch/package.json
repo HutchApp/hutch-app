@@ -25,7 +25,7 @@
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-integration": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000",
     "test-integration:sequential": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000 --runInBand",
-    "test:e2e": "pnpm compile && playwright test --config playwright.config.local-dev.ts",
+    "test:e2e": "pnpm compile && E2E_PORT=3100 playwright test --config playwright.config.local-dev.ts",
     "test:e2e:staging": "playwright test --config playwright.config.staging.ts",
     "test-with-coverage": "c8 node scripts/run-tests-with-coverage.js && node enforce-coverage.config.js",
     "compile": "rm -rf dist && tsc && node scripts/copy-static-assets.js",

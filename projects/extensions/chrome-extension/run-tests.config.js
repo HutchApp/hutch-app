@@ -1,3 +1,7 @@
+const assert = require('node:assert');
+assert(process.env.E2E_PORT, 'E2E_PORT is required');
+const port = process.env.E2E_PORT;
+
 module.exports = {
   projectName: 'Chrome Extension',
   phases: [
@@ -18,7 +22,7 @@ module.exports = {
       type: 'script',
       name: 'Building extension for E2E tests',
       command: 'node scripts/build-extension.js',
-      env: { HUTCH_SERVER_URL: 'http://127.0.0.1:3001' },
+      env: { HUTCH_SERVER_URL: `http://127.0.0.1:${port}` },
     },
     {
       type: 'script',
@@ -30,7 +34,7 @@ module.exports = {
       name: 'Running E2E tests',
       files: ['dist/e2e/login-flow/run.e2e-local.main.js'],
       timeout: 90000,
-      env: { HEADLESS: 'true' },
+      env: { HEADLESS: 'true', E2E_PORT: port },
     },
   ],
 };
