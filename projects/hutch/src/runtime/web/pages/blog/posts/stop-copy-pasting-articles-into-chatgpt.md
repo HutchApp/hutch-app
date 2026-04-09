@@ -20,7 +20,7 @@ So you do the thing:
 7. Close both tabs.
 8. Forget the article existed.
 
-Seven steps. Two apps. Zero record of what you read.
+That is seven steps, two apps, and zero record of what you read.
 
 ## The problems nobody talks about
 
@@ -42,21 +42,21 @@ Here's the same scenario with [Hutch](https://hutch-app.com/install):
 
 That's it.
 
-The article is saved. A TL;DR summary shows up on its own. Read the summary now and decide if the full piece is worth your time. Or skip it. The article stays in your archive either way. Searchable. Yours.
+The article is saved. A TL;DR summary shows up on its own.
 
-No tab-switching. No pasting. No prompt crafting. No vanishing chat threads.
+Read the summary now and decide if the full piece is worth your time. Or skip it. The article stays in your archive either way, searchable and yours.
+
+You skip the tab-switching, the pasting, the prompt crafting, and the vanishing chat threads.
+
+Hutch [caches summaries by URL](/blog/how-ai-tldr-actually-works). If fifty people save the same article, it gets summarised once. Your summary is ready the moment you open the article.
 
 ## One click vs. seven steps
 
 The difference is not just speed. It's whether your reading adds up to something.
 
-With copy-paste, every article is disposable. You extract a summary and throw away the source. There's no trail. No library. No way to revisit what you read last month.
+With copy-paste, every article is disposable. You extract a summary and throw away the source. There is no trail, no personal library, and no way to revisit what you read last month.
 
 With Hutch, every saved article becomes part of your personal archive. Summaries are there for a quick scan. Full articles are there when you want depth. Your reading list is a queue you can manage, not a pile of browser tabs about to crash.
-
-## Summaries are cached
-
-Hutch caches summaries by URL. If fifty people save the same article, it gets summarised once. Your summary is ready the moment you open the article. No loading spinner. No extra API call.
 
 ## The point
 
@@ -64,6 +64,6 @@ ChatGPT is a great tool. But using it as a manual article summariser is seven st
 
 Hutch does it in one.
 
-Save the article. Get the summary. Keep both. Move on.
+Save the article, get the summary, and keep both.
 
 [Try Hutch](https://hutch-app.com/install)

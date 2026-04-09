@@ -7,8 +7,6 @@ author: "Fayner Brack"
 keywords: "instapaper alternative, read it later, hutch vs instapaper, pocket replacement, AI summaries"
 ---
 
-# Hutch vs Instapaper: Two Different Approaches to Read-It-Later
-
 Pocket shut down in July 2025. A lot of readers lost their go-to save-for-later tool overnight. Some moved to Omnivore, but that shut down too. Many landed on Instapaper, which has been running since 2008.
 
 Hutch launched around the same time. I had been running my own reading system for about ten years before turning it into a product.
@@ -31,7 +29,9 @@ Instapaper has a free tier that covers the basics: saving articles, reading them
 
 The company is US-based and has changed hands a few times over the years (Betaworks, then Pinterest, then back to independent).
 
-Here's the trade-off. Instapaper has not shipped many new features in recent years. It works, and it works well, but it's the same product it was in 2023. For some people, that stability is a feature. For others, it feels like maintenance mode.
+Here's the trade-off. Instapaper has not shipped many new features in recent years. It works, and it works well, but it's the same product it was in 2023.
+
+> **For some people, that stability is a feature. For others, it feels like maintenance mode.**
 
 ## Hutch: a different bet
 
@@ -39,9 +39,11 @@ Hutch comes at the problem from another direction. It's a newer product, built b
 
 The biggest difference is AI. Hutch generates summaries of saved articles. You can scan a summary before deciding to read the full piece. Instapaper has no AI features at all.
 
-Does that matter? It depends on how you read. If you save three articles a week and read all of them, summaries won't change much. But what if you save thirty a week and fall behind? A quick summary for each article helps you pick what's worth your time. That can turn an overflowing reading list into a useful one.
+Does that matter? The answer comes down to how you read. If you save three articles a week and read all of them, summaries won't change much.
 
-Hutch is browser-first. It's a web app with a browser extension, not a native mobile app. It works on any device with a browser, but it lacks the deep OS features a native app gives you. No share sheet on your phone. No offline reading on the train yet. If you need mobile apps, that's a real gap right now.
+But what if you save thirty a week and fall behind? A quick summary for each article helps you pick what's worth your time. That can turn an overflowing reading list into a useful one.
+
+Hutch is browser-first. It's a web app with a browser extension, not a native mobile app. It works on any device with a browser, but it lacks the deep OS features a native app gives you. There is no share sheet on your phone and no offline reading on the train yet. If you need mobile apps, that's a real gap right now.
 
 Hutch is hosted in Australia. Your reading data stays on Australian infrastructure under Australian privacy law. That matters if you care about where your data lives.
 

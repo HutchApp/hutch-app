@@ -9,27 +9,35 @@ keywords: "AI reading assistant, read it later, AI summaries, reading tool, arti
 
 The phrase "AI reading assistant" now describes tools that want to read for you. They generate summaries of articles you never open. They send digest emails of content an algorithm picked. They auto-curate feeds based on trends, not on what matters to you.
 
-That's not assistance. That's replacement.
+That is replacement dressed up as help.
 
 A real AI reading assistant removes friction from your reading workflow. It helps you decide what to read faster so you spend more time reading. The goal isn't fewer articles in less time. It's more of the right articles that brings value to you, read properly.
 
 ## How Hutch uses AI
 
-Hutch generates a TL;DR summary for every article you save. Not a replacement for reading. A tool for deciding whether to read it now, later, or not at all.
+Hutch generates a TL;DR summary for every article you save. The summary is a triage tool, not a replacement for reading. It helps you decide whether to read something now, later, or not at all.
 
-That's it. No auto-curated feeds. No digest emails. No "here's what you should read today" notifications. No algorithmic ranking that quietly decides what you see.
+That's it. You won't find auto-curated feeds, digest emails, "here's what you should read today" notifications, or algorithmic ranking that quietly decides what you see.
 
 You save what catches your attention. Hutch summarises it so you can triage faster. When something looks worth your time, you open it and read the real thing in a clean, distraction-free reader view.
 
-The AI stays in the background. You stay in control.
+The AI stays in the background, and you keep control of what you read.
 
 ## Hutch doesn't decide what you read
 
-Most AI reading tools sit between you and your content. They filter, rank, and curate. Over time, you stop choosing what to read. The algorithm chooses for you. Your reading diet narrows to whatever the model thinks you want.
+Most AI reading tools sit between you and your content. They filter, rank, and curate. Over time, you stop choosing what to read.
 
-Hutch works differently. We despise the social media dumbification of mankind. Every article in your list is one you saved yourself. The AI summary helps you scan your own list faster, but it never removes, hides, or reorders anything. Your reading list is yours.
+The algorithm chooses for you. Your reading diet narrows to whatever the model thinks you want.
 
-This is a deliberate design choice. An AI reading assistant that decides what you should read is just another feed algorithm. You already have enough of those.
+Hutch works differently. I despise the social media dumbification of mankind. Every article in your list is one you saved yourself.
+
+The AI summary helps you scan your own list faster, but it never removes, hides, or reorders anything. Your reading list is yours.
+
+This is a deliberate design choice.
+
+> **An AI reading assistant that decides what you should read is just another feed algorithm.**
+
+You already have enough of those.
 
 ## The loop: Save, Summarise, Triage, Read
 
@@ -39,18 +47,10 @@ The workflow has four steps.
 
 **2. Summarise.** Hutch generates a TL;DR for every saved article. The summary highlights the key points so you know what the article covers before you open it.
 
-**3. Triage.** Scan your list by reading the TL;DRs. Decide what to read now, what to save for later, and what to skip. No algorithm involved. Just you, making faster decisions.
+**3. Triage.** Scan your list by reading the TL;DRs. Decide what to read now, what to save for later, and what to skip. The sorting is yours, not an algorithm's.
 
-**4. Read.** Open the article in a clean reader view. No ads, no pop-ups, no cookie banners. Just the content, built for comfortable reading. Dark mode included.
+**4. Read.** Open the article in a clean reader view stripped of ads, pop-ups, and cookie banners. Just the content, built for comfortable reading. Dark mode included.
 
-## Coming soon
-
-Two features are on the roadmap. Both push this further without crossing the line into auto-curation.
-
-**Personalised AI summaries.** Get Summaries shaped by what you care about. If you're a developer, the summary pulls out technical details. If you're a founder, it highlights business implications. Same article, different lens. Based on preferences you set, not ones an algorithm infers.
-
-**Preference learning.** "More like this" and "less like this" buttons update a personal preference model. Over time, your reading list re-ranks to surface articles that match what you find interesting. But nothing is hidden. Nothing is removed. You can review and edit your preferences at any time. The model works for you, transparently.
-
-Both features keep you in control. The AI learns what you like. You always have the final say.
+For a closer look at how the TL;DR works under the hood, see [How AI TL;DR Actually Works in Hutch](/blog/how-ai-tldr-actually-works).
 
 If you want an AI reading assistant that helps you read more of the right things, [give Hutch a try](https://hutch-app.com/install).

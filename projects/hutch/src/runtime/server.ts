@@ -170,10 +170,11 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.get("/sitemap.xml", (_req: Request, res: Response) => {
 		const blogPriorityMap: Record<string, string> = {
 			"best-read-it-later-apps-2026": "0.9",
-			"alternative-to-pocket": "0.9",
 			"omnivore-alternative": "0.9",
 			"hutch-vs-readwise-reader": "0.8",
 			"hutch-vs-instapaper": "0.8",
+			"how-ai-tldr-actually-works": "0.8",
+			"free-read-it-later-apps-2026": "0.8",
 		};
 
 		const pages: { loc: string; priority: string; changefreq: string; lastmod: string }[] = [
