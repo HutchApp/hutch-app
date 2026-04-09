@@ -39,8 +39,13 @@ import type {
 	VerifyPasswordResetToken,
 } from "./providers/password-reset/password-reset.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
+import type { ExchangeGmailCode, ListUnreadGmailMessages } from "./providers/gmail/gmail-api.types";
+import type { FindGmailTokens, SaveGmailTokens, DeleteGmailTokens } from "./providers/gmail/gmail-token-store.types";
+import type { EnsureValidAccessToken } from "./providers/gmail/ensure-valid-access-token";
+import type { RunGmailImport } from "./domain/gmail-import/gmail-import.types";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
+import { initGmailImportRoutes } from "./web/pages/gmail-import/gmail-import.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
@@ -92,6 +97,14 @@ interface AppDependencies {
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
 	readArticleContent: ReadArticleContent;
+	findGmailTokens: FindGmailTokens;
+	saveGmailTokens: SaveGmailTokens;
+	deleteGmailTokens: DeleteGmailTokens;
+	exchangeGmailCode: ExchangeGmailCode;
+	listUnreadGmailMessages: ListUnreadGmailMessages;
+	runGmailImport: RunGmailImport;
+	ensureValidAccessToken: EnsureValidAccessToken;
+	googleClientId: string;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -134,6 +147,7 @@ export function createApp(dependencies: AppDependencies): Express {
 				"Disallow: /queue",
 				"Disallow: /export",
 				"Disallow: /oauth",
+				"Disallow: /gmail-import",
 				"Disallow: /forgot-password",
 				"",
 				"User-agent: GPTBot",
@@ -305,6 +319,20 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticlesByUser: deps.findArticlesByUser,
 	});
 	app.use("/export", requireAuth, exportRouter);
+
+	const gmailImportRouter = initGmailImportRoutes({
+		findGmailTokens: deps.findGmailTokens,
+		saveGmailTokens: deps.saveGmailTokens,
+		deleteGmailTokens: deps.deleteGmailTokens,
+		exchangeGmailCode: deps.exchangeGmailCode,
+		ensureValidAccessToken: deps.ensureValidAccessToken,
+		listUnreadGmailMessages: deps.listUnreadGmailMessages,
+		runGmailImport: deps.runGmailImport,
+		googleClientId: deps.googleClientId,
+		appOrigin,
+		logError: deps.logError,
+	});
+	app.use("/gmail-import", requireAuth, gmailImportRouter);
 
 	const oauthRouter = initOAuthRoutes({
 		model: deps.oauthModel,

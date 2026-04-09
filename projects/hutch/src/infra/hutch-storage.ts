@@ -8,6 +8,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 	public readonly sessionsTable: aws.dynamodb.Table;
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
+	public readonly gmailTokensTable: aws.dynamodb.Table;
 	public readonly passwordResetTokensTable: aws.dynamodb.Table;
 
 	constructor(name: string, args: { deletionProtection: boolean; tableNames: {
@@ -17,6 +18,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 		sessions: string;
 		oauth: string;
 		verificationTokens: string;
+		gmailTokens: string;
 		passwordResetTokens: string;
 	} }, opts?: pulumi.ComponentResourceOptions) {
 		super("hutch:infra:HutchStorage", name, {}, opts);
@@ -122,6 +124,14 @@ export class HutchStorage extends pulumi.ComponentResource {
 				attributeName: "expiresAt",
 				enabled: true,
 			},
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
+
+		this.gmailTokensTable = new aws.dynamodb.Table(`hutch-gmail-tokens`, {
+			name: args.tableNames.gmailTokens,
+			billingMode: "PAY_PER_REQUEST",
+			deletionProtectionEnabled: args.deletionProtection,
+			hashKey: "userId",
+			attributes: [{ name: "userId", type: "S" }],
 		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.passwordResetTokensTable = new aws.dynamodb.Table(`hutch-password-reset-tokens`, {

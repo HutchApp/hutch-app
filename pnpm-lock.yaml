@@ -457,6 +457,19 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  src/packages/hutch-test-app:
+    dependencies:
+      hutch:
+        specifier: workspace:*
+        version: link:../../../projects/hutch
+    devDependencies:
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   src/packages/link-id:
     devDependencies:
       '@types/jest':
