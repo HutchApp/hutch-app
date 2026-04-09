@@ -41,6 +41,16 @@ interface QueueDependencies {
 	logError: (message: string, error?: Error) => void;
 }
 
+import type { SavedArticle } from "../../../domain/article/article.types";
+
+async function markUnreadIfRead(deps: Pick<QueueDependencies, "updateArticleStatus">, saved: SavedArticle): Promise<SavedArticle> {
+	if (saved.status === "read") {
+		await deps.updateArticleStatus(saved.id, saved.userId, "unread");
+		return { ...saved, status: "unread", readAt: undefined };
+	}
+	return saved;
+}
+
 type SaveArticleFromUrlResult = { ok: true; saved: Awaited<ReturnType<SaveArticle>> };
 
 async function saveArticleFromUrl(deps: QueueDependencies, params: {
@@ -66,7 +76,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 				},
 				estimatedReadTime: calculateReadTime(0),
 			});
-			return { ok: true, saved };
+			return { ok: true, saved: await markUnreadIfRead(deps, saved) };
 		}
 
 		const { article } = parseResult;
@@ -92,7 +102,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 			await deps.publishLinkSaved({ url, userId });
 		}
 
-		return { ok: true, saved };
+		return { ok: true, saved: await markUnreadIfRead(deps, saved) };
 	}
 
 	const saved = await deps.saveArticle({
@@ -106,7 +116,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 		await deps.publishLinkSaved({ url, userId });
 	}
 
-	return { ok: true, saved };
+	return { ok: true, saved: await markUnreadIfRead(deps, saved) };
 }
 
 export function initQueueRoutes(deps: QueueDependencies): Router {

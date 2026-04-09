@@ -295,6 +295,46 @@ describe("POST /queue (Siren save article)", () => {
 	});
 });
 
+describe("POST /queue (Siren re-save read article)", () => {
+	it("marks a read article as unread when saved again", async () => {
+		const testApp = createTestApp();
+		const accessToken = await createAccessToken(testApp);
+
+		const saveResponse = await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ url: "https://example.com/resave-siren" });
+
+		const articleId = saveResponse.body.properties.id;
+
+		await request(testApp.app)
+			.post(`/queue/${articleId}/status`)
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ status: "read" });
+
+		const resaveResponse = await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ url: "https://example.com/resave-siren" });
+
+		expect(resaveResponse.status).toBe(201);
+		expect(resaveResponse.body.properties.status).toBe("unread");
+
+		const listResponse = await request(testApp.app)
+			.get("/queue?status=unread")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`);
+
+		expect(listResponse.body.entities).toHaveLength(1);
+	});
+});
+
 describe("POST /queue/:id/delete (Siren)", () => {
 	it("deletes an article and returns 204", async () => {
 		const testApp = createTestApp();

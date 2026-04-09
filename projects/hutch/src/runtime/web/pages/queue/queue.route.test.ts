@@ -799,6 +799,45 @@ describe("Queue routes", () => {
 		});
 	});
 
+	describe("Re-saving a read article marks it unread", () => {
+		it("should mark a read article as unread when saved again via form", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/resave" });
+
+			const queueResponse = await agent.get("/queue");
+			const doc = new JSDOM(queueResponse.text).window.document;
+			const articleId = doc.querySelector("[data-test-article-list] .queue-article")?.getAttribute("data-test-article");
+
+			await agent
+				.post(`/queue/${articleId}/status`)
+				.type("form")
+				.send({ status: "read" });
+
+			const readResponse = await agent.get("/queue?status=read");
+			const readDoc = new JSDOM(readResponse.text).window.document;
+			expect(readDoc.querySelectorAll(".queue-article").length).toBe(1);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/resave" });
+
+			const afterResave = await agent.get("/queue");
+			const afterDoc = new JSDOM(afterResave.text).window.document;
+			const article = afterDoc.querySelector(".queue-article");
+			expect(article?.classList.contains("queue-article--unread")).toBe(true);
+
+			const afterReadTab = await agent.get("/queue?status=read");
+			const afterReadDoc = new JSDOM(afterReadTab.text).window.document;
+			expect(afterReadDoc.querySelectorAll(".queue-article").length).toBe(0);
+		});
+	});
+
 	describe("POST /queue/save with existing article (skip freshness)", () => {
 		it("should save user-article relationship without re-fetching", async () => {
 			const skipFreshness: RefreshArticleIfStale = async () => ({ action: "skip" });
