@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { parseHTML } from "linkedom";
+import parseSrcset from "parse-srcset";
 
 export function resolveRelativeUrls(params: {
 	html: string;
@@ -33,24 +34,16 @@ function resolveSrcset(element: Element, base: URL): void {
 	const value = element.getAttribute("srcset");
 	if (!value) return;
 
-	const resolved = value
-		.split(",")
+	const entries = parseSrcset(value);
+
+	const resolved = entries
 		.map((entry) => {
-			const trimmed = entry.trim();
-			const spaceIndex = trimmed.search(/\s/);
-			if (spaceIndex === -1) {
-				try {
-					return new URL(trimmed, base.href).href;
-				} catch {
-					return trimmed;
-				}
-			}
-			const url = trimmed.slice(0, spaceIndex);
-			const descriptor = trimmed.slice(spaceIndex);
 			try {
-				return new URL(url, base.href).href + descriptor;
+				const resolvedUrl = new URL(entry.url, base.href).href;
+				const descriptor = entry.w ? ` ${entry.w}w` : entry.d ? ` ${entry.d}x` : "";
+				return resolvedUrl + descriptor;
 			} catch {
-				return trimmed;
+				return entry.url;
 			}
 		})
 		.join(", ");

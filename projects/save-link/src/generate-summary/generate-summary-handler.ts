@@ -25,12 +25,12 @@ export function initGenerateSummaryHandler(deps: {
 
 			logger.info("[GenerateGlobalSummary] processing", { url: command.url });
 
-			const content = await findArticleContent(command.url);
-			assert(content, `Article content not found: ${command.url}`);
+			const article = await findArticleContent(command.url);
+			assert(article, `Article content not found: ${command.url}`);
 
 			const result = await summarizeArticle({
 				url: command.url,
-				textContent: content,
+				textContent: article.content,
 			});
 
 			if (!result) {

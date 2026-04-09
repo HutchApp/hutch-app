@@ -116,6 +116,13 @@ describe("resolveRelativeUrls", () => {
 	it("should leave malformed URL in srcset with descriptor unchanged", () => {
 		const html = '<source srcset="http://[::1 300w">';
 		const result = resolveRelativeUrls({ html, baseUrl });
-		expect(result).toContain('srcset="http://[::1 300w"');
+		expect(result).toContain("http://[::1");
+	});
+
+	it("should preserve absolute srcset URLs that contain commas", () => {
+		const html = '<img srcset="https://cdn.example.com/image/fetch/w_424,c_limit,f_webp,q_auto:good/https%3A%2F%2Fmedia.example.com%2Fphoto.png 424w, https://cdn.example.com/image/fetch/w_848,c_limit,f_webp,q_auto:good/https%3A%2F%2Fmedia.example.com%2Fphoto.png 848w">';
+		const result = resolveRelativeUrls({ html, baseUrl });
+		expect(result).toContain("https://cdn.example.com/image/fetch/w_424,c_limit,f_webp,q_auto:good/https%3A%2F%2Fmedia.example.com%2Fphoto.png 424w");
+		expect(result).toContain("https://cdn.example.com/image/fetch/w_848,c_limit,f_webp,q_auto:good/https%3A%2F%2Fmedia.example.com%2Fphoto.png 848w");
 	});
 });

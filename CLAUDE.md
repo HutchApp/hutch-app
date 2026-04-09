@@ -300,7 +300,58 @@ console.log('\n=== Running E2E tests ===\n')
 console.log('\n=== Hutch - Running E2E tests ===\n')
 ```
 
-## Static Analysis Configuration
+## Code Coverage
+
+### Coverage Over Legibility
+
+100% code coverage is more important than code legibility. When a code path cannot be exercised by tests — whether due to V8 engine instrumentation quirks (e.g., `??` creating unreachable branches) or because the fallback is unreachable by design — remove the dead code OR rewrite it to eliminate the untestable path. Do not leave dead fallbacks in place and lower thresholds to accommodate them.
+
+```typescript
+// BAD - ?? creates a V8 branch for a null case that never happens
+const wrapper = document.querySelector("div") ?? document.documentElement;
+
+// GOOD - assert eliminates the untestable branch (no V8 branch in caller)
+const wrapper = document.querySelector("div");
+assert(wrapper, "parseHTML('<div>...') must produce a <div>");
+```
+
+When V8 coverage instrumentation requires restructuring code, make those changes with explanatory comments linking to verified online resources.
+
+### No Coverage Ignore Comments
+
+Coverage ignore comments (`/* c8 ignore */`) are forbidden unless explicitly approved. Instead, restructure code to eliminate untestable branches.
+
+```typescript
+// BAD - hiding untested code
+/* c8 ignore start */
+if (value === null) { return defaultValue }
+/* c8 ignore stop */
+
+// GOOD - assertion fails fast
+assert(value !== null, 'Value must not be null')
+```
+
+### Allowed `c8 ignore` Cases
+
+When `c8 ignore` is necessary, use inline comments — do NOT add individual files to `enforce-coverage.config.js` `extraExcludePatterns`. Config excludes are for whole directories (e.g., `src/infra/**`).
+
+**Thin AWS SDK wrappers** tested via integration tests (not Jest): use whole-file `/* c8 ignore start/stop */` with a reason.
+
+```typescript
+/* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
+export function initS3PutObject(deps: { client: S3Client; bucketName: string }) { ... }
+/* c8 ignore stop */
+```
+
+**CI-only retry callbacks** that never fire during a passing local run:
+
+```typescript
+beforeRetry: /* c8 ignore next */ async (p) => { await p.reload({ waitUntil: 'domcontentloaded' }) },
+```
+
+**V8 async function artifacts**: `await` and `return` statements in `async` functions create V8 continuation branches that no test can exercise — they are runtime state machine internals, not logical code paths. Use `/* c8 ignore next */` on the specific line.
+
+**c8/Jest worker merge issues**: c8 collects V8 coverage from Jest worker processes and merges results. Some branch hits get lost during the merge, causing 0-hit branches on code that tests do exercise. Restructure if possible (e.g., invert `if` to avoid `continue`, use `assert` instead of `if`/`throw`). If the artifact persists after restructuring, use `/* c8 ignore next */` with a comment naming the test that covers the path.
 
 ### Never Add Excludes or Ignore Patterns to Coverage, Lint, Knip, etc. Without Approval
 

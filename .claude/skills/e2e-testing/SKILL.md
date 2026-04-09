@@ -81,27 +81,7 @@ Keep test data inline within each E2E test flow rather than extracting to shared
 
 E2E test support files (`src/e2e/**`) are **not excluded** from coverage enforcement. They run under c8 during `pnpm check` and must meet the same thresholds as production code.
 
-### `c8 ignore` for Intermittent Retry Paths
-
-Retry callbacks (e.g., `beforeRetry`) that only execute under CI flakiness (slow network, delayed parsing) will never fire during a passing local run. Use `/* c8 ignore next */` with a comment explaining why:
-
-```typescript
-// c8 ignore: beforeRetry only executes on CI when article parsing is slow
-beforeRetry: /* c8 ignore next */ async (p) => { await p.reload({ waitUntil: 'domcontentloaded' }) },
-```
-
-### `c8 ignore` for Whole-File Exclusions
-
-When an entire file should be excluded from coverage (e.g., staging-only E2E tests, composition roots, thin SDK wrappers), place `/* c8 ignore start */` on line 1 and `/* c8 ignore stop */` on the last line. Include a reason after `--`:
-
-```typescript
-/* c8 ignore start -- staging E2E test, only run in CI */
-import { test } from '@playwright/test'
-// ... entire file ...
-/* c8 ignore stop */
-```
-
-Do **not** add individual files to `enforce-coverage.config.js` `extraExcludePatterns`. Config excludes are for whole directories (e.g., `src/infra/**`). Individual file exclusions use inline c8 ignore comments.
+For `c8 ignore` rules, allowed cases, and V8 coverage quirks, see the [Code Coverage section in CLAUDE.md](../../../CLAUDE.md#code-coverage).
 
 ## Running E2E Tests
 

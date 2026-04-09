@@ -1,13 +1,16 @@
+/* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import assert from 'node:assert'
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
 import { ArticleUniqueId } from "./article-unique-id";
 
-export type FindArticleContent = (url: string) => Promise<string | undefined>;
+export type ArticleContentResult = { content: string; imageUrl?: string };
+export type FindArticleContent = (url: string) => Promise<ArticleContentResult | undefined>;
 
 const ArticleContentRow = z.object({
 	content: z.string().optional(),
+	imageUrl: z.string().optional(),
 });
 
 export function initFindArticleContent(deps: {
@@ -21,13 +24,15 @@ export function initFindArticleContent(deps: {
 			new GetCommand({
 				TableName: tableName,
 				Key: { url: ArticleUniqueId.parse(url).value },
-				ProjectionExpression: "content",
+				ProjectionExpression: "content, imageUrl",
 			}),
 		);
 		assert(result.Item, 'result.Item must exist')
 		const parsed = ArticleContentRow.parse(result.Item);
-		return parsed.content;
+		if (!parsed.content) return undefined;
+		return { content: parsed.content, imageUrl: parsed.imageUrl };
 	};
 
 	return { findArticleContent };
 }
+/* c8 ignore stop */

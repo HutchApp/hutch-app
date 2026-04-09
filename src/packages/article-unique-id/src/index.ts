@@ -12,4 +12,7 @@ export class ArticleUniqueId {
 	static parse(url: string): ArticleUniqueId {
 		return new ArticleUniqueId(normalizeUrl(url));
 	}
+	toEncodedURLPathComponent(): string {
+		return encodeURIComponent(this.value);
+	}
 }

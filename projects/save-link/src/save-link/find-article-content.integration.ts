@@ -30,8 +30,9 @@ describe("findArticleContent (integration)", () => {
 			}),
 		);
 
-		const content = await findArticleContent(uniqueUrl);
+		const result = await findArticleContent(uniqueUrl);
 
-		assert.equal(content, expectedContent);
+		assert(result);
+		assert.equal(result.content, expectedContent);
 	});
 });

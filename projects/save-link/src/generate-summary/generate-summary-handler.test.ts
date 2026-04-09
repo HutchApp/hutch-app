@@ -50,7 +50,7 @@ describe("initGenerateSummaryHandler", () => {
 			inputTokens: 100,
 			outputTokens: 20,
 		});
-		const findArticleContent: FindArticleContent = async () => "<p>Article content</p>";
+		const findArticleContent: FindArticleContent = async () => ({ content: "<p>Article content</p>" });
 		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
 
 		const handler = initGenerateSummaryHandler({
@@ -92,7 +92,7 @@ describe("initGenerateSummaryHandler", () => {
 
 	it("should skip publishing when summarization returns null (cache hit)", async () => {
 		const summarizeArticle: SummarizeArticle = async () => null;
-		const findArticleContent: FindArticleContent = async () => "<p>Content</p>";
+		const findArticleContent: FindArticleContent = async () => ({ content: "<p>Content</p>" });
 		const publishEvent: PublishEvent = jest.fn();
 
 		const handler = initGenerateSummaryHandler({
@@ -109,7 +109,7 @@ describe("initGenerateSummaryHandler", () => {
 
 	it("should throw on invalid command schema", async () => {
 		const summarizeArticle: SummarizeArticle = async () => null;
-		const findArticleContent: FindArticleContent = async () => "content";
+		const findArticleContent: FindArticleContent = async () => ({ content: "content" });
 		const publishEvent: PublishEvent = jest.fn();
 
 		const handler = initGenerateSummaryHandler({

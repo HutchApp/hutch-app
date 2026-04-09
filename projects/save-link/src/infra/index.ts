@@ -6,6 +6,7 @@ import {
 	HutchSQS,
 	HutchSQSBackedLambda,
 	HutchS3ReadWrite,
+	HutchS3ContentMediaCDN,
 } from "@packages/hutch-infra-components/infra";
 import {
 	SaveLinkCommand,
@@ -24,6 +25,12 @@ const contentBucketName = config.require("contentBucketName");
 
 const contentBucket = new HutchS3ReadWrite("content-bucket", {
 	bucketName: contentBucketName,
+});
+
+// --- Content Images CDN ---
+
+const contentMediaCdn = new HutchS3ContentMediaCDN("content-media", {
+	contentBucket,
 });
 
 const anthropicApiKey = pulumi.secret(requireEnv("ANTHROPIC_API_KEY"));
@@ -66,6 +73,7 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
 		EVENT_BUS_NAME: eventBus.eventBusName,
+		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,

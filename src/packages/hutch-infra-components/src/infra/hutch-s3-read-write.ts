@@ -5,6 +5,7 @@ import type { LambdaPolicy } from "./hutch-lambda";
 export class HutchS3ReadWrite extends pulumi.ComponentResource {
 	public readonly bucket: aws.s3.Bucket["bucket"];
 	public readonly arn: aws.s3.Bucket["arn"];
+	public readonly bucketRegionalDomainName: aws.s3.Bucket["bucketRegionalDomainName"];
 
 	private readonly readPolicyDocument: pulumi.Output<string>;
 	private readonly writePolicyDocument: pulumi.Output<string>;
@@ -33,6 +34,7 @@ export class HutchS3ReadWrite extends pulumi.ComponentResource {
 
 		this.bucket = bucket.bucket;
 		this.arn = bucket.arn;
+		this.bucketRegionalDomainName = bucket.bucketRegionalDomainName;
 
 		this.readPolicyDocument = bucket.arn.apply((arn) =>
 			JSON.stringify({

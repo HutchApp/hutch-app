@@ -45,7 +45,7 @@ describe("initLinkSavedHandler", () => {
 	it("should send GenerateGlobalSummary command when article has content", async () => {
 		const sendMessage = jest.fn().mockResolvedValue({});
 		const sqsClient = { send: sendMessage };
-		const findArticleContent: FindArticleContent = async () => "<p>Some content</p>";
+		const findArticleContent: FindArticleContent = async () => ({ content: "<p>Some content</p>" });
 
 		const handler = initLinkSavedHandler({
 			sqsClient,
@@ -79,7 +79,7 @@ describe("initLinkSavedHandler", () => {
 
 	it("should throw on invalid event detail", async () => {
 		const sqsClient = { send: jest.fn() };
-		const findArticleContent: FindArticleContent = async () => "content";
+		const findArticleContent: FindArticleContent = async () => ({ content: "content" });
 
 		const handler = initLinkSavedHandler({
 			sqsClient,

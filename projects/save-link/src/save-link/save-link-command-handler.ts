@@ -1,8 +1,12 @@
+import assert from "node:assert";
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import { SaveLinkCommand } from "./index";
 import { ArticleUniqueId } from "./article-unique-id";
 import type { FindArticleContent } from "./find-article-content";
+import type { DownloadMedia } from "./download-media";
+import { processContentWithLocalMedia } from "./process-content-with-local-media";
+import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 
 export type PutObject = (params: { key: string; content: string }) => Promise<string>;
 export type UpdateContentLocation = (params: { url: string; contentLocation: string }) => Promise<void>;
@@ -17,9 +21,11 @@ export function initSaveLinkCommandHandler(deps: {
 	putObject: PutObject;
 	updateContentLocation: UpdateContentLocation;
 	publishLinkSaved: PublishLinkSaved;
+	downloadMedia: DownloadMedia;
+	updateThumbnailUrl: UpdateThumbnailUrl;
 	logger: HutchLogger;
 }): SQSHandler {
-	const { findArticleContent, putObject, updateContentLocation, publishLinkSaved, logger } = deps;
+	const { findArticleContent, putObject, updateContentLocation, publishLinkSaved, downloadMedia, updateThumbnailUrl, logger } = deps;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -28,14 +34,31 @@ export function initSaveLinkCommandHandler(deps: {
 
 			logger.info("[SaveLinkCommand] processing", { url: detail.url, userId: detail.userId });
 
-			const content = await findArticleContent(detail.url);
+			const article = await findArticleContent(detail.url);
+			assert(article, `[SaveLinkCommand] article content not found: ${detail.url}`);
 
-			if (content) {
-				const articleUniqueId = ArticleUniqueId.parse(detail.url);
-				const key = contentS3Key(articleUniqueId);
-				const contentLocation = await putObject({ key, content });
-				await updateContentLocation({ url: detail.url, contentLocation });
-				logger.info("[SaveLinkCommand] saved content to S3", { url: detail.url, contentLocation });
+			const articleUniqueId = ArticleUniqueId.parse(detail.url);
+
+			const media = await downloadMedia({
+				html: article.content,
+				thumbnailUrl: article.imageUrl,
+				articleUniqueId,
+			});
+
+			const { html, thumbnailUrl } = await processContentWithLocalMedia({
+				html: article.content,
+				thumbnailUrl: article.imageUrl,
+				media,
+			});
+
+			const key = contentS3Key(articleUniqueId);
+			const contentLocation = await putObject({ key, content: html });
+			await updateContentLocation({ url: detail.url, contentLocation });
+			logger.info("[SaveLinkCommand] saved content to S3", { url: detail.url, contentLocation });
+
+			if (thumbnailUrl && thumbnailUrl !== article.imageUrl) {
+				await updateThumbnailUrl({ url: detail.url, imageUrl: thumbnailUrl });
+				logger.info("[SaveLinkCommand] updated thumbnail URL", { url: detail.url });
 			}
 
 			await publishLinkSaved({ url: detail.url, userId: detail.userId });
