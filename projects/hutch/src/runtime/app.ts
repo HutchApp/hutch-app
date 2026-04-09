@@ -61,7 +61,7 @@ function initProviders() {
 		const readArticleContent = initReadArticleContent({
 			storageProviderQueryOrder: [
 				initS3ReadContent({ client: new S3Client({}), bucketName: contentBucketName }),
-				articleStore.readContent,
+				articleStore.readContent, // Legacy fallback for articles saved before S3 migration
 			],
 			logError,
 		});

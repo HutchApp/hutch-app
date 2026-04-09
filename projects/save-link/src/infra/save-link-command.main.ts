@@ -5,7 +5,8 @@ import { consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { LinkSavedEvent } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
-import { initFindArticleContent } from "../save-link/find-article-content";
+import { initFetchHtml } from "../article-parser/fetch-html";
+import { initReadabilityParser } from "../article-parser/readability-parser";
 import { initS3PutObject } from "../save-link/s3-put-object";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";
 import { initUpdateContentLocation } from "../save-link/update-content-location";
@@ -20,11 +21,10 @@ const imagesCdnBaseUrl = requireEnv("IMAGES_CDN_BASE_URL");
 
 const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const s3Client = new S3Client({});
+const logError = (message: string, error?: Error) => consoleLogger.error(message, { error });
 
-const { findArticleContent } = initFindArticleContent({
-	client,
-	tableName: articlesTable,
-});
+const fetchHtml = initFetchHtml({ fetch: globalThis.fetch, logError });
+const { parseArticle } = initReadabilityParser({ fetchHtml });
 
 const { putObject } = initS3PutObject({
 	client: s3Client,
@@ -67,7 +67,7 @@ const publishLinkSaved = async (params: { url: string; userId: string }) => {
 };
 
 export const handler = initSaveLinkCommandHandler({
-	findArticleContent,
+	parseArticle,
 	putObject,
 	updateContentLocation,
 	publishLinkSaved,

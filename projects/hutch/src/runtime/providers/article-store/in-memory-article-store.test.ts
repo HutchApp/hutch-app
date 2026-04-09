@@ -285,7 +285,6 @@ describe("initInMemoryArticleStore", () => {
 					excerpt: "Updated excerpt",
 					wordCount: 200,
 				},
-				content: "<p>Updated content</p>",
 				estimatedReadTime: 1 as Minutes,
 				etag: '"new-etag"',
 				lastModified: "Wed, 20 Mar 2026 10:00:00 GMT",
@@ -299,7 +298,6 @@ describe("initInMemoryArticleStore", () => {
 				USER_A,
 			);
 			expect(found?.metadata.title).toBe("Updated Title");
-			expect(found?.content).toBe("<p>Updated content</p>");
 
 			const freshness = await store.findArticleFreshness("https://example.com/article");
 			expect(freshness?.etag).toBe('"new-etag"');
@@ -318,7 +316,6 @@ describe("initInMemoryArticleStore", () => {
 					excerpt: "No headers excerpt",
 					wordCount: 50,
 				},
-				content: "<p>Content without headers</p>",
 				estimatedReadTime: 1 as Minutes,
 				contentFetchedAt: "2026-03-20T12:00:00Z",
 			});
@@ -386,14 +383,6 @@ describe("initInMemoryArticleStore", () => {
 	});
 
 	describe("readContent", () => {
-		it("should return content for a saved article by normalized URL", async () => {
-			const store = initInMemoryArticleStore();
-			await store.saveArticle(makeArticleParams({ content: "<p>Hello</p>" }));
-
-			const content = await store.readContent(ArticleUniqueId.parse("https://example.com/article"));
-			expect(content).toBe("<p>Hello</p>");
-		});
-
 		it("should return undefined when article does not exist", async () => {
 			const store = initInMemoryArticleStore();
 
@@ -401,9 +390,9 @@ describe("initInMemoryArticleStore", () => {
 			expect(content).toBeUndefined();
 		});
 
-		it("should return undefined when article has no content", async () => {
+		it("should return undefined for newly saved article since content is stored in S3", async () => {
 			const store = initInMemoryArticleStore();
-			await store.saveArticle(makeArticleParams({ content: undefined }));
+			await store.saveArticle(makeArticleParams());
 
 			const content = await store.readContent(ArticleUniqueId.parse("https://example.com/article"));
 			expect(content).toBeUndefined();

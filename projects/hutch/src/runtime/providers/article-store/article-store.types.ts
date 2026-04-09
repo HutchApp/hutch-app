@@ -9,8 +9,6 @@ export interface SaveArticleParams {
 	userId: UserId;
 	url: string;
 	metadata: SavedArticle["metadata"];
-	content?: string;
-
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 }
 
@@ -44,8 +42,6 @@ export interface GlobalArticleData {
 	id: ArticleId;
 	url: string;
 	metadata: SavedArticle["metadata"];
-	content?: string;
-
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 }
 
@@ -81,8 +77,6 @@ export type FindArticleFreshness = (
 export type UpdateArticleContent = (params: {
 	url: string;
 	metadata: SavedArticle["metadata"];
-	content?: string;
-
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 	etag?: string;
 	lastModified?: string;

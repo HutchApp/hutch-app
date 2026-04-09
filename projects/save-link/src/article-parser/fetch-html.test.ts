@@ -1,0 +1,236 @@
+import { initFetchHtml, initFetchHtmlWithHeaders } from "./fetch-html";
+import { createFakeResponse } from "./fake-response.testutil";
+
+const noopLogError = () => {};
+
+describe("initFetchHtml", () => {
+	it("should return HTML text for a successful response", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ text: "<html>Hello</html>" });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBe("<html>Hello</html>");
+	});
+
+	it("should return undefined when response is not ok", async () => {
+		const fakeFetch = async () => createFakeResponse({ ok: false });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with HTTP status when response is not ok", async () => {
+		const fakeFetch = async () => createFakeResponse({ ok: false, status: 403 });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] HTTP 403 for https://example.com");
+	});
+
+	it("should return undefined when content-type is not text/html", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ contentType: "application/json" });
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with content-type when content-type is not text/html", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ contentType: "application/json" });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith('[FetchArticle] Unexpected Content-Type "application/json" for https://example.com');
+	});
+
+	it("should return undefined when fetch throws", async () => {
+		const fakeFetch = async () => {
+			throw new Error("network error");
+		};
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with error when fetch throws", async () => {
+		const networkError = new Error("network error");
+		const fakeFetch = async () => { throw networkError; };
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] Network error for https://example.com", networkError);
+	});
+
+	it("should pass the URL to the fetch function", async () => {
+		let capturedUrl: string | undefined;
+		const fakeFetch = async (input: string | URL | Request) => {
+			capturedUrl = input as string;
+			return createFakeResponse({ text: "<html></html>" });
+		};
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		await fetchHtml("https://example.com/article");
+
+		expect(capturedUrl).toBe("https://example.com/article");
+	});
+
+	it("should set accept header to text/html", async () => {
+		let capturedInit: RequestInit | undefined;
+		const fakeFetch = async (
+			_input: string | URL | Request,
+			init?: RequestInit,
+		) => {
+			capturedInit = init;
+			return createFakeResponse({ text: "<html></html>" });
+		};
+		const fetchHtml = initFetchHtml({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		await fetchHtml("https://example.com");
+
+		expect(capturedInit?.headers).toEqual({ accept: "text/html" });
+	});
+});
+
+describe("initFetchHtmlWithHeaders", () => {
+	it("should return html and captured ETag header", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({
+				text: "<html>Hello</html>",
+				etag: '"abc123"',
+			});
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result?.html).toBe("<html>Hello</html>");
+		expect(result?.etag).toBe('"abc123"');
+	});
+
+	it("should return html and captured Last-Modified header", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({
+				text: "<html>Hello</html>",
+				lastModified: "Wed, 21 Oct 2025 07:28:00 GMT",
+			});
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result?.html).toBe("<html>Hello</html>");
+		expect(result?.lastModified).toBe("Wed, 21 Oct 2025 07:28:00 GMT");
+	});
+
+	it("should return undefined for missing optional headers", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ text: "<html>Hello</html>" });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result?.html).toBe("<html>Hello</html>");
+		expect(result?.etag).toBeUndefined();
+		expect(result?.lastModified).toBeUndefined();
+	});
+
+	it("should return undefined when response is not ok", async () => {
+		const fakeFetch = async () => createFakeResponse({ ok: false });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with HTTP status when response is not ok", async () => {
+		const fakeFetch = async () => createFakeResponse({ ok: false, status: 403 });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] HTTP 403 for https://example.com");
+	});
+
+	it("should return undefined when content-type is not text/html", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ contentType: "application/json" });
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with content-type when content-type is not text/html", async () => {
+		const fakeFetch = async () =>
+			createFakeResponse({ contentType: "application/json" });
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith('[FetchArticle] Unexpected Content-Type "application/json" for https://example.com');
+	});
+
+	it("should return undefined when fetch throws", async () => {
+		const fakeFetch = async () => { throw new Error("network error"); };
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError: noopLogError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+	});
+
+	it("should call logError with error when fetch throws", async () => {
+		const networkError = new Error("network error");
+		const fakeFetch = async () => { throw networkError; };
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith("[FetchArticle] Network error for https://example.com", networkError);
+	});
+
+	it("should return undefined when content-type header is missing", async () => {
+		const fakeFetch = async (): Promise<Partial<Response>> => {
+			const headers = new Headers();
+			return { status: 200, ok: true, headers, text: async () => "<html>Content</html>" };
+		};
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		const result = await fetchHtml("https://example.com");
+
+		expect(result).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith('[FetchArticle] Unexpected Content-Type "" for https://example.com');
+	});
+
+	it("should pass undefined to logError when fetch throws a non-Error value", async () => {
+		const fakeFetch = async () => { throw "string error"; };
+		const logError = jest.fn();
+		const fetchHtml = initFetchHtmlWithHeaders({ fetch: fakeFetch as typeof fetch, logError });
+
+		await fetchHtml("https://example.com");
+
+		expect(logError).toHaveBeenCalledWith(
+			"[FetchArticle] Network error for https://example.com",
+			undefined,
+		);
+	});
+});

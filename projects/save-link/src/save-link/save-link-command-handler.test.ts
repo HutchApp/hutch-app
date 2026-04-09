@@ -1,6 +1,6 @@
 import { noopLogger } from "@packages/hutch-logger";
 import { initSaveLinkCommandHandler } from "./save-link-command-handler";
-import type { FindArticleContent } from "./find-article-content";
+import type { ParseArticle } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
@@ -45,63 +45,66 @@ function createSqsEvent(detail: { url: string; userId: string }): SQSEvent {
 
 const noopDownloadMedia: DownloadMedia = async () => [];
 
+const successfulParse: ParseArticle = async () => ({
+	ok: true,
+	article: { title: "Test", siteName: "example.com", excerpt: "test", wordCount: 10, content: "<p>Article content</p>" },
+});
+
 describe("initSaveLinkCommandHandler", () => {
-	it("saves content to S3 and publishes LinkSavedEvent when article has content", async () => {
-		const findArticleContent: FindArticleContent = async () => ({ content: "<p>Article content</p>" });
+	it("fetches article, saves content to S3, and publishes LinkSavedEvent", async () => {
 		const putObject = jest.fn().mockResolvedValue("s3://test-bucket/content/example.com%2Farticle/content.html");
 		const updateContentLocation = jest.fn().mockResolvedValue({});
 		const publishLinkSaved = jest.fn().mockResolvedValue({});
-		const updateThumbnailUrl: UpdateThumbnailUrl = jest.fn().mockResolvedValue({});
 
 		const handler = initSaveLinkCommandHandler({
-			findArticleContent,
+			parseArticle: successfulParse,
 			putObject,
 			updateContentLocation,
 			publishLinkSaved,
-			downloadMedia: noopDownloadMedia,
-			updateThumbnailUrl,
-			logger: noopLogger,
-		});
-
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-		expect(putObject).toHaveBeenCalledTimes(1);
-		expect(putObject).toHaveBeenCalledWith({
-			key: expect.stringContaining("example.com"),
-			content: "<p>Article content</p>",
-		});
-
-		expect(updateContentLocation).toHaveBeenCalledTimes(1);
-		expect(updateContentLocation).toHaveBeenCalledWith({
-			url: "https://example.com/article",
-			contentLocation: expect.stringMatching(/^s3:\/\//),
-		});
-
-		expect(publishLinkSaved).toHaveBeenCalledTimes(1);
-		expect(publishLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article", userId: "user-1" });
-	});
-
-	it("throws when article content not found so DLQ retries", async () => {
-		const findArticleContent: FindArticleContent = async () => undefined;
-
-		const handler = initSaveLinkCommandHandler({
-			findArticleContent,
-			putObject: jest.fn(),
-			updateContentLocation: jest.fn(),
-			publishLinkSaved: jest.fn(),
 			downloadMedia: noopDownloadMedia,
 			updateThumbnailUrl: jest.fn(),
 			logger: noopLogger,
 		});
 
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/no-content", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toThrow("[SaveLinkCommand] article content not found");
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		expect(putObject).toHaveBeenCalledWith({
+			key: expect.stringContaining("example.com"),
+			content: "<p>Article content</p>",
+		});
+
+		expect(updateContentLocation).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			contentLocation: expect.stringMatching(/^s3:\/\//),
+		});
+
+		expect(publishLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article", userId: "user-1" });
+	});
+
+	it("skips content save and publishes event when article fetch fails", async () => {
+		const failedParse: ParseArticle = async () => ({ ok: false, reason: "Could not fetch" });
+		const putObject = jest.fn();
+		const publishLinkSaved = jest.fn().mockResolvedValue({});
+
+		const handler = initSaveLinkCommandHandler({
+			parseArticle: failedParse,
+			putObject,
+			updateContentLocation: jest.fn(),
+			publishLinkSaved,
+			downloadMedia: noopDownloadMedia,
+			updateThumbnailUrl: jest.fn(),
+			logger: noopLogger,
+		});
+
+		await handler(createSqsEvent({ url: "https://example.com/unreachable", userId: "user-1" }), stubContext, () => {});
+
+		expect(putObject).not.toHaveBeenCalled();
+		expect(publishLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/unreachable", userId: "user-1" });
 	});
 
 	it("throws on invalid event detail", async () => {
 		const handler = initSaveLinkCommandHandler({
-			findArticleContent: async () => ({ content: "content" }),
+			parseArticle: successfulParse,
 			putObject: jest.fn(),
 			updateContentLocation: jest.fn(),
 			publishLinkSaved: jest.fn(),
@@ -130,20 +133,19 @@ describe("initSaveLinkCommandHandler", () => {
 	});
 
 	it("passes downloaded media through processContentWithLocalMedia to rewrite HTML", async () => {
+		const parseWithImage: ParseArticle = async () => ({
+			ok: true,
+			article: { title: "T", siteName: "s", excerpt: "e", wordCount: 1, content: '<img src="https://example.com/img.png">' },
+		});
 		const downloadMedia: DownloadMedia = jest.fn().mockResolvedValue([
 			{ originalUrl: "https://example.com/img.png", cdnUrl: "https://cdn/images/abc.png" },
 		]);
-		const findArticleContent: FindArticleContent = async () => ({
-			content: '<img src="https://example.com/img.png">',
-			imageUrl: undefined,
-		});
 		const putObject = jest.fn().mockResolvedValue("s3://bucket/key");
-		const updateContentLocation = jest.fn().mockResolvedValue({});
 
 		const handler = initSaveLinkCommandHandler({
-			findArticleContent,
+			parseArticle: parseWithImage,
 			putObject,
-			updateContentLocation,
+			updateContentLocation: jest.fn().mockResolvedValue({}),
 			publishLinkSaved: jest.fn().mockResolvedValue({}),
 			downloadMedia,
 			updateThumbnailUrl: jest.fn(),
@@ -153,22 +155,22 @@ describe("initSaveLinkCommandHandler", () => {
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
 		expect(putObject).toHaveBeenCalledWith(
-			expect.objectContaining({ content: '<img src="https://cdn/images/abc.png">' }),
+			expect.objectContaining({ content: expect.stringContaining("https://cdn/images/abc.png") }),
 		);
 	});
 
 	it("updates thumbnail when media download rewrites it", async () => {
+		const parseWithThumb: ParseArticle = async () => ({
+			ok: true,
+			article: { title: "T", siteName: "s", excerpt: "e", wordCount: 1, content: "<p>text</p>", imageUrl: "https://example.com/thumb.png" },
+		});
 		const downloadMedia: DownloadMedia = jest.fn().mockResolvedValue([
 			{ originalUrl: "https://example.com/thumb.png", cdnUrl: "https://cdn/images/thumb.png" },
 		]);
-		const findArticleContent: FindArticleContent = async () => ({
-			content: "<p>text</p>",
-			imageUrl: "https://example.com/thumb.png",
-		});
 		const updateThumbnailUrl: UpdateThumbnailUrl = jest.fn().mockResolvedValue({});
 
 		const handler = initSaveLinkCommandHandler({
-			findArticleContent,
+			parseArticle: parseWithThumb,
 			putObject: jest.fn().mockResolvedValue("s3://bucket/key"),
 			updateContentLocation: jest.fn().mockResolvedValue({}),
 			publishLinkSaved: jest.fn().mockResolvedValue({}),
@@ -186,19 +188,18 @@ describe("initSaveLinkCommandHandler", () => {
 	});
 
 	it("does not update thumbnail when no media was downloaded for it", async () => {
-		const downloadMedia: DownloadMedia = jest.fn().mockResolvedValue([]);
-		const findArticleContent: FindArticleContent = async () => ({
-			content: "<p>content</p>",
-			imageUrl: "https://example.com/thumb.png",
+		const parseWithThumb: ParseArticle = async () => ({
+			ok: true,
+			article: { title: "T", siteName: "s", excerpt: "e", wordCount: 1, content: "<p>content</p>", imageUrl: "https://example.com/thumb.png" },
 		});
 		const updateThumbnailUrl: UpdateThumbnailUrl = jest.fn();
 
 		const handler = initSaveLinkCommandHandler({
-			findArticleContent,
+			parseArticle: parseWithThumb,
 			putObject: jest.fn().mockResolvedValue("s3://bucket/key"),
 			updateContentLocation: jest.fn().mockResolvedValue({}),
 			publishLinkSaved: jest.fn().mockResolvedValue({}),
-			downloadMedia,
+			downloadMedia: async () => [],
 			updateThumbnailUrl,
 			logger: noopLogger,
 		});

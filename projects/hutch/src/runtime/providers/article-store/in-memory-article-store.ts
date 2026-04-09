@@ -72,6 +72,7 @@ export function initInMemoryArticleStore(): {
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
 	readContent: ContentProvider;
+	writeContent: (params: { url: string; content: string }) => Promise<void>;
 } {
 	const articles = new Map<string, GlobalArticle>();
 	const userArticles = new Map<string, UserArticle>();
@@ -97,8 +98,6 @@ export function initInMemoryArticleStore(): {
 				originalUrl: params.url,
 				routeId,
 				metadata: params.metadata,
-				content: params.content,
-
 				estimatedReadTime: params.estimatedReadTime,
 			});
 		}
@@ -223,7 +222,6 @@ export function initInMemoryArticleStore(): {
 		const article = articles.get(articleUniqueId.value);
 		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
 		article.metadata = params.metadata;
-		article.content = params.content;
 		article.estimatedReadTime = params.estimatedReadTime;
 		if (params.etag) article.etag = params.etag;
 		if (params.lastModified) article.lastModified = params.lastModified;
@@ -250,6 +248,13 @@ export function initInMemoryArticleStore(): {
 		return article.content;
 	};
 
+	const writeContent = async (params: { url: string; content: string }) => {
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
+		const article = articles.get(articleUniqueId.value);
+		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
+		article.content = params.content;
+	};
+
 	return {
 		saveArticle,
 		findArticleById,
@@ -262,5 +267,6 @@ export function initInMemoryArticleStore(): {
 		updateArticleFetchMetadata,
 		clearArticleSummary,
 		readContent,
+		writeContent,
 	};
 }

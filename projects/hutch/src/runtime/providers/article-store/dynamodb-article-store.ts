@@ -152,7 +152,6 @@ export function initDynamoDbArticleStore(deps: {
 						excerpt: params.metadata.excerpt,
 						wordCount: params.metadata.wordCount,
 						imageUrl: params.metadata.imageUrl,
-						content: params.content,
 						estimatedReadTime: params.estimatedReadTime,
 					},
 					ConditionExpression: "attribute_not_exists(#url)",
@@ -386,13 +385,12 @@ export function initDynamoDbArticleStore(deps: {
 			new UpdateCommand({
 				TableName: tableName,
 				Key: { url: articleUniqueId.value },
-				UpdateExpression: "SET title = :title, siteName = :siteName, excerpt = :excerpt, wordCount = :wordCount, content = :content, estimatedReadTime = :ert, contentFetchedAt = :cfa, etag = :etag, lastModified = :lm",
+				UpdateExpression: "SET title = :title, siteName = :siteName, excerpt = :excerpt, wordCount = :wordCount, estimatedReadTime = :ert, contentFetchedAt = :cfa, etag = :etag, lastModified = :lm",
 				ExpressionAttributeValues: {
 					":title": params.metadata.title,
 					":siteName": params.metadata.siteName,
 					":excerpt": params.metadata.excerpt,
 					":wordCount": params.metadata.wordCount,
-					":content": params.content,
 					":ert": params.estimatedReadTime,
 					":cfa": params.contentFetchedAt,
 					":etag": params.etag ?? null,
@@ -427,6 +425,7 @@ export function initDynamoDbArticleStore(deps: {
 		);
 	};
 
+	/** Legacy fallback for articles saved before S3 migration. S3 is the primary content store. */
 	const readContent: ContentProvider = async (articleUniqueId) => {
 		const result = await client.send(
 			new GetCommand({

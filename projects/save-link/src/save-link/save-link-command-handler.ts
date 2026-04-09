@@ -1,9 +1,8 @@
-import assert from "node:assert";
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import { SaveLinkCommand } from "./index";
 import { ArticleUniqueId } from "./article-unique-id";
-import type { FindArticleContent } from "./find-article-content";
+import type { ParseArticle } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import { processContentWithLocalMedia } from "./process-content-with-local-media";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
@@ -17,7 +16,7 @@ function contentS3Key(articleUniqueId: ArticleUniqueId): string {
 }
 
 export function initSaveLinkCommandHandler(deps: {
-	findArticleContent: FindArticleContent;
+	parseArticle: ParseArticle;
 	putObject: PutObject;
 	updateContentLocation: UpdateContentLocation;
 	publishLinkSaved: PublishLinkSaved;
@@ -25,7 +24,7 @@ export function initSaveLinkCommandHandler(deps: {
 	updateThumbnailUrl: UpdateThumbnailUrl;
 	logger: HutchLogger;
 }): SQSHandler {
-	const { findArticleContent, putObject, updateContentLocation, publishLinkSaved, downloadMedia, updateThumbnailUrl, logger } = deps;
+	const { parseArticle, putObject, updateContentLocation, publishLinkSaved, downloadMedia, updateThumbnailUrl, logger } = deps;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -34,9 +33,14 @@ export function initSaveLinkCommandHandler(deps: {
 
 			logger.info("[SaveLinkCommand] processing", { url: detail.url, userId: detail.userId });
 
-			const article = await findArticleContent(detail.url);
-			assert(article, `[SaveLinkCommand] article content not found: ${detail.url}`);
+			const parseResult = await parseArticle(detail.url);
+			if (!parseResult.ok) {
+				logger.info("[SaveLinkCommand] could not fetch article, skipping content", { url: detail.url, reason: parseResult.reason });
+				await publishLinkSaved({ url: detail.url, userId: detail.userId });
+				continue;
+			}
 
+			const { article } = parseResult;
 			const articleUniqueId = ArticleUniqueId.parse(detail.url);
 
 			const media = await downloadMedia({

@@ -3,7 +3,6 @@ import type { Request, Response, Router } from "express";
 import express from "express";
 import { SaveArticleInputSchema, ArticleIdSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
-import { fitContent } from "../../../domain/article/content-size-guard";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type {
@@ -81,7 +80,6 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 				wordCount: article.wordCount,
 				imageUrl: article.imageUrl,
 			},
-			content: fitContent(article.content),
 			estimatedReadTime: calculateReadTime(article.wordCount),
 		});
 

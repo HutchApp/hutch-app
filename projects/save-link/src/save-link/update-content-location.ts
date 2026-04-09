@@ -16,7 +16,7 @@ export function initUpdateContentLocation(deps: {
 			new UpdateCommand({
 				TableName: tableName,
 				Key: { url: articleUniqueId.value },
-				UpdateExpression: "SET contentLocation = :cl",
+				UpdateExpression: "SET contentLocation = :cl REMOVE content",
 				ExpressionAttributeValues: {
 					":cl": params.contentLocation,
 				},
