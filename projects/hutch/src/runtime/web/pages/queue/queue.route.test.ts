@@ -610,7 +610,7 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			expect(doc.querySelector("[data-test-no-content]")?.textContent).toContain("not available");
+			expect(doc.querySelector("[data-test-no-content]")?.textContent).toContain("not yet available");
 		});
 	});
 
