@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { LinkId } from "../save-link/link-id";
+import { ArticleUniqueId } from "../save-link/article-unique-id";
 import type { FindCachedSummary, SaveCachedSummary } from "./article-summary.types";
 
 const SummaryCacheRow = z.object({
@@ -18,11 +18,11 @@ export function initDynamoDbSummaryCache(deps: {
 	const { client, tableName } = deps;
 
 	const findCachedSummary: FindCachedSummary = async (url) => {
-		const linkId = LinkId.from(url);
+		const articleUniqueId = ArticleUniqueId.parse(url);
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
-				Key: { url: linkId },
+				Key: { url: articleUniqueId.value },
 				ProjectionExpression: "summary",
 			}),
 		);
@@ -32,11 +32,11 @@ export function initDynamoDbSummaryCache(deps: {
 	};
 
 	const saveCachedSummary: SaveCachedSummary = async (params) => {
-		const linkId = LinkId.from(params.url);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
-				Key: { url: linkId },
+				Key: { url: articleUniqueId.value },
 				UpdateExpression: "SET summary = :summary, summaryInputTokens = :inputTokens, summaryOutputTokens = :outputTokens",
 				ExpressionAttributeValues: {
 					":summary": params.summary,

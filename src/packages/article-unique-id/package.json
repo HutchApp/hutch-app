@@ -1,7 +1,7 @@
 {
-  "name": "@packages/link-id",
+  "name": "@packages/article-unique-id",
   "version": "1.0.0",
-  "description": "Branded LinkId type with URL normalization for consistent DynamoDB key lookups",
+  "description": "ArticleUniqueId value object with URL normalization for consistent DynamoDB key lookups",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "private": true,

@@ -6,7 +6,7 @@ import type {
 	Minutes,
 	SavedArticle,
 } from "../../domain/article/article.types";
-import { LinkId } from "@packages/link-id";
+import { ArticleUniqueId } from "@packages/article-unique-id";
 import { ReaderId } from "../../domain/article/reader-id";
 import type { UserId } from "../../domain/user/user.types";
 import type {
@@ -88,32 +88,32 @@ export function initInMemoryArticleStore(): {
 	}
 
 	const saveArticle: SaveArticle = async (params) => {
-		const normalizedUrl = LinkId.from(params.url);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
 		const routeId = ReaderId.from(params.url);
 
-		if (!articles.has(normalizedUrl)) {
-			articles.set(normalizedUrl, {
-				url: normalizedUrl,
+		if (!articles.has(articleUniqueId.value)) {
+			articles.set(articleUniqueId.value, {
+				url: articleUniqueId.value,
 				originalUrl: params.url,
 				routeId,
 				metadata: params.metadata,
 				content: params.content,
-	
+
 				estimatedReadTime: params.estimatedReadTime,
 			});
 		}
 
-		const uaKey = userArticleKey(params.userId, normalizedUrl);
+		const uaKey = userArticleKey(params.userId, articleUniqueId.value);
 		if (!userArticles.has(uaKey)) {
 			userArticles.set(uaKey, {
 				userId: params.userId,
-				url: normalizedUrl,
+				url: articleUniqueId.value,
 				status: "unread",
 				savedAt: new Date(),
 			});
 		}
 
-		const article = articles.get(normalizedUrl);
+		const article = articles.get(articleUniqueId.value);
 		assert(article, "Article must exist after set");
 		const ua = userArticles.get(uaKey);
 		assert(ua, "User article must exist after set");
@@ -131,8 +131,8 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const findArticleByUrl: FindArticleByUrl = async (url) => {
-		const normalizedUrl = LinkId.from(url);
-		const article = articles.get(normalizedUrl);
+		const articleUniqueId = ArticleUniqueId.parse(url);
+		const article = articles.get(articleUniqueId.value);
 		if (!article) return null;
 
 		return {
@@ -208,8 +208,8 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const findArticleFreshness: FindArticleFreshness = async (url) => {
-		const normalizedUrl = LinkId.from(url);
-		const article = articles.get(normalizedUrl);
+		const articleUniqueId = ArticleUniqueId.parse(url);
+		const article = articles.get(articleUniqueId.value);
 		if (!article) return null;
 		return {
 			etag: article.etag,
@@ -219,9 +219,9 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const updateArticleContent: UpdateArticleContent = async (params) => {
-		const normalizedUrl = LinkId.from(params.url);
-		const article = articles.get(normalizedUrl);
-		assert(article, `Article not found for URL: ${normalizedUrl}`);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
+		const article = articles.get(articleUniqueId.value);
+		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
 		article.metadata = params.metadata;
 		article.content = params.content;
 		article.estimatedReadTime = params.estimatedReadTime;
@@ -231,21 +231,21 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const updateArticleFetchMetadata: UpdateArticleFetchMetadata = async (params) => {
-		const normalizedUrl = LinkId.from(params.url);
-		const article = articles.get(normalizedUrl);
-		assert(article, `Article not found for URL: ${normalizedUrl}`);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
+		const article = articles.get(articleUniqueId.value);
+		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
 		article.contentFetchedAt = params.contentFetchedAt;
 	};
 
 	const clearArticleSummary: ClearArticleSummary = async (url) => {
-		const normalizedUrl = LinkId.from(url);
-		const article = articles.get(normalizedUrl);
-		assert(article, `Article not found for URL: ${normalizedUrl}`);
+		const articleUniqueId = ArticleUniqueId.parse(url);
+		const article = articles.get(articleUniqueId.value);
+		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
 		article.summary = undefined;
 	};
 
-	const readContent: ContentProvider = async (normalizedUrl) => {
-		const article = articles.get(normalizedUrl);
+	const readContent: ContentProvider = async (articleUniqueId) => {
+		const article = articles.get(articleUniqueId.value);
 		if (!article) return undefined;
 		return article.content;
 	};

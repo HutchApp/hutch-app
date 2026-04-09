@@ -1,5 +1,5 @@
 {
-  "name": "@packages/link-id",
+  "name": "@packages/article-unique-id",
   "targets": {
     "check": {
       "command": "pnpm lint",

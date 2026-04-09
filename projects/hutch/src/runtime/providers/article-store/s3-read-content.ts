@@ -2,11 +2,11 @@
 import type { S3Client } from "@aws-sdk/client-s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import assert from "node:assert";
-import type { NormalisedUrl } from "@packages/link-id";
+import type { ArticleUniqueId } from "@packages/article-unique-id";
 import type { ContentProvider } from "./read-article-content";
 
-function contentS3Key(normalizedUrl: NormalisedUrl): string {
-	return `content/${encodeURIComponent(normalizedUrl)}/content.html`;
+function contentS3Key(articleUniqueId: ArticleUniqueId): string {
+	return `content/${encodeURIComponent(articleUniqueId.value)}/content.html`;
 }
 
 export function initS3ReadContent(deps: {
@@ -15,8 +15,8 @@ export function initS3ReadContent(deps: {
 }): ContentProvider {
 	const { client, bucketName } = deps;
 
-	return async (normalizedUrl) => {
-		const key = contentS3Key(normalizedUrl);
+	return async (articleUniqueId) => {
+		const key = contentS3Key(articleUniqueId);
 		const result = await client.send(
 			new GetObjectCommand({ Bucket: bucketName, Key: key }),
 		);

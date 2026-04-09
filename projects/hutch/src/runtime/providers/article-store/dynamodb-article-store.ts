@@ -11,7 +11,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { ArticleId, SavedArticle } from "../../domain/article/article.types";
 import { ArticleIdSchema, MinutesSchema, ArticleStatusSchema } from "../../domain/article/article.schema";
-import { LinkId } from "@packages/link-id";
+import { ArticleUniqueId } from "@packages/article-unique-id";
 import { ReaderId } from "../../domain/article/reader-id";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type { UserId } from "../../domain/user/user.types";
@@ -130,7 +130,7 @@ export function initDynamoDbArticleStore(deps: {
 	}
 
 	const saveArticle: SaveArticle = async (params) => {
-		const normalizedUrl = LinkId.from(params.url);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
 		const routeId = ReaderId.from(params.url);
 		const now = new Date();
 
@@ -144,7 +144,7 @@ export function initDynamoDbArticleStore(deps: {
 				new PutCommand({
 					TableName: tableName,
 					Item: {
-						url: normalizedUrl,
+						url: articleUniqueId.value,
 						routeId,
 						originalUrl: params.url,
 						title: params.metadata.title,
@@ -164,7 +164,7 @@ export function initDynamoDbArticleStore(deps: {
 					TableName: userArticlesTableName,
 					Item: {
 						userId: params.userId,
-						url: normalizedUrl,
+						url: articleUniqueId.value,
 						status: "unread",
 						savedAt: now.toISOString(),
 					},
@@ -175,12 +175,12 @@ export function initDynamoDbArticleStore(deps: {
 
 		const [articleResult, uaResult] = await Promise.all([
 			client.send(
-				new GetCommand({ TableName: tableName, Key: { url: normalizedUrl } }),
+				new GetCommand({ TableName: tableName, Key: { url: articleUniqueId.value } }),
 			),
 			client.send(
 				new GetCommand({
 					TableName: userArticlesTableName,
-					Key: { userId: params.userId, url: normalizedUrl },
+					Key: { userId: params.userId, url: articleUniqueId.value },
 				}),
 			),
 		]);
@@ -362,11 +362,11 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const findArticleFreshness: FindArticleFreshness = async (url) => {
-		const normalizedUrl = LinkId.from(url);
+		const articleUniqueId = ArticleUniqueId.parse(url);
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
-				Key: { url: normalizedUrl },
+				Key: { url: articleUniqueId.value },
 				ProjectionExpression: "etag, lastModified, contentFetchedAt",
 			}),
 		);
@@ -381,11 +381,11 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const updateArticleContent: UpdateArticleContent = async (params) => {
-		const normalizedUrl = LinkId.from(params.url);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
-				Key: { url: normalizedUrl },
+				Key: { url: articleUniqueId.value },
 				UpdateExpression: "SET title = :title, siteName = :siteName, excerpt = :excerpt, wordCount = :wordCount, content = :content, estimatedReadTime = :ert, contentFetchedAt = :cfa, etag = :etag, lastModified = :lm",
 				ExpressionAttributeValues: {
 					":title": params.metadata.title,
@@ -403,11 +403,11 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const updateArticleFetchMetadata: UpdateArticleFetchMetadata = async (params) => {
-		const normalizedUrl = LinkId.from(params.url);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
-				Key: { url: normalizedUrl },
+				Key: { url: articleUniqueId.value },
 				UpdateExpression: "SET contentFetchedAt = :cfa",
 				ExpressionAttributeValues: {
 					":cfa": params.contentFetchedAt,
@@ -417,21 +417,21 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const clearArticleSummary: ClearArticleSummary = async (url) => {
-		const normalizedUrl = LinkId.from(url);
+		const articleUniqueId = ArticleUniqueId.parse(url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
-				Key: { url: normalizedUrl },
+				Key: { url: articleUniqueId.value },
 				UpdateExpression: "REMOVE summary, summaryInputTokens, summaryOutputTokens",
 			}),
 		);
 	};
 
-	const readContent: ContentProvider = async (normalizedUrl) => {
+	const readContent: ContentProvider = async (articleUniqueId) => {
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
-				Key: { url: normalizedUrl },
+				Key: { url: articleUniqueId.value },
 				ProjectionExpression: "content",
 			}),
 		);

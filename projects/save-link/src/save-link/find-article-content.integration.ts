@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { initFindArticleContent } from "./find-article-content";
-import { LinkId } from "./link-id";
+import { ArticleUniqueId } from "./article-unique-id";
 
 // process.env used directly — same exception as Playwright configs:
 // importing requireEnv causes the node-test process to load require-env.ts
@@ -24,7 +24,7 @@ describe("findArticleContent (integration)", () => {
 			new PutCommand({
 				TableName: tableName,
 				Item: {
-					url: LinkId.from(uniqueUrl),
+					url: ArticleUniqueId.parse(uniqueUrl).value,
 					content: expectedContent,
 				},
 			}),

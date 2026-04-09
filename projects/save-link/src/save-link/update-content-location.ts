@@ -1,7 +1,7 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { LinkId } from "./link-id";
+import { ArticleUniqueId } from "./article-unique-id";
 import type { UpdateContentLocation } from "./save-link-command-handler";
 
 export function initUpdateContentLocation(deps: {
@@ -11,11 +11,11 @@ export function initUpdateContentLocation(deps: {
 	const { client, tableName } = deps;
 
 	const updateContentLocation: UpdateContentLocation = async (params) => {
-		const normalizedUrl = LinkId.from(params.url);
+		const articleUniqueId = ArticleUniqueId.parse(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
-				Key: { url: normalizedUrl },
+				Key: { url: articleUniqueId.value },
 				UpdateExpression: "SET contentLocation = :cl",
 				ExpressionAttributeValues: {
 					":cl": params.contentLocation,

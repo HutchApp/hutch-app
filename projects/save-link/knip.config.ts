@@ -15,7 +15,7 @@ export default {
 		...(base.ignoreDependencies ?? []),
 		// Workspace dependencies with subpath imports not detected by knip
 		"@packages/hutch-infra-components",
-		"@packages/link-id",
+		"@packages/article-unique-id",
 		// Used only in infra code (Pulumi IaC, compiled separately)
 		"@pulumi/aws",
 	],

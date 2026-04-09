@@ -1,6 +1,6 @@
-import { LinkId, type NormalisedUrl } from "@packages/link-id";
+import { ArticleUniqueId } from "@packages/article-unique-id";
 
-export type ContentProvider = (normalizedUrl: NormalisedUrl) => Promise<string | undefined>;
+export type ContentProvider = (articleUniqueId: ArticleUniqueId) => Promise<string | undefined>;
 
 export type ReadArticleContent = (url: string) => Promise<string | undefined>;
 
@@ -11,11 +11,11 @@ export function initReadArticleContent(deps: {
 	const { storageProviderQueryOrder, logError } = deps;
 
 	return async (url) => {
-		const normalizedUrl = LinkId.from(url);
+		const articleUniqueId = ArticleUniqueId.parse(url);
 
 		for (const provider of storageProviderQueryOrder) {
 			try {
-				const content = await provider(normalizedUrl);
+				const content = await provider(articleUniqueId);
 				if (content) return content;
 			} catch (error) {
 				logError("Content provider failed, trying next", error instanceof Error ? error : undefined);

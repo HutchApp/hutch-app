@@ -74,9 +74,9 @@ describe("initReadArticleContent", () => {
 	});
 
 	it("normalizes the URL before passing to providers", async () => {
-		const receivedUrls: string[] = [];
-		const provider: ContentProvider = async (url) => {
-			receivedUrls.push(url);
+		const receivedValues: string[] = [];
+		const provider: ContentProvider = async (articleUniqueId) => {
+			receivedValues.push(articleUniqueId.value);
 			return "content";
 		};
 
@@ -86,6 +86,6 @@ describe("initReadArticleContent", () => {
 		});
 
 		await readArticleContent("https://example.com/article#heading");
-		expect(receivedUrls[0]).toBe("example.com/article");
+		expect(receivedValues[0]).toBe("example.com/article");
 	});
 });
