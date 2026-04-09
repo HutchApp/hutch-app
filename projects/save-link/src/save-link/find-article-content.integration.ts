@@ -12,20 +12,33 @@ import { ArticleUniqueId } from "./article-unique-id";
 const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
 assert(tableName);
 
+const expectedContent = "<p>Integration test content</p>";
+
+const stubS3Client = {
+	send: async () => ({
+		Body: { transformToString: async () => expectedContent },
+	}),
+};
+
 describe("findArticleContent (integration)", () => {
-	it("retrieves content for a saved article", async () => {
-		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-		const { findArticleContent } = initFindArticleContent({ client, tableName });
+	it("retrieves content from S3 using contentLocation stored in DynamoDB", async () => {
+		const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+
+		const { findArticleContent } = initFindArticleContent({
+			dynamoClient,
+			s3Client: stubS3Client as never,
+			tableName,
+		});
 
 		const uniqueUrl = `https://example.com/${randomUUID()}`;
-		const expectedContent = "<p>Integration test content</p>";
+		const articleUniqueId = ArticleUniqueId.parse(uniqueUrl);
 
-		await client.send(
+		await dynamoClient.send(
 			new PutCommand({
 				TableName: tableName,
 				Item: {
-					url: ArticleUniqueId.parse(uniqueUrl).value,
-					content: expectedContent,
+					url: articleUniqueId.value,
+					contentLocation: "s3://test-bucket/content/test/content.html",
 				},
 			}),
 		);
@@ -34,5 +47,30 @@ describe("findArticleContent (integration)", () => {
 
 		assert(result);
 		assert.equal(result.content, expectedContent);
+	});
+
+	it("returns undefined when contentLocation is absent", async () => {
+		const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+
+		const { findArticleContent } = initFindArticleContent({
+			dynamoClient,
+			s3Client: stubS3Client as never,
+			tableName,
+		});
+
+		const uniqueUrl = `https://example.com/${randomUUID()}`;
+		const articleUniqueId = ArticleUniqueId.parse(uniqueUrl);
+
+		await dynamoClient.send(
+			new PutCommand({
+				TableName: tableName,
+				Item: {
+					url: articleUniqueId.value,
+				},
+			}),
+		);
+
+		const result = await findArticleContent(uniqueUrl);
+		assert.equal(result, undefined);
 	});
 });

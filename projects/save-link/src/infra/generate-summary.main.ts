@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { S3Client } from "@aws-sdk/client-s3";
 import Anthropic, { APIError } from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { consoleLogger } from "@packages/hutch-logger";
@@ -20,7 +21,8 @@ const anthropicApiKey = requireEnv("ANTHROPIC_API_KEY");
 const deepseekApiKey = requireEnv("DEEPSEEK_API_KEY");
 const eventBusName = requireEnv("EVENT_BUS_NAME");
 
-const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const s3Client = new S3Client({});
 const anthropicClient = new Anthropic({ apiKey: anthropicApiKey });
 const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com", timeout: 60_000 });
 
@@ -31,12 +33,13 @@ const deepseekAdapter = initCreateDeepseekMessage({
 });
 
 const { findArticleContent } = initFindArticleContent({
-	client,
+	dynamoClient,
+	s3Client,
 	tableName: articlesTable,
 });
 
 const summaryCache = initDynamoDbSummaryCache({
-	client,
+	client: dynamoClient,
 	tableName: articlesTable,
 });
 

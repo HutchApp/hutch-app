@@ -109,6 +109,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 		ANTHROPIC_API_KEY: anthropicApiKey,
 		DEEPSEEK_API_KEY: deepseekApiKey,
 		EVENT_BUS_NAME: eventBus.eventBusName,
+		CONTENT_BUCKET_NAME: contentBucketName,
 	},
 	policies: [
 		...generateSummaryDynamodb.policies,
@@ -140,6 +141,7 @@ const linkSavedLambda = new HutchLambda("link-saved", {
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+		CONTENT_BUCKET_NAME: contentBucketName,
 	},
 	policies: [
 		...linkSavedDynamodb.policies,

@@ -1,4 +1,3 @@
-import assert from "node:assert";
 import type { SQSHandler } from "aws-lambda";
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { HutchLogger } from "@packages/hutch-logger";
@@ -21,7 +20,10 @@ export function initLinkSavedHandler(deps: {
 			logger.info("[LinkSaved] processing", { url: detail.url, userId: detail.userId });
 
 			const content = await findArticleContent(detail.url);
-			assert(content, `Article has no content: ${detail.url}`);
+			if (!content) {
+				logger.info("[LinkSaved] no content available, skipping summary", { url: detail.url });
+				continue;
+			}
 
 			await sqsClient.send(
 				new SendMessageCommand({

@@ -61,8 +61,9 @@ describe("initLinkSavedHandler", () => {
 		expect(JSON.parse(command.input.MessageBody)).toEqual({ url: "https://example.com/article" });
 	});
 
-	it("should throw when article has no content", async () => {
-		const sqsClient = { send: jest.fn() };
+	it("should skip summary dispatch when article has no content", async () => {
+		const sendMessage = jest.fn();
+		const sqsClient = { send: sendMessage };
 		const findArticleContent: FindArticleContent = async () => undefined;
 
 		const handler = initLinkSavedHandler({
@@ -72,9 +73,9 @@ describe("initLinkSavedHandler", () => {
 			logger: noopLogger,
 		});
 
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/no-content", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toThrow("Article has no content: https://example.com/no-content");
+		await handler(createSqsEvent({ url: "https://example.com/no-content", userId: "user-1" }), stubContext, () => {});
+
+		expect(sendMessage).not.toHaveBeenCalled();
 	});
 
 	it("should throw on invalid event detail", async () => {
