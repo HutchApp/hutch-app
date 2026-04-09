@@ -58,4 +58,14 @@ export class HutchS3ReadWrite extends pulumi.ComponentResource {
 	writePolicies(name: string): LambdaPolicy[] {
 		return [{ name: `${name}-write-pol`, policy: this.writePolicyDocument }];
 	}
+
+	static readPoliciesForBucket(name: string, bucketName: string): LambdaPolicy[] {
+		return [{
+			name: `${name}-read-pol`,
+			policy: JSON.stringify({
+				Version: "2012-10-17",
+				Statement: [{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `arn:aws:s3:::${bucketName}/*` }],
+			}),
+		}];
+	}
 }

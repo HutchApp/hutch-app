@@ -1,5 +1,6 @@
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
+import { normalizeArticleUrl } from "./domain/article/normalize-article-url";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
@@ -41,12 +42,12 @@ export function createTestApp(options?: {
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
-
 	const app = createApp({
 		appOrigin: "http://localhost:3000",
 		staticBaseUrl: "",
 		...auth,
 		...articleStore,
+		readArticleContent: (url) => articleStore.readContent(normalizeArticleUrl(url)),
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
 		publishLinkSaved: options?.publishLinkSaved ?? defaultPublishLinkSaved,
 		findCachedSummary: options?.findCachedSummary ?? (async () => ""),

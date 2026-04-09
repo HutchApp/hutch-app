@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import assert from "node:assert";
-import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus } from "@packages/hutch-infra-components/infra";
+import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus, HutchS3ReadWrite } from "@packages/hutch-infra-components/infra";
 import { DomainRegistration } from "./domain-registration";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
@@ -14,6 +14,7 @@ const deletionProtection = config.requireBoolean("deletionProtection");
 const staticDomains = config.requireObject<string[]>("staticDomains");
 assert(staticDomains.length > 0, "staticDomains must have at least one entry");
 const staticBucketName = config.require("staticBucketName");
+const contentBucketName = config.require("contentBucketName");
 const tableNames = {
 	articles: config.require("dynamodbArticlesTable"),
 	userArticles: config.require("dynamodbUserArticlesTable"),
@@ -93,9 +94,11 @@ const lambda = new HutchLambda("hutch", {
 			: requireEnv("RESEND_API_KEY"),
 		STATIC_BASE_URL: staticAssets.baseUrl,
 		EVENT_BUS_NAME: eventBus.eventBusName,
+		CONTENT_BUCKET_NAME: contentBucketName,
 	},
 	policies: [
 		...dynamodb.policies,
+		...HutchS3ReadWrite.readPoliciesForBucket("hutch-content-s3", contentBucketName),
 	],
 });
 

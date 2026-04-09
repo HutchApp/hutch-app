@@ -4,6 +4,7 @@ import request from "supertest";
 import { createTestApp } from "../../test-app";
 import { initInMemoryAuth } from "../../providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
+import { normalizeArticleUrl } from "../../domain/article/normalize-article-url";
 import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
 import type { FetchHtml } from "../../providers/article-parser/readability-parser";
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
@@ -54,6 +55,7 @@ describe("Email verification", () => {
 				staticBaseUrl: "",
 				...auth,
 				...articleStore,
+				readArticleContent: (url: string) => articleStore.readContent(normalizeArticleUrl(url)),
 				...parser,
 				...emailVerification,
 				...passwordReset,

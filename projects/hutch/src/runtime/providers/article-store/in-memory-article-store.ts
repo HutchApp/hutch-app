@@ -23,6 +23,7 @@ import type {
 	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "./article-store.types";
+import type { ContentProvider } from "./read-article-content";
 
 interface GlobalArticle {
 	url: string;
@@ -72,6 +73,7 @@ export function initInMemoryArticleStore(): {
 	findArticlesByUser: FindArticlesByUser;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
+	readContent: ContentProvider;
 } {
 	const articles = new Map<string, GlobalArticle>();
 	const userArticles = new Map<string, UserArticle>();
@@ -244,6 +246,12 @@ export function initInMemoryArticleStore(): {
 		article.summary = undefined;
 	};
 
+	const readContent: ContentProvider = async (normalizedUrl) => {
+		const article = articles.get(normalizedUrl);
+		if (!article) return undefined;
+		return article.content;
+	};
+
 	return {
 		saveArticle,
 		findArticleById,
@@ -255,5 +263,6 @@ export function initInMemoryArticleStore(): {
 		updateArticleContent,
 		updateArticleFetchMetadata,
 		clearArticleSummary,
+		readContent,
 	};
 }

@@ -25,6 +25,9 @@ import { initDynamoDbEmailVerification } from "./providers/email-verification/dy
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
 import { initDynamoDbPasswordReset } from "./providers/password-reset/dynamodb-password-reset";
 import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
+import { S3Client } from "@aws-sdk/client-s3";
+import { initS3ReadContent } from "./providers/article-store/s3-read-content";
+import { initReadArticleContent } from "./providers/article-store/read-article-content";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
@@ -50,10 +53,18 @@ function initProviders() {
 		const passwordResetTokensTable = requireEnv("DYNAMODB_PASSWORD_RESET_TOKENS_TABLE");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
+		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
 		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });
+		const readArticleContent = initReadArticleContent({
+			storageProviderQueryOrder: [
+				initS3ReadContent({ client: new S3Client({}), bucketName: contentBucketName }),
+				articleStore.readContent,
+			],
+			logError,
+		});
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
 		const { publishEvent } = initEventBridgePublisher({
@@ -77,7 +88,8 @@ function initProviders() {
 		return {
 			auth,
 			articleStore,
-	
+			readArticleContent,
+
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			...initDynamoDbPasswordReset({ client, tableName: passwordResetTokensTable }),
@@ -111,6 +123,10 @@ function initProviders() {
 	return {
 		auth,
 		articleStore,
+		readArticleContent: initReadArticleContent({
+			storageProviderQueryOrder: [articleStore.readContent],
+			logError,
+		}),
 
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),

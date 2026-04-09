@@ -25,6 +25,7 @@ import type {
 	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { ReadArticleContent } from "./providers/article-store/read-article-content";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
@@ -90,6 +91,7 @@ interface AppDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	readArticleContent: ReadArticleContent;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -293,6 +295,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		findCachedSummary: deps.findCachedSummary,
 		refreshArticleIfStale: deps.refreshArticleIfStale,
 		updateArticleFetchMetadata: deps.updateArticleFetchMetadata,
+		readArticleContent: deps.readArticleContent,
 		logError: deps.logError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);

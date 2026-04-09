@@ -383,4 +383,29 @@ describe("initInMemoryArticleStore", () => {
 			expect(updated).toBe(false);
 		});
 	});
+
+	describe("readContent", () => {
+		it("should return content for a saved article by normalized URL", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams({ content: "<p>Hello</p>" }));
+
+			const content = await store.readContent("example.com/article");
+			expect(content).toBe("<p>Hello</p>");
+		});
+
+		it("should return undefined when article does not exist", async () => {
+			const store = initInMemoryArticleStore();
+
+			const content = await store.readContent("example.com/nonexistent");
+			expect(content).toBeUndefined();
+		});
+
+		it("should return undefined when article has no content", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams({ content: undefined }));
+
+			const content = await store.readContent("example.com/article");
+			expect(content).toBeUndefined();
+		});
+	});
 });

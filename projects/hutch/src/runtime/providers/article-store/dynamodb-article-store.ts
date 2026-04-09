@@ -25,6 +25,11 @@ import type {
 	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "./article-store.types";
+import type { ContentProvider } from "./read-article-content";
+
+const ArticleContentRow = z.object({
+	content: z.string().optional(),
+});
 
 /** 1. DynamoDB stores missing attributes as null, not undefined. .nullish() accepts both so Zod doesn't throw on null values left by previous writes (e.g. articles saved without lastModified). */
 const ArticleFreshnessRow = z.object({
@@ -93,6 +98,7 @@ export function initDynamoDbArticleStore(deps: {
 	updateArticleContent: UpdateArticleContent;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
 	clearArticleSummary: ClearArticleSummary;
+	readContent: ContentProvider;
 } {
 	const { client, tableName, userArticlesTableName } = deps;
 
@@ -420,6 +426,19 @@ export function initDynamoDbArticleStore(deps: {
 		);
 	};
 
+	const readContent: ContentProvider = async (normalizedUrl) => {
+		const result = await client.send(
+			new GetCommand({
+				TableName: tableName,
+				Key: { url: normalizedUrl },
+				ProjectionExpression: "content",
+			}),
+		);
+		if (!result.Item) return undefined;
+		const parsed = ArticleContentRow.parse(result.Item);
+		return parsed.content;
+	};
+
 	return {
 		saveArticle,
 		findArticleById,
@@ -430,6 +449,7 @@ export function initDynamoDbArticleStore(deps: {
 		updateArticleContent,
 		updateArticleFetchMetadata,
 		clearArticleSummary,
+		readContent,
 	};
 }
 /* c8 ignore stop */

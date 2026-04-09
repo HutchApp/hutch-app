@@ -14,6 +14,7 @@ import type {
 	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
+import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import type { UserId } from "../../../domain/user/user.types";
@@ -37,6 +38,7 @@ interface QueueDependencies {
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	readArticleContent: ReadArticleContent;
 	logError: (message: string, error?: Error) => void;
 }
 
@@ -226,9 +228,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			await deps.updateArticleStatus(articleId, userId, "read");
 		}
 
+		const content = await deps.readArticleContent(article.url);
 		const summary = await deps.findCachedSummary(article.url);
 
-		const html = ReaderPage(article, { emailVerified: req.emailVerified, summary }).to("text/html");
+		const html = ReaderPage({ ...article, content }, { emailVerified: req.emailVerified, summary }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 
