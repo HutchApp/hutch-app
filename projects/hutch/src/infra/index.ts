@@ -3,6 +3,7 @@ import * as aws from "@pulumi/aws";
 import assert from "node:assert";
 import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus, HutchS3ReadWrite } from "@packages/hutch-infra-components/infra";
 import { DomainRegistration } from "./domain-registration";
+import { DomainRedirect } from "./domain-redirect";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
 import { getEnv, requireEnv } from "../runtime/require-env";
@@ -30,7 +31,17 @@ const storage = new HutchStorage("hutch", {
 	tableNames,
 });
 
+const redirectDomains = config.getObject<string[]>("redirectDomains") ?? [];
+
 const domainRegistration = new DomainRegistration("hutch-domain", { domains });
+
+if (redirectDomains.length > 0) {
+	assert(domainRegistration.primaryDomain, "redirectDomains requires domains to be configured");
+	new DomainRedirect("hutch-redirect", {
+		redirectDomains,
+		targetDomain: domainRegistration.primaryDomain,
+	});
+}
 
 const staticAssets = new HutchStaticAssets("hutch-static", {
 	bucketName: staticBucketName,
