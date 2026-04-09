@@ -25,6 +25,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 			name: args.tableNames.articles,
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
+			pointInTimeRecovery: { enabled: true },
 			hashKey: "url",
 			attributes: [
 				{ name: "url", type: "S" },
@@ -43,6 +44,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 			name: args.tableNames.userArticles,
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
+			pointInTimeRecovery: { enabled: true },
 			hashKey: "userId",
 			rangeKey: "url",
 			attributes: [
@@ -64,6 +66,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 			name: args.tableNames.users,
 			billingMode: "PAY_PER_REQUEST",
 			deletionProtectionEnabled: args.deletionProtection,
+			pointInTimeRecovery: { enabled: true },
 			hashKey: "email",
 			attributes: [
 				{ name: "email", type: "S" },
