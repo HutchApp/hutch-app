@@ -1,6 +1,7 @@
+import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 
-export class HutchStorage {
+export class HutchStorage extends pulumi.ComponentResource {
 	public readonly articlesTable: aws.dynamodb.Table;
 	public readonly userArticlesTable: aws.dynamodb.Table;
 	public readonly usersTable: aws.dynamodb.Table;
@@ -9,7 +10,7 @@ export class HutchStorage {
 	public readonly verificationTokensTable: aws.dynamodb.Table;
 	public readonly passwordResetTokensTable: aws.dynamodb.Table;
 
-	constructor(_name: string, args: { deletionProtection: boolean; tableNames: {
+	constructor(name: string, args: { deletionProtection: boolean; tableNames: {
 		articles: string;
 		userArticles: string;
 		users: string;
@@ -17,7 +18,9 @@ export class HutchStorage {
 		oauth: string;
 		verificationTokens: string;
 		passwordResetTokens: string;
-	} }) {
+	} }, opts?: pulumi.ComponentResourceOptions) {
+		super("hutch:infra:HutchStorage", name, {}, opts);
+
 		this.articlesTable = new aws.dynamodb.Table(`hutch-articles`, {
 			name: args.tableNames.articles,
 			billingMode: "PAY_PER_REQUEST",
@@ -34,7 +37,7 @@ export class HutchStorage {
 					projectionType: "ALL",
 				},
 			],
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.userArticlesTable = new aws.dynamodb.Table(`hutch-user-articles`, {
 			name: args.tableNames.userArticles,
@@ -55,7 +58,7 @@ export class HutchStorage {
 					projectionType: "ALL",
 				},
 			],
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.usersTable = new aws.dynamodb.Table(`hutch-users`, {
 			name: args.tableNames.users,
@@ -73,7 +76,7 @@ export class HutchStorage {
 					projectionType: "ALL",
 				},
 			],
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.sessionsTable = new aws.dynamodb.Table(`hutch-sessions`, {
 			name: args.tableNames.sessions,
@@ -84,7 +87,7 @@ export class HutchStorage {
 				attributeName: "expiresAt",
 				enabled: true,
 			},
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.oauthTable = new aws.dynamodb.Table(`hutch-oauth`, {
 			name: args.tableNames.oauth,
@@ -105,7 +108,7 @@ export class HutchStorage {
 				attributeName: "expiresAt",
 				enabled: true,
 			},
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.verificationTokensTable = new aws.dynamodb.Table(`hutch-verification-tokens`, {
 			name: args.tableNames.verificationTokens,
@@ -116,7 +119,7 @@ export class HutchStorage {
 				attributeName: "expiresAt",
 				enabled: true,
 			},
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.passwordResetTokensTable = new aws.dynamodb.Table(`hutch-password-reset-tokens`, {
 			name: args.tableNames.passwordResetTokens,
@@ -127,6 +130,8 @@ export class HutchStorage {
 				attributeName: "expiresAt",
 				enabled: true,
 			},
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
+
+		this.registerOutputs();
 	}
 }

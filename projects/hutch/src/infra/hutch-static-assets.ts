@@ -2,7 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { HutchCertificate, HutchS3PublicRead } from "@packages/hutch-infra-components/infra";
 
-export class HutchStaticAssets {
+export class HutchStaticAssets extends pulumi.ComponentResource {
 	public readonly baseUrl: pulumi.Output<string>;
 
 	constructor(
@@ -13,11 +13,14 @@ export class HutchStaticAssets {
 			domains: string[];
 			zoneId?: Promise<string>;
 		},
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchStaticAssets", name, {}, opts);
+
 		const publicBucket = new HutchS3PublicRead(name, {
 			bucketName: args.bucketName,
-			bucketOpts: { aliases: [{ name: `${name}-bucket` }] },
-		});
+			bucketOpts: { aliases: [{ name: `${name}-bucket`, parent: pulumi.rootStackResource }] },
+		}, { parent: this });
 
 		let viewerCertificate: aws.types.input.cloudfront.DistributionViewerCertificate;
 		let aliases: pulumi.Input<string>[] | undefined;
@@ -26,7 +29,7 @@ export class HutchStaticAssets {
 			const zoneId = args.zoneId;
 			const usEast1 = new aws.Provider(`${name}-us-east-1`, {
 				region: "us-east-1",
-			});
+			}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 			const [primaryDomain, ...altDomains] = args.staticDomains;
 
@@ -35,7 +38,7 @@ export class HutchStaticAssets {
 				altDomains,
 				zoneId,
 				provider: usEast1,
-			});
+			}, { parent: this });
 
 			aliases = args.staticDomains;
 			viewerCertificate = {
@@ -66,6 +69,7 @@ export class HutchStaticAssets {
 					originOverride: true,
 				},
 			},
+			{ parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 		);
 
 		const distribution = new aws.cloudfront.Distribution(
@@ -96,6 +100,7 @@ export class HutchStaticAssets {
 				viewerCertificate,
 				priceClass: "PriceClass_100",
 			},
+			{ parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 		);
 
 		if (args.zoneId) {
@@ -115,10 +120,11 @@ export class HutchStaticAssets {
 							evaluateTargetHealth: false,
 						},
 					],
-				});
+				}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 			}
 		}
 
 		this.baseUrl = pulumi.output(`https://${args.staticDomains[0]}`);
+		this.registerOutputs();
 	}
 }

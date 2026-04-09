@@ -1,7 +1,7 @@
-import type * as pulumi from "@pulumi/pulumi";
+import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 
-export class HutchCertificate {
+export class HutchCertificate extends pulumi.ComponentResource {
 	public readonly certificateArn: pulumi.Output<string>;
 
 	constructor(
@@ -12,7 +12,10 @@ export class HutchCertificate {
 			zoneId: pulumi.Input<string> | Promise<string>;
 			provider?: aws.Provider;
 		},
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchCertificate", name, {}, opts);
+
 		const providerOpts = args.provider ? { provider: args.provider } : {};
 
 		const cert = new aws.acm.Certificate(
@@ -23,7 +26,7 @@ export class HutchCertificate {
 					args.altDomains.length > 0 ? args.altDomains : undefined,
 				validationMethod: "DNS",
 			},
-			providerOpts,
+			{ ...providerOpts, parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 		);
 
 		const validationRecords = cert.domainValidationOptions.apply((opts) =>
@@ -35,7 +38,7 @@ export class HutchCertificate {
 						type: opt.resourceRecordType,
 						records: [opt.resourceRecordValue],
 						ttl: 300,
-					}),
+					}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] }),
 			),
 		);
 
@@ -47,9 +50,10 @@ export class HutchCertificate {
 					records.map((r) => r.fqdn),
 				),
 			},
-			providerOpts,
+			{ ...providerOpts, parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 		);
 
 		this.certificateArn = validated.certificateArn;
+		this.registerOutputs();
 	}
 }

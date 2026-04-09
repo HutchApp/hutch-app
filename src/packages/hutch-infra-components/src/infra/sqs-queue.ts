@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
-export class HutchSqsQueue {
+export class HutchSqsQueue extends pulumi.ComponentResource {
 	public readonly queueArn: aws.sqs.Queue["arn"];
 	public readonly queueUrl: aws.sqs.Queue["url"];
 	public readonly queueName: aws.sqs.Queue["name"];
@@ -16,7 +16,10 @@ export class HutchSqsQueue {
 			dlqMaxReceiveCount?: number;
 			dlqRetentionSeconds?: number;
 		},
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchSqsQueue", name, {}, opts);
+
 		const visibilityTimeout = args?.visibilityTimeoutSeconds ?? 60;
 		const maxReceiveCount = args?.dlqMaxReceiveCount ?? 3;
 		const dlqRetention = args?.dlqRetentionSeconds ?? 1209600; // 14 days
@@ -24,7 +27,7 @@ export class HutchSqsQueue {
 		const dlq = new aws.sqs.Queue(`${name}-dlq`, {
 			name: `${name}-dlq`,
 			messageRetentionSeconds: dlqRetention,
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		const queue = new aws.sqs.Queue(`${name}-q`, {
 			name: `${name}-q`,
@@ -33,7 +36,7 @@ export class HutchSqsQueue {
 				deadLetterTargetArn: dlq.arn,
 				maxReceiveCount,
 			}),
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.queueArn = queue.arn;
 		this.queueUrl = queue.url;
@@ -41,5 +44,6 @@ export class HutchSqsQueue {
 		this.dlqArn = dlq.arn;
 		this.dlqUrl = dlq.url;
 		this.dlqName = dlq.name;
+		this.registerOutputs();
 	}
 }

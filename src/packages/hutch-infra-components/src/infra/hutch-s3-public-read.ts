@@ -1,7 +1,7 @@
+import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import type * as pulumi from "@pulumi/pulumi";
 
-export class HutchS3PublicRead {
+export class HutchS3PublicRead extends pulumi.ComponentResource {
 	public readonly bucket: aws.s3.Bucket["bucket"];
 	public readonly arn: aws.s3.Bucket["arn"];
 	public readonly bucketRegionalDomainName: aws.s3.Bucket["bucketRegionalDomainName"];
@@ -14,11 +14,21 @@ export class HutchS3PublicRead {
 			allowListBucket?: boolean;
 			bucketOpts?: pulumi.CustomResourceOptions;
 		},
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchS3PublicRead", name, {}, opts);
+
 		const bucket = new aws.s3.Bucket(name, {
 			bucket: args.bucketName,
 			forceDestroy: true,
-		}, args.bucketOpts);
+		}, {
+			...args.bucketOpts,
+			parent: this,
+			aliases: [
+				...(args.bucketOpts?.aliases ?? []),
+				{ parent: pulumi.rootStackResource },
+			],
+		});
 
 		const publicAccessBlock = new aws.s3.BucketPublicAccessBlock(`${name}-public-access`, {
 			bucket: bucket.id,
@@ -26,7 +36,7 @@ export class HutchS3PublicRead {
 			blockPublicPolicy: false,
 			ignorePublicAcls: false,
 			restrictPublicBuckets: false,
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.bucketPolicy = new aws.s3.BucketPolicy(
 			`${name}-policy`,
@@ -59,11 +69,12 @@ export class HutchS3PublicRead {
 					});
 				}),
 			},
-			{ dependsOn: [publicAccessBlock] },
+			{ dependsOn: [publicAccessBlock], parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 		);
 
 		this.bucket = bucket.bucket;
 		this.arn = bucket.arn;
 		this.bucketRegionalDomainName = bucket.bucketRegionalDomainName;
+		this.registerOutputs();
 	}
 }
