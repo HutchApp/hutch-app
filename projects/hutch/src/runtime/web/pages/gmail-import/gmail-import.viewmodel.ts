@@ -10,13 +10,12 @@ export interface GmailImportViewModel {
 export function toGmailImportViewModel(params: {
 	isConnected: boolean;
 	statusMessage?: string;
-	emails?: GmailEmailPreview[];
+	emails: GmailEmailPreview[];
 }): GmailImportViewModel {
-	const emails = params.emails ?? [];
 	return {
 		isConnected: params.isConnected,
 		statusMessage: params.statusMessage,
-		emails,
-		emailCount: emails.length,
+		emails: params.emails,
+		emailCount: params.emails.length,
 	};
 }

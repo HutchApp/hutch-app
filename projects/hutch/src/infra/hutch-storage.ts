@@ -132,7 +132,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 			deletionProtectionEnabled: args.deletionProtection,
 			hashKey: "userId",
 			attributes: [{ name: "userId", type: "S" }],
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.passwordResetTokensTable = new aws.dynamodb.Table(`hutch-password-reset-tokens`, {
 			name: args.tableNames.passwordResetTokens,

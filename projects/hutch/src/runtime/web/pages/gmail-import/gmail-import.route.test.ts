@@ -152,7 +152,45 @@ describe("Gmail Import routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-connected]")).not.toBeNull();
+			expect(doc.querySelector("[data-test-connected]")?.textContent?.trim()).toBe("Gmail account connected.");
+			expect(doc.querySelectorAll("[data-test-email-subject]").length).toBe(0);
+		});
+
+		it("should render the page without emails when listing throws non-Error", async () => {
+			const { app, auth, gmailTokenStore } = createTestApp({
+				ensureValidAccessToken: async () => { throw "string error"; },
+			});
+			const { agent, userId } = await loginAgent(app, auth);
+
+			await gmailTokenStore.saveGmailTokens({
+				userId,
+				tokens: { accessToken: "test-access", refreshToken: "test-refresh", expiresAt: Date.now() + 3600000 },
+			});
+
+			const response = await agent.get("/gmail-import");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-connected]")?.textContent?.trim()).toBe("Gmail account connected.");
+			expect(doc.querySelectorAll("[data-test-email-subject]").length).toBe(0);
+		});
+
+		it("should render the page without emails when access token is null", async () => {
+			const { app, auth, gmailTokenStore } = createTestApp({
+				ensureValidAccessToken: async () => null,
+			});
+			const { agent, userId } = await loginAgent(app, auth);
+
+			await gmailTokenStore.saveGmailTokens({
+				userId,
+				tokens: { accessToken: "test-access", refreshToken: "test-refresh", expiresAt: Date.now() + 3600000 },
+			});
+
+			const response = await agent.get("/gmail-import");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-connected]")?.textContent?.trim()).toBe("Gmail account connected.");
 			expect(doc.querySelectorAll("[data-test-email-subject]").length).toBe(0);
 		});
 	});
@@ -239,6 +277,18 @@ describe("Gmail Import routes", () => {
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toContain("Connection+failed");
 		});
+
+		it("should redirect with failure when exchange throws non-Error", async () => {
+			const { app, auth } = createTestApp({
+				exchangeGmailCode: async () => { throw "exchange string error"; },
+			});
+			const { agent } = await loginAgent(app, auth);
+
+			const response = await agent.get("/gmail-import/callback?code=bad-code");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toContain("Connection+failed");
+		});
 	});
 
 	describe("POST /gmail-import/start (unauthenticated)", () => {
@@ -307,6 +357,26 @@ describe("Gmail Import routes", () => {
 		it("should redirect with failure message when import throws", async () => {
 			const { app, auth, gmailTokenStore } = createTestApp({
 				runGmailImport: async () => { throw new Error("import crashed"); },
+			});
+			const { agent, userId } = await loginAgent(app, auth);
+
+			await gmailTokenStore.saveGmailTokens({
+				userId,
+				tokens: { accessToken: "test-access", refreshToken: "test-refresh", expiresAt: Date.now() + 3600000 },
+			});
+
+			const response = await agent
+				.post("/gmail-import/start")
+				.type("form")
+				.send({ messageIds: ["msg-1"] });
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toContain("Import+failed");
+		});
+
+		it("should redirect with failure message when import throws non-Error", async () => {
+			const { app, auth, gmailTokenStore } = createTestApp({
+				runGmailImport: async () => { throw "import string error"; },
 			});
 			const { agent, userId } = await loginAgent(app, auth);
 
