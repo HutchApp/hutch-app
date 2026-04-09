@@ -279,6 +279,16 @@ describe("toQueueViewModel", () => {
 		expect(deleteAction?.url).toBe("/queue/art-1/delete");
 	});
 
+	it("should use POST method and /status URL for mark-unread action", () => {
+		const article = makeArticle({ status: "read" });
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
+
+		const markUnreadAction = vm.articles[0].actions.find(a => a.testAction === "mark-unread");
+		expect(markUnreadAction?.method).toBe("POST");
+		expect(markUnreadAction?.url).toBe("/queue/art-1/status");
+		expect(markUnreadAction?.fields).toEqual([{ name: "status", value: "unread" }]);
+	});
+
 	it("should use GET method and reader view URL for mark-read action", () => {
 		const article = makeArticle({ status: "unread" });
 		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
