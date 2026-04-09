@@ -3,7 +3,7 @@ import * as aws from "@pulumi/aws";
 import assert from "node:assert";
 import type { HutchLambda } from "./hutch-lambda";
 
-export class HutchAPIGateway {
+export class HutchAPIGateway extends pulumi.ComponentResource {
 	public readonly apiUrl: pulumi.Output<string> | string;
 	public readonly defaultRoute: aws.apigatewayv2.Route;
 
@@ -17,12 +17,15 @@ export class HutchAPIGateway {
 			zoneId?: Promise<string>;
 			certificateArn?: pulumi.Output<string>;
 		},
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchAPIGateway", name, {}, opts);
+
 		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
 			apiId: args.api.id,
 			name: "$default",
 			autoDeploy: true,
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		const lambdaIntegration = new aws.apigatewayv2.Integration(
 			`${name}-lambda-integration`,
@@ -32,6 +35,7 @@ export class HutchAPIGateway {
 				integrationUri: args.lambda.arn,
 				payloadFormatVersion: "2.0",
 			},
+			{ parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 		);
 
 		this.defaultRoute = new aws.apigatewayv2.Route(
@@ -41,6 +45,7 @@ export class HutchAPIGateway {
 				routeKey: "$default",
 				target: pulumi.interpolate`integrations/${lambdaIntegration.id}`,
 			},
+			{ parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 		);
 
 		new aws.lambda.Permission(`${name}-api-gw-perm`, {
@@ -49,7 +54,7 @@ export class HutchAPIGateway {
 			function: args.lambda.functionName,
 			principal: "apigateway.amazonaws.com",
 			sourceArn: pulumi.interpolate`${args.api.executionArn}/*/*`,
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		if (args.domains.length > 0) {
 			const primaryDomain = args.domains[0];
@@ -69,6 +74,7 @@ export class HutchAPIGateway {
 							securityPolicy: "TLS_1_2",
 						},
 					},
+					{ parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 				);
 
 				new aws.apigatewayv2.ApiMapping(
@@ -78,6 +84,7 @@ export class HutchAPIGateway {
 						domainName: customDomain.domainName,
 						stage: apiStage.id,
 					},
+					{ parent: this, aliases: [{ parent: pulumi.rootStackResource }] },
 				);
 
 				new aws.route53.Record(`${name}-record-${safeName}`, {
@@ -95,12 +102,14 @@ export class HutchAPIGateway {
 							evaluateTargetHealth: false,
 						},
 					],
-				});
+				}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 			}
 
 			this.apiUrl = `https://${primaryDomain}`;
 		} else {
 			this.apiUrl = pulumi.interpolate`${args.api.apiEndpoint}/${apiStage.name}`;
 		}
+
+		this.registerOutputs();
 	}
 }

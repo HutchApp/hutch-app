@@ -2,7 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import type { LambdaPolicy } from "./hutch-lambda";
 import { HutchSqsQueue } from "./sqs-queue";
 
-export class HutchSQS {
+export class HutchSQS extends pulumi.ComponentResource {
 	public readonly queueArn: HutchSqsQueue["queueArn"];
 	public readonly queueUrl: HutchSqsQueue["queueUrl"];
 	public readonly dlqArn: HutchSqsQueue["dlqArn"];
@@ -13,10 +13,13 @@ export class HutchSQS {
 	constructor(
 		name: string,
 		args: { visibilityTimeoutSeconds: number },
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchSQS", name, {}, opts);
+
 		const queue = new HutchSqsQueue(name, {
 			visibilityTimeoutSeconds: args.visibilityTimeoutSeconds,
-		});
+		}, { parent: this });
 
 		this.queueArn = queue.queueArn;
 		this.queueUrl = queue.queueUrl;
@@ -39,5 +42,7 @@ export class HutchSQS {
 				),
 			},
 		];
+
+		this.registerOutputs();
 	}
 }

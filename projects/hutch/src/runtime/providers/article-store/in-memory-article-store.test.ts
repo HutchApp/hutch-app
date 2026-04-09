@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { LinkId } from "@packages/link-id";
 import { ArticleIdSchema } from "../../domain/article/article.schema";
 import type { Minutes } from "../../domain/article/article.types";
 import type { UserId } from "../../domain/user/user.types";
@@ -381,6 +382,31 @@ describe("initInMemoryArticleStore", () => {
 			const updated = await store.updateArticleStatus(fakeId, USER_A, "read");
 
 			expect(updated).toBe(false);
+		});
+	});
+
+	describe("readContent", () => {
+		it("should return content for a saved article by normalized URL", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams({ content: "<p>Hello</p>" }));
+
+			const content = await store.readContent(LinkId.from("https://example.com/article"));
+			expect(content).toBe("<p>Hello</p>");
+		});
+
+		it("should return undefined when article does not exist", async () => {
+			const store = initInMemoryArticleStore();
+
+			const content = await store.readContent(LinkId.from("https://example.com/nonexistent"));
+			expect(content).toBeUndefined();
+		});
+
+		it("should return undefined when article has no content", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticle(makeArticleParams({ content: undefined }));
+
+			const content = await store.readContent(LinkId.from("https://example.com/article"));
+			expect(content).toBeUndefined();
 		});
 	});
 });

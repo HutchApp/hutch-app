@@ -159,7 +159,7 @@ describe("GET /", () => {
 
 		const table = doc.querySelector("[data-test-comparison-table]");
 		const rows = table?.querySelectorAll("tbody tr");
-		expect(rows?.length).toBe(3);
+		expect(rows?.length).toBe(6);
 	});
 
 	it("should render the trust section with two trust items", async () => {
@@ -224,7 +224,7 @@ describe("GET /", () => {
 		const schemas = Array.from(scripts).map((s) => JSON.parse(s.textContent ?? "{}"));
 
 		const types = schemas.map((s: { "@type": string }) => s["@type"]);
-		expect(types).toEqual(["WebApplication", "Organization", "FAQPage"]);
+		expect(types).toEqual(["WebApplication", "Organization", "FAQPage", "WebSite"]);
 	});
 
 	it("should include FAQ structured data with questions and answers", async () => {
@@ -255,10 +255,10 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const colHeaders = doc.querySelectorAll('[data-test-comparison-table] thead th[scope="col"]');
-		expect(colHeaders.length).toBe(5);
+		expect(colHeaders.length).toBe(7);
 
 		const rowHeaders = doc.querySelectorAll('[data-test-comparison-table] tbody th[scope="row"]');
-		expect(rowHeaders.length).toBe(3);
+		expect(rowHeaders.length).toBe(6);
 	});
 });
 

@@ -54,7 +54,7 @@ export type LambdaPolicy = {
 	policy: pulumi.Input<string>;
 };
 
-export class HutchLambda {
+export class HutchLambda extends pulumi.ComponentResource {
 	public readonly name: string;
 	public readonly functionName: pulumi.Output<string>;
 	public readonly arn: pulumi.Output<string>;
@@ -71,7 +71,10 @@ export class HutchLambda {
 			environment: Record<string, pulumi.Input<string>>;
 			policies: LambdaPolicy[];
 		},
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchLambda", name, {}, opts);
+
 		this.name = name;
 		const lambdaName = `${name}-handler`;
 		const roleName = `${lambdaName}-role`;
@@ -107,19 +110,19 @@ export class HutchLambda {
 					Effect: "Allow",
 				}],
 			}),
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		new aws.iam.RolePolicyAttachment(basicExecutionName, {
 			role: this.role.name,
 			policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		for (const p of args.policies) {
 			new aws.iam.RolePolicy(p.name, {
 				name: p.name,
 				role: this.role.name,
 				policy: p.policy,
-			});
+			}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 		}
 
 		const hasEnvironment = Object.keys(args.environment).length > 0;
@@ -134,9 +137,10 @@ export class HutchLambda {
 			...(hasEnvironment ? {
 				environment: { variables: args.environment },
 			} : {}),
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.functionName = lambdaFunction.name;
 		this.arn = lambdaFunction.arn;
+		this.registerOutputs();
 	}
 }

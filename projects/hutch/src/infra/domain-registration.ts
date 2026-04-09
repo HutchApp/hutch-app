@@ -1,17 +1,22 @@
-import type * as pulumi from "@pulumi/pulumi";
+import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { HutchCertificate } from "@packages/hutch-infra-components/infra";
 
-export class DomainRegistration {
+export class DomainRegistration extends pulumi.ComponentResource {
 	public readonly certificateArn?: pulumi.Output<string>;
 	public readonly zoneId?: Promise<string>;
 	public readonly domains: string[];
 	public readonly primaryDomain?: string;
 
-	constructor(name: string, args: { domains: string[] }) {
+	constructor(name: string, args: { domains: string[] }, opts?: pulumi.ComponentResourceOptions) {
+		super("hutch:infra:DomainRegistration", name, {}, opts);
+
 		this.domains = args.domains;
 
-		if (args.domains.length === 0) return;
+		if (args.domains.length === 0) {
+			this.registerOutputs();
+			return;
+		}
 
 		const [primaryDomain, ...altDomains] = args.domains;
 		this.primaryDomain = primaryDomain;
@@ -24,8 +29,9 @@ export class DomainRegistration {
 			primaryDomain,
 			altDomains,
 			zoneId,
-		});
+		}, { parent: this });
 
 		this.certificateArn = cert.certificateArn;
+		this.registerOutputs();
 	}
 }

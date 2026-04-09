@@ -4,14 +4,14 @@ description: "Omnivore shut down with two weeks notice. Hutch is a privacy-first
 slug: "omnivore-alternative"
 date: "2026-04-04"
 author: "Fayner Brack"
-keywords: "Omnivore alternative, Omnivore replacement, Omnivore shut down, read it later app, ElevenLabs Omnivore, Readwise Reader alternative"
+keywords: "Omnivore alternative, Omnivore replacement, Omnivore shut down, read it later app, ElevenLabs Omnivore, Readwise Reader alternative, Pocket alternative"
 ---
 
 On November 1, 2024, ElevenLabs acquired Omnivore. On November 15, the service shut down and data deletion began. Users had two weeks to export years of saved articles, highlights, and notes.
 
 Two weeks. That was the entire window between "your app still works" and "your data is gone."
 
-Omnivore was open source, community-loved, and had a clear mission. None of that mattered once the acquisition closed. The codebase went read-only. The API stopped responding. The newsletters stopped arriving.
+Omnivore was open source, community-loved, and had a clear mission. None of that mattered once the acquisition closed. The codebase went read-only, the API stopped responding, and the newsletters stopped arriving.
 
 ## The problem was the business model
 
@@ -19,15 +19,11 @@ The problem was not Omnivore's intentions. The team built a good product. The pr
 
 Many Omnivore users moved to [Readwise Reader](https://readwise.io/read) at $12.99/month. Others went to self-hosted options like Karakeep or Wallabag. Each option has trade-offs. Readwise is feature-rich but expensive. Self-hosted tools are free but need you to run a server and deal with updates.
 
-I built Hutch as a middle ground. A hosted read-it-later app with a clear revenue model: subscriptions. No investors. No exit to chase.
+I built Hutch as a middle ground. A hosted read-it-later app with a clear revenue model: subscriptions pay for servers and development, with no investors expecting an exit. For a full breakdown of each option, see the [best read-it-later apps in 2026](/blog/best-read-it-later-apps-2026).
 
 ## Built by a developer who reads
 
-I'm [Fayner Brack](https://www.linkedin.com/in/fagnerbrack/). I created [js-cookie](https://www.jsdelivr.com/package/npm/js-cookie), a JavaScript library with 22 billion+ downloads per year on jsDelivr. I have been building for the web for a long time.
-
-For 10 years I maintained a personal reading pipeline. Gmail filters, DynamoDB tables, and Reddit automations helped me save, organise, and read technical articles. That system generated 300,000+ Reddit karma across developer communities.
-
-Pocket was abandoned. Omnivore disappeared. I turned that personal system into Hutch. One developer, building in public, one feature at a time.
+I maintained a personal reading pipeline for ten years before turning it into Hutch. Pocket was abandoned. Omnivore disappeared. I turned that system into a product. One developer, building in public, one feature at a time.
 
 ## What works today
 
@@ -40,7 +36,7 @@ These features are shipped and live right now:
 - **Auto dark mode.** Matches your system preference.
 - **Secure auth.** OAuth with PKCE. Tokens stored locally in your browser.
 - **Full data export.** Export everything, anytime. Even after you cancel.
-- **Privacy first.** Hosted in Sydney. Australian Privacy Act. No tracking. No ads.
+- **Privacy first.** Hosted in Sydney under the Australian Privacy Act, with no tracking scripts or ads.
 
 ## What Omnivore had, and where Hutch stands
 
@@ -62,17 +58,19 @@ Omnivore had years of development. Hutch is newer. Here is an honest look at the
 | RSS feed reader | Yes | No | Not planned yet |
 | API access | Yes | OAuth only | Extension API exists but not yet for public consumption |
 
-I would rather be honest about gaps than pretend they don't exist. Features ship one at a time, and the [roadmap is public](https://hutch-app.com/#roadmap).
+> **I would rather be honest about gaps than pretend they don't exist.**
+
+Features ship one at a time, and the [roadmap is public](https://hutch-app.com/#roadmap).
 
 ## Your data, your terms
 
 **AGPL source-available.** The full source code is [on GitHub](https://github.com/HutchApp/hutch-app). If Hutch disappears tomorrow, anyone can run it. That's the point.
 
-**Full export, always.** Export all your data anytime, even after you cancel. No two-week countdown. No scrambling for backups.
+**Full export, always.** Export all your data anytime, even after you cancel. Data export is not an afterthought. It is a core promise: your saved articles stay available for export regardless of your subscription status.
 
-**Australian hosting.** Hosted in Sydney. Governed by the Australian Privacy Act, outside US jurisdiction. No tracking, no ads, no data sales.
+**Australian hosting.** Hosted in Sydney, governed by the Australian Privacy Act, outside US jurisdiction. The app runs without tracking scripts, ads, or data sales.
 
-**No venture capital.** Hutch is self-funded. Revenue comes from subscriptions. There are no investors expecting an exit, no board to please, no acquisition to chase.
+**No venture capital.** Hutch is self-funded. Revenue comes from subscriptions. There is no board expecting an exit and no acquisition to chase.
 
 ## Pricing
 
@@ -86,7 +84,9 @@ The first 100 founding members get full access free, forever. [Sign up here](htt
 
 **What happened to Omnivore?**
 
-ElevenLabs acquired Omnivore on November 1, 2024, and shut it down on November 15. Users had about two weeks to export their data before deletion began. The open-source repository was archived. The team moved to ElevenLabs to work on text-to-speech, not reading tools. Omnivore is not coming back.
+ElevenLabs acquired Omnivore on November 1, 2024, and shut it down on November 15. Users had about two weeks to export their data before deletion began. The open-source repository was archived.
+
+The team moved to ElevenLabs to work on text-to-speech, not reading tools. Omnivore is not coming back.
 
 **Is there a free Omnivore alternative?**
 

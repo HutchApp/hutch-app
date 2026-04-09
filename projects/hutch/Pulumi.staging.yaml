@@ -16,4 +16,5 @@ config:
   hutch:dynamodbVerificationTokensTable: hutch-verification-tokens-3f85043
   hutch:dynamodbGmailTokensTable: hutch-gmail-tokens
   hutch:dynamodbPasswordResetTokensTable: hutch-password-reset-tokens
+  hutch:contentBucketName: hutch-article-content-staging
 encryptionsalt: v1:fILgDgnVVEY=:v1:sFKytKYEpZU4Qs+9:o/Q+JSj6rS/qo7p6WyjaekWrgFAk5A==

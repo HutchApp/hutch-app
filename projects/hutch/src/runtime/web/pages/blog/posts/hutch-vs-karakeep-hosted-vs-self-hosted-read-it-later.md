@@ -3,13 +3,13 @@ title: "Hutch vs Karakeep: Hosted vs Self-Hosted Read-It-Later"
 description: "A fair comparison of two developer-focused read-it-later tools, one self-hosted and one managed, and the tradeoffs each makes."
 slug: "hutch-vs-karakeep-hosted-vs-self-hosted-read-it-later"
 date: "2026-04-06"
-author: "Fagner Brack"
+author: "Fayner Brack"
 keywords: "karakeep, hoarder, hutch, read it later, self-hosted, pocket alternative"
 ---
 
 Pocket is dying. Omnivore sold to ElevenLabs and shut down overnight. If you're a developer looking for a read-it-later tool you control, two names keep coming up: **Karakeep** (formerly Hoarder) and **Hutch**.
 
-Both target developers who read a lot. Both have AI features. Both care about data ownership. But they make different bets on how software should reach you.
+Both target developers who read a lot, both have AI features, and both care about data ownership. But they make different bets on how software should reach you.
 
 This post lays out the differences so you can pick the one that fits how you work.
 
@@ -17,11 +17,13 @@ This post lays out the differences so you can pick the one that fits how you wor
 
 **Karakeep** is free, open-source, and self-hosted. You run it yourself with Docker. It has AI-powered auto-tagging through Ollama (local) or OpenAI. It has full-text search, browser extensions, and mobile apps for iOS and Android. It started as Hoarder, rebranded to Karakeep, and now has 38,000+ GitHub stars with active development.
 
-**Hutch** is hosted at A$3.99/month. You sign up, install the browser extension, and start saving articles. It includes AI-generated TL;DR summaries, a clean reader view, Pocket import, and full-text search. No Docker. No server. No maintenance. I built it as a solo developer after running my own reading system for ten years.
+**Hutch** is hosted at $3.99/month. You sign up, install the browser extension, and start saving articles. It includes AI-generated TL;DR summaries, a clean reader view, Pocket import, and full-text search. You skip Docker, server setup, and ongoing maintenance. I built it as a solo developer after running my own reading system for ten years.
 
 ## The real comparison: deployment model
 
-The feature lists overlap enough that features aren't the interesting comparison. The deployment model is. Everything flows from that one choice.
+The feature lists overlap enough that features aren't the interesting comparison.
+
+> **The deployment model is. Everything flows from that one choice.**
 
 ### Self-hosted (Karakeep)
 
@@ -46,7 +48,7 @@ If you self-host, you've probably been burned before. A service you relied on go
 - **Source-available under AGPL.** The full codebase is public. You can read every line of code that handles your data.
 - **Full data export.** You can export everything at any time: articles, tags, metadata. Standard format. No lock-in.
 - **Australian hosting.** Data stays in Australia under Australian privacy law. No US jurisdiction complications.
-- **Clear revenue model.** A$3.99/month. No ads, no tracking, no venture capital, no growth-at-all-costs pressure. You pay for the service. I keep running it. That's the whole model.
+- **Clear revenue model.** $3.99/month. The service runs without ads, tracking, venture capital, or growth-at-all-costs pressure. You pay for the service. I keep running it. That's the whole model.
 
 No one can guarantee the future. But these are structural choices that make a hosted service as trustworthy as it can be.
 
@@ -54,7 +56,7 @@ No one can guarantee the future. But these are structural choices that make a ho
 
 | | Karakeep | Hutch |
 |---|---|---|
-| **Price** | Free | A$3.99/month |
+| **Price** | Free | $3.99/month |
 | **Hosting** | Self-hosted (Docker) | Managed |
 | **Source code** | Open source (AGPLv3) | Source-available (AGPL) |
 | **AI features** | Auto-tagging (Ollama / OpenAI) | TL;DR summaries (included) |
@@ -95,4 +97,4 @@ These aren't competing philosophies. They're different answers to the same quest
 
 ---
 
-*Hutch is a read-it-later app for people who read a lot. A$3.99/month, no ads, no tracking. Try it at [hutchreader.com](https://hutchreader.com).*
+*Hutch is a read-it-later app for people who read a lot. $3.99/month, no ads, no tracking. Try it at [hutchreader.com](https://hutchreader.com).*

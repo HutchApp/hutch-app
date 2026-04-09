@@ -69,3 +69,7 @@ export function findPostBySlug(slug: string): BlogPost | undefined {
 export function getAllSlugs(): string[] {
 	return posts.map((p) => p.slug);
 }
+
+export function getAllPostMetadata(): { slug: string; date: string }[] {
+	return posts.map((p) => ({ slug: p.slug, date: p.date }));
+}

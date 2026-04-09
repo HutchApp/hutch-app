@@ -15,7 +15,9 @@ Most developers I talk to are stuck in the same loop.
 
 It starts small. Someone recommends a newsletter. You subscribe. The first few issues feel great. You click links, read articles, feel informed.
 
-Then life gets busy. Issues pile up. You skim subject lines instead of opening emails. Guilt builds. You tell yourself you'll catch up this weekend. You don't. You unsubscribe.
+Then life gets busy. Issues pile up. You skim subject lines instead of opening emails.
+
+Guilt builds. You tell yourself you'll catch up this weekend. You don't. You unsubscribe.
 
 Three months later, a friend shares a link from that same newsletter. You resubscribe.
 
@@ -29,7 +31,7 @@ But each issue has 10 to 15 links. On a given week, 2 or 3 of those are relevant
 
 So what do most people do? They treat each newsletter as all or nothing. Read everything or read nothing. "Nothing" wins almost every time.
 
-The missing piece is a system that pulls the 2 or 3 good links out of each issue and lets the rest go.
+> **The missing piece is a system that pulls the 2 or 3 good links out of each issue and lets the rest go.**
 
 ## A better workflow
 
@@ -47,9 +49,11 @@ This turns newsletters from a guilt source into a curated feed. Each issue costs
 
 I'm working on this exact problem with Hutch.
 
-The plan: a Gmail import feature. You connect your Gmail account and select which newsletters to import. Hutch extracts the links from each issue, generates a short summary for each one, and saves them to your reading list. No opening newsletters in your inbox. No skimming and forgetting. The links show up in Hutch, ready to triage.
+The plan: a Gmail import feature. You connect your Gmail account and select which newsletters to import. Hutch extracts the links from each issue, generates a short summary for each one, and saves them to your reading list. You stop opening newsletters in your inbox and stop skimming and forgetting. The links show up in Hutch, ready to triage.
 
-I want to be direct about where things stand. Gmail import is in development. It's not shipped yet. Hutch already works as a read-it-later app. You can save articles, read them later, and keep a clean reading list. But the newsletter workflow I described above is manual today. You open the newsletter, find the links that interest you, and save them one by one.
+I want to be direct about where things stand. Gmail import is in development. It's not shipped yet.
+
+Hutch already works as a read-it-later app. You can save articles, read them later, and keep a clean reading list. But the newsletter workflow I described above is manual today. You open the newsletter, find the links that interest you, and save them one by one.
 
 The Gmail integration will automate that process. Connect once. Your newsletter links flow into Hutch with AI-generated summaries to help you sort fast.
 

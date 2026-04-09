@@ -1,8 +1,8 @@
+import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import type * as pulumi from "@pulumi/pulumi";
 import type { LambdaPolicy } from "./hutch-lambda";
 
-export class HutchS3ReadWrite {
+export class HutchS3ReadWrite extends pulumi.ComponentResource {
 	public readonly bucket: aws.s3.Bucket["bucket"];
 	public readonly arn: aws.s3.Bucket["arn"];
 
@@ -14,11 +14,14 @@ export class HutchS3ReadWrite {
 		args: {
 			bucketName: pulumi.Input<string>;
 		},
+		opts?: pulumi.ComponentResourceOptions,
 	) {
+		super("hutch:infra:HutchS3ReadWrite", name, {}, opts);
+
 		const bucket = new aws.s3.Bucket(name, {
 			bucket: args.bucketName,
 			forceDestroy: false,
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		new aws.s3.BucketPublicAccessBlock(`${name}-public-access`, {
 			bucket: bucket.id,
@@ -26,7 +29,7 @@ export class HutchS3ReadWrite {
 			blockPublicPolicy: true,
 			ignorePublicAcls: true,
 			restrictPublicBuckets: true,
-		});
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.bucket = bucket.bucket;
 		this.arn = bucket.arn;
@@ -44,6 +47,8 @@ export class HutchS3ReadWrite {
 				Statement: [{ Effect: "Allow", Action: ["s3:PutObject"], Resource: `${arn}/*` }],
 			}),
 		);
+
+		this.registerOutputs();
 	}
 
 	readPolicies(name: string): LambdaPolicy[] {
@@ -52,5 +57,15 @@ export class HutchS3ReadWrite {
 
 	writePolicies(name: string): LambdaPolicy[] {
 		return [{ name: `${name}-write-pol`, policy: this.writePolicyDocument }];
+	}
+
+	static readPoliciesForBucket(name: string, bucketName: string): LambdaPolicy[] {
+		return [{
+			name: `${name}-read-pol`,
+			policy: JSON.stringify({
+				Version: "2012-10-17",
+				Statement: [{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `arn:aws:s3:::${bucketName}/*` }],
+			}),
+		}];
 	}
 }

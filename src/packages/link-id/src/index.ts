@@ -1,4 +1,4 @@
-export type LinkId = string & { readonly __brand: "LinkId" };
+export type NormalisedUrl = string & { readonly __brand: "NormalisedUrl" };
 
 function normalizeUrl(url: string): string {
 	const parsed = new URL(url);
@@ -7,7 +7,7 @@ function normalizeUrl(url: string): string {
 }
 
 export const LinkId = {
-	from(externalSiteUrl: string): LinkId {
-		return normalizeUrl(externalSiteUrl) as LinkId;
+	from(externalSiteUrl: string): NormalisedUrl {
+		return normalizeUrl(externalSiteUrl) as NormalisedUrl;
 	},
 } as const;

@@ -1,37 +1,87 @@
 ---
-title: "How to Move Your Reading List from Pocket to Hutch"
-description: "Pocket shut down last year on July 8, 2025. Export your saved articles and import them into Hutch in four steps."
+title: "Pocket Shut Down in 2025. Here's How to Recover and Move Your Reading List."
+description: "Pocket closed on July 8, 2025. If you never exported, your articles may still be recoverable. Here's how to find them and move to Hutch."
 slug: "pocket-migration"
 date: "2026-04-05"
 author: "Fayner Brack"
-keywords: "Pocket migration, Pocket export, Pocket alternative, move from Pocket, Pocket shut down"
+keywords: "Pocket migration, Pocket export, Pocket alternative, move from Pocket, Pocket shut down 2025, Pocket replacement"
 ---
 
-Pocket shut down on July 8, 2025. Your saved articles aren't gone. Here's how to bring them into Hutch.
+Pocket shut down on July 8, 2025. Mozilla had acquired it in 2017, slowed development over the years, and pulled the plug. Users got a window to export their data before the servers went offline.
 
-## Step 1: Export your Pocket data
+Many people missed that window. If you were one of them, your articles are not gone.
 
-Pocket offered an HTML export before it closed. That file contains all your saved URLs and titles. Got it already? Skip to Step 3.
+## What happened to Pocket
 
+Mozilla bought Pocket for an undisclosed amount in 2017. The team was small and the roadmap slowed. Feature updates thinned out.
 
-## Step 2: Install the Hutch browser extension
+By early 2025, Pocket was in maintenance mode. Mozilla announced the shutdown in April 2025 and gave users until July 8 to export.
 
-You need the extension to save articles going forward. Pick your browser:
+The export tool produced an HTML file containing every saved URL and its title. If you downloaded that file, you have everything you need. If you did not, the next section is for you.
 
-- [Hutch for Chrome](/install?browser=chrome)
-- [Hutch for Firefox](/install?browser=firefox)
+## If you never exported your Pocket data
 
-## Step 3: Import your articles
+The Pocket servers are offline, but copies of your saved articles likely still exist in other places.
 
-A Pocket import tool is in development. For now, you have two options:
+**Check your email for Pocket confirmation messages.** Every time you saved an article, Pocket sent a confirmation to some accounts. Search your inbox for "Pocket" or "getpocket.com" and collect the URLs from those emails.
 
-- **Save articles one at a time** with the browser extension. Click the Hutch icon on any page you want to keep.
-- **Send your export file** to [hutch+migrate@hutch-app.com](mailto:hutch+migrate@hutch-app.com). Include the HTML file from Pocket. I'll migrate your articles by hand.
+**Check your browser history.** If you read saved articles through Pocket's web app, those URLs appear in your browser history. Search for "getpocket.com/read" to find them. Most browsers keep 90 days of history by default, but some keep more.
 
-## Step 4: Check your articles
+**Try the Wayback Machine.** The Internet Archive crawled many Pocket profiles and public lists. Visit web.archive.org and search for your Pocket profile URL. Cached snapshots often contain saved article links.
 
-Open your [reading list](/queue) and spot-check a few entries. Titles and URLs should match what you had in Pocket. Something missing? Reply to the import confirmation email and I'll sort it out.
+**Check linked accounts.** If you connected Pocket to services like IFTTT, Zapier, or Buffer, those services likely logged the URLs you saved over time.
 
-## About AI summaries
+> **These methods will not recover your full library.** They recover fragments. The more places you look, the more you get back.
 
-Hutch generates a short AI summary for each saved article. After import, summaries appear as each article is processed. No action needed on your end.
+## How to import into Hutch
+
+If you have a Pocket export file (the HTML file from before the shutdown), send it to [hutch+migrate@hutch-app.com](mailto:hutch+migrate@hutch-app.com). I import the file by hand and load your articles into your Hutch account.
+
+What gets imported: every URL and its original title from the export file. What does not get imported: tags, highlights, and read/unread status. Pocket's export format only included URLs and titles.
+
+Typical turnaround is 24 to 48 hours. You get a confirmation email when the import finishes.
+
+Open your [reading list](/queue) and spot-check a few entries to make sure titles and URLs match. Something look wrong? Reply to the confirmation email.
+
+If you do not have the export file, you can still rebuild your reading list. Install the Hutch browser extension for [Chrome](/install?browser=chrome) or [Firefox](/install?browser=firefox) and save articles one at a time from the URLs you recovered.
+
+## What you had in Pocket vs. what you get in Hutch
+
+| Feature | Pocket | Hutch |
+|---------|--------|-------|
+| Save articles from browser | Yes | Yes (Chrome, Firefox) |
+| Reader view | Yes | Yes |
+| AI summaries | No | TL;DR for every article |
+| Tags | Yes | Planned |
+| Highlights | No | Planned |
+| Full-text search | Yes (Premium) | Yes |
+| Offline reading | Yes (mobile) | Planned |
+| Mobile app | iOS, Android | Browser-based (mobile web) |
+| Data export | Yes (before shutdown) | Anytime, even after cancelling |
+| Dark mode | Yes | Yes |
+
+Hutch is smaller than Pocket was. It does not have tags or a mobile app yet.
+
+It does have AI-generated TL;DR summaries for every saved article, which Pocket did not offer. For a full comparison of the current options, see the [best read-it-later apps in 2026](/blog/best-read-it-later-apps-2026).
+
+## AI summaries for imported articles
+
+After your articles are imported, Hutch generates a short AI summary for each one. Summaries appear as each article is processed.
+
+You do not need to do anything. The processing runs in the background and finishes within hours for most libraries.
+
+## Common questions
+
+**Can I still export from Pocket?**
+
+No. Pocket's servers went offline on July 8, 2025. The export tool is no longer available.
+
+If you downloaded the HTML export file before the shutdown, you can still use it. If not, the recovery steps above are your best option.
+
+**How do I import Pocket articles into another app?**
+
+Most read-it-later apps accept the HTML export file that Pocket provided. Readwise Reader, Instapaper, and Raindrop.io all support it. Hutch accepts it too. Send the file to hutch+migrate@hutch-app.com and the import is handled for you.
+
+**I lost my Omnivore reading list too. Can Hutch help?**
+
+Yes. Omnivore shut down in November 2024. If you have an Omnivore data export, send it to the same email address. For more on what happened to Omnivore, see [Omnivore shut down: here's a read-it-later app that won't](/blog/omnivore-alternative).

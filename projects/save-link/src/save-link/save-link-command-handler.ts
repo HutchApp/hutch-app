@@ -1,14 +1,14 @@
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import { SaveLinkCommand } from "./index";
-import { LinkId } from "./link-id";
+import { LinkId, type NormalisedUrl } from "./link-id";
 import type { FindArticleContent } from "./find-article-content";
 
 export type PutObject = (params: { key: string; content: string }) => Promise<string>;
 export type UpdateContentLocation = (params: { url: string; contentLocation: string }) => Promise<void>;
 type PublishLinkSaved = (params: { url: string; userId: string }) => Promise<void>;
 
-function contentS3Key(normalizedUrl: string): string {
+function contentS3Key(normalizedUrl: NormalisedUrl): string {
 	return `content/${encodeURIComponent(normalizedUrl)}/content.html`;
 }
 

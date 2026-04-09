@@ -26,11 +26,17 @@ export function BlogPostPage(params: { post: BlogPost }): Component {
 					headline: post.title,
 					description: post.description,
 					datePublished: post.date,
+					dateModified: post.date,
 					author: {
 						"@type": "Person",
 						name: post.author,
+						url: "https://www.linkedin.com/in/fagnerbrack/",
 					},
 					url: `https://hutch-app.com/blog/${post.slug}`,
+					mainEntityOfPage: {
+						"@type": "WebPage",
+						"@id": `https://hutch-app.com/blog/${post.slug}`,
+					},
 					publisher: {
 						"@type": "Organization",
 						name: "Hutch",
