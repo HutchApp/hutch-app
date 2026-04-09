@@ -1,4 +1,4 @@
-export { LinkId, type LinkId as LinkIdType } from "./link-id";
+export { LinkId, type NormalisedUrl } from "./link-id";
 
 export {
 	SaveLinkCommand,

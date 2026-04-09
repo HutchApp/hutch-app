@@ -11,7 +11,8 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import type { ArticleId, SavedArticle } from "../../domain/article/article.types";
 import { ArticleIdSchema, MinutesSchema, ArticleStatusSchema } from "../../domain/article/article.schema";
-import { normalizeArticleUrl, routeIdFromUrl } from "../../domain/article/normalize-article-url";
+import { LinkId } from "@packages/link-id";
+import { ReaderId } from "../../domain/article/reader-id";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type { UserId } from "../../domain/user/user.types";
 import type {
@@ -129,8 +130,8 @@ export function initDynamoDbArticleStore(deps: {
 	}
 
 	const saveArticle: SaveArticle = async (params) => {
-		const normalizedUrl = normalizeArticleUrl(params.url);
-		const routeId = routeIdFromUrl(params.url);
+		const normalizedUrl = LinkId.from(params.url);
+		const routeId = ReaderId.from(params.url);
 		const now = new Date();
 
 		const ignoreDuplicate = (error: unknown) => {
@@ -361,7 +362,7 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const findArticleFreshness: FindArticleFreshness = async (url) => {
-		const normalizedUrl = normalizeArticleUrl(url);
+		const normalizedUrl = LinkId.from(url);
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
@@ -380,7 +381,7 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const updateArticleContent: UpdateArticleContent = async (params) => {
-		const normalizedUrl = normalizeArticleUrl(params.url);
+		const normalizedUrl = LinkId.from(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
@@ -402,7 +403,7 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const updateArticleFetchMetadata: UpdateArticleFetchMetadata = async (params) => {
-		const normalizedUrl = normalizeArticleUrl(params.url);
+		const normalizedUrl = LinkId.from(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
@@ -416,7 +417,7 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const clearArticleSummary: ClearArticleSummary = async (url) => {
-		const normalizedUrl = normalizeArticleUrl(url);
+		const normalizedUrl = LinkId.from(url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,

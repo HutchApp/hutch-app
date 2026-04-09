@@ -1,1 +1,1 @@
-export { LinkId } from "@packages/link-id";
+export { LinkId, type NormalisedUrl } from "@packages/link-id";

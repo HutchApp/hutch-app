@@ -1,6 +1,6 @@
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
-import { normalizeArticleUrl } from "./domain/article/normalize-article-url";
+import { LinkId } from "@packages/link-id";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { FetchHtml } from "./providers/article-parser/readability-parser";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
@@ -47,7 +47,7 @@ export function createTestApp(options?: {
 		staticBaseUrl: "",
 		...auth,
 		...articleStore,
-		readArticleContent: (url) => articleStore.readContent(normalizeArticleUrl(url)),
+		readArticleContent: (url) => articleStore.readContent(LinkId.from(url)),
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
 		publishLinkSaved: options?.publishLinkSaved ?? defaultPublishLinkSaved,
 		findCachedSummary: options?.findCachedSummary ?? (async () => ""),

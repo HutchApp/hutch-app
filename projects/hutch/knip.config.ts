@@ -19,7 +19,7 @@ export default {
 		"@packages/hutch-infra-components",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
-		// Used in normalize-article-url.ts (knip doesn't resolve workspace subpath)
+		// knip doesn't resolve workspace subpath for @packages/link-id
 		"@packages/link-id",
 	],
 	ignoreBinaries: [

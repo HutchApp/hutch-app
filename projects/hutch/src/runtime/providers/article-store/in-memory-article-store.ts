@@ -6,10 +6,8 @@ import type {
 	Minutes,
 	SavedArticle,
 } from "../../domain/article/article.types";
-import {
-	normalizeArticleUrl,
-	routeIdFromUrl,
-} from "../../domain/article/normalize-article-url";
+import { LinkId } from "@packages/link-id";
+import { ReaderId } from "../../domain/article/reader-id";
 import type { UserId } from "../../domain/user/user.types";
 import type {
 	ClearArticleSummary,
@@ -90,8 +88,8 @@ export function initInMemoryArticleStore(): {
 	}
 
 	const saveArticle: SaveArticle = async (params) => {
-		const normalizedUrl = normalizeArticleUrl(params.url);
-		const routeId = routeIdFromUrl(params.url);
+		const normalizedUrl = LinkId.from(params.url);
+		const routeId = ReaderId.from(params.url);
 
 		if (!articles.has(normalizedUrl)) {
 			articles.set(normalizedUrl, {
@@ -133,7 +131,7 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const findArticleByUrl: FindArticleByUrl = async (url) => {
-		const normalizedUrl = normalizeArticleUrl(url);
+		const normalizedUrl = LinkId.from(url);
 		const article = articles.get(normalizedUrl);
 		if (!article) return null;
 
@@ -210,7 +208,7 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const findArticleFreshness: FindArticleFreshness = async (url) => {
-		const normalizedUrl = normalizeArticleUrl(url);
+		const normalizedUrl = LinkId.from(url);
 		const article = articles.get(normalizedUrl);
 		if (!article) return null;
 		return {
@@ -221,7 +219,7 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const updateArticleContent: UpdateArticleContent = async (params) => {
-		const normalizedUrl = normalizeArticleUrl(params.url);
+		const normalizedUrl = LinkId.from(params.url);
 		const article = articles.get(normalizedUrl);
 		assert(article, `Article not found for URL: ${normalizedUrl}`);
 		article.metadata = params.metadata;
@@ -233,14 +231,14 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const updateArticleFetchMetadata: UpdateArticleFetchMetadata = async (params) => {
-		const normalizedUrl = normalizeArticleUrl(params.url);
+		const normalizedUrl = LinkId.from(params.url);
 		const article = articles.get(normalizedUrl);
 		assert(article, `Article not found for URL: ${normalizedUrl}`);
 		article.contentFetchedAt = params.contentFetchedAt;
 	};
 
 	const clearArticleSummary: ClearArticleSummary = async (url) => {
-		const normalizedUrl = normalizeArticleUrl(url);
+		const normalizedUrl = LinkId.from(url);
 		const article = articles.get(normalizedUrl);
 		assert(article, `Article not found for URL: ${normalizedUrl}`);
 		article.summary = undefined;

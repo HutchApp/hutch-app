@@ -2,7 +2,7 @@
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { normalizeArticleUrl } from "../../domain/article/normalize-article-url";
+import { LinkId } from "@packages/link-id";
 import type { FindCachedSummary, SaveCachedSummary } from "./article-summary.types";
 
 const ArticleSummaryRow = z.object({
@@ -20,7 +20,7 @@ export function initDynamoDbSummaryCache(deps: {
 	const { client, tableName } = deps;
 
 	const findCachedSummary: FindCachedSummary = async (url) => {
-		const normalizedUrl = normalizeArticleUrl(url);
+		const normalizedUrl = LinkId.from(url);
 		const result = await client.send(
 			new GetCommand({ TableName: tableName, Key: { url: normalizedUrl } }),
 		);
@@ -30,7 +30,7 @@ export function initDynamoDbSummaryCache(deps: {
 	};
 
 	const saveCachedSummary: SaveCachedSummary = async (params) => {
-		const normalizedUrl = normalizeArticleUrl(params.url);
+		const normalizedUrl = LinkId.from(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,

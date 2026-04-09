@@ -2,9 +2,10 @@
 import type { S3Client } from "@aws-sdk/client-s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import assert from "node:assert";
+import type { NormalisedUrl } from "@packages/link-id";
 import type { ContentProvider } from "./read-article-content";
 
-function contentS3Key(normalizedUrl: string): string {
+function contentS3Key(normalizedUrl: NormalisedUrl): string {
 	return `content/${encodeURIComponent(normalizedUrl)}/content.html`;
 }
 

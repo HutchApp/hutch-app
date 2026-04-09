@@ -1,6 +1,6 @@
-import { normalizeArticleUrl } from "../../domain/article/normalize-article-url";
+import { LinkId, type NormalisedUrl } from "@packages/link-id";
 
-export type ContentProvider = (normalizedUrl: string) => Promise<string | undefined>;
+export type ContentProvider = (normalizedUrl: NormalisedUrl) => Promise<string | undefined>;
 
 export type ReadArticleContent = (url: string) => Promise<string | undefined>;
 
@@ -11,7 +11,7 @@ export function initReadArticleContent(deps: {
 	const { storageProviderQueryOrder, logError } = deps;
 
 	return async (url) => {
-		const normalizedUrl = normalizeArticleUrl(url);
+		const normalizedUrl = LinkId.from(url);
 
 		for (const provider of storageProviderQueryOrder) {
 			try {
