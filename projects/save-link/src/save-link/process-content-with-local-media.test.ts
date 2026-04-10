@@ -1,5 +1,14 @@
-import { processContentWithLocalMedia } from "./process-content-with-local-media";
+import posthtml from "posthtml";
+import urls from "@11ty/posthtml-urls";
+import { initProcessContentWithLocalMedia, type RewriteHtmlUrls } from "./process-content-with-local-media";
 import type { DownloadedMedia } from "./download-media";
+
+const rewriteHtmlUrls: RewriteHtmlUrls = (html, rewriteUrl) => {
+	const plugin = urls({ eachURL: rewriteUrl });
+	return posthtml().use(plugin).process(html).then(result => result.html);
+};
+
+const processContentWithLocalMedia = initProcessContentWithLocalMedia({ rewriteHtmlUrls });
 
 describe("processContentWithLocalMedia", () => {
 	it("replaces image URLs in html with CDN URLs", async () => {

@@ -3,13 +3,13 @@ import type { HutchLogger } from "@packages/hutch-logger";
 import { SaveLinkCommand } from "./index";
 import { ArticleUniqueId } from "./article-unique-id";
 import type { ParseArticle } from "../article-parser/article-parser.types";
-import type { DownloadMedia } from "./download-media";
-import { processContentWithLocalMedia } from "./process-content-with-local-media";
+import type { DownloadMedia, DownloadedMedia } from "./download-media";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 
 export type PutObject = (params: { key: string; content: string }) => Promise<string>;
 export type UpdateContentLocation = (params: { url: string; contentLocation: string }) => Promise<void>;
 type PublishLinkSaved = (params: { url: string; userId: string }) => Promise<void>;
+type ProcessContent = (params: { html: string; thumbnailUrl: string | undefined; media: DownloadedMedia[] }) => Promise<{ html: string; thumbnailUrl: string | undefined }>;
 
 function contentS3Key(articleUniqueId: ArticleUniqueId): string {
 	return `content/${encodeURIComponent(articleUniqueId.value)}/content.html`;
@@ -21,10 +21,11 @@ export function initSaveLinkCommandHandler(deps: {
 	updateContentLocation: UpdateContentLocation;
 	publishLinkSaved: PublishLinkSaved;
 	downloadMedia: DownloadMedia;
+	processContent: ProcessContent;
 	updateThumbnailUrl: UpdateThumbnailUrl;
 	logger: HutchLogger;
 }): SQSHandler {
-	const { parseArticle, putObject, updateContentLocation, publishLinkSaved, downloadMedia, updateThumbnailUrl, logger } = deps;
+	const { parseArticle, putObject, updateContentLocation, publishLinkSaved, downloadMedia, processContent, updateThumbnailUrl, logger } = deps;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -49,7 +50,7 @@ export function initSaveLinkCommandHandler(deps: {
 				articleUniqueId,
 			});
 
-			const { html, thumbnailUrl } = await processContentWithLocalMedia({
+			const { html, thumbnailUrl } = await processContent({
 				html: article.content,
 				thumbnailUrl: article.imageUrl,
 				media,

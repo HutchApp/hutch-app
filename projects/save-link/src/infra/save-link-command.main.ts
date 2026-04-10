@@ -10,9 +10,12 @@ import { initReadabilityParser } from "../article-parser/readability-parser";
 import { initS3PutObject } from "../save-link/s3-put-object";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";
 import { initUpdateContentLocation } from "../save-link/update-content-location";
+import posthtml from "posthtml";
+import urls from "@11ty/posthtml-urls";
 import { initUpdateThumbnailUrl } from "../save-link/update-thumbnail-url";
 import { initDownloadMedia } from "../save-link/download-media";
 import { initSaveLinkCommandHandler } from "../save-link/save-link-command-handler";
+import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
@@ -66,12 +69,20 @@ const publishLinkSaved = async (params: { url: string; userId: string }) => {
 	});
 };
 
+const processContent = initProcessContentWithLocalMedia({
+	rewriteHtmlUrls: (html, rewriteUrl) => {
+		const plugin = urls({ eachURL: rewriteUrl });
+		return posthtml().use(plugin).process(html).then(result => result.html);
+	},
+});
+
 export const handler = initSaveLinkCommandHandler({
 	parseArticle,
 	putObject,
 	updateContentLocation,
 	publishLinkSaved,
 	downloadMedia,
+	processContent,
 	updateThumbnailUrl,
 	logger: consoleLogger,
 });

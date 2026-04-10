@@ -1,5 +1,8 @@
+import posthtml from "posthtml";
+import urls from "@11ty/posthtml-urls";
 import { noopLogger } from "@packages/hutch-logger";
 import { initSaveLinkCommandHandler } from "./save-link-command-handler";
+import { initProcessContentWithLocalMedia } from "./process-content-with-local-media";
 import type { ParseArticle } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
@@ -45,6 +48,13 @@ function createSqsEvent(detail: { url: string; userId: string }): SQSEvent {
 
 const noopDownloadMedia: DownloadMedia = async () => [];
 
+const processContent = initProcessContentWithLocalMedia({
+	rewriteHtmlUrls: (html, rewriteUrl) => {
+		const plugin = urls({ eachURL: rewriteUrl });
+		return posthtml().use(plugin).process(html).then(result => result.html);
+	},
+});
+
 const successfulParse: ParseArticle = async () => ({
 	ok: true,
 	article: { title: "Test", siteName: "example.com", excerpt: "test", wordCount: 10, content: "<p>Article content</p>" },
@@ -62,6 +72,7 @@ describe("initSaveLinkCommandHandler", () => {
 			updateContentLocation,
 			publishLinkSaved,
 			downloadMedia: noopDownloadMedia,
+			processContent,
 			updateThumbnailUrl: jest.fn(),
 			logger: noopLogger,
 		});
@@ -92,6 +103,7 @@ describe("initSaveLinkCommandHandler", () => {
 			updateContentLocation: jest.fn(),
 			publishLinkSaved,
 			downloadMedia: noopDownloadMedia,
+			processContent,
 			updateThumbnailUrl: jest.fn(),
 			logger: noopLogger,
 		});
@@ -109,6 +121,7 @@ describe("initSaveLinkCommandHandler", () => {
 			updateContentLocation: jest.fn(),
 			publishLinkSaved: jest.fn(),
 			downloadMedia: noopDownloadMedia,
+			processContent,
 			updateThumbnailUrl: jest.fn(),
 			logger: noopLogger,
 		});
@@ -148,6 +161,7 @@ describe("initSaveLinkCommandHandler", () => {
 			updateContentLocation: jest.fn().mockResolvedValue({}),
 			publishLinkSaved: jest.fn().mockResolvedValue({}),
 			downloadMedia,
+			processContent,
 			updateThumbnailUrl: jest.fn(),
 			logger: noopLogger,
 		});
@@ -175,6 +189,7 @@ describe("initSaveLinkCommandHandler", () => {
 			updateContentLocation: jest.fn().mockResolvedValue({}),
 			publishLinkSaved: jest.fn().mockResolvedValue({}),
 			downloadMedia,
+			processContent,
 			updateThumbnailUrl,
 			logger: noopLogger,
 		});
@@ -200,6 +215,7 @@ describe("initSaveLinkCommandHandler", () => {
 			updateContentLocation: jest.fn().mockResolvedValue({}),
 			publishLinkSaved: jest.fn().mockResolvedValue({}),
 			downloadMedia: async () => [],
+			processContent,
 			updateThumbnailUrl,
 			logger: noopLogger,
 		});
