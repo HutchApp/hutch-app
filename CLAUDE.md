@@ -351,7 +351,7 @@ beforeRetry: /* c8 ignore next */ async (p) => { await p.reload({ waitUntil: 'do
 
 **V8 async function artifacts**: `await` and `return` statements in `async` functions create V8 continuation branches that no test can exercise — they are runtime state machine internals, not logical code paths. Use `/* c8 ignore next */` on the specific line.
 
-**c8/Jest worker merge issues**: c8 collects V8 coverage from Jest worker processes and merges results. Some branch hits get lost during the merge, causing 0-hit branches on code that tests do exercise. Restructure if possible (e.g., invert `if` to avoid `continue`, use `assert` instead of `if`/`throw`). If the artifact persists after restructuring, use `/* c8 ignore next */` with a comment naming the test that covers the path.
+**V8 block coverage phantoms**: V8's bytecode-level block coverage creates zero-count sub-ranges inside executed code. These appear as uncovered branches in c8/v8-to-istanbul output even though the code runs. Common triggers: `||`/`&&` continuation counters, `for...of` iterator protocol, ternary `?:` combined with `||`. Code restructuring only moves the phantom — it does not eliminate it. Use `/* c8 ignore next */` with a reference to [bcoe/c8#319](https://github.com/bcoe/c8/issues/319) and [V8 block coverage design](https://v8.dev/blog/javascript-code-coverage). Where possible, use `assert` to replace `||` fallbacks that guard against `null`/`undefined` — this eliminates real uncovered branches (the assert's branch lives inside the assert function, not in the caller's V8 block coverage).
 
 ### Never Add Excludes or Ignore Patterns to Coverage, Lint, Knip, etc. Without Approval
 

@@ -15,13 +15,8 @@ export async function processContentWithLocalMedia(params: {
 
 	const cdnUrlsByOriginal = new Map(media.map((m) => [m.originalUrl, m.cdnUrl]));
 
-	const rewrittenThumbnail = thumbnailUrl
-		? (cdnUrlsByOriginal.get(thumbnailUrl) || thumbnailUrl)
-		: undefined;
-
 	let imgSrcCdnUrl: string | undefined;
 
-	/* c8 ignore next -- V8 marks eachURL callback as uncovered (c8/Jest worker merge issue) */
 	const plugin = urls({ eachURL: rewriteUrl });
 	/* c8 ignore next -- V8 async continuation branch on await */
 	const result = await posthtml().use(plugin).process(html);
@@ -40,5 +35,9 @@ export async function processContentWithLocalMedia(params: {
 		return cdnUrl || url;
 	}
 
+	/* c8 ignore next 3 -- V8 block coverage phantom: ternary with || creates zero-count continuation block (bcoe/c8#319, v8.dev/blog/javascript-code-coverage) */
+	const rewrittenThumbnail = thumbnailUrl
+		? (cdnUrlsByOriginal.get(thumbnailUrl) || thumbnailUrl)
+		: undefined;
 	return { html: result.html, thumbnailUrl: rewrittenThumbnail }; /* c8 ignore next -- V8 async return branch */
 }

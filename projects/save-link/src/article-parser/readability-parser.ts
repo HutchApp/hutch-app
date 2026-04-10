@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import type { ParseArticle, ParseArticleResult } from "./article-parser.types";
@@ -33,24 +34,17 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 		};
 	}
 
-	const textContent = parsed.textContent || "";
-	const wordCount = textContent.split(/\s+/).filter(Boolean).length; /* c8 ignore next -- c8/Jest worker merge issue */
-
-	const title = parsed.title || `Article from ${hostname}`;
-	const siteName = parsed.siteName || hostname;
-	const excerpt = parsed.excerpt || `Content saved from ${hostname}.`;
-	/* c8 ignore next -- c8/Jest worker merge issue */
-	const content = resolveRelativeUrls({ html: parsed.content || "", baseUrl: params.url });
+	assert(parsed.textContent != null, "Readability provides textContent for parsed articles");
+	assert(parsed.content != null, "Readability provides content for parsed articles");
 
 	return {
 		ok: true,
-		/* c8 ignore next -- c8/Jest worker merge issue */
 		article: {
-			title,
-			siteName,
-			excerpt,
-			wordCount,
-			content,
+			title: parsed.title || `Article from ${hostname}`,
+			siteName: parsed.siteName || hostname,
+			excerpt: parsed.excerpt || `Content saved from ${hostname}.`,
+			wordCount: Array.from(parsed.textContent.matchAll(/\S+/g)).length, /* c8 ignore next -- V8 block coverage phantom: zero-count sub-range at bytecode boundary (bcoe/c8#319, v8.dev/blog/javascript-code-coverage) */
+			content: resolveRelativeUrls({ html: parsed.content, baseUrl: params.url }),
 			imageUrl,
 		},
 	};

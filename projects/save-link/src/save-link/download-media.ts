@@ -77,7 +77,7 @@ function extractImageUrls(html: string): string[] {
 	for (const el of document.querySelectorAll("[srcset]")) {
 		const srcset = el.getAttribute("srcset");
 		if (!srcset) continue;
-		/* c8 ignore next 3 -- c8/Jest worker merge issue: branch hits lost for srcset loop */
+		/* c8 ignore next 3 -- V8 block coverage phantom: for-of iterator creates zero-count sub-range inside loop body (bcoe/c8#319, v8.dev/blog/javascript-code-coverage) */
 		for (const entry of parseSrcset(srcset)) {
 			urls.push(entry.url);
 		}
