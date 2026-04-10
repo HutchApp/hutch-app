@@ -1,9 +1,9 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { ArticleUniqueId } from "@packages/article-unique-id";
-import type { FindCachedSummary, SaveCachedSummary } from "./article-summary.types";
+import type { FindCachedSummary } from "./article-summary.types";
 
 const ArticleSummaryRow = z.object({
 	url: z.string(),
@@ -15,7 +15,6 @@ export function initDynamoDbSummaryCache(deps: {
 	tableName: string;
 }): {
 	findCachedSummary: FindCachedSummary;
-	saveCachedSummary: SaveCachedSummary;
 } {
 	const { client, tableName } = deps;
 
@@ -29,22 +28,6 @@ export function initDynamoDbSummaryCache(deps: {
 		return row.summary ?? "";
 	};
 
-	const saveCachedSummary: SaveCachedSummary = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		await client.send(
-			new UpdateCommand({
-				TableName: tableName,
-				Key: { url: articleUniqueId.value },
-				UpdateExpression: "SET summary = :summary, summaryInputTokens = :inputTokens, summaryOutputTokens = :outputTokens",
-				ExpressionAttributeValues: {
-					":summary": params.summary,
-					":inputTokens": params.inputTokens,
-					":outputTokens": params.outputTokens,
-				},
-			}),
-		);
-	};
-
-	return { findCachedSummary, saveCachedSummary };
+	return { findCachedSummary };
 }
 /* c8 ignore stop */
