@@ -24,7 +24,7 @@ module.exports = {
       config: 'playwright.config.local-dev.ts',
       browsers: ['chromium'],
       server: {
-        command: ['node', 'dist/e2e/e2e-server.js'],
+        command: ['node', 'dist/e2e/e2e-server.main.js'],
         url: `http://localhost:${port}`,
         stripCoverage: true,
       },
