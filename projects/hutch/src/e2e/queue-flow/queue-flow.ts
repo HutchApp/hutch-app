@@ -49,8 +49,8 @@ export async function runQueueFlow(page: Page, config: QueueFlowConfig): Promise
   const preQueueGroups = (config.preQueueActionFactories ?? []).map(factory => factory(authProgress))
 
   const allActions = groupOf(
-    createAuthActions(config.authData, authProgress, config.passwordResetProgress),
     ...preQueueGroups,
+    createAuthActions(config.authData, authProgress, config.passwordResetProgress),
     createQueueActions(authProgress, queueProgress, config.testArticles),
   )
 
