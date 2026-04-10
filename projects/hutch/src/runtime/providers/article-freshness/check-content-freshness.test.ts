@@ -15,9 +15,8 @@ function createDeps(overrides?: Record<string, unknown>) {
 				content: "<p>Test</p>",
 			},
 		}),
-		updateArticleContent: async () => {},
-		updateArticleFetchMetadata: async () => {},
-		clearArticleSummary: async () => {},
+		publishRefreshArticleContent: async () => {},
+		publishUpdateFetchTimestamp: async () => {},
 
 		logError: () => {},
 		now: () => new Date("2026-03-20T10:00:00Z"),
@@ -51,25 +50,25 @@ describe("refreshArticleIfStale", () => {
 	});
 
 	it("returns action 'unchanged' on 304 conditional response", async () => {
-		const updateCalled: string[] = [];
+		const publishCalled: string[] = [];
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
 			fetchConditional: async () => ({ changed: false }),
-			updateArticleFetchMetadata: async () => { updateCalled.push("metadata"); },
+			publishUpdateFetchTimestamp: async () => { publishCalled.push("timestamp"); },
 		});
 		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
 
 		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
 
 		expect(result.action).toBe("unchanged");
-		expect(updateCalled).toContain("metadata");
+		expect(publishCalled).toContain("timestamp");
 	});
 
 	it("returns action 'refreshed' on 200 conditional response", async () => {
-		const cleared: string[] = [];
+		const publishCalled: string[] = [];
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				etag: '"abc"',
@@ -81,14 +80,14 @@ describe("refreshArticleIfStale", () => {
 				etag: '"def"',
 				lastModified: "Wed, 20 Mar 2026 10:00:00 GMT",
 			}),
-			clearArticleSummary: async () => { cleared.push("summary"); },
+			publishRefreshArticleContent: async () => { publishCalled.push("refresh"); },
 		});
 		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
 
 		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
 
 		expect(result.action).toBe("refreshed");
-		expect(cleared).toContain("summary");
+		expect(publishCalled).toContain("refresh");
 	});
 
 	it("returns action 'refreshed' on full fetch when no conditional headers available", async () => {

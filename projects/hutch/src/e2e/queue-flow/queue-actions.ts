@@ -13,6 +13,7 @@ export type QueueProgress = {
   verifiedPage2: boolean
   navigatedBackToPage1: boolean
   verifiedBackOnPage1: boolean
+  refreshedExistingArticle: boolean
   paginationArticlesDeleted: boolean
   verifiedNewestFirst: boolean
   sortedOldestFirst: boolean
@@ -207,9 +208,45 @@ export function createQueueActions(authProgress: AuthProgress, progress: QueuePr
     },
   })
 
+  actions.set('resave-existing-article-triggers-refresh', {
+    isAvailable: async (page) => {
+      if (!progress.verifiedBackOnPage1) return false
+      if (progress.refreshedExistingArticle) return false
+      if (!(await isOnPage(page, 'page-queue'))) return false
+      const saveForm = page.locator('[data-test-form="save-article"]')
+      return saveForm.isVisible().catch(() => false)
+    },
+    execute: async (page) => {
+      const countLocator = page.locator('[data-test-article-count]')
+      await expect(countLocator).toBeVisible()
+      const totalBeforeText = await countLocator.textContent()
+      assert.ok(totalBeforeText, 'article count element should have text content')
+      const totalBefore = parseInt(totalBeforeText, 10)
+
+      // Re-save an already-saved URL so refreshArticleIfStale takes the
+      // handleFullFetch branch and publishes publishRefreshArticleContent.
+      // Pagination URLs point to the local server, so the fetch is deterministic.
+      const input = page.locator('[data-test-form="save-article"] input[name="url"]')
+      await input.fill(testData.paginationUrls[0])
+      await clickAndWaitForPageReload(
+        page,
+        page.locator('[data-test-form="save-article"] button[type="submit"]'),
+      )
+
+      await expect(countLocator).toBeVisible()
+      const totalAfterText = await countLocator.textContent()
+      assert.ok(totalAfterText, 'article count element should have text content')
+      const totalAfter = parseInt(totalAfterText, 10)
+      assert.equal(totalAfter, totalBefore, 'Re-saving an existing URL must not duplicate the article')
+
+      progress.refreshedExistingArticle = true
+    },
+  })
+
   actions.set('delete-pagination-articles', {
     isAvailable: async (page) => {
       if (!progress.verifiedBackOnPage1) return false
+      if (!progress.refreshedExistingArticle) return false
       if (progress.paginationArticlesDeleted) return false
       return isOnPage(page, 'page-queue')
     },

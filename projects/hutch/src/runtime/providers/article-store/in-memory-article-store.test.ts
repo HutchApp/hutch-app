@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { ArticleUniqueId } from "@packages/article-unique-id";
 import { ArticleIdSchema } from "../../domain/article/article.schema";
 import type { Minutes } from "../../domain/article/article.types";
@@ -260,81 +259,6 @@ describe("initInMemoryArticleStore", () => {
 			expect(result).toBeNull();
 		});
 
-		it("updateArticleFetchMetadata sets contentFetchedAt", async () => {
-			const store = initInMemoryArticleStore();
-			await store.saveArticle(makeArticleParams());
-
-			await store.updateArticleFetchMetadata({
-				url: "https://example.com/article",
-				contentFetchedAt: "2026-03-20T10:00:00Z",
-			});
-			const freshness = await store.findArticleFreshness("https://example.com/article");
-
-			expect(freshness?.contentFetchedAt).toBe("2026-03-20T10:00:00Z");
-		});
-
-		it("updateArticleContent updates metadata and content", async () => {
-			const store = initInMemoryArticleStore();
-			await store.saveArticle(makeArticleParams());
-
-			await store.updateArticleContent({
-				url: "https://example.com/article",
-				metadata: {
-					title: "Updated Title",
-					siteName: "example.com",
-					excerpt: "Updated excerpt",
-					wordCount: 200,
-				},
-				estimatedReadTime: 1 as Minutes,
-				etag: '"new-etag"',
-				lastModified: "Wed, 20 Mar 2026 10:00:00 GMT",
-				contentFetchedAt: "2026-03-20T10:00:00Z",
-			});
-
-			const byUrl = await store.findArticleByUrl("https://example.com/article");
-			assert(byUrl, "Article should exist after updateArticleContent");
-			const found = await store.findArticleById(
-				byUrl.id,
-				USER_A,
-			);
-			expect(found?.metadata.title).toBe("Updated Title");
-
-			const freshness = await store.findArticleFreshness("https://example.com/article");
-			expect(freshness?.etag).toBe('"new-etag"');
-			expect(freshness?.contentFetchedAt).toBe("2026-03-20T10:00:00Z");
-		});
-
-		it("updateArticleContent without etag or lastModified preserves existing values", async () => {
-			const store = initInMemoryArticleStore();
-			await store.saveArticle(makeArticleParams());
-
-			await store.updateArticleContent({
-				url: "https://example.com/article",
-				metadata: {
-					title: "No Headers",
-					siteName: "example.com",
-					excerpt: "No headers excerpt",
-					wordCount: 50,
-				},
-				estimatedReadTime: 1 as Minutes,
-				contentFetchedAt: "2026-03-20T12:00:00Z",
-			});
-
-			const freshness = await store.findArticleFreshness("https://example.com/article");
-			expect(freshness?.contentFetchedAt).toBe("2026-03-20T12:00:00Z");
-			expect(freshness?.etag).toBeUndefined();
-			expect(freshness?.lastModified).toBeUndefined();
-		});
-
-		it("clearArticleSummary sets summary to undefined", async () => {
-			const store = initInMemoryArticleStore();
-			await store.saveArticle(makeArticleParams());
-
-			await store.clearArticleSummary("https://example.com/article");
-
-			const freshness = await store.findArticleFreshness("https://example.com/article");
-			expect(freshness).not.toBeNull();
-		});
 	});
 
 	describe("updateArticleStatus", () => {

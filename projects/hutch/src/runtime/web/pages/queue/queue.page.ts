@@ -10,9 +10,9 @@ import type {
 	FindArticleById,
 	FindArticlesByUser,
 	SaveArticle,
-	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "../../../providers/article-store/article-store.types";
+import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
@@ -36,7 +36,7 @@ interface QueueDependencies {
 	publishLinkSaved: PublishLinkSaved;
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
-	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	logError: (message: string, error?: Error) => void;
 }
@@ -93,10 +93,10 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 			estimatedReadTime: calculateReadTime(article.wordCount),
 		});
 
-		deps.updateArticleFetchMetadata({
+		deps.publishUpdateFetchTimestamp({
 			url,
 			contentFetchedAt: new Date().toISOString(),
-		}).catch((error) => deps.logError("Failed to update fetch metadata", error instanceof Error ? error : undefined));
+		}).catch((error) => deps.logError("Failed to publish fetch timestamp", error instanceof Error ? error : undefined));
 
 		if (article.content) {
 			await deps.publishLinkSaved({ url, userId });

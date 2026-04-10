@@ -22,9 +22,9 @@ import type {
 	FindArticleById,
 	FindArticlesByUser,
 	SaveArticle,
-	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
+import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
 import type { ReadArticleContent } from "./providers/article-store/read-article-content";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
@@ -90,7 +90,7 @@ interface AppDependencies {
 	publishLinkSaved: PublishLinkSaved;
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
-	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
+	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 }
 
@@ -295,7 +295,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		publishLinkSaved: deps.publishLinkSaved,
 		findCachedSummary: deps.findCachedSummary,
 		refreshArticleIfStale: deps.refreshArticleIfStale,
-		updateArticleFetchMetadata: deps.updateArticleFetchMetadata,
+		publishUpdateFetchTimestamp: deps.publishUpdateFetchTimestamp,
 		readArticleContent: deps.readArticleContent,
 		logError: deps.logError,
 	});

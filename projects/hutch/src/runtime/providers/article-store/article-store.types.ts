@@ -74,18 +74,3 @@ export type FindArticleFreshness = (
 	url: string,
 ) => Promise<ArticleFreshnessData | null>;
 
-export type UpdateArticleContent = (params: {
-	url: string;
-	metadata: SavedArticle["metadata"];
-	estimatedReadTime: SavedArticle["estimatedReadTime"];
-	etag?: string;
-	lastModified?: string;
-	contentFetchedAt: string;
-}) => Promise<void>;
-
-export type UpdateArticleFetchMetadata = (params: {
-	url: string;
-	contentFetchedAt: string;
-}) => Promise<void>;
-
-export type ClearArticleSummary = (url: string) => Promise<void>;

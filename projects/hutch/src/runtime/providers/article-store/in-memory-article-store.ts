@@ -10,15 +10,12 @@ import { ArticleUniqueId } from "@packages/article-unique-id";
 import { ReaderId } from "../../domain/article/reader-id";
 import type { UserId } from "../../domain/user/user.types";
 import type {
-	ClearArticleSummary,
 	DeleteArticle,
 	FindArticleById,
 	FindArticleByUrl,
 	FindArticleFreshness,
 	FindArticlesByUser,
 	SaveArticle,
-	UpdateArticleContent,
-	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "./article-store.types";
 import type { ContentProvider } from "./read-article-content";
@@ -65,9 +62,6 @@ export function initInMemoryArticleStore(): {
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
 	findArticleFreshness: FindArticleFreshness;
-	updateArticleContent: UpdateArticleContent;
-	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
-	clearArticleSummary: ClearArticleSummary;
 	findArticlesByUser: FindArticlesByUser;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
@@ -217,31 +211,6 @@ export function initInMemoryArticleStore(): {
 		};
 	};
 
-	const updateArticleContent: UpdateArticleContent = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		const article = articles.get(articleUniqueId.value);
-		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
-		article.metadata = params.metadata;
-		article.estimatedReadTime = params.estimatedReadTime;
-		if (params.etag) article.etag = params.etag;
-		if (params.lastModified) article.lastModified = params.lastModified;
-		article.contentFetchedAt = params.contentFetchedAt;
-	};
-
-	const updateArticleFetchMetadata: UpdateArticleFetchMetadata = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		const article = articles.get(articleUniqueId.value);
-		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
-		article.contentFetchedAt = params.contentFetchedAt;
-	};
-
-	const clearArticleSummary: ClearArticleSummary = async (url) => {
-		const articleUniqueId = ArticleUniqueId.parse(url);
-		const article = articles.get(articleUniqueId.value);
-		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
-		article.summary = undefined;
-	};
-
 	const readContent: ContentProvider = async (articleUniqueId) => {
 		const article = articles.get(articleUniqueId.value);
 		if (!article) return undefined;
@@ -263,9 +232,6 @@ export function initInMemoryArticleStore(): {
 		findArticlesByUser,
 		deleteArticle,
 		updateArticleStatus,
-		updateArticleContent,
-		updateArticleFetchMetadata,
-		clearArticleSummary,
 		readContent,
 		writeContent,
 	};

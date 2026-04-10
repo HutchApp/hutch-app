@@ -33,6 +33,7 @@ export async function runQueueFlow(page: Page, config: QueueFlowConfig): Promise
     verifiedPage2: false,
     navigatedBackToPage1: false,
     verifiedBackOnPage1: false,
+    refreshedExistingArticle: false,
     paginationArticlesDeleted: false,
     verifiedNewestFirst: false,
     sortedOldestFirst: false,

@@ -12,6 +12,8 @@ import {
 	SaveLinkCommand,
 	LinkSavedEvent,
 	SummaryGeneratedEvent,
+	RefreshArticleContentCommand,
+	UpdateFetchTimestampCommand,
 } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 
@@ -178,6 +180,72 @@ const summaryGeneratedLambdaWithSQS = new HutchSQSBackedLambda("summary-generate
 
 eventBus.subscribe(SummaryGeneratedEvent, summaryGeneratedLambdaWithSQS);
 
+// --- RefreshArticleContent handler ---
+
+const refreshArticleContentQueue = new HutchSQS("refresh-article-content", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const refreshArticleContentDynamodb = new HutchDynamoDBAccess("refresh-article-content-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:UpdateItem"],
+});
+
+const refreshArticleContentLambda = new HutchLambda("refresh-article-content", {
+	entryPoint: "./src/infra/refresh-article-content.main.ts",
+	outputDir: ".lib/refresh-article-content",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: 30,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+	},
+	policies: [
+		...refreshArticleContentDynamodb.policies,
+	],
+});
+
+const refreshArticleContentWithSQS = new HutchSQSBackedLambda("refresh-article-content", {
+	lambda: refreshArticleContentLambda,
+	queue: refreshArticleContentQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(RefreshArticleContentCommand, refreshArticleContentWithSQS);
+
+// --- UpdateFetchTimestamp handler ---
+
+const updateFetchTimestampQueue = new HutchSQS("update-fetch-timestamp", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const updateFetchTimestampDynamodb = new HutchDynamoDBAccess("update-fetch-timestamp-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:UpdateItem"],
+});
+
+const updateFetchTimestampLambda = new HutchLambda("update-fetch-timestamp", {
+	entryPoint: "./src/infra/update-fetch-timestamp.main.ts",
+	outputDir: ".lib/update-fetch-timestamp",
+	assetDir: "./src",
+	memorySize: 128,
+	timeout: 10,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+	},
+	policies: [
+		...updateFetchTimestampDynamodb.policies,
+	],
+});
+
+const updateFetchTimestampWithSQS = new HutchSQSBackedLambda("update-fetch-timestamp", {
+	lambda: updateFetchTimestampLambda,
+	queue: updateFetchTimestampQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(UpdateFetchTimestampCommand, updateFetchTimestampWithSQS);
+
 // --- Exports ---
 
 export const saveLinkCommandQueueUrl = saveLinkCommandQueue.queueUrl;
@@ -188,5 +256,9 @@ export const generateSummaryQueueUrl = generateSummaryQueue.queueUrl;
 export const generateSummaryDlqUrl = generateSummaryQueue.dlqUrl;
 export const summaryGeneratedQueueUrl = summaryGeneratedQueue.queueUrl;
 export const summaryGeneratedDlqUrl = summaryGeneratedQueue.dlqUrl;
+export const refreshArticleContentQueueUrl = refreshArticleContentQueue.queueUrl;
+export const refreshArticleContentDlqUrl = refreshArticleContentQueue.dlqUrl;
+export const updateFetchTimestampQueueUrl = updateFetchTimestampQueue.queueUrl;
+export const updateFetchTimestampDlqUrl = updateFetchTimestampQueue.dlqUrl;
 export const contentBucketOutputName = contentBucket.bucket;
 export const contentBucketOutputArn = contentBucket.arn;

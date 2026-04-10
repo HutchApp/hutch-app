@@ -67,4 +67,40 @@ export const GenerateSummaryCommand = defineCommand({
 });
 export type GenerateSummaryDetail = z.infer<typeof GenerateSummaryCommand.detailSchema>;
 
+export const RefreshArticleContentCommand = defineEvent({
+	name: "refresh-article-content-command",
+	source: "hutch.api",
+	detailType: "RefreshArticleContentCommand",
+	detailSchema: z.object({
+		url: z.string(),
+		metadata: z.object({
+			title: z.string(),
+			siteName: z.string(),
+			excerpt: z.string(),
+			wordCount: z.number(),
+			imageUrl: z.string().optional(),
+		}),
+		estimatedReadTime: z.number(),
+		etag: z.string().optional(),
+		lastModified: z.string().optional(),
+		contentFetchedAt: z.string(),
+	}),
+});
+export type RefreshArticleContentDetail = z.infer<
+	typeof RefreshArticleContentCommand.detailSchema
+>;
+
+export const UpdateFetchTimestampCommand = defineEvent({
+	name: "update-fetch-timestamp-command",
+	source: "hutch.api",
+	detailType: "UpdateFetchTimestampCommand",
+	detailSchema: z.object({
+		url: z.string(),
+		contentFetchedAt: z.string(),
+	}),
+});
+export type UpdateFetchTimestampDetail = z.infer<
+	typeof UpdateFetchTimestampCommand.detailSchema
+>;
+
 export type { HutchEvent, HutchCommand };

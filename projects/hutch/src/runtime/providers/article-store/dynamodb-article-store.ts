@@ -16,14 +16,11 @@ import { ReaderId } from "../../domain/article/reader-id";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type { UserId } from "../../domain/user/user.types";
 import type {
-	ClearArticleSummary,
 	DeleteArticle,
 	FindArticleById,
 	FindArticleFreshness,
 	FindArticlesByUser,
 	SaveArticle,
-	UpdateArticleContent,
-	UpdateArticleFetchMetadata,
 	UpdateArticleStatus,
 } from "./article-store.types";
 import type { ContentProvider } from "./read-article-content";
@@ -96,9 +93,6 @@ export function initDynamoDbArticleStore(deps: {
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
 	findArticleFreshness: FindArticleFreshness;
-	updateArticleContent: UpdateArticleContent;
-	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
-	clearArticleSummary: ClearArticleSummary;
 	readContent: ContentProvider;
 } {
 	const { client, tableName, userArticlesTableName } = deps;
@@ -379,52 +373,6 @@ export function initDynamoDbArticleStore(deps: {
 		};
 	};
 
-	const updateArticleContent: UpdateArticleContent = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		await client.send(
-			new UpdateCommand({
-				TableName: tableName,
-				Key: { url: articleUniqueId.value },
-				UpdateExpression: "SET title = :title, siteName = :siteName, excerpt = :excerpt, wordCount = :wordCount, estimatedReadTime = :ert, contentFetchedAt = :cfa, etag = :etag, lastModified = :lm",
-				ExpressionAttributeValues: {
-					":title": params.metadata.title,
-					":siteName": params.metadata.siteName,
-					":excerpt": params.metadata.excerpt,
-					":wordCount": params.metadata.wordCount,
-					":ert": params.estimatedReadTime,
-					":cfa": params.contentFetchedAt,
-					":etag": params.etag ?? null,
-					":lm": params.lastModified ?? null,
-				},
-			}),
-		);
-	};
-
-	const updateArticleFetchMetadata: UpdateArticleFetchMetadata = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		await client.send(
-			new UpdateCommand({
-				TableName: tableName,
-				Key: { url: articleUniqueId.value },
-				UpdateExpression: "SET contentFetchedAt = :cfa",
-				ExpressionAttributeValues: {
-					":cfa": params.contentFetchedAt,
-				},
-			}),
-		);
-	};
-
-	const clearArticleSummary: ClearArticleSummary = async (url) => {
-		const articleUniqueId = ArticleUniqueId.parse(url);
-		await client.send(
-			new UpdateCommand({
-				TableName: tableName,
-				Key: { url: articleUniqueId.value },
-				UpdateExpression: "REMOVE summary, summaryInputTokens, summaryOutputTokens",
-			}),
-		);
-	};
-
 	/** Legacy fallback for articles saved before S3 migration. S3 is the primary content store. */
 	const readContent: ContentProvider = async (articleUniqueId) => {
 		const result = await client.send(
@@ -446,9 +394,6 @@ export function initDynamoDbArticleStore(deps: {
 		deleteArticle,
 		updateArticleStatus,
 		findArticleFreshness,
-		updateArticleContent,
-		updateArticleFetchMetadata,
-		clearArticleSummary,
 		readContent,
 	};
 }

@@ -7,11 +7,10 @@ import type {
 } from "../article-parser/article-parser.types";
 import type {
 	ArticleFreshnessData,
-	ClearArticleSummary,
 	FindArticleFreshness,
-	UpdateArticleContent,
-	UpdateArticleFetchMetadata,
 } from "../article-store/article-store.types";
+import type { PublishRefreshArticleContent } from "../events/publish-refresh-article-content.types";
+import type { PublishUpdateFetchTimestamp } from "../events/publish-update-fetch-timestamp.types";
 import { calculateReadTime } from "../../domain/article/estimated-read-time";
 
 export type ContentFreshnessResult =
@@ -29,9 +28,8 @@ export function initRefreshArticleIfStale(deps: {
 	fetchConditional: FetchConditional;
 	fetchHtmlWithHeaders: FetchHtmlWithHeaders;
 	parseHtml: ParseHtml;
-	updateArticleContent: UpdateArticleContent;
-	updateArticleFetchMetadata: UpdateArticleFetchMetadata;
-	clearArticleSummary: ClearArticleSummary;
+	publishRefreshArticleContent: PublishRefreshArticleContent;
+	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	logError: (message: string, error?: Error) => void;
 	now: () => Date;
 	staleTtlMs: number;
@@ -70,7 +68,7 @@ export function initRefreshArticleIfStale(deps: {
 			});
 
 			if (!result.changed) {
-				await deps.updateArticleFetchMetadata({
+				await deps.publishUpdateFetchTimestamp({
 					url,
 					contentFetchedAt: deps.now().toISOString(),
 				});
@@ -108,23 +106,20 @@ export function initRefreshArticleIfStale(deps: {
 		const parsed = deps.parseHtml({ url, html: result.html });
 		if (!parsed.ok) return { action: "skip" };
 
-		await Promise.all([
-			deps.updateArticleContent({
-				url,
-				metadata: {
-					title: parsed.article.title,
-					siteName: parsed.article.siteName,
-					excerpt: parsed.article.excerpt,
-					wordCount: parsed.article.wordCount,
-					imageUrl: parsed.article.imageUrl,
-				},
-				estimatedReadTime: calculateReadTime(parsed.article.wordCount),
-				etag: result.etag,
-				lastModified: result.lastModified,
-				contentFetchedAt: deps.now().toISOString(),
-			}),
-			deps.clearArticleSummary(url),
-		]);
+		await deps.publishRefreshArticleContent({
+			url,
+			metadata: {
+				title: parsed.article.title,
+				siteName: parsed.article.siteName,
+				excerpt: parsed.article.excerpt,
+				wordCount: parsed.article.wordCount,
+				imageUrl: parsed.article.imageUrl,
+			},
+			estimatedReadTime: calculateReadTime(parsed.article.wordCount),
+			etag: result.etag,
+			lastModified: result.lastModified,
+			contentFetchedAt: deps.now().toISOString(),
+		});
 
 		return { action: "refreshed", article: parsed };
 	}

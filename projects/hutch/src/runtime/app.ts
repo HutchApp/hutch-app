@@ -30,7 +30,11 @@ import { initS3ReadContent } from "./providers/article-store/s3-read-content";
 import { initReadArticleContent } from "./providers/article-store/read-article-content";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
+import { initEventBridgeRefreshArticleContent } from "./providers/events/eventbridge-refresh-article-content";
+import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbridge-update-fetch-timestamp";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
+import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
+import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { getEnv, requireEnv } from "./require-env";
@@ -72,14 +76,15 @@ function initProviders() {
 			eventBusName,
 		});
 		const { publishLinkSaved } = initEventBridgeLinkSaved({ publishEvent });
+		const { publishRefreshArticleContent } = initEventBridgeRefreshArticleContent({ publishEvent });
+		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
 			fetchConditional,
 			fetchHtmlWithHeaders,
 			parseHtml,
-			updateArticleContent: articleStore.updateArticleContent,
-			updateArticleFetchMetadata: articleStore.updateArticleFetchMetadata,
-			clearArticleSummary: articleStore.clearArticleSummary,
+			publishRefreshArticleContent,
+			publishUpdateFetchTimestamp,
 
 			logError,
 			now: () => new Date(),
@@ -96,6 +101,7 @@ function initProviders() {
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			publishLinkSaved,
+			publishUpdateFetchTimestamp,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
 		};
@@ -105,15 +111,16 @@ function initProviders() {
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const { publishLinkSaved } = initInMemoryLinkSaved({ logger: consoleLogger });
+	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
+	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
 	const stubFindCachedSummary = async (_url: string) => "";
 	const { refreshArticleIfStale } = initRefreshArticleIfStale({
 		findArticleFreshness: articleStore.findArticleFreshness,
 		fetchConditional,
 		fetchHtmlWithHeaders,
 		parseHtml,
-		updateArticleContent: articleStore.updateArticleContent,
-		updateArticleFetchMetadata: articleStore.updateArticleFetchMetadata,
-		clearArticleSummary: articleStore.clearArticleSummary,
+		publishRefreshArticleContent,
+		publishUpdateFetchTimestamp,
 
 		logError,
 		now: () => new Date(),
@@ -134,6 +141,7 @@ function initProviders() {
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		publishLinkSaved,
+		publishUpdateFetchTimestamp,
 		findCachedSummary: stubFindCachedSummary,
 		refreshArticleIfStale,
 	};
