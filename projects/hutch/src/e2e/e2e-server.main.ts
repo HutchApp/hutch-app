@@ -1,4 +1,3 @@
-/* c8 ignore start -- composition root, no logic to test */
 import assert from 'node:assert'
 import express from 'express'
 import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
@@ -32,4 +31,3 @@ process.on('SIGINT', () => process.exit(0))
 server.listen(PORT, () => {
   logger.info(`E2E server running on http://localhost:${PORT}`)
 })
-/* c8 ignore stop */

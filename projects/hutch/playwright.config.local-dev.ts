@@ -12,7 +12,7 @@ export default createPlaywrightConfig({
   video: 'off',
   launchOptions: {},
   webServer: {
-    command: 'tsx src/e2e/e2e-server.ts',
+    command: 'tsx src/e2e/e2e-server.main.ts',
     url: serverUrl,
     reuseExistingServer: true,
     stdout: 'pipe',
