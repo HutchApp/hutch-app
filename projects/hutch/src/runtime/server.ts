@@ -6,6 +6,7 @@ import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
 import type {
 	CountUsers,
+	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
 	DestroySession,
@@ -38,8 +39,11 @@ import type {
 	CreatePasswordResetToken,
 	VerifyPasswordResetToken,
 } from "./providers/password-reset/password-reset.types";
+import type { FindUserByGoogleId, LinkGoogleAccount } from "./providers/google-auth/google-auth.schema";
+import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
+import { initGoogleAuthRoutes } from "./web/auth/google-auth.page";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
@@ -65,6 +69,7 @@ interface AppDependencies {
 	appOrigin: string;
 	staticBaseUrl: string;
 	createUser: CreateUser;
+	createGoogleUser: CreateGoogleUser;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
@@ -85,6 +90,11 @@ interface AppDependencies {
 	verifyPasswordResetToken: VerifyPasswordResetToken;
 	userExistsByEmail: UserExistsByEmail;
 	updatePassword: UpdatePassword;
+	findUserByGoogleId: FindUserByGoogleId;
+	linkGoogleAccount: LinkGoogleAccount;
+	exchangeGoogleCode?: ExchangeGoogleCode;
+	googleClientId?: string;
+	googleClientSecret?: string;
 	baseUrl: string;
 	logError: (message: string, error?: Error) => void;
 	oauthModel: OAuthModel;
@@ -259,6 +269,21 @@ export function createApp(dependencies: AppDependencies): Express {
 		logError: deps.logError,
 	});
 	app.use(authRouter);
+
+	if (deps.exchangeGoogleCode && deps.googleClientId && deps.googleClientSecret) {
+		const googleAuthRouter = initGoogleAuthRoutes({
+			googleClientId: deps.googleClientId,
+			googleClientSecret: deps.googleClientSecret,
+			appOrigin,
+			createSession: deps.createSession,
+			createGoogleUser: deps.createGoogleUser,
+			findUserByGoogleId: deps.findUserByGoogleId,
+			linkGoogleAccount: deps.linkGoogleAccount,
+			exchangeGoogleCode: deps.exchangeGoogleCode,
+			logError: deps.logError,
+		});
+		app.use(googleAuthRouter);
+	}
 
 	const forgotPasswordRouter = initForgotPasswordRoutes({
 		sendEmail: deps.sendEmail,

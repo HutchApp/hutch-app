@@ -16,6 +16,10 @@
           </div>
           <button class="auth-form__submit" type="submit">Sign in</button>
         </form>
+        {{#if showGoogleLogin}}
+        <div class="auth-divider"><span>or</span></div>
+        <a class="auth-google-button" href="/auth/google{{#if returnUrl}}?return={{returnUrl}}{{/if}}">Continue with Google</a>
+        {{/if}}
         <p class="auth-card__footer auth-card__footer--forgot">
           <a href="/forgot-password">Forgot your password?</a>
         </p>

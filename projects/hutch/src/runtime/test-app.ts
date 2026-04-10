@@ -13,6 +13,8 @@ import type { RefreshArticleIfStale } from "./providers/article-freshness/check-
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
+import { initInMemoryGoogleAuth } from "./providers/google-auth/in-memory-google-auth";
+import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -42,6 +44,7 @@ export function createTestApp(options?: {
 	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
 	httpErrorMessageMapping?: HttpErrorMessageMapping;
+	exchangeGoogleCode?: ExchangeGoogleCode;
 	logError?: (message: string, error?: Error) => void;
 	appOrigin?: string;
 }) {
@@ -54,6 +57,7 @@ export function createTestApp(options?: {
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
+	const googleAuth = initInMemoryGoogleAuth();
 
 	const { publishLinkSaved: logOnlyPublish } = initInMemoryLinkSaved({ logger: noopLogger });
 	const defaultPublishLinkSaved: PublishLinkSaved = async (params) => {
@@ -79,11 +83,15 @@ export function createTestApp(options?: {
 		...email,
 		...emailVerification,
 		...passwordReset,
+		...googleAuth,
+		exchangeGoogleCode: options?.exchangeGoogleCode,
+		googleClientId: "test-google-client-id",
+		googleClientSecret: "test-google-client-secret",
 		baseUrl: appOrigin,
 		logError: options?.logError ?? (() => {}),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	});
 
-	return { app, auth, articleStore, parser, oauthModel, email, emailVerification, passwordReset };
+	return { app, auth, articleStore, parser, oauthModel, email, emailVerification, passwordReset, googleAuth };
 }

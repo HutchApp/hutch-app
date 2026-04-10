@@ -21,6 +21,10 @@
           </div>
           <button class="auth-form__submit" type="submit">Create account</button>
         </form>
+        {{#if showGoogleLogin}}
+        <div class="auth-divider"><span>or</span></div>
+        <a class="auth-google-button" href="/auth/google{{#if returnUrl}}?return={{returnUrl}}{{/if}}">Continue with Google</a>
+        {{/if}}
         <p class="auth-card__footer">
           Already have an account? <a href="/login{{#if returnUrl}}?return={{returnUrl}}{{/if}}">Sign in</a>
         </p>

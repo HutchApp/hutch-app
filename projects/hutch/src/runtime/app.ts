@@ -34,6 +34,11 @@ import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbri
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
+import { initInMemoryGoogleAuth } from "./providers/google-auth/in-memory-google-auth";
+import { initDynamoDbGoogleAuth } from "./providers/google-auth/dynamodb-google-auth";
+import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
+import { GoogleIdSchema } from "./providers/google-auth/google-auth.schema";
+import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
@@ -54,6 +59,9 @@ function initProviders() {
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
 		const passwordResetTokensTable = requireEnv("DYNAMODB_PASSWORD_RESET_TOKENS_TABLE");
+		const googleAccountsTable = requireEnv("DYNAMODB_GOOGLE_ACCOUNTS_TABLE");
+		const googleClientId = requireEnv("GOOGLE_CLIENT_ID");
+		const googleClientSecret = requireEnv("GOOGLE_CLIENT_SECRET");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
@@ -86,6 +94,14 @@ function initProviders() {
 			now: () => new Date(),
 			staleTtlMs,
 		});
+		const googleAuth = initDynamoDbGoogleAuth({ client, tableName: googleAccountsTable });
+		const appOriginForRedirect = requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
+		const exchangeGoogleCode = initExchangeGoogleCode({
+			clientId: googleClientId,
+			clientSecret: googleClientSecret,
+			redirectUri: `${appOriginForRedirect}/auth/google/callback`,
+			fetch: globalThis.fetch,
+		});
 		return {
 			auth,
 			articleStore,
@@ -94,6 +110,10 @@ function initProviders() {
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			...initDynamoDbPasswordReset({ client, tableName: passwordResetTokensTable }),
+			...googleAuth,
+			exchangeGoogleCode,
+			googleClientId,
+			googleClientSecret,
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			publishLinkSaved,
@@ -120,6 +140,28 @@ function initProviders() {
 		staleTtlMs,
 	});
 
+	const googleClientId = getEnv("GOOGLE_CLIENT_ID");
+	const googleClientSecret = getEnv("GOOGLE_CLIENT_SECRET");
+
+	const googleAuthConfig = googleClientId && googleClientSecret ? {
+		exchangeGoogleCode: initExchangeGoogleCode({
+			clientId: googleClientId,
+			clientSecret: googleClientSecret,
+			redirectUri: `http://localhost:${getEnv("PORT") || "3000"}/auth/google/callback`,
+			fetch: globalThis.fetch,
+		}),
+		googleClientId,
+		googleClientSecret,
+	} : {
+		exchangeGoogleCode: (async (_code) => ({
+			googleId: GoogleIdSchema.parse(`dev-google-${Date.now()}`),
+			email: `dev-google-${Date.now()}@example.com`,
+			emailVerified: true,
+		})) satisfies ExchangeGoogleCode,
+		googleClientId: "dev-google-client-id",
+		googleClientSecret: "dev-google-client-secret",
+	};
+
 	return {
 		auth,
 		articleStore,
@@ -131,6 +173,8 @@ function initProviders() {
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
 		...initInMemoryPasswordReset(),
+		...initInMemoryGoogleAuth(),
+		...googleAuthConfig,
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		publishLinkSaved,

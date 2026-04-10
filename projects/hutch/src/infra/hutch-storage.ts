@@ -9,6 +9,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
 	public readonly passwordResetTokensTable: aws.dynamodb.Table;
+	public readonly googleAccountsTable: aws.dynamodb.Table;
 
 	constructor(name: string, args: { deletionProtection: boolean; tableNames: {
 		articles: string;
@@ -18,6 +19,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 		oauth: string;
 		verificationTokens: string;
 		passwordResetTokens: string;
+		googleAccounts: string;
 	} }, opts?: pulumi.ComponentResourceOptions) {
 		super("hutch:infra:HutchStorage", name, {}, opts);
 
@@ -134,6 +136,15 @@ export class HutchStorage extends pulumi.ComponentResource {
 				enabled: true,
 			},
 		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
+
+		this.googleAccountsTable = new aws.dynamodb.Table(`hutch-google-accounts`, {
+			name: args.tableNames.googleAccounts,
+			billingMode: "PAY_PER_REQUEST",
+			deletionProtectionEnabled: args.deletionProtection,
+			pointInTimeRecovery: { enabled: true },
+			hashKey: "googleId",
+			attributes: [{ name: "googleId", type: "S" }],
+		}, { parent: this });
 
 		this.registerOutputs();
 	}

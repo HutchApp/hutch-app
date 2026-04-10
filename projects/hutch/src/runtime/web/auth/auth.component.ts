@@ -21,6 +21,7 @@ interface AuthFormData {
 	errors?: FieldError[];
 	globalError?: string;
 	returnUrl?: string;
+	showGoogleLogin?: boolean;
 }
 
 interface FieldViewModel {
@@ -47,6 +48,7 @@ export function LoginPage(data?: AuthFormData): Component {
 		email,
 		globalError: data?.globalError,
 		returnUrl: data?.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
+		showGoogleLogin: data?.showGoogleLogin,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 	});
@@ -87,6 +89,7 @@ export function SignupPage(data?: AuthFormData): Component {
 		email,
 		globalError: data?.globalError,
 		returnUrl: data?.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
+		showGoogleLogin: data?.showGoogleLogin,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),

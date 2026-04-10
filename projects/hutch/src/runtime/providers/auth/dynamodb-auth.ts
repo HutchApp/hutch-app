@@ -13,6 +13,7 @@ import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CountUsers,
+	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
 	DestroySession,
@@ -44,6 +45,7 @@ export function initDynamoDbAuth(deps: {
 	sessionsTableName: string;
 }): {
 	createUser: CreateUser;
+	createGoogleUser: CreateGoogleUser;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
@@ -205,8 +207,29 @@ export function initDynamoDbAuth(deps: {
 		);
 	};
 
+	const createGoogleUser: CreateGoogleUser = async ({ email, userId }) => {
+		const normalizedEmail = normalizeEmail(email);
+
+		try {
+			await client.send(
+				new PutCommand({
+					TableName: usersTableName,
+					Item: { email: normalizedEmail, userId, emailVerified: true },
+					ConditionExpression: "attribute_not_exists(email)",
+				}),
+			);
+			return { ok: true, userId };
+		} catch (error) {
+			if (error instanceof ConditionalCheckFailedException) {
+				return { ok: false, reason: "email-already-exists" };
+			}
+			throw error;
+		}
+	};
+
 	return {
 		createUser,
+		createGoogleUser,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,

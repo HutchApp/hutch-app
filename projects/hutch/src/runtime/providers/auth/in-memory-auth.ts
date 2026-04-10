@@ -4,6 +4,7 @@ import type { UserId } from "../../domain/user/user.types";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CountUsers,
+	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
 	DestroySession,
@@ -31,6 +32,7 @@ interface StoredSession {
 
 export function initInMemoryAuth(): {
 	createUser: CreateUser;
+	createGoogleUser: CreateGoogleUser;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
@@ -119,8 +121,21 @@ export function initInMemoryAuth(): {
 		user.passwordHash = await hashPassword(password);
 	};
 
+	const createGoogleUser: CreateGoogleUser = async ({ email, userId }) => {
+		const normalizedEmail = normalizeEmail(email);
+
+		if (users.has(normalizedEmail)) {
+			return { ok: false, reason: "email-already-exists" };
+		}
+
+		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash: "", emailVerified: true });
+
+		return { ok: true, userId };
+	};
+
 	return {
 		createUser,
+		createGoogleUser,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,

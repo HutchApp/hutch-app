@@ -25,6 +25,7 @@ const tableNames = {
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
 	passwordResetTokens: config.require("dynamodbPasswordResetTokensTable"),
+	googleAccounts: config.require("dynamodbGoogleAccountsTable"),
 };
 
 const storage = new HutchStorage("hutch", {
@@ -91,6 +92,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 		{ arn: storage.oauthTable.arn, includeIndexes: true },
 		{ arn: storage.verificationTokensTable.arn, includeIndexes: false },
 		{ arn: storage.passwordResetTokensTable.arn, includeIndexes: false },
+		{ arn: storage.googleAccountsTable.arn, includeIndexes: false },
 	],
 	actions: [
 		"dynamodb:GetItem",
@@ -130,6 +132,9 @@ const lambda = new HutchLambda("hutch", {
 		DYNAMODB_OAUTH_TABLE: storage.oauthTable.name,
 		DYNAMODB_VERIFICATION_TOKENS_TABLE: storage.verificationTokensTable.name,
 		DYNAMODB_PASSWORD_RESET_TOKENS_TABLE: storage.passwordResetTokensTable.name,
+		DYNAMODB_GOOGLE_ACCOUNTS_TABLE: storage.googleAccountsTable.name,
+		GOOGLE_CLIENT_ID: config.require("googleClientId"),
+		GOOGLE_CLIENT_SECRET: config.requireSecret("googleClientSecret"),
 		RESEND_API_KEY: pulumi.runtime.isDryRun()
 			? (getEnv("RESEND_API_KEY") ?? "")
 			: requireEnv("RESEND_API_KEY"),

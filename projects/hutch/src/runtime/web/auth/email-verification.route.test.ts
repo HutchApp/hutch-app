@@ -9,6 +9,7 @@ import type { CrawlArticle } from "@packages/crawl-article";
 import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "../../providers/password-reset/in-memory-password-reset";
+import { initInMemoryGoogleAuth } from "../../providers/google-auth/in-memory-google-auth";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
@@ -63,6 +64,9 @@ describe("Email verification", () => {
 				...parser,
 				...emailVerification,
 				...passwordReset,
+				...initInMemoryGoogleAuth(),
+				googleClientId: "test-google-client-id",
+				googleClientSecret: "test-google-client-secret",
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
 				logError: () => { resolveErrorLogged(); },

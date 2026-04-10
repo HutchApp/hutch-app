@@ -47,6 +47,33 @@ describe("Auth routes", () => {
 			const signupLink = doc.querySelector(".auth-card__footer:not(.auth-card__footer--forgot) a")?.getAttribute("href");
 			expect(signupLink).toContain("/signup?return=");
 		});
+
+		it("should hide Google login button by default", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login");
+
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-google-button")).toBeNull();
+		});
+
+		it("should render Continue with Google link when feature=google-login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login?feature=google-login");
+
+			const doc = new JSDOM(response.text).window.document;
+			const googleLink = doc.querySelector(".auth-google-button");
+			expect(googleLink?.getAttribute("href")).toBe("/auth/google");
+			expect(googleLink?.textContent).toBe("Continue with Google");
+		});
+
+		it("should include return URL in Continue with Google link", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login?feature=google-login&return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
+
+			const doc = new JSDOM(response.text).window.document;
+			const googleLink = doc.querySelector(".auth-google-button")?.getAttribute("href");
+			expect(googleLink).toContain("/auth/google?return=");
+		});
 	});
 
 	describe("POST /login", () => {
@@ -78,6 +105,19 @@ describe("Auth routes", () => {
 			expect(doc.querySelector("[data-test-global-error]")?.textContent).toContain(
 				"Invalid email or password",
 			);
+		});
+
+		it("should preserve Google login button through invalid credentials when feature=google-login", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/login?feature=google-login")
+				.type("form")
+				.send({ email: "test@example.com", password: "wrongpassword" });
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-google-button")).not.toBeNull();
 		});
 
 		it("should redirect to return URL after successful login", async () => {
@@ -130,6 +170,19 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector('[data-test-error="email"]')?.textContent).toBe("Please enter a valid email address");
+		});
+
+		it("should preserve Google login button through validation errors when feature=google-login", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/login?feature=google-login")
+				.type("form")
+				.send({ email: "", password: "password123" });
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-google-button")).not.toBeNull();
 		});
 
 		it("should preserve return URL in form action after invalid credentials", async () => {
@@ -203,6 +256,24 @@ describe("Auth routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			const loginLink = doc.querySelector(".auth-card__footer a")?.getAttribute("href");
 			expect(loginLink).toContain("/login?return=");
+		});
+
+		it("should hide Google login button by default", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/signup");
+
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-google-button")).toBeNull();
+		});
+
+		it("should render Continue with Google link when feature=google-login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/signup?feature=google-login");
+
+			const doc = new JSDOM(response.text).window.document;
+			const googleLink = doc.querySelector(".auth-google-button");
+			expect(googleLink?.getAttribute("href")).toBe("/auth/google");
+			expect(googleLink?.textContent).toBe("Continue with Google");
 		});
 	});
 
@@ -286,6 +357,20 @@ describe("Auth routes", () => {
 			);
 		});
 
+		it("should preserve Google login button through duplicate email error when feature=google-login", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "existing@example.com", password: "password123" });
+
+			const response = await request(app)
+				.post("/signup?feature=google-login")
+				.type("form")
+				.send({ email: "existing@example.com", password: "password123", confirmPassword: "password123" });
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-google-button")).not.toBeNull();
+		});
+
 		it("should show error for mismatched passwords", async () => {
 			const { app } = createTestApp();
 
@@ -351,6 +436,19 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector('[data-test-error="password"]')?.textContent).toBe("Password must be at least 8 characters");
+		});
+
+		it("should preserve Google login button through validation errors when feature=google-login", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app)
+				.post("/signup?feature=google-login")
+				.type("form")
+				.send({ email: "new@example.com", password: "short", confirmPassword: "short" });
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector(".auth-google-button")).not.toBeNull();
 		});
 	});
 

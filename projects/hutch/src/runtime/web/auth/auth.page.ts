@@ -21,6 +21,13 @@ import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { buildVerificationEmailHtml } from "./verification-email";
 import { flattenZodErrors } from "./flatten-zod-errors";
 
+const FeatureQuerySchema = z.object({ feature: z.string().optional() }).passthrough();
+
+function hasGoogleLoginFeature(query: unknown): boolean {
+	const parsed = FeatureQuerySchema.safeParse(query);
+	return parsed.success && parsed.data.feature === "google-login";
+}
+
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
 const COOKIE_NAME = "hutch_sid";
@@ -56,17 +63,20 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 		const returnUrl = extractReturnUrl(req.query);
-		const result = LoginPage({ returnUrl }).to("text/html");
+		const showGoogleLogin = hasGoogleLoginFeature(req.query);
+		const result = LoginPage({ returnUrl, showGoogleLogin }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
 		const returnUrl = extractReturnUrl(req.query);
+		const showGoogleLogin = hasGoogleLoginFeature(req.query);
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
 			const result = LoginPage({
 				returnUrl,
+				showGoogleLogin,
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
 			}).to("text/html");
@@ -80,6 +90,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!credentials.ok) {
 			const result = LoginPage({
 				returnUrl,
+				showGoogleLogin,
 				email,
 				globalError: "Invalid email or password",
 			}).to("text/html");
@@ -98,17 +109,20 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 		const returnUrl = extractReturnUrl(req.query);
-		const result = SignupPage({ returnUrl }).to("text/html");
+		const showGoogleLogin = hasGoogleLoginFeature(req.query);
+		const result = SignupPage({ returnUrl, showGoogleLogin }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
 		const returnUrl = extractReturnUrl(req.query);
+		const showGoogleLogin = hasGoogleLoginFeature(req.query);
 		const parsed = SignupSchema.safeParse(req.body);
 
 		if (!parsed.success) {
 			const result = SignupPage({
 				returnUrl,
+				showGoogleLogin,
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
 			}).to("text/html");
@@ -122,6 +136,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!createResult.ok) {
 			const result = SignupPage({
 				returnUrl,
+				showGoogleLogin,
 				email,
 				globalError: "An account with this email already exists",
 			}).to("text/html");
