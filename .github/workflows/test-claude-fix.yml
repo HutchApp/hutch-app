@@ -1,0 +1,41 @@
+name: Test Claude Fix
+
+# Temporary workflow used to validate that --setting-sources user unblocks
+# claude-code-action on PRs that carry .claude/settings.json (enabledPlugins).
+# Remove once the fix is merged to main.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test/fix-claude-listener-settings-sources
+
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Print .claude/settings.json contents
+        run: |
+          echo "=== .claude/settings.json ==="
+          cat .claude/settings.json || echo "(missing)"
+
+      - name: Run Claude Code with --setting-sources user
+        id: claude
+        uses: anthropics/claude-code-action@cd77b50d2b0808657f8e6774085c8bf54484351c # v1.0.72
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
+          prompt: |
+            Reply with the single word "pong" and nothing else. Do not read any files.
+          claude_args: '--model claude-opus-4-6 --dangerously-skip-permissions --setting-sources user --max-turns 1'
