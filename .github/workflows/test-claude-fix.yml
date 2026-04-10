@@ -27,9 +27,9 @@ jobs:
           echo "=== .claude/settings.json ==="
           cat .claude/settings.json || echo "(missing)"
 
-      - name: Run Claude Code with --setting-sources user
+      - name: Run Claude Code (base action, no workflow validation)
         id: claude
-        uses: anthropics/claude-code-action@cd77b50d2b0808657f8e6774085c8bf54484351c # v1.0.72
+        uses: anthropics/claude-code-action/base-action@cd77b50d2b0808657f8e6774085c8bf54484351c # v1.0.72
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           show_full_output: true
