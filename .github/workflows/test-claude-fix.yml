@@ -6,9 +6,6 @@ name: Test Claude Fix
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - test/fix-claude-listener-settings-sources
 
 permissions:
   contents: read
