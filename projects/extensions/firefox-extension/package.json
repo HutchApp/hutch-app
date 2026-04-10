@@ -1,6 +1,6 @@
 {
   "name": "firefox-extension",
-  "version": "1.0.46",
+  "version": "1.0.47",
   "description": "Hutch — Where reading still matters",
   "main": "src/infra/index.ts",
   "private": true,
