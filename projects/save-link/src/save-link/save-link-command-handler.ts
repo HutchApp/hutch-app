@@ -11,10 +11,6 @@ export type UpdateContentLocation = (params: { url: string; contentLocation: str
 type PublishLinkSaved = (params: { url: string; userId: string }) => Promise<void>;
 type ProcessContent = (params: { html: string; thumbnailUrl: string | undefined; media: DownloadedMedia[] }) => Promise<{ html: string; thumbnailUrl: string | undefined }>;
 
-function contentS3Key(articleResourceUniqueId: ArticleResourceUniqueId): string {
-	return `content/${encodeURIComponent(articleResourceUniqueId.value)}/content.html`;
-}
-
 export function initSaveLinkCommandHandler(deps: {
 	parseArticle: ParseArticle;
 	putObject: PutObject;
@@ -56,7 +52,7 @@ export function initSaveLinkCommandHandler(deps: {
 				media,
 			});
 
-			const key = contentS3Key(articleResourceUniqueId);
+			const key = articleResourceUniqueId.toS3ContentKey();
 			const contentLocation = await putObject({ key, content: html });
 			await updateContentLocation({ url: detail.url, contentLocation });
 			logger.info("[SaveLinkCommand] saved content to S3", { url: detail.url, contentLocation });

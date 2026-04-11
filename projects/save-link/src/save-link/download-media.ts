@@ -27,7 +27,6 @@ export function initDownloadMedia(deps: {
 	const { putImageObject, logger, fetch: fetchFn, imagesCdnBaseUrl } = deps;
 
 	return async ({ html, thumbnailUrl, articleResourceUniqueId }) => {
-		const encodedArticlePath = articleResourceUniqueId.toEncodedURLPathComponent();
 		const results: DownloadedMedia[] = [];
 
 		const imageUrls = extractImageUrls(html);
@@ -47,8 +46,8 @@ export function initDownloadMedia(deps: {
 					const hash = createHash("sha256").update(originalUrl).digest("hex").slice(0, 16);
 					const ext = extensionFromContentType(downloaded.contentType, originalUrl);
 					const filename = `${hash}${ext}`;
-					const key = `content/${encodedArticlePath}/images/${filename}`;
-					const cdnUrl = `${imagesCdnBaseUrl}/content/${encodeURIComponent(encodedArticlePath)}/images/${filename}`;
+					const key = articleResourceUniqueId.toS3ImageKey(filename);
+					const cdnUrl = articleResourceUniqueId.toImageCdnUrl({ baseUrl: imagesCdnBaseUrl, filename });
 
 					await putImageObject({ key, body: downloaded.body, contentType: downloaded.contentType });
 					logger.info("[DownloadMedia] cached image", { originalUrl, cdnUrl });

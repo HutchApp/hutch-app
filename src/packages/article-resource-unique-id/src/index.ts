@@ -12,8 +12,15 @@ export class ArticleResourceUniqueId {
 	static parse(url: string): ArticleResourceUniqueId {
 		return new ArticleResourceUniqueId(normalizeUrl(url));
 	}
-	toEncodedURLPathComponent(): string {
-		return encodeURIComponent(this.value);
+	toS3ContentKey(): string {
+		return `content/${encodeURIComponent(this.value)}/content.html`;
+	}
+	toS3ImageKey(filename: string): string {
+		return `content/${encodeURIComponent(this.value)}/images/${filename}`;
+	}
+	toImageCdnUrl({ baseUrl, filename }: { baseUrl: string; filename: string }): string {
+		// Double-encoded: the CDN URL-decodes once before looking up the singly-encoded S3 key.
+		return `${baseUrl}/content/${encodeURIComponent(encodeURIComponent(this.value))}/images/${filename}`;
 	}
 	toString(): string {
 		return this.value;

@@ -42,57 +42,59 @@ describe("ArticleResourceUniqueId.parse", () => {
 	});
 });
 
-describe("ArticleResourceUniqueId.toEncodedURLPathComponent", () => {
-	it("encodes slashes in path", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com/blog/post").toEncodedURLPathComponent())
-			.toBe("example.com%2Fblog%2Fpost");
-	});
-
-	it("encodes trailing slash", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com/article/").toEncodedURLPathComponent())
-			.toBe("example.com%2Farticle%2F");
+describe("ArticleResourceUniqueId.toS3ContentKey", () => {
+	it("produces the canonical S3 content key", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com/blog/post").toS3ContentKey())
+			.toBe("content/example.com%2Fblog%2Fpost/content.html");
 	});
 
 	it("encodes query string characters", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com/path?q=1&page=2").toEncodedURLPathComponent())
-			.toBe("example.com%2Fpath%3Fq%3D1%26page%3D2");
+		expect(ArticleResourceUniqueId.parse("https://example.com/path?q=1&page=2").toS3ContentKey())
+			.toBe("content/example.com%2Fpath%3Fq%3D1%26page%3D2/content.html");
 	});
 
 	it("encodes colon in port", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com:8080/path").toEncodedURLPathComponent())
-			.toBe("example.com%3A8080%2Fpath");
-	});
-
-	it("encodes percent-encoded spaces in path", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com/my%20article").toEncodedURLPathComponent())
-			.toBe("example.com%2Fmy%2520article");
-	});
-
-	it("encodes hash-like characters that survived normalization", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com/path#heading").toEncodedURLPathComponent())
-			.toBe("example.com%2Fpath");
-	});
-
-	it("round-trips through decodeURIComponent", () => {
-		const encoded = ArticleResourceUniqueId.parse("https://example.com/blog/post/").toEncodedURLPathComponent();
-		expect(decodeURIComponent(encoded)).toBe("example.com/blog/post/");
-	});
-
-	it("encodes substack-style nested paths", () => {
-		const encoded = ArticleResourceUniqueId.parse("https://daviddfriedman.substack.com/p/consequences-of-climate-change").toEncodedURLPathComponent();
-		expect(encoded).toBe("daviddfriedman.substack.com%2Fp%2Fconsequences-of-climate-change");
-		expect(decodeURIComponent(encoded)).toBe("daviddfriedman.substack.com/p/consequences-of-climate-change");
+		expect(ArticleResourceUniqueId.parse("https://example.com:8080/path").toS3ContentKey())
+			.toBe("content/example.com%3A8080%2Fpath/content.html");
 	});
 
 	it("encodes unicode characters in path", () => {
-		const encoded = ArticleResourceUniqueId.parse("https://example.com/café").toEncodedURLPathComponent();
-		expect(decodeURIComponent(encoded)).toBe("example.com/caf%C3%A9");
+		expect(ArticleResourceUniqueId.parse("https://example.com/café").toS3ContentKey())
+			.toBe("content/example.com%2Fcaf%C3%A9/content.html");
 	});
 
-	it("encodes plus signs in path", () => {
-		const encoded = ArticleResourceUniqueId.parse("https://example.com/c++guide").toEncodedURLPathComponent();
-		expect(encoded).toContain("%2B%2B");
-		expect(decodeURIComponent(encoded)).toBe("example.com/c++guide");
+	it("matches between save (write) and read sides for the same URL", () => {
+		const write = ArticleResourceUniqueId.parse("https://example.com/article").toS3ContentKey();
+		const read = ArticleResourceUniqueId.parse("http://example.com/article").toS3ContentKey();
+		expect(write).toBe(read);
+	});
+});
+
+describe("ArticleResourceUniqueId.toS3ImageKey", () => {
+	it("produces the image S3 key under the content prefix", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com/blog/post").toS3ImageKey("abc123.png"))
+			.toBe("content/example.com%2Fblog%2Fpost/images/abc123.png");
+	});
+
+	it("encodes the id but not the filename", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com:8080/path").toS3ImageKey("hash.jpg"))
+			.toBe("content/example.com%3A8080%2Fpath/images/hash.jpg");
+	});
+});
+
+describe("ArticleResourceUniqueId.toImageCdnUrl", () => {
+	it("double-encodes the id so the CDN URL decodes to the S3 key", () => {
+		const id = ArticleResourceUniqueId.parse("https://example.com/blog/post");
+		const url = id.toImageCdnUrl({ baseUrl: "https://cdn.example", filename: "abc123.png" });
+		expect(url).toBe("https://cdn.example/content/example.com%252Fblog%252Fpost/images/abc123.png");
+	});
+
+	it("URL path decodes once to match the S3 image key", () => {
+		const id = ArticleResourceUniqueId.parse("https://example.com/article");
+		const key = id.toS3ImageKey("hash.png");
+		const url = id.toImageCdnUrl({ baseUrl: "https://cdn.example", filename: "hash.png" });
+		const urlPath = new URL(url).pathname;
+		expect(decodeURIComponent(urlPath.replace(/^\//, ""))).toBe(key);
 	});
 });
 
