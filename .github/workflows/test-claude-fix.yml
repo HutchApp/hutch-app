@@ -35,4 +35,4 @@ jobs:
           show_full_output: true
           prompt: |
             Reply with the single word "pong" and nothing else. Do not read any files.
-          claude_args: '--model claude-opus-4-6 --dangerously-skip-permissions --setting-sources user --max-turns 1'
+          claude_args: '--model claude-opus-4-6 --thinking-budget max --dangerously-skip-permissions --setting-sources user --max-turns 1'
