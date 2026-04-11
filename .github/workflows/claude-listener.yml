@@ -100,4 +100,4 @@ jobs:
           additional_permissions: |
             actions: read
 
-          claude_args: '--model claude-opus-4-6 --thinking-budget max --dangerously-skip-permissions'
+          claude_args: '--model claude-opus-4-6 --dangerously-skip-permissions'
