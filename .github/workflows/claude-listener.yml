@@ -104,4 +104,4 @@ jobs:
           # not read .claude/settings.json, which lists enabledPlugins that are not
           # installed in CI and would trigger an ajv schema-validation crash in the
           # bundled CLI (see anthropics/claude-code#20752).
-          claude_args: '--model claude-opus-4-6 --dangerously-skip-permissions --setting-sources user'
+          claude_args: '--model claude-opus-4-6 --thinking-budget max --dangerously-skip-permissions --setting-sources user'
