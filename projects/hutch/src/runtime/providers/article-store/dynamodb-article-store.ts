@@ -71,7 +71,7 @@ function toSavedArticle(
 			siteName: article.siteName,
 			excerpt: article.excerpt,
 			wordCount: article.wordCount,
-			imageUrl: article.imageUrl,
+			imageUrl: article.imageUrl ?? undefined,
 		},
 		content: article.content,
 
