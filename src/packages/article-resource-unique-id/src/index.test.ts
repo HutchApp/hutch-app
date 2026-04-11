@@ -96,11 +96,7 @@ describe("ArticleResourceUniqueId.toEncodedURLPathComponent", () => {
 	});
 });
 
-describe("ArticleResourceUniqueId.toJSON / toString", () => {
-	it("toJSON returns the normalized value", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com/path").toJSON()).toBe("example.com/path");
-	});
-
+describe("ArticleResourceUniqueId.toString", () => {
 	it("toString returns the normalized value", () => {
 		expect(ArticleResourceUniqueId.parse("https://example.com/path").toString()).toBe("example.com/path");
 	});

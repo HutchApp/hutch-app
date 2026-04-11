@@ -15,9 +15,6 @@ export class ArticleResourceUniqueId {
 	toEncodedURLPathComponent(): string {
 		return encodeURIComponent(this.value);
 	}
-	toJSON(): string {
-		return this.value;
-	}
 	toString(): string {
 		return this.value;
 	}
