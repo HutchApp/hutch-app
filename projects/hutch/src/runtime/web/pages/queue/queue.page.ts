@@ -1,7 +1,8 @@
 import assert from "node:assert";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import { SaveArticleInputSchema, ArticleIdSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
+import { SaveArticleInputSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
+import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
@@ -223,9 +224,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	router.get("/:id/read", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
-		const articleId = ArticleIdSchema.parse(req.params.id);
-
-		const article = await deps.findArticleById(articleId, userId);
+		const parsedId = ReaderArticleHashIdSchema.safeParse(req.params.id);
+		const article = parsedId.success
+			? await deps.findArticleById(parsedId.data, userId)
+			: null;
 
 		if (!article) {
 			res.redirect(303, "/queue");
@@ -233,7 +235,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		if (article.status === "unread") {
-			await deps.updateArticleStatus(articleId, userId, "read");
+			await deps.updateArticleStatus(article.id, userId, "read");
 		}
 
 		const content = await deps.readArticleContent(article.url);
@@ -246,33 +248,31 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	router.post("/:id/status", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
-		const articleId = ArticleIdSchema.parse(req.params.id);
-		const parsed = ArticleStatusSchema.safeParse(req.body.status);
+		const parsedId = ReaderArticleHashIdSchema.safeParse(req.params.id);
+		const parsedStatus = ArticleStatusSchema.safeParse(req.body.status);
 
-		if (!parsed.success) {
-			res.redirect(303, buildQueueUrl(parseQueueUrl(req.query)));
-			return;
+		if (parsedId.success && parsedStatus.success) {
+			await deps.updateArticleStatus(parsedId.data, userId, parsedStatus.data);
 		}
 
-		await deps.updateArticleStatus(articleId, userId, parsed.data);
-		const returnState = parseQueueUrl(req.query);
-		res.redirect(303, buildQueueUrl(returnState));
+		res.redirect(303, buildQueueUrl(parseQueueUrl(req.query)));
 	});
 
 	router.post("/:id/delete", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
-		const articleId = ArticleIdSchema.parse(req.params.id);
+		const parsedId = ReaderArticleHashIdSchema.safeParse(req.params.id);
 
-		await deps.deleteArticle(articleId, userId);
+		if (parsedId.success) {
+			await deps.deleteArticle(parsedId.data, userId);
+		}
 
 		if (wantsSiren(req)) {
 			res.status(204).send();
 			return;
 		}
 
-		const returnState = parseQueueUrl(req.query);
-		res.redirect(303, buildQueueUrl(returnState));
+		res.redirect(303, buildQueueUrl(parseQueueUrl(req.query)));
 	});
 
 	return router;

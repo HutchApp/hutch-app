@@ -1,17 +1,20 @@
 import type {
-	ArticleId,
 	Minutes,
 	SavedArticle,
 } from "../../../domain/article/article.types";
+import { ReaderArticleHashId } from "../../../domain/article/reader-article-hash-id";
 import type { UserId } from "../../../domain/user/user.types";
 import type { FindArticlesResult } from "../../../providers/article-store/article-store.types";
 import { toQueueViewModel } from "./queue.viewmodel";
 
+const ARTICLE_URL = "https://example.com/post";
+const ARTICLE_ID = ReaderArticleHashId.from(ARTICLE_URL).value;
+
 function makeArticle(overrides?: Partial<SavedArticle>): SavedArticle {
 	return {
-		id: "art-1" as ArticleId,
+		id: ReaderArticleHashId.from(ARTICLE_URL),
 		userId: "user-1" as UserId,
-		url: "https://example.com/post",
+		url: ARTICLE_URL,
 		metadata: {
 			title: "Test Article",
 			siteName: "example.com",
@@ -268,7 +271,7 @@ describe("toQueueViewModel", () => {
 		const vm = toQueueViewModel(makeResult([article]), filters, { now: NOW });
 
 		const deleteAction = vm.articles[0].actions.find(a => a.testAction === "delete");
-		expect(deleteAction?.url).toBe("/queue/art-1/delete?status=read&order=asc");
+		expect(deleteAction?.url).toBe(`/queue/${ARTICLE_ID}/delete?status=read&order=asc`);
 	});
 
 	it("should not include query string in action URLs for default view", () => {
@@ -276,7 +279,7 @@ describe("toQueueViewModel", () => {
 		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
 
 		const deleteAction = vm.articles[0].actions.find(a => a.testAction === "delete");
-		expect(deleteAction?.url).toBe("/queue/art-1/delete");
+		expect(deleteAction?.url).toBe(`/queue/${ARTICLE_ID}/delete`);
 	});
 
 	it("should use POST method and /status URL for mark-unread action", () => {
@@ -285,7 +288,7 @@ describe("toQueueViewModel", () => {
 
 		const markUnreadAction = vm.articles[0].actions.find(a => a.testAction === "mark-unread");
 		expect(markUnreadAction?.method).toBe("POST");
-		expect(markUnreadAction?.url).toBe("/queue/art-1/status");
+		expect(markUnreadAction?.url).toBe(`/queue/${ARTICLE_ID}/status`);
 		expect(markUnreadAction?.fields).toEqual([{ name: "status", value: "unread" }]);
 	});
 
@@ -295,7 +298,7 @@ describe("toQueueViewModel", () => {
 
 		const markReadAction = vm.articles[0].actions.find(a => a.testAction === "mark-read");
 		expect(markReadAction?.method).toBe("GET");
-		expect(markReadAction?.url).toBe("/queue/art-1/read");
+		expect(markReadAction?.url).toBe(`/queue/${ARTICLE_ID}/read`);
 		expect(markReadAction?.fields).toEqual([]);
 	});
 

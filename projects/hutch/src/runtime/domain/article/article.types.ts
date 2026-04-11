@@ -1,6 +1,6 @@
 import type { UserId } from "../user/user.types";
+import type { ReaderArticleHashId } from "./reader-article-hash-id";
 
-export type ArticleId = string & { readonly __brand: "ArticleId" };
 export type Minutes = number & { readonly __brand: "Minutes" };
 
 export type ArticleStatus = "unread" | "read";
@@ -14,7 +14,7 @@ export interface ArticleMetadata {
 }
 
 export interface SavedArticle {
-	id: ArticleId;
+	id: ReaderArticleHashId;
 	userId: UserId;
 	url: string;
 	metadata: ArticleMetadata;

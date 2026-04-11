@@ -118,8 +118,9 @@ function toArticleViewModel(
 	returnQuery: string,
 ): QueueArticleViewModel {
 	const readTime = article.estimatedReadTime;
+	const id = article.id.value;
 	return {
-		id: article.id,
+		id,
 		title: article.metadata.title,
 		siteName: article.metadata.siteName,
 		excerpt: article.metadata.excerpt,
@@ -130,7 +131,7 @@ function toArticleViewModel(
 		savedAgo: formatRelativeDate(article.savedAt, now),
 		imageUrl: article.metadata.imageUrl,
 		hasContent: Boolean(article.content),
-		actions: toArticleActions(article, returnQuery),
+		actions: toArticleActions({ id, status: article.status }, returnQuery),
 	};
 }
 

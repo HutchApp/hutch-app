@@ -4,15 +4,21 @@ function normalizeUrl(url: string): string {
 	return `${parsed.hostname}${port}${parsed.pathname}${parsed.search}`;
 }
 
-export class ArticleUniqueId {
+export class ArticleResourceUniqueId {
 	readonly value: string;
 	private constructor(value: string) {
 		this.value = value;
 	}
-	static parse(url: string): ArticleUniqueId {
-		return new ArticleUniqueId(normalizeUrl(url));
+	static parse(url: string): ArticleResourceUniqueId {
+		return new ArticleResourceUniqueId(normalizeUrl(url));
 	}
 	toEncodedURLPathComponent(): string {
 		return encodeURIComponent(this.value);
+	}
+	toJSON(): string {
+		return this.value;
+	}
+	toString(): string {
+		return this.value;
 	}
 }

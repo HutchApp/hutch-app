@@ -2,7 +2,7 @@
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
-import { ArticleUniqueId } from "@packages/article-unique-id";
+import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type { FindCachedSummary } from "./article-summary.types";
 
 const ArticleSummaryRow = z.object({
@@ -19,9 +19,9 @@ export function initDynamoDbSummaryCache(deps: {
 	const { client, tableName } = deps;
 
 	const findCachedSummary: FindCachedSummary = async (url) => {
-		const articleUniqueId = ArticleUniqueId.parse(url);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 		const result = await client.send(
-			new GetCommand({ TableName: tableName, Key: { url: articleUniqueId.value } }),
+			new GetCommand({ TableName: tableName, Key: { url: articleResourceUniqueId.value } }),
 		);
 		if (!result.Item) return "";
 		const row = ArticleSummaryRow.parse(result.Item);

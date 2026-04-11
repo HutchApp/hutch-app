@@ -212,9 +212,9 @@ importers:
       '@node-oauth/oauth2-server':
         specifier: 5.2.1
         version: 5.2.1
-      '@packages/article-unique-id':
+      '@packages/article-resource-unique-id':
         specifier: workspace:*
-        version: link:../../src/packages/article-unique-id
+        version: link:../../src/packages/article-resource-unique-id
       '@packages/hutch-infra-components':
         specifier: workspace:*
         version: link:../../src/packages/hutch-infra-components
@@ -379,9 +379,9 @@ importers:
       '@mozilla/readability':
         specifier: 0.6.0
         version: 0.6.0
-      '@packages/article-unique-id':
+      '@packages/article-resource-unique-id':
         specifier: workspace:*
-        version: link:../../src/packages/article-unique-id
+        version: link:../../src/packages/article-resource-unique-id
       '@packages/hutch-infra-components':
         specifier: workspace:*
         version: link:../../src/packages/hutch-infra-components
@@ -435,7 +435,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  src/packages/article-unique-id:
+  src/packages/article-resource-unique-id:
     devDependencies:
       '@types/jest':
         specifier: 29.5.14

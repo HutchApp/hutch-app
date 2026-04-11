@@ -34,7 +34,7 @@ export function ReaderPage(article: SavedArticle, options?: { emailVerified?: bo
 		seo: {
 			title: `${article.metadata.title} — Hutch Reader`,
 			description: article.metadata.excerpt,
-			canonicalUrl: `/queue/${article.id}/read`,
+			canonicalUrl: `/queue/${article.id.value}/read`,
 			robots: "noindex, nofollow",
 		},
 		styles: READER_STYLES,

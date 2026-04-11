@@ -5,7 +5,7 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
-import { ArticleUniqueId } from "./article-unique-id";
+import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 
 export type ArticleContentResult = { content: string; imageUrl?: string };
 export type FindArticleContent = (url: string) => Promise<ArticleContentResult | undefined>;
@@ -35,7 +35,7 @@ export function initFindArticleContent(deps: {
 		const result = await dynamoClient.send(
 			new GetCommand({
 				TableName: tableName,
-				Key: { url: ArticleUniqueId.parse(url).value },
+				Key: { url: ArticleResourceUniqueId.parse(url).value },
 				ProjectionExpression: "contentLocation, imageUrl",
 			}),
 		);

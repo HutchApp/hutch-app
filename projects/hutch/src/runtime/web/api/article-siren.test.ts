@@ -1,17 +1,20 @@
 import type {
-	ArticleId,
 	ArticleStatus,
 	Minutes,
 	SavedArticle,
 } from "../../domain/article/article.types";
+import { ReaderArticleHashId } from "../../domain/article/reader-article-hash-id";
 import type { UserId } from "../../domain/user/user.types";
 import { toArticleSubEntity, toArticleEntity } from "./article-siren";
 
+const ARTICLE_URL = "https://example.com/article";
+const ARTICLE_ID = ReaderArticleHashId.from(ARTICLE_URL).value;
+
 function makeArticle(overrides: Partial<SavedArticle> = {}): SavedArticle {
 	return {
-		id: "test-article-id" as ArticleId,
+		id: ReaderArticleHashId.from(ARTICLE_URL),
 		userId: "test-user-id" as UserId,
-		url: "https://example.com/article",
+		url: ARTICLE_URL,
 		metadata: {
 			title: "Test Article",
 			siteName: "Example",
@@ -37,8 +40,8 @@ describe("toArticleSubEntity", () => {
 			class: ["article"],
 			rel: ["item"],
 			properties: {
-				id: "test-article-id",
-				url: "https://example.com/article",
+				id: ARTICLE_ID,
+				url: ARTICLE_URL,
 				title: "Test Article",
 				siteName: "Example",
 				excerpt: "First paragraph...",
@@ -50,9 +53,9 @@ describe("toArticleSubEntity", () => {
 				readAt: null,
 			},
 			links: [
-				{ rel: ["read"], href: "/queue/test-article-id/read" },
+				{ rel: ["read"], href: `/queue/${ARTICLE_ID}/read` },
 			],
-			actions: [{ name: "delete", href: "/queue/test-article-id/delete", method: "POST" }],
+			actions: [{ name: "delete", href: `/queue/${ARTICLE_ID}/delete`, method: "POST" }],
 		});
 	});
 
@@ -61,7 +64,7 @@ describe("toArticleSubEntity", () => {
 		const subEntity = toArticleSubEntity(article);
 
 		expect(subEntity.links).toEqual([
-			{ rel: ["read"], href: "/queue/test-article-id/read" },
+			{ rel: ["read"], href: `/queue/${ARTICLE_ID}/read` },
 		]);
 	});
 

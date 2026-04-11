@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { initFindArticleContent } from "./find-article-content";
-import { ArticleUniqueId } from "./article-unique-id";
+import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 
 // process.env used directly — same exception as Playwright configs:
 // importing requireEnv causes the node-test process to load require-env.ts
@@ -31,13 +31,13 @@ describe("findArticleContent (integration)", () => {
 		});
 
 		const uniqueUrl = `https://example.com/${randomUUID()}`;
-		const articleUniqueId = ArticleUniqueId.parse(uniqueUrl);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(uniqueUrl);
 
 		await dynamoClient.send(
 			new PutCommand({
 				TableName: tableName,
 				Item: {
-					url: articleUniqueId.value,
+					url: articleResourceUniqueId.value,
 					contentLocation: "s3://test-bucket/content/test/content.html",
 				},
 			}),
@@ -59,13 +59,13 @@ describe("findArticleContent (integration)", () => {
 		});
 
 		const uniqueUrl = `https://example.com/${randomUUID()}`;
-		const articleUniqueId = ArticleUniqueId.parse(uniqueUrl);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(uniqueUrl);
 
 		await dynamoClient.send(
 			new PutCommand({
 				TableName: tableName,
 				Item: {
-					url: articleUniqueId.value,
+					url: articleResourceUniqueId.value,
 				},
 			}),
 		);

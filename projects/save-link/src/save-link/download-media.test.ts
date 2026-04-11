@@ -1,9 +1,9 @@
 import { noopLogger } from "@packages/hutch-logger";
 import { initDownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
-import { ArticleUniqueId } from "./article-unique-id";
+import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 
-const articleUniqueId = ArticleUniqueId.parse("https://example.com/article");
+const articleResourceUniqueId = ArticleResourceUniqueId.parse("https://example.com/article");
 
 function createPngResponse(): Response {
 	const pixel = Buffer.from(
@@ -44,7 +44,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<p><img src="https://example.com/photo.png"></p>',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(1);
@@ -61,12 +61,12 @@ describe("initDownloadMedia", () => {
 
 	it("encodes article path in S3 key to keep flat structure", async () => {
 		const { downloadMedia, putImageObject } = createDownloadMedia();
-		const nestedArticle = ArticleUniqueId.parse("https://example.com/blog/post/");
+		const nestedArticle = ArticleResourceUniqueId.parse("https://example.com/blog/post/");
 
 		await downloadMedia({
 			html: '<img src="https://example.com/photo.png">',
 			thumbnailUrl: undefined,
-			articleUniqueId: nestedArticle,
+			articleResourceUniqueId: nestedArticle,
 		});
 
 		expect(putImageObject).toHaveBeenCalledWith(
@@ -78,12 +78,12 @@ describe("initDownloadMedia", () => {
 
 	it("double-encodes article path in CDN URL so S3 decodes to correct key", async () => {
 		const { downloadMedia } = createDownloadMedia();
-		const nestedArticle = ArticleUniqueId.parse("https://example.com/blog/post/");
+		const nestedArticle = ArticleResourceUniqueId.parse("https://example.com/blog/post/");
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png">',
 			thumbnailUrl: undefined,
-			articleUniqueId: nestedArticle,
+			articleResourceUniqueId: nestedArticle,
 		});
 
 		expect(media[0].cdnUrl).toContain("example.com%252Fblog%252Fpost");
@@ -95,7 +95,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img srcset="https://example.com/small.png 300w, https://example.com/large.png 600w">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(2);
@@ -109,7 +109,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img srcset="https://cdn.example.com/image/fetch/w_424,c_limit,f_webp,q_auto:good/photo.png 424w, https://cdn.example.com/image/fetch/w_848,c_limit,f_webp,q_auto:good/photo.png 848w">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(2);
@@ -132,7 +132,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png"><img srcset="https://example.com/p/w_424 424w">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media.map((m) => m.originalUrl)).toContain("https://example.com/photo.png");
@@ -145,7 +145,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png" srcset="https://example.com/photo.png 1x">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(fakeFetch).toHaveBeenCalledTimes(1);
@@ -158,7 +158,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: "<p>No images</p>",
 			thumbnailUrl: "https://example.com/thumb.png",
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(1);
@@ -173,7 +173,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<p><img src="https://example.com/broken.png"></p>',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(0);
@@ -187,7 +187,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<p><img src="https://example.com/huge.jpg"></p>',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(0);
@@ -200,7 +200,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png"><img src="https://example.com/photo.png">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(fakeFetch).toHaveBeenCalledTimes(1);
@@ -218,7 +218,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: imgs,
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(putImageObject).toHaveBeenCalledTimes(20);
@@ -231,7 +231,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img src="data:image/png;base64,iVBORw0KGgo=">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(0);
@@ -244,7 +244,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: "<p>Plain text article</p>",
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(0);
@@ -258,7 +258,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(0);
@@ -276,7 +276,7 @@ describe("initDownloadMedia", () => {
 		await downloadMedia({
 			html: '<img src="https://example.com/unknown">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(putImageObject).toHaveBeenCalledWith(
@@ -296,7 +296,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/huge-no-header.jpg">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(0);
@@ -312,7 +312,7 @@ describe("initDownloadMedia", () => {
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/missing.png">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(media).toHaveLength(0);
@@ -331,7 +331,7 @@ describe("initDownloadMedia", () => {
 		await downloadMedia({
 			html: '<img src="https://example.com/photo.tiff">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(putImageObject).toHaveBeenCalledWith(
@@ -351,7 +351,7 @@ describe("initDownloadMedia", () => {
 		await downloadMedia({
 			html: '<img src="https://example.com/image">',
 			thumbnailUrl: undefined,
-			articleUniqueId,
+			articleResourceUniqueId,
 		});
 
 		expect(putImageObject).toHaveBeenCalledWith(

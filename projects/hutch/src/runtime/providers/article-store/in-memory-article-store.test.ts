@@ -1,5 +1,5 @@
-import { ArticleUniqueId } from "@packages/article-unique-id";
-import { ArticleIdSchema } from "../../domain/article/article.schema";
+import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
+import { ReaderArticleHashId } from "../../domain/article/reader-article-hash-id";
 import type { Minutes } from "../../domain/article/article.types";
 import type { UserId } from "../../domain/user/user.types";
 import type { SaveArticleParams } from "./article-store.types";
@@ -73,7 +73,7 @@ describe("initInMemoryArticleStore", () => {
 			const savedA = await store.saveArticle(makeArticleParams({ userId: USER_A }));
 			const savedB = await store.saveArticle(makeArticleParams({ userId: USER_B }));
 
-			expect(savedA.id).toBe(savedB.id);
+			expect(savedA.id.value).toBe(savedB.id.value);
 		});
 
 		it("should produce the same routeId regardless of scheme or fragment", async () => {
@@ -88,8 +88,8 @@ describe("initInMemoryArticleStore", () => {
 				makeArticleParams({ url: "https://example.com/article#heading" }),
 			);
 
-			expect(https.id).toBe(http.id);
-			expect(https.id).toBe(withFragment.id);
+			expect(https.id.value).toBe(http.id.value);
+			expect(https.id.value).toBe(withFragment.id.value);
 		});
 
 		it("should create separate user-article relationships for each user", async () => {
@@ -146,7 +146,7 @@ describe("initInMemoryArticleStore", () => {
 			});
 
 			expect(result.articles.length).toBe(1);
-			expect(result.articles[0].id).toBe(a1.id);
+			expect(result.articles[0].id.value).toBe(a1.id.value);
 		});
 
 		it("should sort by savedAt descending by default", async () => {
@@ -161,8 +161,8 @@ describe("initInMemoryArticleStore", () => {
 
 			const result = await store.findArticlesByUser({ userId: USER_A });
 
-			expect(result.articles[0].id).toBe(a2.id);
-			expect(result.articles[1].id).toBe(a1.id);
+			expect(result.articles[0].id.value).toBe(a2.id.value);
+			expect(result.articles[1].id.value).toBe(a1.id.value);
 		});
 
 		it("should sort ascending when specified", async () => {
@@ -180,8 +180,8 @@ describe("initInMemoryArticleStore", () => {
 				order: "asc",
 			});
 
-			expect(result.articles[0].id).toBe(a1.id);
-			expect(result.articles[1].id).toBe(a2.id);
+			expect(result.articles[0].id.value).toBe(a1.id.value);
+			expect(result.articles[1].id.value).toBe(a2.id.value);
 		});
 
 		it("should paginate results", async () => {
@@ -242,7 +242,7 @@ describe("initInMemoryArticleStore", () => {
 
 		it("should return false when deleting a non-existent article", async () => {
 			const store = initInMemoryArticleStore();
-			const fakeId = ArticleIdSchema.parse("nonexistent-id");
+			const fakeId = ReaderArticleHashId.fromHash("0".repeat(32));
 
 			const deleted = await store.deleteArticle(fakeId, USER_A);
 
@@ -298,7 +298,7 @@ describe("initInMemoryArticleStore", () => {
 
 		it("should return false when updating status of a non-existent article", async () => {
 			const store = initInMemoryArticleStore();
-			const fakeId = ArticleIdSchema.parse("nonexistent-id");
+			const fakeId = ReaderArticleHashId.fromHash("0".repeat(32));
 
 			const updated = await store.updateArticleStatus(fakeId, USER_A, "read");
 
@@ -310,7 +310,7 @@ describe("initInMemoryArticleStore", () => {
 		it("should return undefined when article does not exist", async () => {
 			const store = initInMemoryArticleStore();
 
-			const content = await store.readContent(ArticleUniqueId.parse("https://example.com/nonexistent"));
+			const content = await store.readContent(ArticleResourceUniqueId.parse("https://example.com/nonexistent"));
 			expect(content).toBeUndefined();
 		});
 
@@ -318,7 +318,7 @@ describe("initInMemoryArticleStore", () => {
 			const store = initInMemoryArticleStore();
 			await store.saveArticle(makeArticleParams());
 
-			const content = await store.readContent(ArticleUniqueId.parse("https://example.com/article"));
+			const content = await store.readContent(ArticleResourceUniqueId.parse("https://example.com/article"));
 			expect(content).toBeUndefined();
 		});
 	});

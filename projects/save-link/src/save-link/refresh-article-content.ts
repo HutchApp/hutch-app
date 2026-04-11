@@ -1,7 +1,7 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { ArticleUniqueId } from "./article-unique-id";
+import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { RefreshArticleContent } from "./refresh-article-content-handler";
 
 export function initRefreshArticleContent(deps: {
@@ -11,11 +11,11 @@ export function initRefreshArticleContent(deps: {
 	const { client, tableName } = deps;
 
 	const refreshArticleContent: RefreshArticleContent = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,
-				Key: { url: articleUniqueId.value },
+				Key: { url: articleResourceUniqueId.value },
 				UpdateExpression: "SET title = :title, siteName = :siteName, excerpt = :excerpt, wordCount = :wordCount, estimatedReadTime = :ert, contentFetchedAt = :cfa, etag = :etag, lastModified = :lm, imageUrl = :img REMOVE summary, summaryInputTokens, summaryOutputTokens",
 				ExpressionAttributeValues: {
 					":title": params.metadata.title,

@@ -1,13 +1,12 @@
 import assert from "node:assert";
 import type {
-	ArticleId,
 	ArticleMetadata,
 	ArticleStatus,
 	Minutes,
 	SavedArticle,
 } from "../../domain/article/article.types";
-import { ArticleUniqueId } from "@packages/article-unique-id";
-import { ReaderId } from "../../domain/article/reader-id";
+import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
+import { ReaderArticleHashId } from "../../domain/article/reader-article-hash-id";
 import type { UserId } from "../../domain/user/user.types";
 import type {
 	DeleteArticle,
@@ -23,7 +22,7 @@ import type { ContentProvider } from "./read-article-content";
 interface GlobalArticle {
 	url: string;
 	originalUrl: string;
-	routeId: ArticleId;
+	routeId: ReaderArticleHashId;
 	metadata: ArticleMetadata;
 	content?: string;
 
@@ -75,20 +74,20 @@ export function initInMemoryArticleStore(): {
 		return `${userId}:${url}`;
 	}
 
-	function findArticleByRouteId(routeId: ArticleId): GlobalArticle | undefined {
+	function findArticleByRouteId(routeId: ReaderArticleHashId): GlobalArticle | undefined {
 		for (const article of articles.values()) {
-			if (article.routeId === routeId) return article;
+			if (article.routeId.value === routeId.value) return article;
 		}
 		return undefined;
 	}
 
 	const saveArticle: SaveArticle = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		const routeId = ReaderId.from(params.url);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const routeId = ReaderArticleHashId.from(params.url);
 
-		if (!articles.has(articleUniqueId.value)) {
-			articles.set(articleUniqueId.value, {
-				url: articleUniqueId.value,
+		if (!articles.has(articleResourceUniqueId.value)) {
+			articles.set(articleResourceUniqueId.value, {
+				url: articleResourceUniqueId.value,
 				originalUrl: params.url,
 				routeId,
 				metadata: params.metadata,
@@ -96,17 +95,17 @@ export function initInMemoryArticleStore(): {
 			});
 		}
 
-		const uaKey = userArticleKey(params.userId, articleUniqueId.value);
+		const uaKey = userArticleKey(params.userId, articleResourceUniqueId.value);
 		if (!userArticles.has(uaKey)) {
 			userArticles.set(uaKey, {
 				userId: params.userId,
-				url: articleUniqueId.value,
+				url: articleResourceUniqueId.value,
 				status: "unread",
 				savedAt: new Date(),
 			});
 		}
 
-		const article = articles.get(articleUniqueId.value);
+		const article = articles.get(articleResourceUniqueId.value);
 		assert(article, "Article must exist after set");
 		const ua = userArticles.get(uaKey);
 		assert(ua, "User article must exist after set");
@@ -124,8 +123,8 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const findArticleByUrl: FindArticleByUrl = async (url) => {
-		const articleUniqueId = ArticleUniqueId.parse(url);
-		const article = articles.get(articleUniqueId.value);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		const article = articles.get(articleResourceUniqueId.value);
 		if (!article) return null;
 
 		return {
@@ -201,8 +200,8 @@ export function initInMemoryArticleStore(): {
 	};
 
 	const findArticleFreshness: FindArticleFreshness = async (url) => {
-		const articleUniqueId = ArticleUniqueId.parse(url);
-		const article = articles.get(articleUniqueId.value);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		const article = articles.get(articleResourceUniqueId.value);
 		if (!article) return null;
 		return {
 			etag: article.etag,
@@ -211,16 +210,16 @@ export function initInMemoryArticleStore(): {
 		};
 	};
 
-	const readContent: ContentProvider = async (articleUniqueId) => {
-		const article = articles.get(articleUniqueId.value);
+	const readContent: ContentProvider = async (articleResourceUniqueId) => {
+		const article = articles.get(articleResourceUniqueId.value);
 		if (!article) return undefined;
 		return article.content;
 	};
 
 	const writeContent = async (params: { url: string; content: string }) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		const article = articles.get(articleUniqueId.value);
-		assert(article, `Article not found for URL: ${articleUniqueId.value}`);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const article = articles.get(articleResourceUniqueId.value);
+		assert(article, `Article not found for URL: ${articleResourceUniqueId.value}`);
 		article.content = params.content;
 	};
 

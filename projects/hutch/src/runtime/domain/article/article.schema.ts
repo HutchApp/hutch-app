@@ -1,11 +1,9 @@
 import { z } from "zod";
-import type { ArticleId, Minutes } from "./article.types";
+import type { Minutes } from "./article.types";
 
 export const SaveArticleInputSchema = z.object({
 	url: z.url({ message: "Please enter a valid URL" }),
 });
-
-export const ArticleIdSchema = z.string().transform((s): ArticleId => s as ArticleId);
 
 export const MinutesSchema = z.number().transform((n): Minutes => n as Minutes);
 

@@ -75,8 +75,8 @@ describe("initReadArticleContent", () => {
 
 	it("normalizes the URL before passing to providers", async () => {
 		const receivedValues: string[] = [];
-		const provider: ContentProvider = async (articleUniqueId) => {
-			receivedValues.push(articleUniqueId.value);
+		const provider: ContentProvider = async (articleResourceUniqueId) => {
+			receivedValues.push(articleResourceUniqueId.value);
 			return "content";
 		};
 

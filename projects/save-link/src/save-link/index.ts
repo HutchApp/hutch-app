@@ -1,4 +1,4 @@
-export { ArticleUniqueId } from "./article-unique-id";
+export { ArticleResourceUniqueId } from "./article-resource-unique-id";
 
 export {
 	SaveLinkCommand,

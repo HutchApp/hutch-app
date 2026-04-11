@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { initDynamoDbSummaryCache } from "./dynamodb-summary-cache";
-import { ArticleUniqueId } from "../save-link/article-unique-id";
+import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
 
 // process.env used directly — same exception as Playwright configs:
 // importing requireEnv causes the node-test process to load require-env.ts
@@ -48,7 +48,7 @@ describe("dynamoDbSummaryCache (integration)", () => {
 		const url = `https://example.com/${randomUUID()}`;
 		await client.send(new PutCommand({
 			TableName: tableName,
-			Item: { url: ArticleUniqueId.parse(url).value },
+			Item: { url: ArticleResourceUniqueId.parse(url).value },
 		}));
 
 		const result = await findCachedSummary(url);

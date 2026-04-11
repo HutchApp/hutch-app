@@ -9,10 +9,10 @@ import {
 	DeleteCommand,
 	UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { ArticleId, SavedArticle } from "../../domain/article/article.types";
-import { ArticleIdSchema, MinutesSchema, ArticleStatusSchema } from "../../domain/article/article.schema";
-import { ArticleUniqueId } from "@packages/article-unique-id";
-import { ReaderId } from "../../domain/article/reader-id";
+import type { SavedArticle } from "../../domain/article/article.types";
+import { MinutesSchema, ArticleStatusSchema } from "../../domain/article/article.schema";
+import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
+import { ReaderArticleHashId, ReaderArticleHashIdSchema } from "../../domain/article/reader-article-hash-id";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type { UserId } from "../../domain/user/user.types";
 import type {
@@ -36,9 +36,10 @@ const ArticleFreshnessRow = z.object({
 	contentFetchedAt: z.string().nullish(), /* 1 */
 });
 
+/** `routeId` column holds the `ReaderArticleHashId.value` (32-char hex). The Zod schema rehydrates it into a `ReaderArticleHashId` instance on read. */
 const ArticleRow = z.object({
 	url: z.string(),
-	routeId: ArticleIdSchema,
+	routeId: ReaderArticleHashIdSchema,
 	originalUrl: z.string(),
 	title: z.string(),
 	siteName: z.string(),
@@ -97,13 +98,13 @@ export function initDynamoDbArticleStore(deps: {
 } {
 	const { client, tableName, userArticlesTableName } = deps;
 
-	async function findArticleByRouteId(routeId: ArticleId): Promise<z.infer<typeof ArticleRow> | null> {
+	async function findArticleByRouteId(routeId: ReaderArticleHashId): Promise<z.infer<typeof ArticleRow> | null> {
 		const result = await client.send(
 			new QueryCommand({
 				TableName: tableName,
 				IndexName: "routeId-index",
 				KeyConditionExpression: "routeId = :routeId",
-				ExpressionAttributeValues: { ":routeId": routeId },
+				ExpressionAttributeValues: { ":routeId": routeId.value },
 				Limit: 1,
 			}),
 		);
@@ -124,8 +125,8 @@ export function initDynamoDbArticleStore(deps: {
 	}
 
 	const saveArticle: SaveArticle = async (params) => {
-		const articleUniqueId = ArticleUniqueId.parse(params.url);
-		const routeId = ReaderId.from(params.url);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const routeId = ReaderArticleHashId.from(params.url);
 		const now = new Date();
 
 		const ignoreDuplicate = (error: unknown) => {
@@ -138,8 +139,8 @@ export function initDynamoDbArticleStore(deps: {
 				new PutCommand({
 					TableName: tableName,
 					Item: {
-						url: articleUniqueId.value,
-						routeId,
+						url: articleResourceUniqueId.value,
+						routeId: routeId.value,
 						originalUrl: params.url,
 						title: params.metadata.title,
 						siteName: params.metadata.siteName,
@@ -157,7 +158,7 @@ export function initDynamoDbArticleStore(deps: {
 					TableName: userArticlesTableName,
 					Item: {
 						userId: params.userId,
-						url: articleUniqueId.value,
+						url: articleResourceUniqueId.value,
 						status: "unread",
 						savedAt: now.toISOString(),
 					},
@@ -168,12 +169,12 @@ export function initDynamoDbArticleStore(deps: {
 
 		const [articleResult, uaResult] = await Promise.all([
 			client.send(
-				new GetCommand({ TableName: tableName, Key: { url: articleUniqueId.value } }),
+				new GetCommand({ TableName: tableName, Key: { url: articleResourceUniqueId.value } }),
 			),
 			client.send(
 				new GetCommand({
 					TableName: userArticlesTableName,
-					Key: { userId: params.userId, url: articleUniqueId.value },
+					Key: { userId: params.userId, url: articleResourceUniqueId.value },
 				}),
 			),
 		]);
@@ -355,11 +356,11 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	const findArticleFreshness: FindArticleFreshness = async (url) => {
-		const articleUniqueId = ArticleUniqueId.parse(url);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
-				Key: { url: articleUniqueId.value },
+				Key: { url: articleResourceUniqueId.value },
 				ProjectionExpression: "etag, lastModified, contentFetchedAt",
 			}),
 		);
@@ -374,11 +375,11 @@ export function initDynamoDbArticleStore(deps: {
 	};
 
 	/** Legacy fallback for articles saved before S3 migration. S3 is the primary content store. */
-	const readContent: ContentProvider = async (articleUniqueId) => {
+	const readContent: ContentProvider = async (articleResourceUniqueId) => {
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
-				Key: { url: articleUniqueId.value },
+				Key: { url: articleResourceUniqueId.value },
 				ProjectionExpression: "content",
 			}),
 		);

@@ -42,7 +42,7 @@
     "@aws-sdk/client-sqs": "3.1001.0",
     "@aws-sdk/lib-dynamodb": "3.1001.0",
     "@mozilla/readability": "0.6.0",
-    "@packages/article-unique-id": "workspace:*",
+    "@packages/article-resource-unique-id": "workspace:*",
     "@packages/hutch-infra-components": "workspace:*",
     "@packages/hutch-logger": "workspace:*",
     "@types/parse-srcset": "1.0.0",

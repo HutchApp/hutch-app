@@ -1,19 +1,20 @@
 import type {
-	ArticleId,
 	Minutes,
 	SavedArticle,
 } from "../../domain/article/article.types";
+import { ReaderArticleHashId } from "../../domain/article/reader-article-hash-id";
 import type { UserId } from "../../domain/user/user.types";
 import type { FindArticlesResult } from "../../providers/article-store/article-store.types";
 import { toArticleCollectionEntity } from "./collection-siren";
 
-function makeArticle(id: string): SavedArticle {
+function makeArticle(idHint: string): SavedArticle {
+	const url = `https://example.com/${idHint}`;
 	return {
-		id: id as ArticleId,
+		id: ReaderArticleHashId.from(url),
 		userId: "test-user-id" as UserId,
-		url: `https://example.com/${id}`,
+		url,
 		metadata: {
-			title: `Article ${id}`,
+			title: `Article ${idHint}`,
 			siteName: "Example",
 			excerpt: "First paragraph...",
 			wordCount: 1200,

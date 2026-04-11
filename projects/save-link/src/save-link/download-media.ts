@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { parseHTML } from "linkedom";
 import parseSrcset from "parse-srcset";
 import type { HutchLogger } from "@packages/hutch-logger";
-import type { ArticleUniqueId } from "./article-unique-id";
+import type { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { PutImageObject } from "./s3-put-image-object";
 
 const MAX_IMAGES = 20;
@@ -15,7 +15,7 @@ export type DownloadedMedia = { originalUrl: string; cdnUrl: string };
 export type DownloadMedia = (params: {
 	html: string;
 	thumbnailUrl: string | undefined;
-	articleUniqueId: ArticleUniqueId;
+	articleResourceUniqueId: ArticleResourceUniqueId;
 }) => Promise<DownloadedMedia[]>;
 
 export function initDownloadMedia(deps: {
@@ -26,8 +26,8 @@ export function initDownloadMedia(deps: {
 }): DownloadMedia {
 	const { putImageObject, logger, fetch: fetchFn, imagesCdnBaseUrl } = deps;
 
-	return async ({ html, thumbnailUrl, articleUniqueId }) => {
-		const encodedArticlePath = articleUniqueId.toEncodedURLPathComponent();
+	return async ({ html, thumbnailUrl, articleResourceUniqueId }) => {
+		const encodedArticlePath = articleResourceUniqueId.toEncodedURLPathComponent();
 		const results: DownloadedMedia[] = [];
 
 		const imageUrls = extractImageUrls(html);

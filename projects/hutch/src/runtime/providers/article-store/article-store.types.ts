@@ -1,8 +1,8 @@
 import type {
-	ArticleId,
 	ArticleStatus,
 	SavedArticle,
 } from "../../domain/article/article.types";
+import type { ReaderArticleHashId } from "../../domain/article/reader-article-hash-id";
 import type { UserId } from "../../domain/user/user.types";
 
 export interface SaveArticleParams {
@@ -34,12 +34,12 @@ export interface FindArticlesResult {
 export type SaveArticle = (params: SaveArticleParams) => Promise<SavedArticle>;
 
 export type FindArticleById = (
-	id: ArticleId,
+	id: ReaderArticleHashId,
 	userId: UserId,
 ) => Promise<SavedArticle | null>;
 
 export interface GlobalArticleData {
-	id: ArticleId;
+	id: ReaderArticleHashId;
 	url: string;
 	metadata: SavedArticle["metadata"];
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
@@ -54,12 +54,12 @@ export type FindArticlesByUser = (
 ) => Promise<FindArticlesResult>;
 
 export type DeleteArticle = (
-	id: ArticleId,
+	id: ReaderArticleHashId,
 	userId: UserId,
 ) => Promise<boolean>;
 
 export type UpdateArticleStatus = (
-	id: ArticleId,
+	id: ReaderArticleHashId,
 	userId: UserId,
 	status: ArticleStatus,
 ) => Promise<boolean>;

@@ -1,7 +1,7 @@
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import { SaveLinkCommand } from "./index";
-import { ArticleUniqueId } from "./article-unique-id";
+import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { ParseArticle } from "../article-parser/article-parser.types";
 import type { DownloadMedia, DownloadedMedia } from "./download-media";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
@@ -11,8 +11,8 @@ export type UpdateContentLocation = (params: { url: string; contentLocation: str
 type PublishLinkSaved = (params: { url: string; userId: string }) => Promise<void>;
 type ProcessContent = (params: { html: string; thumbnailUrl: string | undefined; media: DownloadedMedia[] }) => Promise<{ html: string; thumbnailUrl: string | undefined }>;
 
-function contentS3Key(articleUniqueId: ArticleUniqueId): string {
-	return `content/${encodeURIComponent(articleUniqueId.value)}/content.html`;
+function contentS3Key(articleResourceUniqueId: ArticleResourceUniqueId): string {
+	return `content/${encodeURIComponent(articleResourceUniqueId.value)}/content.html`;
 }
 
 export function initSaveLinkCommandHandler(deps: {
@@ -42,12 +42,12 @@ export function initSaveLinkCommandHandler(deps: {
 			}
 
 			const { article } = parseResult;
-			const articleUniqueId = ArticleUniqueId.parse(detail.url);
+			const articleResourceUniqueId = ArticleResourceUniqueId.parse(detail.url);
 
 			const media = await downloadMedia({
 				html: article.content,
 				thumbnailUrl: article.imageUrl,
-				articleUniqueId,
+				articleResourceUniqueId,
 			});
 
 			const { html, thumbnailUrl } = await processContent({
@@ -56,7 +56,7 @@ export function initSaveLinkCommandHandler(deps: {
 				media,
 			});
 
-			const key = contentS3Key(articleUniqueId);
+			const key = contentS3Key(articleResourceUniqueId);
 			const contentLocation = await putObject({ key, content: html });
 			await updateContentLocation({ url: detail.url, contentLocation });
 			logger.info("[SaveLinkCommand] saved content to S3", { url: detail.url, contentLocation });

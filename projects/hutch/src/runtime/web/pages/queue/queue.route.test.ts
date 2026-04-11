@@ -151,6 +151,19 @@ describe("Queue routes", () => {
 			expect(statusResponse.status).toBe(303);
 			expect(statusResponse.headers.location).toBe("/queue");
 		});
+
+		it("should redirect without error for malformed article id", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const statusResponse = await agent
+				.post("/queue/not-a-valid-hash/status")
+				.type("form")
+				.send({ status: "read" });
+
+			expect(statusResponse.status).toBe(303);
+			expect(statusResponse.headers.location).toBe("/queue");
+		});
 	});
 
 	describe("POST /queue/:id/delete", () => {
@@ -193,6 +206,16 @@ describe("Queue routes", () => {
 			const deleteResponse = await agent.post(`/queue/${articleId}/delete?order=asc`);
 
 			expect(deleteResponse.headers.location).toBe("/queue?order=asc");
+		});
+
+		it("should redirect without error for malformed article id", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const deleteResponse = await agent.post("/queue/not-a-valid-hash/delete");
+
+			expect(deleteResponse.status).toBe(303);
+			expect(deleteResponse.headers.location).toBe("/queue");
 		});
 	});
 
