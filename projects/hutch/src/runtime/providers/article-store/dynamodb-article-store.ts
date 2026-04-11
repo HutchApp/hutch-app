@@ -44,7 +44,7 @@ const ArticleRow = z.object({
 	siteName: z.string(),
 	excerpt: z.string(),
 	wordCount: z.number(),
-	imageUrl: z.string().optional(),
+	imageUrl: z.string().nullish(), /* 1 */
 	content: z.string().optional(),
 
 	estimatedReadTime: MinutesSchema,
