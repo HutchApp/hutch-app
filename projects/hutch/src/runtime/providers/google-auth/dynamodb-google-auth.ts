@@ -1,9 +1,9 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { UserIdSchema } from "../../domain/user/user.schema";
-import type { FindUserByGoogleId, LinkGoogleAccount } from "./google-auth.schema";
+import type { FindUserByGoogleId, LinkGoogleAccount, UnlinkGoogleAccount } from "./google-auth.schema";
 
 const GoogleAccountRow = z.object({
 	userId: UserIdSchema,
@@ -15,6 +15,7 @@ export function initDynamoDbGoogleAuth(deps: {
 }): {
 	findUserByGoogleId: FindUserByGoogleId;
 	linkGoogleAccount: LinkGoogleAccount;
+	unlinkGoogleAccount: UnlinkGoogleAccount;
 } {
 	const { client, tableName } = deps;
 
@@ -46,6 +47,15 @@ export function initDynamoDbGoogleAuth(deps: {
 		);
 	};
 
-	return { findUserByGoogleId, linkGoogleAccount };
+	const unlinkGoogleAccount: UnlinkGoogleAccount = async (googleId) => {
+		await client.send(
+			new DeleteCommand({
+				TableName: tableName,
+				Key: { googleId: String(googleId) },
+			}),
+		);
+	};
+
+	return { findUserByGoogleId, linkGoogleAccount, unlinkGoogleAccount };
 }
 /* c8 ignore stop */

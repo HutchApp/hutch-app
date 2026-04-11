@@ -1,4 +1,5 @@
 /* c8 ignore start -- composition root, no logic to test */
+import assert from "node:assert";
 import type { Express } from "express";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
@@ -95,7 +96,7 @@ function initProviders() {
 			staleTtlMs,
 		});
 		const googleAuth = initDynamoDbGoogleAuth({ client, tableName: googleAccountsTable });
-		const appOriginForRedirect = requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
+		const appOriginForRedirect = requireEnv("APP_ORIGIN");
 		const exchangeGoogleCode = initExchangeGoogleCode({
 			clientId: googleClientId,
 			clientSecret: googleClientSecret,
@@ -142,6 +143,12 @@ function initProviders() {
 
 	const googleClientId = getEnv("GOOGLE_CLIENT_ID");
 	const googleClientSecret = getEnv("GOOGLE_CLIENT_SECRET");
+	// Partial config is a misconfiguration — one var without the other would silently fall back
+	// to the dev stub and mask real errors during local testing.
+	assert(
+		(googleClientId && googleClientSecret) || (!googleClientId && !googleClientSecret),
+		"GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must both be set or both unset",
+	);
 
 	const googleAuthConfig = googleClientId && googleClientSecret ? {
 		exchangeGoogleCode: initExchangeGoogleCode({

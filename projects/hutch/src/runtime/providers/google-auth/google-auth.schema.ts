@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { UserId } from "../../domain/user/user.types";
 
-export type GoogleId = string & { readonly __brand: "GoogleId" };
+export const GoogleIdSchema = z.string().brand<"GoogleId">();
+export type GoogleId = z.infer<typeof GoogleIdSchema>;
 
 export type FindUserByGoogleId = (googleId: GoogleId) => Promise<UserId | null>;
 
@@ -11,4 +12,4 @@ export type LinkGoogleAccount = (link: {
 	email: string;
 }) => Promise<void>;
 
-export const GoogleIdSchema = z.string().transform((s): GoogleId => s as GoogleId);
+export type UnlinkGoogleAccount = (googleId: GoogleId) => Promise<void>;

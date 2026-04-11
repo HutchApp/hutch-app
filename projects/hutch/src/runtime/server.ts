@@ -39,7 +39,7 @@ import type {
 	CreatePasswordResetToken,
 	VerifyPasswordResetToken,
 } from "./providers/password-reset/password-reset.types";
-import type { FindUserByGoogleId, LinkGoogleAccount } from "./providers/google-auth/google-auth.schema";
+import type { FindUserByGoogleId, LinkGoogleAccount, UnlinkGoogleAccount } from "./providers/google-auth/google-auth.schema";
 import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
@@ -92,6 +92,7 @@ interface AppDependencies {
 	updatePassword: UpdatePassword;
 	findUserByGoogleId: FindUserByGoogleId;
 	linkGoogleAccount: LinkGoogleAccount;
+	unlinkGoogleAccount: UnlinkGoogleAccount;
 	exchangeGoogleCode?: ExchangeGoogleCode;
 	googleClientId?: string;
 	googleClientSecret?: string;
@@ -279,6 +280,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			createGoogleUser: deps.createGoogleUser,
 			findUserByGoogleId: deps.findUserByGoogleId,
 			linkGoogleAccount: deps.linkGoogleAccount,
+			unlinkGoogleAccount: deps.unlinkGoogleAccount,
 			exchangeGoogleCode: deps.exchangeGoogleCode,
 			logError: deps.logError,
 		});

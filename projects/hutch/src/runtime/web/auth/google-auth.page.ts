@@ -1,12 +1,24 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Request, Response, Router } from "express";
 import express from "express";
+import { z } from "zod";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type { CreateGoogleUser, CreateSession } from "../../providers/auth/auth.types";
-import type { FindUserByGoogleId, LinkGoogleAccount } from "../../providers/google-auth/google-auth.schema";
+import type { FindUserByGoogleId, LinkGoogleAccount, UnlinkGoogleAccount } from "../../providers/google-auth/google-auth.schema";
 import type { ExchangeGoogleCode } from "../../providers/google-auth/google-token.types";
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { LoginPage } from "./auth.component";
+
+const CallbackQuerySchema = z.object({
+	code: z.string().min(1),
+	state: z.string().min(1),
+});
+
+const StatePayloadSchema = z.object({
+	nonce: z.string(),
+	returnUrl: z.string().optional(),
+	createdAt: z.number(),
+});
 
 const COOKIE_NAME = "hutch_sid";
 const STATE_COOKIE = "hutch_gstate";
@@ -26,6 +38,7 @@ interface GoogleAuthDependencies {
 	createGoogleUser: CreateGoogleUser;
 	findUserByGoogleId: FindUserByGoogleId;
 	linkGoogleAccount: LinkGoogleAccount;
+	unlinkGoogleAccount: UnlinkGoogleAccount;
 	exchangeGoogleCode: ExchangeGoogleCode;
 	logError: (message: string, error?: Error) => void;
 }
@@ -76,17 +89,17 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 	});
 
 	router.get("/auth/google/callback", async (req: Request, res: Response) => {
-		const code = req.query.code as string | undefined;
-		const stateParam = req.query.state as string | undefined;
+		const parsedQuery = CallbackQuerySchema.safeParse(req.query);
 		const stateCookie = req.cookies?.[STATE_COOKIE];
 
 		res.clearCookie(STATE_COOKIE, { path: "/" });
 
-		if (!code || !stateParam || !stateCookie || stateParam !== stateCookie) {
+		if (!parsedQuery.success || !stateCookie || parsedQuery.data.state !== stateCookie) {
 			const result = LoginPage({ globalError: "Google sign-in failed. Please try again." }).to("text/html");
 			res.status(400).type("html").send(result.body);
 			return;
 		}
+		const { code, state: stateParam } = parsedQuery.data;
 
 		const payload = verifyState(stateParam, deps.googleClientSecret);
 		if (!payload) {
@@ -95,7 +108,8 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 			return;
 		}
 
-		const stateData = JSON.parse(payload) as { nonce: string; returnUrl?: string; createdAt: number };
+		// Payload was HMAC-verified above so its shape is trusted — an invalid shape indicates a bug.
+		const stateData = StatePayloadSchema.parse(JSON.parse(payload));
 		if (Date.now() - stateData.createdAt > STATE_TTL_MS) {
 			const result = LoginPage({ globalError: "Google sign-in expired. Please try again." }).to("text/html");
 			res.status(400).type("html").send(result.body);
@@ -127,8 +141,14 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 		}
 
 		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
+		// Link first so that createGoogleUser failure leaves no orphaned user. If createGoogleUser
+		// then fails, we compensate by unlinking to keep the google_accounts table consistent and
+		// avoid a permanent lockout on retry.
+		await deps.linkGoogleAccount({ googleId: tokenResult.googleId, userId, email: tokenResult.email });
+
 		const createResult = await deps.createGoogleUser({ email: tokenResult.email, userId });
 		if (!createResult.ok) {
+			await deps.unlinkGoogleAccount(tokenResult.googleId);
 			const result = LoginPage({
 				globalError: "An account with this email already exists. Please sign in with your password.",
 				email: tokenResult.email,
@@ -136,8 +156,6 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 			res.status(422).type("html").send(result.body);
 			return;
 		}
-
-		await deps.linkGoogleAccount({ googleId: tokenResult.googleId, userId, email: tokenResult.email });
 
 		const sessionId = await deps.createSession({ userId, emailVerified: true });
 		res.cookie(COOKIE_NAME, sessionId, COOKIE_OPTIONS);

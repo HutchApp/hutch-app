@@ -63,6 +63,19 @@ describe("Google auth routes", () => {
 	});
 
 	describe("GET /auth/google/callback", () => {
+		it("should render error when code query param is missing", async () => {
+			const { app } = createGoogleTestApp();
+			const state = createSignedState({ nonce: "abc", createdAt: Date.now() });
+
+			const response = await request(app)
+				.get(`/auth/google/callback?state=${encodeURIComponent(state)}`)
+				.set("Cookie", `hutch_gstate=${state}`);
+
+			expect(response.status).toBe(400);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-global-error]")?.textContent).toContain("Google sign-in failed");
+		});
+
 		it("should render error when state cookie is missing", async () => {
 			const { app } = createGoogleTestApp();
 			const state = createSignedState({ nonce: "abc", createdAt: Date.now() });

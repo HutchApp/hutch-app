@@ -1,9 +1,10 @@
 import type { UserId } from "../../domain/user/user.types";
-import type { GoogleId, FindUserByGoogleId, LinkGoogleAccount } from "./google-auth.schema";
+import type { GoogleId, FindUserByGoogleId, LinkGoogleAccount, UnlinkGoogleAccount } from "./google-auth.schema";
 
 export function initInMemoryGoogleAuth(): {
 	findUserByGoogleId: FindUserByGoogleId;
 	linkGoogleAccount: LinkGoogleAccount;
+	unlinkGoogleAccount: UnlinkGoogleAccount;
 } {
 	const accounts = new Map<GoogleId, { userId: UserId; email: string }>();
 
@@ -16,5 +17,9 @@ export function initInMemoryGoogleAuth(): {
 		accounts.set(googleId, { userId, email });
 	};
 
-	return { findUserByGoogleId, linkGoogleAccount };
+	const unlinkGoogleAccount: UnlinkGoogleAccount = async (googleId) => {
+		accounts.delete(googleId);
+	};
+
+	return { findUserByGoogleId, linkGoogleAccount, unlinkGoogleAccount };
 }
