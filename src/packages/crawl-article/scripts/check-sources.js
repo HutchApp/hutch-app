@@ -29,19 +29,23 @@ const crawlArticle = initCrawlArticle({
   headers: { ...DEFAULT_CRAWL_HEADERS },
 });
 
-function assertFetched(result, url) {
+function assertFetched(result, source) {
   assert.equal(
     result.status,
     'fetched',
-    `expected 'fetched' for ${url}, got '${result.status}' — likely 403 or network error`,
+    `expected 'fetched' for ${source.url}, got '${result.status}' — likely 403 or network error`,
   );
   assert(
     result.html.length > MIN_HTML_BYTES,
-    `HTML too short (${result.html.length} bytes) for ${url} — likely a block or paywall page`,
+    `HTML too short (${result.html.length} bytes) for ${source.url} — likely a block or paywall page`,
   );
   assert(
     result.html.toLowerCase().includes('<html'),
-    `response for ${url} does not look like HTML`,
+    `response for ${source.url} does not look like HTML`,
+  );
+  assert(
+    result.html.includes(source.expectedContent),
+    `expected content not found for ${source.url} — got a block/error page instead of real article content`,
   );
 }
 
@@ -50,7 +54,7 @@ describe('crawler source health', () => {
     describe(source.label, () => {
       it('first save fetch (no conditional headers)', async () => {
         const result = await crawlArticle({ url: source.url });
-        assertFetched(result, source.url);
+        assertFetched(result, source);
       });
 
       it('TTL refresh fetch (replays etag / lastModified from first save)', async () => {
@@ -60,7 +64,7 @@ describe('crawler source health', () => {
         // servers that don't return 200 (fetched). Both are acceptable — the
         // failure mode we're guarding against is `status: 'failed'`.
         const firstResult = await crawlArticle({ url: source.url });
-        assertFetched(firstResult, source.url);
+        assertFetched(firstResult, source);
 
         const refreshResult = await crawlArticle({
           url: source.url,
