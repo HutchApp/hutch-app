@@ -47,6 +47,10 @@ A common failure mode: runtime code conditionally requires environment variables
 - [ ] Environment variable set in the Lambda environment block
 - [ ] Runtime composition root reads the env var and wires it to the provider
 
+## Moving a Domain Between Redirect and Primary Requires Two Deploys
+
+ACM cert validation DNS records conflict when a domain moves between `redirectDomains` and `domains` in the same deploy because Pulumi creates before it deletes. Remove the domain from its old list first, deploy, then add it to the new list.
+
 ## Wire-Format Values Are Deployment Contracts
 
 The `source` and `detailType` strings in event definitions are stored in deployed EventBridge rules. Renaming them requires coordinated redeployment of all stacks that publish or subscribe. Change TypeScript identifiers freely, but treat wire values as immutable unless you coordinate the deployment.
