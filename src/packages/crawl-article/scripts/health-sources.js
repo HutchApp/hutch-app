@@ -60,4 +60,9 @@ exports.HEALTH_SOURCES = [
     url: 'https://www.linkedin.com/posts/fagnerbrack_ai-webdev-softwareengineering-activity-7429345910167453696-2MJD?utm_source=share&utm_medium=member_desktop&rcm=ACoAAA5sDgUBEQM_1ZyxJFG0-Bvfm4gOYd-wqo4',
     expectedContent: 'The issue now is that people realised coding was never the bottleneck',
   },
+  {
+    label: 'X (Twitter)',
+    url: 'https://x.com/elonmusk/status/1519480761749016577',
+    expectedContent: 'buying Coca-Cola to put the cocaine back in',
+  },
 ];

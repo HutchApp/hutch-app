@@ -185,6 +185,87 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 	});
 });
 
+describe("initCrawlArticle — X/Twitter oembed fallback", () => {
+	it("fetches tweet content via oembed API for x.com URLs", async () => {
+		const fakeFetch: typeof fetch = async (input) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			if (url.includes("publish.twitter.com/oembed")) {
+				return new Response(JSON.stringify({
+					author_name: "Elon Musk",
+					html: '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Test tweet</p></blockquote>\n',
+				}), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				});
+			}
+			return new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } });
+		};
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://x.com/elonmusk/status/1519480761749016577" });
+
+		expect(result).toEqual({
+			status: "fetched",
+			html: '<html><head><title>Elon Musk</title></head><body><blockquote class="twitter-tweet"><p lang="en" dir="ltr">Test tweet</p></blockquote>\n</body></html>',
+		});
+	});
+
+	it("fetches tweet content via oembed API for twitter.com URLs", async () => {
+		const fakeFetch: typeof fetch = async () =>
+			new Response(JSON.stringify({
+				author_name: "User",
+				html: "<blockquote>Tweet</blockquote>\n",
+			}), {
+				status: 200,
+				headers: { "content-type": "application/json" },
+			});
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://twitter.com/user/status/123" });
+
+		expect(result.status).toBe("fetched");
+	});
+
+	it("returns 'failed' when oembed API returns non-ok status", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(null, { status: 404 });
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://x.com/user/status/123" });
+
+		expect(result).toEqual({ status: "failed" });
+		expect(logError).toHaveBeenCalledWith("[CrawlArticle] oembed HTTP 404 for https://x.com/user/status/123");
+	});
+
+	it("returns 'failed' when oembed API throws a network error", async () => {
+		const networkError = new Error("timeout");
+		const fakeFetch: typeof fetch = async () => { throw networkError; };
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://x.com/user/status/123" });
+
+		expect(result).toEqual({ status: "failed" });
+		expect(logError).toHaveBeenCalledWith("[CrawlArticle] oembed error for https://x.com/user/status/123", networkError);
+	});
+
+	it("encodes the tweet URL in the oembed request", async () => {
+		let capturedUrl = "";
+		const fakeFetch: typeof fetch = async (input) => {
+			capturedUrl = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			return new Response(JSON.stringify({ author_name: "", html: "" }), {
+				status: 200,
+				headers: { "content-type": "application/json" },
+			});
+		};
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		await crawlArticle({ url: "https://x.com/user/status/123?ref=test" });
+
+		expect(capturedUrl).toBe("https://publish.twitter.com/oembed?url=https%3A%2F%2Fx.com%2Fuser%2Fstatus%2F123%3Fref%3Dtest");
+	});
+});
+
 describe("initCrawlArticle — failure modes", () => {
 	it("returns status 'failed' and logs HTTP status when response is not ok and not 304", async () => {
 		const fakeFetch: typeof fetch = async () => new Response(null, { status: 403 });

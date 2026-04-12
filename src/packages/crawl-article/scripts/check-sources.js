@@ -21,8 +21,6 @@ const assert = require('node:assert/strict');
 const { DEFAULT_CRAWL_HEADERS, initCrawlArticle } = require('../dist/crawl-article');
 const { HEALTH_SOURCES } = require('./health-sources');
 
-const MIN_HTML_BYTES = 2000;
-
 const crawlArticle = initCrawlArticle({
   fetch: globalThis.fetch,
   logError: (message, error) => console.error(message, error ?? ''),
@@ -34,10 +32,6 @@ function assertFetched(result, source) {
     result.status,
     'fetched',
     `expected 'fetched' for ${source.url}, got '${result.status}' — likely 403 or network error`,
-  );
-  assert(
-    result.html.length > MIN_HTML_BYTES,
-    `HTML too short (${result.html.length} bytes) for ${source.url} — likely a block or paywall page`,
   );
   assert(
     result.html.toLowerCase().includes('<html'),
@@ -78,8 +72,8 @@ describe('crawler source health', () => {
         );
         if (refreshResult.status === 'fetched') {
           assert(
-            refreshResult.html.length > MIN_HTML_BYTES,
-            `TTL refresh HTML too short (${refreshResult.html.length} bytes) for ${source.url}`,
+            refreshResult.html.includes(source.expectedContent),
+            `TTL refresh expected content not found for ${source.url} — got a block/error page instead of real article content`,
           );
         }
       });
