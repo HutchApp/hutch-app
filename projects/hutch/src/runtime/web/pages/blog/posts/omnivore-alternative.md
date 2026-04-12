@@ -60,7 +60,7 @@ Omnivore had years of development. Hutch is newer. Here is an honest look at the
 
 > **I would rather be honest about gaps than pretend they don't exist.**
 
-Features ship one at a time, and the [roadmap is public](https://hutch-app.com/#roadmap).
+Features ship one at a time, and the [roadmap is public](https://readplace.com/#roadmap).
 
 ## Your data, your terms
 
@@ -78,7 +78,7 @@ $3.99/month. TL;DR summaries are included.
 
 Readwise Reader is a great choice for power users at $12.99/month. Hutch is simpler and cheaper. A focused read-it-later tool, not a full research platform.
 
-The first 100 founding members get full access free, forever. [Sign up here](https://hutch-app.com/signup).
+The first 100 founding members get full access free, forever. [Sign up here](https://readplace.com/signup).
 
 ## Common questions from Omnivore users
 
@@ -94,10 +94,10 @@ Hutch is free for the first 100 founding members. Full access, forever. After th
 
 **Can I import my Omnivore data into Hutch?**
 
-You can send Omnivore data file to hutch+migrate@hutch-app.com and I'll do it for you. If you exported your data before the shutdown, keep that file. You can start fresh right now with the [browser extension](https://hutch-app.com/install). Save any article with one click.
+You can send Omnivore data file to hutch+migrate@hutch-app.com and I'll do it for you. If you exported your data before the shutdown, keep that file. You can start fresh right now with the [browser extension](https://readplace.com/install). Save any article with one click.
 
 ## Your reading list should not have an expiry date
 
 Install the extension. Save an article. See if it fits how you read.
 
-[Install the browser extension](https://hutch-app.com/install) or [view the source on GitHub](https://github.com/HutchApp/hutch-app).
+[Install the browser extension](https://readplace.com/install) or [view the source on GitHub](https://github.com/HutchApp/hutch-app).

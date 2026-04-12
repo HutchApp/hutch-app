@@ -35,7 +35,7 @@ export function InstallPage(params: { firefox: string | null; chrome: string | n
 			title: "Install Hutch Browser Extension",
 			description:
 				"Where reading still matters. Download the Hutch browser extension for Firefox or Chrome and save articles with one click.",
-			canonicalUrl: "https://hutch-app.com/install",
+			canonicalUrl: "https://readplace.com/install",
 		},
 		styles: INSTALL_PAGE_STYLES,
 		bodyClass: "page-install",

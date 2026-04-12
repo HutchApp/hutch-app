@@ -53,4 +53,4 @@ The workflow has four steps.
 
 For a closer look at how the TL;DR works under the hood, see [How AI TL;DR Actually Works in Hutch](/blog/how-ai-tldr-actually-works).
 
-If you want an AI reading assistant that helps you read more of the right things, [give Hutch a try](https://hutch-app.com/install).
+If you want an AI reading assistant that helps you read more of the right things, [give Hutch a try](https://readplace.com/install).

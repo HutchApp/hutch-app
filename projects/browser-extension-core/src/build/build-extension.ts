@@ -37,10 +37,11 @@ interface BuildPlanInput {
 	config: ExtensionBuildConfig;
 	projectDir: string;
 	serverUrl: string | undefined;
+	appDomains: readonly string[];
 	pack?: (params: { sourceDir: string; outputPath: string }) => void;
 }
 
-function createPlanData(input: { config: ExtensionBuildConfig; projectDir: string; serverUrl: string; corePackageJsonPath: string }): {
+function createPlanData(input: { config: ExtensionBuildConfig; projectDir: string; serverUrl: string; appDomains: readonly string[]; corePackageJsonPath: string }): {
 	esbuildOptions: EsbuildOptions;
 	copies: CopyOperation[];
 	directories: string[];
@@ -74,6 +75,7 @@ function createPlanData(input: { config: ExtensionBuildConfig; projectDir: strin
 		},
 		define: {
 			__SERVER_URL__: JSON.stringify(input.serverUrl),
+			__APP_DOMAINS__: JSON.stringify(input.appDomains),
 		},
 	};
 
@@ -100,13 +102,14 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 
 	return {
 		createBuildPlan(input: BuildPlanInput) {
-			assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://hutch-app.com)");
+			assert(input.serverUrl, "HUTCH_SERVER_URL environment variable is required.\nSet it before building (e.g. HUTCH_SERVER_URL=https://readplace.com)");
 			const serverUrl = input.serverUrl;
 
 			const planData = createPlanData({
 				config: input.config,
 				projectDir: input.projectDir,
 				serverUrl,
+				appDomains: input.appDomains,
 				corePackageJsonPath: resolvedDeps.resolveCorePackageJson(),
 			});
 

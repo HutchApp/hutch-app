@@ -14,7 +14,7 @@ export function BlogIndexPage(params: { posts: BlogPost[] }): Component {
 			title: "Blog — Hutch",
 			description:
 				"Articles about reading, building software, and the tools behind Hutch.",
-			canonicalUrl: "https://hutch-app.com/blog",
+			canonicalUrl: "https://readplace.com/blog",
 			ogType: "website",
 		},
 		styles: BLOG_STYLES,

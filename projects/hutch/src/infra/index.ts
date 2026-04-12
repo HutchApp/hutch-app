@@ -33,21 +33,49 @@ const storage = new HutchStorage("hutch", {
 
 const redirectDomains = config.getObject<string[]>("redirectDomains") ?? [];
 
-const domainRegistration = new DomainRegistration("hutch-domain", { domains });
+/**
+ * Ordering convention:
+ *   domains[0]           — legacy primary; keeps the original Pulumi resource names
+ *                          ("hutch-domain", HutchAPIGateway's internal custom-domain wiring)
+ *                          so existing deployments see a no-op.
+ *   domains[1..]         — additional canonicals added during migration; each gets its own
+ *                          DomainRegistration and API Gateway wiring with suffixed names.
+ *   domains[last]        — canonical user-facing origin (SEO, emails, OAuth). Latest entry
+ *                          wins so migrating to a new canonical just means appending.
+ */
+const [legacyPrimaryDomain, ...additionalDomains] = domains;
+const canonicalDomain: string | undefined = domains[domains.length - 1];
+
+const legacyDomainRegistration = new DomainRegistration("hutch-domain", {
+	domains: legacyPrimaryDomain ? [legacyPrimaryDomain] : [],
+});
+
+const additionalDomainRegistrations = additionalDomains.map((domain) =>
+	new DomainRegistration(`hutch-domain-${domain.replace(/\./g, "-")}`, { domains: [domain] }),
+);
+
+const allDomainRegistrations = [legacyDomainRegistration, ...additionalDomainRegistrations];
 
 if (redirectDomains.length > 0) {
-	assert(domainRegistration.primaryDomain, "redirectDomains requires domains to be configured");
+	assert(canonicalDomain, "redirectDomains requires domains to be configured");
 	new DomainRedirect("hutch-redirect", {
 		redirectDomains,
-		targetDomain: domainRegistration.primaryDomain,
+		targetDomain: canonicalDomain,
 	});
 }
 
+const staticDomainEntries = staticDomains.map((staticDomain) => {
+	const parentIndex = domains.findIndex((d) => staticDomain.endsWith(`.${d}`));
+	const parentRegistration = parentIndex >= 0 ? allDomainRegistrations[parentIndex] : undefined;
+	return parentRegistration?.zoneId
+		? { domain: staticDomain, zoneId: parentRegistration.zoneId }
+		: { domain: staticDomain };
+});
+
 const staticAssets = new HutchStaticAssets("hutch-static", {
 	bucketName: staticBucketName,
-	staticDomains,
+	staticDomains: staticDomainEntries,
 	domains,
-	zoneId: domainRegistration.zoneId,
 });
 
 const eventBus = HutchEventBus.fromPlatformStack(config);
@@ -79,8 +107,8 @@ const api = new aws.apigatewayv2.Api("hutch-api-gateway", {
 	description: `Hutch API Gateway (${stage})`,
 });
 
-const appOrigin: pulumi.Input<string> = domainRegistration.domains.length > 0
-	? `https://${domainRegistration.primaryDomain!}`
+const appOrigin: pulumi.Input<string> = canonicalDomain
+	? `https://${canonicalDomain}`
 	: api.apiEndpoint;
 
 const lambda = new HutchLambda("hutch", {
@@ -119,12 +147,54 @@ const gateway = new HutchAPIGateway("hutch", {
 	api,
 	lambda: lambda,
 	stage,
-	domains,
-	zoneId: domainRegistration.zoneId,
-	certificateArn: domainRegistration.certificateArn,
+	domains: legacyPrimaryDomain ? [legacyPrimaryDomain] : [],
+	zoneId: legacyDomainRegistration.zoneId,
+	certificateArn: legacyDomainRegistration.certificateArn,
 });
 
-export const apiUrl = gateway.apiUrl;
+for (const [i, domain] of additionalDomains.entries()) {
+	const safeName = domain.replace(/\./g, "-");
+	const registration = additionalDomainRegistrations[i];
+	assert(registration.certificateArn, `${domain} registration must have a certificate`);
+	assert(registration.zoneId, `${domain} registration must have a zoneId`);
+
+	const customDomain = new aws.apigatewayv2.DomainName(
+		`hutch-apigw-domain-${safeName}`,
+		{
+			domainName: domain,
+			domainNameConfiguration: {
+				certificateArn: registration.certificateArn,
+				endpointType: "REGIONAL",
+				securityPolicy: "TLS_1_2",
+			},
+		},
+	);
+
+	new aws.apigatewayv2.ApiMapping(
+		`hutch-apigw-mapping-${safeName}`,
+		{
+			apiId: api.id,
+			domainName: customDomain.domainName,
+			stage: "$default",
+		},
+		{ dependsOn: [gateway] },
+	);
+
+	new aws.route53.Record(`hutch-apigw-record-${safeName}`, {
+		zoneId: registration.zoneId,
+		name: domain,
+		type: "A",
+		aliases: [
+			{
+				name: customDomain.domainNameConfiguration.apply((c) => c.targetDomainName),
+				zoneId: customDomain.domainNameConfiguration.apply((c) => c.hostedZoneId),
+				evaluateTargetHealth: false,
+			},
+		],
+	});
+}
+
+export const apiUrl: pulumi.Input<string> = canonicalDomain ? `https://${canonicalDomain}` : gateway.apiUrl;
 export const functionName = lambda.functionName;
 export const staticBaseUrl = staticAssets.baseUrl;
 export const _dependencies = [gateway.defaultRoute];

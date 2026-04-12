@@ -47,6 +47,9 @@ importers:
       js-base64:
         specifier: 3.7.8
         version: 3.7.8
+      js-yaml:
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.1.13
         version: 4.1.13
@@ -57,6 +60,9 @@ importers:
       '@packages/test-phase-runner':
         specifier: workspace:*
         version: link:../../src/packages/test-phase-runner
+      '@types/js-yaml':
+        specifier: 4.0.9
+        version: 4.0.9
       '@types/selenium-webdriver':
         specifier: 4.35.5
         version: 4.35.5
@@ -2420,6 +2426,9 @@ packages:
 
   '@types/jest@29.5.14':
     resolution: {integrity: sha512-ZN+4sdnLUbo8EVvVc2ao0GFW6oVrQRPn4K2lglySj7APvSrgzxHiNNK99us4WDMi57xxA2yggblIAMNhXOotLQ==}
+
+  '@types/js-yaml@4.0.9':
+    resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
 
   '@types/jsdom@21.1.7':
     resolution: {integrity: sha512-yOriVnggzrnQ3a9OKOCxaVuSug3w3/SbOj5i7VwXWZEyUNl3bLF9V3MfxGbZKuwqJOQyRfqXyROBB1CoZLFWzA==}
@@ -8392,6 +8401,8 @@ snapshots:
     dependencies:
       expect: 29.7.0
       pretty-format: 29.7.0
+
+  '@types/js-yaml@4.0.9': {}
 
   '@types/jsdom@21.1.7':
     dependencies:

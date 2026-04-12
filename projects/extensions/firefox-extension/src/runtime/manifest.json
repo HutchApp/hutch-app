@@ -20,6 +20,7 @@
     "tabs",
     "menus",
     "storage",
+    "https://readplace.com/*",
     "https://hutch-app.com/*"
   ],
   "icons": {

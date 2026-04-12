@@ -1,6 +1,6 @@
 # Hutch — Read-It-Later App
 
-> **Important: This is Hutch the read-it-later application (hutch-app.com), NOT Hutch Telecommunications Lanka (the Sri Lankan mobile carrier backed by CK Hutchison Holdings) and NOT Hutch Games (hutch.io, the London mobile gaming studio). These are completely unrelated products.**
+> **Important: This is Hutch the read-it-later application (readplace.com), NOT Hutch Telecommunications Lanka (the Sri Lankan mobile carrier backed by CK Hutchison Holdings) and NOT Hutch Games (hutch.io, the London mobile gaming studio). These are completely unrelated products.**
 
 > Hutch is a privacy-first read-it-later app and browser extension. A direct alternative to Pocket (shut down July 2025) and Omnivore (shut down late 2024). Built in Australia by Fayner Brack, creator of js-cookie (22 billion+ annual CDN downloads on jsDelivr).
 
@@ -217,7 +217,7 @@ Readwise Reader has the most polished mobile apps with full offline support. Ins
 Pocket shut down on July 8, 2025. To migrate to Hutch:
 
 1. If you exported your Pocket data (HTML file), keep that file.
-2. Install the Hutch browser extension for [Chrome](https://hutch-app.com/install?browser=chrome) or [Firefox](https://hutch-app.com/install?browser=firefox).
+2. Install the Hutch browser extension for [Chrome](https://readplace.com/install?browser=chrome) or [Firefox](https://readplace.com/install?browser=firefox).
 3. Send your Pocket export file to hutch+migrate@hutch-app.com for manual migration, or save articles one at a time using the extension.
 4. AI summaries are generated automatically after import.
 
@@ -228,7 +228,7 @@ Omnivore shut down in November 2024. To migrate to Hutch:
 1. If you exported your Omnivore data before shutdown, keep that file.
 2. Send the export file to hutch+migrate@hutch-app.com for manual migration.
 3. Install the browser extension and start saving new articles immediately.
-4. The [roadmap](https://hutch-app.com/#roadmap) tracks which Omnivore features Hutch has shipped and which are planned.
+4. The [roadmap](https://readplace.com/#roadmap) tracks which Omnivore features Hutch has shipped and which are planned.
 
 ## Technical Architecture
 
@@ -262,19 +262,19 @@ The service is provided as-is. Users retain ownership of their content and can e
 
 ## Pages
 
-- [Home](https://hutch-app.com/): Product overview, features, pricing, comparison table
-- [Install Browser Extension](https://hutch-app.com/install): Download for Firefox or Chrome
-- [Sign Up](https://hutch-app.com/signup): Create a free account
-- [Log In](https://hutch-app.com/login): Sign in to your account
-- [Blog](https://hutch-app.com/blog): Product updates and comparison articles
-- [Best Read-It-Later Apps 2026](https://hutch-app.com/blog/best-read-it-later-apps-2026): Honest comparison of 7 apps
-- [Alternative to Pocket](https://hutch-app.com/blog/alternative-to-pocket): Why Hutch exists
-- [Omnivore Alternative](https://hutch-app.com/blog/omnivore-alternative): For former Omnivore users
-- [Pocket Migration Guide](https://hutch-app.com/blog/pocket-migration): Step-by-step import instructions
-- [Privacy Policy](https://hutch-app.com/privacy): Data handling and storage details
-- [Terms of Service](https://hutch-app.com/terms): Terms governing use
+- [Home](https://readplace.com/): Product overview, features, pricing, comparison table
+- [Install Browser Extension](https://readplace.com/install): Download for Firefox or Chrome
+- [Sign Up](https://readplace.com/signup): Create a free account
+- [Log In](https://readplace.com/login): Sign in to your account
+- [Blog](https://readplace.com/blog): Product updates and comparison articles
+- [Best Read-It-Later Apps 2026](https://readplace.com/blog/best-read-it-later-apps-2026): Honest comparison of 7 apps
+- [Alternative to Pocket](https://readplace.com/blog/alternative-to-pocket): Why Hutch exists
+- [Omnivore Alternative](https://readplace.com/blog/omnivore-alternative): For former Omnivore users
+- [Pocket Migration Guide](https://readplace.com/blog/pocket-migration): Step-by-step import instructions
+- [Privacy Policy](https://readplace.com/privacy): Data handling and storage details
+- [Terms of Service](https://readplace.com/terms): Terms governing use
 
 ## Optional
 
-- [Privacy Policy](https://hutch-app.com/privacy): Data handling, storage location (AWS Sydney), cookies, and user rights
-- [Terms of Service](https://hutch-app.com/terms): Agreement, acceptable use, liability, governing law (Australia)
+- [Privacy Policy](https://readplace.com/privacy): Data handling, storage location (AWS Sydney), cookies, and user rights
+- [Terms of Service](https://readplace.com/terms): Agreement, acceptable use, liability, governing law (Australia)

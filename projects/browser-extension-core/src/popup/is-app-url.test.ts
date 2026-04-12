@@ -1,27 +1,51 @@
 import { isAppUrl } from "./is-app-url";
 
 describe("isAppUrl", () => {
-	it("returns true when tab is on the same origin as serverUrl", () => {
-		expect(isAppUrl({ tabUrl: "https://hutch-app.com/queue", serverUrl: "https://hutch-app.com" })).toBe(true);
+	it("returns true when the tab hostname is one of the app domains", () => {
+		expect(
+			isAppUrl({ tabUrl: "https://readplace.com/queue", appDomains: ["readplace.com", "hutch-app.com"] }),
+		).toBe(true);
 	});
 
-	it("returns true for localhost dev server", () => {
-		expect(isAppUrl({ tabUrl: "http://127.0.0.1:3000/queue", serverUrl: "http://127.0.0.1:3000" })).toBe(true);
+	it("returns true for any app domain in the list", () => {
+		expect(
+			isAppUrl({ tabUrl: "https://hutch-app.com/queue", appDomains: ["readplace.com", "hutch-app.com"] }),
+		).toBe(true);
 	});
 
-	it("returns false for a different domain", () => {
-		expect(isAppUrl({ tabUrl: "https://example.com/article", serverUrl: "https://hutch-app.com" })).toBe(false);
+	it("returns true for 127.0.0.1 on any port", () => {
+		expect(isAppUrl({ tabUrl: "http://127.0.0.1:3000/queue", appDomains: ["readplace.com"] })).toBe(true);
+		expect(isAppUrl({ tabUrl: "http://127.0.0.1:4000/queue", appDomains: ["readplace.com"] })).toBe(true);
 	});
 
-	it("returns false for different ports on localhost", () => {
-		expect(isAppUrl({ tabUrl: "http://127.0.0.1:4000/page", serverUrl: "http://127.0.0.1:3000" })).toBe(false);
+	it("returns true for localhost on any port", () => {
+		expect(isAppUrl({ tabUrl: "http://localhost:3000/queue", appDomains: ["readplace.com"] })).toBe(true);
+		expect(isAppUrl({ tabUrl: "http://localhost:8080/queue", appDomains: ["readplace.com"] })).toBe(true);
+	});
+
+	it("returns false for a domain not in the list", () => {
+		expect(
+			isAppUrl({ tabUrl: "https://example.com/article", appDomains: ["readplace.com", "hutch-app.com"] }),
+		).toBe(false);
 	});
 
 	it("returns false for invalid tab URL", () => {
-		expect(isAppUrl({ tabUrl: "not-a-url", serverUrl: "https://hutch-app.com" })).toBe(false);
+		expect(isAppUrl({ tabUrl: "not-a-url", appDomains: ["readplace.com"] })).toBe(false);
 	});
 
-	it("returns true for nested paths on the server", () => {
-		expect(isAppUrl({ tabUrl: "https://hutch-app.com/read/abc123", serverUrl: "https://hutch-app.com" })).toBe(true);
+	it("returns true for nested paths on an app domain", () => {
+		expect(
+			isAppUrl({ tabUrl: "https://readplace.com/read/abc123", appDomains: ["readplace.com"] }),
+		).toBe(true);
+	});
+
+	it("returns false for subdomains not explicitly listed", () => {
+		expect(
+			isAppUrl({ tabUrl: "https://static.readplace.com/favicon.ico", appDomains: ["readplace.com"] }),
+		).toBe(false);
+	});
+
+	it("returns false when appDomains is empty and URL is not localhost", () => {
+		expect(isAppUrl({ tabUrl: "https://readplace.com/", appDomains: [] })).toBe(false);
 	});
 });

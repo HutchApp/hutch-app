@@ -2,9 +2,9 @@ import { buildVerificationEmailHtml } from "./verification-email";
 
 describe("buildVerificationEmailHtml", () => {
 	it("includes the verify URL in the email link", () => {
-		const html = buildVerificationEmailHtml("https://hutch-app.com/verify?token=abc123");
+		const html = buildVerificationEmailHtml("https://readplace.com/verify?token=abc123");
 
-		expect(html).toContain('href="https://hutch-app.com/verify?token=abc123"');
+		expect(html).toContain('href="https://readplace.com/verify?token=abc123"');
 	});
 
 	it("escapes HTML entities in the URL to prevent injection", () => {
@@ -14,13 +14,13 @@ describe("buildVerificationEmailHtml", () => {
 	});
 
 	it("renders the email subject heading", () => {
-		const html = buildVerificationEmailHtml("https://hutch-app.com/verify");
+		const html = buildVerificationEmailHtml("https://readplace.com/verify");
 
 		expect(html).toContain("Verify your email");
 	});
 
 	it("produces a complete HTML document", () => {
-		const html = buildVerificationEmailHtml("https://hutch-app.com/verify");
+		const html = buildVerificationEmailHtml("https://readplace.com/verify");
 
 		expect(html).toContain("<!DOCTYPE html>");
 		expect(html).toContain("</html>");

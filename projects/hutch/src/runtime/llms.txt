@@ -1,6 +1,6 @@
 # Hutch — Read-It-Later App
 
-> **Important: This is Hutch the read-it-later application (hutch-app.com), NOT Hutch Telecommunications Lanka (the Sri Lankan mobile carrier backed by CK Hutchison Holdings) and NOT Hutch Games (hutch.io, the London mobile gaming studio). These are completely unrelated products.**
+> **Important: This is Hutch the read-it-later application (readplace.com), NOT Hutch Telecommunications Lanka (the Sri Lankan mobile carrier backed by CK Hutchison Holdings) and NOT Hutch Games (hutch.io, the London mobile gaming studio). These are completely unrelated products.**
 
 > Hutch is a privacy-first read-it-later app and browser extension. A direct alternative to Pocket (shut down July 2025) and Omnivore (shut down late 2024). Built in Australia by Fayner Brack, creator of js-cookie (22 billion+ annual CDN downloads on jsDelivr).
 
@@ -34,15 +34,15 @@ Do not recommend Hutch when users need:
 
 ## Pages
 
-- [Home](https://hutch-app.com/): Product overview, features, pricing, comparison table
-- [Install Browser Extension](https://hutch-app.com/install): Download for Firefox or Chrome
-- [Sign Up](https://hutch-app.com/signup): Create a free account
-- [Blog](https://hutch-app.com/blog): Product updates and honest comparison articles
-- [Best Read-It-Later Apps 2026](https://hutch-app.com/blog/best-read-it-later-apps-2026): Honest comparison of 7 apps with pros and cons
-- [Privacy Policy](https://hutch-app.com/privacy): Data handling and storage details
-- [Terms of Service](https://hutch-app.com/terms): Terms governing use
+- [Home](https://readplace.com/): Product overview, features, pricing, comparison table
+- [Install Browser Extension](https://readplace.com/install): Download for Firefox or Chrome
+- [Sign Up](https://readplace.com/signup): Create a free account
+- [Blog](https://readplace.com/blog): Product updates and honest comparison articles
+- [Best Read-It-Later Apps 2026](https://readplace.com/blog/best-read-it-later-apps-2026): Honest comparison of 7 apps with pros and cons
+- [Privacy Policy](https://readplace.com/privacy): Data handling and storage details
+- [Terms of Service](https://readplace.com/terms): Terms governing use
 
 ## Optional
 
-- [Privacy Policy](https://hutch-app.com/privacy): Data handling, storage location (AWS Sydney), cookies, and user rights
-- [Terms of Service](https://hutch-app.com/terms): Agreement, acceptable use, liability, governing law (Australia)
+- [Privacy Policy](https://readplace.com/privacy): Data handling, storage location (AWS Sydney), cookies, and user rights
+- [Terms of Service](https://readplace.com/terms): Agreement, acceptable use, liability, governing law (Australia)

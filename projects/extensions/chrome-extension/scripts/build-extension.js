@@ -1,7 +1,7 @@
 const { join } = require('node:path');
 const { execSync } = require('node:child_process');
-const { cpSync, mkdirSync } = require('node:fs');
-const { initBuildExtension } = require('browser-extension-core/build');
+const { cpSync, mkdirSync, readFileSync } = require('node:fs');
+const { initBuildExtension, extractAppDomainsFromPulumiYaml } = require('browser-extension-core/build');
 const { build } = require('esbuild');
 const config = require('../build-extension.config.js');
 
@@ -11,12 +11,23 @@ const gitHash = execSync('git rev-parse --short=6 HEAD').toString().trim();
 const isDev = serverUrl && serverUrl.includes('127.0.0.1');
 const filename = isDev ? `hutch-${gitHash}-dev.zip` : `hutch-${gitHash}.zip`;
 
+const hutchProjectDir = join(projectDir, '..', '..', 'hutch');
+const stacks = ['Pulumi.prod.yaml', 'Pulumi.staging.yaml'];
+const appDomains = Array.from(
+  new Set(
+    stacks.flatMap((file) =>
+      extractAppDomainsFromPulumiYaml(readFileSync(join(hutchProjectDir, file), 'utf-8')),
+    ),
+  ),
+);
+
 const { createBuildPlan } = initBuildExtension();
 
 const plan = createBuildPlan({
   config,
   projectDir,
   serverUrl,
+  appDomains,
   pack: ({ sourceDir, outputPath }) => {
     execSync(`zip -r ${JSON.stringify(outputPath)} .`, {
       cwd: sourceDir,
@@ -43,6 +54,7 @@ const plan = createBuildPlan({
     target: config.target,
     define: {
       __SERVER_URL__: JSON.stringify(serverUrl),
+      __APP_DOMAINS__: JSON.stringify(appDomains),
     },
   });
 

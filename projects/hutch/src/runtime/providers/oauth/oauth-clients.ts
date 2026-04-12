@@ -6,6 +6,7 @@ const REGISTERED_CLIENTS: Record<string, OAuthClient> = {
 		id: OAuthClientIdSchema.parse("hutch-firefox-extension"),
 		name: "Hutch Firefox Extension",
 		redirectUris: [
+			"https://readplace.com/oauth/callback",
 			"https://hutch-app.com/oauth/callback",
 			"http://127.0.0.1:3000/oauth/callback",
 		],
@@ -15,6 +16,7 @@ const REGISTERED_CLIENTS: Record<string, OAuthClient> = {
 		id: OAuthClientIdSchema.parse("hutch-chrome-extension"),
 		name: "Hutch Chrome Extension",
 		redirectUris: [
+			"https://readplace.com/oauth/callback",
 			"https://hutch-app.com/oauth/callback",
 			"http://127.0.0.1:3000/oauth/callback",
 			"http://127.0.0.1:3001/oauth/callback",

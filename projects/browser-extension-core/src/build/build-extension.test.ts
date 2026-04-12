@@ -5,18 +5,18 @@ describe("createBuildPlan", () => {
 	const projectDir = "/projects/firefox-extension";
 	const corePackageJsonPath = "/projects/browser-extension-core/package.json";
 
-	function createBuildPlan(input: { config: { target: string }; projectDir: string; serverUrl: string }) {
+	function createBuildPlan(input: { config: { target: string }; projectDir: string; serverUrl: string; appDomains?: readonly string[] }) {
 		const { createBuildPlan } = initBuildExtension({
 			resolveCorePackageJson: () => corePackageJsonPath,
 		});
-		return createBuildPlan(input);
+		return createBuildPlan({ ...input, appDomains: input.appDomains ?? [] });
 	}
 
 	it("sets esbuild target from config", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		expect(plan.esbuildOptions.target).toBe("firefox91");
@@ -26,7 +26,7 @@ describe("createBuildPlan", () => {
 		const plan = createBuildPlan({
 			config: { target: "chrome109" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		expect(plan.esbuildOptions.target).toBe("chrome109");
@@ -36,7 +36,7 @@ describe("createBuildPlan", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		expect(plan.esbuildOptions.entryPoints).toEqual([
@@ -50,7 +50,7 @@ describe("createBuildPlan", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		expect(plan.esbuildOptions.outdir).toBe(join(projectDir, "dist-extension-compiled"));
@@ -60,7 +60,7 @@ describe("createBuildPlan", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		expect(plan.esbuildOptions.format).toBe("iife");
@@ -71,7 +71,7 @@ describe("createBuildPlan", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		expect(plan.esbuildOptions.alias["browser-extension-core"]).toBe(
@@ -83,17 +83,28 @@ describe("createBuildPlan", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
-		expect(plan.esbuildOptions.define.__SERVER_URL__).toBe('"https://hutch-app.com"');
+		expect(plan.esbuildOptions.define.__SERVER_URL__).toBe('"https://readplace.com"');
+	});
+
+	it("defines __APP_DOMAINS__ as a JSON array of all configured domains", () => {
+		const plan = createBuildPlan({
+			config: { target: "firefox91" },
+			projectDir,
+			serverUrl: "https://readplace.com",
+			appDomains: ["readplace.com", "hutch-app.com"],
+		});
+
+		expect(plan.esbuildOptions.define.__APP_DOMAINS__).toBe('["readplace.com","hutch-app.com"]');
 	});
 
 	it("includes six output directories", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		const outDir = join(projectDir, "dist-extension-compiled");
@@ -111,7 +122,7 @@ describe("createBuildPlan", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
 		});
 
 		const srcDir = join(projectDir, "src");
@@ -137,6 +148,7 @@ describe("createBuildPlan", () => {
 				config: { target: "firefox91" },
 				projectDir,
 				serverUrl: "",
+				appDomains: [],
 			}),
 		).toThrow("HUTCH_SERVER_URL");
 	});
@@ -151,6 +163,7 @@ describe("createBuildPlan", () => {
 				config: { target: "firefox91" },
 				projectDir,
 				serverUrl: undefined,
+				appDomains: [],
 			}),
 		).toThrow("HUTCH_SERVER_URL");
 	});
@@ -163,6 +176,7 @@ describe("initBuildExtension defaults", () => {
 			config: { target: "firefox91" },
 			projectDir: "/test",
 			serverUrl: "https://example.com",
+			appDomains: [],
 		});
 
 		expect(plan.esbuildOptions.alias["browser-extension-core"]).toContain("browser-extension-core");
@@ -176,7 +190,7 @@ describe("plan.buildExtension", () => {
 		const writtenFiles: Map<string, string> = new Map();
 		let esbuildCallCount = 0;
 		let lastEsbuildOptions: { target: string } | null = null;
-		let manifestContent = JSON.stringify({ host_permissions: ["https://hutch-app.com/*"], permissions: ["activeTab"] });
+		let manifestContent = JSON.stringify({ host_permissions: ["https://readplace.com/*"], permissions: ["activeTab"] });
 
 		const deps = {
 			esbuild: async (options: { target: string }) => {
@@ -213,7 +227,8 @@ describe("plan.buildExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 		});
 
 		await plan.buildExtension();
@@ -228,7 +243,8 @@ describe("plan.buildExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "chrome109" },
 			projectDir: "/projects/chrome-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 		});
 
 		await plan.buildExtension();
@@ -243,7 +259,8 @@ describe("plan.buildExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 		});
 
 		await plan.buildExtension();
@@ -258,7 +275,8 @@ describe("plan.buildExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 		});
 
 		await plan.buildExtension();
@@ -272,12 +290,13 @@ describe("plan.buildExtension", () => {
 
 	it("adds localhost host_permissions for dev builds", async () => {
 		const { deps, writtenFiles, setManifestContent } = createInMemoryDeps();
-		setManifestContent(JSON.stringify({ host_permissions: ["https://hutch-app.com/*"] }));
+		setManifestContent(JSON.stringify({ host_permissions: ["https://readplace.com/*"] }));
 		const { createBuildPlan } = initBuildExtension(deps);
 		const plan = createBuildPlan({
 			config: { target: "chrome109" },
 			projectDir: "/projects/chrome-extension",
 			serverUrl: "http://127.0.0.1:3000",
+			appDomains: [],
 		});
 
 		await plan.buildExtension();
@@ -286,17 +305,18 @@ describe("plan.buildExtension", () => {
 		const written = writtenFiles.get(manifestPath);
 		expect(written).toBeDefined();
 		const manifest = JSON.parse(written!);
-		expect(manifest.host_permissions).toEqual(["https://hutch-app.com/*", "http://127.0.0.1:3000/*"]);
+		expect(manifest.host_permissions).toEqual(["https://readplace.com/*", "http://127.0.0.1:3000/*"]);
 	});
 
 	it("adds localhost to permissions for Firefox MV2 dev builds", async () => {
 		const { deps, writtenFiles, setManifestContent } = createInMemoryDeps();
-		setManifestContent(JSON.stringify({ permissions: ["activeTab", "tabs", "https://hutch-app.com/*"] }));
+		setManifestContent(JSON.stringify({ permissions: ["activeTab", "tabs", "https://readplace.com/*"] }));
 		const { createBuildPlan } = initBuildExtension(deps);
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
 			serverUrl: "http://127.0.0.1:3000",
+			appDomains: [],
 		});
 
 		await plan.buildExtension();
@@ -305,7 +325,7 @@ describe("plan.buildExtension", () => {
 		const written = writtenFiles.get(manifestPath);
 		expect(written).toBeDefined();
 		const manifest = JSON.parse(written!);
-		expect(manifest.permissions).toEqual(["activeTab", "tabs", "https://hutch-app.com/*", "http://127.0.0.1:3000/*"]);
+		expect(manifest.permissions).toEqual(["activeTab", "tabs", "https://readplace.com/*", "http://127.0.0.1:3000/*"]);
 	});
 
 	it("does not modify manifest for production builds", async () => {
@@ -314,7 +334,8 @@ describe("plan.buildExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "chrome109" },
 			projectDir: "/projects/chrome-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 		});
 
 		await plan.buildExtension();
@@ -349,7 +370,8 @@ describe("plan.packExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 			pack: (params) => {
 				packCalledWith = params;
 			},
@@ -370,7 +392,8 @@ describe("plan.packExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 			pack: () => {},
 		});
 
@@ -388,7 +411,8 @@ describe("plan.packExtension", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir: "/projects/firefox-extension",
-			serverUrl: "https://hutch-app.com",
+			serverUrl: "https://readplace.com",
+			appDomains: [],
 		});
 
 		expect(() => plan.packExtension("hutch-abc123.xpi")).toThrow();

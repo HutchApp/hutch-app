@@ -13,7 +13,7 @@ export function TermsPage(): Component {
 			title: "Terms of Service — Hutch",
 			description:
 				"Terms governing your use of the Hutch read-it-later service.",
-			canonicalUrl: "https://hutch-app.com/terms",
+			canonicalUrl: "https://readplace.com/terms",
 			robots: "noindex, follow",
 		},
 		styles: LEGAL_PAGE_STYLES,

@@ -11,6 +11,7 @@
     "offscreen"
   ],
   "host_permissions": [
+    "https://readplace.com/*",
     "https://hutch-app.com/*"
   ],
   "icons": {

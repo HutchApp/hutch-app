@@ -12,7 +12,7 @@ export function NotFoundPage(): Component {
 		seo: {
 			title: "Page Not Found — Hutch",
 			description: "The page you are looking for does not exist.",
-			canonicalUrl: "https://hutch-app.com",
+			canonicalUrl: "https://readplace.com",
 			robots: "noindex, nofollow",
 		},
 		styles: NOT_FOUND_STYLES,

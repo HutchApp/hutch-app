@@ -2,7 +2,7 @@
 
 A read-it-later app. Save articles, read them later. Built from a personal reading system I've been running for 10 years.
 
-→ [hutch-app.com](https://hutch-app.com) · [r/hutchapp](https://www.reddit.com/r/hutchapp)
+→ [readplace.com](https://readplace.com) · [r/hutchapp](https://www.reddit.com/r/hutchapp)
 
 ---
 

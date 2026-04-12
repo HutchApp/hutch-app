@@ -13,7 +13,7 @@ export function PrivacyPage(): Component {
 			title: "Privacy Policy — Hutch",
 			description:
 				"How Hutch handles your data. I collect only what's necessary to run the service and never sell your information.",
-			canonicalUrl: "https://hutch-app.com/privacy",
+			canonicalUrl: "https://readplace.com/privacy",
 			robots: "noindex, follow",
 		},
 		styles: LEGAL_PAGE_STYLES,

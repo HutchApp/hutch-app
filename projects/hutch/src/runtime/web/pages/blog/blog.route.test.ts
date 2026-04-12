@@ -54,7 +54,7 @@ describe("GET /blog", () => {
 
 		const canonical = doc.querySelector('link[rel="canonical"]');
 		expect(canonical?.getAttribute("href")).toBe(
-			"https://hutch-app.com/blog",
+			"https://readplace.com/blog",
 		);
 	});
 
@@ -143,7 +143,7 @@ describe("GET /blog/:slug", () => {
 
 		const canonical = doc.querySelector('link[rel="canonical"]');
 		expect(canonical?.getAttribute("href")).toBe(
-			`https://hutch-app.com/blog/${firstPost.slug}`,
+			`https://readplace.com/blog/${firstPost.slug}`,
 		);
 	});
 

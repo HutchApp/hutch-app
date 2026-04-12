@@ -10,7 +10,7 @@ import type {
 import { filterByUrl, paginateItems, avatarColor, relativeTime, isAppUrl } from "browser-extension-core";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 
-declare const __SERVER_URL__: string;
+declare const __APP_DOMAINS__: string[];
 
 const logger = HutchLogger.from(consoleLogger);
 
@@ -222,7 +222,7 @@ async function saveAndShowList() {
 	const activeTab = await getActiveTab();
 	if (!activeTab) throw new Error("No active tab or URL parameters");
 
-	if (isAppUrl({ tabUrl: activeTab.url, serverUrl: __SERVER_URL__ })) {
+	if (isAppUrl({ tabUrl: activeTab.url, appDomains: __APP_DOMAINS__ })) {
 		await showListView();
 		return;
 	}

@@ -36,7 +36,7 @@ That is seven steps, two apps, and zero record of what you read.
 
 ## What if it took one click?
 
-Here's the same scenario with [Hutch](https://hutch-app.com/install):
+Here's the same scenario with [Hutch](https://readplace.com/install):
 
 1. Click the browser extension.
 
@@ -66,4 +66,4 @@ Hutch does it in one.
 
 Save the article, get the summary, and keep both.
 
-[Try Hutch](https://hutch-app.com/install)
+[Try Hutch](https://readplace.com/install)

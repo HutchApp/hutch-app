@@ -10,8 +10,8 @@
       "default": "./dist/index.js"
     },
     "./build": {
-      "types": "./dist/build/build-extension.d.ts",
-      "default": "./dist/build/build-extension.js"
+      "types": "./dist/build/index.d.ts",
+      "default": "./dist/build/index.js"
     },
     "./e2e": {
       "types": "./dist/e2e/index.d.ts",
@@ -49,11 +49,13 @@
     "@packages/hutch-logger": "workspace:*",
     "esbuild": "0.25.4",
     "js-base64": "3.7.8",
+    "js-yaml": "4.1.1",
     "zod": "4.1.13"
   },
   "devDependencies": {
     "@packages/check-unused-css": "workspace:*",
     "@packages/test-phase-runner": "workspace:*",
+    "@types/js-yaml": "4.0.9",
     "@types/selenium-webdriver": "4.35.5",
     "c8": "10.1.3",
     "concurrently": "9.2.1",

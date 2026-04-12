@@ -19,7 +19,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 			title: "Hutch — Read-It-Later App | Save Articles, Read Them Later",
 			description:
 				"A read-it-later app and Pocket alternative. Save articles with one click, read them later. Privacy-first, built in Australia by the creator of js-cookie.",
-			canonicalUrl: "https://hutch-app.com",
+			canonicalUrl: "https://readplace.com",
 			ogType: "website",
 			ogImage: `${staticBaseUrl}/og-image-1200x630.png`,
 			ogImageType: "image/png",
@@ -33,11 +33,11 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					"@context": "https://schema.org",
 					"@type": "WebApplication",
-					"@id": "https://hutch-app.com/#app",
+					"@id": "https://readplace.com/#app",
 					additionalType: "https://schema.org/MobileApplication",
 					name: "Hutch",
 					alternateName: ["Hutch Read-It-Later App", "Hutch App"],
-					url: "https://hutch-app.com",
+					url: "https://readplace.com",
 					description:
 						"A privacy-first read-it-later app and Pocket alternative. Save articles with one click, read them later. NOT affiliated with Hutch Telecommunications Lanka or Hutch Games.",
 					applicationCategory: "ProductivityApplication",
@@ -88,10 +88,10 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					"@context": "https://schema.org",
 					"@type": "Organization",
-					"@id": "https://hutch-app.com/#organization",
+					"@id": "https://readplace.com/#organization",
 					name: "Hutch",
 					alternateName: ["Hutch App", "Hutch Read-It-Later", "hutch-app"],
-					url: "https://hutch-app.com",
+					url: "https://readplace.com",
 					logo: `${staticBaseUrl}/og-image-1200x630.png`,
 					sameAs: [
 						"https://github.com/HutchApp/hutch-app",
@@ -163,7 +163,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					"@type": "WebSite",
 					name: "Hutch — Read-It-Later App",
 					alternateName: "Hutch App",
-					url: "https://hutch-app.com",
+					url: "https://readplace.com",
 					description: "A privacy-first read-it-later app. NOT the Hutch telecom carrier or Hutch Games.",
 				},
 			],
