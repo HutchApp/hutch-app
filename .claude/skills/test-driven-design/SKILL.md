@@ -169,6 +169,34 @@ input.value = 'John';
 expect(input.value).toBe('John');
 ```
 
+#### Never Rely on `querySelector(...).toBeNull()` — Assert Existence First, Then Check State
+
+`expect(doc.querySelector(...)).toBeNull()` is a fragile way to prove "this element should be hidden" — a typo in the selector also returns `null`, so the assertion passes for the wrong reason. The same bug hides in `.not.toBeNull()`: a typo makes the assertion fail even when the production code is correct.
+
+Render the element unconditionally and encode visibility as **metadata on the element** (a state class or `data-*` attribute). Tests look the element up first, assert it exists, and then check the metadata. A selector typo now fails at `assert(element)` instead of silently passing a visibility assertion.
+
+```typescript
+// ❌ BAD - A typo in the selector makes this assertion trivially true
+expect(doc.querySelector("[data-test-onboarding]")).toBeNull();
+
+// ❌ BAD (subtler) - A typo makes the assertion fail for the wrong reason
+expect(doc.querySelector("[data-test-onbording]")).not.toBeNull(); // typo
+
+// ✅ GOOD - Assert the element exists, then check its state via metadata
+const container = doc.querySelector("[data-test-onboarding]");
+assert(container, "onboarding container must be rendered");
+expect(container.classList.contains("onboarding--hidden")).toBe(true);
+```
+
+This forces the production code to always render the element and toggle a state class (or `data-*` attribute) for visibility. Pair with CSS that makes the state explicit on both sides — don't rely on the element's default `display`:
+
+```css
+.onboarding--visible { display: block; } /* explicit default for a <section> */
+.onboarding--hidden  { display: none; }
+```
+
+The same pattern applies to any binary rendering decision (shown/hidden, enabled/disabled, expanded/collapsed): render unconditionally, toggle a class, assert on the class.
+
 ### Avoid Negative Test Assertions
 
 Negative assertions (`.not.toContain()`) become stale when code is refactored.
