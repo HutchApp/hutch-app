@@ -1,4 +1,4 @@
-import type { CrawlArticle } from "./article-parser.types";
+import type { CrawlArticle } from "./crawl-article.types";
 import { headerOrUndefined } from "./header-utils";
 
 const FETCH_TIMEOUT_MS = 5000;

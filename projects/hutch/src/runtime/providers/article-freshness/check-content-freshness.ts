@@ -1,6 +1,5 @@
+import type { CrawlArticle, CrawlArticleResult } from "@packages/crawl-article";
 import type {
-	CrawlArticle,
-	CrawlArticleResult,
 	ParseArticleResult,
 	ParseHtml,
 } from "../article-parser/article-parser.types";

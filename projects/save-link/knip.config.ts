@@ -7,8 +7,6 @@ export default {
 	...base,
 	entry: [
 		"**/*.main.ts",
-		// Real-network canary invoked by the nx `check-sources` target and the crawler-health workflow
-		"scripts/check-sources.js",
 	],
 	ignore: [
 		...(base.ignore ?? [])
@@ -18,6 +16,7 @@ export default {
 		// Workspace dependencies with subpath imports not detected by knip
 		"@packages/hutch-infra-components",
 		"@packages/article-resource-unique-id",
+		"@packages/crawl-article",
 		// Used only in infra code (Pulumi IaC, compiled separately)
 		"@pulumi/aws",
 	],

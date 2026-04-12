@@ -1,5 +1,5 @@
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { createHutchApp } from "../runtime/app";
-import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "../runtime/providers/article-parser/crawl-article";
 import { initReadabilityParser } from "../runtime/providers/article-parser/readability-parser";
 import { lambdaExpress } from "./lambda-express";
 

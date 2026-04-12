@@ -8,7 +8,7 @@ import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
-import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "./providers/article-parser/crawl-article";
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { parseHtml } from "./providers/article-parser/readability-parser";
 import { initRefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import {

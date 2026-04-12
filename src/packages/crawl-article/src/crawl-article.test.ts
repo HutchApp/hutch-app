@@ -1,24 +1,49 @@
+import assert from "node:assert";
 import { initCrawlArticle, DEFAULT_CRAWL_HEADERS } from "./crawl-article";
-import { createFakeResponse } from "./fake-response.testutil";
 
 const noopLogError = () => {};
 
-function initCrawl(overrides?: { fetch?: typeof fetch; logError?: (message: string, error?: Error) => void }) {
+function initCrawl(overrides?: {
+	fetch?: typeof fetch;
+	logError?: (message: string, error?: Error) => void;
+}) {
+	const defaultFetch: typeof fetch = async () =>
+		new Response("<html></html>", {
+			status: 200,
+			headers: { "content-type": "text/html" },
+		});
 	return initCrawlArticle({
-		fetch: overrides?.fetch ?? (async () => createFakeResponse({ text: "<html></html>" }) as Response),
+		fetch: overrides?.fetch ?? defaultFetch,
 		logError: overrides?.logError ?? noopLogError,
 		headers: { ...DEFAULT_CRAWL_HEADERS },
 	});
 }
 
+function plainHeaders(init: RequestInit | undefined): Record<string, string> {
+	assert(init !== undefined, "Expected fetch init to be captured");
+	const headers = init.headers;
+	assert(headers !== undefined, "Expected init.headers to be set");
+	assert(!(headers instanceof Headers), "Expected plain object headers, not Headers instance");
+	assert(!Array.isArray(headers), "Expected plain object headers, not array");
+	const result: Record<string, string> = {};
+	for (const [key, value] of Object.entries(headers)) {
+		assert(typeof value === "string", `Expected string header value for "${key}"`);
+		result[key] = value;
+	}
+	return result;
+}
+
 describe("initCrawlArticle — regular first-save fetch", () => {
 	it("returns status 'fetched' with html and captured headers on 200", async () => {
-		const fakeFetch = (async () =>
-			createFakeResponse({
-				text: "<html>Hello</html>",
-				etag: '"abc123"',
-				lastModified: "Wed, 21 Oct 2025 07:28:00 GMT",
-			})) as typeof fetch;
+		const fakeFetch: typeof fetch = async () =>
+			new Response("<html>Hello</html>", {
+				status: 200,
+				headers: {
+					"content-type": "text/html",
+					etag: '"abc123"',
+					"last-modified": "Wed, 21 Oct 2025 07:28:00 GMT",
+				},
+			});
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		const result = await crawlArticle({ url: "https://example.com" });
@@ -32,8 +57,11 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 	});
 
 	it("returns status 'fetched' with undefined etag/lastModified when origin sends none", async () => {
-		const fakeFetch = (async () =>
-			createFakeResponse({ text: "<html>Hello</html>" })) as typeof fetch;
+		const fakeFetch: typeof fetch = async () =>
+			new Response("<html>Hello</html>", {
+				status: 200,
+				headers: { "content-type": "text/html" },
+			});
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		const result = await crawlArticle({ url: "https://example.com" });
@@ -48,15 +76,18 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 
 	it("sends the browser-like default headers on the first fetch", async () => {
 		let capturedInit: RequestInit | undefined;
-		const fakeFetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+		const fakeFetch: typeof fetch = async (_input, init) => {
 			capturedInit = init;
-			return createFakeResponse({ text: "<html></html>" });
-		}) as typeof fetch;
+			return new Response("<html></html>", {
+				status: 200,
+				headers: { "content-type": "text/html" },
+			});
+		};
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		await crawlArticle({ url: "https://example.com" });
 
-		expect(capturedInit?.headers).toEqual({
+		expect(plainHeaders(capturedInit)).toEqual({
 			"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 			accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 			"accept-language": "en-US,en;q=0.9",
@@ -64,23 +95,25 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 	});
 
 	it("passes the URL through to the fetch function unchanged", async () => {
-		let capturedUrl: string | undefined;
-		const fakeFetch = (async (input: string | URL | Request) => {
-			capturedUrl = input as string;
-			return createFakeResponse({ text: "<html></html>" });
-		}) as typeof fetch;
+		let capturedInput: unknown;
+		const fakeFetch: typeof fetch = async (input) => {
+			capturedInput = input;
+			return new Response("<html></html>", {
+				status: 200,
+				headers: { "content-type": "text/html" },
+			});
+		};
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		await crawlArticle({ url: "https://example.com/article" });
 
-		expect(capturedUrl).toBe("https://example.com/article");
+		expect(capturedInput).toBe("https://example.com/article");
 	});
 });
 
 describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 	it("returns status 'not-modified' on 304 response", async () => {
-		const fakeFetch = (async () =>
-			createFakeResponse({ status: 304, ok: false })) as typeof fetch;
+		const fakeFetch: typeof fetch = async () => new Response(null, { status: 304 });
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		const result = await crawlArticle({
@@ -92,12 +125,15 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 	});
 
 	it("returns status 'fetched' with fresh headers on 200 conditional response", async () => {
-		const fakeFetch = (async () =>
-			createFakeResponse({
-				text: "<html>New content</html>",
-				etag: '"def456"',
-				lastModified: "Thu, 22 Oct 2025 10:00:00 GMT",
-			})) as typeof fetch;
+		const fakeFetch: typeof fetch = async () =>
+			new Response("<html>New content</html>", {
+				status: 200,
+				headers: {
+					"content-type": "text/html",
+					etag: '"def456"',
+					"last-modified": "Thu, 22 Oct 2025 10:00:00 GMT",
+				},
+			});
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		const result = await crawlArticle({
@@ -116,15 +152,15 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 
 	it("sends If-None-Match when etag is provided, alongside defaults", async () => {
 		let capturedInit: RequestInit | undefined;
-		const fakeFetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+		const fakeFetch: typeof fetch = async (_input, init) => {
 			capturedInit = init;
-			return createFakeResponse({ status: 304, ok: false });
-		}) as typeof fetch;
+			return new Response(null, { status: 304 });
+		};
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		await crawlArticle({ url: "https://example.com", etag: '"abc123"' });
 
-		const headers = capturedInit?.headers as Record<string, string>;
+		const headers = plainHeaders(capturedInit);
 		expect(headers["if-none-match"]).toBe('"abc123"');
 		expect(headers["user-agent"]).toBeTruthy();
 		expect(headers["accept-language"]).toBeTruthy();
@@ -132,10 +168,10 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 
 	it("sends If-Modified-Since when lastModified is provided, alongside defaults", async () => {
 		let capturedInit: RequestInit | undefined;
-		const fakeFetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+		const fakeFetch: typeof fetch = async (_input, init) => {
 			capturedInit = init;
-			return createFakeResponse({ status: 304, ok: false });
-		}) as typeof fetch;
+			return new Response(null, { status: 304 });
+		};
 		const crawlArticle = initCrawl({ fetch: fakeFetch });
 
 		await crawlArticle({
@@ -143,7 +179,7 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 			lastModified: "Wed, 21 Oct 2025 07:28:00 GMT",
 		});
 
-		const headers = capturedInit?.headers as Record<string, string>;
+		const headers = plainHeaders(capturedInit);
 		expect(headers["if-modified-since"]).toBe("Wed, 21 Oct 2025 07:28:00 GMT");
 		expect(headers["user-agent"]).toBeTruthy();
 	});
@@ -151,8 +187,7 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 
 describe("initCrawlArticle — failure modes", () => {
 	it("returns status 'failed' and logs HTTP status when response is not ok and not 304", async () => {
-		const fakeFetch = (async () =>
-			createFakeResponse({ status: 403, ok: false })) as typeof fetch;
+		const fakeFetch: typeof fetch = async () => new Response(null, { status: 403 });
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
 
@@ -163,8 +198,11 @@ describe("initCrawlArticle — failure modes", () => {
 	});
 
 	it("returns status 'failed' and logs content-type when not text/html", async () => {
-		const fakeFetch = (async () =>
-			createFakeResponse({ contentType: "application/json" })) as typeof fetch;
+		const fakeFetch: typeof fetch = async () =>
+			new Response("{}", {
+				status: 200,
+				headers: { "content-type": "application/json" },
+			});
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
 
@@ -175,10 +213,9 @@ describe("initCrawlArticle — failure modes", () => {
 	});
 
 	it("returns status 'failed' and logs empty content-type when header is missing", async () => {
-		const fakeFetch = (async () => {
-			const headers = new Headers();
-			return { status: 200, ok: true, headers, text: async () => "<html>Content</html>" } as Partial<Response>;
-		}) as typeof fetch;
+		// Buffer body bypasses Response's auto-assigned text/plain Content-Type, so headers.get returns null
+		const fakeFetch: typeof fetch = async () =>
+			new Response(Buffer.from("<html>Content</html>"), { status: 200, headers: {} });
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
 
@@ -190,7 +227,7 @@ describe("initCrawlArticle — failure modes", () => {
 
 	it("returns status 'failed' and logs with the Error instance when fetch throws", async () => {
 		const networkError = new Error("network down");
-		const fakeFetch = (async () => { throw networkError; }) as typeof fetch;
+		const fakeFetch: typeof fetch = async () => { throw networkError; };
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
 
@@ -201,7 +238,7 @@ describe("initCrawlArticle — failure modes", () => {
 	});
 
 	it("returns status 'failed' and logs undefined when fetch throws a non-Error value", async () => {
-		const fakeFetch = (async () => { throw "string error"; }) as typeof fetch;
+		const fakeFetch: typeof fetch = async () => { throw "string error"; };
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
 

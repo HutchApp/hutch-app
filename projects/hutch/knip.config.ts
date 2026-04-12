@@ -21,6 +21,7 @@ export default {
 		"@packages/check-unused-css",
 		// knip doesn't resolve workspace subpath for @packages/article-resource-unique-id
 		"@packages/article-resource-unique-id",
+		"@packages/crawl-article",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

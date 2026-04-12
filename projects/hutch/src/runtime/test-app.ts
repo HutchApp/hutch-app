@@ -1,8 +1,9 @@
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
+import type { CrawlArticle } from "@packages/crawl-article";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
-import type { CrawlArticle, ParseArticle } from "./providers/article-parser/article-parser.types";
+import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";

@@ -13,12 +13,12 @@
  * requests. The canary proves both still work. Per-source failures show
  * in the GitHub Actions UI as `✗ <label> > (first save | TTL refresh)`.
  *
- * Run via: pnpm nx run save-link:check-sources
+ * Run via: pnpm nx run @packages/crawl-article:check-sources
  * (depends on the `compile` target — see project.json)
  */
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { DEFAULT_CRAWL_HEADERS, initCrawlArticle } = require('../dist/article-parser/crawl-article');
+const { DEFAULT_CRAWL_HEADERS, initCrawlArticle } = require('../dist/crawl-article');
 const { HEALTH_SOURCES } = require('./health-sources');
 
 const MIN_HTML_BYTES = 2000;

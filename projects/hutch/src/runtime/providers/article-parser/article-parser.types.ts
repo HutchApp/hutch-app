@@ -14,14 +14,3 @@ export type ParseArticleResult =
 export type ParseArticle = (url: string) => Promise<ParseArticleResult>;
 
 export type ParseHtml = (params: { url: string; html: string }) => ParseArticleResult;
-
-export type CrawlArticleResult =
-	| { status: "fetched"; html: string; etag?: string; lastModified?: string }
-	| { status: "not-modified" }
-	| { status: "failed" };
-
-export type CrawlArticle = (params: {
-	url: string;
-	etag?: string;
-	lastModified?: string;
-}) => Promise<CrawlArticleResult>;

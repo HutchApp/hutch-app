@@ -1,0 +1,14 @@
+{
+  "name": "@packages/crawl-article",
+  "targets": {
+    "check": {
+      "command": "pnpm lint",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "check-sources": {
+      "dependsOn": ["compile"],
+      "command": "node --test --test-reporter=spec scripts/check-sources.js",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

@@ -1,7 +1,8 @@
 import assert from "node:assert";
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
-import type { CrawlArticle, ParseArticle, ParseArticleResult } from "./article-parser.types";
+import type { CrawlArticle } from "@packages/crawl-article";
+import type { ParseArticle, ParseArticleResult } from "./article-parser.types";
 import { extractThumbnail } from "./extract-thumbnail";
 import { resolveRelativeUrls } from "./resolve-relative-urls";
 

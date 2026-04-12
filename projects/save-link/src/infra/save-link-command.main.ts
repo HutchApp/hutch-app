@@ -5,7 +5,7 @@ import { consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { LinkSavedEvent } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
-import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "../article-parser/crawl-article";
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { initReadabilityParser } from "../article-parser/readability-parser";
 import { initS3PutObject } from "../save-link/s3-put-object";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";

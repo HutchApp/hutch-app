@@ -1,5 +1,5 @@
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { createHutchApp } from "./app";
-import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "./providers/article-parser/crawl-article";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import { PORT } from "./server";
 
