@@ -11,8 +11,8 @@
   display: block;
 }
 
-.onboarding--hidden {
-  display: none;
+.onboarding--complete {
+  display: block;
 }
 
 .onboarding__intro {
@@ -144,6 +144,73 @@
 
 .onboarding__step--complete .onboarding__actions {
   display: none;
+}
+
+.onboarding__success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0;
+  position: relative;
+}
+
+.onboarding__dismiss-form {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.onboarding__dismiss {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.onboarding__dismiss:hover {
+  color: var(--foreground);
+}
+
+.onboarding__success-check {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.onboarding__success-check::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  width: 12px;
+  height: 20px;
+  border: solid var(--primary-foreground);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.onboarding__success .onboarding__avatar {
+  margin-bottom: 12px;
+}
+
+.onboarding__success-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 4px;
+}
+
+.onboarding__success-message {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
 }
 
 @media (max-width: 600px) {

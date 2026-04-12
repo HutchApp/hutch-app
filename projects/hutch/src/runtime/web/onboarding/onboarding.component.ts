@@ -52,12 +52,14 @@ function allStepsComplete(ctx: OnboardingContext): boolean {
 
 export function OnboardingChecklist(ctx: OnboardingContext): string {
 	const steps = ONBOARDING_STEPS.map((step) => toStepDisplayModel(step, ctx));
-	const stateClass = allStepsComplete(ctx)
-		? "onboarding--hidden"
+	const allComplete = allStepsComplete(ctx);
+	const stateClass = allComplete
+		? "onboarding--complete"
 		: "onboarding--visible";
 	return render(ONBOARDING_TEMPLATE, {
 		steps,
 		stateClass,
+		allComplete,
 		founderAvatarUrl: FOUNDER_AVATAR_URL,
 	});
 }

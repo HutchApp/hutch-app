@@ -45,15 +45,14 @@ export function createOnboardingActions(
       if (!authProgress.accountCreated) return false
       if (!progress.installedExtension) return false
       if (progress.savedFirstArticle) return false
-      return (await page.locator('[data-test-onboarding].onboarding--hidden').count()) > 0
+      return (await page.locator('[data-test-onboarding].onboarding--complete').count()) > 0
     },
     execute: async (page) => {
       const container = page.locator('[data-test-onboarding]')
-      await expect(container).toHaveClass(/onboarding--hidden/)
-      await expect(container).toBeHidden()
+      await expect(container).toHaveClass(/onboarding--complete/)
 
-      const step = page.locator('[data-test-onboarding-step="save-first-article"]')
-      await expect(step).toHaveAttribute('data-test-onboarding-complete', 'true')
+      const success = page.locator('[data-test-onboarding-success]')
+      await expect(success).toBeVisible()
 
       progress.savedFirstArticle = true
     },

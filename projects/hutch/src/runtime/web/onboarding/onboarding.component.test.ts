@@ -135,12 +135,33 @@ describe("OnboardingChecklist", () => {
 		assert.equal(actions, null);
 	});
 
-	it("hides container when both steps are complete", () => {
+	it("shows success message with avatar when both steps are complete", () => {
 		const doc = parse(OnboardingChecklist(contextWith({ savedArticleCount: 1, extensionInstalled: true })));
 
 		const container = doc.querySelector("[data-test-onboarding]");
 		assert(container, "onboarding container must be rendered");
-		assert(container.classList.contains("onboarding--hidden"));
+		assert(container.classList.contains("onboarding--complete"));
 		assert(!container.classList.contains("onboarding--visible"));
+
+		const success = doc.querySelector("[data-test-onboarding-success]");
+		assert(success, "success section must be rendered");
+
+		const title = success.querySelector(".onboarding__success-title");
+		assert(title);
+		assert.equal(title.textContent, "You did it!");
+
+		const message = success.querySelector(".onboarding__success-message");
+		assert(message);
+		assert.match(message.textContent ?? "", /one of us/);
+
+		const avatar = success.querySelector(".onboarding__avatar");
+		assert(avatar, "founder avatar must be shown in success state");
+	});
+
+	it("does not show steps list when all complete", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ savedArticleCount: 1, extensionInstalled: true })));
+
+		const steps = doc.querySelector("[data-test-onboarding-steps]");
+		assert.equal(steps, null);
 	});
 });

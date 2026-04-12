@@ -1,4 +1,15 @@
 <section class="onboarding {{stateClass}}" data-test-onboarding>
+  {{#if allComplete}}
+  <div class="onboarding__success" data-test-onboarding-success>
+    <form method="POST" action="/queue/dismiss-onboarding" class="onboarding__dismiss-form">
+      <button type="submit" class="onboarding__dismiss" aria-label="Dismiss" data-test-onboarding-dismiss>&times;</button>
+    </form>
+    <div class="onboarding__success-check" aria-hidden="true"></div>
+    <img class="onboarding__avatar" src="{{founderAvatarUrl}}" alt="Fayner Brack" width="72" height="72">
+    <h2 class="onboarding__success-title">You did it!</h2>
+    <p class="onboarding__success-message">You're officially one of us. Welcome to Hutch.</p>
+  </div>
+  {{else}}
   <header class="onboarding__intro">
     <img class="onboarding__avatar" src="{{founderAvatarUrl}}" alt="Fayner Brack" width="72" height="72">
     <div class="onboarding__intro-text">
@@ -24,4 +35,5 @@
     </li>
     {{/each}}
   </ol>
+  {{/if}}
 </section>

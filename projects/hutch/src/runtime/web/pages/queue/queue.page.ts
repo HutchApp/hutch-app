@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { COOKIE_NAME, COOKIE_VALUE } from "@packages/onboarding-extension-signal";
+import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME, DISMISS_COOKIE_VALUE } from "@packages/onboarding-extension-signal";
 import type { Request, Response, Router } from "express";
 import express from "express";
 import { SaveArticleInputSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
@@ -163,10 +163,16 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const totalArticles = (await deps.findArticlesByUser({ userId, page: 1, pageSize: 1 })).total;
 		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles });
 		const extensionInstalled = req.cookies?.[COOKIE_NAME] === COOKIE_VALUE;
+		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === DISMISS_COOKIE_VALUE;
 		const ua = req.headers["user-agent"] ?? "";
 		const browser = ua.includes("Firefox/") ? "firefox" as const : ua.includes("Chrome/") ? "chrome" as const : "other" as const;
-		const html = QueuePage(vm, { emailVerified: req.emailVerified, saveUrl: filterUrl, extensionInstalled, browser }).to("text/html");
+		const html = QueuePage(vm, { emailVerified: req.emailVerified, saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
+	});
+
+	router.post("/dismiss-onboarding", (_req: Request, res: Response) => {
+		res.cookie(DISMISS_COOKIE_NAME, DISMISS_COOKIE_VALUE, { path: "/", maxAge: 365 * 24 * 60 * 60 * 1000, sameSite: "lax", httpOnly: true });
+		res.redirect(303, "/queue");
 	});
 
 	router.post("/", async (req: Request, res: Response) => {

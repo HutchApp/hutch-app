@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { COOKIE_NAME, COOKIE_VALUE } from "@packages/onboarding-extension-signal";
+import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME, DISMISS_COOKIE_VALUE } from "@packages/onboarding-extension-signal";
 import { createTestApp } from "../../../test-app";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
@@ -73,7 +73,7 @@ describe("Queue onboarding", () => {
 		expect(step.getAttribute("data-test-onboarding-complete")).toBe("true");
 	});
 
-	it("hides onboarding when both extension cookie and saved article are present", async () => {
+	it("shows success message when both extension cookie and saved article are present", async () => {
 		const { app, auth } = createTestApp();
 		const agent = await loginAgent(app, auth);
 
@@ -89,8 +89,11 @@ describe("Queue onboarding", () => {
 		const doc = new JSDOM(response.text).window.document;
 		const onboarding = doc.querySelector("[data-test-onboarding]");
 		assert(onboarding, "onboarding container must be rendered");
-		expect(onboarding.classList.contains("onboarding--hidden")).toBe(true);
-		expect(onboarding.classList.contains("onboarding--visible")).toBe(false);
+		expect(onboarding.classList.contains("onboarding--complete")).toBe(true);
+
+		const success = doc.querySelector("[data-test-onboarding-success]");
+		assert(success, "success section must be rendered");
+		expect(success.querySelector(".onboarding__success-title")?.textContent).toBe("You did it!");
 	});
 
 	it("shows 'Install the Chrome browser extension' for Chrome user-agent", async () => {
@@ -135,7 +138,7 @@ describe("Queue onboarding", () => {
 		expect(title.textContent).toBe("Install a browser extension");
 	});
 
-	it("marks save-first-article complete even when viewing an empty filter tab", async () => {
+	it("shows success state even when viewing an empty filter tab", async () => {
 		const { app, auth } = createTestApp();
 		const agent = await loginAgent(app, auth);
 
@@ -151,10 +154,36 @@ describe("Queue onboarding", () => {
 		const doc = new JSDOM(response.text).window.document;
 		const onboarding = doc.querySelector("[data-test-onboarding]");
 		assert(onboarding, "onboarding container must still be rendered");
-		expect(onboarding.classList.contains("onboarding--hidden")).toBe(true);
+		expect(onboarding.classList.contains("onboarding--complete")).toBe(true);
 
-		const saveFirstStep = onboarding.querySelector('[data-test-onboarding-step="save-first-article"]');
-		assert(saveFirstStep, "save-first-article step must be rendered");
-		expect(saveFirstStep.getAttribute("data-test-onboarding-complete")).toBe("true");
+		const success = doc.querySelector("[data-test-onboarding-success]");
+		assert(success, "success section must be rendered");
+	});
+
+	it("does not render onboarding when dismiss cookie is present", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		const response = await agent
+			.get("/queue")
+			.set("Cookie", `${DISMISS_COOKIE_NAME}=${DISMISS_COOKIE_VALUE}`);
+
+		const doc = new JSDOM(response.text).window.document;
+		const onboarding = doc.querySelector("[data-test-onboarding]");
+		expect(onboarding).toBeNull();
+	});
+
+	it("POST /queue/dismiss-onboarding sets dismiss cookie and redirects to /queue", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		const response = await agent.post("/queue/dismiss-onboarding");
+
+		expect(response.status).toBe(303);
+		expect(response.headers.location).toBe("/queue");
+		const cookies = response.headers["set-cookie"];
+		assert(cookies, "set-cookie header must be present");
+		const cookieStr = Array.isArray(cookies) ? cookies.join("; ") : cookies;
+		expect(cookieStr).toContain(`${DISMISS_COOKIE_NAME}=${DISMISS_COOKIE_VALUE}`);
 	});
 });
