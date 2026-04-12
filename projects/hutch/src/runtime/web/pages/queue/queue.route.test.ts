@@ -363,7 +363,7 @@ describe("Queue routes", () => {
 			const actionForms = doc.querySelectorAll(".queue-article__action-form");
 
 			expect(actionForms.length).toBe(2);
-			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Read");
+			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Done");
 			expect(doc.querySelector("[data-test-action='delete']")?.textContent).toBe("×");
 		});
 
@@ -935,7 +935,7 @@ describe("Queue routes", () => {
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
 			const unreadTab = doc.querySelector('[data-test-filter="unread"]');
-			expect(unreadTab?.textContent).toBe("Unread (2)");
+			expect(unreadTab?.textContent).toBe("To read (2)");
 		});
 
 		it("should show unread count when viewing read tab", async () => {
@@ -954,7 +954,7 @@ describe("Queue routes", () => {
 			const readResponse = await agent.get("/queue?status=read");
 			const readDoc = new JSDOM(readResponse.text).window.document;
 			const unreadTab = readDoc.querySelector('[data-test-filter="unread"]');
-			expect(unreadTab?.textContent).toBe("Unread (2)");
+			expect(unreadTab?.textContent).toBe("To read (2)");
 		});
 
 		it("should not show count on the Read tab", async () => {
@@ -964,7 +964,7 @@ describe("Queue routes", () => {
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
 			const readTab = doc.querySelector('[data-test-filter="read"]');
-			expect(readTab?.textContent).toBe("Read");
+			expect(readTab?.textContent).toBe("Done");
 		});
 
 		it("should show zero unread count on empty queue", async () => {
@@ -974,7 +974,7 @@ describe("Queue routes", () => {
 			const response = await agent.get("/queue");
 			const doc = new JSDOM(response.text).window.document;
 			const unreadTab = doc.querySelector('[data-test-filter="unread"]');
-			expect(unreadTab?.textContent).toBe("Unread (0)");
+			expect(unreadTab?.textContent).toBe("To read (0)");
 		});
 	});
 

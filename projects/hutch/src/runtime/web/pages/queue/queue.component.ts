@@ -70,7 +70,7 @@ function filterLinkClass(isActive: boolean): string {
 }
 
 export function formatUnreadLabel(count: number): string {
-	return count > 99 ? "Unread (99+)" : `Unread (${count})`;
+	return count > 99 ? "To read (99+)" : `To read (${count})`;
 }
 
 function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: boolean; browser: BrowserName; onboardingDismissed: boolean }): QueueDisplayModel {
