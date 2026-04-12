@@ -63,34 +63,40 @@
     </section>
 
     <section id="what-works" class="home-features" data-test-section="core-features" aria-label="Current features">
-      <div class="section-header">
-        <p class="section-header__label">What Works Today</p>
-        <h2 class="section-header__title">Save articles for later — here's what works today.</h2>
-        <p class="section-header__subtitle">These features are shipped and working right now. Install the extension and try them.</p>
-      </div>
-      <div class="home-features__grid">
-        {{#each coreFeatures}}
-        <div class="feature-card" data-test-feature="{{name}}">
-          <h3 class="feature-card__name">{{name}}</h3>
-          <p class="feature-card__description">{{description}}</p>
+      <div class="home-features__container">
+        <h2 class="home-features__heading">What works today.</h2>
+        <p class="home-features__lead">These features are shipped and working right now. Install the extension and try them.</p>
+        <hr class="home-features__rule">
+        <div class="home-features__featured">
+          {{#each featuredFeatures}}
+          <div class="feature-card feature-card--featured" data-test-feature="{{name}}">
+            <h3 class="feature-card__name">{{name}}</h3>
+            <p class="feature-card__description">{{description}}</p>
+          </div>
+          {{/each}}
         </div>
-        {{/each}}
+        <div class="home-features__compact">
+          {{#each compactFeatures}}
+          <div class="feature-card feature-card--compact" data-test-feature="{{name}}">
+            <h3 class="feature-card__name">{{name}}</h3>
+            <p class="feature-card__description">{{description}}</p>
+          </div>
+          {{/each}}
+        </div>
       </div>
     </section>
 
-    <section id="roadmap" class="home-features" data-test-section="roadmap" aria-label="Planned features">
-      <div class="section-header">
-        <p class="section-header__label">What's Coming</p>
-        <h2 class="section-header__title">Built in public. One feature at a time.</h2>
-        <p class="section-header__subtitle">Here's what I'm planning to build next.</p>
-      </div>
-      <div class="home-features__grid">
-        {{#each plannedFeatures}}
-        <div class="feature-card" data-test-feature="{{name}}">
-          <h3 class="feature-card__name">{{name}}</h3>
-          <p class="feature-card__description">{{description}}</p>
-        </div>
-        {{/each}}
+    <section id="roadmap" class="home-roadmap" data-test-section="roadmap" aria-label="Planned features">
+      <div class="home-roadmap__container">
+        <h2 class="home-roadmap__heading">What I'm building next.</h2>
+        <ol class="home-roadmap__list">
+          {{#each plannedFeatures}}
+          <li class="feature-card feature-card--roadmap" data-test-feature="{{name}}">
+            <strong class="feature-card__name">{{name}}</strong>
+            <span class="feature-card__description">{{description}}</span>
+          </li>
+          {{/each}}
+        </ol>
       </div>
     </section>
 

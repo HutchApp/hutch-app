@@ -178,31 +178,28 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
 			progressPercent,
 			allocationExhausted,
-			coreFeatures: [
-				{
-					name: "Firefox Extension",
-					description:
-						"Save any page with one click, Ctrl/Cmd+D, or right-click.",
-				},
-				{
-					name: "Chrome Extension",
-					description:
-						"Same one-click saving, also available in Google Chrome.",
-				},
+			featuredFeatures: [
 				{
 					name: "Reader View",
 					description:
-						"Clean article view powered by Mozilla Firefox's reader view. No distractions.",
+						"Clean article view powered by Mozilla Firefox's Readability engine — the same library Firefox uses. No ads, no sidebars, no pop-ups.",
 				},
 				{
-					name: "Web App",
+					name: "Browser Extensions",
 					description:
-						"Manage and organise your reading list from any browser.",
+						"Save any page with one click, Ctrl/Cmd+D, or right-click. Available for both Firefox and Chrome.",
 				},
 				{
 					name: "TL;DR Summaries",
 					description:
-						"A TL;DR per article outlining the most important points.",
+						"Every saved article gets a TL;DR outlining the most important points. Built on the same AI that powers the reading experience.",
+				},
+			],
+			compactFeatures: [
+				{
+					name: "Web App",
+					description:
+						"Manage and organise your reading list from any browser.",
 				},
 				{
 					name: "Auto Dark Mode",
@@ -223,6 +220,11 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					name: "Privacy First",
 					description:
 						"Hosted in Sydney. Australian Privacy Act compliant. No tracking, no ads.",
+				},
+				{
+					name: "Import Your Data",
+					description:
+						"Import from Pocket, Instapaper, and Omnivore exports.",
 				},
 			],
 			plannedFeatures: [

@@ -100,7 +100,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const coreSection = doc.querySelector('[data-test-section="core-features"]');
-		const features = coreSection?.querySelectorAll(".feature-card");
+		const features = coreSection?.querySelectorAll("[data-test-feature]");
 		expect(features?.length).toBe(9);
 	});
 
