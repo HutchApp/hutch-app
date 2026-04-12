@@ -6,6 +6,7 @@ config:
   hutch:platformStack: organization/platform/prod
   hutch:domains:
     - hutch-app.com
+    - readplace.com
   hutch:redirectDomains:
     - savearticles.app
     - savearticle.app
@@ -13,6 +14,7 @@ config:
   hutch:deletionProtection: true
   hutch:staticDomains:
     - static.hutch-app.com
+    - static.readplace.com
   hutch:staticBucketName: hutch-static-assets-prod
   hutch:dynamodbArticlesTable: hutch-articles-cda0a08
   hutch:dynamodbUserArticlesTable: hutch-user-articles-8226beb
