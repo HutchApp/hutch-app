@@ -2,8 +2,7 @@ import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
-import type { FetchHtml } from "./providers/article-parser/readability-parser";
-import type { ParseArticle } from "./providers/article-parser/article-parser.types";
+import type { CrawlArticle, ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
@@ -24,15 +23,18 @@ import { createApp } from "./server";
 const { publishUpdateFetchTimestamp: defaultPublishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: noopLogger });
 const noopCheckFreshness: RefreshArticleIfStale = async () => ({ action: "new" });
 
-const stubFetchHtml: FetchHtml = async (url) => {
+const stubCrawlArticle: CrawlArticle = async ({ url }) => {
 	const hostname = new URL(url).hostname;
-	return `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content saved from ${hostname}.</p></article></body></html>`;
+	return {
+		status: "fetched",
+		html: `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content saved from ${hostname}.</p></article></body></html>`,
+	};
 };
 
 export function createTestApp(options?: {
 	articleStore?: ReturnType<typeof initInMemoryArticleStore>;
 	parseArticle?: ParseArticle;
-	fetchHtml?: FetchHtml;
+	crawlArticle?: CrawlArticle;
 	publishLinkSaved?: PublishLinkSaved;
 	publishUpdateFetchTimestamp?: PublishUpdateFetchTimestamp;
 	findCachedSummary?: FindCachedSummary;
@@ -42,8 +44,8 @@ export function createTestApp(options?: {
 }) {
 	const auth = initInMemoryAuth();
 	const articleStore = options?.articleStore ?? initInMemoryArticleStore();
-	const fetchHtml = options?.fetchHtml ?? stubFetchHtml;
-	const parser = initReadabilityParser({ fetchHtml });
+	const crawlArticle = options?.crawlArticle ?? stubCrawlArticle;
+	const parser = initReadabilityParser({ crawlArticle });
 	const appOrigin = options?.appOrigin ?? "http://localhost:3000";
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin });
 	const email = initInMemoryEmail();

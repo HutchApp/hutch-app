@@ -311,10 +311,12 @@ describe("Queue routes", () => {
 
 	describe("Article URL link", () => {
 		it("should render site name as a link to the original URL", async () => {
-			const fetchHtml = async (_url: string) =>
-				`<html><head><meta property="og:site_name" content="Example Blog"></head><body><article><h1>Post</h1><p>Content here.</p></article></body></html>`;
+			const crawlArticle = async () => ({
+				status: "fetched" as const,
+				html: `<html><head><meta property="og:site_name" content="Example Blog"></head><body><article><h1>Post</h1><p>Content here.</p></article></body></html>`,
+			});
 
-			const { app, auth } = createTestApp({ fetchHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -387,10 +389,12 @@ describe("Queue routes", () => {
 
 	describe("Thumbnail", () => {
 		it("should render thumbnail when article has og:image", async () => {
-			const fetchHtml = async (_url: string) =>
-				`<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`;
+			const crawlArticle = async () => ({
+				status: "fetched" as const,
+				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+			});
 
-			const { app, auth } = createTestApp({ fetchHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -415,8 +419,8 @@ describe("Queue routes", () => {
 				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
 			</article></body></html>`;
 
-			const fetchHtml = async (_url: string) => articleHtml;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -456,8 +460,8 @@ describe("Queue routes", () => {
 				<p>A second paragraph with more words for the parser to work with properly.</p>
 			</article></body></html>`;
 
-			const fetchHtml = async (_url: string) => articleHtml;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -490,8 +494,8 @@ describe("Queue routes", () => {
 				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
 			</article></body></html>`;
 
-			const fetchHtml = async (_url: string) => articleHtml;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -542,8 +546,8 @@ describe("Queue routes", () => {
 				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
 			</article></body></html>`;
 
-			const fetchHtml = async (_url: string) => articleHtml;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -565,9 +569,9 @@ describe("Queue routes", () => {
 				<p>This is archived content that has been saved for later reading and will be summarized.</p>
 			</article></body></html>`;
 
-			const fetchHtml = async (_url: string) => articleHtml;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
 			const findCachedSummary = async () => "Key points from the article distilled into a brief summary.";
-			const { app, auth } = createTestApp({ fetchHtml, findCachedSummary });
+			const { app, auth } = createTestApp({ crawlArticle, findCachedSummary });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -595,8 +599,8 @@ describe("Queue routes", () => {
 				<p>Content without a summary generated.</p>
 			</article></body></html>`;
 
-			const fetchHtml = async (_url: string) => articleHtml;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -616,8 +620,8 @@ describe("Queue routes", () => {
 		});
 
 		it("should show no-content fallback when article has no extracted content", async () => {
-			const fetchHtml = async (_url: string) => "<html><body></body></html>";
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "fetched" as const, html: "<html><body></body></html>" });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -639,8 +643,8 @@ describe("Queue routes", () => {
 
 	describe("Parse failure", () => {
 		it("should save article without content when fetch fails", async () => {
-			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "failed" as const });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent
@@ -653,8 +657,8 @@ describe("Queue routes", () => {
 		});
 
 		it("should show fallback title from hostname when fetch fails", async () => {
-			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "failed" as const });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -668,8 +672,8 @@ describe("Queue routes", () => {
 		});
 
 		it("should show no-content template on read page when fetch fails", async () => {
-			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "failed" as const });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -689,8 +693,8 @@ describe("Queue routes", () => {
 		});
 
 		it("should link article title to reader view when article has no content", async () => {
-			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
-			const { app, auth } = createTestApp({ fetchHtml });
+			const crawlArticle = async () => ({ status: "failed" as const });
+			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -705,9 +709,9 @@ describe("Queue routes", () => {
 		});
 
 		it("should log error when article parsing fails", async () => {
-			const fetchHtml = async (_url: string): Promise<undefined> => undefined;
+			const crawlArticle = async () => ({ status: "failed" as const });
 			const logError = jest.fn();
-			const { app, auth } = createTestApp({ fetchHtml, logError });
+			const { app, auth } = createTestApp({ crawlArticle, logError });
 			const agent = await loginAgent(app, auth);
 
 			await agent

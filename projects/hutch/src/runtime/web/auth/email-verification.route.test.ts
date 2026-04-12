@@ -6,16 +6,19 @@ import { initInMemoryAuth } from "../../providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
-import type { FetchHtml } from "../../providers/article-parser/readability-parser";
+import type { CrawlArticle } from "../../providers/article-parser/article-parser.types";
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "../../providers/password-reset/in-memory-password-reset";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
 
-const stubFetchHtml: FetchHtml = async (url) => {
+const stubCrawlArticle: CrawlArticle = async ({ url }) => {
 	const hostname = new URL(url).hostname;
-	return `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content</p></article></body></html>`;
+	return {
+		status: "fetched",
+		html: `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content</p></article></body></html>`,
+	};
 };
 
 describe("Email verification", () => {
@@ -40,7 +43,7 @@ describe("Email verification", () => {
 		it("should complete signup even when email sending fails", async () => {
 			const auth = initInMemoryAuth();
 			const articleStore = initInMemoryArticleStore();
-			const parser = initReadabilityParser({ fetchHtml: stubFetchHtml });
+			const parser = initReadabilityParser({ crawlArticle: stubCrawlArticle });
 			const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 			const emailVerification = initInMemoryEmailVerification();
 			const passwordReset = initInMemoryPasswordReset();

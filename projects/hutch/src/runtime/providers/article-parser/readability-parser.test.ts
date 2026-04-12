@@ -19,8 +19,8 @@ const ARTICLE_HTML = `
 
 describe("initReadabilityParser", () => {
 	it("should extract article title from HTML", async () => {
-		const fetchHtml = async (_url: string) => ARTICLE_HTML;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: ARTICLE_HTML });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");
 
@@ -31,8 +31,8 @@ describe("initReadabilityParser", () => {
 	});
 
 	it("should extract article content as HTML", async () => {
-		const fetchHtml = async (_url: string) => ARTICLE_HTML;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: ARTICLE_HTML });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");
 
@@ -43,8 +43,8 @@ describe("initReadabilityParser", () => {
 	});
 
 	it("should calculate word count from extracted text", async () => {
-		const fetchHtml = async (_url: string) => ARTICLE_HTML;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: ARTICLE_HTML });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");
 
@@ -55,8 +55,8 @@ describe("initReadabilityParser", () => {
 	});
 
 	it("should extract thumbnail from og:image", async () => {
-		const fetchHtml = async (_url: string) => ARTICLE_HTML;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: ARTICLE_HTML });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");
 
@@ -67,8 +67,8 @@ describe("initReadabilityParser", () => {
 	});
 
 	it("should return error for invalid URL", async () => {
-		const fetchHtml = async (_url: string) => ARTICLE_HTML;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: ARTICLE_HTML });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("not-a-url");
 
@@ -78,9 +78,21 @@ describe("initReadabilityParser", () => {
 		}
 	});
 
-	it("should return error when fetch fails", async () => {
-		const fetchHtml = async (_url: string) => undefined;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+	it("should return error when crawl fails", async () => {
+		const crawlArticle = async () => ({ status: "failed" as const });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+
+		const result = await parseArticle("https://example.com/article");
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.reason).toBe("Could not fetch article");
+		}
+	});
+
+	it("should return error when crawl returns not-modified (unexpected on first fetch)", async () => {
+		const crawlArticle = async () => ({ status: "not-modified" as const });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");
 
@@ -91,8 +103,8 @@ describe("initReadabilityParser", () => {
 	});
 
 	it("should fall back to hostname when readability cannot parse", async () => {
-		const fetchHtml = async (_url: string) => "<html><body></body></html>";
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: "<html><body></body></html>" });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");
 
@@ -111,8 +123,8 @@ describe("initReadabilityParser", () => {
 			<p>Enough content to be parsed by readability as a real article with several words in this paragraph.</p>
 			<p>Another paragraph for good measure with additional text.</p>
 		</article></body></html>`;
-		const fetchHtml = async (_url: string) => htmlWithoutSiteName;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: htmlWithoutSiteName });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://blog.example.com/post");
 
@@ -129,8 +141,8 @@ describe("initReadabilityParser", () => {
 			<p>Enough content to be parsed by readability as a real article with several words in this paragraph.</p>
 			<p>Another paragraph for good measure with additional text to satisfy the parser minimum.</p>
 		</article></body></html>`;
-		const fetchHtml = async (_url: string) => htmlWithEmptyTitle;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: htmlWithEmptyTitle });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://blog.example.com/post");
 
@@ -141,8 +153,8 @@ describe("initReadabilityParser", () => {
 	});
 
 	it("should return content string from parsed article", async () => {
-		const fetchHtml = async (_url: string) => ARTICLE_HTML;
-		const { parseArticle } = initReadabilityParser({ fetchHtml });
+		const crawlArticle = async () => ({ status: "fetched" as const, html: ARTICLE_HTML });
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");
 

@@ -8,8 +8,7 @@ import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
-import { initFetchHtmlWithHeaders } from "./providers/article-parser/fetch-html";
-import { initFetchConditional } from "./providers/article-parser/fetch-conditional";
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "./providers/article-parser/crawl-article";
 import { parseHtml } from "./providers/article-parser/readability-parser";
 import { initRefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import {
@@ -43,8 +42,7 @@ function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
-	const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch, logError });
-	const fetchConditional = initFetchConditional({ fetch: globalThis.fetch });
+	const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } });
 	const staleTtlMs = 86400000;
 
 	if (persistence === "prod") {
@@ -80,13 +78,10 @@ function initProviders() {
 		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
-			fetchConditional,
-			fetchHtmlWithHeaders,
+			crawlArticle,
 			parseHtml,
 			publishRefreshArticleContent,
 			publishUpdateFetchTimestamp,
-
-			logError,
 			now: () => new Date(),
 			staleTtlMs,
 		});
@@ -116,13 +111,10 @@ function initProviders() {
 	const stubFindCachedSummary = async (_url: string) => "";
 	const { refreshArticleIfStale } = initRefreshArticleIfStale({
 		findArticleFreshness: articleStore.findArticleFreshness,
-		fetchConditional,
-		fetchHtmlWithHeaders,
+		crawlArticle,
 		parseHtml,
 		publishRefreshArticleContent,
 		publishUpdateFetchTimestamp,
-
-		logError,
 		now: () => new Date(),
 		staleTtlMs,
 	});

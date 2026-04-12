@@ -23,11 +23,16 @@ describe("Queue freshness integration", () => {
 
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
-			fetchConditional: async () => ({ changed: false }),
-			fetchHtmlWithHeaders: async () => ({
-				html: "<html><head><title>Updated</title></head><body><article><p>New content</p></article></body></html>",
-				etag: '"fresh-etag"',
-			}),
+			crawlArticle: async (params) => {
+				if (!params.etag && !params.lastModified) {
+					return {
+						status: "fetched",
+						html: "<html><head><title>Updated</title></head><body><article><p>New content</p></article></body></html>",
+						etag: '"fresh-etag"',
+					};
+				}
+				return { status: "not-modified" };
+			},
 			parseHtml: () => ({
 				ok: true as const,
 				article: {
@@ -40,7 +45,6 @@ describe("Queue freshness integration", () => {
 			}),
 			publishRefreshArticleContent: async (p) => { refreshPublished.push(p); },
 			publishUpdateFetchTimestamp: async (p) => { timestampPublished.push(p); },
-			logError: () => {},
 			now: () => new Date(),
 			staleTtlMs: 0,
 		});

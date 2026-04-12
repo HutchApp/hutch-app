@@ -13,10 +13,13 @@ export type ParseArticleResult =
 
 export type ParseArticle = (url: string) => Promise<ParseArticleResult>;
 
-export interface FetchHtmlResult {
-	html: string;
+export type CrawlArticleResult =
+	| { status: "fetched"; html: string; etag?: string; lastModified?: string }
+	| { status: "not-modified" }
+	| { status: "failed" };
+
+export type CrawlArticle = (params: {
+	url: string;
 	etag?: string;
 	lastModified?: string;
-}
-
-export type FetchHtmlWithHeaders = (url: string) => Promise<FetchHtmlResult | undefined>;
+}) => Promise<CrawlArticleResult>;

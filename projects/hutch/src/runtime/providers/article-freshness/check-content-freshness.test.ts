@@ -3,8 +3,7 @@ import { initRefreshArticleIfStale } from "./check-content-freshness";
 function createDeps(overrides?: Record<string, unknown>) {
 	return {
 		findArticleFreshness: async (_url: string) => null,
-		fetchConditional: async () => ({ changed: false as const }),
-		fetchHtmlWithHeaders: async () => undefined,
+		crawlArticle: async () => ({ status: "failed" as const }),
 		parseHtml: () => ({
 			ok: true as const,
 			article: {
@@ -17,8 +16,6 @@ function createDeps(overrides?: Record<string, unknown>) {
 		}),
 		publishRefreshArticleContent: async () => {},
 		publishUpdateFetchTimestamp: async () => {},
-
-		logError: () => {},
 		now: () => new Date("2026-03-20T10:00:00Z"),
 		staleTtlMs: 86400000,
 		...overrides,
@@ -49,14 +46,14 @@ describe("refreshArticleIfStale", () => {
 		expect(result.action).toBe("skip");
 	});
 
-	it("returns action 'unchanged' on 304 conditional response", async () => {
+	it("returns action 'unchanged' when crawlArticle returns not-modified and publishes fetch timestamp", async () => {
 		const publishCalled: string[] = [];
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
-			fetchConditional: async () => ({ changed: false }),
+			crawlArticle: async () => ({ status: "not-modified" as const }),
 			publishUpdateFetchTimestamp: async () => { publishCalled.push("timestamp"); },
 		});
 		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
@@ -67,15 +64,39 @@ describe("refreshArticleIfStale", () => {
 		expect(publishCalled).toContain("timestamp");
 	});
 
-	it("returns action 'refreshed' on 200 conditional response", async () => {
+	it("passes existing etag and lastModified to crawlArticle when stale", async () => {
+		const capturedParams: { url: string; etag?: string; lastModified?: string }[] = [];
+		const deps = createDeps({
+			findArticleFreshness: async () => ({
+				etag: '"abc"',
+				lastModified: "Wed, 19 Mar 2026 00:00:00 GMT",
+				contentFetchedAt: "2026-03-19T00:00:00Z",
+			}),
+			crawlArticle: async (params: { url: string; etag?: string; lastModified?: string }) => {
+				capturedParams.push(params);
+				return { status: "not-modified" as const };
+			},
+		});
+		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
+
+		await refreshArticleIfStale({ url: "https://example.com/article" });
+
+		expect(capturedParams[0]).toEqual({
+			url: "https://example.com/article",
+			etag: '"abc"',
+			lastModified: "Wed, 19 Mar 2026 00:00:00 GMT",
+		});
+	});
+
+	it("returns action 'refreshed' when crawlArticle returns fetched content (TTL refresh path)", async () => {
 		const publishCalled: string[] = [];
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
-			fetchConditional: async () => ({
-				changed: true,
+			crawlArticle: async () => ({
+				status: "fetched" as const,
 				html: "<html>New content</html>",
 				etag: '"def"',
 				lastModified: "Wed, 20 Mar 2026 10:00:00 GMT",
@@ -90,12 +111,13 @@ describe("refreshArticleIfStale", () => {
 		expect(publishCalled).toContain("refresh");
 	});
 
-	it("returns action 'refreshed' on full fetch when no conditional headers available", async () => {
+	it("returns action 'refreshed' when crawlArticle returns fetched content (regular save path — no existing headers)", async () => {
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
-			fetchHtmlWithHeaders: async () => ({
+			crawlArticle: async () => ({
+				status: "fetched" as const,
 				html: "<html>Fresh</html>",
 				etag: '"new"',
 			}),
@@ -107,12 +129,12 @@ describe("refreshArticleIfStale", () => {
 		expect(result.action).toBe("refreshed");
 	});
 
-	it("returns action 'skip' when full fetch fails", async () => {
+	it("returns action 'skip' when crawlArticle returns failed", async () => {
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
-			fetchHtmlWithHeaders: async () => undefined,
+			crawlArticle: async () => ({ status: "failed" as const }),
 		});
 		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
 
@@ -121,98 +143,16 @@ describe("refreshArticleIfStale", () => {
 		expect(result.action).toBe("skip");
 	});
 
-	it("returns action 'skip' when conditional fetch throws an error", async () => {
+	it("returns action 'skip' when parseHtml returns not ok after fetched content", async () => {
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
-			fetchConditional: async () => { throw new Error("network error"); },
-		});
-		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
-
-		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
-
-		expect(result.action).toBe("skip");
-	});
-
-	it("returns action 'skip' when full fetch throws an error", async () => {
-		const deps = createDeps({
-			findArticleFreshness: async () => ({
-				contentFetchedAt: "2026-03-19T00:00:00Z",
-			}),
-			fetchHtmlWithHeaders: async () => { throw new Error("network error"); },
-		});
-		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
-
-		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
-
-		expect(result.action).toBe("skip");
-	});
-
-	it("returns action 'skip' when parseHtml returns not ok after conditional fetch", async () => {
-		const deps = createDeps({
-			findArticleFreshness: async () => ({
-				etag: '"abc"',
-				contentFetchedAt: "2026-03-19T00:00:00Z",
-			}),
-			fetchConditional: async () => ({
-				changed: true,
+			crawlArticle: async () => ({
+				status: "fetched" as const,
 				html: "<html>Bad content</html>",
 				etag: '"def"',
-			}),
-			parseHtml: () => ({ ok: false as const, reason: "could not parse" }),
-		});
-		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
-
-		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
-
-		expect(result.action).toBe("skip");
-	});
-
-	it("logs undefined when conditional fetch throws a non-Error value", async () => {
-		const loggedErrors: (Error | undefined)[] = [];
-		const deps = createDeps({
-			findArticleFreshness: async () => ({
-				etag: '"abc"',
-				contentFetchedAt: "2026-03-19T00:00:00Z",
-			}),
-			fetchConditional: async () => { throw "string error"; },
-			logError: (_msg: string, error?: Error) => { loggedErrors.push(error); },
-		});
-		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
-
-		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
-
-		expect(result.action).toBe("skip");
-		expect(loggedErrors[0]).toBeUndefined();
-	});
-
-	it("logs undefined when full fetch throws a non-Error value", async () => {
-		const loggedErrors: (Error | undefined)[] = [];
-		const deps = createDeps({
-			findArticleFreshness: async () => ({
-				contentFetchedAt: "2026-03-19T00:00:00Z",
-			}),
-			fetchHtmlWithHeaders: async () => { throw "string error"; },
-			logError: (_msg: string, error?: Error) => { loggedErrors.push(error); },
-		});
-		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
-
-		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
-
-		expect(result.action).toBe("skip");
-		expect(loggedErrors[0]).toBeUndefined();
-	});
-
-	it("returns action 'skip' when parseHtml returns not ok after full fetch", async () => {
-		const deps = createDeps({
-			findArticleFreshness: async () => ({
-				contentFetchedAt: "2026-03-19T00:00:00Z",
-			}),
-			fetchHtmlWithHeaders: async () => ({
-				html: "<html>Bad content</html>",
-				etag: '"new"',
 			}),
 			parseHtml: () => ({ ok: false as const, reason: "could not parse" }),
 		});

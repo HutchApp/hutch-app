@@ -4,6 +4,11 @@
     "check": {
       "command": "pnpm lint && pnpm test-with-coverage",
       "options": { "cwd": "{projectRoot}" }
+    },
+    "check-sources": {
+      "dependsOn": ["compile"],
+      "command": "node --test --test-reporter=spec scripts/check-sources.js",
+      "options": { "cwd": "{projectRoot}" }
     }
   }
 }

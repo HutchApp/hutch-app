@@ -54,4 +54,22 @@ describe("dynamoDbSummaryCache (integration)", () => {
 		const result = await findCachedSummary(url);
 		assert.equal(result, "");
 	});
+
+	it("dedupes tracking-param variants to the same cached summary row", async () => {
+		const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
+		assert(tableName);
+
+		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const { findCachedSummary, saveCachedSummary } = initDynamoDbSummaryCache({ client, tableName });
+
+		const canonical = `https://example.com/${randomUUID()}`;
+		const friendsLink = `${canonical}?source=friends_link&sk=af337097bd3ecac5750a7fb1dcd0b91d`;
+		const utmVariant = `${canonical}?utm_source=twitter&utm_medium=social`;
+
+		await saveCachedSummary({ url: friendsLink, summary: "Deduped summary", inputTokens: 10, outputTokens: 5 });
+
+		assert.equal(await findCachedSummary(canonical), "Deduped summary");
+		assert.equal(await findCachedSummary(friendsLink), "Deduped summary");
+		assert.equal(await findCachedSummary(utmVariant), "Deduped summary");
+	});
 });

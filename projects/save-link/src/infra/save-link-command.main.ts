@@ -5,7 +5,7 @@ import { consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { LinkSavedEvent } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
-import { initFetchHtml } from "../article-parser/fetch-html";
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "../article-parser/crawl-article";
 import { initReadabilityParser } from "../article-parser/readability-parser";
 import { initS3PutObject } from "../save-link/s3-put-object";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";
@@ -26,8 +26,8 @@ const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const s3Client = new S3Client({});
 const logError = (message: string, error?: Error) => consoleLogger.error(message, { error });
 
-const fetchHtml = initFetchHtml({ fetch: globalThis.fetch, logError });
-const { parseArticle } = initReadabilityParser({ fetchHtml });
+const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } });
+const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 const { putObject } = initS3PutObject({
 	client: s3Client,

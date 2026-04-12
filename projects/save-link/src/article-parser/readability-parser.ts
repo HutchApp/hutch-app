@@ -1,11 +1,9 @@
 import assert from "node:assert";
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
-import type { ParseArticle, ParseArticleResult } from "./article-parser.types";
+import type { CrawlArticle, ParseArticle, ParseArticleResult } from "./article-parser.types";
 import { extractThumbnail } from "./extract-thumbnail";
 import { resolveRelativeUrls } from "./resolve-relative-urls";
-
-export type FetchHtml = (url: string) => Promise<string | undefined>;
 
 export function parseHtml(params: { url: string; html: string }): ParseArticleResult {
 	let hostname: string;
@@ -51,7 +49,7 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 }
 
 export function initReadabilityParser(deps: {
-	fetchHtml: FetchHtml;
+	crawlArticle: CrawlArticle;
 }): { parseArticle: ParseArticle } {
 	const parseArticle: ParseArticle = async (url) => {
 		try {
@@ -60,12 +58,12 @@ export function initReadabilityParser(deps: {
 			return { ok: false, reason: "Invalid URL" };
 		}
 
-		const html = await deps.fetchHtml(url);
-		if (!html) {
+		const result = await deps.crawlArticle({ url });
+		if (result.status !== "fetched") {
 			return { ok: false, reason: "Could not fetch article" };
 		}
 
-		return parseHtml({ url, html });
+		return parseHtml({ url, html: result.html });
 	};
 
 	return { parseArticle };

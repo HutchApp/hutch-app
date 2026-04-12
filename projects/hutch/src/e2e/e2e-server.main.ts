@@ -4,8 +4,7 @@ import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
 import { createTestApp } from '../runtime/test-app'
 import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
 import { initRefreshArticleIfStale } from '../runtime/providers/article-freshness/check-content-freshness'
-import { initFetchHtml, initFetchHtmlWithHeaders } from '../runtime/providers/article-parser/fetch-html'
-import { initFetchConditional } from '../runtime/providers/article-parser/fetch-conditional'
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from '../runtime/providers/article-parser/crawl-article'
 import { initReadabilityParser, parseHtml } from '../runtime/providers/article-parser/readability-parser'
 import { initInMemoryRefreshArticleContent } from '../runtime/providers/events/in-memory-refresh-article-content'
 import { initInMemoryUpdateFetchTimestamp } from '../runtime/providers/events/in-memory-update-fetch-timestamp'
@@ -16,10 +15,8 @@ const origin = `http://localhost:${PORT}`
 const logger = HutchLogger.from(consoleLogger)
 
 const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }))
-const fetchHtml = initFetchHtml({ fetch: globalThis.fetch, logError })
-const fetchHtmlWithHeaders = initFetchHtmlWithHeaders({ fetch: globalThis.fetch, logError })
-const fetchConditional = initFetchConditional({ fetch: globalThis.fetch })
-const { parseArticle } = initReadabilityParser({ fetchHtml })
+const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } })
+const { parseArticle } = initReadabilityParser({ crawlArticle })
 
 // Wire real refresh stack with in-memory publishers so e2e exercises the
 // event-driven refresh/update-timestamp paths (publishRefreshArticleContent
@@ -29,12 +26,10 @@ const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ log
 const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger })
 const { refreshArticleIfStale } = initRefreshArticleIfStale({
   findArticleFreshness: articleStore.findArticleFreshness,
-  fetchConditional,
-  fetchHtmlWithHeaders,
+  crawlArticle,
   parseHtml,
   publishRefreshArticleContent,
   publishUpdateFetchTimestamp,
-  logError,
   now: () => new Date(),
   staleTtlMs: 0,
 })

@@ -1,14 +1,10 @@
 import type {
-	ConditionalFetchResult,
-	FetchConditional,
-	FetchHtmlWithHeaders,
+	CrawlArticle,
+	CrawlArticleResult,
 	ParseArticleResult,
 	ParseHtml,
 } from "../article-parser/article-parser.types";
-import type {
-	ArticleFreshnessData,
-	FindArticleFreshness,
-} from "../article-store/article-store.types";
+import type { FindArticleFreshness } from "../article-store/article-store.types";
 import type { PublishRefreshArticleContent } from "../events/publish-refresh-article-content.types";
 import type { PublishUpdateFetchTimestamp } from "../events/publish-update-fetch-timestamp.types";
 import { calculateReadTime } from "../../domain/article/estimated-read-time";
@@ -25,12 +21,10 @@ export type RefreshArticleIfStale = (params: {
 
 export function initRefreshArticleIfStale(deps: {
 	findArticleFreshness: FindArticleFreshness;
-	fetchConditional: FetchConditional;
-	fetchHtmlWithHeaders: FetchHtmlWithHeaders;
+	crawlArticle: CrawlArticle;
 	parseHtml: ParseHtml;
 	publishRefreshArticleContent: PublishRefreshArticleContent;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
-	logError: (message: string, error?: Error) => void;
 	now: () => Date;
 	staleTtlMs: number;
 }): { refreshArticleIfStale: RefreshArticleIfStale } {
@@ -49,59 +43,30 @@ export function initRefreshArticleIfStale(deps: {
 			}
 		}
 
-		if (freshness.etag || freshness.lastModified) {
-			return handleConditionalFetch(params.url, freshness);
+		const result = await deps.crawlArticle({
+			url: params.url,
+			etag: freshness.etag,
+			lastModified: freshness.lastModified,
+		});
+
+		if (result.status === "not-modified") {
+			await deps.publishUpdateFetchTimestamp({
+				url: params.url,
+				contentFetchedAt: deps.now().toISOString(),
+			});
+			return { action: "unchanged" };
 		}
 
-		return handleFullFetch(params.url);
+		if (result.status === "failed") {
+			return { action: "skip" };
+		}
+
+		return handleFetchedContent(params.url, result);
 	};
 
-	async function handleConditionalFetch(
+	async function handleFetchedContent(
 		url: string,
-		freshness: ArticleFreshnessData,
-	): Promise<ContentFreshnessResult> {
-		try {
-			const result = await deps.fetchConditional({
-				url,
-				etag: freshness.etag,
-				lastModified: freshness.lastModified,
-			});
-
-			if (!result.changed) {
-				await deps.publishUpdateFetchTimestamp({
-					url,
-					contentFetchedAt: deps.now().toISOString(),
-				});
-				return { action: "unchanged" };
-			}
-
-			return handleChangedContent(url, result);
-		} catch (error) {
-			deps.logError("Conditional fetch failed", error instanceof Error ? error : undefined);
-			return { action: "skip" };
-		}
-	}
-
-	async function handleFullFetch(url: string): Promise<ContentFreshnessResult> {
-		try {
-			const fetchResult = await deps.fetchHtmlWithHeaders(url);
-			if (!fetchResult) return { action: "skip" };
-
-			return handleChangedContent(url, {
-				changed: true,
-				html: fetchResult.html,
-				etag: fetchResult.etag,
-				lastModified: fetchResult.lastModified,
-			});
-		} catch (error) {
-			deps.logError("Full fetch failed", error instanceof Error ? error : undefined);
-			return { action: "skip" };
-		}
-	}
-
-	async function handleChangedContent(
-		url: string,
-		result: ConditionalFetchResult & { changed: true },
+		result: CrawlArticleResult & { status: "fetched" },
 	): Promise<ContentFreshnessResult> {
 		const parsed = deps.parseHtml({ url, html: result.html });
 		if (!parsed.ok) return { action: "skip" };

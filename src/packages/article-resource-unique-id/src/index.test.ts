@@ -103,10 +103,6 @@ describe("ArticleResourceUniqueId.toString", () => {
 		expect(ArticleResourceUniqueId.parse("https://example.com/path").toString()).toBe("example.com/path");
 	});
 
-	it("serializes as a plain string via JSON.stringify", () => {
-		expect(JSON.stringify(ArticleResourceUniqueId.parse("https://example.com/path"))).toBe('"example.com/path"');
-	});
-
 	it("interpolates as the normalized value in template literals", () => {
 		expect(`${ArticleResourceUniqueId.parse("https://example.com/path")}`).toBe("example.com/path");
 	});

@@ -1,3 +1,5 @@
+export { stripTrackingParams } from "./strip-tracking-params";
+
 function normalizeUrl(url: string): string {
 	const parsed = new URL(url);
 	const port = parsed.port ? `:${parsed.port}` : "";

@@ -7,6 +7,8 @@ export default {
 	...base,
 	entry: [
 		"**/*.main.ts",
+		// Real-network canary invoked by the nx `check-sources` target and the crawler-health workflow
+		"scripts/check-sources.js",
 	],
 	ignore: [
 		...(base.ignore ?? [])

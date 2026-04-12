@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
+import { ArticleResourceUniqueId, stripTrackingParams } from "../save-link/article-resource-unique-id";
 import type { FindCachedSummary, SaveCachedSummary } from "./article-summary.types";
 
 const SummaryCacheRow = z.object({
@@ -18,7 +18,7 @@ export function initDynamoDbSummaryCache(deps: {
 	const { client, tableName } = deps;
 
 	const findCachedSummary: FindCachedSummary = async (url) => {
-		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(stripTrackingParams(url));
 		const result = await client.send(
 			new GetCommand({
 				TableName: tableName,
@@ -32,7 +32,7 @@ export function initDynamoDbSummaryCache(deps: {
 	};
 
 	const saveCachedSummary: SaveCachedSummary = async (params) => {
-		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(stripTrackingParams(params.url));
 		await client.send(
 			new UpdateCommand({
 				TableName: tableName,

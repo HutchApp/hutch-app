@@ -256,8 +256,8 @@ describe("POST /queue (Siren save article)", () => {
 	});
 
 	it("returns 201 with fallback article when fetch fails", async () => {
-		const fetchHtml = async (_url: string): Promise<undefined> => undefined;
-		const testApp = createTestApp({ fetchHtml });
+		const crawlArticle = async () => ({ status: "failed" as const });
+		const testApp = createTestApp({ crawlArticle });
 		const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
 		assert(client);
 		const testToken = createTestToken();
