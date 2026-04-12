@@ -1,17 +1,10 @@
 import { expect } from '@playwright/test'
+import { COOKIE_NAME, COOKIE_VALUE } from '@packages/onboarding-extension-signal'
 import type { PageAction } from '../hateoas/navigation-handler.types'
 import type { AuthProgress } from './auth-actions'
 
-/**
- * 1. These actions test the *save-first-article* detection logic in both
- *    directions: the step flips to complete when the user saves at least one
- *    article, and the onboarding reappears if all articles are subsequently
- *    deleted and the count returns to zero. Other onboarding concerns
- *    (install-extension detection, open-reader-view detection, dismissal
- *    persistence) will be added in future releases as the detection logic for
- *    each lands.
- */
 export type OnboardingProgress = {
+  installedExtension: boolean
   savedFirstArticle: boolean
   savedFirstArticleReappeared: boolean
 }
@@ -22,9 +15,35 @@ export function createOnboardingActions(
 ): Map<string, PageAction> {
   const actions = new Map<string, PageAction>()
 
+  actions.set('onboarding-install-extension-incomplete', {
+    isAvailable: async (page) => {
+      if (!authProgress.accountCreated) return false
+      if (progress.installedExtension) return false
+      return (await page.locator('[data-test-onboarding-step="install-extension"]').count()) > 0
+    },
+    execute: async (page) => {
+      const step = page.locator('[data-test-onboarding-step="install-extension"]')
+      await expect(step).toHaveAttribute('data-test-onboarding-complete', 'false')
+
+      await page.context().addCookies([{
+        name: COOKIE_NAME,
+        value: COOKIE_VALUE,
+        path: '/',
+        domain: new URL(page.url()).hostname,
+      }])
+      await page.reload({ waitUntil: 'domcontentloaded' })
+
+      const updatedStep = page.locator('[data-test-onboarding-step="install-extension"]')
+      await expect(updatedStep).toHaveAttribute('data-test-onboarding-complete', 'true')
+
+      progress.installedExtension = true
+    },
+  })
+
   actions.set('onboarding-save-first-article', {
     isAvailable: async (page) => {
       if (!authProgress.accountCreated) return false
+      if (!progress.installedExtension) return false
       if (progress.savedFirstArticle) return false
       return (await page.locator('[data-test-onboarding].onboarding--hidden').count()) > 0
     },

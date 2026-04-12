@@ -6,6 +6,8 @@ import type { OnboardingContext } from "./onboarding.types";
 function contextWith(overrides: Partial<OnboardingContext> = {}): OnboardingContext {
 	return {
 		savedArticleCount: 0,
+		extensionInstalled: false,
+		browser: "chrome",
 		...overrides,
 	};
 }
@@ -15,17 +17,21 @@ function parse(html: string): Document {
 }
 
 describe("OnboardingChecklist", () => {
-	it("renders save-first-article as incomplete and the container visible when no articles have been saved", () => {
-		const doc = parse(OnboardingChecklist(contextWith({ savedArticleCount: 0 })));
+	it("renders both steps incomplete and container visible when nothing is done", () => {
+		const doc = parse(OnboardingChecklist(contextWith()));
 
 		const container = doc.querySelector("[data-test-onboarding]");
 		assert(container, "onboarding container must be rendered");
 		assert(container.classList.contains("onboarding--visible"));
 		assert(!container.classList.contains("onboarding--hidden"));
 
-		const step = doc.querySelector('[data-test-onboarding-step="save-first-article"]');
-		assert(step, "save-first-article step must be rendered");
-		assert.equal(step.getAttribute("data-test-onboarding-complete"), "false");
+		const installStep = doc.querySelector('[data-test-onboarding-step="install-extension"]');
+		assert(installStep, "install-extension step must be rendered");
+		assert.equal(installStep.getAttribute("data-test-onboarding-complete"), "false");
+
+		const saveStep = doc.querySelector('[data-test-onboarding-step="save-first-article"]');
+		assert(saveStep, "save-first-article step must be rendered");
+		assert.equal(saveStep.getAttribute("data-test-onboarding-complete"), "false");
 	});
 
 	it("renders the founder avatar alongside the intro text", () => {
@@ -37,16 +43,104 @@ describe("OnboardingChecklist", () => {
 		assert.match(avatar.getAttribute("src") ?? "", /\/fayner-brack\.jpg$/);
 	});
 
-	it("renders save-first-article as complete and the container hidden once at least one article has been saved", () => {
-		const doc = parse(OnboardingChecklist(contextWith({ savedArticleCount: 1 })));
+	it("renders install-extension before save-first-article", () => {
+		const doc = parse(OnboardingChecklist(contextWith()));
+
+		const steps = doc.querySelectorAll("[data-test-onboarding-step]");
+		assert(steps.length >= 2, "at least two steps must be rendered");
+		assert.equal(steps[0].getAttribute("data-test-onboarding-step"), "install-extension");
+		assert.equal(steps[1].getAttribute("data-test-onboarding-step"), "save-first-article");
+	});
+
+	it("marks install-extension complete when extensionInstalled is true", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ extensionInstalled: true })));
+
+		const step = doc.querySelector('[data-test-onboarding-step="install-extension"]');
+		assert(step, "install-extension step must be rendered");
+		assert.equal(step.getAttribute("data-test-onboarding-complete"), "true");
+	});
+
+	it("keeps install-extension incomplete when extensionInstalled is false", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ extensionInstalled: false, savedArticleCount: 5 })));
+
+		const step = doc.querySelector('[data-test-onboarding-step="install-extension"]');
+		assert(step, "install-extension step must be rendered");
+		assert.equal(step.getAttribute("data-test-onboarding-complete"), "false");
+	});
+
+	it("shows container when only save-first-article is complete", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ savedArticleCount: 1, extensionInstalled: false })));
+
+		const container = doc.querySelector("[data-test-onboarding]");
+		assert(container, "onboarding container must be rendered");
+		assert(container.classList.contains("onboarding--visible"));
+	});
+
+	it("shows container when only install-extension is complete", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ savedArticleCount: 0, extensionInstalled: true })));
+
+		const container = doc.querySelector("[data-test-onboarding]");
+		assert(container, "onboarding container must be rendered");
+		assert(container.classList.contains("onboarding--visible"));
+	});
+
+	it("shows 'Install the Chrome browser extension' for Chrome users", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ browser: "chrome" })));
+		const title = doc.querySelector('[data-test-onboarding-step="install-extension"] .onboarding__step-title');
+		assert(title);
+		assert.equal(title.textContent, "Install the Chrome browser extension");
+	});
+
+	it("shows 'Install the Firefox browser extension' for Firefox users", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ browser: "firefox" })));
+		const title = doc.querySelector('[data-test-onboarding-step="install-extension"] .onboarding__step-title');
+		assert(title);
+		assert.equal(title.textContent, "Install the Firefox browser extension");
+	});
+
+	it("shows 'Install a browser extension' for unrecognised browsers", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ browser: "other" })));
+		const title = doc.querySelector('[data-test-onboarding-step="install-extension"] .onboarding__step-title');
+		assert(title);
+		assert.equal(title.textContent, "Install a browser extension");
+	});
+
+	it("shows an 'Install' action linking to /install?browser=chrome for Chrome users", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ browser: "chrome" })));
+		const action = doc.querySelector('[data-test-onboarding-step="install-extension"] [data-test-onboarding-action]');
+		assert(action, "action link must be rendered");
+		assert.equal(action.textContent, "Install");
+		assert.equal(action.getAttribute("href"), "/install?browser=chrome");
+	});
+
+	it("shows an 'Install' action linking to /install?browser=firefox for Firefox users", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ browser: "firefox" })));
+		const action = doc.querySelector('[data-test-onboarding-step="install-extension"] [data-test-onboarding-action]');
+		assert(action, "action link must be rendered");
+		assert.equal(action.textContent, "Install");
+		assert.equal(action.getAttribute("href"), "/install?browser=firefox");
+	});
+
+	it("shows a 'Choose browser' action linking to /install for unrecognised browsers", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ browser: "other" })));
+		const action = doc.querySelector('[data-test-onboarding-step="install-extension"] [data-test-onboarding-action]');
+		assert(action, "action link must be rendered");
+		assert.equal(action.textContent, "Choose browser");
+		assert.equal(action.getAttribute("href"), "/install");
+	});
+
+	it("does not render actions on save-first-article step", () => {
+		const doc = parse(OnboardingChecklist(contextWith()));
+		const actions = doc.querySelector('[data-test-onboarding-step="save-first-article"] .onboarding__actions');
+		assert.equal(actions, null);
+	});
+
+	it("hides container when both steps are complete", () => {
+		const doc = parse(OnboardingChecklist(contextWith({ savedArticleCount: 1, extensionInstalled: true })));
 
 		const container = doc.querySelector("[data-test-onboarding]");
 		assert(container, "onboarding container must be rendered");
 		assert(container.classList.contains("onboarding--hidden"));
 		assert(!container.classList.contains("onboarding--visible"));
-
-		const step = doc.querySelector('[data-test-onboarding-step="save-first-article"]');
-		assert(step, "save-first-article step must be rendered");
-		assert.equal(step.getAttribute("data-test-onboarding-complete"), "true");
 	});
 });

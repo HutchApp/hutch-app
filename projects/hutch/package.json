@@ -47,6 +47,7 @@
     "@packages/crawl-article": "workspace:*",
     "@packages/hutch-infra-components": "workspace:*",
     "@packages/hutch-logger": "workspace:*",
+    "@packages/onboarding-extension-signal": "workspace:*",
     "@types/parse-srcset": "1.0.0",
     "browser-extension-core": "workspace:*",
     "compression": "1.8.1",

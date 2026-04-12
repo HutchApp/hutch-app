@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { render } from "../render";
 import { requireEnv } from "../../require-env";
 import { ONBOARDING_STEPS } from "./onboarding.steps";
-import type { OnboardingContext, OnboardingStep } from "./onboarding.types";
+import type { OnboardingAction, OnboardingContext, OnboardingStep } from "./onboarding.types";
 
 export { ONBOARDING_STYLES } from "./onboarding.styles";
 
@@ -22,6 +22,7 @@ interface OnboardingStepDisplayModel {
 	completeAttr: "true" | "false";
 	rowClass: string;
 	checkClass: string;
+	actions: OnboardingAction[];
 }
 
 function toStepDisplayModel(
@@ -29,9 +30,10 @@ function toStepDisplayModel(
 	ctx: OnboardingContext,
 ): OnboardingStepDisplayModel {
 	const isComplete = step.isComplete(ctx);
+	const actions = step.actions?.(ctx) ?? [];
 	return {
 		id: step.id,
-		title: step.title,
+		title: step.title(ctx),
 		description: step.description,
 		completeAttr: isComplete ? "true" : "false",
 		rowClass: isComplete
@@ -40,6 +42,7 @@ function toStepDisplayModel(
 		checkClass: isComplete
 			? "onboarding__check onboarding__check--ticked"
 			: "onboarding__check",
+		actions,
 	};
 }
 

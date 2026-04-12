@@ -75,7 +75,7 @@ function createPlanData(input: { config: ExtensionBuildConfig; projectDir: strin
 		},
 		define: {
 			__SERVER_URL__: JSON.stringify(input.serverUrl),
-			__APP_DOMAINS__: JSON.stringify(input.appDomains),
+			__APP_DOMAINS__: JSON.stringify([...input.appDomains, "127.0.0.1", "localhost"]),
 		},
 	};
 

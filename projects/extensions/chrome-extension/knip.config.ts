@@ -22,6 +22,7 @@ export default {
 		// Workspace dependencies — knip can't trace through esbuild-bundled entry points
 		"browser-extension-core",
 		"@packages/hutch-logger",
+		"@packages/onboarding-extension-signal",
 		// Dynamic import in E2E test — knip can't trace dynamic imports
 		"hutch",
 		// Used by scripts/check-unused-css.js (not a source-level import)

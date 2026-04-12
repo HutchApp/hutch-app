@@ -19,9 +19,10 @@ export default {
 		"@packages/hutch-infra-components",
 		// Used by scripts/check-unused-css.js (not a source-level import)
 		"@packages/check-unused-css",
-		// knip doesn't resolve workspace subpath for @packages/article-resource-unique-id
+		// knip doesn't resolve workspace subpath for @packages/* imports
 		"@packages/article-resource-unique-id",
 		"@packages/crawl-article",
+		"@packages/onboarding-extension-signal",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

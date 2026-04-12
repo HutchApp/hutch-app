@@ -1,0 +1,7 @@
+export const COOKIE_NAME = "hutch_ext_installed";
+export const COOKIE_VALUE = "1";
+
+/** Called by the browser extension content script on Hutch pages. */
+export function markExtensionInstalled(): void {
+	document.cookie = `${COOKIE_NAME}=${COOKIE_VALUE}; path=/; max-age=31536000; SameSite=Lax`;
+}

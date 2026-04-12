@@ -36,6 +36,7 @@ test.describe('Queue management flow (local)', () => {
     }
 
     const onboardingProgress: OnboardingProgress = {
+      installedExtension: false,
       savedFirstArticle: false,
       savedFirstArticleReappeared: false,
     }
@@ -69,7 +70,7 @@ test.describe('Queue management flow (local)', () => {
         ),
       ],
       preQueueProgressObjects: [seedProgress, cleanupProgress, passwordResetProgress, onboardingProgress, savePermalinkProgress],
-      maxNavigations: 85,
+      maxNavigations: 90,
     })
   })
 })

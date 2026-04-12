@@ -89,7 +89,7 @@ describe("createBuildPlan", () => {
 		expect(plan.esbuildOptions.define.__SERVER_URL__).toBe('"https://readplace.com"');
 	});
 
-	it("defines __APP_DOMAINS__ as a JSON array of all configured domains", () => {
+	it("defines __APP_DOMAINS__ as a JSON array of configured domains plus localhost", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
@@ -97,7 +97,7 @@ describe("createBuildPlan", () => {
 			appDomains: ["readplace.com", "hutch-app.com"],
 		});
 
-		expect(plan.esbuildOptions.define.__APP_DOMAINS__).toBe('["readplace.com","hutch-app.com"]');
+		expect(plan.esbuildOptions.define.__APP_DOMAINS__).toBe('["readplace.com","hutch-app.com","127.0.0.1","localhost"]');
 	});
 
 	it("includes six output directories", () => {

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { OnboardingChecklist, ONBOARDING_STYLES } from "../../onboarding/onboarding.component";
+import type { BrowserName } from "../../onboarding/onboarding.types";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
@@ -72,7 +73,7 @@ export function formatUnreadLabel(count: number): string {
 	return count > 99 ? "Unread (99+)" : `Unread (${count})`;
 }
 
-function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
+function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: boolean; browser: BrowserName }): QueueDisplayModel {
 	const activeStatus = vm.filters.status;
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
 	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
@@ -80,6 +81,8 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 
 	const onboardingHtml = OnboardingChecklist({
 		savedArticleCount: vm.totalArticles,
+		extensionInstalled: options.extensionInstalled,
+		browser: options.browser,
 	});
 
 	return {
@@ -111,9 +114,9 @@ const HTMX_SCRIPTS = `<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/d
 
 const AUTO_SUBMIT_SCRIPT = `\n<script>(function(){var f=document.querySelector('[data-auto-submit]');if(f)f.requestSubmit();})()</script>`;
 
-export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean; saveUrl?: string }): Component {
+export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean; saveUrl?: string; extensionInstalled?: boolean; browser?: BrowserName }): Component {
 	const saveUrl = options?.saveUrl;
-	const displayModel = toQueueDisplayModel(vm);
+	const displayModel = toQueueDisplayModel(vm, { extensionInstalled: options?.extensionInstalled ?? false, browser: options?.browser ?? "other" });
 	const content = render(QUEUE_TEMPLATE, { ...displayModel, saveUrl });
 
 	return Base({

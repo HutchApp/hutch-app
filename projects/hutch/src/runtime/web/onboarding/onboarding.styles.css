@@ -121,6 +121,31 @@
   margin-bottom: 8px;
 }
 
+.onboarding__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.onboarding__action {
+  display: inline-block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.onboarding__action:hover {
+  opacity: 0.85;
+}
+
+.onboarding__step--complete .onboarding__actions {
+  display: none;
+}
+
 @media (max-width: 600px) {
   .onboarding {
     padding: 20px;

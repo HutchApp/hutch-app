@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
@@ -36,13 +35,6 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector("[data-test-empty-queue]")?.textContent).toContain("empty");
 			expect(doc.querySelector('[data-test-form="save-article"]')?.getAttribute("action")).toBe("/queue/save");
-			const onboarding = doc.querySelector("[data-test-onboarding]");
-			assert(onboarding, "onboarding container must be rendered");
-			expect(onboarding.classList.contains("onboarding--visible")).toBe(true);
-			expect(onboarding.classList.contains("onboarding--hidden")).toBe(false);
-			const saveFirstStep = onboarding.querySelector('[data-test-onboarding-step="save-first-article"]');
-			assert(saveFirstStep, "save-first-article step must be rendered");
-			expect(saveFirstStep.getAttribute("data-test-onboarding-complete")).toBe("false");
 		});
 
 		it("should show article count", async () => {
@@ -73,35 +65,6 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(queueResponse.text).window.document;
 			expect(doc.querySelectorAll(".queue-article").length).toBe(1);
 			expect(doc.querySelector("[data-test-empty-queue]")).toBeNull();
-			const onboarding = doc.querySelector("[data-test-onboarding]");
-			assert(onboarding, "onboarding container must still be rendered (just hidden)");
-			expect(onboarding.classList.contains("onboarding--hidden")).toBe(true);
-			expect(onboarding.classList.contains("onboarding--visible")).toBe(false);
-			const saveFirstStep = onboarding.querySelector('[data-test-onboarding-step="save-first-article"]');
-			assert(saveFirstStep, "save-first-article step must be rendered");
-			expect(saveFirstStep.getAttribute("data-test-onboarding-complete")).toBe("true");
-		});
-
-		it("should mark save-first-article complete even when viewing an empty filter tab", async () => {
-			const { app, auth } = createTestApp();
-			const agent = await loginAgent(app, auth);
-
-			await agent
-				.post("/queue/save")
-				.type("form")
-				.send({ url: "https://example.com/article-on-unread-tab" });
-
-			// The saved article is unread by default. Viewing the "read" tab returns
-			// zero matching articles, but the save-first-article step must still be
-			// complete because the user has at least one article saved overall.
-			const readTabResponse = await agent.get("/queue?status=read");
-			const doc = new JSDOM(readTabResponse.text).window.document;
-			const onboarding = doc.querySelector("[data-test-onboarding]");
-			assert(onboarding, "onboarding container must still be rendered");
-			expect(onboarding.classList.contains("onboarding--hidden")).toBe(true);
-			const saveFirstStep = onboarding.querySelector('[data-test-onboarding-step="save-first-article"]');
-			assert(saveFirstStep, "save-first-article step must be rendered");
-			expect(saveFirstStep.getAttribute("data-test-onboarding-complete")).toBe("true");
 		});
 
 		it("should show error for invalid URL", async () => {

@@ -1,0 +1,9 @@
+{
+  "name": "@packages/onboarding-extension-signal",
+  "targets": {
+    "check": {
+      "command": "pnpm lint",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}
