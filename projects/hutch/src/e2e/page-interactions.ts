@@ -10,10 +10,13 @@ export async function clickAndWaitForPageReload(page: Page, locator: ReturnType<
   await Promise.race([
     // Full page navigation (non-HTMX links, standard form submits)
     loadEvent,
-    // HTMX adds htmx-request class when request starts, removes after swap.
-    // Wait for it to appear then disappear — guarantees the DOM is stable.
+    // HTMX: wait for htmx-request to appear then disappear, then wait for
+    // network to go idle. HTMX may schedule the DOM swap asynchronously after
+    // removing htmx-request; networkidle ensures the swap and any follow-up
+    // requests (e.g. redirects) have fully completed before we return.
     page.waitForSelector('.htmx-request', { state: 'attached', timeout: 5000 })
       .then(() => page.waitForSelector('.htmx-request', { state: 'detached', timeout: 60000 }))
+      .then(() => page.waitForLoadState('networkidle'))
       .catch(() => page.waitForLoadState('networkidle')),
   ])
 }
