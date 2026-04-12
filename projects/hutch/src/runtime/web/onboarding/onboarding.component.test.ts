@@ -148,7 +148,7 @@ describe("OnboardingChecklist", () => {
 
 		const title = success.querySelector(".onboarding__success-title");
 		assert(title);
-		assert.equal(title.textContent, "You did it!");
+		assert.match(title.textContent ?? "", /You did it!/);
 
 		const message = success.querySelector(".onboarding__success-message");
 		assert(message);

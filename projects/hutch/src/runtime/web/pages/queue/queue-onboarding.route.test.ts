@@ -93,7 +93,7 @@ describe("Queue onboarding", () => {
 
 		const success = doc.querySelector("[data-test-onboarding-success]");
 		assert(success, "success section must be rendered");
-		expect(success.querySelector(".onboarding__success-title")?.textContent).toBe("You did it!");
+		expect(success.querySelector(".onboarding__success-title")?.textContent).toMatch(/You did it!/);
 	});
 
 	it("shows 'Install the Chrome browser extension' for Chrome user-agent", async () => {

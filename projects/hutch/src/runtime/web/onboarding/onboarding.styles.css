@@ -175,27 +175,6 @@
   color: var(--foreground);
 }
 
-.onboarding__success-check {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--primary);
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.onboarding__success-check::after {
-  content: "";
-  position: absolute;
-  top: 12px;
-  left: 16px;
-  width: 12px;
-  height: 20px;
-  border: solid var(--primary-foreground);
-  border-width: 0 3px 3px 0;
-  transform: rotate(45deg);
-}
-
 .onboarding__success .onboarding__avatar {
   margin-bottom: 12px;
 }
