@@ -4,8 +4,8 @@
         <h1 class="queue__title">My Queue</h1>
         <span class="queue__count" data-test-article-count>{{total}} article{{pluralSuffix}}</span>
       </div>
-      <form class="queue__save-form" method="POST" action="/queue/save" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" hx-disabled-elt=".queue__save-btn" data-test-form="save-article">
-        <input class="queue__save-input" type="url" name="url" placeholder="Paste a URL to save an article…" required>
+      <form class="queue__save-form" method="POST" action="/queue/save" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" hx-disabled-elt=".queue__save-btn" data-test-form="save-article"{{#if saveUrl}} data-auto-submit{{/if}}>
+        <input class="queue__save-input" type="url" name="url" placeholder="Paste a URL to save an article…" required value="{{saveUrl}}">
         <button class="queue__save-btn" type="submit"><span class="queue__save-btn-label">Save</span><span class="queue__save-btn-saving">Saving…</span></button>
       </form>
       {{#if saveError}}<p class="queue__save-error" data-test-save-error>{{saveError}}</p>{{/if}}

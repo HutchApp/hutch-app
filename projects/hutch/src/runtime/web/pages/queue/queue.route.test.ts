@@ -1067,4 +1067,44 @@ describe("Queue routes", () => {
 			expect(publishCalled).toBe(false);
 		});
 	});
+
+	describe("GET /queue?url=", () => {
+		it("should pre-fill save input and add auto-submit attribute", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue?url=https%3A%2F%2Fexample.com%2Farticle");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const form = doc.querySelector('[data-test-form="save-article"]');
+			expect(form?.hasAttribute("data-auto-submit")).toBe(true);
+			const input = form?.querySelector('input[name="url"]');
+			expect(input?.getAttribute("value")).toBe("https://example.com/article");
+		});
+
+		it("should include auto-submit script", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue?url=https%3A%2F%2Fexample.com%2Farticle");
+
+			expect(response.text).toContain("data-auto-submit");
+			expect(response.text).toContain("requestSubmit");
+		});
+
+		it("should not add auto-submit when url is absent", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const form = doc.querySelector('[data-test-form="save-article"]');
+			expect(form?.hasAttribute("data-auto-submit")).toBe(false);
+			const input = form?.querySelector('input[name="url"]');
+			expect(input?.getAttribute("value")).toBe("");
+		});
+	});
 });

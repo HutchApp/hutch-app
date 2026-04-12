@@ -109,9 +109,12 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 
 const HTMX_SCRIPTS = `<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>`;
 
-export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean }): Component {
+const AUTO_SUBMIT_SCRIPT = `\n<script>(function(){var f=document.querySelector('[data-auto-submit]');if(f)f.requestSubmit();})()</script>`;
+
+export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean; saveUrl?: string }): Component {
+	const saveUrl = options?.saveUrl;
 	const displayModel = toQueueDisplayModel(vm);
-	const content = render(QUEUE_TEMPLATE, displayModel);
+	const content = render(QUEUE_TEMPLATE, { ...displayModel, saveUrl });
 
 	return Base({
 		seo: {
@@ -123,7 +126,7 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 		styles: `${QUEUE_STYLES}\n${ONBOARDING_STYLES}`,
 		bodyClass: "page-queue",
 		content,
-		scripts: HTMX_SCRIPTS,
+		scripts: HTMX_SCRIPTS + (saveUrl ? AUTO_SUBMIT_SCRIPT : ""),
 		isAuthenticated: true,
 		emailVerified: options?.emailVerified,
 	});

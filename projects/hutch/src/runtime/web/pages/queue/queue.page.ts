@@ -161,7 +161,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			: (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 		const totalArticles = (await deps.findArticlesByUser({ userId, page: 1, pageSize: 1 })).total;
 		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles });
-		const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
+		const html = QueuePage(vm, { emailVerified: req.emailVerified, saveUrl: filterUrl }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 

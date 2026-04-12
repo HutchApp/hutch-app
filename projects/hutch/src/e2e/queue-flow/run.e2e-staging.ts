@@ -2,6 +2,7 @@
 import assert from 'node:assert'
 import { test } from '@playwright/test'
 import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
+import { createSavePermalinkActions, type SavePermalinkProgress } from './save-permalink-actions'
 import type { TestArticleData } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
 
@@ -11,6 +12,11 @@ test.describe('Queue management flow (staging)', () => {
 
     const cleanupProgress: CleanupProgress = {
       previousArticlesDeleted: false,
+    }
+
+    const savePermalinkProgress: SavePermalinkProgress = {
+      savedViaPermalink: false,
+      deletedPermalinkArticle: false,
     }
 
     const stagingArticles: TestArticleData = {
@@ -33,9 +39,14 @@ test.describe('Queue management flow (staging)', () => {
       },
       preQueueActionFactories: [
         createCleanupActions(cleanupProgress),
+        createSavePermalinkActions(
+          { baseUrl: baseURL, testUrl: `${baseURL}/privacy?permalink=1` },
+          cleanupProgress,
+          savePermalinkProgress,
+        ),
       ],
-      preQueueProgressObjects: [cleanupProgress],
-      maxNavigations: 85,
+      preQueueProgressObjects: [cleanupProgress, savePermalinkProgress],
+      maxNavigations: 90,
     })
   })
 })

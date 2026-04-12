@@ -42,6 +42,7 @@ import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
+import { initSaveRoutes } from "./web/pages/save/save.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
 import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
@@ -300,6 +301,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		logError: deps.logError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
+
+	const saveRouter = initSaveRoutes();
+	app.use("/save", saveRouter);
 
 	const exportRouter = initExportRoutes({
 		findArticlesByUser: deps.findArticlesByUser,

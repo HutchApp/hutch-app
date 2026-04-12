@@ -3,6 +3,7 @@ import { test } from '@playwright/test'
 import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
 import { createOnboardingActions, type OnboardingProgress } from './onboarding-actions'
 import { createPasswordResetActions, type PasswordResetProgress } from './password-reset-actions'
+import { createSavePermalinkActions, type SavePermalinkProgress } from './save-permalink-actions'
 import { createSeedActions, type SeedProgress } from './seed-actions'
 import { createLocalTestArticles } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
@@ -39,6 +40,11 @@ test.describe('Queue management flow (local)', () => {
       savedFirstArticleReappeared: false,
     }
 
+    const savePermalinkProgress: SavePermalinkProgress = {
+      savedViaPermalink: false,
+      deletedPermalinkArticle: false,
+    }
+
     await runQueueFlow(page, {
       baseURL: BASE_URL,
       testArticles: createLocalTestArticles(BASE_URL),
@@ -56,9 +62,14 @@ test.describe('Queue management flow (local)', () => {
           authProgress,
           passwordResetProgress,
         ),
+        createSavePermalinkActions(
+          { baseUrl: BASE_URL, testUrl: `${BASE_URL}/privacy?permalink=1` },
+          cleanupProgress,
+          savePermalinkProgress,
+        ),
       ],
-      preQueueProgressObjects: [seedProgress, cleanupProgress, passwordResetProgress, onboardingProgress],
-      maxNavigations: 80,
+      preQueueProgressObjects: [seedProgress, cleanupProgress, passwordResetProgress, onboardingProgress, savePermalinkProgress],
+      maxNavigations: 85,
     })
   })
 })
