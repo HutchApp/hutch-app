@@ -332,4 +332,20 @@ describe("toQueueViewModel", () => {
 
 		expect(vm.unreadCount).toBe(7);
 	});
+
+	it("should include totalArticles from options independent of current filter", () => {
+		const vm = toQueueViewModel(makeResult([], 0), DEFAULT_FILTERS, {
+			now: NOW,
+			totalArticles: 8,
+		});
+
+		expect(vm.totalArticles).toBe(8);
+		expect(vm.total).toBe(0);
+	});
+
+	it("should default totalArticles to result total when not provided", () => {
+		const vm = toQueueViewModel(makeResult([], 5), DEFAULT_FILTERS, { now: NOW });
+
+		expect(vm.totalArticles).toBe(5);
+	});
 });

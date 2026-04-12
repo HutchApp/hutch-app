@@ -1,0 +1,20 @@
+<section class="onboarding {{stateClass}}" data-test-onboarding>
+  <header class="onboarding__intro">
+    <img class="onboarding__avatar" src="{{founderAvatarUrl}}" alt="Fayner Brack" width="72" height="72">
+    <div class="onboarding__intro-text">
+      <h2 class="onboarding__title">Hi, I'm Fayner Brack!</h2>
+      <p class="onboarding__lede">I built Hutch from my reading system so you could also save articles and actually read them later. Here are a few small things to set you up.</p>
+    </div>
+  </header>
+  <ol class="onboarding__steps" data-test-onboarding-steps>
+    {{#each steps}}
+    <li class="{{rowClass}}" data-test-onboarding-step="{{id}}" data-test-onboarding-complete="{{completeAttr}}">
+      <span class="{{checkClass}}" aria-hidden="true"></span>
+      <div class="onboarding__step-body">
+        <h3 class="onboarding__step-title">{{title}}</h3>
+        <p class="onboarding__step-description">{{description}}</p>
+      </div>
+    </li>
+    {{/each}}
+  </ol>
+</section>

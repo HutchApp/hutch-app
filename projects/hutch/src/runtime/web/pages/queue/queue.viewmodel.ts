@@ -40,6 +40,7 @@ export interface QueueViewModel {
 	totalPages: number;
 	currentPage: number;
 	total: number;
+	totalArticles: number;
 	unreadCount: number;
 	filterUrls: {
 		unread: string;
@@ -138,7 +139,7 @@ function toArticleViewModel(
 export function toQueueViewModel(
 	result: FindArticlesResult,
 	filters: QueueUrlState,
-	options?: { now?: Date; saveError?: string; unreadCount?: number },
+	options?: { now?: Date; saveError?: string; unreadCount?: number; totalArticles?: number },
 ): QueueViewModel {
 	const now = options?.now ?? new Date();
 	const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
@@ -154,6 +155,7 @@ export function toQueueViewModel(
 		totalPages,
 		currentPage: result.page,
 		total: result.total,
+		totalArticles: options?.totalArticles ?? result.total,
 		unreadCount: options?.unreadCount ?? result.total,
 		filterUrls: {
 			unread: buildQueueUrl({ ...baseFilters, status: "unread" }),

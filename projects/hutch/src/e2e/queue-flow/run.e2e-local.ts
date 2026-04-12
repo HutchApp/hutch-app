@@ -1,6 +1,7 @@
 import assert from 'node:assert'
 import { test } from '@playwright/test'
 import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
+import { createOnboardingActions, type OnboardingProgress } from './onboarding-actions'
 import { createPasswordResetActions, type PasswordResetProgress } from './password-reset-actions'
 import { createSeedActions, type SeedProgress } from './seed-actions'
 import { createLocalTestArticles } from './queue-actions'
@@ -33,12 +34,20 @@ test.describe('Queue management flow (local)', () => {
       loggedInWithNewPassword: false,
     }
 
+    const onboardingProgress: OnboardingProgress = {
+      savedFirstArticle: false,
+      savedFirstArticleReappeared: false,
+    }
+
     await runQueueFlow(page, {
       baseURL: BASE_URL,
       testArticles: createLocalTestArticles(BASE_URL),
       authData,
       passwordResetProgress,
       preQueueActionFactories: [
+        // Onboarding assertions run first on the post-signup empty queue, before
+        // seed-actions populates the queue with articles.
+        (authProgress) => createOnboardingActions(authProgress, onboardingProgress),
         createSeedActions(seedProgress, [`${BASE_URL}/privacy?seed=1`, `${BASE_URL}/privacy?seed=2`]),
         createCleanupActions(cleanupProgress),
         (authProgress) => createPasswordResetActions(
@@ -48,7 +57,7 @@ test.describe('Queue management flow (local)', () => {
           passwordResetProgress,
         ),
       ],
-      preQueueProgressObjects: [seedProgress, cleanupProgress, passwordResetProgress],
+      preQueueProgressObjects: [seedProgress, cleanupProgress, passwordResetProgress, onboardingProgress],
       maxNavigations: 80,
     })
   })

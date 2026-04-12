@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
+import { OnboardingChecklist, ONBOARDING_STYLES } from "../../onboarding/onboarding.component";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
@@ -45,6 +46,7 @@ interface QueueDisplayModel {
 	saveError?: string;
 	isEmpty: boolean;
 	hasArticles: boolean;
+	onboardingHtml: string;
 	articles: ArticleDisplayModel[];
 	filterUnreadClass: string;
 	filterUnreadLabel: string;
@@ -76,12 +78,17 @@ function toQueueDisplayModel(vm: QueueViewModel): QueueDisplayModel {
 	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
 	const sortUrl = buildQueueUrl({ status: activeStatus, order: nextOrder });
 
+	const onboardingHtml = OnboardingChecklist({
+		savedArticleCount: vm.totalArticles,
+	});
+
 	return {
 		total: vm.total,
 		pluralSuffix: vm.total !== 1 ? "s" : "",
 		saveError: vm.saveError,
 		isEmpty: vm.isEmpty,
 		hasArticles: !vm.isEmpty,
+		onboardingHtml,
 		articles: vm.articles.map(toArticleDisplayModel),
 		filterUnreadClass: filterLinkClass(activeStatus === "unread"),
 		filterUnreadLabel: formatUnreadLabel(vm.unreadCount),
@@ -113,7 +120,7 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 			canonicalUrl: "/queue",
 			robots: "noindex, nofollow",
 		},
-		styles: QUEUE_STYLES,
+		styles: `${QUEUE_STYLES}\n${ONBOARDING_STYLES}`,
 		bodyClass: "page-queue",
 		content,
 		scripts: HTMX_SCRIPTS,

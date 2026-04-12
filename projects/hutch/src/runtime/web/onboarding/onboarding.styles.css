@@ -1,0 +1,128 @@
+.onboarding {
+  max-width: 800px;
+  margin: 0 auto 24px;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.onboarding--visible {
+  display: block;
+}
+
+.onboarding--hidden {
+  display: none;
+}
+
+.onboarding__intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.onboarding__avatar {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.onboarding__intro-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 4px;
+}
+
+.onboarding__lede {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.onboarding__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.onboarding__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: opacity 0.15s ease;
+}
+
+.onboarding__step--complete {
+  opacity: 0.55;
+}
+
+.onboarding__check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-top: 2px;
+  position: relative;
+  background: var(--background);
+}
+
+.onboarding__check--ticked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.onboarding__check--ticked::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--primary-foreground);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.onboarding__step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.onboarding__step-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 4px;
+}
+
+.onboarding__step--complete .onboarding__step-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--muted-foreground);
+}
+
+.onboarding__step-description {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 600px) {
+  .onboarding {
+    padding: 20px;
+  }
+}
