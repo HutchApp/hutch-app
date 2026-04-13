@@ -218,7 +218,7 @@ Pocket shut down on July 8, 2025. To migrate to Hutch:
 
 1. If you exported your Pocket data (HTML file), keep that file.
 2. Install the Hutch browser extension for [Chrome](https://readplace.com/install?browser=chrome) or [Firefox](https://readplace.com/install?browser=firefox).
-3. Send your Pocket export file to hutch+migrate@hutch-app.com for manual migration, or save articles one at a time using the extension.
+3. Send your Pocket export file to hutch+migrate@readplace.com for manual migration, or save articles one at a time using the extension.
 4. AI summaries are generated automatically after import.
 
 ## Migrating from Omnivore
@@ -226,7 +226,7 @@ Pocket shut down on July 8, 2025. To migrate to Hutch:
 Omnivore shut down in November 2024. To migrate to Hutch:
 
 1. If you exported your Omnivore data before shutdown, keep that file.
-2. Send the export file to hutch+migrate@hutch-app.com for manual migration.
+2. Send the export file to hutch+migrate@readplace.com for manual migration.
 3. Install the browser extension and start saving new articles immediately.
 4. The [roadmap](https://readplace.com/#roadmap) tracks which Omnivore features Hutch has shipped and which are planned.
 
