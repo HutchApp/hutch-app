@@ -4,18 +4,18 @@ describe("extractAppDomainsFromPulumiYaml", () => {
 	it("extracts a single domain", () => {
 		const yaml = `config:
   hutch:domains:
-    - readplace.com
+    - domainA.com
   hutch:deletionProtection: true`;
-		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["readplace.com"]);
+		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["domainA.com"]);
 	});
 
 	it("extracts multiple domains in order", () => {
 		const yaml = `config:
   hutch:domains:
-    - readplace.com
-    - hutch-app.com
+    - domainA.com
+    - domainB.com
   hutch:deletionProtection: true`;
-		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["readplace.com", "hutch-app.com"]);
+		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["domainA.com", "domainB.com"]);
 	});
 
 	it("returns empty array when hutch:domains is absent", () => {
@@ -29,34 +29,34 @@ describe("extractAppDomainsFromPulumiYaml", () => {
 	it("stops at the next top-level key", () => {
 		const yaml = `config:
   hutch:domains:
-    - readplace.com
+    - domainA.com
   hutch:redirectDomains:
-    - savearticles.app`;
-		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["readplace.com"]);
+    - domainC`;
+		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["domainA.com"]);
 	});
 
 	it("strips surrounding double quotes", () => {
 		const yaml = `config:
   hutch:domains:
-    - "readplace.com"`;
-		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["readplace.com"]);
+    - "domainA.com"`;
+		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["domainA.com"]);
 	});
 
 	it("strips surrounding single quotes", () => {
 		const yaml = `config:
   hutch:domains:
-    - 'readplace.com'`;
-		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["readplace.com"]);
+    - 'domainA.com'`;
+		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["domainA.com"]);
 	});
 
 	it("ignores blank lines inside the list", () => {
 		const yaml = `config:
   hutch:domains:
-    - readplace.com
+    - domainA.com
 
-    - hutch-app.com
+    - domainB.com
   hutch:deletionProtection: true`;
-		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["readplace.com", "hutch-app.com"]);
+		expect(extractAppDomainsFromPulumiYaml(yaml)).toEqual(["domainA.com", "domainB.com"]);
 	});
 
 	it("returns empty array for empty input", () => {
