@@ -174,6 +174,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 		content: render(HOME_TEMPLATE, {
 			staticBaseUrl,
 			browserName: browser,
+			founderAvatarUrl: `${staticBaseUrl}/fayner-brack.jpg`,
 			userCount,
 			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
 			progressPercent,

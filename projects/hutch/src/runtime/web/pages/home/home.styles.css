@@ -379,11 +379,27 @@
   margin: 0 auto;
 }
 
+.home-backstory__header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.home-backstory__avatar {
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
 .home-backstory__title {
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.3;
-  margin-bottom: 24px;
+  margin-bottom: 0;
   color: var(--foreground);
 }
 
