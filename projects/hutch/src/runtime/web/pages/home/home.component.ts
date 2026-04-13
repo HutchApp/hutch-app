@@ -70,8 +70,9 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					],
 					author: {
 						"@type": "Person",
+						"@id": "https://readplace.com/#founder",
 						name: "Fayner Brack",
-						url: "https://www.linkedin.com/in/fagnerbrack/",
+						url: "https://fagnerbrack.com",
 					},
 					featureList: [
 						"One-click article saving via browser extension for Firefox and Chrome",
@@ -96,20 +97,31 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					sameAs: [
 						"https://github.com/Readplace/readplace.com",
 						"https://chromewebstore.google.com/detail/hutch/klblengmhlfnmjoagchagfcdbpbocgbf",
-						"https://www.linkedin.com/in/fagnerbrack/",
 					],
 					founder: {
 						"@type": "Person",
+						"@id": "https://readplace.com/#founder",
 						name: "Fayner Brack",
-						url: "https://www.linkedin.com/in/fagnerbrack/",
+						url: "https://fagnerbrack.com",
 						sameAs: [
-							"https://github.com/fagnerbrack",
-							"https://www.reddit.com/user/fagnerbrack",
 							"https://fagnerbrack.com",
+							"https://www.linkedin.com/in/fagnerbrack/",
+							"https://github.com/fagnerbrack",
 							"https://medium.com/@fagnerbrack",
+							"https://www.reddit.com/user/fagnerbrack",
 						],
-						knowsAbout: ["JavaScript", "browser extensions", "read-it-later applications"],
-						description: "Software engineer and creator of js-cookie, a JavaScript library with 22 billion+ annual downloads on jsDelivr CDN.",
+						jobTitle: "Founder",
+						worksFor: { "@id": "https://readplace.com/#organization" },
+						knowsAbout: [
+							"JavaScript",
+							"browser extensions",
+							"read-it-later applications",
+							"web performance",
+							"open source maintenance",
+						],
+						description:
+							"Software engineer and creator of js-cookie, a JavaScript library with 22 billion+ annual downloads on jsDelivr CDN. Founder of Hutch.",
+						award: "Creator of js-cookie — 22 billion+ annual downloads on jsDelivr CDN",
 					},
 					description:
 						"Hutch is a privacy-first read-it-later app and Pocket alternative. NOT affiliated with Hutch Telecommunications Lanka or Hutch Games (hutch.io).",
