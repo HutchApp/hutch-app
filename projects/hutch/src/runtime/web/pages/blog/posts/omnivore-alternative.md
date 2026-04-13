@@ -64,7 +64,7 @@ Features ship one at a time, and the [roadmap is public](https://readplace.com/#
 
 ## Your data, your terms
 
-**AGPL source-available.** The full source code is [on GitHub](https://github.com/HutchApp/hutch-app). If Hutch disappears tomorrow, anyone can run it. That's the point.
+**AGPL source-available.** The full source code is [on GitHub](https://github.com/Readplace/readplace.com). If Hutch disappears tomorrow, anyone can run it. That's the point.
 
 **Full export, always.** Export all your data anytime, even after you cancel. Data export is not an afterthought. It is a core promise: your saved articles stay available for export regardless of your subscription status.
 
@@ -100,4 +100,4 @@ You can send Omnivore data file to hutch+migrate@readplace.com and I'll do it fo
 
 Install the extension. Save an article. See if it fits how you read.
 
-[Install the browser extension](https://readplace.com/install) or [view the source on GitHub](https://github.com/HutchApp/hutch-app).
+[Install the browser extension](https://readplace.com/install) or [view the source on GitHub](https://github.com/Readplace/readplace.com).

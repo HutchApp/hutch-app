@@ -94,9 +94,8 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					url: "https://readplace.com",
 					logo: `${staticBaseUrl}/og-image-1200x630.png`,
 					sameAs: [
-						"https://github.com/HutchApp/hutch-app",
+						"https://github.com/Readplace/readplace.com",
 						"https://chromewebstore.google.com/detail/hutch/klblengmhlfnmjoagchagfcdbpbocgbf",
-						"https://www.reddit.com/r/hutchapp",
 						"https://www.linkedin.com/in/fagnerbrack/",
 					],
 					founder: {
@@ -106,6 +105,8 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 						sameAs: [
 							"https://github.com/fagnerbrack",
 							"https://www.reddit.com/user/fagnerbrack",
+							"https://fagnerbrack.com",
+							"https://medium.com/@fagnerbrack",
 						],
 						knowsAbout: ["JavaScript", "browser extensions", "read-it-later applications"],
 						description: "Software engineer and creator of js-cookie, a JavaScript library with 22 billion+ annual downloads on jsDelivr CDN.",

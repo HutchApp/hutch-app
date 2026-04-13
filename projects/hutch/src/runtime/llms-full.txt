@@ -238,7 +238,7 @@ Omnivore shut down in November 2024. To migrate to Hutch:
 - **Reader View:** Powered by Mozilla's Readability.js
 - **AI Summaries:** Generated per article, included in base price
 - **License:** AGPL (source-available on GitHub)
-- **Source Code:** https://github.com/HutchApp/hutch-app
+- **Source Code:** https://github.com/Readplace/readplace.com
 
 ## About
 

@@ -2,7 +2,7 @@
 
 A read-it-later app. Save articles, read them later. Built from a personal reading system I've been running for 10 years.
 
-→ [readplace.com](https://readplace.com) · [r/hutchapp](https://www.reddit.com/r/hutchapp)
+→ [readplace.com](https://readplace.com)
 
 ---
 
@@ -109,4 +109,4 @@ Check out the [package.json](./package.json) for all available commands.
 
 ## Questions / Community
 
-[r/hutchapp](https://www.reddit.com/r/hutchapp) or open an issue.
+Open an issue.

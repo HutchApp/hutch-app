@@ -57,7 +57,7 @@ gh run view <run-id> --repo owner/repo --log-failed
 **Example investigation flow:**
 ```bash
 # 1. Get failed job details
-gh pr checks <pr-number> --repo HutchApp/hutch-app
+gh pr checks <pr-number> --repo Readplace/readplace.com
 
 # 2. Search logs for actual error (usually at the end)
 gh run view <run-id> --log-failed 2>&1 | grep -E "threshold|Coverage|FAILURE"

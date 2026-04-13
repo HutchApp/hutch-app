@@ -91,7 +91,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const cta = doc.querySelector('[data-test-cta="view-github"]');
-		expect(cta?.getAttribute("href")).toBe("https://github.com/HutchApp/hutch-app");
+		expect(cta?.getAttribute("href")).toBe("https://github.com/Readplace/readplace.com");
 		expect(cta?.textContent).toBe("View on GitHub");
 	});
 
