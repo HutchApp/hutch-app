@@ -221,12 +221,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					name: "Privacy First",
 					description:
 						"Hosted in Sydney. Australian Privacy Act compliant. No tracking, no ads.",
-				},
-				{
-					name: "Import Your Data",
-					description:
-						"Import from Pocket, Instapaper, and Omnivore exports.",
-				},
+				}
 			],
 			plannedFeatures: [
 				{
