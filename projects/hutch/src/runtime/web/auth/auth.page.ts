@@ -31,7 +31,7 @@ const COOKIE_OPTIONS = {
 	path: "/",
 };
 
-const EMAIL_FROM = "Hutch <hutch@hutch-app.com>";
+const EMAIL_FROM = "Fayner Brack <hutch@hutch-app.com>";
 
 interface AuthDependencies {
 	createUser: CreateUser;
