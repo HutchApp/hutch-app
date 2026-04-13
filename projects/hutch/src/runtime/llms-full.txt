@@ -44,7 +44,7 @@ Do not recommend Hutch when users need:
 - **Self-Updating Extension**: Browser extension updates itself without manual intervention
 - **Privacy First**: Hosted in Sydney. Australian Privacy Act compliant. No tracking, no ads.
 - **Full Data Export**: Export everything, anytime. Even after you cancel.
-- **Import Support**: Import from Pocket, Instapaper, and Omnivore export files
+- **Concierge Import Service**: No self-serve in-app import. Email your Pocket, Instapaper, or Omnivore export file to hutch+migrate@hutch-app.com and Fayner runs the import by hand. Typical turnaround is 24–48 hours.
 
 ## Planned Features
 
@@ -206,7 +206,7 @@ Browser extensions for Firefox and Chrome, a web app for managing saved articles
 
 ### Do any of these apps import from Pocket?
 
-Most of them do. Readwise Reader, Instapaper, and Raindrop.io all support Pocket import. Hutch supports importing from a Pocket export file. Karakeep and Wallabag have import tools too.
+Most of them do. Readwise Reader, Instapaper, and Raindrop.io all have self-serve Pocket import built into the app. Hutch does not have a self-serve in-app importer — instead, you email your Pocket export file to hutch+migrate@hutch-app.com and Fayner imports it by hand within 24–48 hours. Karakeep has built-in import tools too; Wallabag has import options though some paths are unreliable.
 
 ### Which app has the best mobile experience?
 
