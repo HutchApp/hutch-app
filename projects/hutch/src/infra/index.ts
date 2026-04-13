@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import assert from "node:assert";
+import { resolve } from "node:path";
 import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus, HutchS3ReadWrite } from "@packages/hutch-infra-components/infra";
 import { DomainRegistration } from "./domain-registration";
 import { DomainRedirect } from "./domain-redirect";
@@ -76,6 +77,7 @@ const staticAssets = new HutchStaticAssets("hutch-static", {
 	bucketName: staticBucketName,
 	staticDomains: staticDomainEntries,
 	domains,
+	sourceDir: resolve(__dirname, "../../static-assets"),
 });
 
 const eventBus = HutchEventBus.fromPlatformStack(config);
