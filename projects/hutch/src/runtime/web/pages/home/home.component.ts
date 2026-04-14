@@ -8,6 +8,76 @@ import { HOME_PAGE_STYLES } from "./home.styles";
 
 const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8");
 
+const HOME_HEADLINE_SCRIPT = `<script>
+(function () {
+  var rotator = document.querySelector('.hero-headline__rotator');
+  if (!rotator) return;
+  var words = ['articles', 'newsletters', 'essays', 'longreads'];
+  function makeSpan(cls, text) {
+    var el = document.createElement('span');
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  }
+  rotator.textContent = '';
+  var sizer = makeSpan('hero-headline__sizer', words[0]);
+  var measurer = makeSpan('hero-headline__measurer', '');
+  var slots = [
+    makeSpan('hero-headline__word hero-headline__word--visible', words[0]),
+    makeSpan('hero-headline__word', '')
+  ];
+  rotator.appendChild(sizer);
+  rotator.appendChild(measurer);
+  rotator.appendChild(slots[0]);
+  rotator.appendChild(slots[1]);
+  rotator.classList.add('hero-headline__rotator--enhanced');
+  function measure(text) {
+    measurer.textContent = text;
+    return measurer.offsetWidth;
+  }
+  rotator.style.width = measure(words[0]) + 'px';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var index = 0;
+  var current = 0;
+  var scheduled = null;
+  var inTick = false;
+  function tick() {
+    scheduled = null;
+    inTick = true;
+    var nextIndex = (index + 1) % words.length;
+    var next = 1 - current;
+    slots[next].textContent = words[nextIndex];
+    rotator.style.width = measure(words[nextIndex]) + 'px';
+    slots[current].classList.remove('hero-headline__word--visible');
+    slots[current].classList.add('hero-headline__word--leaving');
+    setTimeout(function () {
+      slots[next].classList.add('hero-headline__word--visible');
+    }, 150);
+    setTimeout(function () {
+      slots[current].classList.remove('hero-headline__word--leaving');
+      current = next;
+      index = nextIndex;
+      inTick = false;
+      schedule();
+    }, 700);
+  }
+  function schedule() {
+    scheduled = setTimeout(tick, 2500);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') {
+      if (scheduled) {
+        clearTimeout(scheduled);
+        scheduled = null;
+      }
+    } else if (!scheduled && !inTick) {
+      schedule();
+    }
+  });
+  schedule();
+})();
+</script>`;
+
 const FOUNDING_MEMBER_LIMIT = 100;
 
 export function HomePage(params: { userCount: number; staticBaseUrl: string; browser: "firefox" | "chrome" | "other" }): Component {
@@ -182,6 +252,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 			],
 		},
 		styles: HOME_PAGE_STYLES,
+		scripts: HOME_HEADLINE_SCRIPT,
 		headerVariant: "transparent",
 		bodyClass: "page-home",
 		content: render(HOME_TEMPLATE, {

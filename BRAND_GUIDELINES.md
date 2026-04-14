@@ -63,10 +63,11 @@ Icon assets live in `/projects/hutch/static-assets/` and `/projects/firefox-exte
 
 | Role | Colour | Hex / HSL | CSS variable | Usage |
 |---|---|---|---|---|
-| **Warm amber** (Primary) | Warm terracotta/amber-brown | `#c8702a` / `hsl(27 65% 47%)` | `--color-brand`, `--primary`, `--accent` | Hero backgrounds, interactive elements, highlights, CTAs, header brand text |
+| **Warm amber** (Primary) | Warm terracotta/amber-brown | `#c8702a` / `hsl(27 65% 47%)` | `--color-brand`, `--primary`, `--accent` | Interactive elements, CTAs, default header brand text, links |
 | **Amber dark** | Darker amber | `#a85a1e` | `--color-brand-dark` | Hover/active states on brand elements |
 | **Amber light** | Pale amber tint | `#f5e6d3` | `--color-brand-light` | Subtle brand-tinted backgrounds |
-| **Navy** (Secondary) | Deep navy blue | `#2B3A55` | — | Manifest theme colour, meta tags, extension icon background, extension active states |
+| **Warm amber highlight** | Warm gold — the logo dot colour | `#c8923c` | `--color-highlight` | Highlight words in the wordmark and copy (see Highlight Words below) |
+| **Navy** (Secondary) | Deep navy blue | `#2B3A55` | — | Hero background, manifest theme colour, meta tags, extension icon background, extension active states |
 
 ### Neutrals
 
@@ -108,7 +109,7 @@ In dark mode, the brand colours shift slightly warmer and lighter to maintain co
 - **Dark mode is not an inversion.** Colours adapt to slightly warmer, lighter variants — it doesn't simply flip to white-on-black. Test every colour pairing against both backgrounds.
 - **Warm amber on dark backgrounds** is the signature brand combination. When in doubt, lead with this pairing.
 - **Reading surfaces should be neutral.** The amber appears in chrome and UI — never as the background behind article text. Article content sits on white/off-white (light) or dark grey (dark).
-- **Hero gradient:** `linear-gradient(135deg, hsl(27 65% 47%) 0%, hsl(27 50% 35%) 100%)` — the signature landing-page gradient.
+- **Hero gradient:** `linear-gradient(135deg, #2B3A55 0%, #1E2A40 100%)` — a deep navy gradient that mirrors the logo tile. Warm amber highlights (`--color-highlight`) sit directly on this background.
 
 ### Browser Extension Palette
 
@@ -143,6 +144,24 @@ The Firefox extension uses a slightly different palette tuned for small popup co
 - **Never use all-caps** for more than short labels (e.g., "SAVED", "NEW"). Never for headings or body text.
 - **International support:** Typefaces must include full Latin Extended character sets (Portuguese, accented characters). The founder is Brazilian-Australian — this is table stakes.
 - **Avoid trendy typefaces.** If it will look dated in 2 years, don't ship it.
+
+### Highlight Words
+
+A single highlight word inside a phrase can be recoloured with `--color-highlight` (warm amber `#c8923c` — the logo dot) to draw the eye without bolding, underlining, or changing size. The pattern is analogous to how the **Read**_place_ wordmark splits the brand into a white stem and an amber tail.
+
+**Rules:**
+
+- Use the same serif face as the surrounding text (`Georgia, "Times New Roman", serif`). The highlight is colour, not type.
+- **No weight or size change.** Motion or contrast does the work — bold would be shouting.
+- **Never add space** between the default-colour prefix and the highlight word. Readplace is one word, not two.
+- One highlight per phrase. If two words need emphasis, pick the stronger one.
+- The highlight is visible against navy, white, and muted surfaces. On the warm amber gradient it collapses — choose navy or another neutral for those panels.
+
+**Canonical uses:**
+
+- **Wordmark:** `Read<span class="header__brand-mark">place</span>` — the header brand logo.
+- **Hero headline:** the single word that swaps under `A home for …` (articles, newsletters, essays, longreads).
+- **Copy:** sentences where one noun is doing load-bearing work — e.g. `We respect your <span>privacy</span>.`
 
 ---
 

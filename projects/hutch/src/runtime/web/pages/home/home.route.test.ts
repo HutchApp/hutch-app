@@ -12,12 +12,31 @@ describe("GET /", () => {
 		expect(response.headers["content-type"]).toMatch(/text\/html/);
 	});
 
-	it("should render the hero section with main tagline", async () => {
+	it("should render the hero headline with the full word list for screen readers", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
-		const heroTitle = doc.querySelector(".home-hero__title");
-		expect(heroTitle?.textContent).toBe("A read-it-later app that won't shut down.");
+		const srOnly = doc.querySelector(".home-hero__title .sr-only");
+		expect(srOnly?.textContent).toBe("A home for articles, newsletters, essays, and longreads.");
+	});
+
+	it("should render the visible headline portion aria-hidden with the initial rotator word", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const visible = doc.querySelector(".home-hero__title .hero-headline__visible");
+		expect(visible?.getAttribute("aria-hidden")).toBe("true");
+		expect(visible?.textContent?.replace(/\s+/g, " ").trim()).toBe("A home for articles");
+
+		const rotator = doc.querySelector(".hero-headline__rotator");
+		expect(rotator?.textContent).toBe("articles");
+	});
+
+	it("should include the headline word-swap client script", async () => {
+		const response = await request(app).get("/");
+		expect(response.text).toContain("hero-headline__rotator");
+		expect(response.text).toContain("newsletters");
+		expect(response.text).toContain("longreads");
 	});
 
 	it("should render a generic install CTA when browser is unrecognized", async () => {

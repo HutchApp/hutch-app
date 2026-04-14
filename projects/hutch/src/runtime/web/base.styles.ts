@@ -9,6 +9,7 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 	"--color-brand": "#C8702A",
 	"--color-brand-dark": "#A85A1E",
 	"--color-brand-light": "#F5E6D3",
+	"--color-highlight": "#C8923C",
 	"--color-success": "#3D8B6E",
 	"--color-warning": "#C8923C",
 	"--color-error": "#C45C5C",
@@ -61,6 +62,7 @@ const DARK_THEME_VARIABLES: Record<string, string> = {
 	"--color-brand": "#D4833A",
 	"--color-brand-dark": "#E89A55",
 	"--color-brand-light": "#3D2A18",
+	"--color-highlight": "#D4A04A",
 	"--color-success": "#4A9F7F",
 	"--color-warning": "#D4A04A",
 	"--color-error": "#D46B6B",
@@ -148,11 +150,15 @@ export const HEADER_STYLES = `
     gap: 12px;
   }
   .header__brand {
+    font-family: Georgia, "Times New Roman", serif;
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary);
     text-decoration: none;
     letter-spacing: -0.02em;
+  }
+  .header__brand-mark {
+    color: var(--color-highlight);
   }
   .header--transparent .header__brand {
     color: var(--color-on-brand);
