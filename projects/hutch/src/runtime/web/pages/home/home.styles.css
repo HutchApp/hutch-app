@@ -34,15 +34,6 @@
   margin-bottom: 48px;
 }
 
-.section-header__label {
-  font-size: 0.8125rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase; /* 1 */
-  color: var(--primary);
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
 .section-header__title {
   font-size: 2rem;
   font-weight: 700;
@@ -75,13 +66,6 @@
 .home-hero__container {
   max-width: 720px;
   margin: 0 auto;
-}
-
-.home-hero__tagline {
-  font-size: 0.875rem;
-  letter-spacing: 0.05em;
-  opacity: 0.85;
-  margin-bottom: 16px;
 }
 
 .home-hero__title {
@@ -158,14 +142,6 @@
   max-width: 1200px;
   margin: 0 auto;
   text-align: center;
-}
-
-.home-demo__label {
-  font-size: 0.8125rem;
-  letter-spacing: 0.05em;
-  color: var(--primary);
-  font-weight: 600;
-  margin-bottom: 8px;
 }
 
 .home-demo__title {
