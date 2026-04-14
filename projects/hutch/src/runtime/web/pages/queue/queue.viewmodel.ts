@@ -80,7 +80,7 @@ function toArticleActions(
 		actions.push({
 			method: "GET",
 			url: `/queue/${article.id}/read`,
-			text: "Done",
+			text: "Read",
 			title: "Mark as read",
 			testAction: "mark-read",
 			pageReload: true,

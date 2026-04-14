@@ -363,7 +363,7 @@ describe("Queue routes", () => {
 			const actionForms = doc.querySelectorAll(".queue-article__action-form");
 
 			expect(actionForms.length).toBe(2);
-			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Done");
+			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Read");
 			expect(doc.querySelector("[data-test-action='delete']")?.textContent).toBe("×");
 		});
 
