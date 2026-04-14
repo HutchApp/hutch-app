@@ -123,14 +123,6 @@ export function createApp(dependencies: AppDependencies): Express {
 	const { appOrigin, staticBaseUrl, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
 
-	app.use((req: Request, res: Response, next: NextFunction) => {
-		if (req.hostname === "hutch-app.com") {
-			res.redirect(301, `https://readplace.com${req.originalUrl}`);
-			return;
-		}
-		next();
-	});
-
 	app.use(express.urlencoded({ extended: true }));
 	app.use(express.json());
 	app.use(cookieParser());
@@ -306,7 +298,12 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	const extensionCors = cors({
 		origin: (origin, callback) => {
-			if (!origin || origin === appOrigin || /^(moz|chrome)-extension:\/\//.test(origin)) {
+			if (
+				!origin ||
+				origin === appOrigin ||
+				origin === "https://hutch-app.com" ||
+				/^(moz|chrome)-extension:\/\//.test(origin)
+			) {
 				callback(null, true);
 			} else {
 				callback(null, false);

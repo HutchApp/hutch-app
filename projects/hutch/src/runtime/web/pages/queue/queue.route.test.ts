@@ -1017,6 +1017,18 @@ describe("Queue routes", () => {
 			expect(response.headers["access-control-allow-origin"]).toBe("moz-extension://abc123");
 		});
 
+		it("should allow requests from the legacy hutch-app.com origin", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/queue")
+				.set("Origin", "https://hutch-app.com");
+
+			expect(response.status).toBe(200);
+			expect(response.headers["access-control-allow-origin"]).toBe("https://hutch-app.com");
+		});
+
 		it("should reject requests from non-extension origins", async () => {
 			const { app } = createTestApp();
 
