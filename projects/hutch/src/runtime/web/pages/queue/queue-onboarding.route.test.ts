@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME, DISMISS_COOKIE_VALUE } from "@packages/onboarding-extension-signal";
+import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
+import { ONBOARDING_VERSION } from "../../onboarding/onboarding.steps";
 import { createTestApp } from "../../../test-app";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
@@ -160,20 +161,34 @@ describe("Queue onboarding", () => {
 		assert(success, "success section must be rendered");
 	});
 
-	it("does not render onboarding when dismiss cookie is present", async () => {
+	it("does not render onboarding when dismiss cookie matches current version", async () => {
 		const { app, auth } = createTestApp();
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent
 			.get("/queue")
-			.set("Cookie", `${DISMISS_COOKIE_NAME}=${DISMISS_COOKIE_VALUE}`);
+			.set("Cookie", `${DISMISS_COOKIE_NAME}=${ONBOARDING_VERSION}`);
 
 		const doc = new JSDOM(response.text).window.document;
 		const onboarding = doc.querySelector("[data-test-onboarding]");
 		expect(onboarding).toBeNull();
 	});
 
-	it("POST /queue/dismiss-onboarding sets dismiss cookie and redirects to /queue", async () => {
+	it("re-renders onboarding when dismiss cookie has a stale version", async () => {
+		const { app, auth } = createTestApp();
+		const agent = await loginAgent(app, auth);
+
+		const response = await agent
+			.get("/queue")
+			.set("Cookie", `${DISMISS_COOKIE_NAME}=stale-version`);
+
+		const doc = new JSDOM(response.text).window.document;
+		const onboarding = doc.querySelector("[data-test-onboarding]");
+		assert(onboarding, "onboarding container must re-render when cookie version is stale");
+		expect(onboarding.classList.contains("onboarding--visible")).toBe(true);
+	});
+
+	it("POST /queue/dismiss-onboarding sets dismiss cookie to current version and redirects to /queue", async () => {
 		const { app, auth } = createTestApp();
 		const agent = await loginAgent(app, auth);
 
@@ -184,6 +199,6 @@ describe("Queue onboarding", () => {
 		const cookies = response.headers["set-cookie"];
 		assert(cookies, "set-cookie header must be present");
 		const cookieStr = Array.isArray(cookies) ? cookies.join("; ") : cookies;
-		expect(cookieStr).toContain(`${DISMISS_COOKIE_NAME}=${DISMISS_COOKIE_VALUE}`);
+		expect(cookieStr).toContain(`${DISMISS_COOKIE_NAME}=${ONBOARDING_VERSION}`);
 	});
 });

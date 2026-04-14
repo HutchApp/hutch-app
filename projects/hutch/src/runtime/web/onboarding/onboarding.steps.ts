@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { OnboardingStep } from "./onboarding.types";
 
 const BROWSER_LABELS: Record<string, string> = {
@@ -36,3 +37,8 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
 		isComplete: (ctx) => ctx.savedArticleCount > 0,
 	},
 ];
+
+export const ONBOARDING_VERSION = createHash("sha256")
+	.update(ONBOARDING_STEPS.map((step) => step.id).sort().join("|"))
+	.digest("hex")
+	.slice(0, 8);

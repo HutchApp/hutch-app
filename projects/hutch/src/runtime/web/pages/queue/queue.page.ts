@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME, DISMISS_COOKIE_VALUE } from "@packages/onboarding-extension-signal";
+import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { Request, Response, Router } from "express";
 import express from "express";
 import { SaveArticleInputSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
@@ -28,6 +28,7 @@ import type { HttpErrorMessageMapping } from "./queue.error";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
 import { ReaderPage } from "../reader/reader.component";
+import { ONBOARDING_VERSION } from "../../onboarding/onboarding.steps";
 
 interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
@@ -166,7 +167,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const saveError = deps.httpErrorMessageMapping(req.query);
 		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError });
 		const extensionInstalled = req.cookies?.[COOKIE_NAME] === COOKIE_VALUE;
-		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === DISMISS_COOKIE_VALUE;
+		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
 		const ua = req.headers["user-agent"] ?? "";
 		const browser = ua.includes("Firefox/") ? "firefox" as const : ua.includes("Chrome/") ? "chrome" as const : "other" as const;
 		const html = QueuePage(vm, { emailVerified: req.emailVerified, saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed }).to("text/html");
@@ -174,7 +175,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	});
 
 	router.post("/dismiss-onboarding", (_req: Request, res: Response) => {
-		res.cookie(DISMISS_COOKIE_NAME, DISMISS_COOKIE_VALUE, { path: "/", maxAge: 365 * 24 * 60 * 60 * 1000, sameSite: "lax", httpOnly: true });
+		res.cookie(DISMISS_COOKIE_NAME, ONBOARDING_VERSION, { path: "/", maxAge: 365 * 24 * 60 * 60 * 1000, sameSite: "lax", httpOnly: true });
 		res.redirect(303, "/queue");
 	});
 

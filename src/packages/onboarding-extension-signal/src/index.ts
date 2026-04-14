@@ -2,7 +2,6 @@ export const COOKIE_NAME = "hutch_ext_installed";
 export const COOKIE_VALUE = "1";
 
 export const DISMISS_COOKIE_NAME = "hutch_onboarding_dismissed";
-export const DISMISS_COOKIE_VALUE = "1";
 
 /** Called by the browser extension content script on Readplace pages. */
 export function markExtensionInstalled(): void {
