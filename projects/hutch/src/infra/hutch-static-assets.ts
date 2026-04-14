@@ -102,6 +102,9 @@ class CloudFrontInvalidation extends pulumi.dynamic.Resource {
  *                          (`${name}`, `${name}-cdn`) so existing deployments see a no-op.
  *   staticDomains[1..]   — additional canonicals; each gets its own cert, CloudFront
  *                          distribution, and Route53 record with suffixed names.
+ *   staticDomains[last]  — canonical user-facing origin (used for `baseUrl`, i.e. the
+ *                          STATIC_BASE_URL referenced in server-rendered HTML). Latest
+ *                          entry wins so migrating to a new canonical just means appending.
  */
 export class HutchStaticAssets extends pulumi.ComponentResource {
 	public readonly baseUrl: pulumi.Output<string>;
@@ -284,7 +287,9 @@ export class HutchStaticAssets extends pulumi.ComponentResource {
 			);
 		}
 
-		this.baseUrl = pulumi.output(`https://${args.staticDomains[0].domain}`);
+		const canonicalStaticDomain = args.staticDomains[args.staticDomains.length - 1];
+		assert(canonicalStaticDomain, "staticDomains must have at least one entry");
+		this.baseUrl = pulumi.output(`https://${canonicalStaticDomain.domain}`);
 		this.registerOutputs();
 	}
 }
