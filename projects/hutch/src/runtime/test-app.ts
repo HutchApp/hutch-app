@@ -13,6 +13,7 @@ import type { RefreshArticleIfStale } from "./providers/article-freshness/check-
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
+import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -42,6 +43,7 @@ export function createTestApp(options?: {
 	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
 	httpErrorMessageMapping?: HttpErrorMessageMapping;
+	exchangeGoogleCode?: ExchangeGoogleCode;
 	logError?: (message: string, error?: Error) => void;
 	appOrigin?: string;
 }) {
@@ -79,6 +81,13 @@ export function createTestApp(options?: {
 		...email,
 		...emailVerification,
 		...passwordReset,
+		googleAuth: options?.exchangeGoogleCode
+			? {
+				exchangeGoogleCode: options.exchangeGoogleCode,
+				clientId: "test-google-client-id",
+				clientSecret: "test-google-client-secret",
+			}
+			: undefined,
 		baseUrl: appOrigin,
 		logError: options?.logError ?? (() => {}),
 		oauthModel,

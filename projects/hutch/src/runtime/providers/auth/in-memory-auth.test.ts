@@ -1,4 +1,6 @@
+import assert from "node:assert/strict";
 import type { UserId } from "../../domain/user/user.types";
+import { UserIdSchema } from "../../domain/user/user.schema";
 import { initInMemoryAuth } from "./in-memory-auth";
 
 describe("initInMemoryAuth", () => {
@@ -161,6 +163,101 @@ describe("initInMemoryAuth", () => {
 			const auth = initInMemoryAuth();
 
 			await auth.markSessionEmailVerified("nonexistent-session");
+		});
+	});
+
+	describe("findUserByEmail", () => {
+		it("should return null for unknown email", async () => {
+			const auth = initInMemoryAuth();
+
+			const result = await auth.findUserByEmail("noone@example.com");
+
+			expect(result).toBeNull();
+		});
+
+		it("should return userId and unverified flag after createUser", async () => {
+			const auth = initInMemoryAuth();
+			const created = await auth.createUser({ email: "test@example.com", password: "password123" });
+			assert(created.ok, "User creation failed");
+
+			const result = await auth.findUserByEmail("test@example.com");
+
+			expect(result).toEqual({ userId: created.userId, emailVerified: false });
+		});
+
+		it("should reflect markEmailVerified", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+			await auth.markEmailVerified("test@example.com");
+
+			const result = await auth.findUserByEmail("test@example.com");
+
+			expect(result?.emailVerified).toBe(true);
+		});
+
+		it("should handle case-insensitive email lookup", async () => {
+			const auth = initInMemoryAuth();
+			const created = await auth.createUser({ email: "user@example.com", password: "password123" });
+			assert(created.ok, "User creation failed");
+
+			const result = await auth.findUserByEmail("USER@Example.COM");
+
+			expect(result).toEqual({ userId: created.userId, emailVerified: false });
+		});
+	});
+
+	describe("createGoogleUser", () => {
+		it("should create a user without a password and verified email", async () => {
+			const auth = initInMemoryAuth();
+			const userId = UserIdSchema.parse("google-user-123");
+
+			const result = await auth.createGoogleUser({ email: "google@example.com", userId });
+
+			expect(result).toEqual({ ok: true, userId });
+			const lookup = await auth.findUserByEmail("google@example.com");
+			expect(lookup).toEqual({ userId, emailVerified: true });
+		});
+
+		it("should reject duplicate email", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+
+			const result = await auth.createGoogleUser({
+				email: "test@example.com",
+				userId: UserIdSchema.parse("other-id"),
+			});
+
+			expect(result).toEqual({ ok: false, reason: "email-already-exists" });
+		});
+
+		it("should normalize email case", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createGoogleUser({
+				email: "Google@Example.COM",
+				userId: UserIdSchema.parse("google-user-1"),
+			});
+
+			const result = await auth.createGoogleUser({
+				email: "google@example.com",
+				userId: UserIdSchema.parse("google-user-2"),
+			});
+
+			expect(result).toEqual({ ok: false, reason: "email-already-exists" });
+		});
+
+		it("should produce a user that cannot log in with any password", async () => {
+			const auth = initInMemoryAuth();
+			await auth.createGoogleUser({
+				email: "google-only@example.com",
+				userId: UserIdSchema.parse("google-user-only"),
+			});
+
+			const result = await auth.verifyCredentials({
+				email: "google-only@example.com",
+				password: "any-password",
+			});
+
+			expect(result).toEqual({ ok: false, reason: "invalid-credentials" });
 		});
 	});
 

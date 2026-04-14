@@ -13,9 +13,11 @@ import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CountUsers,
+	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
@@ -27,10 +29,12 @@ import { normalizeEmail } from "./normalize-email";
 import { hashPassword, verifyPassword } from "./password";
 
 const CredentialsRow = z.object({
-	passwordHash: z.string(),
+	passwordHash: z.string().optional(),
 	userId: UserIdSchema,
 	emailVerified: z.boolean().optional(),
 });
+
+const UserLookupRow = CredentialsRow.omit({ passwordHash: true });
 
 const SessionRow = z.object({
 	expiresAt: z.number(),
@@ -44,6 +48,8 @@ export function initDynamoDbAuth(deps: {
 	sessionsTableName: string;
 }): {
 	createUser: CreateUser;
+	createGoogleUser: CreateGoogleUser;
+	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
@@ -76,6 +82,40 @@ export function initDynamoDbAuth(deps: {
 			}
 			throw error;
 		}
+	};
+
+	const createGoogleUser: CreateGoogleUser = async ({ email, userId }) => {
+		const normalizedEmail = normalizeEmail(email);
+
+		try {
+			await client.send(
+				new PutCommand({
+					TableName: usersTableName,
+					Item: { email: normalizedEmail, userId, emailVerified: true },
+					ConditionExpression: "attribute_not_exists(email)",
+				}),
+			);
+			return { ok: true, userId };
+		} catch (error) {
+			if (error instanceof ConditionalCheckFailedException) {
+				return { ok: false, reason: "email-already-exists" };
+			}
+			throw error;
+		}
+	};
+
+	const findUserByEmail: FindUserByEmail = async (email) => {
+		const normalizedEmail = normalizeEmail(email);
+		const result = await client.send(
+			new GetCommand({
+				TableName: usersTableName,
+				Key: { email: normalizedEmail },
+				ProjectionExpression: "userId, emailVerified",
+			}),
+		);
+		if (!result.Item) return null;
+		const row = UserLookupRow.parse(result.Item);
+		return { userId: row.userId, emailVerified: row.emailVerified === true };
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
@@ -207,6 +247,8 @@ export function initDynamoDbAuth(deps: {
 
 	return {
 		createUser,
+		createGoogleUser,
+		findUserByEmail,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,

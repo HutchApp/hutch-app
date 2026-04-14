@@ -38,3 +38,14 @@ export type MarkSessionEmailVerified = (sessionId: string) => Promise<void>;
 export type UserExistsByEmail = (email: string) => Promise<boolean>;
 
 export type UpdatePassword = (args: { email: string; password: string }) => Promise<void>;
+
+export type FindUserByEmailResult =
+	| { userId: UserId; emailVerified: boolean }
+	| null;
+
+export type FindUserByEmail = (email: string) => Promise<FindUserByEmailResult>;
+
+export type CreateGoogleUser = (user: {
+	email: string;
+	userId: UserId;
+}) => Promise<CreateUserResult>;

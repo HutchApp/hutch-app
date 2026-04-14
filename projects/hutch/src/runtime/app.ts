@@ -1,4 +1,5 @@
 /* c8 ignore start -- composition root, no logic to test */
+import assert from "node:assert";
 import type { Express } from "express";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
@@ -34,6 +35,7 @@ import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbri
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
+import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
@@ -54,6 +56,9 @@ function initProviders() {
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
 		const passwordResetTokensTable = requireEnv("DYNAMODB_PASSWORD_RESET_TOKENS_TABLE");
+		const googleClientId = requireEnv("GOOGLE_LOGIN_CLIENT_ID");
+		const googleClientSecret = requireEnv("GOOGLE_LOGIN_CLIENT_SECRET");
+		const appOriginForRedirect = requireEnv("APP_ORIGIN");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
@@ -86,6 +91,17 @@ function initProviders() {
 			now: () => new Date(),
 			staleTtlMs,
 		});
+		const googleAuth = {
+			exchangeGoogleCode: initExchangeGoogleCode({
+				clientId: googleClientId,
+				clientSecret: googleClientSecret,
+				redirectUri: `${appOriginForRedirect}/auth/google/callback`,
+				fetch: globalThis.fetch,
+			}),
+			clientId: googleClientId,
+			clientSecret: googleClientSecret,
+		};
+
 		return {
 			auth,
 			articleStore,
@@ -94,6 +110,7 @@ function initProviders() {
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			...initDynamoDbPasswordReset({ client, tableName: passwordResetTokensTable }),
+			googleAuth,
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			publishLinkSaved,
@@ -106,6 +123,24 @@ function initProviders() {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const devGoogleClientId = getEnv("GOOGLE_LOGIN_CLIENT_ID");
+	const devGoogleClientSecret = getEnv("GOOGLE_LOGIN_CLIENT_SECRET");
+	assert(
+		(devGoogleClientId && devGoogleClientSecret) || (!devGoogleClientId && !devGoogleClientSecret),
+		"GOOGLE_LOGIN_CLIENT_ID and GOOGLE_LOGIN_CLIENT_SECRET must both be set or both unset",
+	);
+	const googleAuth = devGoogleClientId && devGoogleClientSecret
+		? {
+			exchangeGoogleCode: initExchangeGoogleCode({
+				clientId: devGoogleClientId,
+				clientSecret: devGoogleClientSecret,
+				redirectUri: `http://localhost:${getEnv("PORT") || "3000"}/auth/google/callback`,
+				fetch: globalThis.fetch,
+			}),
+			clientId: devGoogleClientId,
+			clientSecret: devGoogleClientSecret,
+		}
+		: undefined;
 	const { publishLinkSaved } = initInMemoryLinkSaved({ logger: consoleLogger });
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
@@ -131,6 +166,7 @@ function initProviders() {
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
 		...initInMemoryPasswordReset(),
+		googleAuth,
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		publishLinkSaved,

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
@@ -437,6 +438,113 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/");
+		});
+	});
+
+	describe("feature=google-login toggle", () => {
+		function getGoogleSection(html: string) {
+			const doc = new JSDOM(html).window.document;
+			const section = doc.querySelector("[data-test-google-section]");
+			assert(section, "google section must be rendered");
+			return section;
+		}
+
+		it("should hide Continue with Google on /login by default", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login");
+
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(true);
+		});
+
+		it("should show Continue with Google on /login when feature=google-login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login?feature=google-login");
+
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
+			const googleLink = section.querySelector(".auth-google-button");
+			assert(googleLink, "google button must be rendered");
+			expect(googleLink.getAttribute("href")).toBe("/auth/google");
+			expect(googleLink.textContent).toBe("Continue with Google");
+		});
+
+		it("should pass return URL through to the Continue with Google link", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/login?feature=google-login&return=%2Fsave%3Furl%3Dhttps%253A%252F%252Fexample.com");
+
+			const section = getGoogleSection(response.text);
+			const googleLink = section.querySelector(".auth-google-button");
+			assert(googleLink, "google button must be rendered");
+			expect(googleLink.getAttribute("href")).toContain("/auth/google?return=");
+		});
+
+		it("should keep Continue with Google visible through invalid-credentials on POST /login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app)
+				.post("/login?feature=google-login")
+				.type("form")
+				.send({ email: "test@example.com", password: "wrongpassword" });
+
+			expect(response.status).toBe(422);
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
+		});
+
+		it("should keep Continue with Google visible through a validation error on POST /login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app)
+				.post("/login?feature=google-login")
+				.type("form")
+				.send({ email: "", password: "password123" });
+
+			expect(response.status).toBe(422);
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
+		});
+
+		it("should hide Continue with Google on /signup by default", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/signup");
+
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(true);
+		});
+
+		it("should show Continue with Google on /signup when feature=google-login", async () => {
+			const { app } = createTestApp();
+			const response = await request(app).get("/signup?feature=google-login");
+
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
+			const googleLink = section.querySelector(".auth-google-button");
+			assert(googleLink, "google button must be rendered");
+			expect(googleLink.getAttribute("href")).toBe("/auth/google");
+		});
+
+		it("should keep Continue with Google visible through duplicate email error on POST /signup", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "taken@example.com", password: "password123" });
+			const response = await request(app)
+				.post("/signup?feature=google-login")
+				.type("form")
+				.send({ email: "taken@example.com", password: "password123", confirmPassword: "password123" });
+
+			expect(response.status).toBe(422);
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
+		});
+
+		it("should keep Continue with Google visible through validation error on POST /signup", async () => {
+			const { app } = createTestApp();
+			const response = await request(app)
+				.post("/signup?feature=google-login")
+				.type("form")
+				.send({ email: "new@example.com", password: "short", confirmPassword: "short" });
+
+			expect(response.status).toBe(422);
+			const section = getGoogleSection(response.text);
+			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
 		});
 	});
 });

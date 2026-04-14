@@ -6,9 +6,11 @@ import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
 import type {
 	CountUsers,
+	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
@@ -16,6 +18,7 @@ import type {
 	UserExistsByEmail,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
+import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type {
 	DeleteArticle,
@@ -40,6 +43,8 @@ import type {
 } from "./providers/password-reset/password-reset.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
+import { initGoogleAuthRoutes } from "./web/auth/google-auth.page";
+import { SESSION_COOKIE_NAME } from "./web/auth/session-cookie";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
@@ -59,12 +64,12 @@ import "./web/session.types";
 
 export const PORT = requireEnv("PORT", { defaultValue: "3000" });
 
-const COOKIE_NAME = "hutch_sid";
-
 interface AppDependencies {
 	appOrigin: string;
 	staticBaseUrl: string;
 	createUser: CreateUser;
+	createGoogleUser: CreateGoogleUser;
+	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
@@ -72,6 +77,11 @@ interface AppDependencies {
 	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
 	markSessionEmailVerified: MarkSessionEmailVerified;
+	googleAuth?: {
+		exchangeGoogleCode: ExchangeGoogleCode;
+		clientId: string;
+		clientSecret: string;
+	};
 	parseArticle: ParseArticle;
 	findArticleById: FindArticleById;
 	findArticlesByUser: FindArticlesByUser;
@@ -126,7 +136,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use(cookieParser());
 
 	app.use(async (req: Request, _res: Response, next: NextFunction) => {
-		const sessionId = req.cookies?.[COOKIE_NAME];
+		const sessionId = req.cookies?.[SESSION_COOKIE_NAME];
 		if (sessionId) {
 			const session = await getSessionUserId(sessionId);
 			if (session) {
@@ -267,6 +277,21 @@ export function createApp(dependencies: AppDependencies): Express {
 		logError: deps.logError,
 	});
 	app.use(authRouter);
+
+	if (deps.googleAuth) {
+		const googleAuthRouter = initGoogleAuthRoutes({
+			googleClientId: deps.googleAuth.clientId,
+			googleClientSecret: deps.googleAuth.clientSecret,
+			appOrigin,
+			createSession: deps.createSession,
+			createGoogleUser: deps.createGoogleUser,
+			findUserByEmail: deps.findUserByEmail,
+			markEmailVerified: deps.markEmailVerified,
+			exchangeGoogleCode: deps.googleAuth.exchangeGoogleCode,
+			logError: deps.logError,
+		});
+		app.use(googleAuthRouter);
+	}
 
 	const forgotPasswordRouter = initForgotPasswordRoutes({
 		sendEmail: deps.sendEmail,

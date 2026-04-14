@@ -4,9 +4,11 @@ import type { UserId } from "../../domain/user/user.types";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CountUsers,
+	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
@@ -20,7 +22,7 @@ import { hashPassword, verifyPassword } from "./password";
 interface StoredUser {
 	id: UserId;
 	email: string;
-	passwordHash: string;
+	passwordHash: string | undefined;
 	emailVerified: boolean;
 }
 
@@ -31,6 +33,8 @@ interface StoredSession {
 
 export function initInMemoryAuth(): {
 	createUser: CreateUser;
+	createGoogleUser: CreateGoogleUser;
+	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	getSessionUserId: GetSessionUserId;
@@ -57,6 +61,25 @@ export function initInMemoryAuth(): {
 		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash, emailVerified: false });
 
 		return { ok: true, userId };
+	};
+
+	const createGoogleUser: CreateGoogleUser = async ({ email, userId }) => {
+		const normalizedEmail = normalizeEmail(email);
+
+		if (users.has(normalizedEmail)) {
+			return { ok: false, reason: "email-already-exists" };
+		}
+
+		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash: undefined, emailVerified: true });
+
+		return { ok: true, userId };
+	};
+
+	const findUserByEmail: FindUserByEmail = async (email) => {
+		const normalizedEmail = normalizeEmail(email);
+		const user = users.get(normalizedEmail);
+		if (!user) return null;
+		return { userId: user.id, emailVerified: user.emailVerified };
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
@@ -121,6 +144,8 @@ export function initInMemoryAuth(): {
 
 	return {
 		createUser,
+		createGoogleUser,
+		findUserByEmail,
 		verifyCredentials,
 		createSession,
 		getSessionUserId,

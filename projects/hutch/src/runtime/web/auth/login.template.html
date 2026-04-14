@@ -16,6 +16,10 @@
           </div>
           <button class="auth-form__submit" type="submit">Sign in</button>
         </form>
+        <div class="auth-google-section{{#unless showGoogleLogin}} auth-google-section--hidden{{/unless}}" data-test-google-section>
+          <div class="auth-divider">or</div>
+          <a class="auth-google-button" href="/auth/google{{#if returnUrl}}?return={{returnUrl}}{{/if}}">Continue with Google</a>
+        </div>
         <p class="auth-card__footer auth-card__footer--forgot">
           <a href="/forgot-password">Forgot your password?</a>
         </p>
