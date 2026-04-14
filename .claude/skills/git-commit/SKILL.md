@@ -30,6 +30,10 @@ The scope **must** be the `name` property from the project's `package.json` wher
 - Keep the description concise (ideally under 72 characters)
 - Use imperative mood ("add" not "added" or "adds")
 
+## Pre-Commit Check: New Environment Variables
+
+If `git diff --staged | grep -E 'requireEnv\(|getEnv\('` shows a newly-introduced env var name, consult the `infrastructure-design` skill's two env var checklists (config-derived vs external-secret) before committing. The most commonly missed step is forwarding the secret from GitHub Actions into the CI deploy workflow's `env:` block — a gap local tooling can't detect, because `pnpm check-infra` passes using the variable from your shell. CI fails only at the deploy step after the push has landed on `main`.
+
 ## Pre-commit Hook Failures
 
 When the pre-commit hook fails, follow this diagnostic process **before** asking the user to bypass hooks:
