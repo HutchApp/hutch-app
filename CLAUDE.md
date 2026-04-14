@@ -6,6 +6,12 @@
   a) if unable to install devbox, check [devbox.json](./devbox.json) for required tools and install them manually (Node.js, AWS CLI, Pulumi, etc.), Check [.envrc](./.envrc) for required environment variables and set them in your shell profile (e.g., .bashrc, .zshrc)
 1. Run pnpm install to install dependencies
 
+## Product Constraints
+
+### Imports are manual via email
+
+There is no in-app import. Users email Fayner their export file and he runs the import manually (24–48h turnaround — see [pocket-migration.md](./projects/hutch/src/runtime/web/pages/blog/posts/pocket-migration.md) for the user-facing copy). The absence is intentional: do not build a self-serve import flow, do not describe import as a shipped feature without qualifying it's a manual email process, and do not restore the removed "Import Your Data" landing page card.
+
 ## Architecture Guidelines
 
 ### Brand & Design Guidelines

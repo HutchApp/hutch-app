@@ -61,6 +61,18 @@ No custom `*.client.js` is needed when htmx covers the interaction. Reserve `*.c
 
 IMPORTANT: Ask for human intervention whenever a deviation from htmx is needed away from this basic pattern for SPA navigation.
 
+### No Side Effects on GET
+
+Never mutate state on a GET — proxies cache them, prefetchers fire them, crawlers hit them. For URLs that need to trigger a mutation (e.g., a share-able save permalink), render a page with an auto-submitting `<form method="POST">`. See `save.page.ts` for the `/save?url=X` → `/queue?url=X` → auto-submit POST pattern.
+
+```html
+<form method="POST" action="/queue/save" data-auto-submit>
+  <input type="url" name="url" value="https://...">
+</form>
+```
+
+Alternatively use the POST - Redirect - GET pattern.
+
 ### Anti-Patterns
 
 | Avoid | Instead |
