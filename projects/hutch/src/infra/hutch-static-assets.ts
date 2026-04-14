@@ -16,6 +16,7 @@ const CONTENT_TYPES: Record<string, string> = {
 	".ico": "image/x-icon",
 	".jpg": "image/jpeg",
 	".jpeg": "image/jpeg",
+	".svg": "image/svg+xml",
 	".webmanifest": "application/manifest+json",
 	".xml": "application/xml",
 	".mp4": "video/mp4",
