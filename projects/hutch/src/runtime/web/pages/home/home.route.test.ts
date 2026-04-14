@@ -17,7 +17,7 @@ describe("GET /", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const srOnly = doc.querySelector(".home-hero__title .sr-only");
-		expect(srOnly?.textContent).toBe("A home for articles, newsletters, essays, and longreads.");
+		expect(srOnly?.textContent).toBe("A home for articles, newsletters, essays, longreads, news, blogs, stories, posts, reports, and interviews.");
 	});
 
 	it("should render the visible headline portion aria-hidden with the initial rotator word", async () => {

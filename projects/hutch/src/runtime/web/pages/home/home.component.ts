@@ -12,7 +12,7 @@ const HOME_HEADLINE_SCRIPT = `<script>
 (function () {
   var rotator = document.querySelector('.hero-headline__rotator');
   if (!rotator) return;
-  var words = ['articles', 'newsletters', 'essays', 'longreads'];
+  var words = ['articles', 'news', 'blogs', 'stories', 'newsletters', 'posts', 'reports', 'interviews', 'essays', 'longreads'];
   function makeSpan(cls, text) {
     var el = document.createElement('span');
     el.className = cls;

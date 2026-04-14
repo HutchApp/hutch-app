@@ -160,7 +160,7 @@ A single highlight word inside a phrase can be recoloured with `--color-highligh
 **Canonical uses:**
 
 - **Wordmark:** `Read<span class="header__brand-mark">place</span>` — the header brand logo.
-- **Hero headline:** the single word that swaps under `A home for …` (articles, newsletters, essays, longreads).
+- **Hero headline:** the single word that swaps under `A home for …` (articles, newsletters, essays, longreads, news, blogs, stories, posts, reports, interviews).
 - **Copy:** sentences where one noun is doing load-bearing work — e.g. `We respect your <span>privacy</span>.`
 
 ---
