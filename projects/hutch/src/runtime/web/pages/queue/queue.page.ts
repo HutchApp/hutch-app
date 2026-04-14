@@ -24,6 +24,7 @@ import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
 import { toArticleEntity } from "../../api/article-siren";
 import { parseQueueUrl, buildQueueUrl } from "./queue.url";
+import type { HttpErrorMessageMapping } from "./queue.error";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
 import { ReaderPage } from "../reader/reader.component";
@@ -40,6 +41,7 @@ interface QueueDependencies {
 	refreshArticleIfStale: RefreshArticleIfStale;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
+	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
 }
 
@@ -161,7 +163,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			? result.total
 			: (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 		const totalArticles = (await deps.findArticlesByUser({ userId, page: 1, pageSize: 1 })).total;
-		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles });
+		const saveError = deps.httpErrorMessageMapping(req.query);
+		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError });
 		const extensionInstalled = req.cookies?.[COOKIE_NAME] === COOKIE_VALUE;
 		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === DISMISS_COOKIE_VALUE;
 		const ua = req.headers["user-agent"] ?? "";
@@ -225,10 +228,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		try {
 			const freshness = await deps.refreshArticleIfStale({ url: parsedBody.data.url });
 			await saveArticleFromUrl(deps, { userId, url: parsedBody.data.url, freshness });
-			res.redirect(303, "/queue");
+			res.redirect(303, "/queue#latest-saved");
 		} catch (error) {
 			deps.logError("Failed to save article", error instanceof Error ? error : undefined);
-			res.redirect(303, "/queue");
+			res.redirect(303, "/queue?error_code=save_failed");
 		}
 	});
 

@@ -20,6 +20,7 @@ import {
 import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
 import { noopLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
+import { httpErrorMessageMapping as defaultHttpErrorMessageMapping, type HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 
 const { publishUpdateFetchTimestamp: defaultPublishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: noopLogger });
 const noopCheckFreshness: RefreshArticleIfStale = async () => ({ action: "new" });
@@ -40,6 +41,7 @@ export function createTestApp(options?: {
 	publishUpdateFetchTimestamp?: PublishUpdateFetchTimestamp;
 	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
+	httpErrorMessageMapping?: HttpErrorMessageMapping;
 	logError?: (message: string, error?: Error) => void;
 	appOrigin?: string;
 }) {
@@ -73,6 +75,7 @@ export function createTestApp(options?: {
 		publishUpdateFetchTimestamp: options?.publishUpdateFetchTimestamp ?? defaultPublishUpdateFetchTimestamp,
 		findCachedSummary: options?.findCachedSummary ?? (async () => ""),
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,
+		httpErrorMessageMapping: options?.httpErrorMessageMapping ?? defaultHttpErrorMessageMapping,
 		...email,
 		...emailVerification,
 		...passwordReset,

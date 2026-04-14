@@ -36,6 +36,7 @@ import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
+import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { getEnv, requireEnv } from "./require-env";
 
 function initProviders() {
@@ -159,6 +160,7 @@ export function createHutchApp(deps: {
 		logError: (message, error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack })),
 		oauthModel,
 		validateAccessToken,
+		httpErrorMessageMapping,
 	});
 
 	return { app, auth, articleStore, oauthModel };

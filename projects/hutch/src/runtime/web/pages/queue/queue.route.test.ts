@@ -59,7 +59,7 @@ describe("Queue routes", () => {
 				.send({ url: "https://example.com/article" });
 
 			expect(saveResponse.status).toBe(303);
-			expect(saveResponse.headers.location).toBe("/queue");
+			expect(saveResponse.headers.location).toBe("/queue#latest-saved");
 
 			const queueResponse = await agent.get("/queue");
 			const doc = new JSDOM(queueResponse.text).window.document;
@@ -79,6 +79,32 @@ describe("Queue routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector("[data-test-save-error]")?.textContent).toBe("Please enter a valid URL");
+		});
+
+		it("should redirect with error code when save throws", async () => {
+			const { app, auth } = createTestApp({
+				refreshArticleIfStale: async () => { throw new Error("boom"); },
+			});
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue?error_code=save_failed");
+		});
+
+		it("should render error banner when queue is loaded with error_code=save_failed", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue?error_code=save_failed");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-save-error]")?.textContent).toBe("Could not save article. Please try again.");
 		});
 	});
 
@@ -653,7 +679,7 @@ describe("Queue routes", () => {
 				.send({ url: "https://example.com/broken" });
 
 			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/queue");
+			expect(response.headers.location).toBe("/queue#latest-saved");
 		});
 
 		it("should show fallback title from hostname when fetch fails", async () => {
@@ -877,7 +903,7 @@ describe("Queue routes", () => {
 				.send({ url: "https://example.com/existing" });
 
 			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/queue");
+			expect(response.headers.location).toBe("/queue#latest-saved");
 		});
 
 		it("should save for unchanged content (304)", async () => {

@@ -42,6 +42,7 @@ import type { OAuthModel } from "./providers/oauth/oauth-model";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
+import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { initSaveRoutes } from "./web/pages/save/save.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
@@ -93,6 +94,7 @@ interface AppDependencies {
 	refreshArticleIfStale: RefreshArticleIfStale;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
+	httpErrorMessageMapping: HttpErrorMessageMapping;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -298,6 +300,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		refreshArticleIfStale: deps.refreshArticleIfStale,
 		publishUpdateFetchTimestamp: deps.publishUpdateFetchTimestamp,
 		readArticleContent: deps.readArticleContent,
+		httpErrorMessageMapping: deps.httpErrorMessageMapping,
 		logError: deps.logError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);

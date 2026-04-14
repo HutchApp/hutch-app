@@ -12,6 +12,7 @@ import { initInMemoryPasswordReset } from "../../providers/password-reset/in-mem
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
+import { httpErrorMessageMapping } from "../pages/queue/queue.error";
 
 const stubCrawlArticle: CrawlArticle = async ({ url }) => {
 	const hostname = new URL(url).hostname;
@@ -71,6 +72,7 @@ describe("Email verification", () => {
 				findCachedSummary: async () => "",
 				refreshArticleIfStale: async () => ({ action: "new" as const }),
 				publishUpdateFetchTimestamp: async () => {},
+				httpErrorMessageMapping,
 			});
 
 			const response = await request(app).post("/signup").type("form").send({
