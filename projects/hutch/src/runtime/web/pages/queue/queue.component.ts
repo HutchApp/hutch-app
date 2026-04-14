@@ -123,7 +123,7 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 
 	return Base({
 		seo: {
-			title: "My Queue — Hutch",
+			title: "My Queue — Readplace",
 			description: "Your saved articles reading queue.",
 			canonicalUrl: "/queue",
 			robots: "noindex, nofollow",

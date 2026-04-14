@@ -13,12 +13,12 @@ export function initCreateContextMenus(contextMenus: ContextMenusApi) {
 		await contextMenus.removeAll();
 		contextMenus.create({
 			id: MENU_ITEM_SAVE_PAGE,
-			title: "Save Page to Hutch",
+			title: "Save Page to Readplace",
 			contexts: ["page"],
 		});
 		contextMenus.create({
 			id: MENU_ITEM_SAVE_LINK,
-			title: "Save Link to Hutch",
+			title: "Save Link to Readplace",
 			contexts: ["link"],
 		});
 	};

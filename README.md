@@ -1,4 +1,4 @@
-# Hutch
+# Readplace
 
 A read-it-later app. Save articles, read them later. Built from a personal reading system I've been running for 10 years.
 
@@ -69,7 +69,7 @@ The browser extension and web app in this repo were built through PR review cycl
 
 ## The App
 
-Hutch is a read-it-later app for people who actually read what they save.
+Readplace is a read-it-later app for people who actually read what they save.
 
 **What works now:**
 - Browser extension (Firefox) — save any page in one click

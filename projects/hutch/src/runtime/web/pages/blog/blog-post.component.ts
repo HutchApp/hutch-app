@@ -13,7 +13,7 @@ export function BlogPostPage(params: { post: BlogPost }): Component {
 
 	return Base({
 		seo: {
-			title: `${post.title} — Hutch Blog`,
+			title: `${post.title} — Readplace Blog`,
 			description: post.description,
 			canonicalUrl: `https://readplace.com/blog/${post.slug}`,
 			ogType: "article",
@@ -39,7 +39,7 @@ export function BlogPostPage(params: { post: BlogPost }): Component {
 					},
 					publisher: {
 						"@type": "Organization",
-						name: "Hutch",
+						name: "Readplace",
 						url: "https://readplace.com",
 					},
 				},

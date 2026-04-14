@@ -1,21 +1,21 @@
 ---
 title: "Best Read-It-Later Apps in 2026 (Honest Comparison)"
-description: "Honest comparison of read-it-later apps in 2026: Hutch, Readwise Reader, Instapaper, Raindrop.io, Karakeep, Wallabag, and Matter."
+description: "Honest comparison of read-it-later apps in 2026: Readplace, Readwise Reader, Instapaper, Raindrop.io, Karakeep, Wallabag, and Matter."
 slug: "best-read-it-later-apps-2026"
 date: "2026-04-03"
 author: "Fayner Brack"
-keywords: "read it later apps, Pocket alternative, Omnivore alternative, best read it later 2026, Readwise Reader, Instapaper, Karakeep, Wallabag, Raindrop, Matter, Hutch"
+keywords: "read it later apps, Pocket alternative, Omnivore alternative, best read it later 2026, Readwise Reader, Instapaper, Karakeep, Wallabag, Raindrop, Matter, Readplace"
 ---
 
 Mozilla acquired Pocket and then abandoned it. Omnivore shut down overnight after ElevenLabs acqui-hired the team. Millions of readers lost their save-for-later tool and started looking for a replacement.
 
-This page covers the real alternatives in 2026, with honest pros and cons for each, including Hutch's own limitations. I built Hutch, so I have an obvious bias. I wrote this to be fair anyway.
+This page covers the real alternatives in 2026, with honest pros and cons for each, including Readplace's own limitations. I built Readplace, so I have an obvious bias. I wrote this to be fair anyway.
 
 ## Quick Comparison
 
 | App | Price | AI Features | Open Source | Offline Reading | Platforms |
 |-----|-------|-------------|-------------|-----------------|-----------|
-| **Hutch** | $3.99/mo | TL;DR summaries | Source-available | Planned | Web, Chrome, Firefox |
+| **Readplace** | $3.99/mo | TL;DR summaries | Source-available | Planned | Web, Chrome, Firefox |
 | **Readwise Reader** | $9.99-12.99/mo | Ghostreader AI | No | Yes | Web, iOS, Android, Chrome, Firefox, Safari |
 | **Instapaper** | Free / Premium | No | No | Yes | Web, iOS, Android, Kobo |
 | **Raindrop.io** | Free / $3/mo | No | No | Pro only | Web, iOS, Android, Chrome, Firefox, Safari |
@@ -23,11 +23,11 @@ This page covers the real alternatives in 2026, with honest pros and cons for ea
 | **Wallabag** | Free (self-hosted) | No | Yes | Yes | Web, iOS, Android, Chrome, Firefox |
 | **Matter** | Free / $8/mo | AI co-reader | No | Yes | iOS, Android, Web |
 
-## Hutch
+## Readplace
 
-I built Hutch after ten years of maintaining a personal reading system. Save an article with one click, read it later in a clean reader view, and get an AI-generated TL;DR for every piece. It runs on AWS in Sydney and operates under the Australian Privacy Act.
+I built Readplace after ten years of maintaining a personal reading system. Save an article with one click, read it later in a clean reader view, and get an AI-generated TL;DR for every piece. It runs on AWS in Sydney and operates under the Australian Privacy Act.
 
-The code is source-available. Hutch is newer than most options here and still adding features. What it does today, it does well.
+The code is source-available. Readplace is newer than most options here and still adding features. What it does today, it does well.
 
 **$3.99/month**
 
@@ -40,7 +40,7 @@ The code is source-available. Hutch is newer than most options here and still ad
 ### Limitations
 
 - No mobile app yet and no offline reading. The feature set is smaller than Readwise Reader or Instapaper.
-- Solo-built and newer. If you need a mature product with years of polish, Hutch is not there yet.
+- Solo-built and newer. If you need a mature product with years of polish, Readplace is not there yet.
 
 **Good fit for:** Readers who want AI summaries and privacy without high cost, and who are comfortable with a product that is still growing.
 
@@ -164,7 +164,7 @@ Matter takes a different approach to read-it-later. It adds social discovery and
 
 - **If you want the most features:** Readwise Reader. Nothing else matches its depth, especially for highlight sync to Obsidian or Notion.
 - **If you want to self-host:** Karakeep. It is the most actively developed self-hosted option with AI features included.
-- **If you want AI summaries without the complexity or cost:** Hutch. One price, no tiers, summaries included.
+- **If you want AI summaries without the complexity or cost:** Readplace. One price, no tiers, summaries included.
 - **If you want the simplest Pocket replacement:** Instapaper. Mature, stable, and it works on Kobo e-readers.
 - **If you need a bookmark manager that reads too:** Raindrop.io.
 - **If you want proven open source stability:** Wallabag.
@@ -182,12 +182,12 @@ Omnivore was an open source read-it-later app with a loyal following. In late 20
 
 ### Do any of these apps import from Pocket?
 
-Most of them do. Readwise Reader, Instapaper, and Raindrop.io all have self-serve Pocket import built into the app. Hutch does not have a self-serve in-app importer — instead, you email your Pocket export file to [hutch+migrate@hutch-app.com](mailto:hutch+migrate@hutch-app.com) and I import it by hand within 24–48 hours. Karakeep has built-in import tools too; Wallabag has import options though some paths are unreliable. Check each app's documentation for the current import process.
+Most of them do. Readwise Reader, Instapaper, and Raindrop.io all have self-serve Pocket import built into the app. Readplace does not have a self-serve in-app importer — instead, you email your Pocket export file to [hutch+migrate@hutch-app.com](mailto:hutch+migrate@hutch-app.com) and I import it by hand within 24–48 hours. Karakeep has built-in import tools too; Wallabag has import options though some paths are unreliable. Check each app's documentation for the current import process.
 
 ### Which app has the best mobile experience?
 
-Readwise Reader has the most polished mobile apps with full offline support. Instapaper's mobile apps are mature and reliable. Hutch does not have a native mobile app yet. The web app works on mobile browsers, but it is not the same as a dedicated app.
+Readwise Reader has the most polished mobile apps with full offline support. Instapaper's mobile apps are mature and reliable. Readplace does not have a native mobile app yet. The web app works on mobile browsers, but it is not the same as a dedicated app.
 
-### Is Hutch biased in this comparison?
+### Is Readplace biased in this comparison?
 
-Yes, inherently. I built Hutch, so I have a stake in how it is perceived. I wrote this page to represent each app fairly and to be honest about Hutch's limitations: no mobile app, no offline reading, a smaller feature set, and a newer track record. Think this page is unfair? I want to hear about it.
+Yes, inherently. I built Readplace, so I have a stake in how it is perceived. I wrote this page to represent each app fairly and to be honest about Readplace's limitations: no mobile app, no offline reading, a smaller feature set, and a newer track record. Think this page is unfair? I want to hear about it.

@@ -10,9 +10,9 @@ const TERMS_TEMPLATE = readFileSync(join(__dirname, "terms.template.html"), "utf
 export function TermsPage(): Component {
 	return Base({
 		seo: {
-			title: "Terms of Service — Hutch",
+			title: "Terms of Service — Readplace",
 			description:
-				"Terms governing your use of the Hutch read-it-later service.",
+				"Terms governing your use of the Readplace read-it-later service.",
 			canonicalUrl: "https://readplace.com/terms",
 			robots: "noindex, follow",
 		},

@@ -1,5 +1,5 @@
 ---
-title: "Hutch vs Instapaper: Two Different Approaches to Read-It-Later"
+title: "Readplace vs Instapaper: Two Different Approaches to Read-It-Later"
 description: "A fair comparison of two read-it-later apps that took different paths after Pocket shut down. One is familiar and stable. The other bets on AI and active development."
 slug: "hutch-vs-instapaper"
 date: "2026-04-07"
@@ -9,13 +9,13 @@ keywords: "instapaper alternative, read it later, hutch vs instapaper, pocket re
 
 Pocket shut down in July 2025. A lot of readers lost their go-to save-for-later tool overnight. Some moved to Omnivore, but that shut down too. Many landed on Instapaper, which has been running since 2008.
 
-Hutch launched around the same time. I had been running my own reading system for about ten years before turning it into a product.
+Readplace launched around the same time. I had been running my own reading system for about ten years before turning it into a product.
 
 Both apps save articles for later. Past that, they take different paths. This is an honest comparison of the two.
 
 ## The basics
 
-Instapaper and Hutch do the same core thing. You find something on the web, save it, and read it when you're ready. Both strip away clutter and give you a clean reading view. Both let you organise saved articles.
+Instapaper and Readplace do the same core thing. You find something on the web, save it, and read it when you're ready. Both strip away clutter and give you a clean reading view. Both let you organise saved articles.
 
 That's where the overlap ends.
 
@@ -33,27 +33,27 @@ Here's the trade-off. Instapaper has not shipped many new features in recent yea
 
 > **For some people, that stability is a feature. For others, it feels like maintenance mode.**
 
-## Hutch: a different bet
+## Readplace: a different bet
 
-Hutch comes at the problem from another direction. It's a newer product, built by one developer in Australia. It has a clear opinion about where read-it-later tools should go next.
+Readplace comes at the problem from another direction. It's a newer product, built by one developer in Australia. It has a clear opinion about where read-it-later tools should go next.
 
-The biggest difference is AI. Hutch generates summaries of saved articles. You can scan a summary before deciding to read the full piece. Instapaper has no AI features at all.
+The biggest difference is AI. Readplace generates summaries of saved articles. You can scan a summary before deciding to read the full piece. Instapaper has no AI features at all.
 
 Does that matter? The answer comes down to how you read. If you save three articles a week and read all of them, summaries won't change much.
 
 But what if you save thirty a week and fall behind? A quick summary for each article helps you pick what's worth your time. That can turn an overflowing reading list into a useful one.
 
-Hutch is browser-first. It's a web app with a browser extension, not a native mobile app. It works on any device with a browser, but it lacks the deep OS features a native app gives you. There is no share sheet on your phone and no offline reading on the train yet. If you need mobile apps, that's a real gap right now.
+Readplace is browser-first. It's a web app with a browser extension, not a native mobile app. It works on any device with a browser, but it lacks the deep OS features a native app gives you. There is no share sheet on your phone and no offline reading on the train yet. If you need mobile apps, that's a real gap right now.
 
-Hutch is hosted in Australia. Your reading data stays on Australian infrastructure under Australian privacy law. That matters if you care about where your data lives.
+Readplace is hosted in Australia. Your reading data stays on Australian infrastructure under Australian privacy law. That matters if you care about where your data lives.
 
-On pricing: the first 100 Hutch members got a free founding-member tier. After that, the price is $3.99 per month. There's no ongoing free tier the way Instapaper offers one. Hutch is a paid product from the start.
+On pricing: the first 100 Readplace members got a free founding-member tier. After that, the price is $3.99 per month. There's no ongoing free tier the way Instapaper offers one. Readplace is a paid product from the start.
 
-The other side of that trade-off: Hutch ships new features every week. It's a product you can watch evolve in real time. That momentum is real, but so is the risk that comes with any newer product.
+The other side of that trade-off: Readplace ships new features every week. It's a product you can watch evolve in real time. That momentum is real, but so is the risk that comes with any newer product.
 
 ## Feature comparison
 
-| | Instapaper | Hutch |
+| | Instapaper | Readplace |
 |---|---|---|
 | **Core reading** | Clean, distraction-free reader | Clean, distraction-free reader |
 | **AI summaries** | No | Yes |
@@ -78,7 +78,7 @@ The other side of that trade-off: Hutch ships new features every week. It's a pr
 - You want a free tier to start with
 - You prefer a mature, stable product over new features
 
-**Pick Hutch if:**
+**Pick Readplace if:**
 
 - You save more than you can read and want AI to help you sort through it
 - You're comfortable with a browser-based workflow
@@ -90,10 +90,10 @@ The other side of that trade-off: Hutch ships new features every week. It's a pr
 
 Instapaper is the closest thing to Pocket that still exists. If you want exactly what Pocket was, a clean and simple read-it-later app with mobile apps and a free tier, it's the safe choice. It has done that job well for close to two decades.
 
-If you want AI summaries and a product that's actively growing, Hutch is a different bet. It's newer. It's smaller. It doesn't have native mobile apps. But it's built with a clear direction, and it ships toward that direction every week.
+If you want AI summaries and a product that's actively growing, Readplace is a different bet. It's newer. It's smaller. It doesn't have native mobile apps. But it's built with a clear direction, and it ships toward that direction every week.
 
 Neither choice is wrong. They solve the same problem from different starting points.
 
 ---
 
-*Hutch is a read-it-later app built in Australia. If you want to try it, visit [hutchreader.com](https://hutchreader.com).*
+*Readplace is a read-it-later app built in Australia. If you want to try it, visit [readplace.com](https://readplace.com).*

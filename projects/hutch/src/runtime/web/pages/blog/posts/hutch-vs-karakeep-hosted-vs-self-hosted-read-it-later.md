@@ -1,5 +1,5 @@
 ---
-title: "Hutch vs Karakeep: Hosted vs Self-Hosted Read-It-Later"
+title: "Readplace vs Karakeep: Hosted vs Self-Hosted Read-It-Later"
 description: "A fair comparison of two developer-focused read-it-later tools, one self-hosted and one managed, and the tradeoffs each makes."
 slug: "hutch-vs-karakeep-hosted-vs-self-hosted-read-it-later"
 date: "2026-04-06"
@@ -7,7 +7,7 @@ author: "Fayner Brack"
 keywords: "karakeep, hoarder, hutch, read it later, self-hosted, pocket alternative"
 ---
 
-Pocket is dying. Omnivore sold to ElevenLabs and shut down overnight. If you're a developer looking for a read-it-later tool you control, two names keep coming up: **Karakeep** (formerly Hoarder) and **Hutch**.
+Pocket is dying. Omnivore sold to ElevenLabs and shut down overnight. If you're a developer looking for a read-it-later tool you control, two names keep coming up: **Karakeep** (formerly Hoarder) and **Readplace**.
 
 Both target developers who read a lot, both have AI features, and both care about data ownership. But they make different bets on how software should reach you.
 
@@ -17,7 +17,7 @@ This post lays out the differences so you can pick the one that fits how you wor
 
 **Karakeep** is free, open-source, and self-hosted. You run it yourself with Docker. It has AI-powered auto-tagging through Ollama (local) or OpenAI. It has full-text search, browser extensions, and mobile apps for iOS and Android. It started as Hoarder, rebranded to Karakeep, and now has 38,000+ GitHub stars with active development.
 
-**Hutch** is hosted at $3.99/month. You sign up, install the browser extension, and start saving articles. It includes AI-generated TL;DR summaries, a clean reader view, Pocket import, and full-text search. You skip Docker, server setup, and ongoing maintenance. I built it as a solo developer after running my own reading system for ten years.
+**Readplace** is hosted at $3.99/month. You sign up, install the browser extension, and start saving articles. It includes AI-generated TL;DR summaries, a clean reader view, Pocket import, and full-text search. You skip Docker, server setup, and ongoing maintenance. I built it as a solo developer after running my own reading system for ten years.
 
 ## The real comparison: deployment model
 
@@ -35,7 +35,7 @@ If you already run a homelab, Karakeep slots right in. If you don't, it means ne
 
 Karakeep handles this well. The Docker setup is straightforward. The docs are solid. The community is large enough that you'll find answers to most questions.
 
-### Hosted (Hutch)
+### Hosted (Readplace)
 
 You trade control for convenience. I run the servers, database, backups, updates, SSL, and monitoring. You get a URL and a browser extension. The AI TL;DR runs on every saved article with no configuration.
 
@@ -43,7 +43,7 @@ The tradeoff is trust. Your reading list lives on someone else's server. That's 
 
 ## The trust question
 
-If you self-host, you've probably been burned before. A service you relied on got acquired, shut down, or degraded. "Just trust me" isn't good enough. Here's what Hutch does in concrete terms:
+If you self-host, you've probably been burned before. A service you relied on got acquired, shut down, or degraded. "Just trust me" isn't good enough. Here's what Readplace does in concrete terms:
 
 - **Source-available under AGPL.** The full codebase is public. You can read every line of code that handles your data.
 - **Full data export.** You can export everything at any time: articles, tags, metadata. Standard format. No lock-in.
@@ -54,7 +54,7 @@ No one can guarantee the future. But these are structural choices that make a ho
 
 ## Feature comparison
 
-| | Karakeep | Hutch |
+| | Karakeep | Readplace |
 |---|---|---|
 | **Price** | Free | $3.99/month |
 | **Hosting** | Self-hosted (Docker) | Managed |
@@ -78,7 +78,7 @@ No one can guarantee the future. But these are structural choices that make a ho
 - You want to contribute to an open-source project with an active community.
 - Free matters. Karakeep costs nothing beyond your own infrastructure.
 
-## When to pick Hutch
+## When to pick Readplace
 
 - You don't want to maintain infrastructure for your reading list.
 - You want AI summaries working from the start, no setup needed.
@@ -91,10 +91,10 @@ No one can guarantee the future. But these are structural choices that make a ho
 
 If you enjoy running Docker containers and want full control over your data, Karakeep is excellent. It's well-built, actively maintained, and backed by a strong community. The 38K GitHub stars aren't an accident. It solves a real problem well.
 
-If you'd rather not maintain infrastructure for your reading list, that's the tradeoff Hutch makes for you. You give up self-hosted control in exchange for something that just works when you hit the save button.
+If you'd rather not maintain infrastructure for your reading list, that's the tradeoff Readplace makes for you. You give up self-hosted control in exchange for something that just works when you hit the save button.
 
 These aren't competing philosophies. They're different answers to the same question: how much of the stack do you want to own? Both are valid. Pick the one that matches how you actually want to spend your time.
 
 ---
 
-*Hutch is a read-it-later app for people who read a lot. $3.99/month, no ads, no tracking. Try it at [hutchreader.com](https://hutchreader.com).*
+*Readplace is a read-it-later app for people who read a lot. $3.99/month, no ads, no tracking. Try it at [readplace.com](https://readplace.com).*

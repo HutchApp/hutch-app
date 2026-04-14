@@ -1,7 +1,7 @@
     <main class="auth-page">
       <div class="auth-card">
         <h1 class="auth-card__title">Welcome back</h1>
-        <p class="auth-card__subtitle">Sign in to your Hutch account</p>
+        <p class="auth-card__subtitle">Sign in to your Readplace account</p>
         {{#if globalError}}<div class="auth-form__global-error" data-test-global-error>{{globalError}}</div>{{/if}}
         <form class="auth-form" method="POST" action="/login{{#if returnUrl}}?return={{returnUrl}}{{/if}}" data-test-form="login">
           <div class="auth-form__field">

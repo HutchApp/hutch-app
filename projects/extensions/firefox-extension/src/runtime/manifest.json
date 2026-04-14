@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Hutch — Save Articles & Read Later",
+  "name": "Readplace — Save Articles & Read Later",
   "version": "1.0.52",
   "description": "Save articles with one click. A privacy-first read-it-later app and Pocket alternative.",
   "browser_specific_settings": {
@@ -33,7 +33,7 @@
   },
   "browser_action": {
     "default_popup": "popup/popup.template.html",
-    "default_title": "Hutch",
+    "default_title": "Readplace",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",

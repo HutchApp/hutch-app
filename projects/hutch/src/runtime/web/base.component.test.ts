@@ -25,13 +25,13 @@ describe("Base component", () => {
 		expect(doc.title).toBe("My Title");
 	});
 
-	it("should render the Hutch brand name in the header", () => {
+	it("should render the Readplace brand name in the header", () => {
 		const page = createTestPageContent();
 		const result = Base(page).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const brand = doc.querySelector(".header__brand") as HTMLAnchorElement;
-		expect(brand.textContent).toBe("Hutch");
+		expect(brand.textContent).toBe("Readplace");
 		expect(brand.getAttribute("href")).toBe("/");
 	});
 
@@ -67,7 +67,7 @@ describe("Base component", () => {
 		const doc = new JSDOM(result.body).window.document;
 
 		const footer = doc.querySelector(".footer__copyright");
-		expect(footer?.textContent).toContain("Hutch");
+		expect(footer?.textContent).toContain("Readplace");
 	});
 
 	it("should include the offline banner", () => {
@@ -102,7 +102,7 @@ describe("Base component", () => {
 				title: "T",
 				description: "D",
 				canonicalUrl: "https://readplace.com",
-				structuredData: [{ "@context": "https://schema.org", "@type": "WebSite", name: "Hutch" }],
+				structuredData: [{ "@context": "https://schema.org", "@type": "WebSite", name: "Readplace" }],
 			},
 		});
 		const result = Base(page).to("text/html");
@@ -110,7 +110,7 @@ describe("Base component", () => {
 
 		const ldJson = doc.querySelector('script[type="application/ld+json"]');
 		const data = JSON.parse(ldJson?.textContent || "{}");
-		expect(data.name).toBe("Hutch");
+		expect(data.name).toBe("Readplace");
 	});
 
 	it("should show verification banner when authenticated and email not verified", () => {

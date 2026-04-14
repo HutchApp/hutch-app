@@ -297,7 +297,7 @@ When logging test phase transitions (e.g., "Running unit tests", "Running E2E te
 console.log('\n=== Running E2E tests ===\n')
 
 // GOOD - Clear which project is running
-console.log('\n=== Hutch - Running E2E tests ===\n')
+console.log('\n=== Readplace - Running E2E tests ===\n')
 ```
 
 ## Code Coverage

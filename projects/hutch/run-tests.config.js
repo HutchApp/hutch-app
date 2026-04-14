@@ -3,7 +3,7 @@ assert(process.env.E2E_PORT, 'E2E_PORT is required');
 const port = process.env.E2E_PORT;
 
 module.exports = {
-  projectName: 'Hutch',
+  projectName: 'Readplace',
   phases: [
     {
       type: 'jest',

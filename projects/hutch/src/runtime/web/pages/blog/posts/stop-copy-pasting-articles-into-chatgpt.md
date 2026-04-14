@@ -1,6 +1,6 @@
 ---
 title: "Stop Copy-Pasting Articles into ChatGPT. There's a Better Way."
-description: "You copy articles into ChatGPT for summaries. It works, but it's slow, manual, and nothing gets saved. Hutch does it in one click."
+description: "You copy articles into ChatGPT for summaries. It works, but it's slow, manual, and nothing gets saved. Readplace does it in one click."
 slug: "stop-copy-pasting-articles-into-chatgpt"
 date: "2026-04-06"
 author: "Fayner Brack"
@@ -36,7 +36,7 @@ That is seven steps, two apps, and zero record of what you read.
 
 ## What if it took one click?
 
-Here's the same scenario with [Hutch](https://readplace.com/install):
+Here's the same scenario with [Readplace](https://readplace.com/install):
 
 1. Click the browser extension.
 
@@ -48,7 +48,7 @@ Read the summary now and decide if the full piece is worth your time. Or skip it
 
 You skip the tab-switching, the pasting, the prompt crafting, and the vanishing chat threads.
 
-Hutch [caches summaries by URL](/blog/how-ai-tldr-actually-works). If fifty people save the same article, it gets summarised once. Your summary is ready the moment you open the article.
+Readplace [caches summaries by URL](/blog/how-ai-tldr-actually-works). If fifty people save the same article, it gets summarised once. Your summary is ready the moment you open the article.
 
 ## One click vs. seven steps
 
@@ -56,14 +56,14 @@ The difference is not just speed. It's whether your reading adds up to something
 
 With copy-paste, every article is disposable. You extract a summary and throw away the source. There is no trail, no personal library, and no way to revisit what you read last month.
 
-With Hutch, every saved article becomes part of your personal archive. Summaries are there for a quick scan. Full articles are there when you want depth. Your reading list is a queue you can manage, not a pile of browser tabs about to crash.
+With Readplace, every saved article becomes part of your personal archive. Summaries are there for a quick scan. Full articles are there when you want depth. Your reading list is a queue you can manage, not a pile of browser tabs about to crash.
 
 ## The point
 
 ChatGPT is a great tool. But using it as a manual article summariser is seven steps too many.
 
-Hutch does it in one.
+Readplace does it in one.
 
 Save the article, get the summary, and keep both.
 
-[Try Hutch](https://readplace.com/install)
+[Try Readplace](https://readplace.com/install)

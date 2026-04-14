@@ -1,7 +1,7 @@
 {
   "name": "@packages/onboarding-extension-signal",
   "version": "1.0.0",
-  "description": "Shared read/write interface for the localStorage signal that the browser extension sets on Hutch pages to indicate it is installed",
+  "description": "Shared read/write interface for the localStorage signal that the browser extension sets on Readplace pages to indicate it is installed",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "private": true,

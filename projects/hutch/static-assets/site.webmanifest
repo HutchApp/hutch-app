@@ -1,6 +1,6 @@
 {
-  "name": "Hutch",
-  "short_name": "Hutch",
+  "name": "Readplace",
+  "short_name": "Readplace",
   "description": "A warm, dependable home for your reading list.",
   "start_url": "/",
   "display": "standalone",

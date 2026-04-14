@@ -26,7 +26,7 @@ test.describe('Queue management flow (staging)', () => {
         `${baseURL}/privacy?v=3`,
         `${baseURL}/privacy?v=4`,
       ],
-      titles: ['Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch', 'Privacy Policy — Hutch'],
+      titles: ['Privacy Policy — Readplace', 'Privacy Policy — Readplace', 'Privacy Policy — Readplace', 'Privacy Policy — Readplace'],
       paginationUrls: Array.from({ length: 17 }, (_, i) => `${baseURL}/privacy?p=${i + 1}`),
     }
 

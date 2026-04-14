@@ -1,6 +1,6 @@
 ---
 title: "Pocket Shut Down in 2025. Here's How to Recover and Move Your Reading List."
-description: "Pocket closed on July 8, 2025. If you never exported, your articles may still be recoverable. Here's how to find them and move to Hutch."
+description: "Pocket closed on July 8, 2025. If you never exported, your articles may still be recoverable. Here's how to find them and move to Readplace."
 slug: "pocket-migration"
 date: "2026-04-05"
 author: "Fayner Brack"
@@ -33,9 +33,9 @@ The Pocket servers are offline, but copies of your saved articles likely still e
 
 > **These methods will not recover your full library.** They recover fragments. The more places you look, the more you get back.
 
-## How to import into Hutch
+## How to import into Readplace
 
-If you have a Pocket export file (the HTML file from before the shutdown), send it to [hutch+migrate@readplace.com](mailto:hutch+migrate@readplace.com). I import the file by hand and load your articles into your Hutch account.
+If you have a Pocket export file (the HTML file from before the shutdown), send it to [hutch+migrate@readplace.com](mailto:hutch+migrate@readplace.com). I import the file by hand and load your articles into your Readplace account.
 
 What gets imported: every URL and its original title from the export file. What does not get imported: tags, highlights, and read/unread status. Pocket's export format only included URLs and titles.
 
@@ -43,11 +43,11 @@ Typical turnaround is 24 to 48 hours. You get a confirmation email when the impo
 
 Open your [reading list](/queue) and spot-check a few entries to make sure titles and URLs match. Something look wrong? Reply to the confirmation email.
 
-If you do not have the export file, you can still rebuild your reading list. Install the Hutch browser extension for [Chrome](/install?browser=chrome) or [Firefox](/install?browser=firefox) and save articles one at a time from the URLs you recovered.
+If you do not have the export file, you can still rebuild your reading list. Install the Readplace browser extension for [Chrome](/install?browser=chrome) or [Firefox](/install?browser=firefox) and save articles one at a time from the URLs you recovered.
 
-## What you had in Pocket vs. what you get in Hutch
+## What you had in Pocket vs. what you get in Readplace
 
-| Feature | Pocket | Hutch |
+| Feature | Pocket | Readplace |
 |---------|--------|-------|
 | Save articles from browser | Yes | Yes (Chrome, Firefox) |
 | Reader view | Yes | Yes |
@@ -60,13 +60,13 @@ If you do not have the export file, you can still rebuild your reading list. Ins
 | Data export | Yes (before shutdown) | Anytime, even after cancelling |
 | Dark mode | Yes | Yes |
 
-Hutch is smaller than Pocket was. It does not have tags or a mobile app yet.
+Readplace is smaller than Pocket was. It does not have tags or a mobile app yet.
 
 It does have AI-generated TL;DR summaries for every saved article, which Pocket did not offer. For a full comparison of the current options, see the [best read-it-later apps in 2026](/blog/best-read-it-later-apps-2026).
 
 ## AI summaries for imported articles
 
-After your articles are imported, Hutch generates a short AI summary for each one. Summaries appear as each article is processed.
+After your articles are imported, Readplace generates a short AI summary for each one. Summaries appear as each article is processed.
 
 You do not need to do anything. The processing runs in the background and finishes within hours for most libraries.
 
@@ -80,8 +80,8 @@ If you downloaded the HTML export file before the shutdown, you can still use it
 
 **How do I import Pocket articles into another app?**
 
-Most read-it-later apps accept the HTML export file that Pocket provided. Readwise Reader, Instapaper, and Raindrop.io all support it. Hutch accepts it too. Send the file to hutch+migrate@readplace.com and the import is handled for you.
+Most read-it-later apps accept the HTML export file that Pocket provided. Readwise Reader, Instapaper, and Raindrop.io all support it. Readplace accepts it too. Send the file to hutch+migrate@readplace.com and the import is handled for you.
 
-**I lost my Omnivore reading list too. Can Hutch help?**
+**I lost my Omnivore reading list too. Can Readplace help?**
 
 Yes. Omnivore shut down in November 2024. If you have an Omnivore data export, send it to the same email address. For more on what happened to Omnivore, see [Omnivore shut down: here's a read-it-later app that won't](/blog/omnivore-alternative).

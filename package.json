@@ -2,7 +2,7 @@
   "name": "hutch-app-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Hutch monorepo — read-it-later app",
+  "description": "Readplace monorepo — read-it-later app",
   "scripts": {
     "test": "NX_TUI=true nx run-many --target=test --all",
     "compile": "NX_TUI=true nx run-many --target=compile --all",

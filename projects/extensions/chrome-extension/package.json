@@ -1,7 +1,7 @@
 {
   "name": "chrome-extension",
   "version": "1.0.76",
-  "description": "Hutch — Where reading still matters",
+  "description": "Readplace — Where reading still matters",
   "main": "src/infra/index.ts",
   "private": true,
   "scripts": {

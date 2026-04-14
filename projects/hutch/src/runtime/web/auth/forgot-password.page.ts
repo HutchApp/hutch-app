@@ -15,7 +15,7 @@ import { flattenZodErrors } from "./flatten-zod-errors";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
-const EMAIL_FROM = "Hutch <hutch@hutch-app.com>";
+const EMAIL_FROM = "Readplace <hutch@hutch-app.com>";
 
 interface ForgotPasswordDependencies {
 	sendEmail: SendEmail;
@@ -62,7 +62,7 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 					from: EMAIL_FROM,
 					to: email,
 					bcc: "hutch+password_resets@hutch-app.com",
-					subject: "Reset your password — Hutch",
+					subject: "Reset your password — Readplace",
 					html,
 				});
 			})

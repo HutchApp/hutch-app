@@ -1,6 +1,6 @@
 ---
-title: "How AI TL;DR Actually Works in Hutch (And Why It's Not Slop)"
-description: "Hutch uses AI to generate short article summaries for triage, not replacement. Here's how it works technically, and why it avoids the usual AI content problems."
+title: "How AI TL;DR Actually Works in Readplace (And Why It's Not Slop)"
+description: "Readplace uses AI to generate short article summaries for triage, not replacement. Here's how it works technically, and why it avoids the usual AI content problems."
 slug: "how-ai-tldr-actually-works"
 date: "2026-04-06"
 author: "Fayner Brack"
@@ -11,7 +11,7 @@ The word "slop" exists for a reason. Most AI-generated content is garbage. Linke
 
 The term fits. And it means your scepticism about "AI summaries" in a read-it-later app is fair.
 
-Here's how Hutch's TL;DR works, and why it's not the same thing.
+Here's how Readplace's TL;DR works, and why it's not the same thing.
 
 ## You Choose What to Read
 
@@ -21,7 +21,7 @@ That's the algorithmic feed model. It's the reason people use read-it-later apps
 
 If you don't pay for the product, you are the product.
 
-Hutch's TL;DR doesn't curate anything. You saved the article. You chose it. The summary has one job: help you decide _when_ to read it.
+Readplace's TL;DR doesn't curate anything. You saved the article. You chose it. The summary has one job: help you decide _when_ to read it.
 
 Picture your queue on a Tuesday morning. You have 15 minutes before a meeting and 30 saved articles. The TL;DR tells you which ones are quick and which ones need an hour. It's a triage tool, not a reading replacement.
 
@@ -41,7 +41,7 @@ Summaries come from DeepSeek V3 (the `deepseek-chat` model). I picked DeepSeek f
 
 The part that matters most: **one summary per URL, cached globally**.
 
-When you save an article, Hutch checks a cache first. If someone else saved the same URL before you, you get their summary. No API call, no cost, no wait. On a cache miss, DeepSeek generates the summary and stores it for everyone.
+When you save an article, Readplace checks a cache first. If someone else saved the same URL before you, you get their summary. No API call, no cost, no wait. On a cache miss, DeepSeek generates the summary and stores it for everyone.
 
 This design does two things.
 
@@ -61,11 +61,11 @@ Claude is used as a fallback in some code paths. But the default pipeline runs D
 
 ## The Line I Won't Cross
 
-I built Hutch for people who read, not people who skim or "consume content."
+I built Readplace for people who read, not people who skim or "consume content."
 
 Does a TL;DR feature contradict that? No. It's the difference between a shelf card on a library book and a book summary that replaces reading the book. One helps you pick. The other pretends you don't need to.
 
-Hutch will not generate "smart highlights" that let you skip the article, produce AI commentary on what you saved, or roll your reading list into a daily briefing. Those features would turn Hutch into a tool for avoiding reading.
+Readplace will not generate "smart highlights" that let you skip the article, produce AI commentary on what you saved, or roll your reading list into a daily briefing. Those features would turn Readplace into a tool for avoiding reading.
 
 The summary helps you choose what to read. Then you read it.
 

@@ -15,7 +15,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
 				: "Install a browser extension";
 		},
 		description:
-			"Add Hutch to your browser so you can save any page with one click.",
+			"Add Readplace to your browser so you can save any page with one click.",
 		isComplete: (ctx) => ctx.extensionInstalled,
 		actions: (ctx) => {
 			const INSTALL_URLS: Record<string, string> = {

@@ -1,6 +1,6 @@
   <main class="install-page">
     <div class="install-page__container">
-      <h1 class="install-page__title">Install Hutch</h1>
+      <h1 class="install-page__title">Install Readplace</h1>
       <p class="install-page__subtitle">Save articles with a single click or keyboard shortcut.</p>
 
       <nav class="install-page__tabs" aria-label="Browser" data-test-section="tabs">
@@ -20,7 +20,7 @@
       {{#case "firefox"}}
       <section class="install-page__panel" data-test-section="firefox">
         {{#if firefoxDownloadUrl}}
-        <a href="{{firefoxDownloadUrl}}" class="install-page__download" data-test-cta="download-firefox">Install Hutch for Firefox</a>
+        <a href="{{firefoxDownloadUrl}}" class="install-page__download" data-test-cta="download-firefox">Install Readplace for Firefox</a>
         {{else}}
         <p class="install-page__unavailable" data-test-section="firefox-unavailable">The Firefox extension is not available for download yet. Please check back soon.</p>
         {{/if}}
@@ -30,7 +30,7 @@
       {{#default}}
       <section class="install-page__panel" data-test-section="chrome">
         {{#if chromeDownloadUrl}}
-        <a href="{{chromeDownloadUrl}}" class="install-page__download" data-test-cta="download-chrome">Install Hutch for Chrome</a>
+        <a href="{{chromeDownloadUrl}}" class="install-page__download" data-test-cta="download-chrome">Install Readplace for Chrome</a>
         {{else}}
         <p class="install-page__unavailable" data-test-section="chrome-unavailable">The Chrome extension is not available for download yet. Please check back soon.</p>
         {{/if}}

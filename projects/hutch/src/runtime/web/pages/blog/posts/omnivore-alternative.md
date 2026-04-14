@@ -1,6 +1,6 @@
 ---
 title: "Omnivore Shut Down. Here's a Read-It-Later App That Won't."
-description: "Omnivore shut down with two weeks notice. Hutch is a privacy-first read-it-later app built by a developer and no VC funding."
+description: "Omnivore shut down with two weeks notice. Readplace is a privacy-first read-it-later app built by a developer and no VC funding."
 slug: "omnivore-alternative"
 date: "2026-04-04"
 author: "Fayner Brack"
@@ -19,11 +19,11 @@ The problem was not Omnivore's intentions. The team built a good product. The pr
 
 Many Omnivore users moved to [Readwise Reader](https://readwise.io/read) at $12.99/month. Others went to self-hosted options like Karakeep or Wallabag. Each option has trade-offs. Readwise is feature-rich but expensive. Self-hosted tools are free but need you to run a server and deal with updates.
 
-I built Hutch as a middle ground. A hosted read-it-later app with a clear revenue model: subscriptions pay for servers and development, with no investors expecting an exit. For a full breakdown of each option, see the [best read-it-later apps in 2026](/blog/best-read-it-later-apps-2026).
+I built Readplace as a middle ground. A hosted read-it-later app with a clear revenue model: subscriptions pay for servers and development, with no investors expecting an exit. For a full breakdown of each option, see the [best read-it-later apps in 2026](/blog/best-read-it-later-apps-2026).
 
 ## Built by a developer who reads
 
-I maintained a personal reading pipeline for ten years before turning it into Hutch. Pocket was abandoned. Omnivore disappeared. I turned that system into a product. One developer, building in public, one feature at a time.
+I maintained a personal reading pipeline for ten years before turning it into Readplace. Pocket was abandoned. Omnivore disappeared. I turned that system into a product. One developer, building in public, one feature at a time.
 
 ## What works today
 
@@ -38,11 +38,11 @@ These features are shipped and live right now:
 - **Full data export.** Export everything, anytime. Even after you cancel.
 - **Privacy first.** Hosted in Sydney under the Australian Privacy Act, with no tracking scripts or ads.
 
-## What Omnivore had, and where Hutch stands
+## What Omnivore had, and where Readplace stands
 
-Omnivore had years of development. Hutch is newer. Here is an honest look at the gaps.
+Omnivore had years of development. Readplace is newer. Here is an honest look at the gaps.
 
-| Feature | Omnivore | Hutch | Status |
+| Feature | Omnivore | Readplace | Status |
 | --- | --- | --- | --- |
 | Browser extension | Yes | Yes | Shipped |
 | Reader view | Yes | Yes | Shipped |
@@ -64,19 +64,19 @@ Features ship one at a time, and the [roadmap is public](https://readplace.com/#
 
 ## Your data, your terms
 
-**AGPL source-available.** The full source code is [on GitHub](https://github.com/Readplace/readplace.com). If Hutch disappears tomorrow, anyone can run it. That's the point.
+**AGPL source-available.** The full source code is [on GitHub](https://github.com/Readplace/readplace.com). If Readplace disappears tomorrow, anyone can run it. That's the point.
 
 **Full export, always.** Export all your data anytime, even after you cancel. Data export is not an afterthought. It is a core promise: your saved articles stay available for export regardless of your subscription status.
 
 **Australian hosting.** Hosted in Sydney, governed by the Australian Privacy Act, outside US jurisdiction. The app runs without tracking scripts, ads, or data sales.
 
-**No venture capital.** Hutch is self-funded. Revenue comes from subscriptions. There is no board expecting an exit and no acquisition to chase.
+**No venture capital.** Readplace is self-funded. Revenue comes from subscriptions. There is no board expecting an exit and no acquisition to chase.
 
 ## Pricing
 
 $3.99/month. TL;DR summaries are included.
 
-Readwise Reader is a great choice for power users at $12.99/month. Hutch is simpler and cheaper. A focused read-it-later tool, not a full research platform.
+Readwise Reader is a great choice for power users at $12.99/month. Readplace is simpler and cheaper. A focused read-it-later tool, not a full research platform.
 
 The first 100 founding members get full access free, forever. [Sign up here](https://readplace.com/signup).
 
@@ -90,9 +90,9 @@ The team moved to ElevenLabs to work on text-to-speech, not reading tools. Omniv
 
 **Is there a free Omnivore alternative?**
 
-Hutch is free for the first 100 founding members. Full access, forever. After that, it costs $3.99/month. Self-hosted alternatives like Karakeep and Wallabag are free but require you to run your own server. Readwise Reader is the most feature-complete option at $12.99/month.
+Readplace is free for the first 100 founding members. Full access, forever. After that, it costs $3.99/month. Self-hosted alternatives like Karakeep and Wallabag are free but require you to run your own server. Readwise Reader is the most feature-complete option at $12.99/month.
 
-**Can I import my Omnivore data into Hutch?**
+**Can I import my Omnivore data into Readplace?**
 
 You can send Omnivore data file to hutch+migrate@readplace.com and I'll do it for you. If you exported your data before the shutdown, keep that file. You can start fresh right now with the [browser extension](https://readplace.com/install). Save any article with one click.
 

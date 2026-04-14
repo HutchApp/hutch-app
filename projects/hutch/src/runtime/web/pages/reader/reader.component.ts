@@ -32,7 +32,7 @@ export function ReaderPage(article: SavedArticle, options?: { emailVerified?: bo
 
 	return Base({
 		seo: {
-			title: `${article.metadata.title} — Hutch Reader`,
+			title: `${article.metadata.title} — Readplace Reader`,
 			description: article.metadata.excerpt,
 			canonicalUrl: `/queue/${article.id.value}/read`,
 			robots: "noindex, nofollow",

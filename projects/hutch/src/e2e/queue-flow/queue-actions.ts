@@ -39,7 +39,7 @@ export function createLocalTestArticles(baseUrl: string): TestArticleData {
       "Pocket Shut Down in 2025. Here's How to Recover and Move Your Reading List.",
       "Omnivore Shut Down. Here's a Read-It-Later App That Won't.",
       "You're Subscribed to 30 Newsletters. You Read 3. Here's a Better System.",
-      "Hutch: An AI Reading Assistant That Helps You Read More, Not Less",
+      "Readplace: An AI Reading Assistant That Helps You Read More, Not Less",
     ],
     paginationUrls: Array.from({ length: 17 }, (_, i) => `${baseUrl}/privacy?p=${i + 1}`),
   }
