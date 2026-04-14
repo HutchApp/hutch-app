@@ -21,10 +21,10 @@ test.describe('Queue management flow (staging)', () => {
 
     const stagingArticles: TestArticleData = {
       urls: [
-        `${baseURL}/privacy?v=1`,
-        `${baseURL}/privacy?v=2`,
-        `${baseURL}/privacy?v=3`,
-        `${baseURL}/privacy?v=4`,
+        `${baseURL}/privacy?v=5`,
+        `${baseURL}/privacy?v=6`,
+        `${baseURL}/privacy?v=7`,
+        `${baseURL}/privacy?v=8`,
       ],
       titles: ['Privacy Policy — Readplace', 'Privacy Policy — Readplace', 'Privacy Policy — Readplace', 'Privacy Policy — Readplace'],
       paginationUrls: Array.from({ length: 17 }, (_, i) => `${baseURL}/privacy?p=${i + 1}`),
