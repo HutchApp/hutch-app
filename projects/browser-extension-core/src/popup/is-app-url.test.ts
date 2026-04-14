@@ -3,13 +3,7 @@ import { isAppUrl } from "./is-app-url";
 describe("isAppUrl", () => {
 	it("returns true when the tab hostname is one of the app domains", () => {
 		expect(
-			isAppUrl({ tabUrl: "https://readplace.com/queue", appDomains: ["readplace.com", "hutch-app.com"] }),
-		).toBe(true);
-	});
-
-	it("returns true for any app domain in the list", () => {
-		expect(
-			isAppUrl({ tabUrl: "https://hutch-app.com/queue", appDomains: ["readplace.com", "hutch-app.com"] }),
+			isAppUrl({ tabUrl: "https://readplace.com/queue", appDomains: ["readplace.com"] }),
 		).toBe(true);
 	});
 
@@ -25,7 +19,7 @@ describe("isAppUrl", () => {
 
 	it("returns false for a domain not in the list", () => {
 		expect(
-			isAppUrl({ tabUrl: "https://example.com/article", appDomains: ["readplace.com", "hutch-app.com"] }),
+			isAppUrl({ tabUrl: "https://example.com/article", appDomains: ["readplace.com"] }),
 		).toBe(false);
 	});
 

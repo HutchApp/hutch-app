@@ -94,10 +94,10 @@ describe("createBuildPlan", () => {
 			config: { target: "firefox91" },
 			projectDir,
 			serverUrl: "https://readplace.com",
-			appDomains: ["readplace.com", "hutch-app.com"],
+			appDomains: ["readplace.com"],
 		});
 
-		expect(plan.esbuildOptions.define.__APP_DOMAINS__).toBe('["readplace.com","hutch-app.com","127.0.0.1","localhost"]');
+		expect(plan.esbuildOptions.define.__APP_DOMAINS__).toBe('["readplace.com","127.0.0.1","localhost"]');
 	});
 
 	it("includes six output directories", () => {
