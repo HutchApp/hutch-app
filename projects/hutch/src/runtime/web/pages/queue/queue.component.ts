@@ -112,9 +112,23 @@ function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: 
 	};
 }
 
-const HTMX_SCRIPTS = `<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>`;
+const HTMX_SCRIPTS = `<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script><script>htmx.config.scrollBehavior='smooth';</script>`;
 
-const AUTO_SUBMIT_SCRIPT = `\n<script>(function(){var f=document.querySelector('[data-auto-submit]');if(f)f.requestSubmit();})()</script>`;
+const AUTO_SUBMIT_SCRIPT = `
+<script>
+	(function () {
+		function run() {
+			var form = document.querySelector('[data-auto-submit]');
+			if (form) form.requestSubmit();
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', run, { once: true });
+		} else {
+			run();
+		}
+	})();
+</script>
+`;
 
 export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean; saveUrl?: string; extensionInstalled?: boolean; browser?: BrowserName; onboardingDismissed?: boolean }): Component {
 	const saveUrl = options?.saveUrl;
