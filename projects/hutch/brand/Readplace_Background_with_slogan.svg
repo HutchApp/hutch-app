@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 600" width="1400" height="600">
+  <title>Readplace — full lockup with slogan, dark background</title>
+  <rect width="1400" height="600" fill="#2B3A55"/>
+  <text x="310" y="440" text-anchor="middle" font-family="'Noto Serif', Georgia, 'Times New Roman', serif" font-size="380" font-weight="700" fill="white">&amp;</text>
+  <circle cx="404" cy="198" r="36" fill="#C8923C"/>
+  <text x="560" y="360" font-family="'Noto Serif', Georgia, 'Times New Roman', serif" font-size="140" font-weight="700" fill="white" letter-spacing="-0.02em">Readplace</text>
+  <text x="568" y="420" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif" font-size="32" fill="rgba(255,255,255,0.5)" letter-spacing="0.01em">A warm, dependable place for your reading list.</text>
+</svg>

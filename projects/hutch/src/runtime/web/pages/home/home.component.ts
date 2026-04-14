@@ -93,7 +93,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					name: "Readplace",
 					alternateName: ["Readplace App", "Readplace Read-It-Later"],
 					url: "https://readplace.com",
-					logo: `${staticBaseUrl}/og-image-1200x630.png`,
+					logo: `${staticBaseUrl}/android-chrome-512x512.png`,
 					sameAs: [
 						"https://github.com/Readplace/readplace.com",
 						"https://chromewebstore.google.com/detail/hutch/klblengmhlfnmjoagchagfcdbpbocgbf",

@@ -29,30 +29,29 @@
 
 ### The Icon
 
-The icon is a serif **"H"** letterform with two horizontal shelves and an open book on the top shelf. It functions as a piece of hutch furniture — a visual shorthand for "a place where your reading lives."
+The icon is a serif **"&"** (ampersand) in white, centred on a navy (`#2B3A55`) rounded square, with a single warm amber (`#C8923C`) dot in the upper-right quadrant. The ampersand stands for *this and that*, *now and later*, *your articles and the time to read them*. The dot is the marker — the place you left off, the place you'll come back to.
 
 ### Assets
 
-Icon assets live in `/projects/hutch/src/public/` and `/projects/firefox-extension/src/icons/`.
+Icon assets live in `/projects/hutch/static-assets/` and `/projects/firefox-extension/src/icons/`.
 
 | Asset | Sizes available | Location |
 |---|---|---|
-| **Favicon** | 16, 32, 48, 96px + `.ico` | `projects/hutch/src/public/favicon-*.png` |
-| **Apple Touch Icon** | 57–180px (multiple sizes) | `projects/hutch/src/public/apple-touch-icon-*.png` |
-| **Android Chrome** | 48–512px + maskable variants | `projects/hutch/src/public/android-chrome-*.png` |
-| **Windows Tile** | 70, 150, 310×150, 310px | `projects/hutch/src/public/mstile-*.png` |
-| **Social cards** | 1200×630 (OG), 1200×600 (Twitter) | `projects/hutch/src/public/og-image-*.png`, `twitter-card-*.png` |
+| **Favicon** | 16, 32, 48, 96px + `.ico` | `projects/hutch/static-assets/favicon-*.png` |
+| **Apple Touch Icon** | 57–180px (multiple sizes) | `projects/hutch/static-assets/apple-touch-icon-*.png` |
+| **Android Chrome** | 48–512px + maskable variants | `projects/hutch/static-assets/android-chrome-*.png` |
+| **Windows Tile** | 70, 150, 310×150, 310px | `projects/hutch/static-assets/mstile-*.png` |
+| **Social cards** | 1200×630 (OG), 1200×600 (Twitter) | `projects/hutch/static-assets/og-image-*.png`, `twitter-card-*.png` |
 | **Extension icon** | 16–128px | `projects/firefox-extension/src/icons/icon-*.png` |
 
 ### Usage Rules
 
-- **Minimum clear space:** Maintain padding equal to at least the height of one shelf bar on all sides of the icon.
+- **Minimum clear space:** Maintain padding equal to at least the diameter of the amber dot on all sides of the icon.
 - **Do not** rotate, skew, add drop shadows, apply gradients, or place on busy photographic backgrounds.
 - **Do not** recreate or approximate the logo — always use the provided assets.
-- **Do not** separate the book from the H or rearrange the lock-up components.
-- **Dark backgrounds:** Use the white/light version of the icon.
-- **Light backgrounds:** Use the navy version of the icon.
-- **At 16×16px:** The book detail may be dropped in favour of a simplified H-with-shelves mark for legibility. Prioritise recognisability over fidelity.
+- **Do not** remove or reposition the amber dot, recolour the ampersand, or change the navy background fill.
+- **Backgrounds:** The mark already contains its navy rounded-square tile — keep the full mark intact on both light and dark surfaces rather than swapping fills.
+- **At 16×16px:** The amber dot may be dropped in favour of the ampersand alone for legibility. Prioritise recognisability over fidelity.
 
 ---
 
