@@ -54,6 +54,11 @@ jobs:
           E2E_PORT: '3700'
         run: |
           mkdir -p ci-screenshots
+          # Delete committed linux baselines so --update-snapshots regenerates
+          # them with the fresh CI-rendered pixels. Without this, Playwright
+          # sees the tests pass within the 10% tolerance and skips the update,
+          # leaving the uploaded artifact byte-identical to the committed file.
+          rm -f src/e2e/visual.e2e-local.ts-snapshots/*-chromium-linux.png
           pnpm exec playwright test \
             --config playwright.config.local-dev.ts \
             --update-snapshots \
