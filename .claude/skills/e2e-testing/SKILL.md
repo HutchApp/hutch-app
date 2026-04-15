@@ -85,65 +85,55 @@ For `c8 ignore` rules, allowed cases, and V8 coverage quirks, see the [Code Cove
 
 ## Running E2E Tests
 
-E2E tests run as part of `pnpm check` which includes headless E2E execution with coverage.
+E2E tests run as part of `pnpm check` via `@packages/test-phase-runner`. Each project has a `run-tests.config.js` declaring its phases (Jest unit, Jest integration, Playwright, `node:test` — each project picks what it needs) and a thin `scripts/run-tests-with-coverage.js` that allocates a free port via `getFreePort`, assigns it to `E2E_PORT`, and delegates to the runner. `pnpm test:e2e` runs just the Playwright phase directly for local iteration.
+
+### Staging e2e
+
+Only projects with a `deploy-infra` target have a staging e2e config. After `project-deployment.yaml` deploys to staging, it runs the project's `post-deploy` target, which reads the deployed URL from `pulumi stack output` and runs `STAGING_URL=$URL pnpm test:e2e:staging`. Results land in `test-results-staging/` and the workflow uploads that directory as a GitHub Actions artifact.
+
+The staging Playwright config sets `webServer: undefined` (Playwright is pointed at a remote instance, not launching one) and uses a longer timeout and one retry. hutch has one; web-embed has none because it isn't deployed as a standalone project.
+
+### Why `test-phase-runner`, not `@nx/playwright`
+
+The repo invokes raw Playwright CLI through `test-phase-runner` rather than adopting the `@nx/playwright` plugin. The runner already sequences phases across Jest, `node:test`, and Playwright — extensions need all three — and the dynamic port + `NODE_V8_COVERAGE` discipline lives outside Playwright entirely (in `scripts/run-tests-with-coverage.js` and the Playwright config). Adding the Nx plugin would overlap that orchestration without replacing it.
 
 ## Never Reuse an Existing Server — Every Run Gets a Fresh One on a Fresh Port
 
-Playwright's `reuseExistingServer: true` is forbidden. If a stale dev server or a previous test run is still bound to the same port, Playwright silently connects to it and runs the test against the wrong instance. The failures are indistinguishable from real regressions and the passes are worse — tests that pass against wrong state. Pair this with a dynamically allocated port per run so hardcoded ports can't collide with a running dev server.
+Playwright's `reuseExistingServer: true` is forbidden. If a stale dev server or a previous test run is still bound to the same port, Playwright silently connects to it and runs against the wrong instance. The failures look like real regressions and the passes are worse — tests that pass against the wrong state. The factory in `playwright.config.factory.ts` hard-codes `reuseExistingServer: false` as a safety net for every config it produces.
+
+Pair that with a dynamically allocated port so a hardcoded number can't collide with a running dev server:
 
 ```ts
-// BAD — silently matches any server already on that port
-webServer: {
-  command: 'tsx src/e2e/e2e-server.main.ts',
-  url: serverUrl,
-  reuseExistingServer: true,
-}
-
-// BAD — hardcoded port collides with dev servers and previous runs
-"test:e2e": "E2E_PORT=3100 playwright test --config playwright.config.local-dev.ts"
-```
-
-The projects in this repo use the `@packages/test-phase-runner` pattern: `scripts/run-e2e.js` allocates a free port via `getFreePort`, then `initTestPhaseRunner` launches the compiled server in a separate process (with `stripCoverage: true` to unset `NODE_V8_COVERAGE`) and only invokes Playwright once the server answers. The Playwright config sets `webServer: undefined` so Playwright never manages the server itself.
-
-```ts
-// playwright.config.local-dev.ts — Playwright does NOT manage the server
-export default createPlaywrightConfig({
-  baseURL: `http://localhost:${process.env.E2E_PORT || '0'}`,
-  webServer: undefined,
-  // ...
-})
-
-// scripts/run-e2e.js — allocate a free port, then run the playwright phase
+// scripts/run-tests-with-coverage.js — allocate a free port before any phase runs
 const { initTestPhaseRunner, defaultDeps, getFreePort } = require('@packages/test-phase-runner')
 
 async function main() {
-  const port = await getFreePort()
-  process.env.E2E_PORT = String(port)
+  process.env.E2E_PORT = String(await getFreePort())
 
+  const config = require('../run-tests.config.js')
   const { createTestPlan } = initTestPhaseRunner(defaultDeps)
-  const plan = createTestPlan({
-    config: {
-      projectName: 'Readplace',
-      phases: [{
-        type: 'playwright',
-        name: 'Running E2E tests',
-        config: 'playwright.config.local-dev.ts',
-        browsers: ['chromium'],
-        server: {
-          command: ['node', 'dist/e2e/e2e-server.main.js'],
-          url: `http://localhost:${port}`,
-          stripCoverage: true,
-        },
-        env: { HEADLESS: process.env.HEADLESS || 'false', E2E_PORT: String(port) },
-      }],
-    },
-    projectRoot: join(__dirname, '..'),
-  })
+  const plan = createTestPlan({ config, projectRoot: join(__dirname, '..') })
   await plan.runAllPhases()
 }
 ```
 
-The factory still forces `reuseExistingServer: false` as a safety net for any config that does pass a `webServer` (e.g. staging).
+The Playwright config lets Playwright's own `webServer` launch the compiled server, with the command shell-prefixed by `env -u NODE_V8_COVERAGE` so the server process doesn't inherit the parent `c8` run's coverage directory and write its own profile into it:
+
+```ts
+// playwright.config.local-dev.ts
+export default createPlaywrightConfig({
+  baseURL: `http://localhost:${process.env.E2E_PORT || '0'}`,
+  webServer: {
+    command: 'env -u NODE_V8_COVERAGE node dist/e2e/e2e-server.main.js',
+    url: serverUrl,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  },
+  // ...
+})
+```
+
+Never hardcode `E2E_PORT` in a package.json script, never set `reuseExistingServer: true`, and never launch the e2e server without stripping `NODE_V8_COVERAGE` — all three produce silently-wrong runs that look like real regressions.
 
 ## Debugging E2E Test Failures
 
