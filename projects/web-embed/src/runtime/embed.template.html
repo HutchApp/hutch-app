@@ -1,0 +1,78 @@
+  <main class="embed-page" data-test-page="embed">
+    <div class="embed-page__container">
+      <section class="embed-page__hero">
+        <h1 class="embed-page__title">A save button for your readers.</h1>
+        <p class="embed-page__subtitle">Under 1 KB, no JavaScript, no tracking. Drop it into any HTML page and your readers can save an article to Readplace in one click.</p>
+        <div class="embed-page__demo" data-test="hero-demo">{{{heroDemo}}}
+          <p class="embed-page__demo-hint">Try it — clicking the button saves this page to your Readplace queue.</p>
+        </div>
+      </section>
+
+      <section class="embed-page__section" id="how-it-works">
+        <h2 class="embed-page__section-title">How it works</h2>
+        <div class="embed-page__prose">
+          <p>The button fires after the page has fully loaded — impressions, ad calls, and scroll tracking are all counted before a reader can click. Your analytics don't change.</p>
+        </div>
+      </section>
+
+      <section class="embed-page__section" id="variants">
+        <h2 class="embed-page__section-title">The three variants</h2>
+
+        <article class="embed-variant" data-test-variant="a">
+          <div class="embed-variant__header">
+            <h3 class="embed-variant__name">Variant A — Icon only</h3>
+            <span class="embed-variant__bytes" data-test="bytes-a">{{bytesA}} bytes</span>
+          </div>
+          <p class="embed-variant__note">Inline next to article titles in link lists, sidebars, comment footers.</p>
+          <div class="embed-variant__preview" data-test="preview-a">{{{previewA}}}</div>
+          <div class="embed-variant__code-block">
+            <pre class="embed-variant__code" id="snippet-a-code" data-test="source-a">{{snippetA}}</pre>
+            <button type="button" class="embed-variant__copy" data-copy="snippet-a-code" data-test="copy-a">Copy</button>
+          </div>
+        </article>
+
+        <article class="embed-variant" data-test-variant="b">
+          <div class="embed-variant__header">
+            <h3 class="embed-variant__name">Variant B — Icon and label</h3>
+            <span class="embed-variant__bytes" data-test="bytes-b">{{bytesB}} bytes</span>
+          </div>
+          <p class="embed-variant__note">Top or bottom of an individual article, or inside a navigation bar.</p>
+          <div class="embed-variant__preview" data-test="preview-b">{{{previewB}}}</div>
+          <div class="embed-variant__code-block">
+            <pre class="embed-variant__code" id="snippet-b-code" data-test="source-b">{{snippetB}}</pre>
+            <button type="button" class="embed-variant__copy" data-copy="snippet-b-code" data-test="copy-b">Copy</button>
+          </div>
+        </article>
+
+        <article class="embed-variant" data-test-variant="c">
+          <div class="embed-variant__header">
+            <h3 class="embed-variant__name">Variant C — End-of-post card</h3>
+            <span class="embed-variant__bytes" data-test="bytes-c">{{bytesC}} bytes</span>
+          </div>
+          <p class="embed-variant__note">End of a long-form post, as a reading-continuity prompt.</p>
+          <div class="embed-variant__preview" data-test="preview-c">{{{previewC}}}</div>
+          <div class="embed-variant__code-block">
+            <pre class="embed-variant__code" id="snippet-c-code" data-test="source-c">{{snippetC}}</pre>
+            <button type="button" class="embed-variant__copy" data-copy="snippet-c-code" data-test="copy-c">Copy</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="embed-page__section" id="privacy">
+        <h2 class="embed-page__section-title">Privacy — quote this in your policy</h2>
+        <div class="embed-privacy">
+          <p class="embed-privacy__text" id="privacy-text" data-test="privacy-text">The Readplace save button is a plain HTML link with a small icon image. It sets no cookies on this site and runs no JavaScript. The icon image is fetched from readplace.com as a static asset, the same way any third-party image from any domain would be. When a reader clicks the button, they navigate to readplace.com, where Readplace's privacy policy applies.</p>
+          <button type="button" class="embed-privacy__copy" data-copy="privacy-text" data-test="copy-privacy">Copy</button>
+        </div>
+      </section>
+
+      <footer class="embed-footer">
+        <ul class="embed-footer__links" aria-label="Related">
+          <li><a href="{{appOrigin}}" data-test="link-app">readplace.com</a></li>
+          <li><a href="mailto:hutch+embed@readplace.com">Email me</a></li>
+          <li><a href="{{appOrigin}}/privacy">Privacy policy</a></li>
+          <li><a href="/preview" data-test="link-preview">Developer preview</a></li>
+        </ul>
+      </footer>
+    </div>
+  </main>
