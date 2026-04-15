@@ -23,7 +23,7 @@ function hostOf(urlString: string): string {
 type ResolveResult =
 	| { kind: "ok"; url: string }
 	| { kind: "none" }
-	| { kind: "mismatch" };
+	| { kind: "mismatch"; queryUrl: string; referer: string };
 
 function resolveSaveUrl(input: {
 	queryUrl: string | undefined;
@@ -38,7 +38,7 @@ function resolveSaveUrl(input: {
 	if (q && ref) {
 		return originPath(q) === originPath(ref)
 			? { kind: "ok", url: q }
-			: { kind: "mismatch" };
+			: { kind: "mismatch", queryUrl: q, referer: ref };
 	}
 	if (q) return { kind: "ok", url: q };
 	if (ref) return { kind: "ok", url: ref };
@@ -55,7 +55,7 @@ export function initSaveRoutes(): Router {
 		const result = resolveSaveUrl({ queryUrl, referer, appHost: req.hostname });
 
 		if (result.kind === "mismatch") {
-			const page = SaveFailedPage().to("text/html");
+			const page = SaveFailedPage({ queryUrl: result.queryUrl, referer: result.referer }).to("text/html");
 			res.status(400).type("html").send(page.body);
 			return;
 		}

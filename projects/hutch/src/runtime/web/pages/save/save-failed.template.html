@@ -1,7 +1,21 @@
     <main class="save-failed">
       <div class="save-failed__container">
-        <h1 class="save-failed__title">Save failed</h1>
-        <p class="save-failed__text">Readplace received two different URLs for this save — one in the request and one from the page you came from. I can't tell which one you meant to save, so nothing was saved.</p>
-        <a href="/" class="save-failed__link">Return to Readplace</a>
+        <h1 class="save-failed__title">Pick the article to save</h1>
+        <p class="save-failed__text">Readplace received two different URLs for this save. Pick the one you want to save.</p>
+
+        <ul class="save-failed__options">
+          <li class="save-failed__option">
+            <p class="save-failed__option-label">From the request</p>
+            <p class="save-failed__option-url">{{queryUrl}}</p>
+            <a class="save-failed__option-button" href="{{queryUrlHref}}" data-test-save-failed-option="query">Save this one</a>
+          </li>
+          <li class="save-failed__option">
+            <p class="save-failed__option-label">From the page you came from</p>
+            <p class="save-failed__option-url">{{referer}}</p>
+            <a class="save-failed__option-button" href="{{refererHref}}" data-test-save-failed-option="referer">Save this one</a>
+          </li>
+        </ul>
+
+        <a href="/" class="save-failed__link">Cancel and return to Readplace</a>
       </div>
     </main>

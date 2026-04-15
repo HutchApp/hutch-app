@@ -7,7 +7,12 @@ import { SAVE_FAILED_STYLES } from "./save-failed.styles";
 
 const SAVE_FAILED_TEMPLATE = readFileSync(join(__dirname, "save-failed.template.html"), "utf-8");
 
-export function SaveFailedPage(): Component {
+interface SaveFailedPageInput {
+	queryUrl: string;
+	referer: string;
+}
+
+export function SaveFailedPage(input: SaveFailedPageInput): Component {
 	return Base({
 		seo: {
 			title: "Save failed — Readplace",
@@ -17,6 +22,11 @@ export function SaveFailedPage(): Component {
 		},
 		styles: SAVE_FAILED_STYLES,
 		bodyClass: "page-save-failed",
-		content: render(SAVE_FAILED_TEMPLATE, {}),
+		content: render(SAVE_FAILED_TEMPLATE, {
+			queryUrl: input.queryUrl,
+			queryUrlHref: `/save?url=${encodeURIComponent(input.queryUrl)}`,
+			referer: input.referer,
+			refererHref: `/save?url=${encodeURIComponent(input.referer)}`,
+		}),
 	});
 }
