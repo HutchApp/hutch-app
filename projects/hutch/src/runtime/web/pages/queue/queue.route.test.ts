@@ -474,6 +474,77 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector(".queue-article__thumbnail")).toBeNull();
 		});
+
+		it("should hide thumbnail wrapper until image loads successfully", async () => {
+			const crawlArticle = async () => ({
+				status: "fetched" as const,
+				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+			});
+
+			const { app, auth } = createTestApp({ crawlArticle });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const thumbnail = doc.querySelector(".queue-article__thumbnail");
+			const link = thumbnail?.closest("a");
+			expect(link?.classList.contains("queue-article__thumbnail-link")).toBe(true);
+			expect(link?.classList.contains("queue-article__thumbnail-link--loaded")).toBe(false);
+		});
+
+		it("should reveal thumbnail wrapper when image load event fires", async () => {
+			const crawlArticle = async () => ({
+				status: "fetched" as const,
+				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+			});
+
+			const { app, auth } = createTestApp({ crawlArticle });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const dom = new JSDOM(response.text, { runScripts: "dangerously" });
+			const thumbnail = dom.window.document.querySelector<HTMLImageElement>(".queue-article__thumbnail");
+			const link = thumbnail?.closest("a");
+			expect(link?.classList.contains("queue-article__thumbnail-link--loaded")).toBe(false);
+
+			thumbnail?.dispatchEvent(new dom.window.Event("load"));
+
+			expect(link?.classList.contains("queue-article__thumbnail-link--loaded")).toBe(true);
+		});
+
+		it("should remove thumbnail wrapper when image error event fires", async () => {
+			const crawlArticle = async () => ({
+				status: "fetched" as const,
+				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+			});
+
+			const { app, auth } = createTestApp({ crawlArticle });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			const response = await agent.get("/queue");
+			const dom = new JSDOM(response.text, { runScripts: "dangerously" });
+			const thumbnail = dom.window.document.querySelector<HTMLImageElement>(".queue-article__thumbnail");
+			expect(thumbnail?.closest("a")).not.toBeNull();
+
+			thumbnail?.dispatchEvent(new dom.window.Event("error"));
+
+			expect(dom.window.document.querySelector(".queue-article__thumbnail-link")).toBeNull();
+		});
 	});
 
 	describe("Reader view", () => {

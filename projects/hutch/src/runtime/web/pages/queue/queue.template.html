@@ -26,7 +26,7 @@
       <div class="queue__list" data-test-article-list>
         {{#each articles}}
         <div class="queue-article{{unreadClass}}" data-test-article="{{id}}"{{#if @first}} id="latest-saved"{{/if}}>
-          {{#if imageUrl}}<a href="{{linkUrl}}" tabindex="-1" aria-hidden="true"><img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" loading="lazy"></a>{{/if}}
+          {{#if imageUrl}}<a href="{{linkUrl}}" class="queue-article__thumbnail-link" tabindex="-1" aria-hidden="true"><img class="queue-article__thumbnail" src="{{imageUrl}}" alt="" onload="this.parentElement.classList.add('queue-article__thumbnail-link--loaded')" onerror="this.parentElement.remove()"></a>{{/if}}
           <div class="queue-article__content">
             <div class="queue-article__title-row">
               {{#if isUnread}}<span class="queue-article__unread-dot" aria-label="Unread"></span>{{/if}}
