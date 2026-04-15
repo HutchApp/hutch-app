@@ -3,6 +3,10 @@
  *
  * Keep the list diverse — one entry per edge-sniffing vendor we care about.
  * Failures surface the `label` in the GitHub Actions UI, not a URL.
+ *
+ * Sources that fingerprint Node's fetch at the TLS layer (e.g. Stack Overflow)
+ * cannot be canaries here — they block our production crawler too, so including
+ * them would only prove the block, not the crawler's health.
  */
 exports.HEALTH_SOURCES = [
   {
@@ -44,11 +48,6 @@ exports.HEALTH_SOURCES = [
     label: 'Ars Technica',
     url: 'https://arstechnica.com/features/2005/10/linux/',
     expectedContent: 'following is the complete AIM sniffer',
-  },
-  {
-    label: 'Stack Overflow',
-    url: 'https://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-processing-an-unsorted-array',
-    expectedContent: 'You are a blind operator of a junction and you hear a train coming',
   },
   {
     label: 'The New Yorker',
