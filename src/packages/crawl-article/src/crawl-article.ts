@@ -1,4 +1,5 @@
 import type { CrawlArticle } from "./crawl-article.types";
+import { withH2Fallback } from "./h2-fetch";
 import { headerOrUndefined } from "./header-utils";
 
 const FETCH_TIMEOUT_MS = 5000;
@@ -21,6 +22,7 @@ export function initCrawlArticle(deps: {
 	logError: (message: string, error?: Error) => void;
 	headers: Record<string, string>;
 }): CrawlArticle {
+	const fetchWithFallback = withH2Fallback(deps.fetch);
 	return async (params) => {
 		if (X_TWITTER_PATTERN.test(params.url)) {
 			return fetchViaOembed(deps, params);
@@ -31,7 +33,7 @@ export function initCrawlArticle(deps: {
 		if (params.lastModified) headers["if-modified-since"] = params.lastModified;
 
 		try {
-			const response = await deps.fetch(params.url, {
+			const response = await fetchWithFallback(params.url, {
 				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
 				headers,
 			});

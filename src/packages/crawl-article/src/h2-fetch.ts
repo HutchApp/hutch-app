@@ -1,0 +1,144 @@
+import assert from "node:assert";
+import http2 from "node:http2";
+
+const MAX_REDIRECTS = 5;
+const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
+
+type FetchH2Init = {
+	headers?: Record<string, string>;
+	signal?: AbortSignal;
+};
+
+type H2RequestResult = {
+	status: number;
+	headers: http2.IncomingHttpHeaders;
+	body: Buffer;
+};
+
+/**
+ * HTTP/2 fetch with redirect following. Cloudflare's managed challenge
+ * blocks HTTP/1.1 clients (Node.js undici/fetch) via TLS fingerprinting.
+ * Node's built-in http2 module bypasses the challenge because real browsers
+ * negotiate h2 by default and Cloudflare's heuristics trust the handshake.
+ */
+export async function fetchH2(url: string, init?: FetchH2Init): Promise<Response> {
+	let currentUrl = url;
+	for (let i = 0; i <= MAX_REDIRECTS; i++) {
+		const parsed = new URL(currentUrl);
+		const client = http2.connect(parsed.origin);
+		try {
+			const result = await h2Request(client, parsed, init);
+			if (REDIRECT_STATUS_CODES.has(result.status)) {
+				const location = result.headers.location;
+				assert(typeof location === "string" && location.length > 0, `HTTP/2 ${result.status} from ${currentUrl} missing location header`);
+				currentUrl = new URL(location, parsed.origin).href;
+				continue;
+			}
+			return new Response(result.body, {
+				status: result.status,
+				headers: toFetchHeaders(result.headers),
+			});
+		} finally {
+			client.close();
+		}
+	}
+	throw new Error(`fetchH2: too many redirects for ${url}`);
+}
+
+function h2Request(
+	client: http2.ClientHttp2Session,
+	url: URL,
+	init: FetchH2Init | undefined,
+): Promise<H2RequestResult> {
+	return new Promise((resolve, reject) => {
+		client.on("error", reject);
+		const reqHeaders: http2.OutgoingHttpHeaders = {
+			":method": "GET",
+			":path": url.pathname + url.search,
+		};
+		if (init?.headers) {
+			for (const [key, value] of Object.entries(init.headers)) {
+				reqHeaders[key] = value;
+			}
+		}
+		const req = client.request(reqHeaders);
+		req.on("error", reject);
+		const signal = init?.signal;
+		if (signal) {
+			if (signal.aborted) {
+				req.close();
+				reject(signal.reason);
+				return;
+			}
+			const onAbort = () => {
+				req.close();
+				reject(signal.reason);
+			};
+			signal.addEventListener("abort", onAbort, { once: true });
+			req.on("close", () => signal.removeEventListener("abort", onAbort));
+		}
+		let status: number | undefined;
+		let responseHeaders: http2.IncomingHttpHeaders | undefined;
+		req.on("response", (headers) => {
+			status = Number(headers[":status"]);
+			responseHeaders = headers;
+		});
+		const chunks: Buffer[] = [];
+		req.on("data", (chunk: Buffer) => chunks.push(chunk));
+		req.on("end", () => {
+			assert(status !== undefined, "HTTP/2 stream ended without :status");
+			assert(responseHeaders, "HTTP/2 stream ended without response headers");
+			resolve({ status, headers: responseHeaders, body: Buffer.concat(chunks) });
+		});
+		req.end();
+	});
+}
+
+function toFetchHeaders(incoming: http2.IncomingHttpHeaders): Headers {
+	const out = new Headers();
+	for (const [key, value] of Object.entries(incoming)) {
+		if (key.startsWith(":")) continue;
+		if (typeof value !== "string") continue;
+		out.set(key, value);
+	}
+	return out;
+}
+
+/**
+ * Wraps a fetch with an HTTP/2 fallback that kicks in when the origin
+ * returns a Cloudflare managed challenge (403 + cf-mitigated: challenge).
+ * Non-challenge responses pass through unchanged.
+ */
+export function withH2Fallback(
+	baseFetch: typeof fetch,
+	h2FetchImpl: typeof fetchH2 = fetchH2,
+): typeof fetch {
+	return async (input, init) => {
+		const response = await baseFetch(input, init);
+		if (response.status !== 403) return response;
+		if (response.headers.get("cf-mitigated") !== "challenge") return response;
+		await response.text();
+		return h2FetchImpl(urlFromInput(input), {
+			headers: toPlainHeaders(init?.headers),
+			signal: init?.signal ?? undefined,
+		});
+	};
+}
+
+type FetchInput = Parameters<typeof fetch>[0];
+type FetchInit = Parameters<typeof fetch>[1];
+
+function urlFromInput(input: FetchInput): string {
+	if (typeof input === "string") return input;
+	if (input instanceof URL) return input.href;
+	return input.url;
+}
+
+function toPlainHeaders(headers: NonNullable<FetchInit>["headers"]): Record<string, string> | undefined {
+	if (!headers) return undefined;
+	const out: Record<string, string> = {};
+	new Headers(headers).forEach((value, key) => {
+		out[key] = value;
+	});
+	return out;
+}

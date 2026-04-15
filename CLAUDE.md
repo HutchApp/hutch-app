@@ -12,6 +12,16 @@
 
 There is no in-app import. Users email Fayner their export file and he runs the import manually (24–48h turnaround — see [pocket-migration.md](./projects/hutch/src/runtime/web/pages/blog/posts/pocket-migration.md) for the user-facing copy). The absence is intentional: do not build a self-serve import flow, do not describe import as a shipped feature without qualifying it's a manual email process, and do not restore the removed "Import Your Data" landing page card.
 
+### Crawler Health Canary Is Load-Bearing
+
+A failure in the [crawler source health canary](./src/packages/crawl-article/scripts/health-sources.js) means production traffic is also blocked for that source. Every entry exists because a real user tried to save that type of URL and the crawler broke on it. When a canary fails, fix the crawler until the canary's URL loads — do not delete the entry to make the workflow green. Removing a source silently accepts that readers will get "Sorry, we couldn't save this link" for any URL matching that edge-sniffer's fingerprint (Cloudflare TLS fingerprinting, Fastly JA3, etc.).
+
+Workflow for a canary failure:
+1. Reproduce the failing fetch locally against the same URL before touching any code.
+2. Find the block (status code, Cloudflare `cf-mitigated` header, body contents) and pick a mitigation that hits the real origin (HTTP/2 fallback, header tweaks, oembed, etc.).
+3. Re-run the canary locally until the failing source passes — never commit until it does.
+4. Only then push and watch CI.
+
 ## Architecture Guidelines
 
 ### Brand & Design Guidelines
