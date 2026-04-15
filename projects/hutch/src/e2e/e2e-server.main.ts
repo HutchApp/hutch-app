@@ -1,7 +1,7 @@
-import assert from 'node:assert'
 import express from 'express'
 import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
 import { createTestApp } from '../runtime/test-app'
+import { requireEnv } from '../runtime/require-env'
 import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
 import { initRefreshArticleIfStale } from '../runtime/providers/article-freshness/check-content-freshness'
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from '@packages/crawl-article'
@@ -9,8 +9,7 @@ import { initReadabilityParser, parseHtml } from '../runtime/providers/article-p
 import { initInMemoryRefreshArticleContent } from '../runtime/providers/events/in-memory-refresh-article-content'
 import { initInMemoryUpdateFetchTimestamp } from '../runtime/providers/events/in-memory-update-fetch-timestamp'
 
-assert(process.env.E2E_PORT, "E2E_PORT is required")
-const PORT = Number(process.env.E2E_PORT)
+const PORT = Number(requireEnv('E2E_PORT'))
 const origin = `http://localhost:${PORT}`
 const logger = HutchLogger.from(consoleLogger)
 
