@@ -87,6 +87,64 @@ For `c8 ignore` rules, allowed cases, and V8 coverage quirks, see the [Code Cove
 
 E2E tests run as part of `pnpm check` which includes headless E2E execution with coverage.
 
+## Never Reuse an Existing Server — Every Run Gets a Fresh One on a Fresh Port
+
+Playwright's `reuseExistingServer: true` is forbidden. If a stale dev server or a previous test run is still bound to the same port, Playwright silently connects to it and runs the test against the wrong instance. The failures are indistinguishable from real regressions and the passes are worse — tests that pass against wrong state. Pair this with a dynamically allocated port per run so hardcoded ports can't collide with a running dev server.
+
+```ts
+// BAD — silently matches any server already on that port
+webServer: {
+  command: 'tsx src/e2e/e2e-server.main.ts',
+  url: serverUrl,
+  reuseExistingServer: true,
+}
+
+// BAD — hardcoded port collides with dev servers and previous runs
+"test:e2e": "E2E_PORT=3100 playwright test --config playwright.config.local-dev.ts"
+```
+
+The projects in this repo use the `@packages/test-phase-runner` pattern: `scripts/run-e2e.js` allocates a free port via `getFreePort`, then `initTestPhaseRunner` launches the compiled server in a separate process (with `stripCoverage: true` to unset `NODE_V8_COVERAGE`) and only invokes Playwright once the server answers. The Playwright config sets `webServer: undefined` so Playwright never manages the server itself.
+
+```ts
+// playwright.config.local-dev.ts — Playwright does NOT manage the server
+export default createPlaywrightConfig({
+  baseURL: `http://localhost:${process.env.E2E_PORT || '0'}`,
+  webServer: undefined,
+  // ...
+})
+
+// scripts/run-e2e.js — allocate a free port, then run the playwright phase
+const { initTestPhaseRunner, defaultDeps, getFreePort } = require('@packages/test-phase-runner')
+
+async function main() {
+  const port = await getFreePort()
+  process.env.E2E_PORT = String(port)
+
+  const { createTestPlan } = initTestPhaseRunner(defaultDeps)
+  const plan = createTestPlan({
+    config: {
+      projectName: 'Readplace',
+      phases: [{
+        type: 'playwright',
+        name: 'Running E2E tests',
+        config: 'playwright.config.local-dev.ts',
+        browsers: ['chromium'],
+        server: {
+          command: ['node', 'dist/e2e/e2e-server.main.js'],
+          url: `http://localhost:${port}`,
+          stripCoverage: true,
+        },
+        env: { HEADLESS: process.env.HEADLESS || 'false', E2E_PORT: String(port) },
+      }],
+    },
+    projectRoot: join(__dirname, '..'),
+  })
+  await plan.runAllPhases()
+}
+```
+
+The factory still forces `reuseExistingServer: false` as a safety net for any config that does pass a `webServer` (e.g. staging).
+
 ## Debugging E2E Test Failures
 
 ### Failure Types

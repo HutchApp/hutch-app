@@ -23,11 +23,6 @@ module.exports = {
       name: 'Running E2E tests',
       config: 'playwright.config.local-dev.ts',
       browsers: ['chromium'],
-      server: {
-        command: ['node', 'dist/e2e/e2e-server.main.js'],
-        url: `http://localhost:${port}`,
-        stripCoverage: true,
-      },
       env: { HEADLESS: 'true', E2E_PORT: port },
     },
   ],

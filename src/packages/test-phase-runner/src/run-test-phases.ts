@@ -1,8 +1,7 @@
 import assert from "node:assert";
-import { execSync as defaultExecSync, spawn as defaultSpawn } from "node:child_process";
-import type { ChildProcess, ExecSyncOptions, SpawnOptions } from "node:child_process";
+import { execSync as defaultExecSync } from "node:child_process";
+import type { ExecSyncOptions } from "node:child_process";
 import { globSync as defaultGlobSync } from "node:fs";
-import http from "node:http";
 
 interface JestPhase {
 	type: "jest";
@@ -34,12 +33,6 @@ interface PlaywrightPhase {
 	name: string;
 	config: string;
 	browsers: string[];
-	server: {
-		command: string[];
-		url: string;
-		waitTimeoutMs?: number;
-		stripCoverage?: boolean;
-	};
 	env?: Record<string, string>;
 }
 
@@ -77,10 +70,6 @@ interface ResolvedPlaywrightPhase {
 	type: "playwright";
 	name: string;
 	browserInstallCommand: string;
-	serverSpawnArgs: string[];
-	serverUrl: string;
-	waitTimeoutMs: number;
-	stripCoverage: boolean;
 	testCommand: string;
 	env: Record<string, string>;
 }
@@ -98,15 +87,11 @@ export interface TestPlan {
 }
 
 type ExecSyncFn = (command: string, options: ExecSyncOptions) => Buffer | string;
-type SpawnFn = (command: string, args: string[], options: SpawnOptions) => ChildProcess;
 type GlobSyncFn = (pattern: string) => string[];
-type WaitForServerFn = (url: string, timeoutMs: number) => Promise<void>;
 
 export interface TestPhaseRunnerDeps {
 	execSync: ExecSyncFn;
-	spawn: SpawnFn;
 	globSync: GlobSyncFn;
-	waitForServer: WaitForServerFn;
 }
 
 function resolveJestPhase(phase: JestPhase): ResolvedJestPhase {
@@ -148,41 +133,14 @@ function resolvePlaywrightPhase(phase: PlaywrightPhase): ResolvedPlaywrightPhase
 		type: "playwright",
 		name: phase.name,
 		browserInstallCommand: `node_modules/.bin/playwright install --with-deps ${browsers}`,
-		serverSpawnArgs: phase.server.command,
-		serverUrl: phase.server.url,
-		waitTimeoutMs: phase.server.waitTimeoutMs ?? 15000,
-		stripCoverage: phase.server.stripCoverage ?? false,
 		testCommand: `node_modules/.bin/playwright test --config ${phase.config}`,
 		env: phase.env ?? {},
 	};
 }
 
-function defaultWaitForServer(url: string, timeoutMs: number): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const deadline = Date.now() + timeoutMs;
-		function attempt() {
-			http
-				.get(url, (res) => {
-					res.resume();
-					resolve();
-				})
-				.on("error", () => {
-					if (Date.now() > deadline) {
-						reject(new Error(`Server at ${url} did not start within ${timeoutMs}ms`));
-						return;
-					}
-					setTimeout(attempt, 200);
-				});
-		}
-		attempt();
-	});
-}
-
 export const defaultDeps: TestPhaseRunnerDeps = {
 	execSync: defaultExecSync as ExecSyncFn,
-	spawn: defaultSpawn,
 	globSync: defaultGlobSync,
-	waitForServer: defaultWaitForServer,
 };
 
 export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
@@ -195,7 +153,7 @@ export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 		});
 	}
 
-	async function runPlaywrightPhase(displayName: string, phase: ResolvedPlaywrightPhase, projectRoot: string) {
+	function runPlaywrightPhase(displayName: string, phase: ResolvedPlaywrightPhase, projectRoot: string) {
 		console.log(`\n=== ${displayName} ===\n`);
 
 		deps.execSync(phase.browserInstallCommand, {
@@ -203,27 +161,11 @@ export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 			stdio: "inherit",
 		});
 
-		const spawnCommand = phase.stripCoverage ? "env" : phase.serverSpawnArgs[0];
-		const spawnArgs = phase.stripCoverage
-			? ["-u", "NODE_V8_COVERAGE", ...phase.serverSpawnArgs]
-			: phase.serverSpawnArgs.slice(1);
-
-		const serverProcess = deps.spawn(spawnCommand, spawnArgs, {
+		deps.execSync(phase.testCommand, {
 			cwd: projectRoot,
 			stdio: "inherit",
+			env: { ...process.env, ...phase.env },
 		});
-
-		try {
-			await deps.waitForServer(phase.serverUrl, phase.waitTimeoutMs);
-
-			deps.execSync(phase.testCommand, {
-				cwd: projectRoot,
-				stdio: "inherit",
-				env: { ...process.env, ...phase.env },
-			});
-		} finally {
-			serverProcess.kill("SIGTERM");
-		}
 	}
 
 	return {
@@ -260,7 +202,7 @@ export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 						}
 
 						if (phase.type === "playwright") {
-							await runPlaywrightPhase(displayName, phase, input.projectRoot);
+							runPlaywrightPhase(displayName, phase, input.projectRoot);
 							continue;
 						}
 

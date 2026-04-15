@@ -1,42 +1,22 @@
-import type { ExecSyncOptions, SpawnOptions } from "node:child_process";
+import type { ExecSyncOptions } from "node:child_process";
 import { defaultDeps, initTestPhaseRunner } from "./run-test-phases";
 import type { ResolvedPhase, TestPhaseRunnerDeps } from "./run-test-phases";
 
 function createInMemoryDeps() {
 	const executedCommands: Array<{ command: string; cwd?: string | URL; env?: NodeJS.ProcessEnv }> = [];
-	const spawnedProcesses: Array<{ command: string; args: string[]; cwd?: string | URL }> = [];
-	let waitForServerCalls = 0;
-	let _killCalled = false;
 
 	const deps: TestPhaseRunnerDeps = {
 		execSync: (command: string, options: ExecSyncOptions) => {
 			executedCommands.push({ command, cwd: options.cwd, env: options.env });
 			return Buffer.from("");
 		},
-		spawn: (command: string, args: string[], options: SpawnOptions) => {
-			spawnedProcesses.push({ command, args, cwd: options.cwd });
-			return {
-				kill: (_signal: string) => {
-					_killCalled = true;
-				},
-			} as ReturnType<typeof import("node:child_process").spawn>;
-		},
 		globSync: (pattern: string) => {
 			if (pattern.includes("empty")) return [];
 			return ["dist/e2e/test1.test.js", "dist/e2e/test2.test.js"];
 		},
-		waitForServer: async (_url: string, _timeoutMs: number) => {
-			waitForServerCalls++;
-		},
 	};
 
-	return {
-		deps,
-		executedCommands,
-		spawnedProcesses,
-		getWaitForServerCalls: () => waitForServerCalls,
-		getKillCalled: () => _killCalled,
-	};
+	return { deps, executedCommands };
 }
 
 function createRunner(deps: TestPhaseRunnerDeps = defaultDeps) {
@@ -249,7 +229,6 @@ describe("playwright phase resolution", () => {
 						name: "E2E tests",
 						config: "playwright.config.local-dev.ts",
 						browsers: ["chromium"],
-						server: { command: ["node", "dist/e2e/e2e-server.js"], url: "http://localhost:3100" },
 					},
 				],
 			},
@@ -271,7 +250,6 @@ describe("playwright phase resolution", () => {
 						name: "E2E tests",
 						config: "playwright.config.local-dev.ts",
 						browsers: ["chromium"],
-						server: { command: ["node", "dist/e2e/e2e-server.js"], url: "http://localhost:3100" },
 					},
 				],
 			},
@@ -280,94 +258,6 @@ describe("playwright phase resolution", () => {
 
 		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
 		expect(phase.testCommand).toBe("node_modules/.bin/playwright test --config playwright.config.local-dev.ts");
-	});
-
-	it("defaults waitTimeoutMs to 15000", () => {
-		const runner = createRunner();
-		const plan = runner.createTestPlan({
-			config: {
-				projectName: "Readplace",
-				phases: [
-					{
-						type: "playwright",
-						name: "E2E tests",
-						config: "playwright.config.local-dev.ts",
-						browsers: ["chromium"],
-						server: { command: ["node", "dist/e2e/e2e-server.js"], url: "http://localhost:3100" },
-					},
-				],
-			},
-			projectRoot: "/projects/hutch",
-		});
-
-		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
-		expect(phase.waitTimeoutMs).toBe(15000);
-	});
-
-	it("uses custom waitTimeoutMs when provided", () => {
-		const runner = createRunner();
-		const plan = runner.createTestPlan({
-			config: {
-				projectName: "Readplace",
-				phases: [
-					{
-						type: "playwright",
-						name: "E2E tests",
-						config: "playwright.config.local-dev.ts",
-						browsers: ["chromium"],
-						server: { command: ["node", "server.js"], url: "http://localhost:3100", waitTimeoutMs: 30000 },
-					},
-				],
-			},
-			projectRoot: "/projects/hutch",
-		});
-
-		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
-		expect(phase.waitTimeoutMs).toBe(30000);
-	});
-
-	it("defaults stripCoverage to false", () => {
-		const runner = createRunner();
-		const plan = runner.createTestPlan({
-			config: {
-				projectName: "Readplace",
-				phases: [
-					{
-						type: "playwright",
-						name: "E2E tests",
-						config: "playwright.config.local-dev.ts",
-						browsers: ["chromium"],
-						server: { command: ["node", "server.js"], url: "http://localhost:3100" },
-					},
-				],
-			},
-			projectRoot: "/projects/hutch",
-		});
-
-		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
-		expect(phase.stripCoverage).toBe(false);
-	});
-
-	it("sets stripCoverage when configured", () => {
-		const runner = createRunner();
-		const plan = runner.createTestPlan({
-			config: {
-				projectName: "Readplace",
-				phases: [
-					{
-						type: "playwright",
-						name: "E2E tests",
-						config: "playwright.config.local-dev.ts",
-						browsers: ["chromium"],
-						server: { command: ["node", "server.js"], url: "http://localhost:3100", stripCoverage: true },
-					},
-				],
-			},
-			projectRoot: "/projects/hutch",
-		});
-
-		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
-		expect(phase.stripCoverage).toBe(true);
 	});
 
 	it("supports multiple browsers", () => {
@@ -381,7 +271,6 @@ describe("playwright phase resolution", () => {
 						name: "E2E tests",
 						config: "playwright.config.local-dev.ts",
 						browsers: ["chromium", "firefox"],
-						server: { command: ["node", "server.js"], url: "http://localhost:3100" },
 					},
 				],
 			},
@@ -390,6 +279,28 @@ describe("playwright phase resolution", () => {
 
 		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
 		expect(phase.browserInstallCommand).toBe("node_modules/.bin/playwright install --with-deps chromium firefox");
+	});
+
+	it("preserves env vars for the test command", () => {
+		const runner = createRunner();
+		const plan = runner.createTestPlan({
+			config: {
+				projectName: "Readplace",
+				phases: [
+					{
+						type: "playwright",
+						name: "E2E tests",
+						config: "playwright.config.local-dev.ts",
+						browsers: ["chromium"],
+						env: { HEADLESS: "true", E2E_PORT: "12345" },
+					},
+				],
+			},
+			projectRoot: "/projects/hutch",
+		});
+
+		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
+		expect(phase.env).toEqual({ HEADLESS: "true", E2E_PORT: "12345" });
 	});
 });
 
@@ -467,8 +378,8 @@ describe("runAllPhases execution", () => {
 		expect(executedCommands[0].env).toEqual(expect.objectContaining({ HUTCH_SERVER_URL: "http://localhost:3000" }));
 	});
 
-	it("executes playwright phase with server lifecycle", async () => {
-		const { deps, executedCommands, spawnedProcesses, getWaitForServerCalls, getKillCalled } = createInMemoryDeps();
+	it("executes playwright phase: installs browsers then runs test command", async () => {
+		const { deps, executedCommands } = createInMemoryDeps();
 		const runner = createRunner(deps);
 		const plan = runner.createTestPlan({
 			config: {
@@ -479,12 +390,7 @@ describe("runAllPhases execution", () => {
 						name: "E2E tests",
 						config: "playwright.config.local-dev.ts",
 						browsers: ["chromium"],
-						server: {
-							command: ["node", "dist/e2e/e2e-server.js"],
-							url: "http://localhost:3100",
-							stripCoverage: true,
-						},
-						env: { HEADLESS: "true" },
+						env: { HEADLESS: "true", E2E_PORT: "12345" },
 					},
 				],
 			},
@@ -493,82 +399,12 @@ describe("runAllPhases execution", () => {
 
 		await plan.runAllPhases();
 
+		expect(executedCommands).toHaveLength(2);
 		expect(executedCommands[0].command).toContain("playwright install");
-		expect(spawnedProcesses[0].command).toBe("env");
-		expect(spawnedProcesses[0].args).toEqual(["-u", "NODE_V8_COVERAGE", "node", "dist/e2e/e2e-server.js"]);
-		expect(getWaitForServerCalls()).toBe(1);
+		expect(executedCommands[0].cwd).toBe("/projects/hutch");
 		expect(executedCommands[1].command).toContain("playwright test");
-		expect(getKillCalled()).toBe(true);
-	});
-
-	it("spawns server directly when stripCoverage is false", async () => {
-		const { deps, spawnedProcesses } = createInMemoryDeps();
-		const runner = createRunner(deps);
-		const plan = runner.createTestPlan({
-			config: {
-				projectName: "Readplace",
-				phases: [
-					{
-						type: "playwright",
-						name: "E2E tests",
-						config: "playwright.config.local-dev.ts",
-						browsers: ["chromium"],
-						server: {
-							command: ["node", "dist/e2e/e2e-server.js"],
-							url: "http://localhost:3100",
-							stripCoverage: false,
-						},
-					},
-				],
-			},
-			projectRoot: "/projects/hutch",
-		});
-
-		await plan.runAllPhases();
-
-		expect(spawnedProcesses[0].command).toBe("node");
-		expect(spawnedProcesses[0].args).toEqual(["dist/e2e/e2e-server.js"]);
-	});
-
-	it("kills server even when playwright test command fails", async () => {
-		let killCalled = false;
-		const deps: TestPhaseRunnerDeps = {
-			execSync: (command: string, _options: ExecSyncOptions) => {
-				if (command.includes("playwright test")) {
-					throw new Error("Test failed");
-				}
-				return Buffer.from("");
-			},
-			spawn: (_command: string, _args: string[], _options: SpawnOptions) => {
-				return {
-					kill: () => {
-						killCalled = true;
-					},
-				} as ReturnType<typeof import("node:child_process").spawn>;
-			},
-			globSync: () => [],
-			waitForServer: async () => {},
-		};
-
-		const runner = createRunner(deps);
-		const plan = runner.createTestPlan({
-			config: {
-				projectName: "Readplace",
-				phases: [
-					{
-						type: "playwright",
-						name: "E2E tests",
-						config: "playwright.config.local-dev.ts",
-						browsers: ["chromium"],
-						server: { command: ["node", "server.js"], url: "http://localhost:3100" },
-					},
-				],
-			},
-			projectRoot: "/projects/hutch",
-		});
-
-		await expect(plan.runAllPhases()).rejects.toThrow("Test failed");
-		expect(killCalled).toBe(true);
+		expect(executedCommands[1].cwd).toBe("/projects/hutch");
+		expect(executedCommands[1].env).toEqual(expect.objectContaining({ HEADLESS: "true", E2E_PORT: "12345" }));
 	});
 
 	it("executes multiple phases in order", async () => {

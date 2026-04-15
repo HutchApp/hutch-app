@@ -13,7 +13,6 @@ interface PlaywrightConfigOptions {
     | {
         command: string
         url: string
-        reuseExistingServer: boolean
         stdout: 'pipe' | 'ignore'
         stderr: 'pipe' | 'ignore'
       }
@@ -46,6 +45,10 @@ export const createPlaywrightConfig = (options: PlaywrightConfigOptions) => {
         },
       },
     ],
-    webServer: options.webServer,
+    // Never reuse an existing server — a stale dev server or previous test run on the same port
+    // will silently match and the test will run against the wrong instance. See .claude/skills/e2e-testing/SKILL.md.
+    webServer: options.webServer
+      ? { ...options.webServer, reuseExistingServer: false }
+      : undefined,
   })
 }
