@@ -42,3 +42,6 @@ playwright-report/
 .env
 .env.local
 .env.*.local
+
+# Claude Code runtime artifacts
+.claude/scheduled_tasks.lock
