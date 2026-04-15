@@ -28,11 +28,11 @@ export const createPlaywrightConfig = (options: PlaywrightConfigOptions) => {
     timeout: 60000,
     expect: {
       toHaveScreenshot: {
-        // Cross-platform font rendering (mac vs linux) and antialiasing differences mean the
-        // same rendered element can differ by ~2-4% of pixels without being a real regression.
-        // Baselines are captured on one device and compared against all; this slack covers
-        // text edge anti-aliasing so we don't need per-platform baselines.
-        maxDiffPixelRatio: 0.05,
+        // Cross-platform font rendering (mac vs linux), icon rasterization and antialiasing
+        // differences mean the same element can differ by ~5-7% of pixels without being a
+        // real regression. Baselines are captured on one device and shared across all, so
+        // this slack absorbs text edge anti-aliasing and SVG icon subpixel differences.
+        maxDiffPixelRatio: 0.1,
         threshold: 0.2,
         animations: 'disabled',
         caret: 'hide',
