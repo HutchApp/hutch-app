@@ -6,6 +6,8 @@ import type { HutchLambda } from "./hutch-lambda";
 export class HutchAPIGateway extends pulumi.ComponentResource {
 	public readonly apiUrl: pulumi.Output<string> | string;
 	public readonly defaultRoute: aws.apigatewayv2.Route;
+	public readonly apiGatewayId: pulumi.Output<string>;
+	public readonly apiGatewayExecutionArn: pulumi.Output<string>;
 
 	constructor(
 		name: string,
@@ -20,6 +22,9 @@ export class HutchAPIGateway extends pulumi.ComponentResource {
 		opts?: pulumi.ComponentResourceOptions,
 	) {
 		super("hutch:infra:HutchAPIGateway", name, {}, opts);
+
+		this.apiGatewayId = args.api.id;
+		this.apiGatewayExecutionArn = args.api.executionArn;
 
 		const apiStage = new aws.apigatewayv2.Stage(`${name}-api-stage`, {
 			apiId: args.api.id,

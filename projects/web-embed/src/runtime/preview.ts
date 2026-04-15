@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { renderBase } from "./base";
 import { PREVIEW_PAGE_STYLES } from "./preview.styles";
 import { render } from "./render";
-import { SNIPPET_A, SNIPPET_B, SNIPPET_C, substituteOrigins } from "./snippets";
+import { renderSnippet } from "./snippets";
 
 const PREVIEW_TEMPLATE = readFileSync(join(__dirname, "preview.template.html"), "utf-8");
 
@@ -15,9 +15,9 @@ export interface PreviewPageInput {
 export function renderPreviewPage(input: PreviewPageInput): string {
 	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin };
 	const content = render(PREVIEW_TEMPLATE, {
-		previewA: substituteOrigins(SNIPPET_A, origins),
-		previewB: substituteOrigins(SNIPPET_B, origins),
-		previewC: substituteOrigins(SNIPPET_C, origins),
+		previewA: renderSnippet("a", origins),
+		previewB: renderSnippet("b", origins),
+		previewC: renderSnippet("c", origins),
 	});
 
 	return renderBase({

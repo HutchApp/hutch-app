@@ -25,7 +25,7 @@ test.describe("Embed preview visual regression", () => {
 	});
 
 	test("each background stage matches its baseline screenshot", async ({ page }) => {
-		await page.goto(`${BASE_URL}/preview`, { waitUntil: "domcontentloaded" });
+		await page.goto(`${BASE_URL}/embed/preview`, { waitUntil: "domcontentloaded" });
 		await waitForPageReady(page, '[data-test-page="embed-preview"]');
 
 		for (const bg of ["white", "surface", "dark"] as const) {
@@ -35,14 +35,14 @@ test.describe("Embed preview visual regression", () => {
 	});
 
 	test("the hero demo button matches its baseline screenshot", async ({ page }) => {
-		await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+		await page.goto(`${BASE_URL}/embed`, { waitUntil: "domcontentloaded" });
 		await waitForPageReady(page, '[data-test-page="embed"]');
 		const hero = page.locator('[data-test="hero-demo"]');
 		await expect(hero).toHaveScreenshot("embed-hero-demo.png");
 	});
 
 	test("each variant preview on the main page matches its baseline screenshot", async ({ page }) => {
-		await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+		await page.goto(`${BASE_URL}/embed`, { waitUntil: "domcontentloaded" });
 		await waitForPageReady(page, '[data-test-page="embed"]');
 
 		for (const id of ["a", "b", "c"] as const) {

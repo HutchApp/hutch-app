@@ -7,24 +7,24 @@ import { createApp } from "./server";
 const DEFAULT_CONFIG: AppConfig = {
 	port: 3500,
 	appOrigin: "https://readplace.com",
-	embedOrigin: "http://localhost:3500",
+	embedOrigin: "http://localhost:3500/embed",
 };
 
 function makeApp(overrides: Partial<AppConfig> = {}) {
 	return createApp({ ...DEFAULT_CONFIG, ...overrides });
 }
 
-describe("GET /", () => {
+describe("GET /embed", () => {
 	it("should return 200 and HTML content", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/text\/html/);
 	});
 
 	it("should render the hero title inside the embed page container", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const page = doc.querySelector('[data-test-page="embed"]');
 		assert(page, "embed page container must be rendered");
@@ -35,7 +35,7 @@ describe("GET /", () => {
 
 	it("should render all three variants with numeric byte counts", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 
 		expect(doc.querySelectorAll("[data-test-variant]")).toHaveLength(3);
@@ -49,7 +49,7 @@ describe("GET /", () => {
 
 	it("should render every variant preview as a live anchor that links into the save flow", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 
 		for (const id of ["preview-a", "preview-b", "preview-c"] as const) {
@@ -63,7 +63,7 @@ describe("GET /", () => {
 
 	it("should render every snippet source as escaped text that preserves the canonical URLs", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 
 		for (const id of ["source-a", "source-b", "source-c"] as const) {
@@ -71,13 +71,13 @@ describe("GET /", () => {
 			assert(source, `${id} source block must be rendered`);
 			expect(source.textContent).toContain("<a href=");
 			expect(source.textContent).toContain("https://readplace.com/save");
-			expect(source.textContent).toContain("https://embed.readplace.com/icon.svg");
+			expect(source.textContent).toContain("https://readplace.com/embed/icon.svg");
 		}
 	});
 
 	it("should render the hero demo as the unmodified snippet B so it exercises the same Referer-based save flow as publishers get", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const demo = doc.querySelector('[data-test="hero-demo"]');
 		assert(demo, "hero demo container must be rendered");
@@ -88,7 +88,7 @@ describe("GET /", () => {
 
 	it("should render the quotable privacy statement", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const privacy = doc.querySelector('[data-test="privacy-text"]');
 		assert(privacy, "privacy statement must be rendered");
@@ -98,20 +98,20 @@ describe("GET /", () => {
 
 	it("should expose a copy button for every snippet and the privacy paragraph", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		expect(doc.querySelectorAll("button[data-copy]")).toHaveLength(4);
 	});
 
 	it("should include the copy-to-clipboard inline script", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		expect(response.text).toContain("navigator.clipboard");
 	});
 
 	it("should register / with the default indexable robots directive", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const robots = doc.querySelector('meta[name="robots"]');
 		assert(robots, "robots meta must be rendered");
@@ -120,7 +120,7 @@ describe("GET /", () => {
 
 	it("should substitute the Readplace app origin in live preview save links when appOrigin differs from the canonical value", async () => {
 		const app = makeApp({ appOrigin: "http://127.0.0.1:9999" });
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const previewAnchor = doc.querySelector('[data-test="preview-b"] a');
 		assert(previewAnchor, "preview-b anchor must be rendered");
@@ -129,31 +129,31 @@ describe("GET /", () => {
 
 	it("should substitute the embed origin in live preview icon URLs so the dev server can serve them", async () => {
 		const app = makeApp({ embedOrigin: "http://localhost:3700" });
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const previewImg = doc.querySelector('[data-test="preview-a"] img');
 		assert(previewImg, "preview-a img must be rendered");
 		expect(previewImg.getAttribute("src")).toBe("http://localhost:3700/icon.svg");
 	});
 
-	it("should keep the canonical readplace.com and embed.readplace.com URLs inside the copy-paste source blocks regardless of config", async () => {
+	it("should keep the canonical readplace.com URLs inside the copy-paste source blocks regardless of config", async () => {
 		const app = makeApp({
 			appOrigin: "http://127.0.0.1:9999",
-			embedOrigin: "http://localhost:3700",
+			embedOrigin: "http://localhost:3700/embed",
 		});
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const source = doc.querySelector('[data-test="source-b"]');
 		assert(source, "source-b must be rendered");
 		expect(source.textContent).toContain("https://readplace.com/save");
-		expect(source.textContent).toContain("https://embed.readplace.com/icon.svg");
+		expect(source.textContent).toContain("https://readplace.com/embed/icon.svg");
 		expect(source.textContent).not.toContain("http://127.0.0.1:9999");
 		expect(source.textContent).not.toContain("http://localhost:3700");
 	});
 
 	it("should link the footer back to the Readplace app origin", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/");
+		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
 		const link = doc.querySelector('[data-test="link-app"]');
 		assert(link, "app link must be rendered");
@@ -161,17 +161,17 @@ describe("GET /", () => {
 	});
 });
 
-describe("GET /preview", () => {
+describe("GET /embed/preview", () => {
 	it("should return 200 and HTML content", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/preview");
+		const response = await request(app).get("/embed/preview");
 		expect(response.status).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/text\/html/);
 	});
 
 	it("should be marked noindex so search engines skip the developer preview", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/preview");
+		const response = await request(app).get("/embed/preview");
 		const doc = new JSDOM(response.text).window.document;
 		const robots = doc.querySelector('meta[name="robots"]');
 		assert(robots, "robots meta must be rendered");
@@ -180,7 +180,7 @@ describe("GET /preview", () => {
 
 	it("should render one stage per background", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/preview");
+		const response = await request(app).get("/embed/preview");
 		const doc = new JSDOM(response.text).window.document;
 		for (const bg of ["white", "surface", "dark"] as const) {
 			const stage = doc.querySelector(`[data-test-bg="${bg}"]`);
@@ -190,7 +190,7 @@ describe("GET /preview", () => {
 
 	it("should render each variant once inside every background stage", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/preview");
+		const response = await request(app).get("/embed/preview");
 		const doc = new JSDOM(response.text).window.document;
 		const stages = doc.querySelectorAll(".embed-preview__stage");
 		expect(stages).toHaveLength(3);
@@ -200,11 +200,11 @@ describe("GET /preview", () => {
 	});
 });
 
-describe("GET /icon.svg", () => {
+describe("GET /embed/icon.svg", () => {
 	it("should return the embed icon SVG with the correct content type and immutable cache header", async () => {
 		const app = makeApp();
 		const response = await request(app)
-			.get("/icon.svg")
+			.get("/embed/icon.svg")
 			.buffer(true)
 			.parse((res, cb) => {
 				let data = "";
@@ -224,10 +224,10 @@ describe("GET /icon.svg", () => {
 	});
 });
 
-describe("GET /health", () => {
+describe("GET /embed/health", () => {
 	it("should return 200 ok", async () => {
 		const app = makeApp();
-		const response = await request(app).get("/health");
+		const response = await request(app).get("/embed/health");
 		expect(response.status).toBe(200);
 		expect(response.text).toBe("ok");
 	});

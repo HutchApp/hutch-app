@@ -2,10 +2,9 @@ import { requireEnv } from "../runtime/require-env";
 import { createApp } from "../runtime/server";
 
 const port = Number(requireEnv("E2E_PORT"));
-const embedOrigin = `http://localhost:${port}`;
+const embedOrigin = `http://localhost:${port}/embed`;
 
 const app = createApp({
-	port,
 	appOrigin: "https://readplace.com",
 	embedOrigin,
 });

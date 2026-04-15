@@ -13,7 +13,9 @@ export default createPlaywrightConfig({
   headless: process.env.HEADLESS === 'true',
   webServer: {
     command: 'env -u NODE_V8_COVERAGE node dist/e2e/e2e-server.main.js',
-    url: serverUrl,
+    // Routes are mounted at /embed; the bare root 404s, so point readiness at the
+    // health endpoint under the /embed prefix.
+    url: `${serverUrl}/embed/health`,
     stdout: 'pipe',
     stderr: 'pipe',
   },

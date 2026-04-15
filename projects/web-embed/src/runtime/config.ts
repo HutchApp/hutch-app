@@ -1,17 +1,27 @@
 import { requireEnv } from "./require-env";
 
 export const CANONICAL_APP_ORIGIN = "https://readplace.com";
-export const CANONICAL_EMBED_ORIGIN = "https://embed.readplace.com";
+export const CANONICAL_EMBED_ORIGIN = "https://readplace.com/embed";
 
-export interface AppConfig {
-	port: number;
+export interface EmbedAppOrigins {
 	appOrigin: string;
 	embedOrigin: string;
 }
 
+export interface AppConfig extends EmbedAppOrigins {
+	port: number;
+}
+
+export function loadOriginsFromEnv(): EmbedAppOrigins {
+	return {
+		appOrigin: requireEnv("APP_ORIGIN"),
+		embedOrigin: requireEnv("EMBED_ORIGIN"),
+	};
+}
+
 export function loadConfigFromEnv(): AppConfig {
-	const port = Number.parseInt(requireEnv("PORT"), 10);
-	const appOrigin = requireEnv("APP_ORIGIN");
-	const embedOrigin = requireEnv("EMBED_ORIGIN");
-	return { port, appOrigin, embedOrigin };
+	return {
+		port: Number.parseInt(requireEnv("PORT"), 10),
+		...loadOriginsFromEnv(),
+	};
 }

@@ -109,7 +109,7 @@ const api = new aws.apigatewayv2.Api("hutch-api-gateway", {
 	description: `Readplace API Gateway (${stage})`,
 });
 
-const appOrigin: pulumi.Input<string> = canonicalDomain
+export const appOrigin: pulumi.Input<string> = canonicalDomain
 	? `https://${canonicalDomain}`
 	: api.apiEndpoint;
 
@@ -201,4 +201,6 @@ for (const [i, domain] of additionalDomains.entries()) {
 export const apiUrl: pulumi.Input<string> = canonicalDomain ? `https://${canonicalDomain}` : gateway.apiUrl;
 export const functionName = lambda.functionName;
 export const staticBaseUrl = staticAssets.baseUrl;
+export const apiGatewayId = gateway.apiGatewayId;
+export const apiGatewayExecutionArn = gateway.apiGatewayExecutionArn;
 export const _dependencies = [gateway.defaultRoute];

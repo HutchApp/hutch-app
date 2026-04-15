@@ -455,6 +455,9 @@ importers:
 
   projects/web-embed:
     dependencies:
+      '@packages/hutch-infra-components':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-infra-components
       express:
         specifier: 4.22.1
         version: 4.22.1
@@ -464,6 +467,9 @@ importers:
       helmet:
         specifier: 8.1.0
         version: 8.1.0
+      serverless-http:
+        specifier: 4.0.0
+        version: 4.0.0
     devDependencies:
       '@packages/test-phase-runner':
         specifier: workspace:*
@@ -471,6 +477,15 @@ importers:
       '@playwright/test':
         specifier: 1.58.2
         version: 1.58.2
+      '@pulumi/aws':
+        specifier: 7.20.0
+        version: 7.20.0(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.9.3))(typescript@5.9.3)
+      '@pulumi/pulumi':
+        specifier: 3.224.0
+        version: 3.224.0(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.9.3))(typescript@5.9.3)
+      '@types/aws-lambda':
+        specifier: 8.10.161
+        version: 8.10.161
       '@types/express':
         specifier: 4.17.25
         version: 4.17.25

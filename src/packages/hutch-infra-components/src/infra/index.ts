@@ -2,6 +2,7 @@ export { HutchEventBus } from "./event-bus";
 export { HutchLambda } from "./hutch-lambda";
 export type { LambdaPolicy } from "./hutch-lambda";
 export { HutchAPIGateway } from "./hutch-api-gateway";
+export { HutchAPIGatewayLambdaRoute } from "./hutch-api-gateway-lambda-route";
 export { HutchDynamoDBAccess } from "./hutch-dynamodb-access";
 export { HutchCertificate } from "./hutch-certificate";
 export { HutchSQS } from "./hutch-sqs";

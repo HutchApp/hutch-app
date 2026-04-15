@@ -4,7 +4,7 @@ import { renderBase } from "./base";
 import { CANONICAL_EMBED_ORIGIN } from "./config";
 import { EMBED_PAGE_STYLES } from "./embed.styles";
 import { render } from "./render";
-import { SNIPPET_A, SNIPPET_B, SNIPPET_C, byteLength, substituteOrigins } from "./snippets";
+import { byteLength, renderCanonicalSnippet, renderSnippet } from "./snippets";
 
 const EMBED_TEMPLATE = readFileSync(join(__dirname, "embed.template.html"), "utf-8");
 
@@ -34,9 +34,12 @@ export interface EmbedPageInput {
 
 export function renderEmbedPage(input: EmbedPageInput): string {
 	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin };
-	const previewA = substituteOrigins(SNIPPET_A, origins);
-	const previewB = substituteOrigins(SNIPPET_B, origins);
-	const previewC = substituteOrigins(SNIPPET_C, origins);
+	const previewA = renderSnippet("a", origins);
+	const previewB = renderSnippet("b", origins);
+	const previewC = renderSnippet("c", origins);
+	const sourceA = renderCanonicalSnippet("a");
+	const sourceB = renderCanonicalSnippet("b");
+	const sourceC = renderCanonicalSnippet("c");
 
 	const content = render(EMBED_TEMPLATE, {
 		// The hero demo is literally the unmodified preview of snippet B — same HTML, same Referer-based
@@ -45,12 +48,12 @@ export function renderEmbedPage(input: EmbedPageInput): string {
 		previewA,
 		previewB,
 		previewC,
-		snippetA: SNIPPET_A,
-		snippetB: SNIPPET_B,
-		snippetC: SNIPPET_C,
-		bytesA: byteLength(SNIPPET_A),
-		bytesB: byteLength(SNIPPET_B),
-		bytesC: byteLength(SNIPPET_C),
+		snippetA: sourceA,
+		snippetB: sourceB,
+		snippetC: sourceC,
+		bytesA: byteLength(sourceA),
+		bytesB: byteLength(sourceB),
+		bytesC: byteLength(sourceC),
 		appOrigin: input.appOrigin,
 	});
 
