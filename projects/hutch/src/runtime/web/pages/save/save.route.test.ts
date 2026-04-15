@@ -1,5 +1,3 @@
-import assert from "node:assert/strict";
-import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
 
@@ -178,8 +176,8 @@ describe("Save routes", () => {
 		});
 	});
 
-	describe("GET /save with mismatched url and Referer", () => {
-		it("should return 400 rendering both urls and save buttons when origins differ", async () => {
+	describe("GET /save with url and Referer pointing at different articles", () => {
+		it("should prefer the query url when origins differ", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);
 
@@ -187,24 +185,11 @@ describe("Save routes", () => {
 				.get("/save?url=https://publisher.com/article-a")
 				.set("Referer", "https://other.com/article-b");
 
-			expect(response.status).toBe(400);
-			expect(response.headers["content-type"]).toMatch(/text\/html/);
-			const doc = new JSDOM(response.text).window.document;
-			const title = doc.querySelector(".save-failed__title");
-			assert(title, "save-failed title must be rendered");
-			expect(doc.body.classList.contains("page-save-failed")).toBe(true);
-
-			const queryOption = doc.querySelector<HTMLAnchorElement>('[data-test-save-failed-option="query"]');
-			const refererOption = doc.querySelector<HTMLAnchorElement>('[data-test-save-failed-option="referer"]');
-			assert(queryOption, "query option button must render");
-			assert(refererOption, "referer option button must render");
-			expect(queryOption.getAttribute("href")).toBe("/save?url=https%3A%2F%2Fpublisher.com%2Farticle-a");
-			expect(refererOption.getAttribute("href")).toBe("/save?url=https%3A%2F%2Fother.com%2Farticle-b");
-			expect(response.text).toContain("https://publisher.com/article-a");
-			expect(response.text).toContain("https://other.com/article-b");
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-a");
 		});
 
-		it("should return 400 when paths differ on the same origin", async () => {
+		it("should prefer the query url when paths differ on the same origin", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);
 
@@ -212,61 +197,22 @@ describe("Save routes", () => {
 				.get("/save?url=https://publisher.com/article-a")
 				.set("Referer", "https://publisher.com/article-b");
 
-			expect(response.status).toBe(400);
-			const doc = new JSDOM(response.text).window.document;
-			const title = doc.querySelector(".save-failed__title");
-			assert(title, "save-failed title must be rendered");
-			expect(doc.body.classList.contains("page-save-failed")).toBe(true);
-			expect(response.text).toContain("https://publisher.com/article-a");
-			expect(response.text).toContain("https://publisher.com/article-b");
-		});
-
-		it("should save the query URL when the user clicks that option", async () => {
-			const { app, auth } = createTestApp();
-			const agent = await loginAgent(app, auth);
-
-			const mismatchResponse = await agent
-				.get("/save?url=https://publisher.com/article-a")
-				.set("Referer", "https://other.com/article-b");
-			expect(mismatchResponse.status).toBe(400);
-
-			const doc = new JSDOM(mismatchResponse.text).window.document;
-			const queryOption = doc.querySelector<HTMLAnchorElement>('[data-test-save-failed-option="query"]');
-			assert(queryOption, "query option button must render");
-			const href = queryOption.getAttribute("href");
-			assert(href, "query option must have an href");
-
-			const response = await agent
-				.get(href)
-				.set("Referer", "https://readplace.test/save?url=https%3A%2F%2Fpublisher.com%2Farticle-a")
-				.set("Host", "readplace.test");
-
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-a");
 		});
 
-		it("should save the referer URL when the user clicks that option", async () => {
+		it("should preserve the query string on the url when it has one", async () => {
 			const { app, auth } = createTestApp();
 			const agent = await loginAgent(app, auth);
 
-			const mismatchResponse = await agent
-				.get("/save?url=https://publisher.com/article-a")
-				.set("Referer", "https://other.com/article-b");
-			expect(mismatchResponse.status).toBe(400);
-
-			const doc = new JSDOM(mismatchResponse.text).window.document;
-			const refererOption = doc.querySelector<HTMLAnchorElement>('[data-test-save-failed-option="referer"]');
-			assert(refererOption, "referer option button must render");
-			const href = refererOption.getAttribute("href");
-			assert(href, "referer option must have an href");
-
 			const response = await agent
-				.get(href)
-				.set("Referer", "https://readplace.test/save?url=https%3A%2F%2Fother.com%2Farticle-b")
-				.set("Host", "readplace.test");
+				.get("/save?url=https://publisher.com/article-a%3Futm_source%3Dlinkedin")
+				.set("Referer", "https://www.linkedin.com/");
 
 			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/queue?url=https%3A%2F%2Fother.com%2Farticle-b");
+			expect(response.headers.location).toBe(
+				"/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-a%3Futm_source%3Dlinkedin",
+			);
 		});
 	});
 

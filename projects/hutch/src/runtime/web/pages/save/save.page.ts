@@ -1,7 +1,6 @@
 import type { Router } from "express";
 import express from "express";
 import { z } from "zod";
-import { SaveFailedPage } from "./save-failed.component";
 
 const SaveUrlSchema = z.url();
 
@@ -11,19 +10,11 @@ function parseUrl(raw: unknown): string | undefined {
 	return parsed.success ? parsed.data : undefined;
 }
 
-function originPath(urlString: string): string {
-	const u = new URL(urlString);
-	return `${u.origin}${u.pathname.replace(/\/+$/, "")}`;
-}
-
 function hostOf(urlString: string): string {
 	return new URL(urlString).hostname;
 }
 
-type ResolveResult =
-	| { kind: "ok"; url: string }
-	| { kind: "none" }
-	| { kind: "mismatch"; queryUrl: string; referer: string };
+type ResolveResult = { kind: "ok"; url: string } | { kind: "none" };
 
 function resolveSaveUrl(input: {
 	queryUrl: string | undefined;
@@ -35,11 +26,6 @@ function resolveSaveUrl(input: {
 	// Referers from our own host (e.g. /login after round-trip) are never the URL the user wants to save.
 	const ref = rawRef && hostOf(rawRef) !== input.appHost ? rawRef : undefined;
 
-	if (q && ref) {
-		return originPath(q) === originPath(ref)
-			? { kind: "ok", url: q }
-			: { kind: "mismatch", queryUrl: q, referer: ref };
-	}
 	if (q) return { kind: "ok", url: q };
 	if (ref) return { kind: "ok", url: ref };
 	return { kind: "none" };
@@ -53,12 +39,6 @@ export function initSaveRoutes(): Router {
 		const referer = req.get("Referer");
 
 		const result = resolveSaveUrl({ queryUrl, referer, appHost: req.hostname });
-
-		if (result.kind === "mismatch") {
-			const page = SaveFailedPage({ queryUrl: result.queryUrl, referer: result.referer }).to("text/html");
-			res.status(400).type("html").send(page.body);
-			return;
-		}
 
 		if (result.kind === "none") {
 			res.redirect(303, req.userId ? "/queue" : "/");
