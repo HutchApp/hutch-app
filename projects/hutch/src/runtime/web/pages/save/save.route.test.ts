@@ -1,3 +1,5 @@
+import assert from "node:assert/strict";
+import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
 
@@ -97,6 +99,130 @@ describe("Save routes", () => {
 			const postLoginResponse = await agent.get(returnParam);
 			expect(postLoginResponse.status).toBe(303);
 			expect(postLoginResponse.headers.location).toBe("/queue?url=https%3A%2F%2Fexample.com%2Farticle");
+		});
+	});
+
+	describe("GET /save with Referer only", () => {
+		it("should redirect authenticated user to queue with the referer URL", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/save")
+				.set("Referer", "https://publisher.com/article-1");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-1");
+		});
+
+		it("should carry the referer URL through login for unauthenticated user", async () => {
+			const { app, auth } = createTestApp();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+			const agent = request.agent(app);
+
+			const saveResponse = await agent
+				.get("/save")
+				.set("Referer", "https://publisher.com/article-1");
+
+			expect(saveResponse.status).toBe(303);
+			const loginRedirect = saveResponse.headers.location;
+			expect(loginRedirect).toContain("/login?return=");
+
+			const returnParam = decodeURIComponent(loginRedirect.split("return=")[1]);
+			expect(returnParam).toBe("/save?url=https%3A%2F%2Fpublisher.com%2Farticle-1");
+
+			await agent
+				.post(`/login?return=${encodeURIComponent(returnParam)}`)
+				.type("form")
+				.send({ email: "test@example.com", password: "password123" });
+
+			const postLoginResponse = await agent.get(returnParam);
+			expect(postLoginResponse.status).toBe(303);
+			expect(postLoginResponse.headers.location).toBe("/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-1");
+		});
+
+		it("should ignore an invalid Referer and fall through to the no-url branch", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/save").set("Referer", "not-a-url");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+	});
+
+	describe("GET /save with matching url and Referer", () => {
+		it("should save the url when ?url= and Referer point to the same article", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/save?url=https://publisher.com/article-1")
+				.set("Referer", "https://publisher.com/article-1");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-1");
+		});
+
+		it("should normalise trailing slashes when comparing", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/save?url=https://publisher.com/article-1")
+				.set("Referer", "https://publisher.com/article-1/");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-1");
+		});
+	});
+
+	describe("GET /save with mismatched url and Referer", () => {
+		it("should return 400 with a failure page when origins differ", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/save?url=https://publisher.com/article-a")
+				.set("Referer", "https://other.com/article-b");
+
+			expect(response.status).toBe(400);
+			expect(response.headers["content-type"]).toMatch(/text\/html/);
+			const doc = new JSDOM(response.text).window.document;
+			const title = doc.querySelector(".save-failed__title");
+			assert(title, "save-failed title must be rendered");
+			expect(doc.body.classList.contains("page-save-failed")).toBe(true);
+		});
+
+		it("should return 400 when paths differ on the same origin", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/save?url=https://publisher.com/article-a")
+				.set("Referer", "https://publisher.com/article-b");
+
+			expect(response.status).toBe(400);
+			const doc = new JSDOM(response.text).window.document;
+			const title = doc.querySelector(".save-failed__title");
+			assert(title, "save-failed title must be rendered");
+			expect(doc.body.classList.contains("page-save-failed")).toBe(true);
+		});
+	});
+
+	describe("GET /save with a self-origin Referer", () => {
+		it("should ignore the Referer when it points at the app's own host", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.get("/save?url=https://publisher.com/article-1")
+				.set("Host", "readplace.test")
+				.set("Referer", "http://readplace.test/login");
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue?url=https%3A%2F%2Fpublisher.com%2Farticle-1");
 		});
 	});
 });

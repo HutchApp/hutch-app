@@ -1,0 +1,28 @@
+.save-failed {
+  padding: 120px 20px;
+  text-align: center;
+}
+
+.save-failed__container {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.save-failed__title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--foreground);
+}
+
+.save-failed__text {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  margin-bottom: 24px;
+}
+
+.save-failed__link {
+  color: var(--primary);
+  text-decoration: underline;
+}
