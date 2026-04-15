@@ -30,6 +30,7 @@ coverage/
 test-results/
 playwright-report/
 .last-run.json
+.playwright-mcp/
 
 # Visual regression testing (baselines are committed, current/diffs are not)
 **/visual-current/
