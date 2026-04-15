@@ -43,6 +43,34 @@ jobs:
 
       - run: pnpm check
 
+      # Re-run the web-embed visual tests with --update-snapshots so CI-rendered
+      # linux pixels land in the snapshot dir, then upload them as an artifact
+      # for visual comparison against the committed darwin baselines.
+      - name: Capture web-embed CI screenshots
+        if: always()
+        working-directory: projects/web-embed
+        env:
+          HEADLESS: 'true'
+          E2E_PORT: '3700'
+        run: |
+          mkdir -p ci-screenshots
+          pnpm exec playwright test \
+            --config playwright.config.local-dev.ts \
+            --update-snapshots \
+            --reporter=list || true
+          cp src/e2e/visual.e2e-local.ts-snapshots/*-chromium-linux.png ci-screenshots/
+
+      - name: Upload web-embed CI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-embed-ci-screenshots
+          path: |
+            projects/web-embed/ci-screenshots/
+            projects/web-embed/test-results/
+          retention-days: 14
+          if-no-files-found: warn
+
   # Only detect and deploy on pushes to main (not on PRs)
   detect-projects:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
