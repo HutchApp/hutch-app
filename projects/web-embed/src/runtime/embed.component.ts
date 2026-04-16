@@ -25,6 +25,29 @@ const COPY_SCRIPT = `<script>
       });
     })(buttons[i]);
   }
+
+  var snippetIds = ['snippet-a-code', 'snippet-b-code', 'snippet-c-code'];
+  var originals = {};
+  for (var i = 0; i < snippetIds.length; i++) {
+    var el = document.getElementById(snippetIds[i]);
+    if (el) originals[snippetIds[i]] = el.textContent;
+  }
+
+  var urlInput = document.querySelector('.embed-url-input__field');
+  if (urlInput) {
+    urlInput.addEventListener('input', function() {
+      var url = urlInput.value.trim();
+      for (var id in originals) {
+        var el = document.getElementById(id);
+        if (!el) continue;
+        if (url) {
+          el.textContent = originals[id].replace('PAGE_URL', encodeURIComponent(url));
+        } else {
+          el.textContent = originals[id];
+        }
+      }
+    });
+  }
 })();
 </script>`;
 
@@ -43,8 +66,8 @@ export function EmbedPage(input: EmbedPageInput): Component {
 	const sourceC = renderCanonicalSnippet("c");
 
 	const content = render(EMBED_TEMPLATE, {
-		// The hero demo is literally the unmodified preview of snippet B — same HTML, same Referer-based
-		// save flow. Clicking it saves the embed page itself, proving the snippet works end-to-end.
+		// The hero demo is snippet B with the embed page's own URL filled in,
+		// proving the save flow works end-to-end when a reader clicks it.
 		heroDemo: previewB,
 		previewA,
 		previewB,

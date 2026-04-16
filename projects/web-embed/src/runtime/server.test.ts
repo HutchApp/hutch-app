@@ -47,6 +47,18 @@ describe("GET /embed", () => {
 		}
 	});
 
+	it("should render a URL input field inside the variants section so publishers can customise the snippets", async () => {
+		const app = makeApp();
+		const response = await request(app).get("/embed");
+		const doc = new JSDOM(response.text).window.document;
+		const variants = doc.querySelector("#variants");
+		assert(variants, "variants section must be rendered");
+		const input = variants.querySelector(".embed-url-input__field");
+		assert(input, "URL input must be rendered inside the variants section");
+		expect(input.getAttribute("type")).toBe("url");
+		expect(input.getAttribute("placeholder")).toBe("https://example.com/my-article");
+	});
+
 	it("should render every variant preview as a live anchor that passes the page URL via the save endpoint", async () => {
 		const app = makeApp();
 		const response = await request(app).get("/embed");
