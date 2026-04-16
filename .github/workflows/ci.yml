@@ -25,7 +25,6 @@ jobs:
       PULUMI_STACK: staging
       PULUMI_CONFIG_PASSPHRASE: ''
       PERSISTENCE: development
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       STATIC_BASE_URL: 'https://d2uoxssv1ey7em.cloudfront.net'
     steps:
       - uses: actions/checkout@v6

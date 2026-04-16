@@ -143,7 +143,7 @@ describe("initLinkSummariser", () => {
 		expect(result).toBeNull();
 	});
 
-	it("should return null when Claude returns 'Summary not available.'", async () => {
+	it("should return null when AI returns 'Summary not available.'", async () => {
 		const createMessage = createStubCreateMessage("Summary not available.");
 
 		const { summarizeArticle } = initLinkSummariser({

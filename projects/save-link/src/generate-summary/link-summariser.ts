@@ -43,7 +43,7 @@ export function initLinkSummariser(deps: {
 		deps.logger.info("[summarize] cache miss, calling AI", { url: params.url, visibleLength });
 
 		const response = await deps.createMessage({
-			model: "claude-sonnet-4-6",
+			model: "deepseek-chat",
 			max_tokens: 10240,
 			system: SUMMARIZE_PROMPT,
 			messages: [{
@@ -84,7 +84,7 @@ export function initLinkSummariser(deps: {
 		const parsed = z.object({ summary: z.string() }).parse(JSON.parse(textBlock.text));
 		const summary = parsed.summary.trim();
 		if (summary === "Summary not available.") {
-			deps.logger.info("[summarize] Claude returned unavailable", { url: params.url });
+			deps.logger.info("[summarize] AI returned unavailable", { url: params.url });
 			return null;
 		}
 

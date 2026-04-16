@@ -35,7 +35,6 @@ const contentMediaCdn = new HutchS3ContentMediaCDN("content-media", {
 	contentBucket,
 });
 
-const anthropicApiKey = pulumi.secret(requireEnv("ANTHROPIC_API_KEY"));
 const deepseekApiKey = pulumi.secret(requireEnv("DEEPSEEK_API_KEY"));
 
 const eventBus = HutchEventBus.fromPlatformStack(config);
@@ -108,7 +107,6 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	timeout: 45,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
-		ANTHROPIC_API_KEY: anthropicApiKey,
 		DEEPSEEK_API_KEY: deepseekApiKey,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		CONTENT_BUCKET_NAME: contentBucketName,
