@@ -477,9 +477,6 @@ importers:
       '@pulumi/aws':
         specifier: 7.20.0
         version: 7.20.0(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.9.3))(typescript@5.9.3)
-      '@pulumi/pulumi':
-        specifier: 3.224.0
-        version: 3.224.0(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.9.3))(typescript@5.9.3)
       '@types/aws-lambda':
         specifier: 8.10.161
         version: 8.10.161

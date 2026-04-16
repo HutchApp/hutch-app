@@ -49,6 +49,7 @@ import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { initSaveRoutes } from "./web/pages/save/save.page";
+import { initEmbedRoutes } from "./web/pages/embed/embed.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
 import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
@@ -254,6 +255,7 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	const blogRouter = initBlogRoutes();
 	app.use("/blog", blogRouter);
+	app.use("/embed", initEmbedRoutes({ appOrigin }));
 
 	const authRouter = initAuthRoutes({
 		createUser: deps.createUser,
