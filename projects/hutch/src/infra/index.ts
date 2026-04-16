@@ -103,6 +103,11 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 	],
 });
 
+const logGroup = new aws.cloudwatch.LogGroup("hutch-log-analytics", {
+	name: "/aws/lambda/hutch-handler",
+	retentionInDays: 30,
+});
+
 const api = new aws.apigatewayv2.Api("hutch-api-gateway", {
 	name: "hutch-api-gateway",
 	protocolType: "HTTP",
@@ -138,6 +143,7 @@ const lambda = new HutchLambda("hutch", {
 		STATIC_BASE_URL: staticAssets.baseUrl,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		CONTENT_BUCKET_NAME: contentBucketName,
+		ANALYTICS_SALT: requireEnv("ANALYTICS_SALT"),
 	},
 	policies: [
 		...dynamodb.policies,
@@ -197,6 +203,89 @@ for (const [i, domain] of additionalDomains.entries()) {
 		],
 	});
 }
+
+// --- Analytics Dashboard ---
+
+const region = aws.config.requireRegion();
+
+function logWidget(params: {
+	title: string;
+	logGroupName: string;
+	query: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	view: "pie" | "table" | "bar" | "timeSeries";
+}) {
+	return {
+		type: "log",
+		x: params.x,
+		y: params.y,
+		width: params.width,
+		height: params.height,
+		properties: {
+			region,
+			title: params.title,
+			query: `SOURCE '${params.logGroupName}' | ${params.query}`,
+			view: params.view,
+		},
+	};
+}
+
+new aws.cloudwatch.Dashboard("readplace-analytics", {
+	dashboardName: "readplace-analytics",
+	dashboardBody: pulumi.output(logGroup.name).apply((logGroupName) =>
+		JSON.stringify({
+			widgets: [
+				logWidget({
+					title: "UTM Source (%)",
+					logGroupName,
+					query: [
+						"fields @timestamp, utm_source",
+						"| filter stream = \"analytics\" and event = \"pageview\"",
+						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
+						"| filter ispresent(utm_source) and utm_source != \"\"",
+						"| stats count(*) as visits by utm_source",
+						"| sort visits desc",
+						"| limit 10",
+					].join(" "),
+					x: 0, y: 0, width: 12, height: 8,
+					view: "pie",
+				}),
+				logWidget({
+					title: "Top Referrers",
+					logGroupName,
+					query: [
+						"fields @timestamp, referrer_host",
+						"| filter stream = \"analytics\" and event = \"pageview\"",
+						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
+						"| filter ispresent(referrer_host) and referrer_host != \"\"",
+						"| stats count(*) as visits by referrer_host",
+						"| sort visits desc",
+						"| limit 10",
+					].join(" "),
+					x: 12, y: 0, width: 12, height: 8,
+					view: "pie",
+				}),
+				logWidget({
+					title: "Recent Analytics Events",
+					logGroupName,
+					query: [
+						"fields @timestamp, path, utm_source, utm_medium, utm_campaign, referrer_host, visitor_hash",
+						"| filter stream = \"analytics\"",
+						"| sort @timestamp desc",
+						"| limit 50",
+					].join(" "),
+					x: 0, y: 8, width: 24, height: 8,
+					view: "table",
+				}),
+			],
+		}),
+	),
+});
+
+// --- Exports ---
 
 export const apiUrl: pulumi.Input<string> = canonicalDomain ? `https://${canonicalDomain}` : gateway.apiUrl;
 export const functionName = lambda.functionName;

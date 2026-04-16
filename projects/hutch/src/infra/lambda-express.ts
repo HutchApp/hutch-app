@@ -6,9 +6,10 @@ import compression from "compression";
 import serverless from "serverless-http";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { logger as requestLogger } from "./logger";
+import { type AnalyticsPageview, createAnalyticsMiddleware } from "./analytics";
 import { logAndRespondOnError } from "./error-handler";
 import { localServer } from "../runtime/app";
-import { getEnv } from "../runtime/require-env";
+import { getEnv, requireEnv } from "../runtime/require-env";
 
 // present in Lambda runtime, absent locally — https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime
 const lambda = !!getEnv("AWS_LAMBDA_FUNCTION_NAME");
@@ -18,6 +19,11 @@ export const lambdaExpress = ({
 }: { app: Express }): Handler => {
 	const log = requestLogger();
 	const logger = HutchLogger.from(consoleLogger);
+	const analytics = createAnalyticsMiddleware({
+		logger: HutchLogger.fromJSON<AnalyticsPageview>(),
+		salt: requireEnv("ANALYTICS_SALT"),
+		now: () => new Date(),
+	});
 
 	const application = express()
 		.disable("x-powered-by")
@@ -29,6 +35,7 @@ export const lambdaExpress = ({
 			}),
 		)
 		.use(log)
+		.use(analytics)
 		.use(app)
 		.use(logAndRespondOnError(logger));
 
