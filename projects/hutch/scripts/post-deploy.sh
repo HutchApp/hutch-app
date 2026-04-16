@@ -8,6 +8,9 @@ RAW_URL=$(pulumi stack output apiUrl --stack "$STACK")
 URL="${RAW_URL%/\$default}"
 echo "Verifying $STACK deployment at: $URL"
 curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL"
+curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL/embed"
+curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL/embed/icon.svg"
+curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL/embed/health"
 
 if [ "$STACK" = "staging" ]; then
   npx playwright install --with-deps chromium
