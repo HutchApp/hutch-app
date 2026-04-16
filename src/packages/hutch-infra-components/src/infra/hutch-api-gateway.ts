@@ -30,6 +30,7 @@ export class HutchAPIGateway extends pulumi.ComponentResource {
 			apiId: args.api.id,
 			name: "$default",
 			autoDeploy: true,
+			description: `${args.stage} stage`,
 		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		const lambdaIntegration = new aws.apigatewayv2.Integration(
