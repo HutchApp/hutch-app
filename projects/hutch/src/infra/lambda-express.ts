@@ -7,6 +7,7 @@ import serverless from "serverless-http";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { logger as requestLogger } from "./logger";
 import { type AnalyticsPageview, createAnalyticsMiddleware } from "./analytics";
+import { createBanMiddleware } from "./ban";
 import { logAndRespondOnError } from "./error-handler";
 import { localServer } from "../runtime/app";
 import { getEnv, requireEnv } from "../runtime/require-env";
@@ -19,9 +20,11 @@ export const lambdaExpress = ({
 }: { app: Express }): Handler => {
 	const log = requestLogger();
 	const logger = HutchLogger.from(consoleLogger);
+	const salt = requireEnv("ANALYTICS_SALT");
+	const ban = createBanMiddleware({ salt });
 	const analytics = createAnalyticsMiddleware({
 		logger: HutchLogger.fromJSON<AnalyticsPageview>(),
-		salt: requireEnv("ANALYTICS_SALT"),
+		salt,
 		now: () => new Date(),
 	});
 
@@ -35,6 +38,7 @@ export const lambdaExpress = ({
 			}),
 		)
 		.use(log)
+		.use(ban)
 		.use(analytics)
 		.use(app)
 		.use(logAndRespondOnError(logger));

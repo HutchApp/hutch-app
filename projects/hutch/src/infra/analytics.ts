@@ -43,7 +43,7 @@ function extractReferrerHost(req: Request): string | null {
 	}
 }
 
-function hashIp(deps: { ip: string | undefined; salt: string }): string | null {
+export function hashIp(deps: { ip: string | undefined; salt: string }): string | null {
 	if (!deps.ip) return null;
 	return createHash("sha256")
 		.update(deps.ip + deps.salt)

@@ -1,0 +1,3 @@
+# Banned visitor hashes
+# One hash per line. Lines starting with # are comments. Empty lines are ignored.
+# Find visitor hashes in the CloudWatch "readplace-analytics" dashboard (Recent Analytics Events table).
