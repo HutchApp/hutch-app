@@ -106,7 +106,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 const logGroup = new aws.cloudwatch.LogGroup("hutch-log-analytics", {
 	name: "/aws/lambda/hutch-handler",
 	retentionInDays: 30,
-});
+}, { import: "/aws/lambda/hutch-handler" });
 
 const api = new aws.apigatewayv2.Api("hutch-api-gateway", {
 	name: "hutch-api-gateway",
