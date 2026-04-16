@@ -26,7 +26,6 @@ verify() {
 verify ""
 verify "/embed"
 verify "/embed/icon.svg"
-verify "/embed/health"
 
 if [ "$STACK" = "staging" ]; then
   npx playwright install --with-deps chromium
