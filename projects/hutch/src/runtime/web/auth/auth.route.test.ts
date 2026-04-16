@@ -441,110 +441,49 @@ describe("Auth routes", () => {
 		});
 	});
 
-	describe("feature=google-login toggle", () => {
-		function getGoogleSection(html: string) {
+	describe("Google sign-in button", () => {
+		function getGoogleButton(html: string) {
 			const doc = new JSDOM(html).window.document;
 			const section = doc.querySelector("[data-test-google-section]");
 			assert(section, "google section must be rendered");
-			return section;
+			const link = section.querySelector(".auth-google-button");
+			assert(link, "google button must be rendered");
+			return link;
 		}
 
-		it("should hide Continue with Google on /login by default", async () => {
+		it("should render Sign in with Google on /login with the Google logo", async () => {
 			const { app } = createTestApp();
 			const response = await request(app).get("/login");
 
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(true);
+			const link = getGoogleButton(response.text);
+			expect(link.getAttribute("href")).toBe("/auth/google");
+			expect(link.querySelector(".auth-google-button__label")?.textContent).toBe("Sign in with Google");
+			const logo = link.querySelector("svg.auth-google-button__logo");
+			assert(logo, "google logo must be rendered");
+			expect(logo.getAttribute("viewBox")).toBe("0 0 18 18");
+			expect(logo.getAttribute("aria-hidden")).toBe("true");
+			expect(logo.querySelectorAll('path[fill="#4285F4"]').length).toBe(1);
+			expect(logo.querySelectorAll('path[fill="#34A853"]').length).toBe(1);
+			expect(logo.querySelectorAll('path[fill="#FBBC05"]').length).toBe(1);
+			expect(logo.querySelectorAll('path[fill="#EA4335"]').length).toBe(1);
 		});
 
-		it("should show Continue with Google on /login when feature=google-login", async () => {
+		it("should pass return URL through to the Google sign-in link on /login", async () => {
 			const { app } = createTestApp();
-			const response = await request(app).get("/login?feature=google-login");
+			const response = await request(app).get("/login?return=%2Fsave%3Furl%3Dhttps%253A%252F%252Fexample.com");
 
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
-			const googleLink = section.querySelector(".auth-google-button");
-			assert(googleLink, "google button must be rendered");
-			expect(googleLink.getAttribute("href")).toBe("/auth/google");
-			expect(googleLink.textContent).toBe("Continue with Google");
+			const link = getGoogleButton(response.text);
+			expect(link.getAttribute("href")).toContain("/auth/google?return=");
 		});
 
-		it("should pass return URL through to the Continue with Google link", async () => {
-			const { app } = createTestApp();
-			const response = await request(app).get("/login?feature=google-login&return=%2Fsave%3Furl%3Dhttps%253A%252F%252Fexample.com");
-
-			const section = getGoogleSection(response.text);
-			const googleLink = section.querySelector(".auth-google-button");
-			assert(googleLink, "google button must be rendered");
-			expect(googleLink.getAttribute("href")).toContain("/auth/google?return=");
-		});
-
-		it("should keep Continue with Google visible through invalid-credentials on POST /login", async () => {
-			const { app } = createTestApp();
-			const response = await request(app)
-				.post("/login?feature=google-login")
-				.type("form")
-				.send({ email: "test@example.com", password: "wrongpassword" });
-
-			expect(response.status).toBe(422);
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
-		});
-
-		it("should keep Continue with Google visible through a validation error on POST /login", async () => {
-			const { app } = createTestApp();
-			const response = await request(app)
-				.post("/login?feature=google-login")
-				.type("form")
-				.send({ email: "", password: "password123" });
-
-			expect(response.status).toBe(422);
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
-		});
-
-		it("should hide Continue with Google on /signup by default", async () => {
+		it("should render Sign up with Google on /signup with the Google logo", async () => {
 			const { app } = createTestApp();
 			const response = await request(app).get("/signup");
 
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(true);
-		});
-
-		it("should show Continue with Google on /signup when feature=google-login", async () => {
-			const { app } = createTestApp();
-			const response = await request(app).get("/signup?feature=google-login");
-
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
-			const googleLink = section.querySelector(".auth-google-button");
-			assert(googleLink, "google button must be rendered");
-			expect(googleLink.getAttribute("href")).toBe("/auth/google");
-		});
-
-		it("should keep Continue with Google visible through duplicate email error on POST /signup", async () => {
-			const { app, auth } = createTestApp();
-			await auth.createUser({ email: "taken@example.com", password: "password123" });
-			const response = await request(app)
-				.post("/signup?feature=google-login")
-				.type("form")
-				.send({ email: "taken@example.com", password: "password123", confirmPassword: "password123" });
-
-			expect(response.status).toBe(422);
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
-		});
-
-		it("should keep Continue with Google visible through validation error on POST /signup", async () => {
-			const { app } = createTestApp();
-			const response = await request(app)
-				.post("/signup?feature=google-login")
-				.type("form")
-				.send({ email: "new@example.com", password: "short", confirmPassword: "short" });
-
-			expect(response.status).toBe(422);
-			const section = getGoogleSection(response.text);
-			expect(section.classList.contains("auth-google-section--hidden")).toBe(false);
+			const link = getGoogleButton(response.text);
+			expect(link.getAttribute("href")).toBe("/auth/google");
+			expect(link.querySelector(".auth-google-button__label")?.textContent).toBe("Sign up with Google");
+			assert(link.querySelector("svg.auth-google-button__logo"), "google logo must be rendered");
 		});
 	});
 });
