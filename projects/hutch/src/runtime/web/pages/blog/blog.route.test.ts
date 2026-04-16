@@ -162,6 +162,28 @@ describe("GET /blog/:slug", () => {
 	});
 });
 
+describe("hutch-app.com blog redirect", () => {
+	it("should 301 redirect /blog to readplace.com", async () => {
+		const { app } = createTestApp({ appOrigin: "https://readplace.com" });
+		const response = await request(app)
+			.get("/blog")
+			.set("Host", "hutch-app.com");
+		expect(response.status).toBe(301);
+		expect(response.headers.location).toBe("https://readplace.com/blog");
+	});
+
+	it("should 301 redirect /blog/:slug to readplace.com", async () => {
+		const { app } = createTestApp({ appOrigin: "https://readplace.com" });
+		const response = await request(app)
+			.get(`/blog/${firstPost.slug}`)
+			.set("Host", "hutch-app.com");
+		expect(response.status).toBe(301);
+		expect(response.headers.location).toBe(
+			`https://readplace.com/blog/${firstPost.slug}`,
+		);
+	});
+});
+
 describe("GET /sitemap.xml", () => {
 	const { app } = createTestApp();
 

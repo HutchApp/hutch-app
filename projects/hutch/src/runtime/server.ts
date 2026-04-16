@@ -254,6 +254,13 @@ export function createApp(dependencies: AppDependencies): Express {
 	});
 
 	const blogRouter = initBlogRoutes();
+	app.use("/blog", (req: Request, res: Response, next: NextFunction) => {
+		if (req.headers.host === "hutch-app.com") {
+			res.redirect(301, `${appOrigin}${req.originalUrl}`);
+			return;
+		}
+		next();
+	});
 	app.use("/blog", blogRouter);
 	app.use("/embed", initEmbedRoutes({ appOrigin }));
 
