@@ -62,14 +62,25 @@ describe("renderSnippet", () => {
 		const html = renderSnippet("a", {
 			appOrigin: "http://127.0.0.1:9999",
 			embedOrigin: "https://readplace.com/embed",
+			pageUrl: "PAGE_URL",
 		});
-		expect(html).toContain('href="http://127.0.0.1:9999/save"');
+		expect(html).toContain('href="http://127.0.0.1:9999/save?url=PAGE_URL"');
+	});
+
+	it("should substitute pageUrl in the save link href", () => {
+		const html = renderSnippet("a", {
+			appOrigin: "https://readplace.com",
+			embedOrigin: "https://readplace.com/embed",
+			pageUrl: "https://example.com/my-article",
+		});
+		expect(html).toContain('href="https://readplace.com/save?url=https://example.com/my-article"');
 	});
 
 	it("should substitute embedOrigin in the icon img src", () => {
 		const html = renderSnippet("a", {
 			appOrigin: "https://readplace.com",
 			embedOrigin: "http://localhost:3700",
+			pageUrl: "PAGE_URL",
 		});
 		expect(html).toContain('src="http://localhost:3700/icon.svg"');
 	});
@@ -78,8 +89,9 @@ describe("renderSnippet", () => {
 		const html = renderSnippet("a", {
 			appOrigin: "http://127.0.0.1:9999",
 			embedOrigin: "http://localhost:3700",
+			pageUrl: "PAGE_URL",
 		});
-		expect(html).toContain('href="http://127.0.0.1:9999/save"');
+		expect(html).toContain('href="http://127.0.0.1:9999/save?url=PAGE_URL"');
 		expect(html).toContain('src="http://localhost:3700/icon.svg"');
 	});
 
@@ -87,6 +99,7 @@ describe("renderSnippet", () => {
 		const html = renderSnippet("a", {
 			appOrigin: "http://127.0.0.1:9999",
 			embedOrigin: "https://readplace.com/embed",
+			pageUrl: "PAGE_URL",
 		});
 		expect(html).toContain('src="https://readplace.com/embed/icon.svg"');
 	});
@@ -99,10 +112,11 @@ describe("SnippetComponent", () => {
 			origins: {
 				appOrigin: "http://127.0.0.1:9999",
 				embedOrigin: "http://localhost:3700",
+				pageUrl: "https://example.com/article",
 			},
 		}).to("text/html");
 		expect(result.statusCode).toBe(200);
-		expect(result.body).toContain('href="http://127.0.0.1:9999/save"');
+		expect(result.body).toContain('href="http://127.0.0.1:9999/save?url=https://example.com/article"');
 		expect(result.body).toContain('src="http://localhost:3700/icon.svg"');
 	});
 
@@ -114,6 +128,7 @@ describe("SnippetComponent", () => {
 				origins: {
 					appOrigin: "https://readplace.com",
 					embedOrigin: "https://readplace.com/embed",
+					pageUrl: "PAGE_URL",
 				},
 			}).to("text/html");
 			expect(result.body.length).toBeGreaterThan(0);

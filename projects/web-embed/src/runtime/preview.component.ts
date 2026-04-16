@@ -14,7 +14,7 @@ export interface PreviewPageInput {
 }
 
 export function PreviewPage(input: PreviewPageInput): Component {
-	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin };
+	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin, pageUrl: `${input.embedOrigin}/preview` };
 	const content = render(PREVIEW_TEMPLATE, {
 		previewA: renderSnippet("a", origins),
 		previewB: renderSnippet("b", origins),

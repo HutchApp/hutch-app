@@ -47,7 +47,7 @@ describe("GET /embed", () => {
 		}
 	});
 
-	it("should render every variant preview as a live anchor that links into the save flow", async () => {
+	it("should render every variant preview as a live anchor that passes the page URL via the save endpoint", async () => {
 		const app = makeApp();
 		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
@@ -57,11 +57,11 @@ describe("GET /embed", () => {
 			assert(preview, `${id} preview container must be rendered`);
 			const anchor = preview.querySelector("a");
 			assert(anchor, `${id} preview must contain a live anchor`);
-			expect(anchor.getAttribute("href")).toContain("/save");
+			expect(anchor.getAttribute("href")).toContain("/save?url=");
 		}
 	});
 
-	it("should render every snippet source as escaped text that preserves the canonical URLs", async () => {
+	it("should render every snippet source with the canonical save URL and PAGE_URL placeholder", async () => {
 		const app = makeApp();
 		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
@@ -69,13 +69,12 @@ describe("GET /embed", () => {
 		for (const id of ["source-a", "source-b", "source-c"] as const) {
 			const source = doc.querySelector(`[data-test="${id}"]`);
 			assert(source, `${id} source block must be rendered`);
-			expect(source.textContent).toContain("<a href=");
-			expect(source.textContent).toContain("https://readplace.com/save");
+			expect(source.textContent).toContain("https://readplace.com/save?url=PAGE_URL");
 			expect(source.textContent).toContain("https://readplace.com/embed/icon.svg");
 		}
 	});
 
-	it("should render the hero demo as the unmodified snippet B so it exercises the same Referer-based save flow as publishers get", async () => {
+	it("should render the hero demo as snippet B pointing at the embed page itself", async () => {
 		const app = makeApp();
 		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
@@ -83,7 +82,7 @@ describe("GET /embed", () => {
 		assert(demo, "hero demo container must be rendered");
 		const anchor = demo.querySelector("a");
 		assert(anchor, "hero demo must contain an anchor");
-		expect(anchor.getAttribute("href")).toBe("https://readplace.com/save");
+		expect(anchor.getAttribute("href")).toBe("https://readplace.com/save?url=http://localhost:3500/embed/");
 	});
 
 	it("should render the quotable privacy statement", async () => {
@@ -124,7 +123,7 @@ describe("GET /embed", () => {
 		const doc = new JSDOM(response.text).window.document;
 		const previewAnchor = doc.querySelector('[data-test="preview-b"] a');
 		assert(previewAnchor, "preview-b anchor must be rendered");
-		expect(previewAnchor.getAttribute("href")).toBe("http://127.0.0.1:9999/save");
+		expect(previewAnchor.getAttribute("href")).toContain("http://127.0.0.1:9999/save?url=");
 	});
 
 	it("should substitute the embed origin in live preview icon URLs so the dev server can serve them", async () => {
@@ -136,7 +135,7 @@ describe("GET /embed", () => {
 		expect(previewImg.getAttribute("src")).toBe("http://localhost:3700/icon.svg");
 	});
 
-	it("should keep the canonical readplace.com URLs inside the copy-paste source blocks regardless of config", async () => {
+	it("should keep the canonical readplace.com URLs and PAGE_URL placeholder inside the copy-paste source blocks regardless of config", async () => {
 		const app = makeApp({
 			appOrigin: "http://127.0.0.1:9999",
 			embedOrigin: "http://localhost:3700/embed",
@@ -145,7 +144,7 @@ describe("GET /embed", () => {
 		const doc = new JSDOM(response.text).window.document;
 		const source = doc.querySelector('[data-test="source-b"]');
 		assert(source, "source-b must be rendered");
-		expect(source.textContent).toContain("https://readplace.com/save");
+		expect(source.textContent).toContain("https://readplace.com/save?url=PAGE_URL");
 		expect(source.textContent).toContain("https://readplace.com/embed/icon.svg");
 		expect(source.textContent).not.toContain("http://127.0.0.1:9999");
 		expect(source.textContent).not.toContain("http://localhost:3700");

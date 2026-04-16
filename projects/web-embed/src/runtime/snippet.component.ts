@@ -18,11 +18,13 @@ const SNIPPET_TEMPLATES: Record<SnippetVariant, string> = {
 export interface SnippetOrigins {
 	appOrigin: string;
 	embedOrigin: string;
+	pageUrl: string;
 }
 
 export const CANONICAL_ORIGINS: SnippetOrigins = {
 	appOrigin: CANONICAL_APP_ORIGIN,
 	embedOrigin: CANONICAL_EMBED_ORIGIN,
+	pageUrl: "PAGE_URL",
 };
 
 export function renderSnippet(variant: SnippetVariant, origins: SnippetOrigins): string {

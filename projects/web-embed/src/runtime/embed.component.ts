@@ -34,7 +34,7 @@ export interface EmbedPageInput {
 }
 
 export function EmbedPage(input: EmbedPageInput): Component {
-	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin };
+	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin, pageUrl: `${input.embedOrigin}/` };
 	const previewA = renderSnippet("a", origins);
 	const previewB = renderSnippet("b", origins);
 	const previewC = renderSnippet("c", origins);
