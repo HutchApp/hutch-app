@@ -29,6 +29,14 @@ export const createPlaywrightConfig = (options: PlaywrightConfigOptions) => {
     reporter: 'html',
     retries: options.retries,
     timeout: options.timeout ?? 120000,
+    expect: {
+      toHaveScreenshot: {
+        maxDiffPixelRatio: 0.1,
+        threshold: 0.2,
+        animations: 'disabled',
+        caret: 'hide',
+      },
+    },
     use: {
       baseURL: options.baseURL,
       trace: 'on-first-retry',
