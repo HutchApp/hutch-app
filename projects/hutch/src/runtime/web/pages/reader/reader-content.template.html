@@ -13,6 +13,12 @@
       <pre class="reader__summary-text">{{summary}}</pre>
     </div>
     {{/if}}
+    {{#if audioEnabled}}
+    <div class="reader__audio-player" data-test-audio-player>
+      <audio controls preload="metadata" src="{{staticBaseUrl}}/sample-audio.opus" data-audio-element>
+      </audio>
+    </div>
+    {{/if}}
     <div class="reader__content" data-test-reader-content>
       {{{content}}}
     </div>

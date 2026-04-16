@@ -740,6 +740,65 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(readerResponse.text).window.document;
 			expect(doc.querySelector("[data-test-no-content]")?.textContent).toContain("not yet available");
 		});
+
+		it("should render audio player when feature=audio query param is present", async () => {
+			const articleHtml = `
+			<html><head><title>Audio Article</title></head>
+			<body><article>
+				<h1>Audio Article</h1>
+				<p>An article with enough content for readability to parse and display properly.</p>
+				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
+			</article></body></html>`;
+
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/audio-article" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read?feature=audio`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-audio-player]")).not.toBeNull();
+			expect(doc.querySelector("[data-audio-element]")).not.toBeNull();
+		});
+
+		it("should not render audio player without feature=audio query param", async () => {
+			const articleHtml = `
+			<html><head><title>No Audio Article</title></head>
+			<body><article>
+				<h1>No Audio Article</h1>
+				<p>An article with enough content for readability to parse and display properly.</p>
+				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
+			</article></body></html>`;
+
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const { app, auth } = createTestApp({ crawlArticle });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/no-audio-article" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			expect(doc.querySelector("[data-test-audio-player]")).toBeNull();
+		});
 	});
 
 	describe("Parse failure", () => {

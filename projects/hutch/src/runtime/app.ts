@@ -141,7 +141,16 @@ function initProviders() {
 			clientSecret: devGoogleClientSecret,
 		}
 		: undefined;
-	const { publishLinkSaved } = initInMemoryLinkSaved({ logger: consoleLogger });
+	const { publishLinkSaved: logOnlyPublish } = initInMemoryLinkSaved({ logger: consoleLogger });
+	const publishLinkSaved: typeof logOnlyPublish = async (params) => {
+		await logOnlyPublish(params);
+		const crawlResult = await crawlArticle({ url: params.url });
+		if (crawlResult.status !== "fetched") return;
+		const result = parseHtml({ url: params.url, html: crawlResult.html });
+		if (result.ok) {
+			await articleStore.writeContent({ url: params.url, content: result.article.content });
+		}
+	};
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
 	const stubFindCachedSummary = async (_url: string) => "";

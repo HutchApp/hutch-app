@@ -255,8 +255,9 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 		const content = await deps.readArticleContent(article.url);
 		const summary = await deps.findCachedSummary(article.url);
+		const audioEnabled = req.query.feature === "audio";
 
-		const html = ReaderPage({ ...article, content }, { emailVerified: req.emailVerified, summary }).to("text/html");
+		const html = ReaderPage({ ...article, content }, { emailVerified: req.emailVerified, summary, audioEnabled }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 
