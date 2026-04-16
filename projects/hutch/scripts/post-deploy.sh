@@ -7,10 +7,26 @@ RAW_URL=$(pulumi stack output apiUrl --stack "$STACK")
 # Strip /$default suffix that API Gateway appends to the URL
 URL="${RAW_URL%/\$default}"
 echo "Verifying $STACK deployment at: $URL"
-curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL"
-curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL/embed"
-curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL/embed/icon.svg"
-curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL/embed/health"
+
+verify() {
+  local path="$1"
+  local attempt
+  for attempt in 1 2 3; do
+    if curl --fail --silent --show-error --max-time 30 --output /dev/null "$URL$path"; then
+      return 0
+    fi
+    echo "Attempt $attempt failed for $URL$path — retrying in 5s"
+    sleep 5
+  done
+  echo "--- Diagnostic dump for $URL$path ---"
+  curl --silent --show-error --max-time 30 --dump-header - "$URL$path" | head -20
+  return 1
+}
+
+verify ""
+verify "/embed"
+verify "/embed/icon.svg"
+verify "/embed/health"
 
 if [ "$STACK" = "staging" ]; then
   npx playwright install --with-deps chromium
