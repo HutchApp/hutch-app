@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Component } from "./component.types";
 import { CANONICAL_APP_ORIGIN, CANONICAL_EMBED_ORIGIN } from "./config";
+import { HtmlPage } from "./html-page";
 import { render } from "./render";
 
 const SNIPPETS_DIR = join(__dirname, "snippets");
@@ -18,7 +20,7 @@ export interface SnippetOrigins {
 	embedOrigin: string;
 }
 
-const CANONICAL_ORIGINS: SnippetOrigins = {
+export const CANONICAL_ORIGINS: SnippetOrigins = {
 	appOrigin: CANONICAL_APP_ORIGIN,
 	embedOrigin: CANONICAL_EMBED_ORIGIN,
 };
@@ -29,6 +31,15 @@ export function renderSnippet(variant: SnippetVariant, origins: SnippetOrigins):
 
 export function renderCanonicalSnippet(variant: SnippetVariant): string {
 	return renderSnippet(variant, CANONICAL_ORIGINS);
+}
+
+export interface SnippetComponentInput {
+	variant: SnippetVariant;
+	origins: SnippetOrigins;
+}
+
+export function SnippetComponent(input: SnippetComponentInput): Component {
+	return HtmlPage(renderSnippet(input.variant, input.origins));
 }
 
 export function byteLength(snippet: string): number {

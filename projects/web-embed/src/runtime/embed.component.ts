@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { renderBase } from "./base";
+import { Base } from "./base.component";
+import type { Component } from "./component.types";
 import { CANONICAL_EMBED_ORIGIN } from "./config";
 import { EMBED_PAGE_STYLES } from "./embed.styles";
 import { render } from "./render";
-import { byteLength, renderCanonicalSnippet, renderSnippet } from "./snippets";
+import { byteLength, renderCanonicalSnippet, renderSnippet } from "./snippet.component";
 
 const EMBED_TEMPLATE = readFileSync(join(__dirname, "embed.template.html"), "utf-8");
 
@@ -32,7 +33,7 @@ export interface EmbedPageInput {
 	embedOrigin: string;
 }
 
-export function renderEmbedPage(input: EmbedPageInput): string {
+export function EmbedPage(input: EmbedPageInput): Component {
 	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin };
 	const previewA = renderSnippet("a", origins);
 	const previewB = renderSnippet("b", origins);
@@ -57,7 +58,7 @@ export function renderEmbedPage(input: EmbedPageInput): string {
 		appOrigin: input.appOrigin,
 	});
 
-	return renderBase({
+	return Base({
 		seo: {
 			title: "Readplace embed kit — a save button for your readers",
 			description:

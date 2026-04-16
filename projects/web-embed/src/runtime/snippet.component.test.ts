@@ -1,9 +1,10 @@
 import {
+	SnippetComponent,
 	type SnippetVariant,
 	byteLength,
 	renderCanonicalSnippet,
 	renderSnippet,
-} from "./snippets";
+} from "./snippet.component";
 
 const MAX_BYTES = 1024;
 const VARIANTS: SnippetVariant[] = ["a", "b", "c"];
@@ -89,6 +90,35 @@ describe("renderSnippet", () => {
 		});
 		expect(html).toContain('src="https://readplace.com/embed/icon.svg"');
 	});
+});
+
+describe("SnippetComponent", () => {
+	it("should return 200 and the rendered HTML body for text/html", () => {
+		const result = SnippetComponent({
+			variant: "a",
+			origins: {
+				appOrigin: "http://127.0.0.1:9999",
+				embedOrigin: "http://localhost:3700",
+			},
+		}).to("text/html");
+		expect(result.statusCode).toBe(200);
+		expect(result.body).toContain('href="http://127.0.0.1:9999/save"');
+		expect(result.body).toContain('src="http://localhost:3700/icon.svg"');
+	});
+
+	it.each(VARIANTS)(
+		"should produce a non-empty body for snippet %s",
+		(variant) => {
+			const result = SnippetComponent({
+				variant,
+				origins: {
+					appOrigin: "https://readplace.com",
+					embedOrigin: "https://readplace.com/embed",
+				},
+			}).to("text/html");
+			expect(result.body.length).toBeGreaterThan(0);
+		},
+	);
 });
 
 describe("byteLength", () => {

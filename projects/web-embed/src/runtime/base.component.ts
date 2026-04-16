@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { BASE_STYLES } from "./base.styles";
+import type { Component } from "./component.types";
+import { HtmlPage } from "./html-page";
 import { render } from "./render";
 
 const BASE_TEMPLATE = readFileSync(join(__dirname, "base.template.html"), "utf-8");
@@ -21,7 +23,7 @@ export interface BaseLayoutInput {
 	appOrigin: string;
 }
 
-export function renderBase(input: BaseLayoutInput): string {
+function renderBaseTemplate(input: BaseLayoutInput): string {
 	return render(BASE_TEMPLATE, {
 		title: input.seo.title,
 		description: input.seo.description,
@@ -34,4 +36,8 @@ export function renderBase(input: BaseLayoutInput): string {
 		scripts: input.scripts ?? "",
 		appOrigin: input.appOrigin,
 	});
+}
+
+export function Base(input: BaseLayoutInput): Component {
+	return HtmlPage(renderBaseTemplate(input));
 }

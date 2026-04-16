@@ -2,9 +2,9 @@ import type { Express } from "express";
 import express from "express";
 import helmet from "helmet";
 import type { EmbedAppOrigins } from "./config";
-import { renderEmbedPage } from "./embed";
+import { EmbedPage } from "./embed.component";
 import { EMBED_ICON_SVG } from "./icon";
-import { renderPreviewPage } from "./preview";
+import { PreviewPage } from "./preview.component";
 
 export function createApp(config: EmbedAppOrigins): Express {
 	const app = express();
@@ -24,19 +24,19 @@ export function createApp(config: EmbedAppOrigins): Express {
 	const embedRouter = express.Router();
 
 	embedRouter.get("/", (_req, res) => {
-		const html = renderEmbedPage({
+		const result = EmbedPage({
 			appOrigin: config.appOrigin,
 			embedOrigin: config.embedOrigin,
-		});
-		res.type("html").send(html);
+		}).to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	embedRouter.get("/preview", (_req, res) => {
-		const html = renderPreviewPage({
+		const result = PreviewPage({
 			appOrigin: config.appOrigin,
 			embedOrigin: config.embedOrigin,
-		});
-		res.type("html").send(html);
+		}).to("text/html");
+		res.status(result.statusCode).type("html").send(result.body);
 	});
 
 	embedRouter.get("/icon.svg", (_req, res) => {
