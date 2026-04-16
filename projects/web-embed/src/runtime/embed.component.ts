@@ -1,13 +1,25 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import Handlebars from "handlebars";
 import { Base } from "./base.component";
 import type { Component } from "./component.types";
 import { CANONICAL_EMBED_ORIGIN } from "./config";
 import { EMBED_PAGE_STYLES } from "./embed.styles";
 import { render } from "./render";
-import { byteLength, renderCanonicalSnippet, renderSnippet } from "./snippet.component";
+import { CANONICAL_ORIGINS, type SnippetVariant, byteLength, renderSnippet } from "./snippet.component";
 
 const EMBED_TEMPLATE = readFileSync(join(__dirname, "embed.template.html"), "utf-8");
+
+function isValidUrl(raw: string): boolean {
+	try {
+		new URL(raw);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+const HTMX_SCRIPT = '<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>';
 
 const COPY_SCRIPT = `<script>
 (function() {
@@ -25,59 +37,57 @@ const COPY_SCRIPT = `<script>
       });
     })(buttons[i]);
   }
-
-  var snippetIds = ['snippet-a-code', 'snippet-b-code', 'snippet-c-code'];
-  var originals = {};
-  for (var i = 0; i < snippetIds.length; i++) {
-    var el = document.getElementById(snippetIds[i]);
-    if (el) originals[snippetIds[i]] = el.textContent;
-  }
-
-  var urlInput = document.querySelector('.embed-url-input__field');
-  if (urlInput) {
-    urlInput.addEventListener('input', function() {
-      var url = urlInput.value.trim();
-      for (var id in originals) {
-        var el = document.getElementById(id);
-        if (!el) continue;
-        if (url) {
-          el.textContent = originals[id].replace('PAGE_URL', encodeURIComponent(url));
-        } else {
-          el.textContent = originals[id];
-        }
-      }
-    });
-  }
 })();
 </script>`;
 
 export interface EmbedPageInput {
 	appOrigin: string;
 	embedOrigin: string;
+	articleUrl?: string;
+}
+
+function highlightedSource(variant: SnippetVariant, encodedUrl: string): string {
+	const snippet = renderSnippet(variant, { ...CANONICAL_ORIGINS, pageUrl: encodedUrl });
+	const escaped = Handlebars.Utils.escapeExpression(snippet);
+	return escaped.replace(
+		encodedUrl,
+		`<mark class="embed-variant__url-highlight">${encodedUrl}</mark>`,
+	);
 }
 
 export function EmbedPage(input: EmbedPageInput): Component {
-	const origins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin, pageUrl: `${input.embedOrigin}/` };
-	const previewA = renderSnippet("a", origins);
-	const previewB = renderSnippet("b", origins);
-	const previewC = renderSnippet("c", origins);
-	const sourceA = renderCanonicalSnippet("a");
-	const sourceB = renderCanonicalSnippet("b");
-	const sourceC = renderCanonicalSnippet("c");
+	const articleUrl = input.articleUrl && isValidUrl(input.articleUrl) ? input.articleUrl : undefined;
+
+	const heroOrigins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin, pageUrl: `${input.embedOrigin}/` };
+	// The hero demo is snippet B with the embed page's own URL filled in,
+	// proving the save flow works end-to-end when a reader clicks it.
+	const heroDemo = renderSnippet("b", heroOrigins);
+
+	let variantData = {};
+	if (articleUrl) {
+		const encodedUrl = encodeURIComponent(articleUrl);
+		const previewOrigins = { appOrigin: input.appOrigin, embedOrigin: input.embedOrigin, pageUrl: articleUrl };
+		const sourceA = highlightedSource("a", encodedUrl);
+		const sourceB = highlightedSource("b", encodedUrl);
+		const sourceC = highlightedSource("c", encodedUrl);
+		variantData = {
+			hasUrl: true,
+			previewA: renderSnippet("a", previewOrigins),
+			previewB: renderSnippet("b", previewOrigins),
+			previewC: renderSnippet("c", previewOrigins),
+			snippetA: sourceA,
+			snippetB: sourceB,
+			snippetC: sourceC,
+			bytesA: byteLength(renderSnippet("a", { ...CANONICAL_ORIGINS, pageUrl: encodedUrl })),
+			bytesB: byteLength(renderSnippet("b", { ...CANONICAL_ORIGINS, pageUrl: encodedUrl })),
+			bytesC: byteLength(renderSnippet("c", { ...CANONICAL_ORIGINS, pageUrl: encodedUrl })),
+		};
+	}
 
 	const content = render(EMBED_TEMPLATE, {
-		// The hero demo is snippet B with the embed page's own URL filled in,
-		// proving the save flow works end-to-end when a reader clicks it.
-		heroDemo: previewB,
-		previewA,
-		previewB,
-		previewC,
-		snippetA: sourceA,
-		snippetB: sourceB,
-		snippetC: sourceC,
-		bytesA: byteLength(sourceA),
-		bytesB: byteLength(sourceB),
-		bytesC: byteLength(sourceC),
+		heroDemo,
+		articleUrl: articleUrl ?? "",
+		...variantData,
 		appOrigin: input.appOrigin,
 	});
 
@@ -91,7 +101,7 @@ export function EmbedPage(input: EmbedPageInput): Component {
 		pageStyles: EMBED_PAGE_STYLES,
 		bodyClass: "page-embed",
 		content,
-		scripts: COPY_SCRIPT,
+		scripts: `${HTMX_SCRIPT}${COPY_SCRIPT}`,
 		appOrigin: input.appOrigin,
 	});
 }

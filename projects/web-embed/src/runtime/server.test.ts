@@ -14,7 +14,7 @@ function makeApp(overrides: Partial<AppConfig> = {}) {
 	return createApp({ ...DEFAULT_CONFIG, ...overrides });
 }
 
-describe("GET /embed", () => {
+describe("GET /embed (no URL)", () => {
 	it("should return 200 and HTML content", async () => {
 		const app = makeApp();
 		const response = await request(app).get("/embed");
@@ -33,59 +33,6 @@ describe("GET /embed", () => {
 		expect(title.textContent).toBe("A save button for your readers.");
 	});
 
-	it("should render all three variants with numeric byte counts", async () => {
-		const app = makeApp();
-		const response = await request(app).get("/embed");
-		const doc = new JSDOM(response.text).window.document;
-
-		expect(doc.querySelectorAll("[data-test-variant]")).toHaveLength(3);
-
-		for (const id of ["bytes-a", "bytes-b", "bytes-c"] as const) {
-			const bytes = doc.querySelector(`[data-test="${id}"]`);
-			assert(bytes, `${id} byte count must be rendered`);
-			expect(bytes.textContent).toMatch(/^\d+ bytes$/);
-		}
-	});
-
-	it("should render a URL input field inside the variants section so publishers can customise the snippets", async () => {
-		const app = makeApp();
-		const response = await request(app).get("/embed");
-		const doc = new JSDOM(response.text).window.document;
-		const variants = doc.querySelector("#variants");
-		assert(variants, "variants section must be rendered");
-		const input = variants.querySelector(".embed-url-input__field");
-		assert(input, "URL input must be rendered inside the variants section");
-		expect(input.getAttribute("type")).toBe("url");
-		expect(input.getAttribute("placeholder")).toBe("https://example.com/my-article");
-	});
-
-	it("should render every variant preview as a live anchor that passes the page URL via the save endpoint", async () => {
-		const app = makeApp();
-		const response = await request(app).get("/embed");
-		const doc = new JSDOM(response.text).window.document;
-
-		for (const id of ["preview-a", "preview-b", "preview-c"] as const) {
-			const preview = doc.querySelector(`[data-test="${id}"]`);
-			assert(preview, `${id} preview container must be rendered`);
-			const anchor = preview.querySelector("a");
-			assert(anchor, `${id} preview must contain a live anchor`);
-			expect(anchor.getAttribute("href")).toContain("/save?url=");
-		}
-	});
-
-	it("should render every snippet source with the canonical save URL and PAGE_URL placeholder", async () => {
-		const app = makeApp();
-		const response = await request(app).get("/embed");
-		const doc = new JSDOM(response.text).window.document;
-
-		for (const id of ["source-a", "source-b", "source-c"] as const) {
-			const source = doc.querySelector(`[data-test="${id}"]`);
-			assert(source, `${id} source block must be rendered`);
-			expect(source.textContent).toContain("https://readplace.com/save?url=PAGE_URL");
-			expect(source.textContent).toContain("https://readplace.com/embed/icon.svg");
-		}
-	});
-
 	it("should render the hero demo as snippet B pointing at the embed page itself", async () => {
 		const app = makeApp();
 		const response = await request(app).get("/embed");
@@ -95,6 +42,29 @@ describe("GET /embed", () => {
 		const anchor = demo.querySelector("a");
 		assert(anchor, "hero demo must contain an anchor");
 		expect(anchor.getAttribute("href")).toBe("https://readplace.com/save?url=http://localhost:3500/embed/");
+	});
+
+	it("should render a URL form with an empty input and a submit button", async () => {
+		const app = makeApp();
+		const response = await request(app).get("/embed");
+		const doc = new JSDOM(response.text).window.document;
+		const form = doc.querySelector('[data-test="url-form"]');
+		assert(form, "URL form must be rendered");
+		expect(form.getAttribute("method")).toBe("GET");
+		expect(form.getAttribute("action")).toBe("/embed");
+		const input = form.querySelector(".embed-url-input__field");
+		assert(input, "URL input must be rendered");
+		expect(input.getAttribute("type")).toBe("url");
+		expect(input.getAttribute("value")).toBe("");
+		const button = form.querySelector("button[type='submit']");
+		assert(button, "submit button must be rendered");
+	});
+
+	it("should not render the variants section when no URL is provided", async () => {
+		const app = makeApp();
+		const response = await request(app).get("/embed");
+		const doc = new JSDOM(response.text).window.document;
+		expect(doc.querySelectorAll("[data-test-variant]")).toHaveLength(0);
 	});
 
 	it("should render the quotable privacy statement", async () => {
@@ -107,11 +77,11 @@ describe("GET /embed", () => {
 		expect(privacy.textContent).toContain("sets no cookies");
 	});
 
-	it("should expose a copy button for every snippet and the privacy paragraph", async () => {
+	it("should expose a copy button only for the privacy paragraph when no URL is provided", async () => {
 		const app = makeApp();
 		const response = await request(app).get("/embed");
 		const doc = new JSDOM(response.text).window.document;
-		expect(doc.querySelectorAll("button[data-copy]")).toHaveLength(4);
+		expect(doc.querySelectorAll("button[data-copy]")).toHaveLength(1);
 	});
 
 	it("should include the copy-to-clipboard inline script", async () => {
@@ -129,9 +99,116 @@ describe("GET /embed", () => {
 		expect(robots.getAttribute("content")).toBe("index, follow");
 	});
 
-	it("should substitute the Readplace app origin in live preview save links when appOrigin differs from the canonical value", async () => {
-		const app = makeApp({ appOrigin: "http://127.0.0.1:9999" });
+	it("should link the footer back to the Readplace app origin", async () => {
+		const app = makeApp();
 		const response = await request(app).get("/embed");
+		const doc = new JSDOM(response.text).window.document;
+		const link = doc.querySelector('[data-test="link-app"]');
+		assert(link, "app link must be rendered");
+		expect(link.getAttribute("href")).toBe("https://readplace.com");
+	});
+
+	it("should not render the variants section for an invalid URL", async () => {
+		const app = makeApp();
+		const response = await request(app).get("/embed?url=not-a-url");
+		const doc = new JSDOM(response.text).window.document;
+		expect(doc.querySelectorAll("[data-test-variant]")).toHaveLength(0);
+	});
+});
+
+describe("GET /embed?url=<article>", () => {
+	const articleUrl = "https://example.com/my-article";
+	const encodedUrl = encodeURIComponent(articleUrl);
+	const embedPath = `/embed?url=${encodeURIComponent(articleUrl)}`;
+
+	it("should render all three variants with numeric byte counts", async () => {
+		const app = makeApp();
+		const response = await request(app).get(embedPath);
+		const doc = new JSDOM(response.text).window.document;
+
+		expect(doc.querySelectorAll("[data-test-variant]")).toHaveLength(3);
+
+		for (const id of ["bytes-a", "bytes-b", "bytes-c"] as const) {
+			const bytes = doc.querySelector(`[data-test="${id}"]`);
+			assert(bytes, `${id} byte count must be rendered`);
+			expect(bytes.textContent).toMatch(/^\d+ bytes$/);
+		}
+	});
+
+	it("should pre-fill the URL form input with the provided article URL", async () => {
+		const app = makeApp();
+		const response = await request(app).get(embedPath);
+		const doc = new JSDOM(response.text).window.document;
+		const input = doc.querySelector(".embed-url-input__field");
+		assert(input, "URL input must be rendered");
+		expect(input.getAttribute("value")).toBe(articleUrl);
+	});
+
+	it("should render snippet source blocks with the encoded article URL instead of PAGE_URL", async () => {
+		const app = makeApp();
+		const response = await request(app).get(embedPath);
+		const doc = new JSDOM(response.text).window.document;
+
+		for (const id of ["source-a", "source-b", "source-c"] as const) {
+			const source = doc.querySelector(`[data-test="${id}"]`);
+			assert(source, `${id} source block must be rendered`);
+			expect(source.textContent).toContain(`https://readplace.com/save?url=${encodedUrl}`);
+			expect(source.textContent).not.toContain("PAGE_URL");
+		}
+	});
+
+	it("should highlight the encoded URL inside each snippet source block with a mark element", async () => {
+		const app = makeApp();
+		const response = await request(app).get(embedPath);
+		const doc = new JSDOM(response.text).window.document;
+
+		for (const id of ["source-a", "source-b", "source-c"] as const) {
+			const source = doc.querySelector(`[data-test="${id}"]`);
+			assert(source, `${id} source block must be rendered`);
+			const mark = source.querySelector("mark.embed-variant__url-highlight");
+			assert(mark, `${id} must highlight the URL with a mark element`);
+			expect(mark.textContent).toBe(encodedUrl);
+		}
+	});
+
+	it("should render every variant preview as a live anchor that passes the article URL via the save endpoint", async () => {
+		const app = makeApp();
+		const response = await request(app).get(embedPath);
+		const doc = new JSDOM(response.text).window.document;
+
+		for (const id of ["preview-a", "preview-b", "preview-c"] as const) {
+			const preview = doc.querySelector(`[data-test="${id}"]`);
+			assert(preview, `${id} preview container must be rendered`);
+			const anchor = preview.querySelector("a");
+			assert(anchor, `${id} preview must contain a live anchor`);
+			expect(anchor.getAttribute("href")).toContain(`/save?url=${articleUrl}`);
+		}
+	});
+
+	it("should expose a copy button for every snippet and the privacy paragraph", async () => {
+		const app = makeApp();
+		const response = await request(app).get(embedPath);
+		const doc = new JSDOM(response.text).window.document;
+		expect(doc.querySelectorAll("button[data-copy]")).toHaveLength(4);
+	});
+
+	it("should keep the canonical readplace.com origin in source blocks regardless of configured appOrigin", async () => {
+		const app = makeApp({
+			appOrigin: "http://127.0.0.1:9999",
+			embedOrigin: "http://localhost:3700/embed",
+		});
+		const response = await request(app).get(embedPath);
+		const doc = new JSDOM(response.text).window.document;
+		const source = doc.querySelector('[data-test="source-b"]');
+		assert(source, "source-b must be rendered");
+		expect(source.textContent).toContain(`https://readplace.com/save?url=${encodedUrl}`);
+		expect(source.textContent).not.toContain("http://127.0.0.1:9999");
+		expect(source.textContent).not.toContain("http://localhost:3700");
+	});
+
+	it("should substitute the app origin in live preview save links when appOrigin differs from canonical", async () => {
+		const app = makeApp({ appOrigin: "http://127.0.0.1:9999" });
+		const response = await request(app).get(embedPath);
 		const doc = new JSDOM(response.text).window.document;
 		const previewAnchor = doc.querySelector('[data-test="preview-b"] a');
 		assert(previewAnchor, "preview-b anchor must be rendered");
@@ -140,35 +217,11 @@ describe("GET /embed", () => {
 
 	it("should substitute the embed origin in live preview icon URLs so the dev server can serve them", async () => {
 		const app = makeApp({ embedOrigin: "http://localhost:3700" });
-		const response = await request(app).get("/embed");
+		const response = await request(app).get(embedPath);
 		const doc = new JSDOM(response.text).window.document;
 		const previewImg = doc.querySelector('[data-test="preview-a"] img');
 		assert(previewImg, "preview-a img must be rendered");
 		expect(previewImg.getAttribute("src")).toBe("http://localhost:3700/icon.svg");
-	});
-
-	it("should keep the canonical readplace.com URLs and PAGE_URL placeholder inside the copy-paste source blocks regardless of config", async () => {
-		const app = makeApp({
-			appOrigin: "http://127.0.0.1:9999",
-			embedOrigin: "http://localhost:3700/embed",
-		});
-		const response = await request(app).get("/embed");
-		const doc = new JSDOM(response.text).window.document;
-		const source = doc.querySelector('[data-test="source-b"]');
-		assert(source, "source-b must be rendered");
-		expect(source.textContent).toContain("https://readplace.com/save?url=PAGE_URL");
-		expect(source.textContent).toContain("https://readplace.com/embed/icon.svg");
-		expect(source.textContent).not.toContain("http://127.0.0.1:9999");
-		expect(source.textContent).not.toContain("http://localhost:3700");
-	});
-
-	it("should link the footer back to the Readplace app origin", async () => {
-		const app = makeApp();
-		const response = await request(app).get("/embed");
-		const doc = new JSDOM(response.text).window.document;
-		const link = doc.querySelector('[data-test="link-app"]');
-		assert(link, "app link must be rendered");
-		expect(link.getAttribute("href")).toBe("https://readplace.com");
 	});
 });
 

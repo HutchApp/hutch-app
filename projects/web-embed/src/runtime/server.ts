@@ -23,10 +23,12 @@ export function createApp(config: EmbedAppOrigins): Express {
 
 	const embedRouter = express.Router();
 
-	embedRouter.get("/", (_req, res) => {
+	embedRouter.get("/", (req, res) => {
+		const articleUrl = typeof req.query.url === "string" ? req.query.url : undefined;
 		const result = EmbedPage({
 			appOrigin: config.appOrigin,
 			embedOrigin: config.embedOrigin,
+			articleUrl,
 		}).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});

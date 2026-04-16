@@ -42,7 +42,7 @@ test.describe("Embed preview visual regression", () => {
 	});
 
 	test("each variant preview on the main page matches its baseline screenshot", async ({ page }) => {
-		await page.goto(`${BASE_URL}/embed`, { waitUntil: "domcontentloaded" });
+		await page.goto(`${BASE_URL}/embed?url=${encodeURIComponent("https://example.com/article")}`, { waitUntil: "domcontentloaded" });
 		await waitForPageReady(page, '[data-test-page="embed"]');
 
 		for (const id of ["a", "b", "c"] as const) {
