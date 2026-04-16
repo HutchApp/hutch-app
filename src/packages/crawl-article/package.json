@@ -13,6 +13,9 @@
     "check": "pnpm lint",
     "check-infra": "echo 'No infrastructure — shared library'"
   },
+  "dependencies": {
+    "linkedom": "0.18.12"
+  },
   "devDependencies": {
     "@types/jest": "29.5.14",
     "c8": "10.1.3",

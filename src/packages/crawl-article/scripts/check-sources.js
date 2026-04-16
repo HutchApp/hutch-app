@@ -43,12 +43,36 @@ function assertFetched(result, source) {
   );
 }
 
+function assertThumbnail(result, source) {
+  if (source.expectsThumbnail) {
+    assert(
+      result.thumbnailImage,
+      `expected thumbnailImage for ${source.url} — the og:image/twitter:image fetch failed under the H2-fallback path`,
+    );
+    assert(
+      Buffer.isBuffer(result.thumbnailImage.body) && result.thumbnailImage.body.length > 0,
+      `expected non-empty thumbnail body for ${source.url}`,
+    );
+    assert(
+      typeof result.thumbnailImage.contentType === 'string' && result.thumbnailImage.contentType.startsWith('image/'),
+      `expected image/* content-type for thumbnail of ${source.url}, got '${result.thumbnailImage?.contentType}'`,
+    );
+  } else {
+    assert.equal(
+      result.thumbnailImage,
+      undefined,
+      `expected no thumbnailImage for ${source.url} — it was not expected to have one`,
+    );
+  }
+}
+
 describe('crawler source health', () => {
   for (const source of HEALTH_SOURCES) {
     describe(source.label, () => {
-      it('first save fetch (no conditional headers)', async () => {
-        const result = await crawlArticle({ url: source.url });
+      it('first save fetch with thumbnail (no conditional headers)', async () => {
+        const result = await crawlArticle({ url: source.url, fetchThumbnail: true });
         assertFetched(result, source);
+        assertThumbnail(result, source);
       });
 
       it('TTL refresh fetch (replays etag / lastModified from first save)', async () => {
@@ -57,6 +81,8 @@ describe('crawler source health', () => {
         // Servers that support conditional requests return 304 (not-modified);
         // servers that don't return 200 (fetched). Both are acceptable — the
         // failure mode we're guarding against is `status: 'failed'`.
+        // TTL refresh does not opt into thumbnail fetching — the thumbnail is
+        // already persisted to S3 at first-save time.
         const firstResult = await crawlArticle({ url: source.url });
         assertFetched(firstResult, source);
 

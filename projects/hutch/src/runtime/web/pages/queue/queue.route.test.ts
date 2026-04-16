@@ -418,6 +418,7 @@ describe("Queue routes", () => {
 			const crawlArticle = async () => ({
 				status: "fetched" as const,
 				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+				thumbnailUrl: "https://example.com/thumb.jpg",
 			});
 
 			const { app, auth } = createTestApp({ crawlArticle });
@@ -445,7 +446,7 @@ describe("Queue routes", () => {
 				<p>Additional paragraph with more text to exceed the minimum threshold.</p>
 			</article></body></html>`;
 
-			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml, thumbnailUrl: "https://example.com/thumb.jpg" });
 			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
 
@@ -479,6 +480,7 @@ describe("Queue routes", () => {
 			const crawlArticle = async () => ({
 				status: "fetched" as const,
 				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+				thumbnailUrl: "https://example.com/thumb.jpg",
 			});
 
 			const { app, auth } = createTestApp({ crawlArticle });
@@ -501,6 +503,7 @@ describe("Queue routes", () => {
 			const crawlArticle = async () => ({
 				status: "fetched" as const,
 				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+				thumbnailUrl: "https://example.com/thumb.jpg",
 			});
 
 			const { app, auth } = createTestApp({ crawlArticle });
@@ -526,6 +529,7 @@ describe("Queue routes", () => {
 			const crawlArticle = async () => ({
 				status: "fetched" as const,
 				html: `<html><head><meta property="og:image" content="https://example.com/thumb.jpg"></head></html>`,
+				thumbnailUrl: "https://example.com/thumb.jpg",
 			});
 
 			const { app, auth } = createTestApp({ crawlArticle });

@@ -1,5 +1,19 @@
+export type ThumbnailImage = {
+	body: Buffer;
+	contentType: string;
+	url: string;
+	extension: string;
+};
+
 export type CrawlArticleResult =
-	| { status: "fetched"; html: string; etag?: string; lastModified?: string }
+	| {
+			status: "fetched";
+			html: string;
+			thumbnailUrl?: string;
+			thumbnailImage?: ThumbnailImage;
+			etag?: string;
+			lastModified?: string;
+	  }
 	| { status: "not-modified" }
 	| { status: "failed" };
 
@@ -7,4 +21,5 @@ export type CrawlArticle = (params: {
 	url: string;
 	etag?: string;
 	lastModified?: string;
+	fetchThumbnail?: boolean;
 }) => Promise<CrawlArticleResult>;

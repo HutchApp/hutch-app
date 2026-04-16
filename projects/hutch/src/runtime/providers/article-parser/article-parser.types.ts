@@ -13,4 +13,4 @@ export type ParseArticleResult =
 
 export type ParseArticle = (url: string) => Promise<ParseArticleResult>;
 
-export type ParseHtml = (params: { url: string; html: string }) => ParseArticleResult;
+export type ParseHtml = (params: { url: string; html: string; thumbnailUrl?: string }) => ParseArticleResult;

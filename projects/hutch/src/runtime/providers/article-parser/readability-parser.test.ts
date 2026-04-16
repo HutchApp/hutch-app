@@ -54,8 +54,12 @@ describe("initReadabilityParser", () => {
 		}
 	});
 
-	it("should extract thumbnail from og:image", async () => {
-		const crawlArticle = async () => ({ status: "fetched" as const, html: ARTICLE_HTML });
+	it("should pass through thumbnailUrl from the crawl result as imageUrl", async () => {
+		const crawlArticle = async () => ({
+			status: "fetched" as const,
+			html: ARTICLE_HTML,
+			thumbnailUrl: "https://example.com/image.jpg",
+		});
 		const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 		const result = await parseArticle("https://example.com/article");

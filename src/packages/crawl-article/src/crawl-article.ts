@@ -1,8 +1,11 @@
-import type { CrawlArticle } from "./crawl-article.types";
+import { parseHTML } from "linkedom";
+import type { CrawlArticle, CrawlArticleResult, ThumbnailImage } from "./crawl-article.types";
 import { withH2Fallback } from "./h2-fetch";
 import { headerOrUndefined } from "./header-utils";
 
 const FETCH_TIMEOUT_MS = 5000;
+const THUMBNAIL_FETCH_TIMEOUT_MS = 5000;
+const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024;
 
 /**
  * Browser-like headers required by Fastly/Cloudflare edge sniffers.
@@ -50,17 +53,78 @@ export function initCrawlArticle(deps: {
 				return { status: "failed" };
 			}
 			const html = await response.text();
-			return {
+			const candidates = extractThumbnailCandidates({ html, baseUrl: params.url });
+			const thumbnailUrl = candidates[0];
+			const thumbnailImage = params.fetchThumbnail
+				? await fetchThumbnailImage({ fetchWithFallback, logError: deps.logError, candidates })
+				: undefined;
+			const result: CrawlArticleResult & { status: "fetched" } = {
 				status: "fetched",
 				html,
 				etag: headerOrUndefined(response.headers, "etag"),
 				lastModified: headerOrUndefined(response.headers, "last-modified"),
 			};
+			if (thumbnailUrl) result.thumbnailUrl = thumbnailUrl;
+			if (thumbnailImage) result.thumbnailImage = thumbnailImage;
+			return result;
 		} catch (error) {
 			deps.logError(`[CrawlArticle] Network error for ${params.url}`, error instanceof Error ? error : undefined);
 			return { status: "failed" };
 		}
 	};
+}
+
+async function fetchThumbnailImage(args: {
+	fetchWithFallback: typeof globalThis.fetch;
+	logError: (message: string, error?: Error) => void;
+	candidates: string[];
+}): Promise<ThumbnailImage | undefined> {
+	const { fetchWithFallback, logError, candidates } = args;
+
+	for (const candidateUrl of candidates) {
+		const result = await tryFetchImage({ fetchWithFallback, logError, url: candidateUrl });
+		if (result) return result;
+	}
+
+	return undefined;
+}
+
+async function tryFetchImage(args: {
+	fetchWithFallback: typeof globalThis.fetch;
+	logError: (message: string, error?: Error) => void;
+	url: string;
+}): Promise<ThumbnailImage | undefined> {
+	const { fetchWithFallback, logError, url } = args;
+	try {
+		const response = await fetchWithFallback(url, {
+			signal: AbortSignal.timeout(THUMBNAIL_FETCH_TIMEOUT_MS),
+			headers: { accept: "image/*,*/*;q=0.8" },
+		});
+		if (!response.ok) {
+			logError(`[CrawlArticle] Thumbnail HTTP ${response.status} for ${url}`);
+			return undefined;
+		}
+		const contentType = response.headers.get("content-type") ?? "";
+		if (!contentType.startsWith("image/")) {
+			logError(`[CrawlArticle] Thumbnail unexpected Content-Type "${contentType}" for ${url}`);
+			return undefined;
+		}
+		const contentLength = response.headers.get("content-length");
+		if (contentLength && Number.parseInt(contentLength, 10) > MAX_THUMBNAIL_BYTES) {
+			logError(`[CrawlArticle] Thumbnail too large (${contentLength} bytes) for ${url}`);
+			return undefined;
+		}
+		const arrayBuffer = await response.arrayBuffer();
+		const body = Buffer.from(arrayBuffer);
+		if (body.length > MAX_THUMBNAIL_BYTES) {
+			logError(`[CrawlArticle] Thumbnail too large (${body.length} bytes) for ${url}`);
+			return undefined;
+		}
+		return { body, contentType, url, extension: extensionFromContentType({ contentType, url }) };
+	} catch (error) {
+		logError(`[CrawlArticle] Thumbnail network error for ${url}`, error instanceof Error ? error : undefined);
+		return undefined;
+	}
 }
 
 /** X/Twitter returns a JS app shell with no content. The oembed API returns the actual tweet text. */
@@ -85,5 +149,76 @@ async function fetchViaOembed(
 	} catch (error) {
 		deps.logError(`[CrawlArticle] oembed error for ${params.url}`, error instanceof Error ? error : undefined);
 		return { status: "failed" } as const;
+	}
+}
+
+function extensionFromContentType(params: { contentType: string; url: string }): string {
+	const { contentType, url } = params;
+	const mimeMap: Record<string, string> = {
+		"image/png": ".png",
+		"image/jpeg": ".jpg",
+		"image/gif": ".gif",
+		"image/webp": ".webp",
+		"image/svg+xml": ".svg",
+		"image/avif": ".avif",
+	};
+	const mimeBase = contentType.split(";")[0].trim().toLowerCase();
+	if (mimeMap[mimeBase]) return mimeMap[mimeBase];
+	try {
+		const pathname = new URL(url).pathname;
+		const match = pathname.match(/\.(\w{2,5})$/);
+		if (match) return `.${match[1]}`;
+	} catch {
+		// malformed URL
+	}
+	return ".bin";
+}
+
+function extractThumbnailCandidates(params: {
+	html: string;
+	baseUrl?: string;
+}): string[] {
+	const { html, baseUrl } = params;
+	const { document } = parseHTML(html);
+	const seen = new Set<string>();
+	const candidates: string[] = [];
+
+	function push(raw: string | null | undefined) {
+		const resolved = resolveIfRelative(raw, baseUrl);
+		if (resolved && isValidHttpUrl(resolved) && !seen.has(resolved)) {
+			seen.add(resolved);
+			candidates.push(resolved);
+		}
+	}
+
+	push(document.querySelector('meta[property="og:image"]')?.getAttribute("content"));
+	push(document.querySelector('meta[name="twitter:image"]')?.getAttribute("content"));
+	for (const img of document.querySelectorAll("img[src]")) {
+		push(img.getAttribute("src"));
+	}
+
+	return candidates;
+}
+
+function resolveIfRelative(
+	url: string | null | undefined,
+	baseUrl: string | undefined,
+): string | undefined {
+	if (!url) return undefined;
+	if (isValidHttpUrl(url)) return url;
+	if (!baseUrl) return url;
+	try {
+		return new URL(url, baseUrl).href;
+	} catch {
+		return url;
+	}
+}
+
+function isValidHttpUrl(url: string): boolean {
+	try {
+		const parsed = new URL(url);
+		return parsed.protocol === "http:" || parsed.protocol === "https:";
+	} catch {
+		return false;
 	}
 }

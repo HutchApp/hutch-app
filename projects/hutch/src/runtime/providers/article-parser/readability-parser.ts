@@ -3,10 +3,9 @@ import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import type { CrawlArticle } from "@packages/crawl-article";
 import type { ParseArticle, ParseArticleResult } from "./article-parser.types";
-import { extractThumbnail } from "./extract-thumbnail";
 import { resolveRelativeUrls } from "./resolve-relative-urls";
 
-export function parseHtml(params: { url: string; html: string }): ParseArticleResult {
+export function parseHtml(params: { url: string; html: string; thumbnailUrl?: string }): ParseArticleResult {
 	let hostname: string;
 	try {
 		hostname = new URL(params.url).hostname;
@@ -14,7 +13,6 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 		return { ok: false, reason: "Invalid URL" };
 	}
 
-	const imageUrl = extractThumbnail({ html: params.html, baseUrl: params.url });
 	const { document } = parseHTML(params.html);
 	const reader = new Readability(document);
 	const parsed = reader.parse();
@@ -28,7 +26,7 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 				excerpt: `Content saved from ${hostname}.`,
 				wordCount: 0,
 				content: "",
-				imageUrl,
+				imageUrl: params.thumbnailUrl,
 			},
 		};
 	}
@@ -44,7 +42,7 @@ export function parseHtml(params: { url: string; html: string }): ParseArticleRe
 			excerpt: parsed.excerpt || `Content saved from ${hostname}.`,
 			wordCount: Array.from(parsed.textContent.matchAll(/\S+/g)).length, /* c8 ignore next -- V8 block coverage phantom: zero-count sub-range at bytecode boundary (bcoe/c8#319, v8.dev/blog/javascript-code-coverage) */
 			content: resolveRelativeUrls({ html: parsed.content, baseUrl: params.url }),
-			imageUrl,
+			imageUrl: params.thumbnailUrl,
 		},
 	};
 }
@@ -64,7 +62,7 @@ export function initReadabilityParser(deps: {
 			return { ok: false, reason: "Could not fetch article" };
 		}
 
-		return parseHtml({ url, html: result.html });
+		return parseHtml({ url, html: result.html, thumbnailUrl: result.thumbnailUrl });
 	};
 
 	return { parseArticle };

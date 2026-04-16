@@ -6,7 +6,7 @@ import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-inf
 import { LinkSavedEvent } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
-import { initReadabilityParser } from "../article-parser/readability-parser";
+import { parseHtml } from "../article-parser/readability-parser";
 import { initS3PutObject } from "../save-link/s3-put-object";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";
 import { initUpdateContentLocation } from "../save-link/update-content-location";
@@ -27,7 +27,6 @@ const s3Client = new S3Client({});
 const logError = (message: string, error?: Error) => consoleLogger.error(message, { error });
 
 const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } });
-const { parseArticle } = initReadabilityParser({ crawlArticle });
 
 const { putObject } = initS3PutObject({
 	client: s3Client,
@@ -77,12 +76,15 @@ const processContent = initProcessContentWithLocalMedia({
 });
 
 export const handler = initSaveLinkCommandHandler({
-	parseArticle,
+	crawlArticle,
+	parseHtml,
 	putObject,
+	putImageObject,
 	updateContentLocation,
 	publishLinkSaved,
 	downloadMedia,
 	processContent,
 	updateThumbnailUrl,
+	imagesCdnBaseUrl,
 	logger: consoleLogger,
 });

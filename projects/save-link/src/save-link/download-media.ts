@@ -14,7 +14,6 @@ export type DownloadedMedia = { originalUrl: string; cdnUrl: string };
 
 export type DownloadMedia = (params: {
 	html: string;
-	thumbnailUrl: string | undefined;
 	articleResourceUniqueId: ArticleResourceUniqueId;
 }) => Promise<DownloadedMedia[]>;
 
@@ -26,13 +25,10 @@ export function initDownloadMedia(deps: {
 }): DownloadMedia {
 	const { putImageObject, logger, fetch: fetchFn, imagesCdnBaseUrl } = deps;
 
-	return async ({ html, thumbnailUrl, articleResourceUniqueId }) => {
+	return async ({ html, articleResourceUniqueId }) => {
 		const results: DownloadedMedia[] = [];
 
 		const imageUrls = extractImageUrls(html);
-		if (thumbnailUrl && !imageUrls.includes(thumbnailUrl)) {
-			imageUrls.push(thumbnailUrl);
-		}
 
 		const uniqueUrls = [...new Set(imageUrls)].slice(0, MAX_IMAGES);
 
@@ -44,7 +40,7 @@ export function initDownloadMedia(deps: {
 					if (!downloaded) return;
 
 					const hash = createHash("sha256").update(originalUrl).digest("hex").slice(0, 16);
-					const ext = extensionFromContentType(downloaded.contentType, originalUrl);
+					const ext = extensionFromContentType({ contentType: downloaded.contentType, url: originalUrl });
 					const filename = `${hash}${ext}`;
 					const key = articleResourceUniqueId.toS3ImageKey(filename);
 					const cdnUrl = articleResourceUniqueId.toImageCdnUrl({ baseUrl: imagesCdnBaseUrl, filename });
@@ -112,7 +108,8 @@ async function downloadImage(
 	return { body, contentType };
 }
 
-function extensionFromContentType(contentType: string, url: string): string {
+function extensionFromContentType(params: { contentType: string; url: string }): string {
+	const { contentType, url } = params;
 	const mimeMap: Record<string, string> = {
 		"image/png": ".png",
 		"image/jpeg": ".jpg",

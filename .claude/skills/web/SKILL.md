@@ -139,6 +139,21 @@ form.querySelectorAll('[name]').forEach(function(el) {
 });
 ```
 
+## Structured Parsing Over Regex
+
+Use a proper parser for any structured format (HTML, XML, JSON, etc.). Never use regex to extract data from structured markup — regex cannot handle nesting, attribute ordering, or encoding edge cases reliably.
+
+For HTML in this codebase, use `linkedom`'s `parseHTML` and standard DOM APIs (`querySelector`, `getAttribute`). Regex-based markup parsing requires explicit human approval.
+
+```typescript
+// BAD — regex breaks on attribute order, whitespace, encoding
+const match = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+
+// GOOD — DOM parser handles all edge cases
+const { document } = parseHTML(html);
+const content = document.querySelector('meta[property="og:image"]')?.getAttribute("content");
+```
+
 ## HTML Template Conventions
 
 - Use `.html` files for view templates with Handlebars placeholder substitution

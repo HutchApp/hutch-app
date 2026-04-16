@@ -43,7 +43,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<p><img src="https://example.com/photo.png"></p>',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -65,7 +64,6 @@ describe("initDownloadMedia", () => {
 
 		await downloadMedia({
 			html: '<img src="https://example.com/photo.png">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId: nestedArticle,
 		});
 
@@ -82,7 +80,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId: nestedArticle,
 		});
 
@@ -94,7 +91,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img srcset="https://example.com/small.png 300w, https://example.com/large.png 600w">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -108,7 +104,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img srcset="https://cdn.example.com/image/fetch/w_424,c_limit,f_webp,q_auto:good/photo.png 424w, https://cdn.example.com/image/fetch/w_848,c_limit,f_webp,q_auto:good/photo.png 848w">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -131,7 +126,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png"><img srcset="https://example.com/p/w_424 424w">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -144,26 +138,11 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png" srcset="https://example.com/photo.png 1x">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
 		expect(fakeFetch).toHaveBeenCalledTimes(1);
 		expect(media).toHaveLength(1);
-	});
-
-	it("includes thumbnail URL in download", async () => {
-		const { downloadMedia, putImageObject } = createDownloadMedia();
-
-		const media = await downloadMedia({
-			html: "<p>No images</p>",
-			thumbnailUrl: "https://example.com/thumb.png",
-			articleResourceUniqueId,
-		});
-
-		expect(media).toHaveLength(1);
-		expect(media[0].originalUrl).toBe("https://example.com/thumb.png");
-		expect(putImageObject).toHaveBeenCalledTimes(1);
 	});
 
 	it("returns empty array when download fails", async () => {
@@ -172,7 +151,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<p><img src="https://example.com/broken.png"></p>',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -186,7 +164,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<p><img src="https://example.com/huge.jpg"></p>',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -199,7 +176,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png"><img src="https://example.com/photo.png">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -217,7 +193,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: imgs,
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -230,7 +205,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="data:image/png;base64,iVBORw0KGgo=">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -243,7 +217,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: "<p>Plain text article</p>",
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -257,7 +230,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/photo.png">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -275,7 +247,6 @@ describe("initDownloadMedia", () => {
 
 		await downloadMedia({
 			html: '<img src="https://example.com/unknown">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -295,7 +266,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/huge-no-header.jpg">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -311,7 +281,6 @@ describe("initDownloadMedia", () => {
 
 		const media = await downloadMedia({
 			html: '<img src="https://example.com/missing.png">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -330,7 +299,6 @@ describe("initDownloadMedia", () => {
 
 		await downloadMedia({
 			html: '<img src="https://example.com/photo.tiff">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 
@@ -350,7 +318,6 @@ describe("initDownloadMedia", () => {
 
 		await downloadMedia({
 			html: '<img src="https://example.com/image">',
-			thumbnailUrl: undefined,
 			articleResourceUniqueId,
 		});
 

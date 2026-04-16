@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { initCrawlArticle, DEFAULT_CRAWL_HEADERS } from "./crawl-article";
+import type { CrawlArticleResult } from "./crawl-article.types";
 
 const noopLogError = () => {};
 
@@ -328,4 +329,342 @@ describe("initCrawlArticle — failure modes", () => {
 		expect(result).toEqual({ status: "failed" });
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Network error for https://example.com", undefined);
 	});
+});
+
+describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
+	const articleHtml = `<html><head><meta property="og:image" content="https://cdn.example.com/thumb.jpg"></head><body></body></html>`;
+	const imageBytes = Buffer.from([0xff, 0xd8, 0xff]);
+
+	function articleThenImageFetch(thumbResponse: Response | (() => Response)): typeof fetch {
+		let call = 0;
+		return async (input) => {
+			call += 1;
+			if (call === 1) {
+				return new Response(articleHtml, {
+					status: 200,
+					headers: { "content-type": "text/html" },
+				});
+			}
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			expect(url).toBe("https://cdn.example.com/thumb.jpg");
+			return typeof thumbResponse === "function" ? thumbResponse() : thumbResponse;
+		};
+	}
+
+	function assertFetched(result: CrawlArticleResult): asserts result is CrawlArticleResult & { status: "fetched" } {
+		assert(result.status === "fetched", `Expected 'fetched', got '${result.status}'`);
+	}
+
+	it("does not fetch a thumbnail when fetchThumbnail is false (default)", async () => {
+		let fetchCalls = 0;
+		const fakeFetch: typeof fetch = async () => {
+			fetchCalls += 1;
+			return new Response(articleHtml, { status: 200, headers: { "content-type": "text/html" } });
+		};
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com" });
+
+		expect(fetchCalls).toBe(1);
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBe("https://cdn.example.com/thumb.jpg");
+		expect(result.thumbnailImage).toBeUndefined();
+	});
+
+	it("returns thumbnailImage when the article has an og:image that fetches successfully", async () => {
+		const fakeFetch = articleThenImageFetch(new Response(imageBytes, {
+			status: 200,
+			headers: { "content-type": "image/jpeg", "content-length": String(imageBytes.length) },
+		}));
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com/article", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toEqual({
+			body: imageBytes,
+			contentType: "image/jpeg",
+			url: "https://cdn.example.com/thumb.jpg",
+			extension: ".jpg",
+		});
+	});
+
+	it("sends an image Accept header when fetching the thumbnail", async () => {
+		let thumbnailInit: RequestInit | undefined;
+		let call = 0;
+		const fakeFetch: typeof fetch = async (_input, init) => {
+			call += 1;
+			if (call === 1) {
+				return new Response(articleHtml, { status: 200, headers: { "content-type": "text/html" } });
+			}
+			thumbnailInit = init;
+			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/jpeg" } });
+		};
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		const headers = plainHeaders(thumbnailInit);
+		expect(headers.accept).toBe("image/*,*/*;q=0.8");
+	});
+
+	it("returns thumbnailImage undefined when the article has no thumbnail URL", async () => {
+		const fakeFetch: typeof fetch = async () =>
+			new Response("<html><head><title>No image</title></head><body></body></html>", {
+				status: 200,
+				headers: { "content-type": "text/html" },
+			});
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toBeUndefined();
+	});
+
+	it("logs and returns thumbnailImage undefined when the thumbnail HTTP request fails", async () => {
+		const fakeFetch = articleThenImageFetch(new Response(null, { status: 403 }));
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Thumbnail HTTP 403 for https://cdn.example.com/thumb.jpg");
+	});
+
+	it("logs and returns thumbnailImage undefined when the thumbnail content-type is not an image", async () => {
+		const fakeFetch = articleThenImageFetch(new Response("not-an-image", {
+			status: 200,
+			headers: { "content-type": "text/html" },
+		}));
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith('[CrawlArticle] Thumbnail unexpected Content-Type "text/html" for https://cdn.example.com/thumb.jpg');
+	});
+
+	it("logs and returns thumbnailImage undefined when content-length exceeds the cap", async () => {
+		const oversizedLength = String(6 * 1024 * 1024);
+		const fakeFetch = articleThenImageFetch(new Response(imageBytes, {
+			status: 200,
+			headers: { "content-type": "image/jpeg", "content-length": oversizedLength },
+		}));
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith(`[CrawlArticle] Thumbnail too large (${oversizedLength} bytes) for https://cdn.example.com/thumb.jpg`);
+	});
+
+	it("logs and returns thumbnailImage undefined when the actual body exceeds the cap after download", async () => {
+		const oversizedBody = Buffer.alloc(6 * 1024 * 1024, 0);
+		const fakeFetch = articleThenImageFetch(new Response(oversizedBody, {
+			status: 200,
+			headers: { "content-type": "image/jpeg" },
+		}));
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith(`[CrawlArticle] Thumbnail too large (${oversizedBody.length} bytes) for https://cdn.example.com/thumb.jpg`);
+	});
+
+	it("logs and returns thumbnailImage undefined when the thumbnail fetch throws", async () => {
+		const networkError = new Error("connection reset");
+		const fakeFetch = articleThenImageFetch(() => { throw networkError; });
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Thumbnail network error for https://cdn.example.com/thumb.jpg", networkError);
+	});
+
+	it("logs with undefined when the thumbnail fetch throws a non-Error value", async () => {
+		const fakeFetch = articleThenImageFetch(() => { throw "boom"; });
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage).toBeUndefined();
+		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Thumbnail network error for https://cdn.example.com/thumb.jpg", undefined);
+	});
+
+	it("cascades to second candidate when og:image fetch fails", async () => {
+		const htmlWithDeadOgAndGoodBody = `<html><head>
+			<meta property="og:image" content="https://dead.example.com/og.jpg">
+		</head><body>
+			<img src="https://cdn.example.com/body.jpg">
+		</body></html>`;
+
+		let call = 0;
+		const fakeFetch: typeof fetch = async (input) => {
+			call += 1;
+			if (call === 1) {
+				return new Response(htmlWithDeadOgAndGoodBody, { status: 200, headers: { "content-type": "text/html" } });
+			}
+			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+			if (url === "https://dead.example.com/og.jpg") {
+				return new Response(null, { status: 404 });
+			}
+			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/jpeg" } });
+		};
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBe("https://dead.example.com/og.jpg");
+		expect(result.thumbnailImage).toEqual({
+			body: imageBytes,
+			contentType: "image/jpeg",
+			url: "https://cdn.example.com/body.jpg",
+			extension: ".jpg",
+		});
+	});
+
+	it("derives extension from URL pathname when content-type is not in the known MIME map", async () => {
+		const htmlWithThumb = `<html><head><meta property="og:image" content="https://cdn.example.com/photo.tiff"></head></html>`;
+		let call = 0;
+		const fakeFetch: typeof fetch = async () => {
+			call += 1;
+			if (call === 1) return new Response(htmlWithThumb, { status: 200, headers: { "content-type": "text/html" } });
+			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/tiff" } });
+		};
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage?.extension).toBe(".tiff");
+	});
+
+	it("uses .bin extension when content-type is unknown and URL has no file extension", async () => {
+		const htmlWithThumb = `<html><head><meta property="og:image" content="https://cdn.example.com/image"></head></html>`;
+		let call = 0;
+		const fakeFetch: typeof fetch = async () => {
+			call += 1;
+			if (call === 1) return new Response(htmlWithThumb, { status: 200, headers: { "content-type": "text/html" } });
+			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/x-custom" } });
+		};
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+
+		assertFetched(result);
+		expect(result.thumbnailImage?.extension).toBe(".bin");
+	});
+});
+
+describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArticle)", () => {
+	it("extracts og:image as thumbnailUrl", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(
+			'<html><head><meta property="og:image" content="https://example.com/og.jpg"></head></html>',
+			{ status: 200, headers: { "content-type": "text/html" } },
+		);
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com" });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBe("https://example.com/og.jpg");
+	});
+
+	it("extracts twitter:image when og:image is absent", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(
+			'<html><head><meta name="twitter:image" content="https://example.com/tw.jpg"></head></html>',
+			{ status: 200, headers: { "content-type": "text/html" } },
+		);
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com" });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBe("https://example.com/tw.jpg");
+	});
+
+	it("prefers og:image over twitter:image", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(
+			'<html><head><meta property="og:image" content="https://example.com/og.jpg"><meta name="twitter:image" content="https://example.com/tw.jpg"></head></html>',
+			{ status: 200, headers: { "content-type": "text/html" } },
+		);
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com" });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBe("https://example.com/og.jpg");
+	});
+
+	it("falls back to first body img when no meta tags exist", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(
+			'<html><body><img src="https://example.com/photo.jpg"><img src="https://example.com/second.jpg"></body></html>',
+			{ status: 200, headers: { "content-type": "text/html" } },
+		);
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com" });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBe("https://example.com/photo.jpg");
+	});
+
+	it("returns thumbnailUrl undefined when no images exist", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(
+			"<html><head></head><body><p>No images</p></body></html>",
+			{ status: 200, headers: { "content-type": "text/html" } },
+		);
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com" });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBeUndefined();
+	});
+
+	it("rejects data: and javascript: URIs", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(
+			'<html><head><meta property="og:image" content="data:image/png;base64,abc"></head><body><img src="javascript:alert(1)"></body></html>',
+			{ status: 200, headers: { "content-type": "text/html" } },
+		);
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com" });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBeUndefined();
+	});
+
+	it("resolves relative og:image using the article URL as base", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(
+			'<html><head><meta property="og:image" content="/images/og.jpg"></head></html>',
+			{ status: 200, headers: { "content-type": "text/html" } },
+		);
+		const crawlArticle = initCrawl({ fetch: fakeFetch });
+
+		const result = await crawlArticle({ url: "https://example.com/post" });
+
+		assertFetched(result);
+		expect(result.thumbnailUrl).toBe("https://example.com/images/og.jpg");
+	});
+
+	function assertFetched(result: CrawlArticleResult): asserts result is CrawlArticleResult & { status: "fetched" } {
+		assert(result.status === "fetched", `Expected 'fetched', got '${result.status}'`);
+	}
 });
