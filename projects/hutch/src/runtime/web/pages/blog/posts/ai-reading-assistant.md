@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "AI reading assistant, read it later, AI summaries, reading tool, article triage, Pocket alternative"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+Most "AI reading assistants" replace reading with summaries and algorithmic curation. Readplace takes a different approach: it generates a TL;DR for every saved article so you can triage your list faster, then read the real thing. The AI never curates, hides, or reorders your content. You save what you want, scan summaries to prioritise, and read in a clean reader view. The workflow is save, summarise, triage, read.
+
+</div>
+</details>
+
 The phrase "AI reading assistant" now describes tools that want to read for you. They generate summaries of articles you never open. They send digest emails of content an algorithm picked. They auto-curate feeds based on trends, not on what matters to you.
 
 That is replacement dressed up as help.

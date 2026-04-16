@@ -210,3 +210,47 @@
 .blog-post__content strong {
   font-weight: 600;
 }
+
+/* Blog TL;DR collapsible — classes used as raw HTML inside blog post .md files */
+
+/* purgecss-ignore-start: used in <details> HTML embedded in markdown blog posts */
+.blog-tldr {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin: 0 0 32px;
+}
+
+.blog-tldr__toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  list-style: none;
+}
+
+.blog-tldr__toggle::-webkit-details-marker {
+  display: none;
+}
+
+.blog-tldr__toggle::after {
+  content: "\25BE";
+  font-size: 1.2em;
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.blog-tldr[open] .blog-tldr__toggle::after {
+  transform: rotate(180deg);
+}
+
+.blog-tldr__body {
+  padding: 0 16px 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+/* purgecss-ignore-end */

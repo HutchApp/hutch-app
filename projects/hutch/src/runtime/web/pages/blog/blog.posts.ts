@@ -5,7 +5,7 @@ import { z } from "zod";
 import matter from "gray-matter";
 import MarkdownIt from "markdown-it";
 
-const md = new MarkdownIt();
+const md = new MarkdownIt({ html: true });
 
 const BlogFrontmatter = z.object({
 	title: z.string(),

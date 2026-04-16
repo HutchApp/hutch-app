@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "read it later apps, Pocket alternative, Omnivore alternative, best read it later 2026, Readwise Reader, Instapaper, Karakeep, Wallabag, Raindrop, Matter, Readplace"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+Pocket is dead, Omnivore shut down. The real alternatives in 2026: Readwise Reader ($12.99/mo) for power users who need highlight sync to Obsidian/Notion. Instapaper (free tier) for a simple Pocket replacement with Kobo support. Karakeep (free, self-hosted) for developers who want full data control. Raindrop.io ($3/mo) for bookmark-heavy workflows. Wallabag (free, self-hosted) for proven stability. Matter ($8/mo) for social reading. Readplace ($3.99/mo) for AI summaries and privacy without the cost of Readwise.
+
+</div>
+</details>
+
 Mozilla acquired Pocket and then abandoned it. Omnivore shut down overnight after ElevenLabs acqui-hired the team. Millions of readers lost their save-for-later tool and started looking for a replacement.
 
 This page covers the real alternatives in 2026, with honest pros and cons for each, including Readplace's own limitations. I built Readplace, so I have an obvious bias. I wrote this to be fair anyway.

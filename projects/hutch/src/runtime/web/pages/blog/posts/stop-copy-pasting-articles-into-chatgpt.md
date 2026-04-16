@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "chatgpt article summary, read it later, article summarizer, chatgpt alternative for articles"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+Copy-pasting articles into ChatGPT for summaries takes seven steps, leaves no record, and loses the source. Readplace does it in one click: save the article, get an AI summary automatically, and keep both in a searchable archive. Summaries are cached by URL so they are ready instantly.
+
+</div>
+</details>
+
 You find a 2,400-word article. You don't have time to read it now. You want the gist.
 
 So you do the thing:

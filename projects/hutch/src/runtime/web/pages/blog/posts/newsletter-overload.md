@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "newsletter overload, developer newsletters, read it later, email newsletters, reading system"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+You subscribe to dozens of newsletters and read almost none. The fix is not discipline — it is routing links into a read-it-later app, triaging with summaries, and archiving the email. Each issue costs 30 seconds of triage instead of guilt. Readplace is building a Gmail import feature that will automate this: connect once and newsletter links flow into your reading list with AI summaries.
+
+</div>
+</details>
+
 Your inbox has unread issues of JavaScript Weekly, TLDR, Pointer, Bytes, Changelog, and four others you forgot about. You won't read them. You know it. I know it. Tomorrow a new one lands, you skim two links, close it, and feel behind.
 
 Most developers I talk to are stuck in the same loop.

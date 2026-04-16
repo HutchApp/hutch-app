@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "privacy analytics, cookieless analytics, IP hashing, read it later privacy, Google Analytics alternative, privacy first, visitor hash"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+Readplace tracks pageviews without cookies, third-party scripts, or consent banners. An Express middleware hashes each visitor's IP with a secret salt (SHA-256, truncated to 16 chars) and logs a JSON line to stdout. Same IP produces the same hash, so distinct visitors are countable — but the hash is one-way and cannot be reversed into an IP. The logs flow to CloudWatch; the dashboard is infrastructure-as-code. About eighty lines of TypeScript replace an analytics vendor.
+
+</div>
+</details>
+
 Every web server sees its own traffic. Analytics vendors package that data as a dashboard and charge for it.
 
 Most sites pay for the dashboard with surveillance. Cookies on the visitor. Third-party scripts in the browser. Identifiers that follow people between sites they did not ask to connect.

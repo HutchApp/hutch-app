@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "karakeep, hoarder, hutch, read it later, self-hosted, pocket alternative"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+Karakeep is free, open-source, and self-hosted with Docker. You get full data control and AI auto-tagging via Ollama, but you handle updates, backups, and uptime. Readplace is hosted at $3.99/mo with AI summaries included and no setup. You trade self-hosted control for convenience. Pick Karakeep if you already run a homelab. Pick Readplace if you do not want to maintain infrastructure for your reading list.
+
+</div>
+</details>
+
 Pocket is dying. Omnivore sold to ElevenLabs and shut down overnight. If you're a developer looking for a read-it-later tool you control, two names keep coming up: **Karakeep** (formerly Hoarder) and **Readplace**.
 
 Both target developers who read a lot, both have AI features, and both care about data ownership. But they make different bets on how software should reach you.

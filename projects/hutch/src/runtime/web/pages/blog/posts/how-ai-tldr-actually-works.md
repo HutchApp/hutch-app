@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "ai summary, read it later, article tl;dr, deepseek, ai slop, hutch app"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+Readplace generates a short TL;DR for every saved article using DeepSeek V3. Summaries are cached globally by URL — one API call serves everyone who saves the same link. The prompt bans corporate jargon and forces plain language. The summary is a triage tool to help you decide when to read, not a replacement for reading. Readplace will not generate smart highlights, AI commentary, or daily briefings.
+
+</div>
+</details>
+
 The word "slop" exists for a reason. Most AI-generated content is garbage. LinkedIn posts read like they came from a tube. "Key takeaways" listicles flatten every nuance into five bullets nobody asked for.
 
 The term fits. And it means your scepticism about "AI summaries" in a read-it-later app is fair.

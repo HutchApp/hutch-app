@@ -7,6 +7,15 @@ author: "Fayner Brack"
 keywords: "instapaper alternative, read it later, hutch vs instapaper, pocket replacement, AI summaries"
 ---
 
+<details class="blog-tldr">
+<summary class="blog-tldr__toggle">TL;DR</summary>
+<div class="blog-tldr__body">
+
+Instapaper is the familiar Pocket replacement: mature, stable, free tier, native mobile apps, Kobo support, but limited recent development and no AI. Readplace is newer and actively shipping: AI summaries, Australian hosting, source-available code, $3.99/mo with no free tier, but no native mobile apps or offline reading yet. Pick Instapaper for stability and mobile. Pick Readplace for AI triage and active development.
+
+</div>
+</details>
+
 Pocket shut down in July 2025. A lot of readers lost their go-to save-for-later tool overnight. Some moved to Omnivore, but that shut down too. Many landed on Instapaper, which has been running since 2008.
 
 Readplace launched around the same time. I had been running my own reading system for about ten years before turning it into a product.
