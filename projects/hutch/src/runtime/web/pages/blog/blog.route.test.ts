@@ -19,7 +19,7 @@ describe("GET /blog", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const title = doc.querySelector(".blog__title");
-		expect(title?.textContent).toBe("Open Readplace");
+		expect(title?.textContent).toBe("Blog");
 	});
 
 	it("should render links to blog posts", async () => {
