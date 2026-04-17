@@ -689,7 +689,7 @@ describe("Queue routes", () => {
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
 			expect(doc.querySelector("[data-test-reader-summary]")?.textContent).toContain("Key points from the article");
-			expect(doc.querySelector(".reader__summary-label")?.textContent).toBe("TL;DR");
+			expect(doc.querySelector(".reader__summary-toggle")?.textContent).toBe("TL;DR");
 		});
 
 		it("should not display summary block when no cached summary exists", async () => {

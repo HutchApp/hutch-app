@@ -8,10 +8,10 @@
       <a class="reader__original-link" href="{{url}}" target="_blank" rel="noopener" data-test-original-link>View original</a>
     </div>
     {{#if summary}}
-    <div class="reader__summary" data-test-reader-summary>
-      <div class="reader__summary-label">TL;DR</div>
+    <details class="reader__summary" data-test-reader-summary>
+      <summary class="reader__summary-toggle">TL;DR</summary>
       <pre class="reader__summary-text">{{summary}}</pre>
-    </div>
+    </details>
     {{/if}}
     {{#if audioEnabled}}
     <div class="reader__audio-player" data-test-audio-player>

@@ -52,19 +52,38 @@
 
 .reader__summary {
   margin-bottom: 2rem;
-  padding: 1.25rem 1.5rem;
   background: var(--color-surface);
   border-radius: 8px;
   border-left: 3px solid var(--color-brand);
 }
 
-.reader__summary-label {
+.reader__summary-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 1.25rem 1.5rem;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text-secondary);
-  margin-bottom: 0.5rem;
+  list-style: none;
+}
+
+.reader__summary-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.reader__summary-toggle::after {
+  content: "\25BE";
+  font-size: 1.2em;
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.reader__summary[open] .reader__summary-toggle::after {
+  transform: rotate(180deg);
 }
 
 .reader__summary-text {
@@ -74,6 +93,7 @@
   white-space: pre-wrap;
   color: var(--color-text-primary);
   margin: 0;
+  padding: 0 1.5rem 1.25rem;
 }
 
 .reader__audio-player {
