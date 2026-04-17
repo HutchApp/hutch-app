@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
+import { isbot } from "isbot";
 import type { HutchLogger } from "@packages/hutch-logger";
 
 export interface AnalyticsPageview {
@@ -22,9 +23,11 @@ const SKIP_PATHS = new Set([
 	"/favicon.ico",
 ]);
 
-function shouldLog(req: Request): boolean {
+function shouldLog(req: Request, statusCode: number): boolean {
 	if (req.method !== "GET") return false;
 	if (SKIP_PATHS.has(req.path)) return false;
+	if (statusCode >= 400) return false;
+	if (isbot(req.get("user-agent"))) return false;
 	return true;
 }
 
@@ -56,8 +59,9 @@ export function createAnalyticsMiddleware(deps: {
 	salt: string;
 	now: () => Date;
 }): RequestHandler {
-	return (req: Request, _res: Response, next: NextFunction) => {
-		if (shouldLog(req)) {
+	return (req: Request, res: Response, next: NextFunction) => {
+		res.on("finish", () => {
+			if (!shouldLog(req, res.statusCode)) return;
 			deps.logger.info({
 				stream: "analytics",
 				event: "pageview",
@@ -70,7 +74,7 @@ export function createAnalyticsMiddleware(deps: {
 				visitor_hash: hashIp({ ip: req.ip, salt: deps.salt }),
 				user_agent: req.get("user-agent") ?? null,
 			});
-		}
+		});
 		next();
 	};
 }
