@@ -51,6 +51,34 @@ describe("View routes", () => {
 			).toBe("<p>Body copy.</p>");
 		});
 
+		it("renders the article when the path arrives with decoded slashes (API Gateway shape)", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ARTICLE_URL}`);
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-reader-title]")?.textContent).toBe(
+				"Hello World",
+			);
+		});
+
+		it("renders the article when the scheme's second slash has been collapsed", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(
+				`/view/${ARTICLE_URL.replace("://", ":/")}`,
+			);
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-reader-title]")?.textContent).toBe(
+				"Hello World",
+			);
+		});
+
 		it("renders the Save CTA with the article URL as a hidden input", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });

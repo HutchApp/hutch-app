@@ -37,8 +37,17 @@ function hostnameFrom(validatedUrl: string): string {
 export function initViewRoutes(deps: ViewDependencies): Router {
 	const router = express.Router();
 
-	router.get("/:articleUrl", async (req, res) => {
-		const parsedUrl = ViewUrlSchema.safeParse(req.params.articleUrl);
+	router.get<string, Record<string, string>>("/*", async (req, res, next) => {
+		const rawPath = req.params[0];
+		if (!rawPath) {
+			next();
+			return;
+		}
+		// API Gateway v2 HTTP API decodes %2F to / before invoking Lambda, so
+		// /view/https%3A%2F%2Fexample.com arrives here as /view/https://example.com.
+		// Restore the scheme's second slash if any proxy collapsed it (https:/ → https://).
+		const normalizedUrl = rawPath.replace(/^(https?):\/(?!\/)/i, "$1://");
+		const parsedUrl = ViewUrlSchema.safeParse(normalizedUrl);
 		if (!parsedUrl.success) {
 			renderError(req, res);
 			return;
