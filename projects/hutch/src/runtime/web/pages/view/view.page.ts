@@ -1,0 +1,102 @@
+import type { Request, Response, Router } from "express";
+import express from "express";
+import { z } from "zod";
+import type {
+	ArticleMetadata,
+	Minutes,
+} from "../../../domain/article/article.types";
+import { calculateReadTime } from "../../../domain/article/estimated-read-time";
+import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
+import type { FindArticleByUrl } from "../../../providers/article-store/article-store.types";
+import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
+import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
+import { collectUtmParams } from "../../shared/utm";
+import { SaveErrorPage } from "../save/save-error.component";
+import { ViewPage } from "./view.component";
+
+const ViewUrlSchema = z.url();
+
+interface ViewDependencies {
+	findArticleByUrl: FindArticleByUrl;
+	readArticleContent: ReadArticleContent;
+	parseArticle: ParseArticle;
+	findCachedSummary: FindCachedSummary;
+}
+
+function renderError(req: Request, res: Response) {
+	const redirectUrl = req.userId ? "/queue" : "/";
+	const linkLabel = req.userId ? "Go to your queue" : "Go to homepage";
+	const html = SaveErrorPage({ redirectUrl, linkLabel }).to("text/html");
+	res.status(html.statusCode).type("html").send(html.body);
+}
+
+function hostnameFrom(validatedUrl: string): string {
+	return new URL(validatedUrl).hostname;
+}
+
+export function initViewRoutes(deps: ViewDependencies): Router {
+	const router = express.Router();
+
+	router.get("/:articleUrl", async (req, res) => {
+		const parsedUrl = ViewUrlSchema.safeParse(req.params.articleUrl);
+		if (!parsedUrl.success) {
+			renderError(req, res);
+			return;
+		}
+		const articleUrl = parsedUrl.data;
+
+		const cached = await deps.findArticleByUrl(articleUrl);
+		const cachedContent = cached
+			? await deps.readArticleContent(articleUrl)
+			: undefined;
+
+		let metadata: ArticleMetadata;
+		let estimatedReadTime: Minutes;
+		let content: string | undefined;
+
+		if (cached && cachedContent) {
+			metadata = cached.metadata;
+			estimatedReadTime = cached.estimatedReadTime;
+			content = cachedContent;
+		} else {
+			const parseResult = await deps.parseArticle(articleUrl);
+			if (!parseResult.ok) {
+				const hostname = hostnameFrom(articleUrl);
+				metadata = cached?.metadata ?? {
+					title: hostname,
+					siteName: hostname,
+					excerpt: "Preview unavailable.",
+					wordCount: 0,
+				};
+				estimatedReadTime = cached?.estimatedReadTime ?? calculateReadTime(0);
+				content = undefined;
+			} else {
+				const parsed = parseResult.article;
+				metadata = {
+					title: parsed.title,
+					siteName: parsed.siteName,
+					excerpt: parsed.excerpt,
+					wordCount: parsed.wordCount,
+					...(parsed.imageUrl ? { imageUrl: parsed.imageUrl } : {}),
+				};
+				estimatedReadTime = calculateReadTime(parsed.wordCount);
+				content = parsed.content;
+			}
+		}
+
+		const summary = await deps.findCachedSummary(articleUrl);
+		const utmParams = collectUtmParams(req.query);
+
+		const html = ViewPage({
+			articleUrl,
+			metadata,
+			estimatedReadTime,
+			content,
+			summary,
+			utmParams,
+		}).to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
+	});
+
+	return router;
+}

@@ -163,4 +163,44 @@ describe("Save routes", () => {
 			expect(postLoginResponse.headers.location).toBe("/queue?url=https%3A%2F%2Fexample.com%2Farticle");
 		});
 	});
+
+	describe("utm_* passthrough", () => {
+		it("forwards utm_* params on the authenticated /queue redirect", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/save?url=https://example.com/article&utm_source=medium&utm_campaign=spring");
+
+			expect(response.status).toBe(303);
+			const parsed = new URL(response.headers.location, "http://localhost");
+			expect(parsed.pathname).toBe("/queue");
+			expect(parsed.searchParams.get("url")).toBe("https://example.com/article");
+			expect(parsed.searchParams.get("utm_source")).toBe("medium");
+			expect(parsed.searchParams.get("utm_campaign")).toBe("spring");
+		});
+
+		it("drops non-utm query params from the /queue redirect", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/save?url=https://example.com/article&foo=bar&utm_source=twitter");
+
+			expect(response.status).toBe(303);
+			const parsed = new URL(response.headers.location, "http://localhost");
+			expect(parsed.searchParams.get("foo")).toBeNull();
+			expect(parsed.searchParams.get("utm_source")).toBe("twitter");
+		});
+
+		it("preserves the full originalUrl (utm included) in the /login return param", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app).get("/save?url=https://example.com/article&utm_source=medium");
+
+			expect(response.status).toBe(303);
+			const location = response.headers.location;
+			expect(location.startsWith("/login?return=")).toBe(true);
+			const returnParam = new URL(`http://localhost${location}`).searchParams.get("return");
+			expect(returnParam).toBe("/save?url=https://example.com/article&utm_source=medium");
+		});
+	});
 });

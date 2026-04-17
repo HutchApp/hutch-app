@@ -1,6 +1,7 @@
 import type { Router } from "express";
 import express from "express";
 import { z } from "zod";
+import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "./save-error.component";
 
 const SaveUrlSchema = z.url();
@@ -30,7 +31,9 @@ export function initSaveRoutes(): Router {
 			return;
 		}
 
-		res.redirect(303, `/queue?url=${encodeURIComponent(url)}`);
+		const utm = collectUtmParams(req.query);
+		const qs = new URLSearchParams([["url", url], ...utm]).toString();
+		res.redirect(303, `/queue?${qs}`);
 	});
 
 	return router;

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
@@ -688,8 +689,13 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			expect(doc.querySelector("[data-test-reader-summary]")?.textContent).toContain("Key points from the article");
-			expect(doc.querySelector(".reader__summary-toggle")?.textContent).toBe("TL;DR");
+			const summarySlot = doc.querySelector("[data-test-reader-summary]");
+			assert(summarySlot, "summary slot must be rendered");
+			expect(
+				summarySlot.classList.contains("article-body__summary-slot--visible"),
+			).toBe(true);
+			expect(summarySlot.textContent).toContain("Key points from the article");
+			expect(doc.querySelector(".article-body__summary-toggle")?.textContent).toBe("TL;DR");
 		});
 
 		it("should not display summary block when no cached summary exists", async () => {
@@ -717,7 +723,11 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			expect(doc.querySelector("[data-test-reader-summary]")).toBeNull();
+			const summarySlot = doc.querySelector("[data-test-reader-summary]");
+			assert(summarySlot, "summary slot must be rendered");
+			expect(
+				summarySlot.classList.contains("article-body__summary-slot--hidden"),
+			).toBe(true);
 		});
 
 		it("should show no-content fallback when article has no extracted content", async () => {
@@ -738,7 +748,9 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			expect(doc.querySelector("[data-test-no-content]")?.textContent).toContain("not yet available");
+			const fallback = doc.querySelector("[data-test-no-content]");
+			assert(fallback, "no-content fallback must be rendered");
+			expect(fallback.textContent).toContain("not yet available");
 		});
 
 		it("should render audio player when feature=audio query param is present", async () => {
@@ -767,8 +779,13 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read?feature=audio`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			expect(doc.querySelector("[data-test-audio-player]")).not.toBeNull();
-			expect(doc.querySelector("[data-audio-element]")).not.toBeNull();
+			const audioSlot = doc.querySelector("[data-test-audio-player]");
+			assert(audioSlot, "audio slot must be rendered");
+			expect(
+				audioSlot.classList.contains("article-body__audio-slot--visible"),
+			).toBe(true);
+			const audioEl = doc.querySelector("[data-audio-element]");
+			assert(audioEl, "audio element must be rendered when audio enabled");
 		});
 
 		it("should not render audio player without feature=audio query param", async () => {
@@ -797,7 +814,11 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			expect(doc.querySelector("[data-test-audio-player]")).toBeNull();
+			const audioSlot = doc.querySelector("[data-test-audio-player]");
+			assert(audioSlot, "audio slot must be rendered");
+			expect(
+				audioSlot.classList.contains("article-body__audio-slot--hidden"),
+			).toBe(true);
 		});
 	});
 
@@ -849,7 +870,8 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			expect(doc.querySelector("[data-test-no-content]")).not.toBeNull();
+			const fallback = doc.querySelector("[data-test-no-content]");
+			assert(fallback, "no-content fallback must be rendered");
 		});
 
 		it("should link article title to reader view when article has no content", async () => {

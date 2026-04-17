@@ -18,6 +18,7 @@ import type { UserId } from "../../domain/user/user.types";
 import type {
 	DeleteArticle,
 	FindArticleById,
+	FindArticleByUrl,
 	FindArticleFreshness,
 	FindArticlesByUser,
 	SaveArticle,
@@ -90,6 +91,7 @@ export function initDynamoDbArticleStore(deps: {
 }): {
 	saveArticle: SaveArticle;
 	findArticleById: FindArticleById;
+	findArticleByUrl: FindArticleByUrl;
 	findArticlesByUser: FindArticlesByUser;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
@@ -374,6 +376,31 @@ export function initDynamoDbArticleStore(deps: {
 		};
 	};
 
+	const findArticleByUrl: FindArticleByUrl = async (url) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		const result = await client.send(
+			new GetCommand({
+				TableName: tableName,
+				Key: { url: articleResourceUniqueId.value },
+				ProjectionExpression: "routeId, originalUrl, title, siteName, excerpt, wordCount, imageUrl, estimatedReadTime",
+			}),
+		);
+		if (!result.Item) return null;
+		const row = ArticleRow.omit({ url: true, content: true }).parse(result.Item);
+		return {
+			id: row.routeId,
+			url: row.originalUrl,
+			metadata: {
+				title: row.title,
+				siteName: row.siteName,
+				excerpt: row.excerpt,
+				wordCount: row.wordCount,
+				imageUrl: row.imageUrl ?? undefined,
+			},
+			estimatedReadTime: row.estimatedReadTime,
+		};
+	};
+
 	/** Legacy fallback for articles saved before S3 migration. S3 is the primary content store. */
 	const readContent: ContentProvider = async (articleResourceUniqueId) => {
 		const result = await client.send(
@@ -391,6 +418,7 @@ export function initDynamoDbArticleStore(deps: {
 	return {
 		saveArticle,
 		findArticleById,
+		findArticleByUrl,
 		findArticlesByUser,
 		deleteArticle,
 		updateArticleStatus,

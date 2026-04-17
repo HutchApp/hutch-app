@@ -23,6 +23,7 @@ import type { ParseArticle } from "./providers/article-parser/article-parser.typ
 import type {
 	DeleteArticle,
 	FindArticleById,
+	FindArticleByUrl,
 	FindArticlesByUser,
 	SaveArticle,
 	UpdateArticleStatus,
@@ -49,6 +50,7 @@ import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { initSaveRoutes } from "./web/pages/save/save.page";
+import { initViewRoutes } from "./web/pages/view/view.page";
 import { initEmbedRoutes } from "./web/pages/embed/embed.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
@@ -85,6 +87,7 @@ interface AppDependencies {
 	};
 	parseArticle: ParseArticle;
 	findArticleById: FindArticleById;
+	findArticleByUrl: FindArticleByUrl;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
@@ -346,6 +349,14 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	const saveRouter = initSaveRoutes();
 	app.use("/save", saveRouter);
+
+	const viewRouter = initViewRoutes({
+		findArticleByUrl: deps.findArticleByUrl,
+		readArticleContent: deps.readArticleContent,
+		parseArticle: deps.parseArticle,
+		findCachedSummary: deps.findCachedSummary,
+	});
+	app.use("/view", viewRouter);
 
 	const exportRouter = initExportRoutes({
 		findArticlesByUser: deps.findArticlesByUser,
