@@ -400,30 +400,38 @@ describe("View routes", () => {
 		});
 	});
 
-	describe("Summary pipeline trigger", () => {
-		it("dispatches SaveLinkCommand after a successful fresh parse so the summary pipeline runs", async () => {
+	describe("GET has no side effects", () => {
+		it("does not call publishLinkSaved on a fresh-parse cache miss", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const publishLinkSaved = jest.fn(async () => {});
 			const { app, articleStore } = createTestApp({ parseArticle, publishLinkSaved });
 
-			const response = await request(app).get(`/view/${ENCODED}`);
+			await request(app).get(`/view/${ENCODED}`);
 
-			expect(response.status).toBe(200);
-			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
-			expect(publishLinkSaved).toHaveBeenCalledWith({ url: ARTICLE_URL, userId: "" });
-			const cached = await articleStore.findArticleByUrl(ARTICLE_URL);
-			expect(cached?.metadata.title).toBe("Hello World");
+			expect(publishLinkSaved).not.toHaveBeenCalled();
+			expect(await articleStore.findArticleByUrl(ARTICLE_URL)).toBeNull();
 		});
 
-		it("does not dispatch SaveLinkCommand when the article is already cached (summary already generated or in flight)", async () => {
-			const parseSpy = jest.fn(
-				async (_url: string): Promise<ParseArticleResult> => buildParseResult(),
-			);
-			const publishLinkSaved = jest.fn(async () => {});
-			const { app, articleStore } = createTestApp({
-				parseArticle: parseSpy,
-				publishLinkSaved,
-			});
+		it("renders the prime form with data-auto-submit on a cache miss", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const form = doc.querySelector("[data-test-view-prime]");
+			assert(form, "prime form must be rendered");
+			expect(form.hasAttribute("data-auto-submit")).toBe(true);
+			expect(form.getAttribute("action")).toBe("/view/prime");
+			expect(form.getAttribute("method")?.toLowerCase()).toBe("post");
+			const urlInput = form.querySelector('input[name="url"]');
+			assert(urlInput, "url hidden input must be rendered");
+			expect(urlInput.getAttribute("value")).toBe(ARTICLE_URL);
+		});
+
+		it("renders the prime form without data-auto-submit when the article is already cached", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app, articleStore } = createTestApp({ parseArticle });
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
 				url: ARTICLE_URL,
@@ -436,20 +444,109 @@ describe("View routes", () => {
 				estimatedReadTime: MinutesSchema.parse(2),
 			});
 			await articleStore.writeContent({ url: ARTICLE_URL, content: "<p>Cached body.</p>" });
-			publishLinkSaved.mockClear();
 
-			await request(app).get(`/view/${ENCODED}`);
+			const response = await request(app).get(`/view/${ENCODED}`);
 
+			const doc = new JSDOM(response.text).window.document;
+			const form = doc.querySelector("[data-test-view-prime]");
+			assert(form, "prime form must be rendered");
+			expect(form.hasAttribute("data-auto-submit")).toBe(false);
+		});
+	});
+
+	describe("POST /view/prime", () => {
+		it("dispatches SaveLinkCommand with empty userId for an anonymous visitor", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const publishLinkSaved = jest.fn(async () => {});
+			const { app, articleStore } = createTestApp({ parseArticle, publishLinkSaved });
+
+			const response = await request(app)
+				.post("/view/prime")
+				.type("form")
+				.send({ url: ARTICLE_URL });
+
+			expect(response.status).toBe(204);
+			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
+			expect(publishLinkSaved).toHaveBeenCalledWith({ url: ARTICLE_URL, userId: "" });
+			const cached = await articleStore.findArticleByUrl(ARTICLE_URL);
+			expect(cached?.metadata.title).toBe("Hello World");
+		});
+
+		it("dispatches SaveLinkCommand with the session userId for an authenticated visitor", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const captured: Array<{ url: string; userId: string }> = [];
+			const publishLinkSaved = async (params: { url: string; userId: string }) => {
+				captured.push(params);
+			};
+			const { app, auth } = createTestApp({ parseArticle, publishLinkSaved });
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+			const agent = request.agent(app);
+			await agent
+				.post("/login")
+				.type("form")
+				.send({ email: "test@example.com", password: "password123" });
+
+			const response = await agent
+				.post("/view/prime")
+				.type("form")
+				.send({ url: ARTICLE_URL });
+
+			expect(response.status).toBe(204);
+			expect(captured.length).toBe(1);
+			const [call] = captured;
+			assert(call, "publishLinkSaved must have been called");
+			expect(call.url).toBe(ARTICLE_URL);
+			expect(call.userId).not.toBe("");
+		});
+
+		it("is idempotent — skips dispatch when the article is already in the global cache", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const publishLinkSaved = jest.fn(async () => {});
+			const { app, articleStore } = createTestApp({ parseArticle, publishLinkSaved });
+			await articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Cached",
+					siteName: "example.com",
+					excerpt: "Cached excerpt.",
+					wordCount: 200,
+				},
+				estimatedReadTime: MinutesSchema.parse(2),
+			});
+
+			const response = await request(app)
+				.post("/view/prime")
+				.type("form")
+				.send({ url: ARTICLE_URL });
+
+			expect(response.status).toBe(204);
 			expect(publishLinkSaved).not.toHaveBeenCalled();
 		});
 
-		it("does not dispatch SaveLinkCommand when parsing fails", async () => {
+		it("skips dispatch when parsing fails", async () => {
 			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
 			const publishLinkSaved = jest.fn(async () => {});
 			const { app } = createTestApp({ parseArticle, publishLinkSaved });
 
-			await request(app).get(`/view/${ENCODED}`);
+			const response = await request(app)
+				.post("/view/prime")
+				.type("form")
+				.send({ url: ARTICLE_URL });
 
+			expect(response.status).toBe(204);
+			expect(publishLinkSaved).not.toHaveBeenCalled();
+		});
+
+		it("returns 400 when the body has no valid url", async () => {
+			const publishLinkSaved = jest.fn(async () => {});
+			const { app } = createTestApp({ publishLinkSaved });
+
+			const response = await request(app)
+				.post("/view/prime")
+				.type("form")
+				.send({ url: "not-a-url" });
+
+			expect(response.status).toBe(400);
 			expect(publishLinkSaved).not.toHaveBeenCalled();
 		});
 	});

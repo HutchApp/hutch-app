@@ -29,6 +29,7 @@ export interface ViewPageInput {
 	content?: string;
 	summary?: string | null;
 	utmParams: [string, string][];
+	needsPriming: boolean;
 }
 
 export function ViewPage(input: ViewPageInput): Component {
@@ -45,6 +46,7 @@ export function ViewPage(input: ViewPageInput): Component {
 		innerContent,
 		articleUrl: input.articleUrl,
 		utmParams: input.utmParams.map(([key, value]) => ({ key, value })),
+		needsPriming: input.needsPriming,
 	});
 
 	const ogImage = input.metadata.imageUrl ?? DEFAULT_OG_IMAGE;

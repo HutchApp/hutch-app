@@ -19,6 +19,7 @@ import { SaveErrorPage } from "../save/save-error.component";
 import { ViewPage } from "./view.component";
 
 const ViewUrlSchema = z.url();
+const PrimeBodySchema = z.object({ url: z.url() });
 
 interface ViewDependencies {
 	findArticleByUrl: FindArticleByUrl;
@@ -42,6 +43,48 @@ function hostnameFrom(validatedUrl: string): string {
 
 export function initViewRoutes(deps: ViewDependencies): Router {
 	const router = express.Router();
+
+	router.post("/prime", async (req, res) => {
+		const parsed = PrimeBodySchema.safeParse(req.body);
+		if (!parsed.success) {
+			res.status(400).end();
+			return;
+		}
+		const articleUrl = parsed.data.url;
+
+		// Idempotent: an existing articles row means a prior prime already
+		// dispatched SaveLinkCommand for this URL. Skip to avoid re-triggering
+		// the crawl / S3 write / summary pipeline.
+		const cached = await deps.findArticleByUrl(articleUrl);
+		if (cached) {
+			res.status(204).end();
+			return;
+		}
+
+		const parseResult = await deps.parseArticle(articleUrl);
+		if (!parseResult.ok) {
+			res.status(204).end();
+			return;
+		}
+
+		const article = parseResult.article;
+		await deps.saveArticleGlobally({
+			url: articleUrl,
+			metadata: {
+				title: article.title,
+				siteName: article.siteName,
+				excerpt: article.excerpt,
+				wordCount: article.wordCount,
+				...(article.imageUrl ? { imageUrl: article.imageUrl } : {}),
+			},
+			estimatedReadTime: calculateReadTime(article.wordCount),
+		});
+		await deps.publishLinkSaved({
+			url: articleUrl,
+			userId: req.userId ?? "",
+		});
+		res.status(204).end();
+	});
 
 	router.get<string, Record<string, string>>("/*", async (req, res, next) => {
 		const rawPath = req.params[0];
@@ -96,21 +139,6 @@ export function initViewRoutes(deps: ViewDependencies): Router {
 				};
 				estimatedReadTime = calculateReadTime(parsed.wordCount);
 				content = parsed.content;
-
-				// Populate the global article store and dispatch SaveLinkCommand so
-				// the downstream save-link / summary pipeline caches content and
-				// generates a TL;DR. Uses the viewer's userId when authenticated,
-				// empty string for anonymous visits (the downstream handlers key
-				// off url only).
-				await deps.saveArticleGlobally({
-					url: articleUrl,
-					metadata,
-					estimatedReadTime,
-				});
-				await deps.publishLinkSaved({
-					url: articleUrl,
-					userId: req.userId ?? "",
-				});
 			}
 		}
 
@@ -124,6 +152,7 @@ export function initViewRoutes(deps: ViewDependencies): Router {
 			content,
 			summary,
 			utmParams,
+			needsPriming: !cached,
 		}).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
