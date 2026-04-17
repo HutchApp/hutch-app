@@ -211,6 +211,37 @@
   font-weight: 600;
 }
 
+.blog-post__content table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 0.95rem;
+}
+
+.blog-post__content thead {
+  background: var(--color-surface);
+}
+
+.blog-post__content th,
+.blog-post__content td {
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.blog-post__content th {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.blog-post__content tbody tr:last-child td {
+  border-bottom: none;
+}
+
 /* Blog TL;DR collapsible — classes used as raw HTML inside blog post .md files */
 
 /* purgecss-ignore-start: used in <details> HTML embedded in markdown blog posts */
