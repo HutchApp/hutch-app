@@ -145,4 +145,69 @@ describe("Base component", () => {
 
 		expect(doc.querySelector(".verify-banner")).toBeNull();
 	});
+
+	it("should rewrite relative canonical URLs to absolute readplace.com URLs", () => {
+		const page = createTestPageContent({
+			seo: { title: "T", description: "D", canonicalUrl: "/login" },
+		});
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(
+			doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
+		).toBe("https://readplace.com/login");
+		expect(
+			doc
+				.querySelector('meta[property="og:url"]')
+				?.getAttribute("content"),
+		).toBe("https://readplace.com/login");
+	});
+
+	it("should leave absolute readplace.com canonical URLs unchanged", () => {
+		const page = createTestPageContent({
+			seo: {
+				title: "T",
+				description: "D",
+				canonicalUrl: "https://readplace.com/blog/my-post",
+			},
+		});
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(
+			doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
+		).toBe("https://readplace.com/blog/my-post");
+	});
+
+	it("should rewrite non-readplace hosts to readplace.com in canonical URLs", () => {
+		const page = createTestPageContent({
+			seo: {
+				title: "T",
+				description: "D",
+				canonicalUrl: "https://hutch-app.com/queue",
+			},
+		});
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(
+			doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
+		).toBe("https://readplace.com/queue");
+	});
+
+	it("should preserve query string when normalizing canonical URLs", () => {
+		const page = createTestPageContent({
+			seo: {
+				title: "T",
+				description: "D",
+				canonicalUrl: "/install?browser=firefox",
+			},
+		});
+		const result = Base(page).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		expect(
+			doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
+		).toBe("https://readplace.com/install?browser=firefox");
+	});
 });

@@ -88,6 +88,13 @@ const NAV_SCRIPT = `
 
 const STATIC_BASE_URL = requireEnv("STATIC_BASE_URL");
 
+const CANONICAL_ORIGIN = "https://readplace.com";
+
+function normalizeCanonicalUrl(canonicalUrl: string): string {
+	const url = new URL(canonicalUrl, CANONICAL_ORIGIN);
+	return `${CANONICAL_ORIGIN}${url.pathname}${url.search}${url.hash}`;
+}
+
 const LIVERELOAD_SCRIPT = getEnv("LIVERELOAD")
 	? `\n<script src="http://localhost:35729/livereload.js?snipver=1"></script>`
 	: "";
@@ -169,7 +176,7 @@ function renderBaseTemplate(page: PageContent): string {
 		staticBaseUrl: STATIC_BASE_URL,
 		title: seo.title,
 		description: seo.description,
-		canonicalUrl: seo.canonicalUrl,
+		canonicalUrl: normalizeCanonicalUrl(seo.canonicalUrl),
 		ogType,
 		ogImage: seo.ogImage,
 		ogImageAlt: seo.ogImageAlt,
