@@ -224,6 +224,19 @@ describe("initReadabilityParser", () => {
 		}
 	});
 
+	it("should return ok:false when Readability throws (bodyless HTML5 with content inside <nav>)", () => {
+		const paragraph =
+			"<p>Content paragraph with enough text to be a real article worth reading for the readability parser to consider it. </p>";
+		const html = `<!DOCTYPE html><html lang=en><title>T</title><nav><h1>Head</h1>${paragraph.repeat(8)}</nav>`;
+
+		const result = parseHtml({ url: "https://example.com/page", html });
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.reason).toMatch(/^Readability parse failed:/);
+		}
+	});
+
 	it("should use fallback values when readability returns empty fields", () => {
 		const minimalHtml = `<html><head></head><body>${"<p>word </p>".repeat(100)}</body></html>`;
 		const result = parseHtml({ url: "https://example.com/page", html: minimalHtml });

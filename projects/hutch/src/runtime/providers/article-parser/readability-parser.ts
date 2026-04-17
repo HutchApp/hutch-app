@@ -15,7 +15,13 @@ export function parseHtml(params: { url: string; html: string; thumbnailUrl?: st
 
 	const { document } = parseHTML(params.html);
 	const reader = new Readability(document);
-	const parsed = reader.parse();
+	let parsed: ReturnType<typeof reader.parse>;
+	try {
+		parsed = reader.parse();
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return { ok: false, reason: `Readability parse failed: ${message}` };
+	}
 
 	if (!parsed) {
 		return {
