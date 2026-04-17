@@ -33,6 +33,12 @@ function buildParseResult(
 	};
 }
 
+function ctaAction(doc: Document): Element {
+	const link = doc.querySelector("[data-test-view-cta-action]");
+	assert(link, "cta action must be rendered");
+	return link;
+}
+
 describe("View routes", () => {
 	describe("GET /view/<encoded-url>", () => {
 		it("renders the article body for an anonymous visitor (200)", async () => {
@@ -79,22 +85,23 @@ describe("View routes", () => {
 			);
 		});
 
-		it("renders the Save CTA with the article URL as a hidden input", async () => {
+		it("renders a Save action pointing to /save with the article URL in the href", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
-			const form = doc.querySelector("[data-test-view-save]");
-			assert(form, "save CTA form must be rendered");
-			expect(form.getAttribute("action")).toBe("/save");
-			const urlInput = form.querySelector('input[name="url"]');
-			assert(urlInput, "url hidden input must be rendered");
-			expect(urlInput.getAttribute("value")).toBe(ARTICLE_URL);
+			const action = ctaAction(doc);
+			expect(action.textContent).toBe("Save to My Queue");
+			const href = action.getAttribute("href");
+			assert(href, "action must have an href");
+			const parsed = new URL(href, "http://localhost");
+			expect(parsed.pathname).toBe("/save");
+			expect(parsed.searchParams.get("url")).toBe(ARTICLE_URL);
 		});
 
-		it("forwards utm_* query params as hidden inputs on the CTA", async () => {
+		it("includes utm_* query params in the Save action href", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
 
@@ -103,18 +110,83 @@ describe("View routes", () => {
 			);
 
 			const doc = new JSDOM(response.text).window.document;
-			const form = doc.querySelector("[data-test-view-save]");
-			assert(form, "save CTA form must be rendered");
-			const utmSource = form.querySelector('input[name="utm_source"]');
-			assert(utmSource, "utm_source hidden input must be rendered");
-			expect(utmSource.getAttribute("value")).toBe("medium");
-			const utmCampaign = form.querySelector('input[name="utm_campaign"]');
-			assert(utmCampaign, "utm_campaign hidden input must be rendered");
-			expect(utmCampaign.getAttribute("value")).toBe("x");
-			const hiddenNames = Array.from(
-				form.querySelectorAll('input[type="hidden"]'),
-			).map((el) => el.getAttribute("name"));
-			expect(hiddenNames).toEqual(["url", "utm_source", "utm_campaign"]);
+			const href = ctaAction(doc).getAttribute("href");
+			assert(href, "action must have an href");
+			const parsed = new URL(href, "http://localhost");
+			expect(parsed.searchParams.get("url")).toBe(ARTICLE_URL);
+			expect(parsed.searchParams.get("utm_source")).toBe("medium");
+			expect(parsed.searchParams.get("utm_campaign")).toBe("x");
+			expect(parsed.searchParams.get("foo")).toBeNull();
+		});
+
+		it("renders the Save action for an authenticated viewer when the URL is not in the store", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app, auth } = createTestApp({ parseArticle });
+			await auth.createUser({
+				email: "reader@example.com",
+				password: "password123",
+			});
+			const agent = request.agent(app);
+			await agent
+				.post("/login")
+				.type("form")
+				.send({ email: "reader@example.com", password: "password123" });
+
+			const response = await agent.get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const action = ctaAction(doc);
+			expect(action.textContent).toBe("Save to My Queue");
+			expect(action.getAttribute("href")?.startsWith("/save?")).toBe(true);
+		});
+
+		it("renders a 'Read in your queue' action for an authenticated viewer when the URL is in the store", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app, auth } = createTestApp({ parseArticle });
+			await auth.createUser({
+				email: "reader@example.com",
+				password: "password123",
+			});
+			const agent = request.agent(app);
+			await agent
+				.post("/login")
+				.type("form")
+				.send({ email: "reader@example.com", password: "password123" });
+			await agent.post("/queue/save").type("form").send({ url: ARTICLE_URL });
+
+			const response = await agent.get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const action = ctaAction(doc);
+			expect(action.textContent).toBe("Read in your queue");
+			expect(action.getAttribute("href")).toMatch(
+				/^\/queue\/[0-9a-f]{32}\/read$/,
+			);
+		});
+
+		it("renders the Save action for an anonymous viewer even when another user has saved the URL", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app, auth } = createTestApp({ parseArticle });
+			await auth.createUser({
+				email: "owner@example.com",
+				password: "password123",
+			});
+			const ownerAgent = request.agent(app);
+			await ownerAgent
+				.post("/login")
+				.type("form")
+				.send({ email: "owner@example.com", password: "password123" });
+			await ownerAgent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: ARTICLE_URL });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const action = ctaAction(doc);
+			expect(action.textContent).toBe("Save to My Queue");
+			expect(action.getAttribute("href")?.startsWith("/save?")).toBe(true);
 		});
 	});
 
@@ -282,7 +354,7 @@ describe("View routes", () => {
 			expect(response.status).toBe(404);
 		});
 
-		it("renders a fallback body with Save CTA when parseArticle fails on a cache miss", async () => {
+		it("renders a fallback body with the Save action when parseArticle fails on a cache miss", async () => {
 			const parseArticle: ParseArticle = async () => ({
 				ok: false,
 				reason: "blocked",
@@ -295,8 +367,8 @@ describe("View routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			const fallback = doc.querySelector("[data-test-no-content]");
 			assert(fallback, "no-content fallback must be rendered");
-			const form = doc.querySelector("[data-test-view-save]");
-			assert(form, "save CTA must still be rendered when parse fails");
+			const action = ctaAction(doc);
+			expect(action.textContent).toBe("Save to My Queue");
 		});
 	});
 

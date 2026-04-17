@@ -15,7 +15,12 @@ const baseInput: ViewPageInput = {
 	estimatedReadTime: 3 as Minutes,
 	content: "<p>Body copy.</p>",
 	summary: "",
-	utmParams: [],
+	actions: [
+		{
+			name: "Save to My Queue",
+			href: "/save?url=https%3A%2F%2Fexample.com%2Fpost",
+		},
+	],
 	needsPriming: false,
 };
 
@@ -56,43 +61,48 @@ describe("ViewPage", () => {
 		);
 	});
 
-	it("renders the sticky Save CTA pointing to /save with the article URL", () => {
-		const doc = render();
-
-		const form = doc.querySelector("[data-test-view-save]");
-		assert(form, "save CTA form must be rendered");
-		expect(form.getAttribute("action")).toBe("/save");
-		expect(form.getAttribute("method")?.toLowerCase()).toBe("get");
-		expect(requireInput(form, "url").getAttribute("value")).toBe(
-			"https://example.com/post",
-		);
-	});
-
-	it("includes utm_* hidden inputs on the Save CTA form", () => {
+	it("renders each action as an anchor with name and href from the model", () => {
 		const doc = render({
 			...baseInput,
-			utmParams: [
-				["utm_source", "medium"],
-				["utm_campaign", "spring"],
+			actions: [{ name: "Save to My Queue", href: "/save?url=x" }],
+		});
+
+		const links = doc.querySelectorAll("[data-test-view-cta-action]");
+		expect(links.length).toBe(1);
+		const link = links[0];
+		assert(link, "cta action link must be rendered");
+		expect(link.tagName).toBe("A");
+		expect(link.getAttribute("href")).toBe("/save?url=x");
+		expect(link.textContent).toBe("Save to My Queue");
+	});
+
+	it("renders a 'Read in your queue' action when the model points to /queue/:id/read", () => {
+		const doc = render({
+			...baseInput,
+			actions: [
+				{ name: "Read in your queue", href: "/queue/abc123/read" },
 			],
 		});
 
-		const form = doc.querySelector("[data-test-view-save]");
-		assert(form, "save CTA form must be rendered");
-		expect(requireInput(form, "utm_source").getAttribute("value")).toBe(
-			"medium",
-		);
-		expect(requireInput(form, "utm_campaign").getAttribute("value")).toBe(
-			"spring",
-		);
+		const link = doc.querySelector("[data-test-view-cta-action]");
+		assert(link, "cta action link must be rendered");
+		expect(link.getAttribute("href")).toBe("/queue/abc123/read");
+		expect(link.textContent).toBe("Read in your queue");
 	});
 
-	it("does not include utm inputs when none are provided", () => {
-		const doc = render();
+	it("renders multiple actions when the model has more than one", () => {
+		const doc = render({
+			...baseInput,
+			actions: [
+				{ name: "Read in your queue", href: "/queue/abc/read" },
+				{ name: "Save to My Queue", href: "/save?url=x" },
+			],
+		});
 
-		const form = doc.querySelector("[data-test-view-save]");
-		assert(form, "save CTA form must be rendered");
-		expect(form.querySelectorAll('input[type="hidden"]').length).toBe(1);
+		const links = doc.querySelectorAll("[data-test-view-cta-action]");
+		expect(links.length).toBe(2);
+		expect(links[0]?.getAttribute("href")).toBe("/queue/abc/read");
+		expect(links[1]?.getAttribute("href")).toBe("/save?url=x");
 	});
 
 	it("emits OG metadata using the article title and excerpt", () => {
@@ -114,7 +124,9 @@ describe("ViewPage", () => {
 		).toBe("article");
 		expect(
 			doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
-		).toBe(`https://readplace.com/view/${encodeURIComponent("https://example.com/post")}`);
+		).toBe(
+			`https://readplace.com/view/${encodeURIComponent("https://example.com/post")}`,
+		);
 	});
 
 	it("falls back to the Readplace default images when article has no imageUrl", () => {
@@ -193,13 +205,13 @@ describe("ViewPage", () => {
 		).toBe(true);
 	});
 
-	it("renders the no-content fallback while still showing the Save CTA when content is undefined", () => {
+	it("renders the no-content fallback while still showing the CTA action when content is undefined", () => {
 		const doc = render({ ...baseInput, content: undefined });
 
 		const fallback = doc.querySelector("[data-test-no-content]");
 		assert(fallback, "no-content fallback must be rendered");
-		const form = doc.querySelector("[data-test-view-save]");
-		assert(form, "save CTA must still be rendered without content");
+		const link = doc.querySelector("[data-test-view-cta-action]");
+		assert(link, "cta action must still be rendered without content");
 	});
 
 	it("renders the prime form always and toggles data-auto-submit via needsPriming", () => {
@@ -215,7 +227,10 @@ describe("ViewPage", () => {
 
 		const idle = render({ ...baseInput, needsPriming: false });
 		const formIdle = idle.querySelector("[data-test-view-prime]");
-		assert(formIdle, "prime form must be rendered even when priming is not needed");
+		assert(
+			formIdle,
+			"prime form must be rendered even when priming is not needed",
+		);
 		expect(formIdle.hasAttribute("data-auto-submit")).toBe(false);
 	});
 });

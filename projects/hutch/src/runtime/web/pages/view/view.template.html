@@ -4,12 +4,9 @@
       </article>
     </main>
     <aside class="view__cta" data-test-view-cta>
-      <form class="view__save-form" method="GET" action="/save" data-test-view-save>
-        <input type="hidden" name="url" value="{{articleUrl}}">
-        {{#each utmParams}}<input type="hidden" name="{{key}}" value="{{value}}">
-        {{/each}}
-        <button type="submit" class="view__save-btn">Save to My Queue</button>
-      </form>
+      {{#each actions}}
+      <a class="view__cta-btn" href="{{href}}" data-test-view-cta-action>{{name}}</a>
+      {{/each}}
     </aside>
     <form method="POST" action="/view/prime" data-test-view-prime{{#if needsPriming}} data-auto-submit{{/if}} hidden>
       <input type="hidden" name="url" value="{{articleUrl}}">

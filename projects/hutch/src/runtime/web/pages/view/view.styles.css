@@ -17,13 +17,12 @@
   z-index: 10;
 }
 
-.view__save-form {
+.view__cta-btn {
+  display: block;
+  box-sizing: border-box;
   width: 100%;
   max-width: 680px;
-}
-
-.view__save-btn {
-  width: 100%;
+  margin: 0 auto;
   padding: 0.875rem 1.25rem;
   font-size: 1rem;
   font-weight: 600;
@@ -31,13 +30,15 @@
   background: var(--color-brand);
   border: none;
   border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.view__save-btn:hover {
+.view__cta-btn:hover {
   filter: brightness(1.05);
 }
 
-.view__save-btn:active {
+.view__cta-btn:active {
   filter: brightness(0.95);
 }

@@ -16,7 +16,7 @@ import type { FindCachedSummary } from "../../../providers/article-summary/artic
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
-import { ViewPage } from "./view.component";
+import { ViewPage, type ViewAction } from "./view.component";
 
 const ViewUrlSchema = z.url();
 const PrimeBodySchema = z.object({ url: z.url() });
@@ -145,13 +145,28 @@ export function initViewRoutes(deps: ViewDependencies): Router {
 		const summary = await deps.findCachedSummary(articleUrl);
 		const utmParams = collectUtmParams(req.query);
 
+		const actions: ViewAction[] =
+			cached && req.userId
+				? [
+						{
+							name: "Read in your queue",
+							href: `/queue/${cached.id}/read`,
+						},
+					]
+				: [
+						{
+							name: "Save to My Queue",
+							href: `/save?${new URLSearchParams([["url", articleUrl], ...utmParams]).toString()}`,
+						},
+					];
+
 		const html = ViewPage({
 			articleUrl,
 			metadata,
 			estimatedReadTime,
 			content,
 			summary,
-			utmParams,
+			actions,
 			needsPriming: !cached,
 		}).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);

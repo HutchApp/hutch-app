@@ -22,13 +22,18 @@ const VIEW_TEMPLATE = readFileSync(
 	"utf-8",
 );
 
+export interface ViewAction {
+	name: string;
+	href: string;
+}
+
 export interface ViewPageInput {
 	articleUrl: string;
 	metadata: ArticleMetadata;
 	estimatedReadTime: Minutes;
 	content?: string;
 	summary?: string | null;
-	utmParams: [string, string][];
+	actions: ViewAction[];
 	needsPriming: boolean;
 }
 
@@ -45,7 +50,7 @@ export function ViewPage(input: ViewPageInput): Component {
 	const content = render(VIEW_TEMPLATE, {
 		innerContent,
 		articleUrl: input.articleUrl,
-		utmParams: input.utmParams.map(([key, value]) => ({ key, value })),
+		actions: input.actions,
 		needsPriming: input.needsPriming,
 	});
 
