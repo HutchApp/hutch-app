@@ -15,6 +15,7 @@ import type {
 	FindArticleFreshness,
 	FindArticlesByUser,
 	SaveArticle,
+	SaveArticleGlobally,
 	UpdateArticleStatus,
 } from "./article-store.types";
 import type { ContentProvider } from "./read-article-content";
@@ -58,6 +59,7 @@ function toSavedArticle(article: GlobalArticle, userArticle: UserArticle): Saved
 
 export function initInMemoryArticleStore(): {
 	saveArticle: SaveArticle;
+	saveArticleGlobally: SaveArticleGlobally;
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
 	findArticleFreshness: FindArticleFreshness;
@@ -81,7 +83,7 @@ export function initInMemoryArticleStore(): {
 		return undefined;
 	}
 
-	const saveArticle: SaveArticle = async (params) => {
+	const saveArticleGlobally: SaveArticleGlobally = async (params) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 		const routeId = ReaderArticleHashId.from(params.url);
 
@@ -94,6 +96,15 @@ export function initInMemoryArticleStore(): {
 				estimatedReadTime: params.estimatedReadTime,
 			});
 		}
+	};
+
+	const saveArticle: SaveArticle = async (params) => {
+		await saveArticleGlobally({
+			url: params.url,
+			metadata: params.metadata,
+			estimatedReadTime: params.estimatedReadTime,
+		});
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 
 		const uaKey = userArticleKey(params.userId, articleResourceUniqueId.value);
 		if (!userArticles.has(uaKey)) {
@@ -225,6 +236,7 @@ export function initInMemoryArticleStore(): {
 
 	return {
 		saveArticle,
+		saveArticleGlobally,
 		findArticleById,
 		findArticleByUrl,
 		findArticleFreshness,

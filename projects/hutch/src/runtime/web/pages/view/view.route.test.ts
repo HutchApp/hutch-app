@@ -399,4 +399,58 @@ describe("View routes", () => {
 			).toBe("<p>Fresh body.</p>");
 		});
 	});
+
+	describe("Summary pipeline trigger", () => {
+		it("dispatches SaveLinkCommand after a successful fresh parse so the summary pipeline runs", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const publishLinkSaved = jest.fn(async () => {});
+			const { app, articleStore } = createTestApp({ parseArticle, publishLinkSaved });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			expect(response.status).toBe(200);
+			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
+			expect(publishLinkSaved).toHaveBeenCalledWith({ url: ARTICLE_URL, userId: "" });
+			const cached = await articleStore.findArticleByUrl(ARTICLE_URL);
+			expect(cached?.metadata.title).toBe("Hello World");
+		});
+
+		it("does not dispatch SaveLinkCommand when the article is already cached (summary already generated or in flight)", async () => {
+			const parseSpy = jest.fn(
+				async (_url: string): Promise<ParseArticleResult> => buildParseResult(),
+			);
+			const publishLinkSaved = jest.fn(async () => {});
+			const { app, articleStore } = createTestApp({
+				parseArticle: parseSpy,
+				publishLinkSaved,
+			});
+			await articleStore.saveArticle({
+				userId: UserIdSchema.parse("seed-user"),
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Cached",
+					siteName: "example.com",
+					excerpt: "Cached excerpt.",
+					wordCount: 200,
+				},
+				estimatedReadTime: MinutesSchema.parse(2),
+			});
+			await articleStore.writeContent({ url: ARTICLE_URL, content: "<p>Cached body.</p>" });
+			publishLinkSaved.mockClear();
+
+			await request(app).get(`/view/${ENCODED}`);
+
+			expect(publishLinkSaved).not.toHaveBeenCalled();
+		});
+
+		it("does not dispatch SaveLinkCommand when parsing fails", async () => {
+			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
+			const publishLinkSaved = jest.fn(async () => {});
+			const { app } = createTestApp({ parseArticle, publishLinkSaved });
+
+			await request(app).get(`/view/${ENCODED}`);
+
+			expect(publishLinkSaved).not.toHaveBeenCalled();
+		});
+	});
 });

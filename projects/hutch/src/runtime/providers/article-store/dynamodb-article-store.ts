@@ -22,6 +22,7 @@ import type {
 	FindArticleFreshness,
 	FindArticlesByUser,
 	SaveArticle,
+	SaveArticleGlobally,
 	UpdateArticleStatus,
 } from "./article-store.types";
 import type { ContentProvider } from "./read-article-content";
@@ -90,6 +91,7 @@ export function initDynamoDbArticleStore(deps: {
 	userArticlesTableName: string;
 }): {
 	saveArticle: SaveArticle;
+	saveArticleGlobally: SaveArticleGlobally;
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
 	findArticlesByUser: FindArticlesByUser;
@@ -126,18 +128,17 @@ export function initDynamoDbArticleStore(deps: {
 		return UserArticleRow.parse(result.Item);
 	}
 
-	const saveArticle: SaveArticle = async (params) => {
+	const ignoreDuplicate = (error: unknown) => {
+		if (error instanceof Error && error.name === "ConditionalCheckFailedException") return;
+		throw error;
+	};
+
+	const saveArticleGlobally: SaveArticleGlobally = async (params) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 		const routeId = ReaderArticleHashId.from(params.url);
-		const now = new Date();
 
-		const ignoreDuplicate = (error: unknown) => {
-			if (error instanceof Error && error.name === "ConditionalCheckFailedException") return;
-			throw error;
-		};
-
-		await Promise.all([
-			client.send(
+		await client
+			.send(
 				new PutCommand({
 					TableName: tableName,
 					Item: {
@@ -154,7 +155,20 @@ export function initDynamoDbArticleStore(deps: {
 					ConditionExpression: "attribute_not_exists(#url)",
 					ExpressionAttributeNames: { "#url": "url" },
 				}),
-			).catch(ignoreDuplicate),
+			)
+			.catch(ignoreDuplicate);
+	};
+
+	const saveArticle: SaveArticle = async (params) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const now = new Date();
+
+		await Promise.all([
+			saveArticleGlobally({
+				url: params.url,
+				metadata: params.metadata,
+				estimatedReadTime: params.estimatedReadTime,
+			}),
 			client.send(
 				new PutCommand({
 					TableName: userArticlesTableName,
@@ -417,6 +431,7 @@ export function initDynamoDbArticleStore(deps: {
 
 	return {
 		saveArticle,
+		saveArticleGlobally,
 		findArticleById,
 		findArticleByUrl,
 		findArticlesByUser,

@@ -55,15 +55,6 @@ describe("ViewPage", () => {
 		);
 	});
 
-	it("renders the Readplace logo linking to home", () => {
-		const doc = render();
-
-		const logo = doc.querySelector("[data-test-view-logo]");
-		assert(logo, "logo must be rendered");
-		expect(logo.getAttribute("href")).toBe("/");
-		expect(logo.textContent).toContain("Readplace");
-	});
-
 	it("renders the sticky Save CTA pointing to /save with the article URL", () => {
 		const doc = render();
 

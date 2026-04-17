@@ -7,9 +7,13 @@ import type {
 } from "../../../domain/article/article.types";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
-import type { FindArticleByUrl } from "../../../providers/article-store/article-store.types";
+import type {
+	FindArticleByUrl,
+	SaveArticleGlobally,
+} from "../../../providers/article-store/article-store.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
 import { ViewPage } from "./view.component";
@@ -21,6 +25,8 @@ interface ViewDependencies {
 	readArticleContent: ReadArticleContent;
 	parseArticle: ParseArticle;
 	findCachedSummary: FindCachedSummary;
+	saveArticleGlobally: SaveArticleGlobally;
+	publishLinkSaved: PublishLinkSaved;
 }
 
 function renderError(req: Request, res: Response) {
@@ -90,6 +96,21 @@ export function initViewRoutes(deps: ViewDependencies): Router {
 				};
 				estimatedReadTime = calculateReadTime(parsed.wordCount);
 				content = parsed.content;
+
+				// Populate the global article store and dispatch SaveLinkCommand so
+				// the downstream save-link / summary pipeline caches content and
+				// generates a TL;DR. Uses the viewer's userId when authenticated,
+				// empty string for anonymous visits (the downstream handlers key
+				// off url only).
+				await deps.saveArticleGlobally({
+					url: articleUrl,
+					metadata,
+					estimatedReadTime,
+				});
+				await deps.publishLinkSaved({
+					url: articleUrl,
+					userId: req.userId ?? "",
+				});
 			}
 		}
 

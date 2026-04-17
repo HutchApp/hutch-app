@@ -33,6 +33,16 @@ export interface FindArticlesResult {
 
 export type SaveArticle = (params: SaveArticleParams) => Promise<SavedArticle>;
 
+export interface SaveArticleGloballyParams {
+	url: string;
+	metadata: SavedArticle["metadata"];
+	estimatedReadTime: SavedArticle["estimatedReadTime"];
+}
+
+export type SaveArticleGlobally = (
+	params: SaveArticleGloballyParams,
+) => Promise<void>;
+
 export type FindArticleById = (
 	id: ReaderArticleHashId,
 	userId: UserId,

@@ -26,6 +26,7 @@ import type {
 	FindArticleByUrl,
 	FindArticlesByUser,
 	SaveArticle,
+	SaveArticleGlobally,
 	UpdateArticleStatus,
 } from "./providers/article-store/article-store.types";
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
@@ -90,6 +91,7 @@ interface AppDependencies {
 	findArticleByUrl: FindArticleByUrl;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;
+	saveArticleGlobally: SaveArticleGlobally;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
 	sendEmail: SendEmail;
@@ -355,6 +357,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		readArticleContent: deps.readArticleContent,
 		parseArticle: deps.parseArticle,
 		findCachedSummary: deps.findCachedSummary,
+		saveArticleGlobally: deps.saveArticleGlobally,
+		publishLinkSaved: deps.publishLinkSaved,
 	});
 	app.use("/view", viewRouter);
 
