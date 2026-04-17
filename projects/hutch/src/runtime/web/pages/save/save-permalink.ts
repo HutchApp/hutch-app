@@ -12,6 +12,8 @@ type UtmParams = {
 const PRESETS = new Map<string, UtmParams>([
 	["medium-top", { utmSource: "fagnerbrack.com", utmContent: "top" }],
 	["medium-bottom", { utmSource: "fagnerbrack.com", utmContent: "bottom" }],
+	["bdd-top", { utmSource: "beyond-the-demo", utmContent: "top" }],
+	["bdd-bottom", { utmSource: "beyond-the-demo", utmContent: "bottom" }],
 ]);
 
 export function buildSavePermalink(params: {
