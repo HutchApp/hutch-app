@@ -42,39 +42,6 @@ jobs:
 
       - run: pnpm check
 
-      # Re-run the web-embed visual tests with --update-snapshots so CI-rendered
-      # linux pixels land in the snapshot dir, then upload them as an artifact
-      # for visual comparison against the committed darwin baselines.
-      - name: Capture web-embed CI screenshots
-        if: always()
-        working-directory: projects/web-embed
-        env:
-          HEADLESS: 'true'
-          E2E_PORT: '3700'
-        run: |
-          mkdir -p ci-screenshots
-          # Delete committed linux baselines so --update-snapshots regenerates
-          # them with the fresh CI-rendered pixels. Without this, Playwright
-          # sees the tests pass within the 10% tolerance and skips the update,
-          # leaving the uploaded artifact byte-identical to the committed file.
-          rm -f src/e2e/visual.e2e-local.ts-snapshots/*-chromium-linux.png
-          pnpm exec playwright test \
-            --config playwright.config.local-dev.ts \
-            --update-snapshots \
-            --reporter=list || true
-          cp src/e2e/visual.e2e-local.ts-snapshots/*-chromium-linux.png ci-screenshots/
-
-      - name: Upload web-embed CI screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-embed-ci-screenshots
-          path: |
-            projects/web-embed/ci-screenshots/
-            projects/web-embed/test-results/
-          retention-days: 14
-          if-no-files-found: warn
-
   # Only detect and deploy on pushes to main (not on PRs)
   detect-projects:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -92,9 +59,6 @@ jobs:
       platform-affected: ${{ steps.detect.outputs.platform-affected }}
       non-platform-projects: ${{ steps.detect.outputs.non-platform-projects }}
       has-non-platform: ${{ steps.detect.outputs.has-non-platform }}
-      parallel-projects: ${{ steps.detect.outputs.parallel-projects }}
-      has-parallel: ${{ steps.detect.outputs.has-parallel }}
-      web-embed-affected: ${{ steps.detect.outputs.web-embed-affected }}
       ff-affected: ${{ steps.detect.outputs.ff-affected }}
       chrome-affected: ${{ steps.detect.outputs.chrome-affected }}
     steps:
@@ -163,18 +127,10 @@ jobs:
           echo "Final deploy list: $PROJECTS"
           echo "Non-platform: $NON_PLATFORM"
 
-          # web-embed depends on hutch:deploy-infra (Nx dependency), so it must
-          # deploy AFTER hutch, not in parallel. Exclude it from the parallel matrix
-          # and give it a separate sequential job.
-          PARALLEL=$(echo "$NON_PLATFORM" | jq -c '[.[] | select(. != "web-embed")]')
-
           # Set outputs for downstream jobs to use in their `if:` conditions
           echo "platform-affected=$(echo "$PROJECTS" | jq -e 'index("platform")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "non-platform-projects=$NON_PLATFORM" >> "$GITHUB_OUTPUT"
           echo "has-non-platform=$(echo "$NON_PLATFORM" | jq -e 'length > 0' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "parallel-projects=$PARALLEL" >> "$GITHUB_OUTPUT"
-          echo "has-parallel=$(echo "$PARALLEL" | jq -e 'length > 0' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "web-embed-affected=$(echo "$NON_PLATFORM" | jq -e 'index("web-embed")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "ff-affected=$(echo "$PROJECTS" | jq -e 'index("firefox-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "chrome-affected=$(echo "$PROJECTS" | jq -e 'index("chrome-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
@@ -188,8 +144,9 @@ jobs:
     with:
       project: platform
 
-  # Deploy non-platform projects in parallel (excluding web-embed, which has
-  # an Nx dependency on hutch:deploy-infra and must run after hutch finishes)
+  # Deploy all non-platform projects in parallel using a dynamic matrix
+  # Each project goes through staging → post-deploy verification → prod
+  # via the reusable project-deployment.yaml workflow
   pipeline:
     name: ${{ matrix.project }}
     if: >-
@@ -197,40 +154,21 @@ jobs:
       && needs.all-tests.result == 'success'
       && needs.detect-projects.result == 'success'
       && needs.deploy-platform.result != 'failure'
-      && needs.detect-projects.outputs.has-parallel == 'true'
+      && needs.detect-projects.outputs.has-non-platform == 'true'
     needs: [all-tests, detect-projects, deploy-platform]
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.detect-projects.outputs.parallel-projects) }}
+        project: ${{ fromJSON(needs.detect-projects.outputs.non-platform-projects) }}
     uses: ./.github/workflows/project-deployment.yaml
     secrets: inherit
     with:
       project: ${{ matrix.project }}
 
-  # web-embed depends on hutch:deploy-infra (Nx dependency graph). Running it
-  # in the parallel matrix causes two concurrent `pulumi up` on the hutch stack
-  # — one from hutch's own job and one from Nx resolving web-embed's dependency.
-  # Deploying it after the pipeline avoids the Pulumi lock conflict.
-  deploy-web-embed:
-    name: web-embed
-    if: >-
-      always()
-      && needs.all-tests.result == 'success'
-      && needs.detect-projects.result == 'success'
-      && needs.deploy-platform.result != 'failure'
-      && needs.pipeline.result != 'failure'
-      && needs.detect-projects.outputs.web-embed-affected == 'true'
-    needs: [all-tests, detect-projects, deploy-platform, pipeline]
-    uses: ./.github/workflows/project-deployment.yaml
-    secrets: inherit
-    with:
-      project: web-embed
-
   # Submit Firefox extension to AMO for signing (runs after pipeline deploys infra)
   ff-extension-publish:
     if: needs.detect-projects.outputs.ff-affected == 'true'
-    needs: [detect-projects, pipeline, deploy-web-embed]
+    needs: [detect-projects, pipeline]
     permissions:
       contents: write
     uses: ./.github/workflows/submit-ff-extension-for-signing.yml
@@ -239,7 +177,7 @@ jobs:
   # Publish Chrome extension to Chrome Web Store
   chrome-extension-publish:
     if: needs.detect-projects.outputs.chrome-affected == 'true'
-    needs: [detect-projects, pipeline, deploy-web-embed]
+    needs: [detect-projects, pipeline]
     permissions:
       contents: write
     uses: ./.github/workflows/publish-chrome-extension.yml

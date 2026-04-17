@@ -91,7 +91,7 @@ E2E tests run as part of `pnpm check` via `@packages/test-phase-runner`. Each pr
 
 Only projects with a `deploy-infra` target have a staging e2e config. After `project-deployment.yaml` deploys to staging, it runs the project's `post-deploy` target, which reads the deployed URL from `pulumi stack output` and runs `STAGING_URL=$URL pnpm test:e2e:staging`. Results land in `test-results-staging/` and the workflow uploads that directory as a GitHub Actions artifact.
 
-The staging Playwright config sets `webServer: undefined` (Playwright is pointed at a remote instance, not launching one) and uses a longer timeout and one retry. hutch has one; web-embed has none because it isn't deployed as a standalone project.
+The staging Playwright config sets `webServer: undefined` (Playwright is pointed at a remote instance, not launching one) and uses a longer timeout and one retry.
 
 ### Why `test-phase-runner`, not `@nx/playwright`
 

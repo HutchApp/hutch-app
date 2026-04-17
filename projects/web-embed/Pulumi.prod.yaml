@@ -1,6 +1,0 @@
-config:
-  aws:region: ap-southeast-2
-  aws:allowedAccountIds:
-    - '278728209435'
-  web-embed:hutchStack: organization/hutch/prod
-encryptionsalt: v1:0b2pc0zzxb4=:v1:I4FxmGrqoAcAbLSM:Ta9BPJ+1zkdRynPzSD/Sh1sjikVLiQ==

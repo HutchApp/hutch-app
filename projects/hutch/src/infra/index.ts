@@ -290,6 +290,4 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 export const apiUrl: pulumi.Input<string> = canonicalDomain ? `https://${canonicalDomain}` : gateway.apiUrl;
 export const functionName = lambda.functionName;
 export const staticBaseUrl = staticAssets.baseUrl;
-export const apiGatewayId = gateway.apiGatewayId;
-export const apiGatewayExecutionArn = gateway.apiGatewayExecutionArn;
 export const _dependencies = [gateway.defaultRoute];

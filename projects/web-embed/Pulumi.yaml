@@ -1,5 +1,0 @@
-name: web-embed
-runtime:
-  name: nodejs
-  options:
-    typescript: true
