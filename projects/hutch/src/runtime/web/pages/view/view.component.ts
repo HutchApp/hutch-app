@@ -70,7 +70,7 @@ export function ViewPage(input: ViewPageInput): Component {
 		seo: {
 			title: `${input.metadata.title} Summary | Readplace`,
 			description,
-			canonicalUrl: input.articleUrl,
+			canonicalUrl: `/view/${encodeURIComponent(input.articleUrl)}`,
 			ogType: "article",
 			ogImage,
 			ogImageAlt,

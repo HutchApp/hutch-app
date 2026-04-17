@@ -122,7 +122,7 @@ describe("ViewPage", () => {
 		).toBe("article");
 		expect(
 			doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
-		).toBe("https://example.com/post");
+		).toBe(`https://readplace.com/view/${encodeURIComponent("https://example.com/post")}`);
 	});
 
 	it("falls back to the Readplace default images when article has no imageUrl", () => {

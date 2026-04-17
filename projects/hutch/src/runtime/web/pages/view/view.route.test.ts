@@ -150,7 +150,7 @@ describe("View routes", () => {
 			).toBe("article");
 			expect(
 				doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
-			).toBe(ARTICLE_URL);
+			).toBe(`https://readplace.com/view/${ENCODED}`);
 		});
 
 		it("falls back to the Readplace default images when article has no imageUrl", async () => {
