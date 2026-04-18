@@ -3,6 +3,10 @@ import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { S3Client } from "@aws-sdk/client-s3";
 import { SQSClient } from "@aws-sdk/client-sqs";
 import { consoleLogger } from "@packages/hutch-logger";
+import {
+	GenerateSummaryCommand,
+} from "@packages/hutch-infra-components";
+import { initSqsCommandDispatcher } from "@packages/hutch-infra-components/runtime";
 import { requireEnv } from "../require-env";
 import { initFindArticleContent } from "../save-link/find-article-content";
 import { initAnonymousLinkSavedHandler } from "../save-link/anonymous-link-saved-handler";
@@ -20,9 +24,14 @@ const { findArticleContent } = initFindArticleContent({
 	tableName: articlesTable,
 });
 
-export const handler = initAnonymousLinkSavedHandler({
+const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
 	sqsClient,
 	queueUrl: generateSummaryQueueUrl,
+	command: GenerateSummaryCommand,
+});
+
+export const handler = initAnonymousLinkSavedHandler({
+	dispatchGenerateSummary,
 	findArticleContent,
 	logger: consoleLogger,
 });

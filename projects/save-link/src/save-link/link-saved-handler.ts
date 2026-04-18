@@ -1,16 +1,16 @@
 import type { SQSHandler } from "aws-lambda";
-import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { HutchLogger } from "@packages/hutch-logger";
+import type { DispatchCommand } from "@packages/hutch-infra-components/runtime";
+import type { GenerateSummaryCommand } from "@packages/hutch-infra-components";
 import { LinkSavedEvent } from "./index";
 import type { FindArticleContent } from "./find-article-content";
 
 export function initLinkSavedHandler(deps: {
-	sqsClient: { send: (command: SendMessageCommand) => Promise<unknown> };
-	queueUrl: string;
+	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
 	findArticleContent: FindArticleContent;
 	logger: HutchLogger;
 }): SQSHandler {
-	const { sqsClient, queueUrl, findArticleContent, logger } = deps;
+	const { dispatchGenerateSummary, findArticleContent, logger } = deps;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -25,12 +25,7 @@ export function initLinkSavedHandler(deps: {
 				continue;
 			}
 
-			await sqsClient.send(
-				new SendMessageCommand({
-					QueueUrl: queueUrl,
-					MessageBody: JSON.stringify({ url: detail.url }),
-				}),
-			);
+			await dispatchGenerateSummary({ url: detail.url });
 
 			logger.info("[LinkSaved] dispatched GenerateGlobalSummary", { url: detail.url });
 		}

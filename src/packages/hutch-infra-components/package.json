@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-eventbridge": "3.1001.0",
+    "@aws-sdk/client-sqs": "3.1001.0",
     "zod": "4.1.13"
   },
   "devDependencies": {
