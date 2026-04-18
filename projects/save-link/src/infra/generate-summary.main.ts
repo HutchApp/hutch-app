@@ -1,5 +1,4 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { S3Client } from "@aws-sdk/client-s3";
 import OpenAI from "openai";
 import { consoleLogger } from "@packages/hutch-logger";
@@ -17,7 +16,7 @@ const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const deepseekApiKey = requireEnv("DEEPSEEK_API_KEY");
 const eventBusName = requireEnv("EVENT_BUS_NAME");
 
-const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const dynamoClient = createDynamoDocumentClient();
 const s3Client = new S3Client({});
 const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com", timeout: 60_000 });
 

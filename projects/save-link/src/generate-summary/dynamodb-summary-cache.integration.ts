@@ -1,8 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import {
+	createDynamoDocumentClient,
+	defineDynamoTable,
+	dynamoField,
+} from "@packages/hutch-storage-client";
+import { z } from "zod";
 import { initDynamoDbSummaryCache } from "./dynamodb-summary-cache";
 import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
 
@@ -12,9 +16,14 @@ import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id
 const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
 assert(tableName);
 
+const SeedRow = z.object({
+	url: z.string(),
+	summary: dynamoField(z.string()),
+});
+
 describe("dynamoDbSummaryCache (integration)", () => {
 	it("returns empty string when no item exists", async () => {
-		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const client = createDynamoDocumentClient();
 		const { findCachedSummary } = initDynamoDbSummaryCache({ client, tableName });
 
 		const nonExistentUrl = `https://example.com/${randomUUID()}`;
@@ -27,7 +36,7 @@ describe("dynamoDbSummaryCache (integration)", () => {
 		const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
 		assert(tableName);
 
-		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const client = createDynamoDocumentClient();
 		const { findCachedSummary, saveCachedSummary } = initDynamoDbSummaryCache({ client, tableName });
 
 		const url = `https://example.com/${randomUUID()}`;
@@ -42,14 +51,12 @@ describe("dynamoDbSummaryCache (integration)", () => {
 		const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
 		assert(tableName);
 
-		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const client = createDynamoDocumentClient();
+		const seedTable = defineDynamoTable({ client, tableName, schema: SeedRow });
 		const { findCachedSummary } = initDynamoDbSummaryCache({ client, tableName });
 
 		const url = `https://example.com/${randomUUID()}`;
-		await client.send(new PutCommand({
-			TableName: tableName,
-			Item: { url: ArticleResourceUniqueId.parse(url).value },
-		}));
+		await seedTable.put({ Item: { url: ArticleResourceUniqueId.parse(url).value } });
 
 		const result = await findCachedSummary(url);
 		assert.equal(result, "");
@@ -59,7 +66,7 @@ describe("dynamoDbSummaryCache (integration)", () => {
 		const tableName = process.env.DYNAMODB_ARTICLES_TABLE;
 		assert(tableName);
 
-		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const client = createDynamoDocumentClient();
 		const { findCachedSummary, saveCachedSummary } = initDynamoDbSummaryCache({ client, tableName });
 
 		const canonical = `https://example.com/${randomUUID()}`;

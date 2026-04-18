@@ -1,5 +1,4 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { consoleLogger } from "@packages/hutch-logger";
 import { requireEnv } from "../require-env";
 import { initUpdateFetchTimestamp } from "../save-link/update-fetch-timestamp";
@@ -7,7 +6,7 @@ import { initUpdateFetchTimestampHandler } from "../save-link/update-fetch-times
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 
-const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const client = createDynamoDocumentClient();
 
 const { updateFetchTimestamp } = initUpdateFetchTimestamp({
 	client,

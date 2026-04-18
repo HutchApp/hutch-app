@@ -1,35 +1,54 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
-import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+	type DynamoDBDocumentClient,
+	defineDynamoTable,
+	dynamoField,
+} from "@packages/hutch-storage-client";
+import { z } from "zod";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { RefreshArticleContent } from "./refresh-article-content-handler";
+
+const ArticleRow = z.object({
+	url: z.string(),
+	title: dynamoField(z.string()),
+	siteName: dynamoField(z.string()),
+	excerpt: dynamoField(z.string()),
+	wordCount: dynamoField(z.number()),
+	estimatedReadTime: dynamoField(z.number()),
+	contentFetchedAt: dynamoField(z.string()),
+	etag: dynamoField(z.string()),
+	lastModified: dynamoField(z.string()),
+	imageUrl: dynamoField(z.string()),
+});
 
 export function initRefreshArticleContent(deps: {
 	client: DynamoDBDocumentClient;
 	tableName: string;
 }): { refreshArticleContent: RefreshArticleContent } {
-	const { client, tableName } = deps;
+	const table = defineDynamoTable({
+		client: deps.client,
+		tableName: deps.tableName,
+		schema: ArticleRow,
+	});
 
 	const refreshArticleContent: RefreshArticleContent = async (params) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
-		await client.send(
-			new UpdateCommand({
-				TableName: tableName,
-				Key: { url: articleResourceUniqueId.value },
-				UpdateExpression: "SET title = :title, siteName = :siteName, excerpt = :excerpt, wordCount = :wordCount, estimatedReadTime = :ert, contentFetchedAt = :cfa, etag = :etag, lastModified = :lm, imageUrl = :img REMOVE summary, summaryInputTokens, summaryOutputTokens",
-				ExpressionAttributeValues: {
-					":title": params.metadata.title,
-					":siteName": params.metadata.siteName,
-					":excerpt": params.metadata.excerpt,
-					":wordCount": params.metadata.wordCount,
-					":ert": params.estimatedReadTime,
-					":cfa": params.contentFetchedAt,
-					":etag": params.etag ?? null,
-					":lm": params.lastModified ?? null,
-					":img": params.metadata.imageUrl ?? null,
-				},
-			}),
-		);
+		await table.update({
+			Key: { url: articleResourceUniqueId.value },
+			UpdateExpression:
+				"SET title = :title, siteName = :siteName, excerpt = :excerpt, wordCount = :wordCount, estimatedReadTime = :ert, contentFetchedAt = :cfa, etag = :etag, lastModified = :lm, imageUrl = :img REMOVE summary, summaryInputTokens, summaryOutputTokens",
+			ExpressionAttributeValues: {
+				":title": params.metadata.title,
+				":siteName": params.metadata.siteName,
+				":excerpt": params.metadata.excerpt,
+				":wordCount": params.metadata.wordCount,
+				":ert": params.estimatedReadTime,
+				":cfa": params.contentFetchedAt,
+				":etag": params.etag ?? null,
+				":lm": params.lastModified ?? null,
+				":img": params.metadata.imageUrl ?? null,
+			},
+		});
 	};
 
 	return { refreshArticleContent };

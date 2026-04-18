@@ -1,5 +1,4 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { consoleLogger } from "@packages/hutch-logger";
 import { requireEnv } from "../require-env";
 import { initRefreshArticleContent } from "../save-link/refresh-article-content";
@@ -7,7 +6,7 @@ import { initRefreshArticleContentHandler } from "../save-link/refresh-article-c
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 
-const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const client = createDynamoDocumentClient();
 
 const { refreshArticleContent } = initRefreshArticleContent({
 	client,

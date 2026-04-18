@@ -1,8 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import {
+	createDynamoDocumentClient,
+	defineDynamoTable,
+	dynamoField,
+} from "@packages/hutch-storage-client";
+import { z } from "zod";
 import { initFindArticleContent } from "./find-article-content";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 
@@ -20,9 +24,15 @@ const stubS3Client = {
 	}),
 };
 
+const SeedRow = z.object({
+	url: z.string(),
+	contentLocation: dynamoField(z.string()),
+});
+
 describe("findArticleContent (integration)", () => {
 	it("retrieves content from S3 using contentLocation stored in DynamoDB", async () => {
-		const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const dynamoClient = createDynamoDocumentClient();
+		const seedTable = defineDynamoTable({ client: dynamoClient, tableName, schema: SeedRow });
 
 		const { findArticleContent } = initFindArticleContent({
 			dynamoClient,
@@ -33,15 +43,12 @@ describe("findArticleContent (integration)", () => {
 		const uniqueUrl = `https://example.com/${randomUUID()}`;
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(uniqueUrl);
 
-		await dynamoClient.send(
-			new PutCommand({
-				TableName: tableName,
-				Item: {
-					url: articleResourceUniqueId.value,
-					contentLocation: "s3://test-bucket/content/test/content.html",
-				},
-			}),
-		);
+		await seedTable.put({
+			Item: {
+				url: articleResourceUniqueId.value,
+				contentLocation: "s3://test-bucket/content/test/content.html",
+			},
+		});
 
 		const result = await findArticleContent(uniqueUrl);
 
@@ -50,7 +57,8 @@ describe("findArticleContent (integration)", () => {
 	});
 
 	it("returns undefined when contentLocation is absent", async () => {
-		const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const dynamoClient = createDynamoDocumentClient();
+		const seedTable = defineDynamoTable({ client: dynamoClient, tableName, schema: SeedRow });
 
 		const { findArticleContent } = initFindArticleContent({
 			dynamoClient,
@@ -61,14 +69,9 @@ describe("findArticleContent (integration)", () => {
 		const uniqueUrl = `https://example.com/${randomUUID()}`;
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(uniqueUrl);
 
-		await dynamoClient.send(
-			new PutCommand({
-				TableName: tableName,
-				Item: {
-					url: articleResourceUniqueId.value,
-				},
-			}),
-		);
+		await seedTable.put({
+			Item: { url: articleResourceUniqueId.value },
+		});
 
 		const result = await findArticleContent(uniqueUrl);
 		assert.equal(result, undefined);

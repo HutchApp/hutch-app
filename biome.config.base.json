@@ -50,19 +50,7 @@
 				"**/src/runtime/providers/article-summary/dynamodb-summary-cache.test.ts",
 				"**/src/runtime/providers/oauth/dynamodb-oauth-model.ts",
 				"**/src/runtime/providers/password-reset/dynamodb-password-reset.ts",
-				"**/src/runtime/providers/email-verification/dynamodb-email-verification.ts",
-				"**/src/generate-summary/dynamodb-summary-cache.ts",
-				"**/src/generate-summary/dynamodb-summary-cache.integration.ts",
-				"**/src/save-link/update-thumbnail-url.ts",
-				"**/src/save-link/update-fetch-timestamp.ts",
-				"**/src/save-link/update-content-location.ts",
-				"**/src/save-link/refresh-article-content.ts",
-				"**/src/save-link/find-article-content.integration.ts",
-				"**/src/infra/generate-summary.main.ts",
-				"**/src/infra/save-link-command.main.ts",
-				"**/src/infra/update-fetch-timestamp.main.ts",
-				"**/src/infra/refresh-article-content.main.ts",
-				"**/src/infra/link-saved.main.ts"
+				"**/src/runtime/providers/email-verification/dynamodb-email-verification.ts"
 			],
 			"linter": {
 				"rules": {
