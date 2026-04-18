@@ -75,7 +75,7 @@ export function initExportRoutes(deps: ExportDependencies): Router {
 		res
 			.set(
 				"Content-Disposition",
-				`attachment; filename="hutch-export-${timestamp}.json"`,
+				`attachment; filename="readplace-export-${timestamp}.json"`,
 			)
 			.type("application/json")
 			.send(json);

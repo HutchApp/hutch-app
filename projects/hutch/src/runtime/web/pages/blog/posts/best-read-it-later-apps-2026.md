@@ -191,7 +191,7 @@ Omnivore was an open source read-it-later app with a loyal following. In late 20
 
 ### Do any of these apps import from Pocket?
 
-Most of them do. Readwise Reader, Instapaper, and Raindrop.io all have self-serve Pocket import built into the app. Readplace does not have a self-serve in-app importer — instead, you email your Pocket export file to [hutch+migrate@hutch-app.com](mailto:hutch+migrate@hutch-app.com) and I import it by hand within 24–48 hours. Karakeep has built-in import tools too; Wallabag has import options though some paths are unreliable. Check each app's documentation for the current import process.
+Most of them do. Readwise Reader, Instapaper, and Raindrop.io all have self-serve Pocket import built into the app. Readplace does not have a self-serve in-app importer — instead, you email your Pocket export file to [hutch+migrate@readplace.com](mailto:hutch+migrate@readplace.com) and I import it by hand within 24–48 hours. Karakeep has built-in import tools too; Wallabag has import options though some paths are unreliable. Check each app's documentation for the current import process.
 
 ### Which app has the best mobile experience?
 

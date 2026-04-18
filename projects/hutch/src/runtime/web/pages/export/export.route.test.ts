@@ -72,7 +72,7 @@ describe("Export routes", () => {
 				"application/json",
 			);
 			expect(response.headers["content-disposition"]).toMatch(
-				/^attachment; filename="hutch-export-\d{4}-\d{2}-\d{2}\.json"$/,
+				/^attachment; filename="readplace-export-\d{4}-\d{2}-\d{2}\.json"$/,
 			);
 		});
 
