@@ -13,7 +13,7 @@ import type {
 } from "../../../providers/article-store/article-store.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
-import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
+import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
 import { ViewPage, type ViewAction } from "./view.component";
@@ -26,7 +26,7 @@ interface ViewDependencies {
 	parseArticle: ParseArticle;
 	findCachedSummary: FindCachedSummary;
 	saveArticleGlobally: SaveArticleGlobally;
-	publishLinkSaved: PublishLinkSaved;
+	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 }
 
 function renderError(req: Request, res: Response) {
@@ -98,18 +98,17 @@ export function initViewRoutes(deps: ViewDependencies): Router {
 				content = parsed.content;
 
 				// Prime on first visit: an existing articles row means a prior
-				// visit already dispatched SaveLinkCommand for this URL, so skip
-				// to avoid re-triggering the crawl / S3 write / summary pipeline.
+				// visit already dispatched SaveAnonymousLinkCommand for this URL,
+				// so skip to avoid re-triggering the crawl / S3 write / summary
+				// pipeline. /view is a viewing action, not a user save, so the
+				// SaveAnonymousLinkCommand path is used regardless of auth.
 				if (!cached) {
 					await deps.saveArticleGlobally({
 						url: articleUrl,
 						metadata,
 						estimatedReadTime,
 					});
-					await deps.publishLinkSaved({
-						url: articleUrl,
-						userId: req.userId ?? "",
-					});
+					await deps.publishSaveAnonymousLink({ url: articleUrl });
 				}
 			}
 		}

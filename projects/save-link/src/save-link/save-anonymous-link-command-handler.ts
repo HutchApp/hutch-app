@@ -1,7 +1,7 @@
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle } from "@packages/crawl-article";
-import { SaveLinkCommand } from "./index";
+import { SaveAnonymousLinkCommand } from "@packages/hutch-infra-components";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
@@ -13,24 +13,22 @@ import {
 	type UpdateContentLocation,
 } from "./save-link-work";
 
-export type { PutObject, UpdateContentLocation } from "./save-link-work";
+type PublishAnonymousLinkSaved = (params: { url: string }) => Promise<void>;
 
-type PublishLinkSaved = (params: { url: string; userId: string }) => Promise<void>;
-
-export function initSaveLinkCommandHandler(deps: {
+export function initSaveAnonymousLinkCommandHandler(deps: {
 	crawlArticle: CrawlArticle;
 	parseHtml: ParseHtml;
 	putObject: PutObject;
 	putImageObject: PutImageObject;
 	updateContentLocation: UpdateContentLocation;
-	publishLinkSaved: PublishLinkSaved;
+	publishAnonymousLinkSaved: PublishAnonymousLinkSaved;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	updateThumbnailUrl: UpdateThumbnailUrl;
 	imagesCdnBaseUrl: string;
 	logger: HutchLogger;
 }): SQSHandler {
-	const { publishLinkSaved, logger } = deps;
+	const { publishAnonymousLinkSaved, logger } = deps;
 
 	const { saveLinkWork } = initSaveLinkWork({
 		crawlArticle: deps.crawlArticle,
@@ -43,20 +41,20 @@ export function initSaveLinkCommandHandler(deps: {
 		updateThumbnailUrl: deps.updateThumbnailUrl,
 		imagesCdnBaseUrl: deps.imagesCdnBaseUrl,
 		logger,
-		logPrefix: "[SaveLinkCommand]",
+		logPrefix: "[SaveAnonymousLinkCommand]",
 	});
 
 	return async (event) => {
 		for (const record of event.Records) {
 			const envelope = JSON.parse(record.body);
-			const detail = SaveLinkCommand.detailSchema.parse(envelope.detail);
+			const detail = SaveAnonymousLinkCommand.detailSchema.parse(envelope.detail);
 
-			logger.info("[SaveLinkCommand] processing", { url: detail.url, userId: detail.userId });
+			logger.info("[SaveAnonymousLinkCommand] processing", { url: detail.url });
 
 			await saveLinkWork(detail.url);
 
-			await publishLinkSaved({ url: detail.url, userId: detail.userId });
-			logger.info("[SaveLinkCommand] published LinkSavedEvent", { url: detail.url });
+			await publishAnonymousLinkSaved({ url: detail.url });
+			logger.info("[SaveAnonymousLinkCommand] published AnonymousLinkSavedEvent", { url: detail.url });
 		}
 	};
 }

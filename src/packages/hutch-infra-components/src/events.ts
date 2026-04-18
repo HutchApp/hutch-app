@@ -37,6 +37,18 @@ export const SaveLinkCommand = defineEvent({
 });
 export type SaveLinkDetail = z.infer<typeof SaveLinkCommand.detailSchema>;
 
+export const SaveAnonymousLinkCommand = defineEvent({
+	name: "save-anonymous-link-command",
+	source: "hutch.api",
+	detailType: "SaveAnonymousLinkCommand",
+	detailSchema: z.object({
+		url: z.string(),
+	}),
+});
+export type SaveAnonymousLinkDetail = z.infer<
+	typeof SaveAnonymousLinkCommand.detailSchema
+>;
+
 export const LinkSavedEvent = defineEvent({
 	name: "link-saved",
 	source: "hutch.save-link",
@@ -47,6 +59,18 @@ export const LinkSavedEvent = defineEvent({
 	}),
 });
 export type LinkSavedDetail = z.infer<typeof LinkSavedEvent.detailSchema>;
+
+export const AnonymousLinkSavedEvent = defineEvent({
+	name: "anonymous-link-saved",
+	source: "hutch.save-link",
+	detailType: "AnonymousLinkSaved",
+	detailSchema: z.object({
+		url: z.string(),
+	}),
+});
+export type AnonymousLinkSavedDetail = z.infer<
+	typeof AnonymousLinkSavedEvent.detailSchema
+>;
 
 export const SummaryGeneratedEvent = defineEvent({
 	name: "summary-generated",

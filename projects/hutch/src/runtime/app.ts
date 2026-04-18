@@ -30,9 +30,11 @@ import { initS3ReadContent } from "./providers/article-store/s3-read-content";
 import { initReadArticleContent } from "./providers/article-store/read-article-content";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
+import { initEventBridgeSaveAnonymousLink } from "./providers/events/eventbridge-save-anonymous-link";
 import { initEventBridgeRefreshArticleContent } from "./providers/events/eventbridge-refresh-article-content";
 import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbridge-update-fetch-timestamp";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
+import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
 import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
@@ -80,6 +82,7 @@ function initProviders() {
 			eventBusName,
 		});
 		const { publishLinkSaved } = initEventBridgeLinkSaved({ publishEvent });
+		const { publishSaveAnonymousLink } = initEventBridgeSaveAnonymousLink({ publishEvent });
 		const { publishRefreshArticleContent } = initEventBridgeRefreshArticleContent({ publishEvent });
 		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
@@ -114,6 +117,7 @@ function initProviders() {
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			publishLinkSaved,
+			publishSaveAnonymousLink,
 			publishUpdateFetchTimestamp,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
@@ -141,9 +145,19 @@ function initProviders() {
 			clientSecret: devGoogleClientSecret,
 		}
 		: undefined;
-	const { publishLinkSaved: logOnlyPublish } = initInMemoryLinkSaved({ logger: consoleLogger });
-	const publishLinkSaved: typeof logOnlyPublish = async (params) => {
-		await logOnlyPublish(params);
+	const { publishLinkSaved: logOnlyPublishLinkSaved } = initInMemoryLinkSaved({ logger: consoleLogger });
+	const publishLinkSaved: typeof logOnlyPublishLinkSaved = async (params) => {
+		await logOnlyPublishLinkSaved(params);
+		const crawlResult = await crawlArticle({ url: params.url });
+		if (crawlResult.status !== "fetched") return;
+		const result = parseHtml({ url: params.url, html: crawlResult.html });
+		if (result.ok) {
+			await articleStore.writeContent({ url: params.url, content: result.article.content });
+		}
+	};
+	const { publishSaveAnonymousLink: logOnlyPublishSaveAnonymousLink } = initInMemorySaveAnonymousLink({ logger: consoleLogger });
+	const publishSaveAnonymousLink: typeof logOnlyPublishSaveAnonymousLink = async (params) => {
+		await logOnlyPublishSaveAnonymousLink(params);
 		const crawlResult = await crawlArticle({ url: params.url });
 		if (crawlResult.status !== "fetched") return;
 		const result = parseHtml({ url: params.url, html: crawlResult.html });
@@ -179,6 +193,7 @@ function initProviders() {
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		publishLinkSaved,
+		publishSaveAnonymousLink,
 		publishUpdateFetchTimestamp,
 		findCachedSummary: stubFindCachedSummary,
 		refreshArticleIfStale,

@@ -69,6 +69,7 @@ describe("Email verification", () => {
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
 				publishLinkSaved: async () => {},
+				publishSaveAnonymousLink: async () => {},
 				findCachedSummary: async () => "",
 				refreshArticleIfStale: async () => ({ action: "new" as const }),
 				publishUpdateFetchTimestamp: async () => {},

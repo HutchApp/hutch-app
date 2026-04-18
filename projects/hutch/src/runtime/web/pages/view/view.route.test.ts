@@ -473,27 +473,24 @@ describe("View routes", () => {
 	});
 
 	describe("GET primes the summary pipeline", () => {
-		it("calls saveArticleGlobally and publishLinkSaved on a fresh-parse cache miss", async () => {
+		it("calls saveArticleGlobally and publishSaveAnonymousLink on a fresh-parse cache miss", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const publishLinkSaved = jest.fn(async () => {});
-			const { app, articleStore } = createTestApp({ parseArticle, publishLinkSaved });
+			const publishSaveAnonymousLink = jest.fn(async () => {});
+			const { app, articleStore } = createTestApp({ parseArticle, publishSaveAnonymousLink });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			expect(response.status).toBe(200);
-			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
-			expect(publishLinkSaved).toHaveBeenCalledWith({ url: ARTICLE_URL, userId: "" });
+			expect(publishSaveAnonymousLink).toHaveBeenCalledTimes(1);
+			expect(publishSaveAnonymousLink).toHaveBeenCalledWith({ url: ARTICLE_URL });
 			const cached = await articleStore.findArticleByUrl(ARTICLE_URL);
 			expect(cached?.metadata.title).toBe("Hello World");
 		});
 
-		it("dispatches SaveLinkCommand with the session userId for an authenticated visitor", async () => {
+		it("dispatches SaveAnonymousLinkCommand for an authenticated visitor (no user association, viewing only)", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const captured: Array<{ url: string; userId: string }> = [];
-			const publishLinkSaved = async (params: { url: string; userId: string }) => {
-				captured.push(params);
-			};
-			const { app, auth } = createTestApp({ parseArticle, publishLinkSaved });
+			const publishSaveAnonymousLink = jest.fn(async () => {});
+			const { app, auth } = createTestApp({ parseArticle, publishSaveAnonymousLink });
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 			const agent = request.agent(app);
 			await agent
@@ -504,17 +501,14 @@ describe("View routes", () => {
 			const response = await agent.get(`/view/${ENCODED}`);
 
 			expect(response.status).toBe(200);
-			expect(captured.length).toBe(1);
-			const [call] = captured;
-			assert(call, "publishLinkSaved must have been called");
-			expect(call.url).toBe(ARTICLE_URL);
-			expect(call.userId).not.toBe("");
+			expect(publishSaveAnonymousLink).toHaveBeenCalledTimes(1);
+			expect(publishSaveAnonymousLink).toHaveBeenCalledWith({ url: ARTICLE_URL });
 		});
 
 		it("is idempotent — skips priming when the article is already in the global cache", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const publishLinkSaved = jest.fn(async () => {});
-			const { app, articleStore } = createTestApp({ parseArticle, publishLinkSaved });
+			const publishSaveAnonymousLink = jest.fn(async () => {});
+			const { app, articleStore } = createTestApp({ parseArticle, publishSaveAnonymousLink });
 			await articleStore.saveArticleGlobally({
 				url: ARTICLE_URL,
 				metadata: {
@@ -528,17 +522,17 @@ describe("View routes", () => {
 
 			await request(app).get(`/view/${ENCODED}`);
 
-			expect(publishLinkSaved).not.toHaveBeenCalled();
+			expect(publishSaveAnonymousLink).not.toHaveBeenCalled();
 		});
 
 		it("skips priming when parseArticle fails", async () => {
 			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
-			const publishLinkSaved = jest.fn(async () => {});
-			const { app } = createTestApp({ parseArticle, publishLinkSaved });
+			const publishSaveAnonymousLink = jest.fn(async () => {});
+			const { app } = createTestApp({ parseArticle, publishSaveAnonymousLink });
 
 			await request(app).get(`/view/${ENCODED}`);
 
-			expect(publishLinkSaved).not.toHaveBeenCalled();
+			expect(publishSaveAnonymousLink).not.toHaveBeenCalled();
 		});
 	});
 });

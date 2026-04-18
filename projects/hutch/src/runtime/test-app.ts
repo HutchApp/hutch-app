@@ -5,8 +5,10 @@ import type { CrawlArticle } from "@packages/crawl-article";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
+import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
+import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
@@ -39,6 +41,7 @@ export function createTestApp(options?: {
 	parseArticle?: ParseArticle;
 	crawlArticle?: CrawlArticle;
 	publishLinkSaved?: PublishLinkSaved;
+	publishSaveAnonymousLink?: PublishSaveAnonymousLink;
 	publishUpdateFetchTimestamp?: PublishUpdateFetchTimestamp;
 	findCachedSummary?: FindCachedSummary;
 	refreshArticleIfStale?: RefreshArticleIfStale;
@@ -57,9 +60,18 @@ export function createTestApp(options?: {
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
 
-	const { publishLinkSaved: logOnlyPublish } = initInMemoryLinkSaved({ logger: noopLogger });
+	const { publishLinkSaved: logOnlyPublishLinkSaved } = initInMemoryLinkSaved({ logger: noopLogger });
 	const defaultPublishLinkSaved: PublishLinkSaved = async (params) => {
-		await logOnlyPublish(params);
+		await logOnlyPublishLinkSaved(params);
+		const result = await parser.parseArticle(params.url);
+		if (result.ok) {
+			await articleStore.writeContent({ url: params.url, content: result.article.content });
+		}
+	};
+
+	const { publishSaveAnonymousLink: logOnlyPublishSaveAnonymousLink } = initInMemorySaveAnonymousLink({ logger: noopLogger });
+	const defaultPublishSaveAnonymousLink: PublishSaveAnonymousLink = async (params) => {
+		await logOnlyPublishSaveAnonymousLink(params);
 		const result = await parser.parseArticle(params.url);
 		if (result.ok) {
 			await articleStore.writeContent({ url: params.url, content: result.article.content });
@@ -74,6 +86,7 @@ export function createTestApp(options?: {
 		readArticleContent: (url) => articleStore.readContent(ArticleResourceUniqueId.parse(url)),
 		parseArticle: options?.parseArticle ?? parser.parseArticle,
 		publishLinkSaved: options?.publishLinkSaved ?? defaultPublishLinkSaved,
+		publishSaveAnonymousLink: options?.publishSaveAnonymousLink ?? defaultPublishSaveAnonymousLink,
 		publishUpdateFetchTimestamp: options?.publishUpdateFetchTimestamp ?? defaultPublishUpdateFetchTimestamp,
 		findCachedSummary: options?.findCachedSummary ?? (async () => ""),
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,

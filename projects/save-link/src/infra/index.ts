@@ -10,7 +10,9 @@ import {
 } from "@packages/hutch-infra-components/infra";
 import {
 	SaveLinkCommand,
+	SaveAnonymousLinkCommand,
 	LinkSavedEvent,
+	AnonymousLinkSavedEvent,
 	SummaryGeneratedEvent,
 	RefreshArticleContentCommand,
 	UpdateFetchTimestampCommand,
@@ -53,6 +55,14 @@ const saveLinkCommandQueue = new HutchSQS("save-link-command", {
 	visibilityTimeoutSeconds: 60,
 });
 
+const saveAnonymousLinkCommandQueue = new HutchSQS("save-anonymous-link-command", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const anonymousLinkSavedQueue = new HutchSQS("anonymous-link-saved", {
+	visibilityTimeoutSeconds: 60,
+});
+
 const summaryGeneratedQueue = new HutchSQS("summary-generated", {
 	visibilityTimeoutSeconds: 60,
 });
@@ -91,6 +101,41 @@ const saveLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-command
 });
 
 eventBus.subscribe(SaveLinkCommand, saveLinkCommandLambdaWithSQS);
+
+// --- SaveAnonymousLinkCommand handler ---
+
+const saveAnonymousLinkCommandDynamodb = new HutchDynamoDBAccess("save-anonymous-link-command-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+});
+
+const saveAnonymousLinkCommandLambda = new HutchLambda("save-anonymous-link-command", {
+	entryPoint: "./src/infra/save-anonymous-link-command.main.ts",
+	outputDir: ".lib/save-anonymous-link-command",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: 30,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+		CONTENT_BUCKET_NAME: contentBucketName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
+		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
+	},
+	policies: [
+		...saveAnonymousLinkCommandDynamodb.policies,
+		...contentBucket.writePolicies("save-anonymous-link-command-s3"),
+	],
+});
+
+eventBus.grantPublish(saveAnonymousLinkCommandLambda);
+
+const saveAnonymousLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-anonymous-link-command", {
+	lambda: saveAnonymousLinkCommandLambda,
+	queue: saveAnonymousLinkCommandQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(SaveAnonymousLinkCommand, saveAnonymousLinkCommandLambdaWithSQS);
 
 // --- GenerateSummary handler ---
 
@@ -157,6 +202,39 @@ const linkSavedLambdaWithSQS = new HutchSQSBackedLambda("link-saved", {
 });
 
 eventBus.subscribe(LinkSavedEvent, linkSavedLambdaWithSQS);
+
+// --- AnonymousLinkSaved handler ---
+
+const anonymousLinkSavedDynamodb = new HutchDynamoDBAccess("anonymous-link-saved-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:GetItem"],
+});
+
+const anonymousLinkSavedLambda = new HutchLambda("anonymous-link-saved", {
+	entryPoint: "./src/infra/anonymous-link-saved.main.ts",
+	outputDir: ".lib/anonymous-link-saved",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: 30,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+		CONTENT_BUCKET_NAME: contentBucketName,
+	},
+	policies: [
+		...anonymousLinkSavedDynamodb.policies,
+		...generateSummaryQueue.policies,
+		...contentBucket.readPolicies("anonymous-link-saved-s3"),
+	],
+});
+
+const anonymousLinkSavedLambdaWithSQS = new HutchSQSBackedLambda("anonymous-link-saved", {
+	lambda: anonymousLinkSavedLambda,
+	queue: anonymousLinkSavedQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(AnonymousLinkSavedEvent, anonymousLinkSavedLambdaWithSQS);
 
 // --- SummaryGenerated handler ---
 
@@ -248,8 +326,12 @@ eventBus.subscribe(UpdateFetchTimestampCommand, updateFetchTimestampWithSQS);
 
 export const saveLinkCommandQueueUrl = saveLinkCommandQueue.queueUrl;
 export const saveLinkCommandDlqUrl = saveLinkCommandQueue.dlqUrl;
+export const saveAnonymousLinkCommandQueueUrl = saveAnonymousLinkCommandQueue.queueUrl;
+export const saveAnonymousLinkCommandDlqUrl = saveAnonymousLinkCommandQueue.dlqUrl;
 export const linkSavedQueueUrl = linkSavedQueue.queueUrl;
 export const linkSavedDlqUrl = linkSavedQueue.dlqUrl;
+export const anonymousLinkSavedQueueUrl = anonymousLinkSavedQueue.queueUrl;
+export const anonymousLinkSavedDlqUrl = anonymousLinkSavedQueue.dlqUrl;
 export const generateSummaryQueueUrl = generateSummaryQueue.queueUrl;
 export const generateSummaryDlqUrl = generateSummaryQueue.dlqUrl;
 export const summaryGeneratedQueueUrl = summaryGeneratedQueue.queueUrl;

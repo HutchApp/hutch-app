@@ -34,6 +34,7 @@ import type { ReadArticleContent } from "./providers/article-store/read-article-
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
+import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
 	CreateVerificationToken,
@@ -106,6 +107,7 @@ interface AppDependencies {
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
 	publishLinkSaved: PublishLinkSaved;
+	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	findCachedSummary: FindCachedSummary;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
@@ -358,7 +360,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		parseArticle: deps.parseArticle,
 		findCachedSummary: deps.findCachedSummary,
 		saveArticleGlobally: deps.saveArticleGlobally,
-		publishLinkSaved: deps.publishLinkSaved,
+		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
 	});
 	app.use("/view", viewRouter);
 
