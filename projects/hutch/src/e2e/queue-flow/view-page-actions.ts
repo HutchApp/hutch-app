@@ -21,9 +21,26 @@ export function createAnonymousViewPageActions(
 				return isOnPage(page, 'page-home')
 			},
 			execute: async (page) => {
-				const viewUrl = `${config.baseUrl}/view/${encodeURIComponent(config.testUrl)}`
-				await page.goto(viewUrl, { waitUntil: 'domcontentloaded' })
+				await page.goto(`${config.baseUrl}/view`, { waitUntil: 'domcontentloaded' })
+				await expect(page.locator('body.page-view-landing')).toHaveCount(1)
 
+				await page.locator('[data-test-view-landing-input]').fill(config.testUrl)
+				await clickAndWaitForPageReload(
+					page,
+					page.locator('[data-test-view-landing-form] button[type="submit"]'),
+				)
+
+				await expect(page.locator('body.page-view')).toHaveCount(1)
+				await expect(page.locator('[data-test-reader-title]')).toBeVisible()
+				await expect(page.locator('[data-test-view-cta-action]')).toBeVisible()
+
+				// Reload the /view/<encoded-url> permalink. First visit primes the
+				// global article cache via saveArticleGlobally; refresh then re-reads
+				// it through findArticleByUrl. Regression guard for the ZodError that
+				// surfaced when the DynamoDB projection omitted `url` while the row
+				// schema required it — the first load succeeded (item absent, no
+				// parse) but the refresh 500'd (item present, parse failed).
+				await page.reload({ waitUntil: 'domcontentloaded' })
 				await expect(page.locator('body.page-view')).toHaveCount(1)
 				await expect(page.locator('[data-test-reader-title]')).toBeVisible()
 				await expect(page.locator('[data-test-view-cta-action]')).toBeVisible()
