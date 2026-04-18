@@ -58,6 +58,33 @@ describe("renderArticleBody", () => {
 		);
 	});
 
+	it("renders the summary collapsed by default", () => {
+		const html = renderArticleBody({
+			...baseInput,
+			content: "<p>Body</p>",
+			summary: "Key points.",
+		});
+		const doc = parse(html);
+
+		const details = doc.querySelector(".article-body__summary");
+		assert(details, "summary details element must be rendered");
+		expect(details.hasAttribute("open")).toBe(false);
+	});
+
+	it("renders the summary expanded when summaryOpen is true", () => {
+		const html = renderArticleBody({
+			...baseInput,
+			content: "<p>Body</p>",
+			summary: "Key points.",
+			summaryOpen: true,
+		});
+		const doc = parse(html);
+
+		const details = doc.querySelector(".article-body__summary");
+		assert(details, "summary details element must be rendered");
+		expect(details.hasAttribute("open")).toBe(true);
+	});
+
 	it("marks the summary slot as hidden when summary is empty", () => {
 		const html = renderArticleBody({
 			...baseInput,

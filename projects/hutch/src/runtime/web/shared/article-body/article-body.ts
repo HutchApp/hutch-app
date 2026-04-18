@@ -22,6 +22,7 @@ export interface ArticleBodyInput {
 	url: string;
 	content?: string;
 	summary?: string | null;
+	summaryOpen?: boolean;
 	audioEnabled?: boolean;
 	backLink?: { href: string; label: string };
 }
@@ -39,6 +40,7 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		url: input.url,
 		content: input.content,
 		summary: hasSummary ? input.summary : undefined,
+		summaryOpen: input.summaryOpen === true,
 		audioEnabled: input.audioEnabled,
 		backLink: input.backLink,
 		staticBaseUrl: STATIC_BASE_URL,

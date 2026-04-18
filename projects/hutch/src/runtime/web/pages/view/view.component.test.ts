@@ -197,6 +197,13 @@ describe("ViewPage", () => {
 		).toBe(true);
 	});
 
+	it("renders the summary expanded by default on the public view", () => {
+		const doc = render({ ...baseInput, summary: "Key points." });
+		const details = doc.querySelector(".article-body__summary");
+		assert(details, "summary details element must be rendered");
+		expect(details.hasAttribute("open")).toBe(true);
+	});
+
 	it("renders the no-content fallback while still showing the CTA action when content is undefined", () => {
 		const doc = render({ ...baseInput, content: undefined });
 

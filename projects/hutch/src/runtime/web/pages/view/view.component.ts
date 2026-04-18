@@ -44,6 +44,7 @@ export function ViewPage(input: ViewPageInput): Component {
 		url: input.articleUrl,
 		content: input.content,
 		summary: input.summary,
+		summaryOpen: true,
 	});
 
 	const content = render(VIEW_TEMPLATE, {
