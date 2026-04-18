@@ -140,7 +140,7 @@ describe("View routes", () => {
 			expect(action.getAttribute("href")?.startsWith("/save?")).toBe(true);
 		});
 
-		it("renders a 'Read in your queue' action for an authenticated viewer when the URL is in the store", async () => {
+		it("renders the Save action for an authenticated viewer even when the URL is already in their queue", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app, auth } = createTestApp({ parseArticle });
 			await auth.createUser({
@@ -158,10 +158,8 @@ describe("View routes", () => {
 
 			const doc = new JSDOM(response.text).window.document;
 			const action = ctaAction(doc);
-			expect(action.textContent).toBe("Read in your queue");
-			expect(action.getAttribute("href")).toMatch(
-				/^\/queue\/[0-9a-f]{32}\/read$/,
-			);
+			expect(action.textContent).toBe("Save to My Queue");
+			expect(action.getAttribute("href")?.startsWith("/save?")).toBe(true);
 		});
 
 		it("renders the Save action for an anonymous viewer even when another user has saved the URL", async () => {

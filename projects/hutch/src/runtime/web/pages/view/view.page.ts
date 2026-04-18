@@ -133,20 +133,12 @@ function handleViewArticle(deps: ViewDependencies) {
 		const summary = await deps.findCachedSummary(articleUrl);
 		const utmParams = collectUtmParams(req.query);
 
-		const actions: ViewAction[] =
-			cached && req.userId
-				? [
-						{
-							name: "Read in your queue",
-							href: `/queue/${cached.id}/read`,
-						},
-					]
-				: [
-						{
-							name: "Save to My Queue",
-							href: `/save?${new URLSearchParams([["url", articleUrl], ...utmParams]).toString()}`,
-						},
-					];
+		const actions: ViewAction[] = [
+			{
+				name: "Save to My Queue",
+				href: `/save?${new URLSearchParams([["url", articleUrl], ...utmParams]).toString()}`,
+			},
+		];
 
 		const html = ViewPage({
 			articleUrl,
