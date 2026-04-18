@@ -16,6 +16,7 @@ import type { FindCachedSummary } from "../../../providers/article-summary/artic
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
+import { ViewLandingPage } from "./view-landing.component";
 import { ViewPage, type ViewAction } from "./view.component";
 
 const ViewUrlSchema = z.url();
@@ -40,15 +41,30 @@ function hostnameFrom(validatedUrl: string): string {
 	return new URL(validatedUrl).hostname;
 }
 
-export function initViewRoutes(deps: ViewDependencies): Router {
-	const router = express.Router();
+function handleViewLanding(req: Request, res: Response) {
+	const submittedUrl =
+		typeof req.query.url === "string" ? req.query.url : undefined;
+	if (submittedUrl === undefined) {
+		const html = ViewLandingPage({
+			isAuthenticated: Boolean(req.userId),
+		}).to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
+		return;
+	}
+	const parsed = ViewUrlSchema.safeParse(submittedUrl);
+	if (!parsed.success) {
+		renderError(req, res);
+		return;
+	}
+	res.redirect(302, `/view/${encodeURIComponent(parsed.data)}`);
+}
 
-	router.get<string, Record<string, string>>("/*", async (req, res, next) => {
+function handleViewArticle(deps: ViewDependencies) {
+	return async (
+		req: Request<Record<string, string>>,
+		res: Response,
+	): Promise<void> => {
 		const rawPath = req.params[0];
-		if (!rawPath) {
-			next();
-			return;
-		}
 		// API Gateway v2 HTTP API decodes %2F to / before invoking Lambda, so
 		// /view/https%3A%2F%2Fexample.com arrives here as /view/https://example.com.
 		// Restore the scheme's second slash if any proxy collapsed it (https:/ → https://).
@@ -140,7 +156,14 @@ export function initViewRoutes(deps: ViewDependencies): Router {
 			actions,
 		}).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
-	});
+	};
+}
+
+export function initViewRoutes(deps: ViewDependencies): Router {
+	const router = express.Router();
+
+	router.get("/", handleViewLanding);
+	router.get<string, Record<string, string>>("/*", handleViewArticle(deps));
 
 	return router;
 }

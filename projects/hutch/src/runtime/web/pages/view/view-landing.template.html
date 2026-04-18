@@ -1,0 +1,16 @@
+    <main class="view-landing">
+      <h1 class="view-landing__title">Read any article, distraction-free</h1>
+      <p class="view-landing__lede">Paste a link and open it in Readplace's reader view.</p>
+      <form class="view-landing__form" method="GET" action="/view" data-test-view-landing-form>
+        <label class="view-landing__label" for="view-landing-url">Article URL</label>
+        <input
+          class="view-landing__input"
+          id="view-landing-url"
+          type="url"
+          name="url"
+          required
+          placeholder="https://example.com/article"
+          data-test-view-landing-input>
+        <button type="submit" class="view-landing__submit">Open in reader view</button>
+      </form>
+    </main>

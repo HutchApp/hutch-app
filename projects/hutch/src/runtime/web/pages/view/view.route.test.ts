@@ -346,12 +346,45 @@ describe("View routes", () => {
 			expect(link?.textContent).toContain("Go to your queue");
 		});
 
-		it("returns 404 for GET /view without a path param", async () => {
+		it("renders the landing form for GET /view without a path param", async () => {
 			const { app } = createTestApp();
 
 			const response = await request(app).get("/view");
 
-			expect(response.status).toBe(404);
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const form = doc.querySelector("[data-test-view-landing-form]");
+			assert(form, "landing form must be rendered");
+			expect(form.getAttribute("method")?.toLowerCase()).toBe("get");
+			expect(form.getAttribute("action")).toBe("/view");
+			const input = form.querySelector(
+				'input[name="url"][data-test-view-landing-input]',
+			);
+			assert(input, "url input must be rendered");
+			expect(input.getAttribute("type")).toBe("url");
+			expect(input.hasAttribute("required")).toBe(true);
+		});
+
+		it("redirects GET /view?url=<valid> to /view/<encoded-url>", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app).get(
+				`/view?url=${encodeURIComponent(ARTICLE_URL)}`,
+			);
+
+			expect(response.status).toBe(302);
+			expect(response.headers.location).toBe(`/view/${ENCODED}`);
+		});
+
+		it("renders the save-error page when GET /view?url=<invalid>", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app).get("/view?url=not-a-url");
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const meta = doc.querySelector('meta[http-equiv="refresh"]');
+			expect(meta?.getAttribute("content")).toBe("5;url=/");
 		});
 
 		it("renders a fallback body with the Save action when parseArticle fails on a cache miss", async () => {
