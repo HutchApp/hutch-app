@@ -10,7 +10,7 @@ describe("buildSavePermalink", () => {
 		});
 
 		expect(result).toBe(
-			"https://readplace.com/save?utm_source=fagnerbrack.com&utm_content=top&url=https%3A%2F%2Ffagnerbrack.com%2Fexample",
+			"https://readplace.com/view/https%3A%2F%2Ffagnerbrack.com%2Fexample?utm_source=fagnerbrack.com&utm_content=top",
 		);
 	});
 
@@ -23,7 +23,7 @@ describe("buildSavePermalink", () => {
 		});
 
 		expect(result).toBe(
-			"https://readplace.com/save?utm_source=src&utm_content=ctx&url=https%3A%2F%2Fexample.com%2Fpath%3Fq%3Dhello%20world%26x%3D1",
+			"https://readplace.com/view/https%3A%2F%2Fexample.com%2Fpath%3Fq%3Dhello%20world%26x%3D1?utm_source=src&utm_content=ctx",
 		);
 	});
 });
@@ -52,7 +52,7 @@ describe("runSavePermalinkCli", () => {
 		const { code, out, err } = runCli(["medium-top", "https://fagnerbrack.com/example"]);
 		expect(code).toBe(0);
 		expect(out).toBe(
-			"https://readplace.com/save?utm_source=fagnerbrack.com&utm_content=top&url=https%3A%2F%2Ffagnerbrack.com%2Fexample\n",
+			"https://readplace.com/view/https%3A%2F%2Ffagnerbrack.com%2Fexample?utm_source=fagnerbrack.com&utm_content=top\n",
 		);
 		expect(err).toBe("");
 	});
@@ -61,7 +61,7 @@ describe("runSavePermalinkCli", () => {
 		const { code, out, err } = runCli(["medium-bottom", "https://fagnerbrack.com/example"]);
 		expect(code).toBe(0);
 		expect(out).toBe(
-			"https://readplace.com/save?utm_source=fagnerbrack.com&utm_content=bottom&url=https%3A%2F%2Ffagnerbrack.com%2Fexample\n",
+			"https://readplace.com/view/https%3A%2F%2Ffagnerbrack.com%2Fexample?utm_source=fagnerbrack.com&utm_content=bottom\n",
 		);
 		expect(err).toBe("");
 	});

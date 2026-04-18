@@ -25,9 +25,8 @@ export function buildSavePermalink(params: {
 	const query = [
 		`utm_source=${encodeURIComponent(params.utmSource)}`,
 		`utm_content=${encodeURIComponent(params.utmContent)}`,
-		`url=${encodeURIComponent(params.url)}`,
 	].join("&");
-	return `${params.baseUrl}/save?${query}`;
+	return `${params.baseUrl}/view/${encodeURIComponent(params.url)}?${query}`;
 }
 
 type CliIO = {
