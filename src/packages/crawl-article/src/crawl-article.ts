@@ -1,9 +1,10 @@
 import { parseHTML } from "linkedom";
+import { withAiaChasing } from "./aia-fetch";
 import type { CrawlArticle, CrawlArticleResult, ThumbnailImage } from "./crawl-article.types";
 import { withH2Fallback } from "./h2-fetch";
 import { headerOrUndefined } from "./header-utils";
 
-const FETCH_TIMEOUT_MS = 5000;
+const FETCH_TIMEOUT_MS = 10000;
 const THUMBNAIL_FETCH_TIMEOUT_MS = 5000;
 const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024;
 
@@ -25,7 +26,7 @@ export function initCrawlArticle(deps: {
 	logError: (message: string, error?: Error) => void;
 	headers: Record<string, string>;
 }): CrawlArticle {
-	const fetchWithFallback = withH2Fallback(deps.fetch);
+	const fetchWithFallback = withH2Fallback(withAiaChasing(deps.fetch));
 	return async (params) => {
 		if (X_TWITTER_PATTERN.test(params.url)) {
 			return fetchViaOembed(deps, params);
