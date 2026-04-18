@@ -349,6 +349,7 @@ export function initDynamoDbArticleStore(deps: {
 			{ url: articleResourceUniqueId.value },
 			{
 				projection: [
+					"url",
 					"routeId",
 					"originalUrl",
 					"title",
