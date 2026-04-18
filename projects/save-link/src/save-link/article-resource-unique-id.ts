@@ -1,1 +1,1 @@
-export { ArticleResourceUniqueId, stripTrackingParams } from "@packages/article-resource-unique-id";
+export { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";

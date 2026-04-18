@@ -71,6 +71,8 @@ const imagesCdnBaseUrl = "https://cdn.example.com";
 
 type HandlerDeps = Parameters<typeof initSaveAnonymousLinkCommandHandler>[0];
 
+const fixedNow = () => new Date("2026-04-18T12:00:00.000Z");
+
 function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	return initSaveAnonymousLinkCommandHandler({
 		crawlArticle: successfulCrawl,
@@ -78,11 +80,13 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		putObject: jest.fn().mockResolvedValue("s3://bucket/key"),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
 		updateContentLocation: jest.fn().mockResolvedValue(undefined),
+		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
 		publishAnonymousLinkSaved: jest.fn().mockResolvedValue(undefined),
 		downloadMedia: noopDownloadMedia,
 		processContent,
 		updateThumbnailUrl: jest.fn().mockResolvedValue(undefined),
 		imagesCdnBaseUrl,
+		now: fixedNow,
 		logger: noopLogger,
 		...overrides,
 	});
@@ -107,6 +111,53 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 			contentLocation: expect.stringMatching(/^s3:\/\//),
 		});
 		expect(publishAnonymousLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article" });
+	});
+
+	it("records contentFetchedAt + etag + lastModified after successful crawl so later saves skip the re-crawl", async () => {
+		const updateFetchTimestamp = jest.fn().mockResolvedValue(undefined);
+		const crawlArticle: CrawlArticle = async () => ({
+			status: "fetched",
+			html: "<html><body><p>Article content</p></body></html>",
+			etag: '"abc123"',
+			lastModified: "Wed, 15 Apr 2026 10:00:00 GMT",
+		});
+
+		const handler = createHandler({ crawlArticle, updateFetchTimestamp });
+
+		await handler(createSqsEvent({ url: "https://example.com/article" }), stubContext, () => {});
+
+		expect(updateFetchTimestamp).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			contentFetchedAt: "2026-04-18T12:00:00.000Z",
+			etag: '"abc123"',
+			lastModified: "Wed, 15 Apr 2026 10:00:00 GMT",
+		});
+	});
+
+	it("passes undefined etag/lastModified when the origin omitted them", async () => {
+		const updateFetchTimestamp = jest.fn().mockResolvedValue(undefined);
+
+		const handler = createHandler({ updateFetchTimestamp });
+
+		await handler(createSqsEvent({ url: "https://example.com/article" }), stubContext, () => {});
+
+		expect(updateFetchTimestamp).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			contentFetchedAt: "2026-04-18T12:00:00.000Z",
+			etag: undefined,
+			lastModified: undefined,
+		});
+	});
+
+	it("does not record the fetch timestamp when the crawl failed", async () => {
+		const updateFetchTimestamp = jest.fn().mockResolvedValue(undefined);
+		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
+
+		const handler = createHandler({ crawlArticle: failedCrawl, updateFetchTimestamp });
+
+		await handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {});
+
+		expect(updateFetchTimestamp).not.toHaveBeenCalled();
 	});
 
 	it("skips content save and still publishes the event when the article fetch fails", async () => {

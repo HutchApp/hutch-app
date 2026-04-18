@@ -6,6 +6,7 @@ import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia, DownloadedMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
+import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
 
 export type PutObject = (params: { key: string; content: string }) => Promise<string>;
 export type UpdateContentLocation = (params: { url: string; contentLocation: string }) => Promise<void>;
@@ -17,10 +18,12 @@ export function initSaveLinkWork(deps: {
 	putObject: PutObject;
 	putImageObject: PutImageObject;
 	updateContentLocation: UpdateContentLocation;
+	updateFetchTimestamp: UpdateFetchTimestamp;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	updateThumbnailUrl: UpdateThumbnailUrl;
 	imagesCdnBaseUrl: string;
+	now: () => Date;
 	logger: HutchLogger;
 	logPrefix: string;
 }): { saveLinkWork: (url: string) => Promise<void> } {
@@ -30,10 +33,12 @@ export function initSaveLinkWork(deps: {
 		putObject,
 		putImageObject,
 		updateContentLocation,
+		updateFetchTimestamp,
 		downloadMedia,
 		processContent,
 		updateThumbnailUrl,
 		imagesCdnBaseUrl,
+		now,
 		logger,
 		logPrefix,
 	} = deps;
@@ -64,6 +69,12 @@ export function initSaveLinkWork(deps: {
 		const key = articleResourceUniqueId.toS3ContentKey();
 		const contentLocation = await putObject({ key, content: html });
 		await updateContentLocation({ url, contentLocation });
+		await updateFetchTimestamp({
+			url,
+			contentFetchedAt: now().toISOString(),
+			etag: crawlResult.etag,
+			lastModified: crawlResult.lastModified,
+		});
 		logger.info(`${logPrefix} saved content to S3`, { url, contentLocation });
 
 		if (crawlResult.thumbnailImage) {

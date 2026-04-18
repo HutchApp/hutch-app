@@ -25,10 +25,20 @@ export function initUpdateFetchTimestamp(deps: {
 
 	const updateFetchTimestamp: UpdateFetchTimestamp = async (params) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const sets = ["contentFetchedAt = :cfa"];
+		const values: Record<string, unknown> = { ":cfa": params.contentFetchedAt };
+		if (params.etag !== undefined) {
+			sets.push("etag = :etag");
+			values[":etag"] = params.etag;
+		}
+		if (params.lastModified !== undefined) {
+			sets.push("lastModified = :lm");
+			values[":lm"] = params.lastModified;
+		}
 		await table.update({
 			Key: { url: articleResourceUniqueId.value },
-			UpdateExpression: "SET contentFetchedAt = :cfa",
-			ExpressionAttributeValues: { ":cfa": params.contentFetchedAt },
+			UpdateExpression: `SET ${sets.join(", ")}`,
+			ExpressionAttributeValues: values,
 		});
 	};
 

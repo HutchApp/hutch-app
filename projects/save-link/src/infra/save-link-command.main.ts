@@ -12,6 +12,7 @@ import { initUpdateContentLocation } from "../save-link/update-content-location"
 import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { initUpdateThumbnailUrl } from "../save-link/update-thumbnail-url";
+import { initUpdateFetchTimestamp } from "../save-link/update-fetch-timestamp";
 import { initDownloadMedia } from "../save-link/download-media";
 import { initSaveLinkCommandHandler } from "../save-link/save-link-command-handler";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
@@ -43,6 +44,11 @@ const { updateContentLocation } = initUpdateContentLocation({
 });
 
 const { updateThumbnailUrl } = initUpdateThumbnailUrl({
+	client,
+	tableName: articlesTable,
+});
+
+const { updateFetchTimestamp } = initUpdateFetchTimestamp({
 	client,
 	tableName: articlesTable,
 });
@@ -80,10 +86,12 @@ export const handler = initSaveLinkCommandHandler({
 	putObject,
 	putImageObject,
 	updateContentLocation,
+	updateFetchTimestamp,
 	publishLinkSaved,
 	downloadMedia,
 	processContent,
 	updateThumbnailUrl,
 	imagesCdnBaseUrl,
+	now: () => new Date(),
 	logger: consoleLogger,
 });

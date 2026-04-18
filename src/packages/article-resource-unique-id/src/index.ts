@@ -1,4 +1,4 @@
-export { stripTrackingParams } from "./strip-tracking-params";
+import { stripTrackingParams } from "./strip-tracking-params";
 
 function normalizeUrl(url: string): string {
 	const parsed = new URL(url);
@@ -12,7 +12,7 @@ export class ArticleResourceUniqueId {
 		this.value = value;
 	}
 	static parse(url: string): ArticleResourceUniqueId {
-		return new ArticleResourceUniqueId(normalizeUrl(url));
+		return new ArticleResourceUniqueId(normalizeUrl(stripTrackingParams(url)));
 	}
 	toS3ContentKey(): string {
 		return `content/${encodeURIComponent(this.value)}/content.html`;

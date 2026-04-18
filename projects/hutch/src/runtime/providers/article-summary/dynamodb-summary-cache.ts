@@ -5,7 +5,7 @@ import {
 	dynamoField,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
-import { ArticleResourceUniqueId, stripTrackingParams } from "@packages/article-resource-unique-id";
+import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type { FindCachedSummary } from "./article-summary.types";
 
 const ArticleSummaryRow = z.object({
@@ -26,7 +26,7 @@ export function initDynamoDbSummaryCache(deps: {
 	});
 
 	const findCachedSummary: FindCachedSummary = async (url) => {
-		const articleResourceUniqueId = ArticleResourceUniqueId.parse(stripTrackingParams(url));
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 		const row = await table.get({ url: articleResourceUniqueId.value });
 		return row?.summary ?? "";
 	};

@@ -5,6 +5,8 @@ import { UpdateFetchTimestampCommand } from "./index";
 export type UpdateFetchTimestamp = (params: {
 	url: string;
 	contentFetchedAt: string;
+	etag?: string;
+	lastModified?: string;
 }) => Promise<void>;
 
 export function initUpdateFetchTimestampHandler(deps: {

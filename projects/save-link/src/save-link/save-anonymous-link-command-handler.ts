@@ -6,6 +6,7 @@ import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
+import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
 import {
 	initSaveLinkWork,
 	type ProcessContent,
@@ -21,11 +22,13 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	putObject: PutObject;
 	putImageObject: PutImageObject;
 	updateContentLocation: UpdateContentLocation;
+	updateFetchTimestamp: UpdateFetchTimestamp;
 	publishAnonymousLinkSaved: PublishAnonymousLinkSaved;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	updateThumbnailUrl: UpdateThumbnailUrl;
 	imagesCdnBaseUrl: string;
+	now: () => Date;
 	logger: HutchLogger;
 }): SQSHandler {
 	const { publishAnonymousLinkSaved, logger } = deps;
@@ -36,10 +39,12 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 		putObject: deps.putObject,
 		putImageObject: deps.putImageObject,
 		updateContentLocation: deps.updateContentLocation,
+		updateFetchTimestamp: deps.updateFetchTimestamp,
 		downloadMedia: deps.downloadMedia,
 		processContent: deps.processContent,
 		updateThumbnailUrl: deps.updateThumbnailUrl,
 		imagesCdnBaseUrl: deps.imagesCdnBaseUrl,
+		now: deps.now,
 		logger,
 		logPrefix: "[SaveAnonymousLinkCommand]",
 	});

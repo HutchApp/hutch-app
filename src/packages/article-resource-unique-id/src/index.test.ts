@@ -13,8 +13,14 @@ describe("ArticleResourceUniqueId.parse", () => {
 		expect(ArticleResourceUniqueId.parse("https://example.com/article#heading").value).toBe("example.com/article");
 	});
 
-	it("preserves query params", () => {
-		expect(ArticleResourceUniqueId.parse("https://example.com/path?q=1&page=2").value).toBe("example.com/path?q=1&page=2");
+	it("preserves non-tracking query params and sorts them alphabetically", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com/path?q=1&page=2").value).toBe("example.com/path?page=2&q=1");
+	});
+
+	it("strips tracking params so the same article with or without utm_* produces one canonical id", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com/article?utm_source=twitter").value).toBe("example.com/article");
+		expect(ArticleResourceUniqueId.parse("https://example.com/article?utm_source=twitter").value)
+			.toBe(ArticleResourceUniqueId.parse("https://example.com/article").value);
 	});
 
 	it("preserves non-default port", () => {
@@ -48,9 +54,9 @@ describe("ArticleResourceUniqueId.toS3ContentKey", () => {
 			.toBe("content/example.com%2Fblog%2Fpost/content.html");
 	});
 
-	it("encodes query string characters", () => {
+	it("encodes query string characters (after tracking strip + alphabetical sort)", () => {
 		expect(ArticleResourceUniqueId.parse("https://example.com/path?q=1&page=2").toS3ContentKey())
-			.toBe("content/example.com%2Fpath%3Fq%3D1%26page%3D2/content.html");
+			.toBe("content/example.com%2Fpath%3Fpage%3D2%26q%3D1/content.html");
 	});
 
 	it("encodes colon in port", () => {
