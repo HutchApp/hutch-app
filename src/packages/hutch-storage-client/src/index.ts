@@ -8,3 +8,4 @@ export {
 	type DynamoDBDocumentClient,
 } from "./define-table";
 export { createDynamoDocumentClient } from "./create-client";
+export { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";

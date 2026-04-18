@@ -200,15 +200,9 @@ importers:
 
   projects/hutch:
     dependencies:
-      '@aws-sdk/client-dynamodb':
-        specifier: 3.1001.0
-        version: 3.1001.0
       '@aws-sdk/client-s3':
         specifier: 3.1001.0
         version: 3.1001.0
-      '@aws-sdk/lib-dynamodb':
-        specifier: 3.1001.0
-        version: 3.1001.0(@aws-sdk/client-dynamodb@3.1001.0)
       '@mozilla/readability':
         specifier: 0.6.0
         version: 0.6.0
@@ -230,6 +224,9 @@ importers:
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../src/packages/hutch-logger
+      '@packages/hutch-storage-client':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-storage-client
       '@packages/onboarding-extension-signal':
         specifier: workspace:*
         version: link:../../src/packages/onboarding-extension-signal

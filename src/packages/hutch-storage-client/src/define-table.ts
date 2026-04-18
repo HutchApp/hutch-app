@@ -5,6 +5,7 @@ import type {
 	DynamoDBDocumentClient,
 	PutCommandInput,
 	QueryCommandInput,
+	ScanCommandInput,
 	UpdateCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 import {
@@ -13,6 +14,7 @@ import {
 	GetCommand,
 	PutCommand,
 	QueryCommand,
+	ScanCommand,
 	UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { z } from "zod";
@@ -39,11 +41,34 @@ export type DynamoTable<TSchema extends z.ZodObject> = {
 	/** Raw Update passthrough. */
 	update: (input: WithoutTable<UpdateCommandInput>) => Promise<void>;
 
-	/** Raw Delete passthrough. */
-	delete: (input: WithoutTable<DeleteCommandInput>) => Promise<void>;
+	/**
+	 * Raw Delete passthrough. Returns `{ Attributes }` when the caller sets
+	 * `ReturnValues: "ALL_OLD"`, parsed through the row schema; otherwise
+	 * resolves with an empty object.
+	 */
+	delete: (
+		input: WithoutTable<DeleteCommandInput>,
+	) => Promise<{ Attributes?: z.infer<TSchema> }>;
 
-	/** Query passthrough. Returns items parsed through the row schema. */
-	query: (input: WithoutTable<QueryCommandInput>) => Promise<z.infer<TSchema>[]>;
+	/**
+	 * Query passthrough. Returns items parsed through the row schema, the
+	 * SDK-reported `Count` (useful with `Select: "COUNT"`), and the
+	 * `LastEvaluatedKey` for pagination.
+	 */
+	query: (input: WithoutTable<QueryCommandInput>) => Promise<{
+		items: z.infer<TSchema>[];
+		count: number;
+		lastEvaluatedKey?: Record<string, unknown>;
+	}>;
+
+	/**
+	 * Scan passthrough. Returns parsed items and the SDK-reported count.
+	 * When `Select: "COUNT"` is used, `items` will be empty and `count`
+	 * holds the matching row count.
+	 */
+	scan: (
+		input?: WithoutTable<ScanCommandInput>,
+	) => Promise<{ items: z.infer<TSchema>[]; count: number }>;
 };
 
 /**
@@ -82,13 +107,27 @@ export function defineDynamoTable<TSchema extends z.ZodObject>(config: {
 			await client.send(new UpdateCommand({ TableName: tableName, ...input }));
 		},
 		async delete(input) {
-			await client.send(new DeleteCommand({ TableName: tableName, ...input }));
+			const result = await client.send(new DeleteCommand({ TableName: tableName, ...input }));
+			if (!result.Attributes) return {};
+			return { Attributes: schema.parse(result.Attributes) };
 		},
 		async query(input) {
 			const result = await client.send(
 				new QueryCommand({ TableName: tableName, ...input }),
 			);
-			return (result.Items ?? []).map((item) => schema.parse(item));
+			const items = (result.Items ?? []).map((item) => schema.parse(item));
+			return {
+				items,
+				count: result.Count ?? 0,
+				lastEvaluatedKey: result.LastEvaluatedKey,
+			};
+		},
+		async scan(input) {
+			const result = await client.send(
+				new ScanCommand({ TableName: tableName, ...(input ?? {}) }),
+			);
+			const items = (result.Items ?? []).map((item) => schema.parse(item));
+			return { items, count: result.Count ?? 0 };
 		},
 	};
 }

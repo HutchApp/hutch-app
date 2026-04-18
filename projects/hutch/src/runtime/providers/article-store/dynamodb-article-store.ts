@@ -1,14 +1,13 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
-import { z } from "zod";
-import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import {
-	BatchGetCommand,
-	PutCommand,
-	GetCommand,
-	QueryCommand,
-	DeleteCommand,
-	UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
+	ConditionalCheckFailedException,
+	type DynamoDBDocumentClient,
+	assertItem,
+	batchGetFromTable,
+	defineDynamoTable,
+	dynamoField,
+} from "@packages/hutch-storage-client";
+import { z } from "zod";
 import type { SavedArticle } from "../../domain/article/article.types";
 import { MinutesSchema, ArticleStatusSchema } from "../../domain/article/article.schema";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
@@ -28,14 +27,13 @@ import type {
 import type { ContentProvider } from "./read-article-content";
 
 const ArticleContentRow = z.object({
-	content: z.string().optional(),
+	content: dynamoField(z.string()),
 });
 
-/** 1. DynamoDB stores missing attributes as null, not undefined. .nullish() accepts both so Zod doesn't throw on null values left by previous writes (e.g. articles saved without lastModified). */
 const ArticleFreshnessRow = z.object({
-	etag: z.string().nullish(), /* 1 */
-	lastModified: z.string().nullish(), /* 1 */
-	contentFetchedAt: z.string().nullish(), /* 1 */
+	etag: dynamoField(z.string()),
+	lastModified: dynamoField(z.string()),
+	contentFetchedAt: dynamoField(z.string()),
 });
 
 /** `routeId` column holds the `ReaderArticleHashId.value` (32-char hex). The Zod schema rehydrates it into a `ReaderArticleHashId` instance on read. */
@@ -47,9 +45,8 @@ const ArticleRow = z.object({
 	siteName: z.string(),
 	excerpt: z.string(),
 	wordCount: z.number(),
-	imageUrl: z.string().nullish(), /* 1 */
-	content: z.string().optional(),
-
+	imageUrl: dynamoField(z.string()),
+	content: dynamoField(z.string()),
 	estimatedReadTime: MinutesSchema,
 });
 
@@ -58,7 +55,7 @@ const UserArticleRow = z.object({
 	url: z.string(),
 	status: ArticleStatusSchema,
 	savedAt: z.string(),
-	readAt: z.string().optional(),
+	readAt: dynamoField(z.string()),
 });
 
 function toSavedArticle(
@@ -74,10 +71,9 @@ function toSavedArticle(
 			siteName: article.siteName,
 			excerpt: article.excerpt,
 			wordCount: article.wordCount,
-			imageUrl: article.imageUrl ?? undefined,
+			imageUrl: article.imageUrl,
 		},
 		content: article.content,
-
 		estimatedReadTime: article.estimatedReadTime,
 		status: userArticle.status,
 		savedAt: new Date(userArticle.savedAt),
@@ -102,34 +98,32 @@ export function initDynamoDbArticleStore(deps: {
 } {
 	const { client, tableName, userArticlesTableName } = deps;
 
+	const articles = defineDynamoTable({ client, tableName, schema: ArticleRow });
+	const articleContent = defineDynamoTable({ client, tableName, schema: ArticleContentRow });
+	const articleFreshness = defineDynamoTable({ client, tableName, schema: ArticleFreshnessRow });
+	const userArticles = defineDynamoTable({
+		client,
+		tableName: userArticlesTableName,
+		schema: UserArticleRow,
+	});
+
 	async function findArticleByRouteId(routeId: ReaderArticleHashId): Promise<z.infer<typeof ArticleRow> | null> {
-		const result = await client.send(
-			new QueryCommand({
-				TableName: tableName,
-				IndexName: "routeId-index",
-				KeyConditionExpression: "routeId = :routeId",
-				ExpressionAttributeValues: { ":routeId": routeId.value },
-				Limit: 1,
-			}),
-		);
-		const item = result.Items?.[0];
-		if (!item) return null;
-		return ArticleRow.parse(item);
+		const { items } = await articles.query({
+			IndexName: "routeId-index",
+			KeyConditionExpression: "routeId = :routeId",
+			ExpressionAttributeValues: { ":routeId": routeId.value },
+			Limit: 1,
+		});
+		return items[0] ?? null;
 	}
 
 	async function findUserArticle(userId: UserId, url: string): Promise<z.infer<typeof UserArticleRow> | null> {
-		const result = await client.send(
-			new GetCommand({
-				TableName: userArticlesTableName,
-				Key: { userId, url },
-			}),
-		);
-		if (!result.Item) return null;
-		return UserArticleRow.parse(result.Item);
+		const row = await userArticles.get({ userId, url });
+		return row ?? null;
 	}
 
 	const ignoreDuplicate = (error: unknown) => {
-		if (error instanceof Error && error.name === "ConditionalCheckFailedException") return;
+		if (error instanceof ConditionalCheckFailedException) return;
 		throw error;
 	};
 
@@ -137,25 +131,22 @@ export function initDynamoDbArticleStore(deps: {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 		const routeId = ReaderArticleHashId.from(params.url);
 
-		await client
-			.send(
-				new PutCommand({
-					TableName: tableName,
-					Item: {
-						url: articleResourceUniqueId.value,
-						routeId: routeId.value,
-						originalUrl: params.url,
-						title: params.metadata.title,
-						siteName: params.metadata.siteName,
-						excerpt: params.metadata.excerpt,
-						wordCount: params.metadata.wordCount,
-						imageUrl: params.metadata.imageUrl,
-						estimatedReadTime: params.estimatedReadTime,
-					},
-					ConditionExpression: "attribute_not_exists(#url)",
-					ExpressionAttributeNames: { "#url": "url" },
-				}),
-			)
+		await articles
+			.put({
+				Item: {
+					url: articleResourceUniqueId.value,
+					routeId: routeId.value,
+					originalUrl: params.url,
+					title: params.metadata.title,
+					siteName: params.metadata.siteName,
+					excerpt: params.metadata.excerpt,
+					wordCount: params.metadata.wordCount,
+					imageUrl: params.metadata.imageUrl,
+					estimatedReadTime: params.estimatedReadTime,
+				},
+				ConditionExpression: "attribute_not_exists(#url)",
+				ExpressionAttributeNames: { "#url": "url" },
+			})
 			.catch(ignoreDuplicate);
 	};
 
@@ -169,9 +160,8 @@ export function initDynamoDbArticleStore(deps: {
 				metadata: params.metadata,
 				estimatedReadTime: params.estimatedReadTime,
 			}),
-			client.send(
-				new PutCommand({
-					TableName: userArticlesTableName,
+			userArticles
+				.put({
 					Item: {
 						userId: params.userId,
 						url: articleResourceUniqueId.value,
@@ -179,23 +169,16 @@ export function initDynamoDbArticleStore(deps: {
 						savedAt: now.toISOString(),
 					},
 					ConditionExpression: "attribute_not_exists(userId)",
-				}),
-			).catch(ignoreDuplicate),
+				})
+				.catch(ignoreDuplicate),
 		]);
 
-		const [articleResult, uaResult] = await Promise.all([
-			client.send(
-				new GetCommand({ TableName: tableName, Key: { url: articleResourceUniqueId.value } }),
-			),
-			client.send(
-				new GetCommand({
-					TableName: userArticlesTableName,
-					Key: { userId: params.userId, url: articleResourceUniqueId.value },
-				}),
-			),
+		const [article, userArticle] = await Promise.all([
+			articles.get({ url: articleResourceUniqueId.value }),
+			userArticles.get({ userId: params.userId, url: articleResourceUniqueId.value }),
 		]);
-		const article = ArticleRow.parse(articleResult.Item);
-		const userArticle = UserArticleRow.parse(uaResult.Item);
+		assertItem(article, "article must exist immediately after save");
+		assertItem(userArticle, "user article must exist immediately after save");
 
 		return toSavedArticle(article, userArticle);
 	};
@@ -230,22 +213,17 @@ export function initDynamoDbArticleStore(deps: {
 		let total = 0;
 		let countStartKey: Record<string, unknown> | undefined;
 		do {
-			const countResult = await client.send(
-				new QueryCommand({
-					TableName: userArticlesTableName,
-					IndexName: "userId-savedAt-index",
-					KeyConditionExpression: "userId = :userId",
-					FilterExpression: filterExpression,
-					ExpressionAttributeValues: expressionValues,
-					ExpressionAttributeNames: expressionAttributeNames,
-					Select: "COUNT",
-					ExclusiveStartKey: countStartKey,
-				}),
-			);
-			total += countResult.Count ?? 0;
-			countStartKey = countResult.LastEvaluatedKey as
-				| Record<string, unknown>
-				| undefined;
+			const { count, lastEvaluatedKey } = await userArticles.query({
+				IndexName: "userId-savedAt-index",
+				KeyConditionExpression: "userId = :userId",
+				FilterExpression: filterExpression,
+				ExpressionAttributeValues: expressionValues,
+				ExpressionAttributeNames: expressionAttributeNames,
+				Select: "COUNT",
+				ExclusiveStartKey: countStartKey,
+			});
+			total += count;
+			countStartKey = lastEvaluatedKey;
 		} while (countStartKey);
 
 		const itemsToSkip = (page - 1) * pageSize;
@@ -254,33 +232,26 @@ export function initDynamoDbArticleStore(deps: {
 		let skippedCount = 0;
 
 		do {
-			const result = await client.send(
-				new QueryCommand({
-					TableName: userArticlesTableName,
-					IndexName: "userId-savedAt-index",
-					KeyConditionExpression: "userId = :userId",
-					FilterExpression: filterExpression,
-					ExpressionAttributeValues: expressionValues,
-					ExpressionAttributeNames: expressionAttributeNames,
-					ScanIndexForward: order === "asc",
-					Limit: pageSize,
-					ExclusiveStartKey: exclusiveStartKey,
-				}),
-			);
-
-			const items = result.Items ?? [];
+			const { items, lastEvaluatedKey } = await userArticles.query({
+				IndexName: "userId-savedAt-index",
+				KeyConditionExpression: "userId = :userId",
+				FilterExpression: filterExpression,
+				ExpressionAttributeValues: expressionValues,
+				ExpressionAttributeNames: expressionAttributeNames,
+				ScanIndexForward: order === "asc",
+				Limit: pageSize,
+				ExclusiveStartKey: exclusiveStartKey,
+			});
 
 			for (const item of items) {
 				if (skippedCount < itemsToSkip) {
 					skippedCount++;
 				} else if (userArts.length < pageSize) {
-					userArts.push(UserArticleRow.parse(item));
+					userArts.push(item);
 				}
 			}
 
-			exclusiveStartKey = result.LastEvaluatedKey as
-				| Record<string, unknown>
-				| undefined;
+			exclusiveStartKey = lastEvaluatedKey;
 
 			if (userArts.length >= pageSize && !exclusiveStartKey) {
 				break;
@@ -295,29 +266,27 @@ export function initDynamoDbArticleStore(deps: {
 		}
 
 		const urls = userArts.map((ua) => ({ url: ua.url }));
-		const batchResult = await client.send(
-			new BatchGetCommand({
-				RequestItems: {
-					[tableName]: { Keys: urls },
-				},
-			}),
-		);
+		const batchedArticles = await batchGetFromTable({
+			client,
+			tableName,
+			schema: ArticleRow,
+			keys: urls,
+		});
 
 		const articlesByUrl = new Map<string, z.infer<typeof ArticleRow>>();
-		for (const item of batchResult.Responses?.[tableName] ?? []) {
-			const article = ArticleRow.parse(item);
+		for (const article of batchedArticles) {
 			articlesByUrl.set(article.url, article);
 		}
 
-		const articles: SavedArticle[] = [];
+		const result: SavedArticle[] = [];
 		for (const ua of userArts) {
 			const article = articlesByUrl.get(ua.url);
 			if (article) {
-				articles.push(toSavedArticle(article, ua));
+				result.push(toSavedArticle(article, ua));
 			}
 		}
 
-		return { articles, total, page, pageSize };
+		return { articles: result, total, page, pageSize };
 	};
 
 	const deleteArticle: DeleteArticle = async (routeId, userId) => {
@@ -327,12 +296,7 @@ export function initDynamoDbArticleStore(deps: {
 		const ua = await findUserArticle(userId, article.url);
 		if (!ua) return false;
 
-		await client.send(
-			new DeleteCommand({
-				TableName: userArticlesTableName,
-				Key: { userId, url: article.url },
-			}),
-		);
+		await userArticles.delete({ Key: { userId, url: article.url } });
 		return true;
 	};
 
@@ -344,28 +308,22 @@ export function initDynamoDbArticleStore(deps: {
 		if (!ua) return false;
 
 		if (status === "read") {
-			await client.send(
-				new UpdateCommand({
-					TableName: userArticlesTableName,
-					Key: { userId, url: article.url },
-					UpdateExpression: "SET #status = :status, readAt = :readAt",
-					ExpressionAttributeNames: { "#status": "status" },
-					ExpressionAttributeValues: {
-						":status": status,
-						":readAt": new Date().toISOString(),
-					},
-				}),
-			);
+			await userArticles.update({
+				Key: { userId, url: article.url },
+				UpdateExpression: "SET #status = :status, readAt = :readAt",
+				ExpressionAttributeNames: { "#status": "status" },
+				ExpressionAttributeValues: {
+					":status": status,
+					":readAt": new Date().toISOString(),
+				},
+			});
 		} else {
-			await client.send(
-				new UpdateCommand({
-					TableName: userArticlesTableName,
-					Key: { userId, url: article.url },
-					UpdateExpression: "SET #status = :status REMOVE readAt",
-					ExpressionAttributeNames: { "#status": "status" },
-					ExpressionAttributeValues: { ":status": status },
-				}),
-			);
+			await userArticles.update({
+				Key: { userId, url: article.url },
+				UpdateExpression: "SET #status = :status REMOVE readAt",
+				ExpressionAttributeNames: { "#status": "status" },
+				ExpressionAttributeValues: { ":status": status },
+			});
 		}
 
 		return true;
@@ -373,34 +331,36 @@ export function initDynamoDbArticleStore(deps: {
 
 	const findArticleFreshness: FindArticleFreshness = async (url) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
-		const result = await client.send(
-			new GetCommand({
-				TableName: tableName,
-				Key: { url: articleResourceUniqueId.value },
-				ProjectionExpression: "etag, lastModified, contentFetchedAt",
-			}),
+		const row = await articleFreshness.get(
+			{ url: articleResourceUniqueId.value },
+			{ projection: ["etag", "lastModified", "contentFetchedAt"] },
 		);
-		if (!result.Item) return null;
-		/** 1. Convert nullish DynamoDB values to undefined to satisfy the ArticleFreshnessData type contract. */
-		const row = ArticleFreshnessRow.parse(result.Item);
+		if (!row) return null;
 		return {
-			etag: row.etag ?? undefined, /* 1 */
-			lastModified: row.lastModified ?? undefined, /* 1 */
-			contentFetchedAt: row.contentFetchedAt ?? undefined, /* 1 */
+			etag: row.etag,
+			lastModified: row.lastModified,
+			contentFetchedAt: row.contentFetchedAt,
 		};
 	};
 
 	const findArticleByUrl: FindArticleByUrl = async (url) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
-		const result = await client.send(
-			new GetCommand({
-				TableName: tableName,
-				Key: { url: articleResourceUniqueId.value },
-				ProjectionExpression: "routeId, originalUrl, title, siteName, excerpt, wordCount, imageUrl, estimatedReadTime",
-			}),
+		const row = await articles.get(
+			{ url: articleResourceUniqueId.value },
+			{
+				projection: [
+					"routeId",
+					"originalUrl",
+					"title",
+					"siteName",
+					"excerpt",
+					"wordCount",
+					"imageUrl",
+					"estimatedReadTime",
+				],
+			},
 		);
-		if (!result.Item) return null;
-		const row = ArticleRow.omit({ url: true, content: true }).parse(result.Item);
+		if (!row) return null;
 		return {
 			id: row.routeId,
 			url: row.originalUrl,
@@ -409,7 +369,7 @@ export function initDynamoDbArticleStore(deps: {
 				siteName: row.siteName,
 				excerpt: row.excerpt,
 				wordCount: row.wordCount,
-				imageUrl: row.imageUrl ?? undefined,
+				imageUrl: row.imageUrl,
 			},
 			estimatedReadTime: row.estimatedReadTime,
 		};
@@ -417,16 +377,11 @@ export function initDynamoDbArticleStore(deps: {
 
 	/** Legacy fallback for articles saved before S3 migration. S3 is the primary content store. */
 	const readContent: ContentProvider = async (articleResourceUniqueId) => {
-		const result = await client.send(
-			new GetCommand({
-				TableName: tableName,
-				Key: { url: articleResourceUniqueId.value },
-				ProjectionExpression: "content",
-			}),
+		const row = await articleContent.get(
+			{ url: articleResourceUniqueId.value },
+			{ projection: ["content"] },
 		);
-		if (!result.Item) return undefined;
-		const parsed = ArticleContentRow.parse(result.Item);
-		return parsed.content;
+		return row?.content;
 	};
 
 	return {

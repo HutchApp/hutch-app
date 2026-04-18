@@ -39,26 +39,5 @@
 				}
 			}
 		}
-	},
-	"overrides": [
-		{
-			"includes": [
-				"**/src/runtime/app.ts",
-				"**/src/runtime/providers/article-store/dynamodb-article-store.ts",
-				"**/src/runtime/providers/auth/dynamodb-auth.ts",
-				"**/src/runtime/providers/article-summary/dynamodb-summary-cache.ts",
-				"**/src/runtime/providers/article-summary/dynamodb-summary-cache.test.ts",
-				"**/src/runtime/providers/oauth/dynamodb-oauth-model.ts",
-				"**/src/runtime/providers/password-reset/dynamodb-password-reset.ts",
-				"**/src/runtime/providers/email-verification/dynamodb-email-verification.ts"
-			],
-			"linter": {
-				"rules": {
-					"style": {
-						"noRestrictedImports": "off"
-					}
-				}
-			}
-		}
-	]
+	}
 }

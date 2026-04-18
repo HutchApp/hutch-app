@@ -1,15 +1,12 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import { randomBytes } from "node:crypto";
-import { z } from "zod";
-import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import {
-	PutCommand,
-	GetCommand,
-	DeleteCommand,
-	ScanCommand,
-	UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
-import { ConditionalCheckFailedException } from "@aws-sdk/client-dynamodb";
+	ConditionalCheckFailedException,
+	type DynamoDBDocumentClient,
+	defineDynamoTable,
+	dynamoField,
+} from "@packages/hutch-storage-client";
+import { z } from "zod";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type {
 	CountUsers,
@@ -28,18 +25,18 @@ import type {
 import { normalizeEmail } from "./normalize-email";
 import { hashPassword, verifyPassword } from "./password";
 
-const CredentialsRow = z.object({
-	passwordHash: z.string().optional(),
+const UserRow = z.object({
+	email: z.string(),
 	userId: UserIdSchema,
-	emailVerified: z.boolean().optional(),
+	passwordHash: dynamoField(z.string()),
+	emailVerified: dynamoField(z.boolean()),
 });
 
-const UserLookupRow = CredentialsRow.omit({ passwordHash: true });
-
 const SessionRow = z.object({
-	expiresAt: z.number(),
+	sessionId: z.string(),
 	userId: UserIdSchema,
-	emailVerified: z.boolean().optional(),
+	expiresAt: z.number(),
+	emailVerified: dynamoField(z.boolean()),
 });
 
 export function initDynamoDbAuth(deps: {
@@ -60,7 +57,16 @@ export function initDynamoDbAuth(deps: {
 	userExistsByEmail: UserExistsByEmail;
 	updatePassword: UpdatePassword;
 } {
-	const { client, usersTableName, sessionsTableName } = deps;
+	const users = defineDynamoTable({
+		client: deps.client,
+		tableName: deps.usersTableName,
+		schema: UserRow,
+	});
+	const sessions = defineDynamoTable({
+		client: deps.client,
+		tableName: deps.sessionsTableName,
+		schema: SessionRow,
+	});
 
 	const createUser: CreateUser = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
@@ -68,13 +74,10 @@ export function initDynamoDbAuth(deps: {
 		const passwordHash = await hashPassword(password);
 
 		try {
-			await client.send(
-				new PutCommand({
-					TableName: usersTableName,
-					Item: { email: normalizedEmail, userId, passwordHash, emailVerified: false },
-					ConditionExpression: "attribute_not_exists(email)",
-				}),
-			);
+			await users.put({
+				Item: { email: normalizedEmail, userId, passwordHash, emailVerified: false },
+				ConditionExpression: "attribute_not_exists(email)",
+			});
 			return { ok: true, userId };
 		} catch (error) {
 			if (error instanceof ConditionalCheckFailedException) {
@@ -88,13 +91,10 @@ export function initDynamoDbAuth(deps: {
 		const normalizedEmail = normalizeEmail(email);
 
 		try {
-			await client.send(
-				new PutCommand({
-					TableName: usersTableName,
-					Item: { email: normalizedEmail, userId, emailVerified: true },
-					ConditionExpression: "attribute_not_exists(email)",
-				}),
-			);
+			await users.put({
+				Item: { email: normalizedEmail, userId, emailVerified: true },
+				ConditionExpression: "attribute_not_exists(email)",
+			});
 			return { ok: true, userId };
 		} catch (error) {
 			if (error instanceof ConditionalCheckFailedException) {
@@ -106,37 +106,21 @@ export function initDynamoDbAuth(deps: {
 
 	const findUserByEmail: FindUserByEmail = async (email) => {
 		const normalizedEmail = normalizeEmail(email);
-		const result = await client.send(
-			new GetCommand({
-				TableName: usersTableName,
-				Key: { email: normalizedEmail },
-				ProjectionExpression: "userId, emailVerified",
-			}),
+		const row = await users.get(
+			{ email: normalizedEmail },
+			{ projection: ["userId", "emailVerified"] },
 		);
-		if (!result.Item) return null;
-		const row = UserLookupRow.parse(result.Item);
+		if (!row) return null;
 		return { userId: row.userId, emailVerified: row.emailVerified === true };
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
+		const row = await users.get({ email: normalizedEmail });
+		if (!row) return { ok: false, reason: "invalid-credentials" };
 
-		const result = await client.send(
-			new GetCommand({
-				TableName: usersTableName,
-				Key: { email: normalizedEmail },
-			}),
-		);
-
-		if (!result.Item) {
-			return { ok: false, reason: "invalid-credentials" };
-		}
-
-		const row = CredentialsRow.parse(result.Item);
 		const valid = await verifyPassword(password, row.passwordHash);
-		if (!valid) {
-			return { ok: false, reason: "invalid-credentials" };
-		}
+		if (!valid) return { ok: false, reason: "invalid-credentials" };
 
 		return { ok: true, userId: row.userId, emailVerified: row.emailVerified === true };
 	};
@@ -145,31 +129,17 @@ export function initDynamoDbAuth(deps: {
 		const sessionId = randomBytes(32).toString("hex");
 		const expiresAt = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60; // 7 days in seconds (TTL)
 
-		await client.send(
-			new PutCommand({
-				TableName: sessionsTableName,
-				Item: { sessionId, userId, emailVerified, expiresAt },
-			}),
-		);
+		await sessions.put({
+			Item: { sessionId, userId, emailVerified, expiresAt },
+		});
 
 		return sessionId;
 	};
 
 	const getSessionUserId: GetSessionUserId = async (sessionId) => {
-		const result = await client.send(
-			new GetCommand({
-				TableName: sessionsTableName,
-				Key: { sessionId },
-			}),
-		);
-
-		if (!result.Item) return null;
-
-		const row = SessionRow.parse(result.Item);
-		if (row.expiresAt < Math.floor(Date.now() / 1000)) {
-			return null;
-		}
-
+		const row = await sessions.get({ sessionId });
+		if (!row) return null;
+		if (row.expiresAt < Math.floor(Date.now() / 1000)) return null;
 		return {
 			userId: row.userId,
 			emailVerified: row.emailVerified === true,
@@ -177,72 +147,47 @@ export function initDynamoDbAuth(deps: {
 	};
 
 	const destroySession: DestroySession = async (sessionId) => {
-		await client.send(
-			new DeleteCommand({
-				TableName: sessionsTableName,
-				Key: { sessionId },
-			}),
-		);
+		await sessions.delete({ Key: { sessionId } });
 	};
 
 	const countUsers: CountUsers = async () => {
-		const result = await client.send(
-			new ScanCommand({
-				TableName: usersTableName,
-				Select: "COUNT",
-			}),
-		);
-		return result.Count ?? 0;
+		const { count } = await users.scan({ Select: "COUNT" });
+		return count;
 	};
 
 	const markEmailVerified: MarkEmailVerified = async (email) => {
 		const normalizedEmail = normalizeEmail(email);
-		await client.send(
-			new UpdateCommand({
-				TableName: usersTableName,
-				Key: { email: normalizedEmail },
-				UpdateExpression: "SET emailVerified = :val",
-				ConditionExpression: "attribute_exists(email)",
-				ExpressionAttributeValues: { ":val": true },
-			}),
-		);
+		await users.update({
+			Key: { email: normalizedEmail },
+			UpdateExpression: "SET emailVerified = :val",
+			ConditionExpression: "attribute_exists(email)",
+			ExpressionAttributeValues: { ":val": true },
+		});
 	};
 
 	const markSessionEmailVerified: MarkSessionEmailVerified = async (sessionId) => {
-		await client.send(
-			new UpdateCommand({
-				TableName: sessionsTableName,
-				Key: { sessionId },
-				UpdateExpression: "SET emailVerified = :val",
-				ExpressionAttributeValues: { ":val": true },
-			}),
-		);
+		await sessions.update({
+			Key: { sessionId },
+			UpdateExpression: "SET emailVerified = :val",
+			ExpressionAttributeValues: { ":val": true },
+		});
 	};
 
 	const userExistsByEmail: UserExistsByEmail = async (email) => {
 		const normalizedEmail = normalizeEmail(email);
-		const result = await client.send(
-			new GetCommand({
-				TableName: usersTableName,
-				Key: { email: normalizedEmail },
-				ProjectionExpression: "email",
-			}),
-		);
-		return !!result.Item;
+		const row = await users.get({ email: normalizedEmail }, { projection: ["email"] });
+		return row !== undefined;
 	};
 
 	const updatePassword: UpdatePassword = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
 		const passwordHash = await hashPassword(password);
-		await client.send(
-			new UpdateCommand({
-				TableName: usersTableName,
-				Key: { email: normalizedEmail },
-				UpdateExpression: "SET passwordHash = :hash",
-				ConditionExpression: "attribute_exists(email)",
-				ExpressionAttributeValues: { ":hash": passwordHash },
-			}),
-		);
+		await users.update({
+			Key: { email: normalizedEmail },
+			UpdateExpression: "SET passwordHash = :hash",
+			ConditionExpression: "attribute_exists(email)",
+			ExpressionAttributeValues: { ":hash": passwordHash },
+		});
 	};
 
 	return {

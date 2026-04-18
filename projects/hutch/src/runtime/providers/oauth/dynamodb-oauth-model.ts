@@ -1,5 +1,9 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import assert from "node:assert";
+import {
+	type DynamoDBDocumentClient,
+	defineDynamoTable,
+} from "@packages/hutch-storage-client";
 import { z } from "zod";
 import type {
 	AuthorizationCode,
@@ -9,13 +13,6 @@ import type {
 	Token,
 	User,
 } from "@node-oauth/oauth2-server";
-import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import {
-	PutCommand,
-	GetCommand,
-	DeleteCommand,
-	QueryCommand,
-} from "@aws-sdk/lib-dynamodb";
 import type { UserId } from "../../domain/user/user.types";
 import { getClient } from "./oauth-clients";
 import type { OAuthModel } from "./oauth-model";
@@ -26,6 +23,7 @@ function toEpochSeconds(date: Date): number {
 }
 
 const AuthCodeRow = z.object({
+	pk: z.string(),
 	expiresAt: z.number(),
 	clientId: z.string(),
 	userId: z.string(),
@@ -36,6 +34,7 @@ const AuthCodeRow = z.object({
 });
 
 const TokenRow = z.object({
+	pk: z.string(),
 	accessToken: z.string(),
 	refreshToken: z.string(),
 	accessTokenExpiresAt: z.number(),
@@ -46,6 +45,7 @@ const TokenRow = z.object({
 });
 
 const RefreshIndexRow = z.object({
+	pk: z.string(),
 	accessToken: z.string(),
 });
 
@@ -66,6 +66,10 @@ export function initDynamoDbOAuthModel(deps: {
 	tableName: string;
 }): OAuthModel {
 	const { client, tableName } = deps;
+	const authCodes = defineDynamoTable({ client, tableName, schema: AuthCodeRow });
+	const tokens = defineDynamoTable({ client, tableName, schema: TokenRow });
+	const refreshIndex = defineDynamoTable({ client, tableName, schema: RefreshIndexRow });
+	const revokeView = defineDynamoTable({ client, tableName, schema: RevokeItemRow });
 
 	return {
 		async getClient(clientId: string, _clientSecret: string): Promise<Client | Falsey> {
@@ -79,21 +83,18 @@ export function initDynamoDbOAuthModel(deps: {
 		): Promise<AuthorizationCode> {
 			assert(code.codeChallenge, "PKCE code_challenge is required for authorization_code grants");
 
-			await client.send(
-				new PutCommand({
-					TableName: tableName,
-					Item: {
-						pk: `code#${code.authorizationCode}`,
-						clientId: oauthClient.id,
-						userId: user.id,
-						redirectUri: code.redirectUri,
-						codeChallenge: code.codeChallenge,
-						codeChallengeMethod: code.codeChallengeMethod ?? "S256",
-						scope: code.scope,
-						expiresAt: toEpochSeconds(code.expiresAt),
-					},
-				}),
-			);
+			await authCodes.put({
+				Item: {
+					pk: `code#${code.authorizationCode}`,
+					clientId: oauthClient.id,
+					userId: user.id,
+					redirectUri: code.redirectUri,
+					codeChallenge: code.codeChallenge,
+					codeChallengeMethod: code.codeChallengeMethod ?? "S256",
+					scope: code.scope,
+					expiresAt: toEpochSeconds(code.expiresAt),
+				},
+			});
 
 			return { ...code, client: oauthClient, user };
 		},
@@ -101,24 +102,12 @@ export function initDynamoDbOAuthModel(deps: {
 		async getAuthorizationCode(
 			authorizationCode: string,
 		): Promise<AuthorizationCode | Falsey> {
-			const result = await client.send(
-				new GetCommand({
-					TableName: tableName,
-					Key: { pk: `code#${authorizationCode}` },
-				}),
-			);
+			const row = await authCodes.get({ pk: `code#${authorizationCode}` });
+			if (!row) return null;
 
-			if (!result.Item) return null;
-
-			const row = AuthCodeRow.parse(result.Item);
 			const expiresAt = new Date(row.expiresAt * 1000);
 			if (expiresAt < new Date()) {
-				await client.send(
-					new DeleteCommand({
-						TableName: tableName,
-						Key: { pk: `code#${authorizationCode}` },
-					}),
-				);
+				await authCodes.delete({ Key: { pk: `code#${authorizationCode}` } });
 				return null;
 			}
 
@@ -138,21 +127,10 @@ export function initDynamoDbOAuthModel(deps: {
 		},
 
 		async revokeAuthorizationCode(code: AuthorizationCode): Promise<boolean> {
-			const existing = await client.send(
-				new GetCommand({
-					TableName: tableName,
-					Key: { pk: `code#${code.authorizationCode}` },
-				}),
-			);
+			const existing = await authCodes.get({ pk: `code#${code.authorizationCode}` });
+			if (!existing) return false;
 
-			if (!existing.Item) return false;
-
-			await client.send(
-				new DeleteCommand({
-					TableName: tableName,
-					Key: { pk: `code#${code.authorizationCode}` },
-				}),
-			);
+			await authCodes.delete({ Key: { pk: `code#${code.authorizationCode}` } });
 			return true;
 		},
 
@@ -169,50 +147,37 @@ export function initDynamoDbOAuthModel(deps: {
 					: accessTokenExpiresAt,
 			);
 
-			await client.send(
-				new PutCommand({
-					TableName: tableName,
-					Item: {
-						pk: `token#${token.accessToken}`,
-						userId: user.id,
-						clientId: oauthClient.id,
-						accessToken: token.accessToken,
-						refreshToken,
-						accessTokenExpiresAt: toEpochSeconds(accessTokenExpiresAt),
-						refreshTokenExpiresAt: toEpochSeconds(refreshTokenExpiresAt),
-						scope: token.scope,
-						expiresAt: ttl,
-					},
-				}),
-			);
+			await tokens.put({
+				Item: {
+					pk: `token#${token.accessToken}`,
+					userId: user.id,
+					clientId: oauthClient.id,
+					accessToken: token.accessToken,
+					refreshToken,
+					accessTokenExpiresAt: toEpochSeconds(accessTokenExpiresAt),
+					refreshTokenExpiresAt: toEpochSeconds(refreshTokenExpiresAt),
+					scope: token.scope,
+					expiresAt: ttl,
+				},
+			});
 
 			if (refreshToken) {
-				await client.send(
-					new PutCommand({
-						TableName: tableName,
-						Item: {
-							pk: `refresh#${refreshToken}`,
-							accessToken: token.accessToken,
-							expiresAt: toEpochSeconds(refreshTokenExpiresAt),
-						},
-					}),
-				);
+				await refreshIndex.put({
+					Item: {
+						pk: `refresh#${refreshToken}`,
+						accessToken: token.accessToken,
+						expiresAt: toEpochSeconds(refreshTokenExpiresAt),
+					},
+				});
 			}
 
 			return { ...token, client: oauthClient, user };
 		},
 
 		async getAccessToken(accessToken: string): Promise<Token | Falsey> {
-			const result = await client.send(
-				new GetCommand({
-					TableName: tableName,
-					Key: { pk: `token#${accessToken}` },
-				}),
-			);
+			const row = await tokens.get({ pk: `token#${accessToken}` });
+			if (!row) return null;
 
-			if (!result.Item) return null;
-
-			const row = TokenRow.parse(result.Item);
 			const accessTokenExpiresAt = new Date(row.accessTokenExpiresAt * 1000);
 			if (accessTokenExpiresAt < new Date()) return null;
 
@@ -231,26 +196,12 @@ export function initDynamoDbOAuthModel(deps: {
 		},
 
 		async getRefreshToken(refreshToken: string): Promise<RefreshToken | Falsey> {
-			const indexResult = await client.send(
-				new GetCommand({
-					TableName: tableName,
-					Key: { pk: `refresh#${refreshToken}` },
-				}),
-			);
+			const indexRow = await refreshIndex.get({ pk: `refresh#${refreshToken}` });
+			if (!indexRow) return null;
 
-			if (!indexResult.Item) return null;
+			const row = await tokens.get({ pk: `token#${indexRow.accessToken}` });
+			if (!row) return null;
 
-			const indexRow = RefreshIndexRow.parse(indexResult.Item);
-			const tokenResult = await client.send(
-				new GetCommand({
-					TableName: tableName,
-					Key: { pk: `token#${indexRow.accessToken}` },
-				}),
-			);
-
-			if (!tokenResult.Item) return null;
-
-			const row = TokenRow.parse(tokenResult.Item);
 			const refreshTokenExpiresAt = new Date(row.refreshTokenExpiresAt * 1000);
 			if (refreshTokenExpiresAt < new Date()) return null;
 
@@ -267,29 +218,11 @@ export function initDynamoDbOAuthModel(deps: {
 		},
 
 		async revokeToken(token: RefreshToken): Promise<boolean> {
-			const indexResult = await client.send(
-				new GetCommand({
-					TableName: tableName,
-					Key: { pk: `refresh#${token.refreshToken}` },
-				}),
-			);
+			const indexRow = await refreshIndex.get({ pk: `refresh#${token.refreshToken}` });
+			if (!indexRow) return false;
 
-			if (!indexResult.Item) return false;
-
-			const indexRow = RefreshIndexRow.parse(indexResult.Item);
-			await client.send(
-				new DeleteCommand({
-					TableName: tableName,
-					Key: { pk: `refresh#${token.refreshToken}` },
-				}),
-			);
-
-			await client.send(
-				new DeleteCommand({
-					TableName: tableName,
-					Key: { pk: `token#${indexRow.accessToken}` },
-				}),
-			);
+			await refreshIndex.delete({ Key: { pk: `refresh#${token.refreshToken}` } });
+			await tokens.delete({ Key: { pk: `token#${indexRow.accessToken}` } });
 
 			return true;
 		},
@@ -302,38 +235,21 @@ export function initDynamoDbOAuthModel(deps: {
 			let exclusiveStartKey: Record<string, unknown> | undefined;
 
 			do {
-				const queryResult = await client.send(
-					new QueryCommand({
-						TableName: tableName,
-						IndexName: "userId-index",
-						KeyConditionExpression: "userId = :userId",
-						ExpressionAttributeValues: { ":userId": userId },
-						ExclusiveStartKey: exclusiveStartKey,
-					}),
-				);
+				const { items, lastEvaluatedKey } = await revokeView.query({
+					IndexName: "userId-index",
+					KeyConditionExpression: "userId = :userId",
+					ExpressionAttributeValues: { ":userId": userId },
+					ExclusiveStartKey: exclusiveStartKey,
+				});
 
-				exclusiveStartKey = queryResult.LastEvaluatedKey;
+				exclusiveStartKey = lastEvaluatedKey;
 
-				if (!queryResult.Items || queryResult.Items.length === 0) continue;
-
-				for (const item of queryResult.Items) {
-					const parsed = RevokeItemRow.parse(item);
-
-					if (parsed.pk.startsWith("token#") && parsed.refreshToken) {
-						await client.send(
-							new DeleteCommand({
-								TableName: tableName,
-								Key: { pk: `refresh#${parsed.refreshToken}` },
-							}),
-						);
+				for (const item of items) {
+					if (item.pk.startsWith("token#") && item.refreshToken) {
+						await refreshIndex.delete({ Key: { pk: `refresh#${item.refreshToken}` } });
 					}
 
-					await client.send(
-						new DeleteCommand({
-							TableName: tableName,
-							Key: { pk: parsed.pk },
-						}),
-					);
+					await revokeView.delete({ Key: { pk: item.pk } });
 				}
 			} while (exclusiveStartKey);
 		},

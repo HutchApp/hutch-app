@@ -1,8 +1,7 @@
 /* c8 ignore start -- composition root, no logic to test */
 import assert from "node:assert";
 import type { Express } from "express";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import type { Logger } from "../infra/logger";
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
@@ -64,7 +63,7 @@ function initProviders() {
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
-		const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+		const client = createDynamoDocumentClient();
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });

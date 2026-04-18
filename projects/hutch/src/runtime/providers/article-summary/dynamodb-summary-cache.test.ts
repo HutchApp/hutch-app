@@ -1,4 +1,4 @@
-import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import type { DynamoDBDocumentClient } from "@packages/hutch-storage-client";
 import { initDynamoDbSummaryCache } from "./dynamodb-summary-cache";
 
 function createFakeClient(item: Record<string, unknown> | undefined): Partial<DynamoDBDocumentClient> {
