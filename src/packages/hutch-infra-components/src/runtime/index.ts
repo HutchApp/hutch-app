@@ -8,7 +8,6 @@ export {
 	initSqsCommandDispatcher,
 	type DispatchCommand,
 } from "./sqs-command-dispatcher";
-export { initInMemorySqsCommandDispatcher } from "./in-memory-sqs-command-dispatcher";
 
 export type PublishEvent = (params: {
 	source: string;
