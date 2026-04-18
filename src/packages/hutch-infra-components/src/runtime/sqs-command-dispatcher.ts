@@ -20,7 +20,7 @@ export function initSqsCommandDispatcher<C extends HutchCommand<z.ZodTypeAny>>(d
 		await sqsClient.send(
 			new SendMessageCommand({
 				QueueUrl: queueUrl,
-				MessageBody: JSON.stringify(validated),
+				MessageBody: JSON.stringify({ detail: validated }),
 			}),
 		);
 	};

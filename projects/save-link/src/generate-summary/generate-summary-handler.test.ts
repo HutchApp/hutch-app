@@ -27,12 +27,12 @@ const stubContext: Context = {
 	succeed: () => {},
 };
 
-function createSqsEvent(command: { url: string }): SQSEvent {
+function createSqsEvent(detail: { url: string }): SQSEvent {
 	return {
 		Records: [{
 			messageId: "msg-1",
 			receiptHandle: "receipt-1",
-			body: JSON.stringify(command),
+			body: JSON.stringify({ detail }),
 			attributes: stubAttributes,
 			messageAttributes: {},
 			md5OfBody: "",
@@ -123,7 +123,7 @@ describe("initGenerateSummaryHandler", () => {
 			Records: [{
 				messageId: "msg-1",
 				receiptHandle: "receipt-1",
-				body: JSON.stringify({ invalid: true }),
+				body: JSON.stringify({ detail: { invalid: true } }),
 				attributes: stubAttributes,
 				messageAttributes: {},
 				md5OfBody: "",

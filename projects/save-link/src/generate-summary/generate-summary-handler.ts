@@ -19,9 +19,8 @@ export function initGenerateSummaryHandler(deps: {
 
 	return async (event) => {
 		for (const record of event.Records) {
-			const command = GenerateSummaryCommand.detailSchema.parse(
-				JSON.parse(record.body),
-			);
+			const envelope = JSON.parse(record.body);
+			const command = GenerateSummaryCommand.detailSchema.parse(envelope.detail);
 
 			logger.info("[GenerateGlobalSummary] processing", { url: command.url });
 
