@@ -11,9 +11,11 @@ export interface AnalyticsPageview {
 	utm_source: string | null;
 	utm_medium: string | null;
 	utm_campaign: string | null;
+	utm_content: string | null;
 	referrer_host: string | null;
 	visitor_hash: string | null;
 	user_agent: string | null;
+	is_authenticated: boolean;
 }
 
 const SKIP_PATHS = new Set([
@@ -70,9 +72,11 @@ export function createAnalyticsMiddleware(deps: {
 				utm_source: extractQueryString(req, "utm_source"),
 				utm_medium: extractQueryString(req, "utm_medium"),
 				utm_campaign: extractQueryString(req, "utm_campaign"),
+				utm_content: extractQueryString(req, "utm_content"),
 				referrer_host: extractReferrerHost(req),
 				visitor_hash: hashIp({ ip: req.ip, salt: deps.salt }),
 				user_agent: req.get("user-agent") ?? null,
+				is_authenticated: Boolean(req.userId),
 			});
 		});
 		next();
