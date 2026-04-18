@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test'
 import type { PageAction } from '../hateoas/navigation-handler.types'
+import type { SavePermalinkActionKey } from './action-catalog'
 import { isOnPage, clickAndWaitForPageReload } from '../page-interactions'
 import type { AuthProgress } from './auth-actions'
 import type { CleanupProgress } from './cleanup-actions'
@@ -13,11 +14,9 @@ export function createSavePermalinkActions(
 	config: { baseUrl: string; testUrl: string },
 	cleanupProgress: CleanupProgress,
 	progress: SavePermalinkProgress,
-): (authProgress: AuthProgress) => Map<string, PageAction> {
-	return (authProgress) => {
-		const actions = new Map<string, PageAction>()
-
-		actions.set('save-via-permalink', {
+): (authProgress: AuthProgress) => Record<SavePermalinkActionKey, PageAction> {
+	return (authProgress) => ({
+		'save-via-permalink': {
 			isAvailable: async (page) => {
 				if (!authProgress.loggedIn) return false
 				if (!cleanupProgress.previousArticlesDeleted) return false
@@ -35,9 +34,9 @@ export function createSavePermalinkActions(
 
 				progress.savedViaPermalink = true
 			},
-		})
+		},
 
-		actions.set('delete-permalink-article', {
+		'delete-permalink-article': {
 			isAvailable: async (page) => {
 				if (!progress.savedViaPermalink) return false
 				if (progress.deletedPermalinkArticle) return false
@@ -51,8 +50,6 @@ export function createSavePermalinkActions(
 
 				progress.deletedPermalinkArticle = true
 			},
-		})
-
-		return actions
-	}
+		},
+	})
 }

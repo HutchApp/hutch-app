@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test'
 import type { PageAction } from '../hateoas/navigation-handler.types'
+import type { ViewPageActionKey } from './action-catalog'
 import { clickAndWaitForPageReload, isOnPage } from '../page-interactions'
 import type { AuthProgress } from './auth-actions'
 
@@ -10,11 +11,9 @@ export type ViewPageProgress = {
 export function createAnonymousViewPageActions(
 	config: { baseUrl: string; testUrl: string },
 	progress: ViewPageProgress,
-): (authProgress: AuthProgress) => Map<string, PageAction> {
-	return (authProgress) => {
-		const actions = new Map<string, PageAction>()
-
-		actions.set('anonymous-visit-view-page', {
+): (authProgress: AuthProgress) => Record<ViewPageActionKey, PageAction> {
+	return (authProgress) => ({
+		'anonymous-visit-view-page': {
 			isAvailable: async (page) => {
 				if (authProgress.accountCreated) return false
 				if (progress.visitedAnonymously) return false
@@ -55,8 +54,6 @@ export function createAnonymousViewPageActions(
 
 				progress.visitedAnonymously = true
 			},
-		})
-
-		return actions
-	}
+		},
+	})
 }

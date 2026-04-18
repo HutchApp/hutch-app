@@ -1,20 +1,35 @@
 import { type Page, expect } from '@playwright/test'
 import { HATEOASClient, PageNavigationHandler, type NavigationConfig } from '../hateoas'
-import { groupOf } from '../hateoas/action-composer'
+import type {
+  ViewPageActionKey,
+  OnboardingActionKey,
+  SeedActionKey,
+  CleanupActionKey,
+  PasswordResetActionKey,
+  SavePermalinkActionKey,
+  QueueFlowActionKey,
+} from './action-catalog'
 import { createAuthActions, type AuthData, type AuthProgress } from './auth-actions'
 import { createQueueActions, type QueueProgress, type TestArticleData } from './queue-actions'
 import type { PasswordResetProgress } from './password-reset-actions'
 import type { PageAction } from '../hateoas/navigation-handler.types'
 
-type ActionGroupFactory = (authProgress: AuthProgress) => Map<string, PageAction>
+export type PreQueueActionFactories = {
+  anonymousView: (authProgress: AuthProgress) => Record<ViewPageActionKey, PageAction>
+  onboarding: (authProgress: AuthProgress) => Record<OnboardingActionKey, PageAction>
+  seed: (authProgress: AuthProgress) => Record<SeedActionKey, PageAction>
+  cleanup: (authProgress: AuthProgress) => Record<CleanupActionKey, PageAction>
+  passwordReset: (authProgress: AuthProgress) => Record<PasswordResetActionKey, PageAction>
+  savePermalink: (authProgress: AuthProgress) => Record<SavePermalinkActionKey, PageAction>
+}
 
 export interface QueueFlowConfig {
   baseURL: string
   testArticles: TestArticleData
   authData: AuthData
-  passwordResetProgress?: PasswordResetProgress
-  preQueueActionFactories?: ActionGroupFactory[]
-  preQueueProgressObjects?: Record<string, boolean>[]
+  passwordResetProgress: PasswordResetProgress
+  preQueueActionFactories: PreQueueActionFactories
+  preQueueProgressObjects: Record<string, boolean>[]
   maxNavigations?: number
 }
 
@@ -47,19 +62,26 @@ export async function runQueueFlow(page: Page, config: QueueFlowConfig): Promise
     cleanupDeleted: false,
   }
 
-  const preQueueGroups = (config.preQueueActionFactories ?? []).map(factory => factory(authProgress))
+  const { anonymousView, onboarding, seed, cleanup, passwordReset, savePermalink } = config.preQueueActionFactories
 
-  const allActions = groupOf(
-    ...preQueueGroups,
-    createAuthActions(config.authData, authProgress, config.passwordResetProgress),
-    createQueueActions(authProgress, queueProgress, config.testArticles),
-  )
+  const allActions: Record<QueueFlowActionKey, PageAction> = {
+    ...anonymousView(authProgress),
+    ...onboarding(authProgress),
+    ...seed(authProgress),
+    ...cleanup(authProgress),
+    ...passwordReset(authProgress),
+    ...savePermalink(authProgress),
+    ...createAuthActions(config.authData, authProgress, config.passwordResetProgress),
+    ...createQueueActions(authProgress, queueProgress, config.testArticles),
+  }
 
   const allProgressObjects: Record<string, boolean>[] = [
     authProgress,
-    ...(config.preQueueProgressObjects ?? []),
+    ...config.preQueueProgressObjects,
     queueProgress,
   ]
+
+  const actionsMap = new Map<string, PageAction>(Object.entries(allActions))
 
   const navigationHandler = new PageNavigationHandler(
     page,
@@ -67,7 +89,7 @@ export async function runQueueFlow(page: Page, config: QueueFlowConfig): Promise
       successDetector: async () =>
         allProgressObjects.every(p => Object.values(p).every(Boolean)),
     },
-    allActions,
+    actionsMap,
   )
 
   const client = new HATEOASClient(page, navigationHandler)

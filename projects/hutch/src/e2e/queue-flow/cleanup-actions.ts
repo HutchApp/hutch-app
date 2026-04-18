@@ -1,4 +1,5 @@
 import type { PageAction } from '../hateoas/navigation-handler.types'
+import type { CleanupActionKey } from './action-catalog'
 import { isOnPage, clickAndWaitForPageReload } from '../page-interactions'
 import type { AuthProgress } from './auth-actions'
 
@@ -8,11 +9,9 @@ export type CleanupProgress = {
 
 export function createCleanupActions(
   cleanupProgress: CleanupProgress,
-): (authProgress: AuthProgress) => Map<string, PageAction> {
-  return (authProgress) => {
-    const actions = new Map<string, PageAction>()
-
-    actions.set('cleanup-previous-articles', {
+): (authProgress: AuthProgress) => Record<CleanupActionKey, PageAction> {
+  return (authProgress) => ({
+    'cleanup-previous-articles': {
       isAvailable: async (page) => {
         if (!authProgress.loggedIn) return false
         if (cleanupProgress.previousArticlesDeleted) return false
@@ -26,8 +25,6 @@ export function createCleanupActions(
         }
         cleanupProgress.previousArticlesDeleted = true
       },
-    })
-
-    return actions
-  }
+    },
+  })
 }

@@ -1,11 +1,40 @@
 /* c8 ignore start -- staging E2E test, only run in CI */
 import assert from 'node:assert'
 import { test } from '@playwright/test'
+import type { PageAction } from '../hateoas/navigation-handler.types'
+import {
+  ONBOARDING_ACTION_KEYS,
+  PASSWORD_RESET_ACTION_KEYS,
+  SEED_ACTION_KEYS,
+} from './action-catalog'
 import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
 import { createSavePermalinkActions, type SavePermalinkProgress } from './save-permalink-actions'
 import { createAnonymousViewPageActions, type ViewPageProgress } from './view-page-actions'
+import type { OnboardingProgress } from './onboarding-actions'
+import type { PasswordResetProgress } from './password-reset-actions'
+import type { SeedProgress } from './seed-actions'
 import type { TestArticleData } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
+
+// No-op factory for action groups that staging legitimately cannot exercise
+// (e.g. password reset needs /e2e/sent-emails, onboarding needs an extension
+// cookie signal). Declaring the same keys as local preserves action-key
+// parity at compile time via the exhaustive *_ACTION_KEYS tuples.
+const SKIP_ACTION: PageAction = {
+  isAvailable: async () => false,
+  execute: async () => { /* staging-skipped action, never runs */ },
+}
+function skipFactory<K extends string>(
+  keys: readonly K[],
+): () => Record<K, PageAction> {
+  return () => {
+    const result = {} as Record<K, PageAction>
+    for (const key of keys) {
+      result[key] = SKIP_ACTION
+    }
+    return result
+  }
+}
 
 test.describe('Queue management flow (staging)', () => {
   test('signup, logout, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page, baseURL }) => {
@@ -22,6 +51,28 @@ test.describe('Queue management flow (staging)', () => {
 
     const viewPageProgress: ViewPageProgress = {
       visitedAnonymously: false,
+    }
+
+    // All-true stubs: staging skips these flows (no /e2e/sent-emails endpoint,
+    // no seed URLs, no extension cookie signal), so mark their progress as
+    // complete up front. The paired skipFactory below keeps action-key parity
+    // with local by registering no-op actions under the same keys.
+    const onboardingProgress: OnboardingProgress = {
+      installedExtension: true,
+      savedFirstArticle: true,
+      savedFirstArticleReappeared: true,
+    }
+
+    const seedProgress: SeedProgress = {
+      articlesSeeded: true,
+    }
+
+    const passwordResetProgress: PasswordResetProgress = {
+      navigatedToForgotPassword: true,
+      submittedForgotPassword: true,
+      navigatedToResetPassword: true,
+      submittedResetPassword: true,
+      loggedInWithNewPassword: true,
     }
 
     const stagingArticles: TestArticleData = {
@@ -42,19 +93,30 @@ test.describe('Queue management flow (staging)', () => {
         email: 'e2e-test@example.com',
         password: 'test-password-123',
       },
-      preQueueActionFactories: [
-        createAnonymousViewPageActions(
+      passwordResetProgress,
+      preQueueActionFactories: {
+        anonymousView: createAnonymousViewPageActions(
           { baseUrl: baseURL, testUrl: `${baseURL}/privacy?view=1` },
           viewPageProgress,
         ),
-        createCleanupActions(cleanupProgress),
-        createSavePermalinkActions(
+        onboarding: skipFactory(ONBOARDING_ACTION_KEYS),
+        seed: skipFactory(SEED_ACTION_KEYS),
+        cleanup: createCleanupActions(cleanupProgress),
+        passwordReset: skipFactory(PASSWORD_RESET_ACTION_KEYS),
+        savePermalink: createSavePermalinkActions(
           { baseUrl: baseURL, testUrl: `${baseURL}/privacy?permalink=1` },
           cleanupProgress,
           savePermalinkProgress,
         ),
+      },
+      preQueueProgressObjects: [
+        viewPageProgress,
+        cleanupProgress,
+        savePermalinkProgress,
+        onboardingProgress,
+        seedProgress,
+        passwordResetProgress,
       ],
-      preQueueProgressObjects: [viewPageProgress, cleanupProgress, savePermalinkProgress],
       maxNavigations: 92,
     })
   })

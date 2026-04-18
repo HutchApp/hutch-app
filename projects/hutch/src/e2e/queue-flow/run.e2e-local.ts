@@ -56,30 +56,25 @@ test.describe('Queue management flow (local)', () => {
       testArticles: createLocalTestArticles(BASE_URL),
       authData,
       passwordResetProgress,
-      preQueueActionFactories: [
-        // Anonymous /view visit runs first on the initial page-home load, before
-        // signup — exercises the public preview page for unauthenticated visitors.
-        createAnonymousViewPageActions(
+      preQueueActionFactories: {
+        anonymousView: createAnonymousViewPageActions(
           { baseUrl: BASE_URL, testUrl: `${BASE_URL}/privacy?view=1` },
           viewPageProgress,
         ),
-        // Onboarding assertions run first on the post-signup empty queue, before
-        // seed-actions populates the queue with articles.
-        (authProgress) => createOnboardingActions(authProgress, onboardingProgress),
-        createSeedActions(seedProgress, [`${BASE_URL}/privacy?seed=1`, `${BASE_URL}/privacy?seed=2`]),
-        createCleanupActions(cleanupProgress),
-        (authProgress) => createPasswordResetActions(
+        onboarding: createOnboardingActions(onboardingProgress),
+        seed: createSeedActions(seedProgress, [`${BASE_URL}/privacy?seed=1`, `${BASE_URL}/privacy?seed=2`]),
+        cleanup: createCleanupActions(cleanupProgress),
+        passwordReset: createPasswordResetActions(
           { email: authData.email, oldPassword: authData.password, newPassword: 'reset-password-456', baseUrl: BASE_URL },
           authData,
-          authProgress,
           passwordResetProgress,
         ),
-        createSavePermalinkActions(
+        savePermalink: createSavePermalinkActions(
           { baseUrl: BASE_URL, testUrl: `${BASE_URL}/privacy?permalink=1` },
           cleanupProgress,
           savePermalinkProgress,
         ),
-      ],
+      },
       preQueueProgressObjects: [viewPageProgress, seedProgress, cleanupProgress, passwordResetProgress, onboardingProgress, savePermalinkProgress],
       maxNavigations: 92,
     })
