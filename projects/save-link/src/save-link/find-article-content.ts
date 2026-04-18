@@ -1,9 +1,12 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
-import assert from 'node:assert'
+import assert from "node:assert";
 import type { S3Client } from "@aws-sdk/client-s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { GetCommand } from "@aws-sdk/lib-dynamodb";
+import {
+	type DynamoDBDocumentClient,
+	defineDynamoTable,
+	dynamoField,
+} from "@packages/hutch-storage-client";
 import { z } from "zod";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 
@@ -11,8 +14,8 @@ export type ArticleContentResult = { content: string; imageUrl?: string };
 export type FindArticleContent = (url: string) => Promise<ArticleContentResult | undefined>;
 
 const ArticleContentRow = z.object({
-	contentLocation: z.string().optional(),
-	imageUrl: z.string().optional(),
+	contentLocation: dynamoField(z.string()),
+	imageUrl: dynamoField(z.string()),
 });
 
 function parseS3Uri(uri: string): { bucket: string; key: string } {
@@ -31,16 +34,18 @@ export function initFindArticleContent(deps: {
 }): { findArticleContent: FindArticleContent } {
 	const { dynamoClient, s3Client, tableName } = deps;
 
+	const articleTable = defineDynamoTable({
+		client: dynamoClient,
+		tableName,
+		schema: ArticleContentRow,
+	});
+
 	const findArticleContent: FindArticleContent = async (url) => {
-		const result = await dynamoClient.send(
-			new GetCommand({
-				TableName: tableName,
-				Key: { url: ArticleResourceUniqueId.parse(url).value },
-				ProjectionExpression: "contentLocation, imageUrl",
-			}),
+		const parsed = await articleTable.get(
+			{ url: ArticleResourceUniqueId.parse(url).value },
+			{ projection: ["contentLocation", "imageUrl"] },
 		);
-		assert(result.Item, 'result.Item must exist')
-		const parsed = ArticleContentRow.parse(result.Item);
+		assert(parsed, "result.Item must exist");
 		if (!parsed.contentLocation) return undefined;
 
 		const { bucket, key } = parseS3Uri(parsed.contentLocation);

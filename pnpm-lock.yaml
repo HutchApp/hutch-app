@@ -406,6 +406,9 @@ importers:
       '@packages/hutch-logger':
         specifier: workspace:*
         version: link:../../src/packages/hutch-logger
+      '@packages/hutch-storage-client':
+        specifier: workspace:*
+        version: link:../../src/packages/hutch-storage-client
       '@types/parse-srcset':
         specifier: 1.0.0
         version: 1.0.0
@@ -531,6 +534,25 @@ importers:
         version: 5.9.3
 
   src/packages/hutch-logger:
+    devDependencies:
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  src/packages/hutch-storage-client:
+    dependencies:
+      '@aws-sdk/client-dynamodb':
+        specifier: 3.1001.0
+        version: 3.1001.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: 3.1001.0
+        version: 3.1001.0(@aws-sdk/client-dynamodb@3.1001.0)
+      zod:
+        specifier: 4.1.13
+        version: 4.1.13
     devDependencies:
       concurrently:
         specifier: 9.2.1
@@ -5867,7 +5889,7 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 5.2.0
       '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/core': 3.973.25
+      '@aws-sdk/core': 3.973.26
       '@aws-sdk/credential-provider-node': 3.972.16
       '@aws-sdk/dynamodb-codec': 3.972.18
       '@aws-sdk/middleware-endpoint-discovery': 3.972.6
@@ -5881,19 +5903,19 @@ snapshots:
       '@aws-sdk/util-user-agent-browser': 3.972.6
       '@aws-sdk/util-user-agent-node': 3.973.2
       '@smithy/config-resolver': 4.4.10
-      '@smithy/core': 3.23.12
+      '@smithy/core': 3.23.13
       '@smithy/fetch-http-handler': 5.3.15
       '@smithy/hash-node': 4.2.11
       '@smithy/invalid-dependency': 4.2.11
       '@smithy/middleware-content-length': 4.2.11
-      '@smithy/middleware-endpoint': 4.4.27
+      '@smithy/middleware-endpoint': 4.4.28
       '@smithy/middleware-retry': 4.4.39
-      '@smithy/middleware-serde': 4.2.15
+      '@smithy/middleware-serde': 4.2.16
       '@smithy/middleware-stack': 4.2.12
       '@smithy/node-config-provider': 4.3.12
-      '@smithy/node-http-handler': 4.5.0
+      '@smithy/node-http-handler': 4.5.1
       '@smithy/protocol-http': 5.3.12
-      '@smithy/smithy-client': 4.12.7
+      '@smithy/smithy-client': 4.12.8
       '@smithy/types': 4.13.1
       '@smithy/url-parser': 4.2.12
       '@smithy/util-base64': 4.3.2
@@ -6220,9 +6242,9 @@ snapshots:
 
   '@aws-sdk/dynamodb-codec@3.972.18':
     dependencies:
-      '@aws-sdk/core': 3.973.25
-      '@smithy/core': 3.23.12
-      '@smithy/smithy-client': 4.12.7
+      '@aws-sdk/core': 3.973.26
+      '@smithy/core': 3.23.13
+      '@smithy/smithy-client': 4.12.8
       '@smithy/types': 4.13.1
       '@smithy/util-base64': 4.3.2
       tslib: 2.8.1
@@ -6235,10 +6257,10 @@ snapshots:
   '@aws-sdk/lib-dynamodb@3.1001.0(@aws-sdk/client-dynamodb@3.1001.0)':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.1001.0
-      '@aws-sdk/core': 3.973.25
+      '@aws-sdk/core': 3.973.26
       '@aws-sdk/util-dynamodb': 3.996.1(@aws-sdk/client-dynamodb@3.1001.0)
-      '@smithy/core': 3.23.12
-      '@smithy/smithy-client': 4.12.7
+      '@smithy/core': 3.23.13
+      '@smithy/smithy-client': 4.12.8
       '@smithy/types': 4.13.1
       tslib: 2.8.1
 
