@@ -3,6 +3,7 @@ import assert from 'node:assert'
 import { test } from '@playwright/test'
 import { createCleanupActions, type CleanupProgress } from './cleanup-actions'
 import { createSavePermalinkActions, type SavePermalinkProgress } from './save-permalink-actions'
+import { createAnonymousViewPageActions, type ViewPageProgress } from './view-page-actions'
 import type { TestArticleData } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
 
@@ -17,6 +18,10 @@ test.describe('Queue management flow (staging)', () => {
     const savePermalinkProgress: SavePermalinkProgress = {
       savedViaPermalink: false,
       deletedPermalinkArticle: false,
+    }
+
+    const viewPageProgress: ViewPageProgress = {
+      visitedAnonymously: false,
     }
 
     const stagingArticles: TestArticleData = {
@@ -38,6 +43,10 @@ test.describe('Queue management flow (staging)', () => {
         password: 'test-password-123',
       },
       preQueueActionFactories: [
+        createAnonymousViewPageActions(
+          { baseUrl: baseURL, testUrl: `${baseURL}/privacy?view=1` },
+          viewPageProgress,
+        ),
         createCleanupActions(cleanupProgress),
         createSavePermalinkActions(
           { baseUrl: baseURL, testUrl: `${baseURL}/privacy?permalink=1` },
@@ -45,8 +54,8 @@ test.describe('Queue management flow (staging)', () => {
           savePermalinkProgress,
         ),
       ],
-      preQueueProgressObjects: [cleanupProgress, savePermalinkProgress],
-      maxNavigations: 90,
+      preQueueProgressObjects: [viewPageProgress, cleanupProgress, savePermalinkProgress],
+      maxNavigations: 92,
     })
   })
 })
