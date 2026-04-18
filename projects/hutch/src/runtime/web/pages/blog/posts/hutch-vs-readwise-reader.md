@@ -8,7 +8,7 @@ keywords: "hutch vs readwise, read it later app, readwise alternative, read it l
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Readwise Reader ($12.99/mo) has deeper features: Ghostreader AI, highlight sync to Obsidian/Notion/Logseq, RSS, and a newsletter inbox. Readplace ($3.99/mo) is simpler: AI TL;DR summaries, Australian hosting, source-available code, and a focused reading experience. Pick Readwise if you need highlighting with note-taking sync. Pick Readplace if you want AI summaries and privacy at a lower price.

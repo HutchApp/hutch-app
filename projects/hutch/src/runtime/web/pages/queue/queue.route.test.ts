@@ -695,7 +695,7 @@ describe("Queue routes", () => {
 				summarySlot.classList.contains("article-body__summary-slot--visible"),
 			).toBe(true);
 			expect(summarySlot.textContent).toContain("Key points from the article");
-			expect(doc.querySelector(".article-body__summary-toggle")?.textContent).toBe("TL;DR");
+			expect(doc.querySelector(".article-body__summary-toggle")?.textContent).toBe("Summary (TL;DR)");
 		});
 
 		it("should not display summary block when no cached summary exists", async () => {

@@ -8,7 +8,7 @@ keywords: "instapaper alternative, read it later, hutch vs instapaper, pocket re
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Instapaper is the familiar Pocket replacement: mature, stable, free tier, native mobile apps, Kobo support, but limited recent development and no AI. Readplace is newer and actively shipping: AI summaries, Australian hosting, source-available code, $3.99/mo with no free tier, but no native mobile apps or offline reading yet. Pick Instapaper for stability and mobile. Pick Readplace for AI triage and active development.

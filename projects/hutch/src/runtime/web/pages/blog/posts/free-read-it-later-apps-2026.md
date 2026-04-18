@@ -8,7 +8,7 @@ keywords: "free read it later app, read it later free, instapaper free, wallabag
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Free read-it-later options in 2026: Instapaper and Raindrop.io have usable free tiers. Karakeep and Wallabag are free and self-hosted but cost time and server money. Browser bookmarks cost nothing but offer no reader view. Pocket and Omnivore were free and both shut down. Free hosted services have a shelf life — the money situation changes and the service goes with it. Readplace costs $3.99/mo because the price is the business model.

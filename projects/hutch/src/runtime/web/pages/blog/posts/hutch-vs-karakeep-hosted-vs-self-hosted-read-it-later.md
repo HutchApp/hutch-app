@@ -8,7 +8,7 @@ keywords: "karakeep, hoarder, hutch, read it later, self-hosted, pocket alternat
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Karakeep is free, open-source, and self-hosted with Docker. You get full data control and AI auto-tagging via Ollama, but you handle updates, backups, and uptime. Readplace is hosted at $3.99/mo with AI summaries included and no setup. You trade self-hosted control for convenience. Pick Karakeep if you already run a homelab. Pick Readplace if you do not want to maintain infrastructure for your reading list.

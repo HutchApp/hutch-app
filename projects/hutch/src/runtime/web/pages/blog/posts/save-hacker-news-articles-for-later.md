@@ -8,7 +8,7 @@ keywords: "hacker news, save articles, read it later, hn reader, hutch"
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Tabs are a guilt system, not a reading system. Separate discovery from reading: save HN articles to a queue during your morning scan, then read from the queue when you have time. AI summaries let you triage 30-40 saved articles in minutes. Readplace's browser extension works on news.ycombinator.com — one click saves the article and generates a summary.

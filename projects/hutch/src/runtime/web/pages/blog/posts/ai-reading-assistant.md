@@ -8,7 +8,7 @@ keywords: "AI reading assistant, read it later, AI summaries, reading tool, arti
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Most "AI reading assistants" replace reading with summaries and algorithmic curation. Readplace takes a different approach: it generates a TL;DR for every saved article so you can triage your list faster, then read the real thing. The AI never curates, hides, or reorders your content. You save what you want, scan summaries to prioritise, and read in a clean reader view. The workflow is save, summarise, triage, read.

@@ -8,7 +8,7 @@ keywords: "Pocket migration, Pocket export, Pocket alternative, move from Pocket
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Pocket shut down July 8, 2025. If you missed the export window, check your email for Pocket confirmation messages, browser history for getpocket.com URLs, the Wayback Machine, and linked services like IFTTT. If you have the HTML export file, email it to hutch+migrate@readplace.com and your articles are imported into Readplace within 24-48 hours.

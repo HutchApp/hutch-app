@@ -8,7 +8,7 @@ keywords: "Omnivore alternative, Omnivore replacement, Omnivore shut down, read 
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Omnivore shut down two weeks after ElevenLabs acquired it. The problem was venture capital needing an exit. Readplace is self-funded at $3.99/mo — subscriptions pay for servers, no investors expecting an exit. It ships Firefox and Chrome extensions, reader view, AI TL;DR summaries, full data export, and source-available code under AGPL. Hosted in Sydney under Australian privacy law.

@@ -8,7 +8,7 @@ keywords: "privacy analytics, cookieless analytics, IP hashing, read it later pr
 ---
 
 <details class="blog-tldr">
-<summary class="blog-tldr__toggle">TL;DR</summary>
+<summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
 Readplace tracks pageviews without cookies, third-party scripts, or consent banners. An Express middleware hashes each visitor's IP with a secret salt (SHA-256, truncated to 16 chars) and logs a JSON line to stdout. Same IP produces the same hash, so distinct visitors are countable — but the hash is one-way and cannot be reversed into an IP. The logs flow to CloudWatch; the dashboard is infrastructure-as-code. About eighty lines of TypeScript replace an analytics vendor.

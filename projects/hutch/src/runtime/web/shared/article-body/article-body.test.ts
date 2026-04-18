@@ -51,7 +51,7 @@ describe("renderArticleBody", () => {
 			slot.classList.contains("article-body__summary-slot--visible"),
 		).toBe(true);
 		expect(doc.querySelector(".article-body__summary-toggle")?.textContent).toBe(
-			"TL;DR",
+			"Summary (TL;DR)",
 		);
 		expect(doc.querySelector(".article-body__summary-text")?.textContent).toBe(
 			"Key points.",
