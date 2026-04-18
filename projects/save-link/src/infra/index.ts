@@ -223,7 +223,9 @@ const anonymousLinkSavedLambda = new HutchLambda("anonymous-link-saved", {
 	},
 	policies: [
 		...anonymousLinkSavedDynamodb.policies,
-		...generateSummaryQueue.policies,
+		// Rename the shared queue's send-policy so the Pulumi URN doesn't
+		// collide with the link-saved Lambda's attachment of the same policy.
+		...generateSummaryQueue.policies.map((p) => ({ ...p, name: `anonymous-${p.name}` })),
 		...contentBucket.readPolicies("anonymous-link-saved-s3"),
 	],
 });
