@@ -70,9 +70,9 @@ jobs:
             projects/browser-extension-core/src/ \
             projects/browser-extension-core/package.json \
             projects/browser-extension-core/tsconfig.json \
-            projects/hutch-logger/src/ \
-            projects/hutch-logger/package.json \
-            projects/hutch-logger/tsconfig.json \
+            src/packages/hutch-logger/src/ \
+            src/packages/hutch-logger/package.json \
+            src/packages/hutch-logger/tsconfig.json \
             package.json \
             pnpm-lock.yaml \
             pnpm-workspace.yaml
