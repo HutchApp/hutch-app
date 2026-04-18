@@ -21,19 +21,11 @@ const baseInput: ViewPageInput = {
 			href: "/save?url=https%3A%2F%2Fexample.com%2Fpost",
 		},
 	],
-	needsPriming: false,
 };
 
 function render(input = baseInput) {
 	const html = ViewPage(input).to("text/html").body;
 	return new JSDOM(html).window.document;
-}
-
-function requireInput(root: Element, name: string): Element {
-	const el = root.querySelector(`input[name="${name}"]`);
-	assert(el, `input[name="${name}"] must be rendered`);
-	assert.equal(el.tagName, "INPUT", `[name="${name}"] must be an <input>`);
-	return el;
 }
 
 describe("ViewPage", () => {
@@ -214,23 +206,4 @@ describe("ViewPage", () => {
 		assert(link, "cta action must still be rendered without content");
 	});
 
-	it("renders the prime form always and toggles data-auto-submit via needsPriming", () => {
-		const priming = render({ ...baseInput, needsPriming: true });
-		const formPriming = priming.querySelector("[data-test-view-prime]");
-		assert(formPriming, "prime form must be rendered");
-		expect(formPriming.getAttribute("action")).toBe("/view/prime");
-		expect(formPriming.getAttribute("method")?.toLowerCase()).toBe("post");
-		expect(formPriming.hasAttribute("data-auto-submit")).toBe(true);
-		expect(requireInput(formPriming, "url").getAttribute("value")).toBe(
-			"https://example.com/post",
-		);
-
-		const idle = render({ ...baseInput, needsPriming: false });
-		const formIdle = idle.querySelector("[data-test-view-prime]");
-		assert(
-			formIdle,
-			"prime form must be rendered even when priming is not needed",
-		);
-		expect(formIdle.hasAttribute("data-auto-submit")).toBe(false);
-	});
 });

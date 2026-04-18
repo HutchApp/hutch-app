@@ -22,17 +22,17 @@ export function createAnonymousViewPageActions(
 			},
 			execute: async (page) => {
 				const viewUrl = `${config.baseUrl}/view/${encodeURIComponent(config.testUrl)}`
-				await page.goto(viewUrl)
+				await page.goto(viewUrl, { waitUntil: 'domcontentloaded' })
 
 				await expect(page.locator('body.page-view')).toHaveCount(1)
 				await expect(page.locator('[data-test-reader-title]')).toBeVisible()
-				await expect(page.locator('[data-test-view-save]')).toBeVisible()
+				await expect(page.locator('[data-test-view-cta-action]')).toBeVisible()
 
 				// Click Save as anonymous — /save redirects to /login?return=/save?url=...
 				// so the regular navigate-to-signup action can pick up from page-login.
 				await clickAndWaitForPageReload(
 					page,
-					page.locator('[data-test-view-save] button[type="submit"]'),
+					page.locator('[data-test-view-cta-action]'),
 				)
 				await expect(page.locator('body.page-login')).toHaveCount(1)
 

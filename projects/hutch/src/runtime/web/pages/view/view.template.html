@@ -8,12 +8,3 @@
       <a class="view__cta-btn" href="{{href}}" data-test-view-cta-action>{{name}}</a>
       {{/each}}
     </aside>
-    <form method="POST" action="/view/prime" data-test-view-prime{{#if needsPriming}} data-auto-submit{{/if}} hidden>
-      <input type="hidden" name="url" value="{{articleUrl}}">
-    </form>
-    <script>
-    (function () {
-      var form = document.querySelector('[data-auto-submit]');
-      if (form) form.requestSubmit();
-    })();
-    </script>
