@@ -5,6 +5,7 @@ import { createOnboardingActions, type OnboardingProgress } from './onboarding-a
 import { createPasswordResetActions, type PasswordResetProgress } from './password-reset-actions'
 import { createSavePermalinkActions, type SavePermalinkProgress } from './save-permalink-actions'
 import { createSeedActions, type SeedProgress } from './seed-actions'
+import { createAnonymousViewPageActions, type ViewPageProgress } from './view-page-actions'
 import { createLocalTestArticles } from './queue-actions'
 import { runQueueFlow } from './queue-flow'
 
@@ -46,12 +47,22 @@ test.describe('Queue management flow (local)', () => {
       deletedPermalinkArticle: false,
     }
 
+    const viewPageProgress: ViewPageProgress = {
+      visitedAnonymously: false,
+    }
+
     await runQueueFlow(page, {
       baseURL: BASE_URL,
       testArticles: createLocalTestArticles(BASE_URL),
       authData,
       passwordResetProgress,
       preQueueActionFactories: [
+        // Anonymous /view visit runs first on the initial page-home load, before
+        // signup — exercises the public preview page for unauthenticated visitors.
+        createAnonymousViewPageActions(
+          { baseUrl: BASE_URL, testUrl: `${BASE_URL}/privacy?view=1` },
+          viewPageProgress,
+        ),
         // Onboarding assertions run first on the post-signup empty queue, before
         // seed-actions populates the queue with articles.
         (authProgress) => createOnboardingActions(authProgress, onboardingProgress),
@@ -69,8 +80,8 @@ test.describe('Queue management flow (local)', () => {
           savePermalinkProgress,
         ),
       ],
-      preQueueProgressObjects: [seedProgress, cleanupProgress, passwordResetProgress, onboardingProgress, savePermalinkProgress],
-      maxNavigations: 90,
+      preQueueProgressObjects: [viewPageProgress, seedProgress, cleanupProgress, passwordResetProgress, onboardingProgress, savePermalinkProgress],
+      maxNavigations: 92,
     })
   })
 })

@@ -19,10 +19,11 @@ export function createAuthActions(data: AuthData, progress: AuthProgress, passwo
   actions.set('navigate-to-signup', {
     isAvailable: async (page) => {
       if (progress.accountCreated) return false
-      return isOnPage(page, 'page-home')
+      if (await isOnPage(page, 'page-home')) return true
+      return isOnPage(page, 'page-login')
     },
     execute: async (page) => {
-      await page.locator('a[href="/signup"]').first().click()
+      await page.locator('a[href^="/signup"]').first().click()
     },
   })
 
