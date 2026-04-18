@@ -89,12 +89,22 @@ export function defineDynamoTable<TSchema extends z.ZodObject>(config: {
 
 	return {
 		async get(key, options) {
-			const projection = options?.projection?.join(", ");
+			const fields = options?.projection;
+			// Alias every projected attribute with `#` so reserved keywords (e.g.
+			// `url`, `name`, `status`) don't trip the ProjectionExpression parser.
+			const projectionOptions = fields
+				? {
+						ProjectionExpression: fields.map((f) => `#${String(f)}`).join(", "),
+						ExpressionAttributeNames: Object.fromEntries(
+							fields.map((f) => [`#${String(f)}`, String(f)]),
+						),
+					}
+				: {};
 			const result = await client.send(
 				new GetCommand({
 					TableName: tableName,
 					Key: key,
-					...(projection ? { ProjectionExpression: projection } : {}),
+					...projectionOptions,
 				}),
 			);
 			if (!result.Item) return undefined;
