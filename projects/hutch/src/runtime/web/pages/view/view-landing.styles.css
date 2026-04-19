@@ -8,7 +8,7 @@
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 0.5rem;
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .view-landing__lede {
@@ -26,7 +26,7 @@
 .view-landing__label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .view-landing__input {
@@ -36,12 +36,12 @@
   border: 1px solid var(--color-border);
   border-radius: 0.5rem;
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-text-primary);
   box-sizing: border-box;
 }
 
 .view-landing__input:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-brand);
   outline-offset: 1px;
 }
 
@@ -50,7 +50,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
-  background: var(--color-primary);
+  background: var(--color-brand);
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
