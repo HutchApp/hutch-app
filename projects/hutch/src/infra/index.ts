@@ -228,8 +228,7 @@ function logWidget(params: {
 		properties: {
 			region,
 			title: params.title,
-			logGroupNames: params.logGroupNames,
-			query: params.query,
+			query: `SOURCE ${params.logGroupNames.map((n) => `'${n}'`).join(", ")} | ${params.query}`,
 			view: params.view,
 		},
 	};
