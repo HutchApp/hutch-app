@@ -3,7 +3,7 @@
 }
 
 .embed-page__container {
-  max-width: 680px;
+  max-width: var(--reader-max-width);
   margin: 0 auto;
 }
 

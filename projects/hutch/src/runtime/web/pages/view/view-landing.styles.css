@@ -1,5 +1,5 @@
 .view-landing {
-  max-width: 680px;
+  max-width: var(--reader-max-width);
   margin: 0 auto;
   padding: 3rem 1rem;
 }

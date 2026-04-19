@@ -33,6 +33,7 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 	"--radius-sm": "6px",
 	"--radius": "8px",
 	"--radius-lg": "12px",
+	"--reader-max-width": "680px",
 	"--input": "var(--color-border)",
 	"--ring": "hsl(27 65% 47%)",
 	"--ring-shadow": "hsl(27 65% 47% / 0.15)",

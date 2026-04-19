@@ -4,7 +4,9 @@
       </article>
     </main>
     <aside class="view__cta" data-test-view-cta>
-      {{#each actions}}
-      <a class="view__cta-btn" href="{{href}}" data-test-view-cta-action>{{name}}</a>
-      {{/each}}
+      <div class="view__cta-content">
+        {{#each actions}}
+        <a class="view__cta-btn" href="{{href}}" data-test-view-cta-action>{{name}}</a>
+        {{/each}}
+      </div>
     </aside>

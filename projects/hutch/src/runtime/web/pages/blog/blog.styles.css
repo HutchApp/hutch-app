@@ -1,7 +1,7 @@
 /* Blog index */
 
 .blog {
-  max-width: 680px;
+  max-width: var(--reader-max-width);
   margin: 0 auto;
   padding: 48px 20px;
 }
@@ -75,7 +75,7 @@
 /* Blog post */
 
 .blog-post {
-  max-width: 680px;
+  max-width: var(--reader-max-width);
   margin: 0 auto;
   padding: 48px 20px;
 }

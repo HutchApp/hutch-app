@@ -264,7 +264,7 @@
 }
 
 .home-features__container {
-  max-width: 680px;
+  max-width: var(--reader-max-width);
   margin: 0 auto;
 }
 
@@ -374,7 +374,7 @@
 }
 
 .home-roadmap__container {
-  max-width: 680px;
+  max-width: var(--reader-max-width);
   margin: 0 auto;
 }
 
@@ -423,7 +423,7 @@
 }
 
 .home-backstory__container {
-  max-width: 680px;
+  max-width: var(--reader-max-width);
   margin: 0 auto;
 }
 
