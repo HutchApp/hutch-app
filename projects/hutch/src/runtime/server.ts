@@ -35,6 +35,7 @@ import type { RefreshArticleIfStale } from "./providers/article-freshness/check-
 import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
+import type { LogParseError } from "./providers/parse-errors/log-parse-error";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
 	CreateVerificationToken,
@@ -113,6 +114,7 @@ interface AppDependencies {
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
+	logParseError: LogParseError;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -348,6 +350,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		readArticleContent: deps.readArticleContent,
 		httpErrorMessageMapping: deps.httpErrorMessageMapping,
 		logError: deps.logError,
+		logParseError: deps.logParseError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 
@@ -361,6 +364,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		findCachedSummary: deps.findCachedSummary,
 		saveArticleGlobally: deps.saveArticleGlobally,
 		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
+		logParseError: deps.logParseError,
 	});
 	app.use("/view", viewRouter);
 

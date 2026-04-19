@@ -580,5 +580,19 @@ describe("View routes", () => {
 
 			expect(publishSaveAnonymousLink).not.toHaveBeenCalled();
 		});
+
+		it("reports parse failures via logParseError with source 'hutch-view'", async () => {
+			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
+			const logParseError = jest.fn();
+			const { app } = createTestApp({ parseArticle, logParseError });
+
+			await request(app).get(`/view/${ENCODED}`);
+
+			expect(logParseError).toHaveBeenCalledWith({
+				url: ARTICLE_URL,
+				reason: "blocked",
+				source: "hutch-view",
+			});
+		});
 	});
 });

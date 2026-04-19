@@ -3,6 +3,7 @@ import * as aws from "@pulumi/aws";
 import assert from "node:assert";
 import { resolve } from "node:path";
 import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus, HutchS3ReadWrite } from "@packages/hutch-infra-components/infra";
+import { PARSE_ERROR_STREAM } from "@packages/hutch-infra-components";
 import { DomainRegistration } from "./domain-registration";
 import { DomainRedirect } from "./domain-redirect";
 import { HutchStorage } from "./hutch-storage";
@@ -210,7 +211,7 @@ const region = aws.config.requireRegion();
 
 function logWidget(params: {
 	title: string;
-	logGroupName: string;
+	logGroupNames: string[];
 	query: string;
 	x: number;
 	y: number;
@@ -227,20 +228,30 @@ function logWidget(params: {
 		properties: {
 			region,
 			title: params.title,
-			query: `SOURCE '${params.logGroupName}' | ${params.query}`,
+			query: `SOURCE ${params.logGroupNames.map((n) => `'${n}'`).join(", ")} | ${params.query}`,
 			view: params.view,
 		},
 	};
 }
 
+/**
+ * HutchLambda names it a Lambda `{name}-handler`, which makes the CloudWatch
+ * log group `/aws/lambda/{name}-handler`. Names below mirror the HutchLambda
+ * resource names in `projects/save-link/src/infra/index.ts`.
+ */
+const SAVE_LINK_PARSE_ERROR_LOG_GROUPS = [
+	"/aws/lambda/save-link-command-handler",
+	"/aws/lambda/save-anonymous-link-command-handler",
+] as const;
+
 new aws.cloudwatch.Dashboard("readplace-analytics", {
 	dashboardName: "readplace-analytics",
-	dashboardBody: pulumi.output(logGroup.name).apply((logGroupName) =>
+	dashboardBody: pulumi.output(logGroup.name).apply((hutchLogGroupName) =>
 		JSON.stringify({
 			widgets: [
 				logWidget({
 					title: "UTM Source (%)",
-					logGroupName,
+					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, utm_source",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
@@ -255,7 +266,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 				}),
 				logWidget({
 					title: "Top Referrers",
-					logGroupName,
+					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, referrer_host",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
@@ -270,7 +281,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 				}),
 				logWidget({
 					title: "Recent Analytics Events",
-					logGroupName,
+					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, path, utm_source, utm_medium, utm_campaign, utm_content, referrer_host, visitor_hash, is_authenticated",
 						"| filter stream = \"analytics\"",
@@ -282,7 +293,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 				}),
 				logWidget({
 					title: "UTM Content (%)",
-					logGroupName,
+					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, utm_content",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
@@ -297,7 +308,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 				}),
 				logWidget({
 					title: "Distinct Visitors per Day",
-					logGroupName,
+					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, visitor_hash",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
@@ -310,7 +321,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 				}),
 				logWidget({
 					title: "Distinct Authenticated Readers per Day",
-					logGroupName,
+					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, visitor_hash, path, is_authenticated",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
@@ -322,6 +333,18 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					].join(" "),
 					x: 12, y: 24, width: 12, height: 8,
 					view: "timeSeries",
+				}),
+				logWidget({
+					title: "Parse Errors",
+					logGroupNames: [hutchLogGroupName, ...SAVE_LINK_PARSE_ERROR_LOG_GROUPS],
+					query: [
+						"fields @timestamp, url, reason, source",
+						`| filter stream = "${PARSE_ERROR_STREAM}"`,
+						"| sort @timestamp desc",
+						"| limit 100",
+					].join(" "),
+					x: 0, y: 32, width: 24, height: 8,
+					view: "table",
 				}),
 			],
 		}),

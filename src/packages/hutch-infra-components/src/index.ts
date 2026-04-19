@@ -18,3 +18,4 @@ export {
 	type HutchEvent,
 	type HutchCommand,
 } from "./events";
+export { PARSE_ERROR_STREAM, type ParseErrorEvent } from "./logs";

@@ -22,6 +22,7 @@ import {
 } from "./providers/oauth/oauth-model";
 import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
 import { noopLogger } from "@packages/hutch-logger";
+import type { LogParseError } from "./providers/parse-errors/log-parse-error";
 import { createApp } from "./server";
 import { httpErrorMessageMapping as defaultHttpErrorMessageMapping, type HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 
@@ -48,6 +49,7 @@ export function createTestApp(options?: {
 	httpErrorMessageMapping?: HttpErrorMessageMapping;
 	exchangeGoogleCode?: ExchangeGoogleCode;
 	logError?: (message: string, error?: Error) => void;
+	logParseError?: LogParseError;
 	appOrigin?: string;
 }) {
 	const auth = initInMemoryAuth();
@@ -103,6 +105,7 @@ export function createTestApp(options?: {
 			: undefined,
 		baseUrl: appOrigin,
 		logError: options?.logError ?? (() => {}),
+		logParseError: options?.logParseError ?? (() => {}),
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 	});

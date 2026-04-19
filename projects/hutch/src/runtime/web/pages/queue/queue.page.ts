@@ -18,6 +18,7 @@ import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publ
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
+import type { LogParseError } from "../../../providers/parse-errors/log-parse-error";
 import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
@@ -44,6 +45,7 @@ interface QueueDependencies {
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
+	logParseError: LogParseError;
 }
 
 import type { SavedArticle } from "../../../domain/article/article.types";
@@ -68,7 +70,11 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	if (freshness.action === "new") {
 		const parseResult = await deps.parseArticle(url);
 		if (!parseResult.ok) {
-			deps.logError(`[FetchArticle] Could not fetch ${url}: ${parseResult.reason}`);
+			deps.logParseError({
+				url,
+				reason: parseResult.reason,
+				source: "hutch-queue",
+			});
 			const hostname = new URL(url).hostname;
 			const saved = await deps.saveArticle({
 				userId,

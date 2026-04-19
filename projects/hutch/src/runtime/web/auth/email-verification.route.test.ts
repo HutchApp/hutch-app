@@ -66,6 +66,7 @@ describe("Email verification", () => {
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
 				logError: () => { resolveErrorLogged(); },
+				logParseError: () => {},
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
 				publishLinkSaved: async () => {},

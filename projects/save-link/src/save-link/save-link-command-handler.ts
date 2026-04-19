@@ -7,6 +7,7 @@ import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
+import type { LogParseError } from "./log-parse-error";
 import {
 	initSaveLinkWork,
 	type ProcessContent,
@@ -32,6 +33,7 @@ export function initSaveLinkCommandHandler(deps: {
 	imagesCdnBaseUrl: string;
 	now: () => Date;
 	logger: HutchLogger;
+	logParseError: LogParseError;
 }): SQSHandler {
 	const { publishLinkSaved, logger } = deps;
 
@@ -48,6 +50,7 @@ export function initSaveLinkCommandHandler(deps: {
 		imagesCdnBaseUrl: deps.imagesCdnBaseUrl,
 		now: deps.now,
 		logger,
+		logParseError: deps.logParseError,
 		logPrefix: "[SaveLinkCommand]",
 	});
 

@@ -925,10 +925,10 @@ describe("Queue routes", () => {
 			expect(titleLink?.getAttribute("href")).toContain("/read");
 		});
 
-		it("should log error when article parsing fails", async () => {
+		it("reports parse failures via logParseError with source 'hutch-queue'", async () => {
 			const crawlArticle = async () => ({ status: "failed" as const });
-			const logError = jest.fn();
-			const { app, auth } = createTestApp({ crawlArticle, logError });
+			const logParseError = jest.fn();
+			const { app, auth } = createTestApp({ crawlArticle, logParseError });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -936,9 +936,11 @@ describe("Queue routes", () => {
 				.type("form")
 				.send({ url: "https://example.com/broken" });
 
-			expect(logError).toHaveBeenCalledWith(
-				expect.stringContaining("[FetchArticle]"),
-			);
+			expect(logParseError).toHaveBeenCalledWith({
+				url: "https://example.com/broken",
+				reason: expect.any(String),
+				source: "hutch-queue",
+			});
 		});
 	});
 

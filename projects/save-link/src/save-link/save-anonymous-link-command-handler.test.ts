@@ -88,6 +88,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		imagesCdnBaseUrl,
 		now: fixedNow,
 		logger: noopLogger,
+		logParseError: jest.fn(),
 		...overrides,
 	});
 }
@@ -158,6 +159,34 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		await handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {});
 
 		expect(updateFetchTimestamp).not.toHaveBeenCalled();
+	});
+
+	it("reports crawl failures via logParseError with the crawl status as reason", async () => {
+		const logParseError = jest.fn();
+		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
+
+		const handler = createHandler({ crawlArticle: failedCrawl, logParseError });
+
+		await handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {});
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/unreachable",
+			reason: "crawl-failed",
+		});
+	});
+
+	it("reports parse failures via logParseError with the parser's reason", async () => {
+		const logParseError = jest.fn();
+		const failedParse: ParseHtml = () => ({ ok: false, reason: "Invalid URL" });
+
+		const handler = createHandler({ parseHtml: failedParse, logParseError });
+
+		await handler(createSqsEvent({ url: "https://example.com/bad" }), stubContext, () => {});
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			reason: "Invalid URL",
+		});
 	});
 
 	it("skips content save and still publishes the event when the article fetch fails", async () => {

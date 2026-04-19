@@ -37,7 +37,9 @@ import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save
 import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
-import { consoleLogger } from "@packages/hutch-logger";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
+import type { ParseErrorEvent } from "@packages/hutch-infra-components";
+import { initLogParseError } from "./providers/parse-errors/log-parse-error";
 import { createApp } from "./server";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { getEnv, requireEnv } from "./require-env";
@@ -45,6 +47,10 @@ import { getEnv, requireEnv } from "./require-env";
 function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
+	const { logParseError } = initLogParseError({
+		logger: HutchLogger.fromJSON<ParseErrorEvent>(),
+		now: () => new Date(),
+	});
 
 	const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } });
 	const staleTtlMs = 86400000;
@@ -120,6 +126,7 @@ function initProviders() {
 			publishUpdateFetchTimestamp,
 			findCachedSummary: summaryCache.findCachedSummary,
 			refreshArticleIfStale,
+			logParseError,
 		};
 	}
 
@@ -196,6 +203,7 @@ function initProviders() {
 		publishUpdateFetchTimestamp,
 		findCachedSummary: stubFindCachedSummary,
 		refreshArticleIfStale,
+		logParseError,
 	};
 }
 

@@ -14,6 +14,7 @@ import type {
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
+import type { LogParseError } from "../../../providers/parse-errors/log-parse-error";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
 import { ViewLandingPage } from "./view-landing.component";
@@ -29,6 +30,7 @@ interface ViewDependencies {
 	findCachedSummary: FindCachedSummary;
 	saveArticleGlobally: SaveArticleGlobally;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	logParseError: LogParseError;
 }
 
 function renderError(req: Request, res: Response) {
@@ -93,6 +95,11 @@ function handleViewArticle(deps: ViewDependencies) {
 		} else {
 			const parseResult = await deps.parseArticle(articleUrl);
 			if (!parseResult.ok) {
+				deps.logParseError({
+					url: articleUrl,
+					reason: parseResult.reason,
+					source: "hutch-view",
+				});
 				const hostname = hostnameFrom(articleUrl);
 				metadata = cached?.metadata ?? {
 					title: hostname,

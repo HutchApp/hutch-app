@@ -7,6 +7,7 @@ import type { DownloadMedia, DownloadedMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
+import type { LogParseError } from "./log-parse-error";
 
 export type PutObject = (params: { key: string; content: string }) => Promise<string>;
 export type UpdateContentLocation = (params: { url: string; contentLocation: string }) => Promise<void>;
@@ -25,6 +26,7 @@ export function initSaveLinkWork(deps: {
 	imagesCdnBaseUrl: string;
 	now: () => Date;
 	logger: HutchLogger;
+	logParseError: LogParseError;
 	logPrefix: string;
 }): { saveLinkWork: (url: string) => Promise<void> } {
 	const {
@@ -40,19 +42,20 @@ export function initSaveLinkWork(deps: {
 		imagesCdnBaseUrl,
 		now,
 		logger,
+		logParseError,
 		logPrefix,
 	} = deps;
 
 	const saveLinkWork = async (url: string): Promise<void> => {
 		const crawlResult = await crawlArticle({ url, fetchThumbnail: true });
 		if (crawlResult.status !== "fetched") {
-			logger.info(`${logPrefix} could not fetch article, skipping content`, { url, status: crawlResult.status });
+			logParseError({ url, reason: `crawl-${crawlResult.status}` });
 			return;
 		}
 
 		const parseResult = parseHtml({ url, html: crawlResult.html });
 		if (!parseResult.ok) {
-			logger.info(`${logPrefix} could not parse article, skipping content`, { url, reason: parseResult.reason });
+			logParseError({ url, reason: parseResult.reason });
 			return;
 		}
 

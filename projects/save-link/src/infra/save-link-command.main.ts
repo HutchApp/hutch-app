@@ -1,8 +1,8 @@
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { S3Client } from "@aws-sdk/client-s3";
-import { consoleLogger } from "@packages/hutch-logger";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
-import { LinkSavedEvent } from "@packages/hutch-infra-components";
+import { LinkSavedEvent, type ParseErrorEvent } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { parseHtml } from "../article-parser/readability-parser";
@@ -15,6 +15,7 @@ import { initUpdateThumbnailUrl } from "../save-link/update-thumbnail-url";
 import { initUpdateFetchTimestamp } from "../save-link/update-fetch-timestamp";
 import { initDownloadMedia } from "../save-link/download-media";
 import { initSaveLinkCommandHandler } from "../save-link/save-link-command-handler";
+import { initLogParseError } from "../save-link/log-parse-error";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
@@ -80,6 +81,11 @@ const processContent = initProcessContentWithLocalMedia({
 	},
 });
 
+const { logParseError } = initLogParseError({
+	logger: HutchLogger.fromJSON<ParseErrorEvent>(),
+	now: () => new Date(),
+});
+
 export const handler = initSaveLinkCommandHandler({
 	crawlArticle,
 	parseHtml,
@@ -94,4 +100,5 @@ export const handler = initSaveLinkCommandHandler({
 	imagesCdnBaseUrl,
 	now: () => new Date(),
 	logger: consoleLogger,
+	logParseError,
 });
