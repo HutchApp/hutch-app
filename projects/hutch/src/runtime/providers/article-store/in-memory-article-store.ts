@@ -107,14 +107,15 @@ export function initInMemoryArticleStore(): {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 
 		const uaKey = userArticleKey(params.userId, articleResourceUniqueId.value);
-		if (!userArticles.has(uaKey)) {
-			userArticles.set(uaKey, {
+		const existing = userArticles.get(uaKey);
+		userArticles.set(uaKey, existing
+			? { ...existing, savedAt: new Date() }
+			: {
 				userId: params.userId,
 				url: articleResourceUniqueId.value,
 				status: "unread",
 				savedAt: new Date(),
 			});
-		}
 
 		const article = articles.get(articleResourceUniqueId.value);
 		assert(article, "Article must exist after set");

@@ -160,17 +160,16 @@ export function initDynamoDbArticleStore(deps: {
 				metadata: params.metadata,
 				estimatedReadTime: params.estimatedReadTime,
 			}),
-			userArticles
-				.put({
-					Item: {
-						userId: params.userId,
-						url: articleResourceUniqueId.value,
-						status: "unread",
-						savedAt: now.toISOString(),
-					},
-					ConditionExpression: "attribute_not_exists(userId)",
-				})
-				.catch(ignoreDuplicate),
+			userArticles.update({
+				Key: { userId: params.userId, url: articleResourceUniqueId.value },
+				UpdateExpression:
+					"SET savedAt = :savedAt, #status = if_not_exists(#status, :unread)",
+				ExpressionAttributeNames: { "#status": "status" },
+				ExpressionAttributeValues: {
+					":savedAt": now.toISOString(),
+					":unread": "unread",
+				},
+			}),
 		]);
 
 		const [article, userArticle] = await Promise.all([

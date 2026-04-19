@@ -107,6 +107,41 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector("[data-test-save-error]")?.textContent).toBe("Could not save article. Please try again.");
 		});
+
+		it("should bump a re-saved article to the top so #latest-saved points to it", async () => {
+			const { app, auth } = createTestApp();
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/first" });
+
+			const afterFirst = await agent.get("/queue");
+			const firstId = new JSDOM(afterFirst.text).window.document
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+			assert.ok(firstId, "first article should have an id");
+
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/second" });
+
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/first" });
+
+			const response = await agent.get("/queue");
+			const doc = new JSDOM(response.text).window.document;
+			const articles = doc.querySelectorAll("[data-test-article-list] .queue-article");
+			expect(articles.length).toBe(2);
+			expect(articles[0].getAttribute("data-test-article")).toBe(firstId);
+			expect(articles[0].getAttribute("id")).toBe("latest-saved");
+		});
 	});
 
 	describe("POST /queue/:id/status", () => {

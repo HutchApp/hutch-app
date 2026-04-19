@@ -114,6 +114,37 @@ describe("initInMemoryArticleStore", () => {
 			expect(result.articles.length).toBe(1);
 			expect(result.total).toBe(1);
 		});
+
+		it("should bump savedAt to top on re-save so the article moves to the head of the queue", async () => {
+			const store = initInMemoryArticleStore();
+			const first = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/first" }),
+			);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/second" }),
+			);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/first" }),
+			);
+
+			const result = await store.findArticlesByUser({ userId: USER_A });
+
+			expect(result.articles[0].id.value).toBe(first.id.value);
+		});
+
+		it("should preserve status and readAt on re-save", async () => {
+			const store = initInMemoryArticleStore();
+			const saved = await store.saveArticle(makeArticleParams());
+			await store.updateArticleStatus(saved.id, USER_A, "read");
+
+			await store.saveArticle(makeArticleParams());
+			const found = await store.findArticleById(saved.id, USER_A);
+
+			expect(found?.status).toBe("read");
+			expect(found?.readAt).toBeInstanceOf(Date);
+		});
 	});
 
 	describe("findArticlesByUser", () => {
