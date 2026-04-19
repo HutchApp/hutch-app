@@ -138,6 +138,10 @@ function handleViewArticle(deps: ViewDependencies) {
 				name: "Save to My Queue",
 				href: `/save?${new URLSearchParams([["url", articleUrl], ...utmParams]).toString()}`,
 			},
+			{
+				name: "View another article",
+				href: "/view",
+			},
 		];
 
 		const html = ViewPage({

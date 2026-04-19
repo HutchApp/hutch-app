@@ -29,9 +29,10 @@ export function createAnonymousViewPageActions(
 					page.locator('[data-test-view-landing-form] button[type="submit"]'),
 				)
 
+				const saveAction = page.getByRole('link', { name: 'Save to My Queue' })
 				await expect(page.locator('body.page-view')).toHaveCount(1)
 				await expect(page.locator('[data-test-reader-title]')).toBeVisible()
-				await expect(page.locator('[data-test-view-cta-action]')).toBeVisible()
+				await expect(saveAction).toBeVisible()
 
 				// Reload the /view/<encoded-url> permalink. First visit primes the
 				// global article cache via saveArticleGlobally; refresh then re-reads
@@ -42,14 +43,11 @@ export function createAnonymousViewPageActions(
 				await page.reload({ waitUntil: 'domcontentloaded' })
 				await expect(page.locator('body.page-view')).toHaveCount(1)
 				await expect(page.locator('[data-test-reader-title]')).toBeVisible()
-				await expect(page.locator('[data-test-view-cta-action]')).toBeVisible()
+				await expect(saveAction).toBeVisible()
 
 				// Click Save as anonymous — /save redirects to /login?return=/save?url=...
 				// so the regular navigate-to-signup action can pick up from page-login.
-				await clickAndWaitForPageReload(
-					page,
-					page.locator('[data-test-view-cta-action]'),
-				)
+				await clickAndWaitForPageReload(page, saveAction)
 				await expect(page.locator('body.page-login')).toHaveCount(1)
 
 				progress.visitedAnonymously = true

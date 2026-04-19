@@ -186,6 +186,21 @@ describe("View routes", () => {
 			expect(action.textContent).toBe("Save to My Queue");
 			expect(action.getAttribute("href")?.startsWith("/save?")).toBe(true);
 		});
+
+		it("renders a 'View another article' action pointing to /view", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const actions = doc.querySelectorAll("[data-test-view-cta-action]");
+			expect(actions.length).toBe(2);
+			const second = actions[1];
+			assert(second, "second cta action must be rendered");
+			expect(second.textContent).toBe("View another article");
+			expect(second.getAttribute("href")).toBe("/view");
+		});
 	});
 
 	describe("TL;DR rendering", () => {
