@@ -228,7 +228,8 @@ function logWidget(params: {
 		properties: {
 			region,
 			title: params.title,
-			query: `SOURCE ${params.logGroupNames.map((n) => `'${n}'`).join(", ")} | ${params.query}`,
+			logGroupNames: params.logGroupNames,
+			query: params.query,
 			view: params.view,
 		},
 	};
@@ -327,7 +328,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(visitor_hash)",
-						"| filter is_authenticated = 1",
+						"| filter is_authenticated",
 						"| filter path like \"/queue/\" and path like \"/read\"",
 						"| stats count_distinct(visitor_hash) as authenticated_readers by bin(1d)",
 					].join(" "),
