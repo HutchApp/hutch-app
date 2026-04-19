@@ -28,6 +28,7 @@ const SHARE_SCRIPT = `<script>
 
   var url = btn.getAttribute('data-share-url');
   var title = btn.getAttribute('data-share-title');
+  var copiedLabel = wrap.querySelector('[data-view-share-copied]');
   var canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
   var canCopy = typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function';
   if (!canShare && !canCopy) return;
@@ -72,30 +73,25 @@ const SHARE_SCRIPT = `<script>
   });
 
   function flashCopied() {
-    btn.classList.add('view__share-balloon--copied');
+    if (copiedLabel) copiedLabel.classList.add('view__share-balloon-copied--visible');
     if (status) status.textContent = 'Link copied to clipboard';
     setTimeout(function() {
-      btn.classList.remove('view__share-balloon--copied');
+      if (copiedLabel) copiedLabel.classList.remove('view__share-balloon-copied--visible');
       if (status) status.textContent = '';
-    }, 1500);
-  }
-
-  function fallbackCopy() {
-    if (!canCopy) return;
-    navigator.clipboard.writeText(url).then(flashCopied).catch(function() {
-      if (status) status.textContent = 'Unable to copy link';
-    });
+    }, 3000);
   }
 
   btn.addEventListener('click', function() {
+    if (canCopy) {
+      navigator.clipboard.writeText(url).then(flashCopied).catch(function() {
+        if (status) status.textContent = 'Unable to copy link';
+      });
+    }
     if (canShare) {
       navigator.share({ title: title, url: url }).catch(function(err) {
         if (err && err.name === 'AbortError') return;
-        fallbackCopy();
       });
-      return;
     }
-    fallbackCopy();
   });
 })();
 </script>`;

@@ -187,18 +187,22 @@
   opacity: 0.8;
 }
 
-.view__share-balloon--copied {
-  background: var(--color-success);
-  color: #fff;
-  border-color: var(--color-success);
+.view__share-balloon-copied {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-error);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
 }
 
-.view__share-balloon--copied .view__share-balloon-hint {
-  color: #fff;
-  opacity: 0.9;
-}
-
-.view__share-balloon--copied .view__share-balloon-icon {
+.view__share-balloon-copied--visible {
   opacity: 1;
 }
 

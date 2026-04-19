@@ -262,7 +262,7 @@ describe("View routes", () => {
 			expect(status.getAttribute("aria-live")).toBe("polite");
 		});
 
-		it("inlines the share script that invokes navigator.share", async () => {
+		it("inlines the share script that copies to clipboard and invokes navigator.share", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
 
@@ -270,6 +270,20 @@ describe("View routes", () => {
 
 			expect(response.text).toContain("navigator.share");
 			expect(response.text).toContain("navigator.clipboard");
+			expect(response.text).toContain("writeText");
+		});
+
+		it("renders the 'Link copied!' feedback label", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const label = doc.querySelector("[data-test-view-share-copied]");
+			assert(label, "copied feedback label must be rendered");
+			expect(label.textContent?.trim()).toBe("Link copied!");
+			expect(response.text).toContain("view__share-balloon-copied--visible");
 		});
 
 		it("escapes special characters in the share title attribute", async () => {
