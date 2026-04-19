@@ -7,10 +7,7 @@
       </div>
       <a class="article-body__original-link" href="{{url}}" target="_blank" rel="noopener" data-test-original-link>View original</a>
     </div>
-    {{#if summary}}<div class="article-body__summary-slot article-body__summary-slot--visible" data-test-reader-summary><details class="article-body__summary"{{#if summaryOpen}} open{{/if}}>
-      <summary class="article-body__summary-toggle">Summary (TL;DR)</summary>
-      <pre class="article-body__summary-text">{{summary}}</pre>
-    </details></div>{{else}}<div class="article-body__summary-slot article-body__summary-slot--hidden" data-test-reader-summary></div>{{/if}}
+    {{{summarySlotHtml}}}
     {{#if audioEnabled}}<div class="article-body__audio-slot article-body__audio-slot--visible" data-test-audio-player><div class="article-body__audio-player">
       <audio controls preload="metadata" src="{{staticBaseUrl}}/sample-audio.opus" data-audio-element></audio>
     </div></div>{{else}}<div class="article-body__audio-slot article-body__audio-slot--hidden" data-test-audio-player></div>{{/if}}

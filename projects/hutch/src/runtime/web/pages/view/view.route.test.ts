@@ -7,7 +7,7 @@ import type {
 	ParseArticle,
 	ParseArticleResult,
 } from "../../../providers/article-parser/article-parser.types";
-import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { FindGeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { createTestApp } from "../../../test-app";
 
 const ARTICLE_URL = "https://example.com/post";
@@ -336,38 +336,142 @@ describe("View routes", () => {
 	});
 
 	describe("TL;DR rendering", () => {
-		it("marks the summary slot visible when a cached summary exists", async () => {
+		it("marks the summary slot visible with the text when status=ready", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const findCachedSummary: FindCachedSummary = async () =>
-				"Key points from the article.";
-			const { app } = createTestApp({ parseArticle, findCachedSummary });
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({
+				status: "ready",
+				summary: "Key points from the article.",
+			});
+			const { app } = createTestApp({ parseArticle, findGeneratedSummary });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
 			const slot = doc.querySelector("[data-test-reader-summary]");
 			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("ready");
 			expect(
 				slot.classList.contains("article-body__summary-slot--visible"),
 			).toBe(true);
 			expect(
 				doc.querySelector(".article-body__summary-text")?.textContent,
 			).toBe("Key points from the article.");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
 		});
 
-		it("marks the summary slot hidden when the cached summary is empty", async () => {
+		it("shows a loading indicator with a poll attribute when status=pending", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const findCachedSummary: FindCachedSummary = async () => "";
-			const { app } = createTestApp({ parseArticle, findCachedSummary });
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
+			const { app } = createTestApp({ parseArticle, findGeneratedSummary });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
 			const slot = doc.querySelector("[data-test-reader-summary]");
 			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("pending");
+			expect(slot.getAttribute("hx-get")).toMatch(/^\/view\/summary\?url=.+&poll=1$/);
+			expect(slot.getAttribute("hx-trigger")).toBe("every 3s");
+			const loading = doc.querySelector(".article-body__summary-loading");
+			assert(loading, "loading indicator must be rendered when status=pending");
+		});
+
+		it("shows an inline error when status=failed", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({
+				status: "failed",
+				reason: "deepseek timeout",
+			});
+			const { app } = createTestApp({ parseArticle, findGeneratedSummary });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("failed");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
+			expect(
+				doc.querySelector(".article-body__summary-error")?.textContent,
+			).toContain("couldn't generate a summary");
+		});
+
+		it("marks the summary slot hidden when status=skipped", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "skipped" });
+			const { app } = createTestApp({ parseArticle, findGeneratedSummary });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("skipped");
 			expect(
 				slot.classList.contains("article-body__summary-slot--hidden"),
 			).toBe(true);
+		});
+	});
+
+	describe("GET /view/summary fragment", () => {
+		it("returns a ready fragment without polling attributes", async () => {
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({
+				status: "ready",
+				summary: "Fragment summary.",
+			});
+			const { app } = createTestApp({ findGeneratedSummary });
+
+			const response = await request(app).get(
+				`/view/summary?url=${encodeURIComponent(ARTICLE_URL)}`,
+			);
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("ready");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
+		});
+
+		it("increments the poll counter when status=pending under the cap", async () => {
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
+			const { app } = createTestApp({ findGeneratedSummary });
+
+			const response = await request(app).get(
+				`/view/summary?url=${encodeURIComponent(ARTICLE_URL)}&poll=5`,
+			);
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("hx-get")).toMatch(/poll=6$/);
+		});
+
+		it("stops polling at the cap and renders a terminal message", async () => {
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
+			const { app } = createTestApp({ findGeneratedSummary });
+
+			const response = await request(app).get(
+				`/view/summary?url=${encodeURIComponent(ARTICLE_URL)}&poll=40`,
+			);
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
+			expect(
+				doc.querySelector(".article-body__summary-loading")?.textContent,
+			).toContain("Still generating");
+		});
+
+		it("returns 400 for an invalid url", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app).get("/view/summary?url=not-a-url");
+
+			expect(response.status).toBe(400);
 		});
 	});
 

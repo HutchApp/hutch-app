@@ -12,9 +12,13 @@ import type {
 	SaveArticleGlobally,
 } from "../../../providers/article-store/article-store.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
-import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
+import type {
+	FindGeneratedSummary,
+	MarkSummaryPending,
+} from "../../../providers/article-summary/article-summary.types";
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
 import type { LogParseError } from "../../../providers/parse-errors/log-parse-error";
+import { renderSummarySlot } from "../../shared/article-body/summary-slot/summary-slot.component";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
 import { ViewLandingPage } from "./view-landing.component";
@@ -27,7 +31,8 @@ interface ViewDependencies {
 	findArticleByUrl: FindArticleByUrl;
 	readArticleContent: ReadArticleContent;
 	parseArticle: ParseArticle;
-	findCachedSummary: FindCachedSummary;
+	findGeneratedSummary: FindGeneratedSummary;
+	markSummaryPending: MarkSummaryPending;
 	saveArticleGlobally: SaveArticleGlobally;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	logParseError: LogParseError;
@@ -132,13 +137,18 @@ function handleViewArticle(deps: ViewDependencies) {
 						metadata,
 						estimatedReadTime,
 					});
+					await deps.markSummaryPending({ url: articleUrl });
 					await deps.publishSaveAnonymousLink({ url: articleUrl });
 				}
 			}
 		}
 
-		const summary = await deps.findCachedSummary(articleUrl);
+		const summary = await deps.findGeneratedSummary(articleUrl);
 		const utmParams = collectUtmParams(req.query);
+		const status = summary?.status ?? "pending";
+		const summaryPollUrl = status === "pending"
+			? `/view/summary?url=${encodeURIComponent(articleUrl)}&poll=1`
+			: undefined;
 
 		const actions: ViewAction[] = [
 			{
@@ -157,9 +167,31 @@ function handleViewArticle(deps: ViewDependencies) {
 			estimatedReadTime,
 			content,
 			summary,
+			summaryPollUrl,
 			actions,
 		}).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
+	};
+}
+
+function handleViewSummary(deps: ViewDependencies) {
+	return async (req: Request, res: Response): Promise<void> => {
+		const parsed = ViewUrlSchema.safeParse(req.query.url);
+		if (!parsed.success) {
+			res.status(400).type("html").send("");
+			return;
+		}
+		const articleUrl = parsed.data;
+		const summary = await deps.findGeneratedSummary(articleUrl);
+		const status = summary?.status ?? "pending";
+		const pollCount = Number(req.query.poll ?? "0");
+		const MAX_POLLS = 40;
+		const summaryPollUrl = status === "pending" && pollCount < MAX_POLLS
+			? `/view/summary?url=${encodeURIComponent(articleUrl)}&poll=${pollCount + 1}`
+			: undefined;
+
+		const html = renderSummarySlot({ summary, summaryPollUrl, summaryOpen: true });
+		res.type("html").send(html);
 	};
 }
 
@@ -169,6 +201,7 @@ export function initViewRoutes(deps: ViewDependencies): Router {
 	const rateLimit = initViewArticleRateLimit({ windowMs: 10_000, limit: 20 });
 
 	router.get("/", handleViewLanding);
+	router.get("/summary", rateLimit, handleViewSummary(deps));
 	router.get<string, Record<string, string>>("/*", rateLimit, handleViewArticle(deps));
 
 	return router;

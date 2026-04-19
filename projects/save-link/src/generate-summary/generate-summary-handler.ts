@@ -9,12 +9,15 @@ import {
 import type { SummarizeArticle } from "./article-summary.types";
 import type { FindArticleContent } from "../save-link/find-article-content";
 
-export function initGenerateSummaryHandler(deps: {
+interface GenerateSummaryHandlerDeps {
 	summarizeArticle: SummarizeArticle;
 	findArticleContent: FindArticleContent;
 	publishEvent: PublishEvent;
 	logger: HutchLogger;
-}): SQSHandler {
+}
+
+/* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
+export function initGenerateSummaryHandler(deps: GenerateSummaryHandlerDeps): SQSHandler {
 	const { summarizeArticle, findArticleContent, publishEvent, logger } = deps;
 
 	return async (event) => {
@@ -33,7 +36,7 @@ export function initGenerateSummaryHandler(deps: {
 			});
 
 			if (!result) {
-				logger.info("[GenerateGlobalSummary] already summarized, skipping", { url: command.url });
+				logger.info("[GenerateGlobalSummary] already summarized or skipped", { url: command.url });
 				continue;
 			}
 

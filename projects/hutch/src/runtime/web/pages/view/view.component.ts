@@ -4,11 +4,12 @@ import type {
 	ArticleMetadata,
 	Minutes,
 } from "../../../domain/article/article.types";
+import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { requireEnv } from "../../../require-env";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
-import { renderArticleBody } from "../../shared/article-body/article-body";
+import { renderArticleBody } from "../../shared/article-body/article-body.component";
 import { SHARE_ICON_SVG } from "./view.share-icon";
 import { VIEW_STYLES } from "./view.styles";
 
@@ -118,7 +119,8 @@ export interface ViewPageInput {
 	metadata: ArticleMetadata;
 	estimatedReadTime: Minutes;
 	content?: string;
-	summary?: string | null;
+	summary?: GeneratedSummary;
+	summaryPollUrl?: string;
 	actions: ViewAction[];
 }
 
@@ -130,6 +132,7 @@ export function ViewPage(input: ViewPageInput): Component {
 		url: input.articleUrl,
 		content: input.content,
 		summary: input.summary,
+		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: true,
 	});
 

@@ -10,7 +10,10 @@ import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-upd
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
-import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
+import type {
+	FindGeneratedSummary,
+	MarkSummaryPending,
+} from "./providers/article-summary/article-summary.types";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
@@ -44,7 +47,8 @@ export function createTestApp(options?: {
 	publishLinkSaved?: PublishLinkSaved;
 	publishSaveAnonymousLink?: PublishSaveAnonymousLink;
 	publishUpdateFetchTimestamp?: PublishUpdateFetchTimestamp;
-	findCachedSummary?: FindCachedSummary;
+	findGeneratedSummary?: FindGeneratedSummary;
+	markSummaryPending?: MarkSummaryPending;
 	refreshArticleIfStale?: RefreshArticleIfStale;
 	httpErrorMessageMapping?: HttpErrorMessageMapping;
 	exchangeGoogleCode?: ExchangeGoogleCode;
@@ -90,7 +94,8 @@ export function createTestApp(options?: {
 		publishLinkSaved: options?.publishLinkSaved ?? defaultPublishLinkSaved,
 		publishSaveAnonymousLink: options?.publishSaveAnonymousLink ?? defaultPublishSaveAnonymousLink,
 		publishUpdateFetchTimestamp: options?.publishUpdateFetchTimestamp ?? defaultPublishUpdateFetchTimestamp,
-		findCachedSummary: options?.findCachedSummary ?? (async () => ""),
+		findGeneratedSummary: options?.findGeneratedSummary ?? (async () => undefined),
+		markSummaryPending: options?.markSummaryPending ?? (async () => {}),
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,
 		httpErrorMessageMapping: options?.httpErrorMessageMapping ?? defaultHttpErrorMessageMapping,
 		...email,

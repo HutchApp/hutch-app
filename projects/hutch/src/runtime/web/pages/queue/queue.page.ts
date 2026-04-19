@@ -16,7 +16,11 @@ import type {
 } from "../../../providers/article-store/article-store.types";
 import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
-import type { FindCachedSummary } from "../../../providers/article-summary/article-summary.types";
+import type {
+	FindGeneratedSummary,
+	MarkSummaryPending,
+} from "../../../providers/article-summary/article-summary.types";
+import { renderSummarySlot } from "../../shared/article-body/summary-slot/summary-slot.component";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import type { LogParseError } from "../../../providers/parse-errors/log-parse-error";
 import type { UserId } from "../../../domain/user/user.types";
@@ -39,7 +43,8 @@ interface QueueDependencies {
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
 	publishLinkSaved: PublishLinkSaved;
-	findCachedSummary: FindCachedSummary;
+	findGeneratedSummary: FindGeneratedSummary;
+	markSummaryPending: MarkSummaryPending;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
@@ -110,6 +115,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 		}).catch((error) => deps.logError("Failed to publish fetch timestamp", error instanceof Error ? error : undefined));
 
 		if (article.content) {
+			await deps.markSummaryPending({ url });
 			await deps.publishLinkSaved({ url, userId });
 		}
 
@@ -124,6 +130,7 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	});
 
 	if (freshness.action === "refreshed" && freshness.article.article.content) {
+		await deps.markSummaryPending({ url });
 		await deps.publishLinkSaved({ url, userId });
 	}
 
@@ -260,11 +267,40 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 
 		const content = await deps.readArticleContent(article.url);
-		const summary = await deps.findCachedSummary(article.url);
+		const summary = await deps.findGeneratedSummary(article.url);
 		const audioEnabled = req.query.feature === "audio";
+		const status = summary?.status ?? "pending";
+		const summaryPollUrl = status === "pending"
+			? `/queue/${article.id.value}/summary?poll=1`
+			: undefined;
 
-		const html = ReaderPage({ ...article, content }, { emailVerified: req.emailVerified, summary, audioEnabled }).to("text/html");
+		const html = ReaderPage({ ...article, content }, { emailVerified: req.emailVerified, summary, summaryPollUrl, audioEnabled }).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
+	});
+
+	router.get("/:id/summary", async (req: Request, res: Response) => {
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
+		const parsedId = ReaderArticleHashIdSchema.safeParse(req.params.id);
+		const article = parsedId.success
+			? await deps.findArticleById(parsedId.data, userId)
+			: null;
+
+		if (!article) {
+			res.status(404).type("html").send("");
+			return;
+		}
+
+		const summary = await deps.findGeneratedSummary(article.url);
+		const status = summary?.status ?? "pending";
+		const pollCount = Number(req.query.poll ?? "0");
+		const MAX_POLLS = 40;
+		const summaryPollUrl = status === "pending" && pollCount < MAX_POLLS
+			? `/queue/${article.id.value}/summary?poll=${pollCount + 1}`
+			: undefined;
+
+		const html = renderSummarySlot({ summary, summaryPollUrl });
+		res.type("html").send(html);
 	});
 
 	router.post("/:id/status", async (req: Request, res: Response) => {

@@ -1,16 +1,26 @@
+export type GeneratedSummary =
+	| { status: "pending" }
+	| { status: "ready"; summary: string }
+	| { status: "failed"; reason: string }
+	| { status: "skipped" };
+
 export type SummarizeArticle = (params: {
 	url: string;
 	textContent: string;
 }) => Promise<{ summary: string; inputTokens: number; outputTokens: number } | null>;
 
-export type FindCachedSummary = (url: string) => Promise<string>;
+export type FindGeneratedSummary = (url: string) => Promise<GeneratedSummary | undefined>;
 
-export type SaveCachedSummary = (params: {
+export type SaveGeneratedSummary = (params: {
 	url: string;
 	summary: string;
 	inputTokens: number;
 	outputTokens: number;
 }) => Promise<void>;
+
+export type MarkSummaryPending = (params: { url: string }) => Promise<void>;
+export type MarkSummaryFailed = (params: { url: string; reason: string }) => Promise<void>;
+export type MarkSummarySkipped = (params: { url: string }) => Promise<void>;
 
 export type DocumentBlock = {
 	type: "document";

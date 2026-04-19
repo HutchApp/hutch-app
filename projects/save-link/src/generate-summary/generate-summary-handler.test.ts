@@ -73,7 +73,7 @@ describe("initGenerateSummaryHandler", () => {
 		});
 	});
 
-	it("should throw when article content not found", async () => {
+	it("should throw when article content not found (SQS will retry, DLQ consumer handles terminal failure)", async () => {
 		const summarizeArticle: SummarizeArticle = async () => null;
 		const findArticleContent: FindArticleContent = async () => undefined;
 		const publishEvent: PublishEvent = jest.fn();
@@ -88,9 +88,11 @@ describe("initGenerateSummaryHandler", () => {
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/missing" }), stubContext, () => {}),
 		).rejects.toThrow("Article content not found");
+
+		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
-	it("should skip publishing when summarization returns null (cache hit)", async () => {
+	it("should skip publishing when summarization returns null (cache hit or skipped)", async () => {
 		const summarizeArticle: SummarizeArticle = async () => null;
 		const findArticleContent: FindArticleContent = async () => ({ content: "<p>Content</p>" });
 		const publishEvent: PublishEvent = jest.fn();

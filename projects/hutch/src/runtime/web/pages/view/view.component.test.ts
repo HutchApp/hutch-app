@@ -14,7 +14,7 @@ const baseInput: ViewPageInput = {
 	},
 	estimatedReadTime: 3 as Minutes,
 	content: "<p>Body copy.</p>",
-	summary: "",
+	summary: { status: "skipped" },
 	actions: [
 		{
 			name: "Save to My Queue",
@@ -181,24 +181,30 @@ describe("ViewPage", () => {
 		expect(data.image).toBeUndefined();
 	});
 
-	it("toggles the summary slot visibility based on summary presence", () => {
-		const without = render();
-		const slotWithout = without.querySelector("[data-test-reader-summary]");
-		assert(slotWithout, "summary slot must be rendered");
+	it("toggles the summary slot visibility based on status", () => {
+		const skipped = render();
+		const slotSkipped = skipped.querySelector("[data-test-reader-summary]");
+		assert(slotSkipped, "summary slot must be rendered");
 		expect(
-			slotWithout.classList.contains("article-body__summary-slot--hidden"),
+			slotSkipped.classList.contains("article-body__summary-slot--hidden"),
 		).toBe(true);
 
-		const withSummary = render({ ...baseInput, summary: "Key points." });
-		const slotWith = withSummary.querySelector("[data-test-reader-summary]");
-		assert(slotWith, "summary slot must be rendered");
+		const ready = render({
+			...baseInput,
+			summary: { status: "ready", summary: "Key points." },
+		});
+		const slotReady = ready.querySelector("[data-test-reader-summary]");
+		assert(slotReady, "summary slot must be rendered");
 		expect(
-			slotWith.classList.contains("article-body__summary-slot--visible"),
+			slotReady.classList.contains("article-body__summary-slot--visible"),
 		).toBe(true);
 	});
 
 	it("renders the summary expanded by default on the public view", () => {
-		const doc = render({ ...baseInput, summary: "Key points." });
+		const doc = render({
+			...baseInput,
+			summary: { status: "ready", summary: "Key points." },
+		});
 		const details = doc.querySelector(".article-body__summary");
 		assert(details, "summary details element must be rendered");
 		expect(details.hasAttribute("open")).toBe(true);

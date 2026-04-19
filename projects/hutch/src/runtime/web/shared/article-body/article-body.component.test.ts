@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import type { Minutes } from "../../../domain/article/article.types";
-import { renderArticleBody } from "./article-body";
+import { renderArticleBody } from "./article-body.component";
 
 const baseInput = {
 	title: "Hello World",
@@ -37,82 +37,17 @@ describe("renderArticleBody", () => {
 		).toBe("<p>Body copy</p>");
 	});
 
-	it("marks the summary slot as visible when summary is a non-empty string", () => {
+	it("delegates to the summary slot renderer", () => {
 		const html = renderArticleBody({
 			...baseInput,
 			content: "<p>Body</p>",
-			summary: "Key points.",
+			summary: { status: "ready", summary: "Key points." },
 		});
 		const doc = parse(html);
 
 		const slot = doc.querySelector("[data-test-reader-summary]");
-		assert(slot, "summary slot must be rendered");
-		expect(
-			slot.classList.contains("article-body__summary-slot--visible"),
-		).toBe(true);
-		expect(doc.querySelector(".article-body__summary-toggle")?.textContent).toBe(
-			"Summary (TL;DR)",
-		);
-		expect(doc.querySelector(".article-body__summary-text")?.textContent).toBe(
-			"Key points.",
-		);
-	});
-
-	it("renders the summary collapsed by default", () => {
-		const html = renderArticleBody({
-			...baseInput,
-			content: "<p>Body</p>",
-			summary: "Key points.",
-		});
-		const doc = parse(html);
-
-		const details = doc.querySelector(".article-body__summary");
-		assert(details, "summary details element must be rendered");
-		expect(details.hasAttribute("open")).toBe(false);
-	});
-
-	it("renders the summary expanded when summaryOpen is true", () => {
-		const html = renderArticleBody({
-			...baseInput,
-			content: "<p>Body</p>",
-			summary: "Key points.",
-			summaryOpen: true,
-		});
-		const doc = parse(html);
-
-		const details = doc.querySelector(".article-body__summary");
-		assert(details, "summary details element must be rendered");
-		expect(details.hasAttribute("open")).toBe(true);
-	});
-
-	it("marks the summary slot as hidden when summary is empty", () => {
-		const html = renderArticleBody({
-			...baseInput,
-			content: "<p>Body</p>",
-			summary: "",
-		});
-		const doc = parse(html);
-
-		const slot = doc.querySelector("[data-test-reader-summary]");
-		assert(slot, "summary slot must be rendered");
-		expect(
-			slot.classList.contains("article-body__summary-slot--hidden"),
-		).toBe(true);
-	});
-
-	it("marks the summary slot as hidden when summary is null", () => {
-		const html = renderArticleBody({
-			...baseInput,
-			content: "<p>Body</p>",
-			summary: null,
-		});
-		const doc = parse(html);
-
-		const slot = doc.querySelector("[data-test-reader-summary]");
-		assert(slot, "summary slot must be rendered");
-		expect(
-			slot.classList.contains("article-body__summary-slot--hidden"),
-		).toBe(true);
+		assert(slot, "summary slot must be rendered inside the article body");
+		expect(slot.getAttribute("data-summary-status")).toBe("ready");
 	});
 
 	it("renders the back link inside the back slot when backLink is provided", () => {

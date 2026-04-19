@@ -9,6 +9,8 @@ export {
 	type AnonymousLinkSavedDetail,
 	SummaryGeneratedEvent,
 	type SummaryGeneratedDetail,
+	SummaryGenerationFailedEvent,
+	type SummaryGenerationFailedDetail,
 	GenerateSummaryCommand,
 	type GenerateSummaryDetail,
 	RefreshArticleContentCommand,

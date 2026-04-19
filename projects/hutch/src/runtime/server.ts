@@ -32,7 +32,10 @@ import type {
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
 import type { ReadArticleContent } from "./providers/article-store/read-article-content";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
-import type { FindCachedSummary } from "./providers/article-summary/article-summary.types";
+import type {
+	FindGeneratedSummary,
+	MarkSummaryPending,
+} from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { LogParseError } from "./providers/parse-errors/log-parse-error";
@@ -109,7 +112,8 @@ interface AppDependencies {
 	validateAccessToken: ValidateAccessToken;
 	publishLinkSaved: PublishLinkSaved;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
-	findCachedSummary: FindCachedSummary;
+	findGeneratedSummary: FindGeneratedSummary;
+	markSummaryPending: MarkSummaryPending;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
@@ -344,7 +348,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
 		publishLinkSaved: deps.publishLinkSaved,
-		findCachedSummary: deps.findCachedSummary,
+		findGeneratedSummary: deps.findGeneratedSummary,
+		markSummaryPending: deps.markSummaryPending,
 		refreshArticleIfStale: deps.refreshArticleIfStale,
 		publishUpdateFetchTimestamp: deps.publishUpdateFetchTimestamp,
 		readArticleContent: deps.readArticleContent,
@@ -361,7 +366,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticleByUrl: deps.findArticleByUrl,
 		readArticleContent: deps.readArticleContent,
 		parseArticle: deps.parseArticle,
-		findCachedSummary: deps.findCachedSummary,
+		findGeneratedSummary: deps.findGeneratedSummary,
+		markSummaryPending: deps.markSummaryPending,
 		saveArticleGlobally: deps.saveArticleGlobally,
 		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
 		logParseError: deps.logParseError,

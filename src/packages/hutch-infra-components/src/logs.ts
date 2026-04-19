@@ -6,5 +6,5 @@ export interface ParseErrorEvent {
 	timestamp: string;
 	url: string;
 	reason: string;
-	source: "save-link" | "hutch-view" | "hutch-queue";
+	source: "save-link" | "hutch-view" | "hutch-queue" | "generate-summary";
 }

@@ -8,7 +8,7 @@ import { initFindArticleContent } from "../save-link/find-article-content";
 import { initLinkSummariser } from "../generate-summary/link-summariser";
 import { initCreateDeepseekMessage } from "../generate-summary/create-deepseek-message";
 import { MAX_SUMMARY_LENGTH } from "../generate-summary/max-summary-length";
-import { initDynamoDbSummaryCache } from "../generate-summary/dynamodb-summary-cache";
+import { initDynamoDbGeneratedSummary } from "../generate-summary/dynamodb-generated-summary";
 import { stripHtml } from "../generate-summary/strip-html";
 import { initGenerateSummaryHandler } from "../generate-summary/generate-summary-handler";
 
@@ -30,7 +30,7 @@ const { findArticleContent } = initFindArticleContent({
 	tableName: articlesTable,
 });
 
-const summaryCache = initDynamoDbSummaryCache({
+const summaryStore = initDynamoDbGeneratedSummary({
 	client: dynamoClient,
 	tableName: articlesTable,
 });
@@ -43,7 +43,9 @@ const { summarizeArticle } = initLinkSummariser({
 		const visibleLength = cleanedText.replace(/\s/g, "").length;
 		return visibleLength <= MAX_SUMMARY_LENGTH * 3;
 	},
-	...summaryCache,
+	findGeneratedSummary: summaryStore.findGeneratedSummary,
+	saveGeneratedSummary: summaryStore.saveGeneratedSummary,
+	markSummarySkipped: summaryStore.markSummarySkipped,
 });
 
 const { publishEvent } = initEventBridgePublisher({

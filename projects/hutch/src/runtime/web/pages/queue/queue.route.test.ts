@@ -698,7 +698,7 @@ describe("Queue routes", () => {
 			expect(titleLink?.getAttribute("href")).toContain("/read");
 		});
 
-		it("should display AI summary when cached summary exists", async () => {
+		it("should display AI summary when status=ready", async () => {
 			const articleHtml = `
 			<html><head><title>Summarized Post</title><meta property="og:site_name" content="Example Blog"></head>
 			<body><article>
@@ -707,8 +707,11 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
-			const findCachedSummary = async () => "Key points from the article distilled into a brief summary.";
-			const { app, auth } = createTestApp({ crawlArticle, findCachedSummary });
+			const findGeneratedSummary = async () => ({
+				status: "ready" as const,
+				summary: "Key points from the article distilled into a brief summary.",
+			});
+			const { app, auth } = createTestApp({ crawlArticle, findGeneratedSummary });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -726,14 +729,89 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(readerResponse.text).window.document;
 			const summarySlot = doc.querySelector("[data-test-reader-summary]");
 			assert(summarySlot, "summary slot must be rendered");
+			expect(summarySlot.getAttribute("data-summary-status")).toBe("ready");
 			expect(
 				summarySlot.classList.contains("article-body__summary-slot--visible"),
 			).toBe(true);
 			expect(summarySlot.textContent).toContain("Key points from the article");
 			expect(doc.querySelector(".article-body__summary-toggle")?.textContent).toBe("Summary (TL;DR)");
+			expect(summarySlot.hasAttribute("hx-get")).toBe(false);
 		});
 
-		it("should not display summary block when no cached summary exists", async () => {
+		it("should show a pending loading indicator with hx-get polling when status=pending", async () => {
+			const articleHtml = `
+			<html><head><title>Pending Post</title></head>
+			<body><article>
+				<h1>Pending Post</h1>
+				<p>Content with pending summary.</p>
+			</article></body></html>`;
+
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({ status: "pending" as const });
+			const { app, auth } = createTestApp({ crawlArticle, findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/pending-post" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			const summarySlot = doc.querySelector("[data-test-reader-summary]");
+			assert(summarySlot, "summary slot must be rendered");
+			expect(summarySlot.getAttribute("data-summary-status")).toBe("pending");
+			expect(summarySlot.getAttribute("hx-get")).toMatch(/^\/queue\/.+\/summary\?poll=1$/);
+			expect(summarySlot.getAttribute("hx-trigger")).toBe("every 3s");
+			const loading = doc.querySelector(".article-body__summary-loading");
+			assert(loading, "loading indicator must be rendered when status=pending");
+		});
+
+		it("should show an inline error when status=failed", async () => {
+			const articleHtml = `
+			<html><head><title>Failed Post</title></head>
+			<body><article>
+				<h1>Failed Post</h1>
+				<p>Content with a failed summary.</p>
+			</article></body></html>`;
+
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({
+				status: "failed" as const,
+				reason: "deepseek timeout",
+			});
+			const { app, auth } = createTestApp({ crawlArticle, findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/failed-post" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			const summarySlot = doc.querySelector("[data-test-reader-summary]");
+			assert(summarySlot, "summary slot must be rendered");
+			expect(summarySlot.getAttribute("data-summary-status")).toBe("failed");
+			expect(summarySlot.hasAttribute("hx-get")).toBe(false);
+			expect(
+				doc.querySelector(".article-body__summary-error")?.textContent,
+			).toContain("couldn't generate a summary");
+		});
+
+		it("should hide the summary slot when status=skipped", async () => {
 			const articleHtml = `
 			<html><head><title>No Summary Post</title></head>
 			<body><article>
@@ -742,7 +820,8 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
-			const { app, auth } = createTestApp({ crawlArticle });
+			const findGeneratedSummary = async () => ({ status: "skipped" as const });
+			const { app, auth } = createTestApp({ crawlArticle, findGeneratedSummary });
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -760,9 +839,111 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(readerResponse.text).window.document;
 			const summarySlot = doc.querySelector("[data-test-reader-summary]");
 			assert(summarySlot, "summary slot must be rendered");
+			expect(summarySlot.getAttribute("data-summary-status")).toBe("skipped");
 			expect(
 				summarySlot.classList.contains("article-body__summary-slot--hidden"),
 			).toBe(true);
+		});
+
+		it("GET /queue/:id/summary returns a ready fragment without polling when status=ready", async () => {
+			const articleHtml = `
+			<html><head><title>Summarized Post</title></head>
+			<body><article>
+				<h1>Summarized Post</h1>
+				<p>Content with ready summary.</p>
+			</article></body></html>`;
+
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({
+				status: "ready" as const,
+				summary: "Fragment ready summary.",
+			});
+			const { app, auth } = createTestApp({ crawlArticle, findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/fragment-ready" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const response = await agent.get(`/queue/${articleId}/summary`);
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("ready");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
+			expect(
+				doc.querySelector(".article-body__summary-text")?.textContent,
+			).toBe("Fragment ready summary.");
+		});
+
+		it("GET /queue/:id/summary increments poll counter when status=pending", async () => {
+			const articleHtml = `<html><body><article><p>Pending content.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({ status: "pending" as const });
+			const { app, auth } = createTestApp({ crawlArticle, findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/fragment-pending" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const response = await agent.get(`/queue/${articleId}/summary?poll=3`);
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("hx-get")).toMatch(/poll=4$/);
+		});
+
+		it("GET /queue/:id/summary stops polling at the cap", async () => {
+			const articleHtml = `<html><body><article><p>Pending content.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({ status: "pending" as const });
+			const { app, auth } = createTestApp({ crawlArticle, findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/fragment-cap" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const response = await agent.get(`/queue/${articleId}/summary?poll=40`);
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
+			expect(
+				doc.querySelector(".article-body__summary-loading")?.textContent,
+			).toContain("Still generating");
+		});
+
+		it("GET /queue/:id/summary returns 404 for a missing article", async () => {
+			const findGeneratedSummary = async () => undefined;
+			const { app, auth } = createTestApp({ findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue/00000000000000000000000000000000/summary");
+			expect(response.status).toBe(404);
 		});
 
 		it("should show no-content fallback when article has no extracted content", async () => {

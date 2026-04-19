@@ -84,6 +84,20 @@ export const SummaryGeneratedEvent = defineEvent({
 });
 export type SummaryGeneratedDetail = z.infer<typeof SummaryGeneratedEvent.detailSchema>;
 
+export const SummaryGenerationFailedEvent = defineEvent({
+	name: "summary-generation-failed",
+	source: "hutch.save-link",
+	detailType: "SummaryGenerationFailed",
+	detailSchema: z.object({
+		url: z.string(),
+		reason: z.string(),
+		receiveCount: z.number(),
+	}),
+});
+export type SummaryGenerationFailedDetail = z.infer<
+	typeof SummaryGenerationFailedEvent.detailSchema
+>;
+
 export const GenerateSummaryCommand = defineCommand({
 	detailSchema: z.object({
 		url: z.string(),

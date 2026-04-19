@@ -2,8 +2,9 @@ import { noopLogger } from "@packages/hutch-logger";
 import { initLinkSummariser } from "./link-summariser";
 import type {
 	CreateAiMessage,
-	FindCachedSummary,
-	SaveCachedSummary,
+	FindGeneratedSummary,
+	MarkSummarySkipped,
+	SaveGeneratedSummary,
 } from "./article-summary.types";
 
 function createStubCreateMessage(summary: string): CreateAiMessage {
@@ -13,18 +14,22 @@ function createStubCreateMessage(summary: string): CreateAiMessage {
 	});
 }
 
-const noCache: FindCachedSummary = async () => "";
-const noopSave: SaveCachedSummary = async () => {};
+const noCache: FindGeneratedSummary = async () => undefined;
+const pendingCache: FindGeneratedSummary = async () => ({ status: "pending" });
+const noopSave: SaveGeneratedSummary = async () => {};
+const noopMarkSkipped: MarkSummarySkipped = async () => {};
 const identity = (text: string) => text;
 
 describe("initLinkSummariser", () => {
-	it("should skip summarisation when isTooShortToSummarize returns true", async () => {
+	it("should skip summarisation and mark the row as skipped when isTooShortToSummarize returns true", async () => {
 		const createMessage = jest.fn();
+		const markSummarySkipped = jest.fn().mockResolvedValue(undefined);
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
-			findCachedSummary: noCache,
-			saveCachedSummary: noopSave,
+			findGeneratedSummary: pendingCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => true,
@@ -37,6 +42,7 @@ describe("initLinkSummariser", () => {
 
 		expect(result).toBeNull();
 		expect(createMessage).not.toHaveBeenCalled();
+		expect(markSummarySkipped).toHaveBeenCalledWith({ url: "https://example.com/short" });
 	});
 
 	it("should pass article content as a document block to createMessage", async () => {
@@ -47,8 +53,9 @@ describe("initLinkSummariser", () => {
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
-			findCachedSummary: noCache,
-			saveCachedSummary: noopSave,
+			findGeneratedSummary: noCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -79,8 +86,9 @@ describe("initLinkSummariser", () => {
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
-			findCachedSummary: noCache,
-			saveCachedSummary: noopSave,
+			findGeneratedSummary: pendingCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -98,14 +106,18 @@ describe("initLinkSummariser", () => {
 		});
 	});
 
-	it("should return null on cache hit without calling createMessage", async () => {
+	it("should return null on ready cache hit without calling createMessage", async () => {
 		const createMessage = jest.fn();
-		const cachedSummary: FindCachedSummary = async () => "cached summary";
+		const cachedSummary: FindGeneratedSummary = async () => ({
+			status: "ready",
+			summary: "cached summary",
+		});
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
-			findCachedSummary: cachedSummary,
-			saveCachedSummary: noopSave,
+			findGeneratedSummary: cachedSummary,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -120,6 +132,83 @@ describe("initLinkSummariser", () => {
 		expect(createMessage).not.toHaveBeenCalled();
 	});
 
+	it("should return null on skipped cache hit", async () => {
+		const createMessage = jest.fn();
+		const skippedCache: FindGeneratedSummary = async () => ({ status: "skipped" });
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findGeneratedSummary: skippedCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		const result = await summarizeArticle({
+			url: "https://example.com/skipped",
+			textContent: "Some content.",
+		});
+
+		expect(result).toBeNull();
+		expect(createMessage).not.toHaveBeenCalled();
+	});
+
+	it("should retry on failed status (redrive scenario: give the new attempt a chance)", async () => {
+		const createMessage = createStubCreateMessage("Recovered summary.");
+		const failedCache: FindGeneratedSummary = async () => ({
+			status: "failed",
+			reason: "timeout",
+		});
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findGeneratedSummary: failedCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		const result = await summarizeArticle({
+			url: "https://example.com/failed",
+			textContent: "Some content.",
+		});
+
+		expect(result).toEqual({
+			summary: "Recovered summary.",
+			inputTokens: 50,
+			outputTokens: 10,
+		});
+	});
+
+	it("should proceed when cache status is pending", async () => {
+		const createMessage = createStubCreateMessage("Fresh summary.");
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findGeneratedSummary: pendingCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		const result = await summarizeArticle({
+			url: "https://example.com/pending",
+			textContent: "Long content.",
+		});
+
+		expect(result).toEqual({
+			summary: "Fresh summary.",
+			inputTokens: 50,
+			outputTokens: 10,
+		});
+	});
+
 	it("should return null when response has no text block", async () => {
 		const createMessage: CreateAiMessage = async () => ({
 			content: [{ type: "tool_use" }],
@@ -128,8 +217,9 @@ describe("initLinkSummariser", () => {
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
-			findCachedSummary: noCache,
-			saveCachedSummary: noopSave,
+			findGeneratedSummary: noCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -148,8 +238,9 @@ describe("initLinkSummariser", () => {
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
-			findCachedSummary: noCache,
-			saveCachedSummary: noopSave,
+			findGeneratedSummary: noCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,

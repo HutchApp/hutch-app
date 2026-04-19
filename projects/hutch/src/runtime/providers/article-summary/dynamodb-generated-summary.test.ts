@@ -1,0 +1,126 @@
+import type { DynamoDBDocumentClient } from "@packages/hutch-storage-client";
+import { initDynamoDbGeneratedSummary } from "./dynamodb-generated-summary";
+
+function createFakeClient(item: Record<string, unknown> | undefined): Partial<DynamoDBDocumentClient> {
+	return {
+		send: async () => ({ Item: item }),
+	};
+}
+
+describe("initDynamoDbGeneratedSummary", () => {
+	it("returns undefined when no row exists", async () => {
+		const client = createFakeClient(undefined);
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toBeUndefined();
+	});
+
+	it("returns pending when row exists without summary or status", async () => {
+		const client = createFakeClient({ url: "https://example.com/article" });
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "pending" });
+	});
+
+	it("returns ready for a legacy row with summary and no status (backfill)", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summary: "Legacy summary",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "ready", summary: "Legacy summary" });
+	});
+
+	it("returns ready when status=ready and summary is present", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summary: "Fresh summary",
+			summaryStatus: "ready",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "ready", summary: "Fresh summary" });
+	});
+
+	it("returns pending when status=pending", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summaryStatus: "pending",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "pending" });
+	});
+
+	it("returns failed with reason when status=failed", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summaryStatus: "failed",
+			summaryFailureReason: "deepseek timeout",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "failed", reason: "deepseek timeout" });
+	});
+
+	it("throws when summaryStatus=failed is persisted without a summaryFailureReason", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summaryStatus: "failed",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		await expect(findGeneratedSummary("https://example.com/article")).rejects.toThrow(
+			"summaryStatus=failed row must carry a summaryFailureReason",
+		);
+	});
+
+	it("returns skipped when status=skipped", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summaryStatus: "skipped",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "skipped" });
+	});
+});

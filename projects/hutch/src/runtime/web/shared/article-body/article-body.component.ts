@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Minutes } from "../../../domain/article/article.types";
+import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { requireEnv } from "../../../require-env";
 import { render } from "../../render";
+import { renderSummarySlot } from "./summary-slot/summary-slot.component";
 
 const STATIC_BASE_URL = requireEnv("STATIC_BASE_URL");
 
@@ -21,7 +23,8 @@ export interface ArticleBodyInput {
 	estimatedReadTime: Minutes;
 	url: string;
 	content?: string;
-	summary?: string | null;
+	summary?: GeneratedSummary;
+	summaryPollUrl?: string;
 	summaryOpen?: boolean;
 	audioEnabled?: boolean;
 	backLink?: { href: string; label: string };
@@ -32,15 +35,19 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		return render(ARTICLE_BODY_NO_CONTENT_TEMPLATE, { url: input.url });
 	}
 
-	const hasSummary = typeof input.summary === "string" && input.summary.length > 0;
+	const summarySlotHtml = renderSummarySlot({
+		summary: input.summary,
+		summaryPollUrl: input.summaryPollUrl,
+		summaryOpen: input.summaryOpen,
+	});
+
 	return render(ARTICLE_BODY_TEMPLATE, {
 		title: input.title,
 		siteName: input.siteName,
 		estimatedReadTime: input.estimatedReadTime,
 		url: input.url,
 		content: input.content,
-		summary: hasSummary ? input.summary : undefined,
-		summaryOpen: input.summaryOpen === true,
+		summarySlotHtml,
 		audioEnabled: input.audioEnabled,
 		backLink: input.backLink,
 		staticBaseUrl: STATIC_BASE_URL,

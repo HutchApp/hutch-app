@@ -3,6 +3,7 @@ import {
 	HutchEventBus,
 	HutchLambda,
 	HutchDynamoDBAccess,
+	HutchDLQEventHandler,
 	HutchSQS,
 	HutchSQSBackedLambda,
 	HutchS3ReadWrite,
@@ -14,6 +15,7 @@ import {
 	LinkSavedEvent,
 	AnonymousLinkSavedEvent,
 	SummaryGeneratedEvent,
+	SummaryGenerationFailedEvent,
 	RefreshArticleContentCommand,
 	UpdateFetchTimestampCommand,
 } from "@packages/hutch-infra-components";
@@ -64,6 +66,10 @@ const anonymousLinkSavedQueue = new HutchSQS("anonymous-link-saved", {
 });
 
 const summaryGeneratedQueue = new HutchSQS("summary-generated", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const summaryGenerationFailedQueue = new HutchSQS("summary-generation-failed", {
 	visibilityTimeoutSeconds: 60,
 });
 
@@ -170,6 +176,17 @@ new HutchSQSBackedLambda("generate-summary", {
 	alertEmailDLQEntry: alertEmail,
 });
 
+// --- GenerateSummary DLQ consumer ---
+// Flips the summaryStatus row to "failed" and publishes SummaryGenerationFailedEvent
+// when a message lands in generate-summary-dlq. The entry point is derived from the
+// component name, i.e. ./src/infra/generate-summary-dlq.main.ts.
+new HutchDLQEventHandler("generate-summary-dlq", {
+	sourceQueue: generateSummaryQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+});
+
 // --- LinkSaved handler ---
 
 const linkSavedDynamodb = new HutchDynamoDBAccess("link-saved-dynamodb", {
@@ -258,6 +275,26 @@ const summaryGeneratedLambdaWithSQS = new HutchSQSBackedLambda("summary-generate
 
 eventBus.subscribe(SummaryGeneratedEvent, summaryGeneratedLambdaWithSQS);
 
+// --- SummaryGenerationFailed handler ---
+
+const summaryGenerationFailedLambda = new HutchLambda("summary-generation-failed", {
+	entryPoint: "./src/infra/summary-generation-failed.main.ts",
+	outputDir: ".lib/summary-generation-failed",
+	assetDir: "./src",
+	memorySize: 128,
+	timeout: 10,
+	environment: {},
+	policies: [],
+});
+
+const summaryGenerationFailedLambdaWithSQS = new HutchSQSBackedLambda("summary-generation-failed", {
+	lambda: summaryGenerationFailedLambda,
+	queue: summaryGenerationFailedQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(SummaryGenerationFailedEvent, summaryGenerationFailedLambdaWithSQS);
+
 // --- RefreshArticleContent handler ---
 
 const refreshArticleContentQueue = new HutchSQS("refresh-article-content", {
@@ -338,6 +375,8 @@ export const generateSummaryQueueUrl = generateSummaryQueue.queueUrl;
 export const generateSummaryDlqUrl = generateSummaryQueue.dlqUrl;
 export const summaryGeneratedQueueUrl = summaryGeneratedQueue.queueUrl;
 export const summaryGeneratedDlqUrl = summaryGeneratedQueue.dlqUrl;
+export const summaryGenerationFailedQueueUrl = summaryGenerationFailedQueue.queueUrl;
+export const summaryGenerationFailedDlqUrl = summaryGenerationFailedQueue.dlqUrl;
 export const refreshArticleContentQueueUrl = refreshArticleContentQueue.queueUrl;
 export const refreshArticleContentDlqUrl = refreshArticleContentQueue.dlqUrl;
 export const updateFetchTimestampQueueUrl = updateFetchTimestampQueue.queueUrl;

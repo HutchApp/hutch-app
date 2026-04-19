@@ -23,7 +23,7 @@ import { initInMemoryEmailVerification } from "./providers/email-verification/in
 import { initDynamoDbEmailVerification } from "./providers/email-verification/dynamodb-email-verification";
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
 import { initDynamoDbPasswordReset } from "./providers/password-reset/dynamodb-password-reset";
-import { initDynamoDbSummaryCache } from "./providers/article-summary/dynamodb-summary-cache";
+import { initDynamoDbGeneratedSummary } from "./providers/article-summary/dynamodb-generated-summary";
 import { S3Client } from "@aws-sdk/client-s3";
 import { initS3ReadContent } from "./providers/article-store/s3-read-content";
 import { initReadArticleContent } from "./providers/article-store/read-article-content";
@@ -81,7 +81,7 @@ function initProviders() {
 			logError,
 		});
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
-		const summaryCache = initDynamoDbSummaryCache({ client, tableName: articlesTable });
+		const summaryStore = initDynamoDbGeneratedSummary({ client, tableName: articlesTable });
 		const { publishEvent } = initEventBridgePublisher({
 			client: new EventBridgeClient({}),
 			eventBusName,
@@ -124,7 +124,8 @@ function initProviders() {
 			publishLinkSaved,
 			publishSaveAnonymousLink,
 			publishUpdateFetchTimestamp,
-			findCachedSummary: summaryCache.findCachedSummary,
+			findGeneratedSummary: summaryStore.findGeneratedSummary,
+			markSummaryPending: summaryStore.markSummaryPending,
 			refreshArticleIfStale,
 			logParseError,
 		};
@@ -173,7 +174,8 @@ function initProviders() {
 	};
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
-	const stubFindCachedSummary = async (_url: string) => "";
+	const stubFindGeneratedSummary = async (_url: string) => undefined;
+	const stubMarkSummaryPending = async (_params: { url: string }) => {};
 	const { refreshArticleIfStale } = initRefreshArticleIfStale({
 		findArticleFreshness: articleStore.findArticleFreshness,
 		crawlArticle,
@@ -201,7 +203,8 @@ function initProviders() {
 		publishLinkSaved,
 		publishSaveAnonymousLink,
 		publishUpdateFetchTimestamp,
-		findCachedSummary: stubFindCachedSummary,
+		findGeneratedSummary: stubFindGeneratedSummary,
+		markSummaryPending: stubMarkSummaryPending,
 		refreshArticleIfStale,
 		logParseError,
 	};

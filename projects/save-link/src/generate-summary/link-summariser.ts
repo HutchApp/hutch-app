@@ -4,8 +4,9 @@ import { z } from "zod";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type {
 	CreateAiMessage,
-	FindCachedSummary,
-	SaveCachedSummary,
+	FindGeneratedSummary,
+	MarkSummarySkipped,
+	SaveGeneratedSummary,
 	SummarizeArticle,
 } from "./article-summary.types";
 import { MAX_SUMMARY_LENGTH } from "./max-summary-length";
@@ -17,8 +18,9 @@ const SUMMARIZE_PROMPT = readFileSync(
 
 export function initLinkSummariser(deps: {
 	createMessage: CreateAiMessage;
-	findCachedSummary: FindCachedSummary;
-	saveCachedSummary: SaveCachedSummary;
+	findGeneratedSummary: FindGeneratedSummary;
+	saveGeneratedSummary: SaveGeneratedSummary;
+	markSummarySkipped: MarkSummarySkipped;
 	logger: HutchLogger;
 	cleanContent: (html: string) => string;
 	isTooShortToSummarize: (cleanedText: string) => boolean;
@@ -26,9 +28,10 @@ export function initLinkSummariser(deps: {
 	const summarizeArticle: SummarizeArticle = async (params) => {
 		deps.logger.info("[summarize] starting", { url: params.url });
 
-		const cached = await deps.findCachedSummary(params.url);
-		if (cached) {
-			deps.logger.info("[summarize] cache hit", { url: params.url });
+		const cached = await deps.findGeneratedSummary(params.url);
+		// "failed" is retryable on redrive; "ready" and "skipped" are terminal — short-circuit those.
+		if (cached?.status === "ready" || cached?.status === "skipped") {
+			deps.logger.info("[summarize] cache hit", { url: params.url, status: cached.status });
 			return null;
 		}
 
@@ -37,6 +40,7 @@ export function initLinkSummariser(deps: {
 
 		if (deps.isTooShortToSummarize(cleanedContent)) {
 			deps.logger.info("[summarize] content too short, skipping", { url: params.url, visibleLength });
+			await deps.markSummarySkipped({ url: params.url });
 			return null;
 		}
 
@@ -88,7 +92,7 @@ export function initLinkSummariser(deps: {
 			return null;
 		}
 
-		await deps.saveCachedSummary({
+		await deps.saveGeneratedSummary({
 			url: params.url,
 			summary,
 			inputTokens: response.usage.input_tokens,
