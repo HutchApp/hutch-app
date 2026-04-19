@@ -347,18 +347,20 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					x: 12, y: 24, width: 12, height: 8,
 					view: "timeSeries",
 				}),
-				logWidget({
-					title: "Parse Errors",
-					logGroupNames: [hutchLogGroupName, ...SAVE_LINK_PARSE_ERROR_LOG_GROUPS],
-					query: [
-						"fields @timestamp, url, reason, source",
-						`| filter stream = "${PARSE_ERROR_STREAM}"`,
-						"| sort @timestamp desc",
-						"| limit 100",
-					].join(" "),
-					x: 0, y: 32, width: 24, height: 8,
-					view: "table",
-				}),
+				...[hutchLogGroupName, ...SAVE_LINK_PARSE_ERROR_LOG_GROUPS].map((lg, i) =>
+					logWidget({
+						title: `Parse Errors — ${lg}`,
+						logGroupNames: [lg],
+						query: [
+							"fields @timestamp, url, reason, source",
+							`| filter stream = "${PARSE_ERROR_STREAM}"`,
+							"| sort @timestamp desc",
+							"| limit 100",
+						].join(" "),
+						x: 0, y: 32 + i * 8, width: 24, height: 8,
+						view: "table",
+					}),
+				),
 			],
 		}),
 	),
