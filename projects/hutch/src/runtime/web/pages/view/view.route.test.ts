@@ -203,6 +203,124 @@ describe("View routes", () => {
 		});
 	});
 
+	describe("Share balloon", () => {
+		it("renders a share button with the canonical view URL and article title", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const wrap = doc.querySelector("[data-test-view-share-wrap]");
+			assert(wrap, "share balloon wrapper must be rendered");
+			expect(wrap.hasAttribute("hidden")).toBe(true);
+			const btn = doc.querySelector("[data-test-view-share]");
+			assert(btn, "share button must be rendered");
+			expect(btn.getAttribute("aria-label")).toBe("Share this article");
+			expect(btn.getAttribute("data-share-url")).toBe(
+				`https://readplace.com/view/${ENCODED}`,
+			);
+			expect(btn.getAttribute("data-share-title")).toBe("Hello World");
+		});
+
+		it("renders a dismiss button that the inline script persists via localStorage", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const closeBtn = doc.querySelector("[data-test-view-share-close]");
+			assert(closeBtn, "share balloon close button must be rendered");
+			expect(closeBtn.getAttribute("aria-label")).toBe("Dismiss message");
+			expect(response.text).toContain("readplace.share-dismissed");
+			expect(response.text).toContain("view__share-balloon-wrap--open");
+		});
+
+		it("schedules the balloon open behind a scroll threshold and timeout", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			expect(response.text).toContain("SCROLL_THRESHOLD_PX");
+			expect(response.text).toContain("OPEN_DELAY_MS");
+			expect(response.text).toContain("addEventListener('scroll'");
+			expect(response.text).toContain("setTimeout(openBalloon");
+		});
+
+		it("renders an aria-live status region for share feedback", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const status = doc.querySelector("[data-view-share-status]");
+			assert(status, "share status region must be rendered");
+			expect(status.getAttribute("role")).toBe("status");
+			expect(status.getAttribute("aria-live")).toBe("polite");
+		});
+
+		it("inlines the share script that invokes navigator.share", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			expect(response.text).toContain("navigator.share");
+			expect(response.text).toContain("navigator.clipboard");
+		});
+
+		it("escapes special characters in the share title attribute", async () => {
+			const parseArticle: ParseArticle = async () =>
+				buildParseResult({ title: `Ampersand & "Quotes"` });
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const btn = doc.querySelector("[data-test-view-share]");
+			assert(btn, "share button must be rendered");
+			expect(btn.getAttribute("data-share-title")).toBe(`Ampersand & "Quotes"`);
+		});
+
+		it("is not rendered on the /view landing page", async () => {
+			const { app } = createTestApp();
+
+			const response = await request(app).get("/view");
+
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-view-share]")).toBeNull();
+		});
+
+		it("includes the founder avatar inside the balloon", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const avatar = doc.querySelector("[data-test-view-share-avatar]");
+			assert(avatar, "share balloon avatar must be rendered");
+			assert.match(avatar.getAttribute("src") ?? "", /\/fayner-brack\.jpg$/);
+		});
+
+		it("renders the founder greeting and share hint inside the balloon", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const { app } = createTestApp({ parseArticle });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			expect(
+				doc
+					.querySelector("[data-test-view-share-greeting]")
+					?.textContent?.trim(),
+			).toBe("Hi, I'm Fayner.");
+		});
+	});
+
 	describe("TL;DR rendering", () => {
 		it("marks the summary slot visible when a cached summary exists", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();

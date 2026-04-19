@@ -1,7 +1,48 @@
     <main class="view">
+      <span class="sr-only" role="status" aria-live="polite" data-view-share-status></span>
       <article class="view__body">
         {{{innerContent}}}
       </article>
+      <div class="view__share-row">
+        <div class="view__share-balloon-wrap" data-view-share-wrap data-test-view-share-wrap hidden>
+          <button
+            type="button"
+            class="view__share-balloon-close"
+            data-view-share-close
+            data-test-view-share-close
+            aria-label="Dismiss message"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <button
+            type="button"
+            class="view__share-balloon"
+            data-view-share
+            data-share-url="{{shareUrl}}"
+            data-share-title="{{shareTitle}}"
+            aria-label="Share this article"
+            data-test-view-share
+          >
+            <div class="view__share-balloon-chat" data-view-share-chat>
+              <img
+                class="view__share-balloon-avatar"
+                src="{{founderAvatarUrl}}"
+                alt=""
+                width="32"
+                height="32"
+                aria-hidden="true"
+                data-test-view-share-avatar
+              />
+              <span class="view__share-balloon-text">
+                <span class="view__share-balloon-greeting" data-test-view-share-greeting>Hi, I'm Fayner.</span>
+                <span class="view__share-balloon-hint" data-test-view-share-hint>Thanks for trying Readplace.</span>
+                <span class="view__share-balloon-hint" data-test-view-share-hint>Click here to share this post!</span>
+              </span>
+            </div>
+            <span class="view__share-balloon-icon" aria-hidden="true">{{{shareIconSvg}}}</span>
+          </button>
+        </div>
+      </div>
     </main>
     <aside class="view__cta" data-test-view-cta>
       <div class="view__cta-content">
