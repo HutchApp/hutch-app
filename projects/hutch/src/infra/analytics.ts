@@ -15,7 +15,7 @@ export interface AnalyticsPageview {
 	referrer_host: string | null;
 	visitor_hash: string | null;
 	user_agent: string | null;
-	is_authenticated: boolean;
+	is_authenticated: 0 | 1;
 }
 
 const SKIP_PATHS = new Set([
@@ -76,7 +76,7 @@ export function createAnalyticsMiddleware(deps: {
 				referrer_host: extractReferrerHost(req),
 				visitor_hash: hashIp({ ip: req.ip, salt: deps.salt }),
 				user_agent: req.get("user-agent") ?? null,
-				is_authenticated: Boolean(req.userId),
+				is_authenticated: req.userId ? 1 : 0,
 			});
 		});
 		next();

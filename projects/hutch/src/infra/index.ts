@@ -209,6 +209,19 @@ for (const [i, domain] of additionalDomains.entries()) {
 
 const region = aws.config.requireRegion();
 
+/**
+ * Single log group uses the `SOURCE '<name>'` shorthand. Multiple log groups
+ * use the `logGroups(namePrefix: [...])` function — comma-separated quoted
+ * names do NOT work, CloudWatch reads the whole string as one log group and
+ * rejects with "LogGroupName cannot contain a comma".
+ * See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax-Source.html
+ */
+function sourceClause(logGroupNames: readonly string[]): string {
+	if (logGroupNames.length === 1) return `SOURCE '${logGroupNames[0]}'`;
+	const prefixes = logGroupNames.map((n) => `'${n}'`).join(", ");
+	return `SOURCE logGroups(namePrefix: [${prefixes}])`;
+}
+
 function logWidget(params: {
 	title: string;
 	logGroupNames: string[];
@@ -228,7 +241,7 @@ function logWidget(params: {
 		properties: {
 			region,
 			title: params.title,
-			query: `SOURCE ${params.logGroupNames.map((n) => `'${n}'`).join(", ")} | ${params.query}`,
+			query: `${sourceClause(params.logGroupNames)} | ${params.query}`,
 			view: params.view,
 		},
 	};
