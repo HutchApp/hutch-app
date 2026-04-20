@@ -13,6 +13,7 @@ A snapshot reflects the code as it existed at that commit. It does not auto-upda
 | Commit | Date (commit) | Generated | Branch | Subject | Contents |
 |---|---|---|---|---|---|
 | [`1748f31`](./1748f31/) | 2026-04-18 | 2026-04-19 | `main` | feat(hutch): point share permalinks at /view/<url> instead of /save | Save-link flow event storming — UI submit → Lambda → SQS → EventBridge → datastore, with authenticated and anonymous branches. Three pre-rendered SVG diagrams. |
+| [`52017f3`](./52017f3/) | 2026-04-20 | 2026-04-20 | `main` | feat(hutch,save-link,@packages/hutch-infra-components): add summary generation state machine with DLQ | Summary-generation pipeline event storming — LinkSaved/AnonymousLinkSaved dispatch a GenerateSummaryCommand; generator writes ready/skipped and publishes SummaryGenerated; SQS retry exhaustion drives a DLQ handler that flips the row to failed and publishes SummaryGenerationFailed into a parse-errors log. Reader UI polls a pending slot every 3 s up to a 40-poll cap. Four pre-rendered SVG diagrams. |
 
 ---
 
