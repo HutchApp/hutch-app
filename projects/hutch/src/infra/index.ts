@@ -347,6 +347,22 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					x: 12, y: 24, width: 12, height: 8,
 					view: "timeSeries",
 				}),
+				logWidget({
+					title: "Top /view URLs by Unique Visitors",
+					logGroupNames: [hutchLogGroupName],
+					query: [
+						"fields @timestamp, path, visitor_hash",
+						"| filter stream = \"analytics\" and event = \"pageview\"",
+						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
+						"| filter ispresent(visitor_hash)",
+						"| filter path like /^\\/view\\//",
+						"| stats count_distinct(visitor_hash) as unique_visitors, count(*) as total_hits by path",
+						"| sort unique_visitors desc",
+						"| limit 10",
+					].join(" "),
+					x: 0, y: 32, width: 24, height: 8,
+					view: "table",
+				}),
 				...[hutchLogGroupName, ...SAVE_LINK_PARSE_ERROR_LOG_GROUPS].map((lg, i) =>
 					logWidget({
 						title: `Parse Errors — ${lg}`,
@@ -357,7 +373,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 							"| sort @timestamp desc",
 							"| limit 100",
 						].join(" "),
-						x: 0, y: 32 + i * 8, width: 24, height: 8,
+						x: 0, y: 40 + i * 8, width: 24, height: 8,
 						view: "table",
 					}),
 				),
