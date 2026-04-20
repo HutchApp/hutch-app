@@ -473,7 +473,7 @@ describe("View routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			expect(
 				doc.querySelector('meta[property="og:title"]')?.getAttribute("content"),
-			).toBe("Hello World Summary | Readplace");
+			).toBe("Hello World | Reader View");
 			expect(
 				doc
 					.querySelector('meta[property="og:description"]')
@@ -707,7 +707,7 @@ describe("View routes", () => {
 			assert(fallback, "no-content fallback must be rendered");
 			expect(
 				doc.querySelector('meta[property="og:title"]')?.getAttribute("content"),
-			).toBe("Cached Only Title Summary | Readplace");
+			).toBe("Cached Only Title | Reader View");
 		});
 
 		it("falls back to parseArticle when metadata is cached but content is missing", async () => {

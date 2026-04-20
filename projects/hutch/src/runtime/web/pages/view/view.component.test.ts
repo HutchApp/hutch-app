@@ -117,7 +117,7 @@ describe("ViewPage", () => {
 
 		expect(
 			doc.querySelector('meta[property="og:title"]')?.getAttribute("content"),
-		).toBe("Hello World Summary | Readplace");
+		).toBe("Hello World | Reader View");
 		expect(
 			doc
 				.querySelector('meta[property="og:description"]')

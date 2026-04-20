@@ -88,7 +88,7 @@ export function ViewPage(input: ViewPageInput): Component {
 
 	return Base({
 		seo: {
-			title: `${input.metadata.title} Summary | Readplace`,
+			title: `${input.metadata.title} | Reader View`,
 			description,
 			canonicalUrl: `/view/${encodeURIComponent(input.articleUrl)}`,
 			ogType: "article",
