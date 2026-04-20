@@ -25,8 +25,6 @@ export function initGenerateSummaryHandler(deps: GenerateSummaryHandlerDeps): SQ
 			const envelope = JSON.parse(record.body);
 			const command = GenerateSummaryCommand.detailSchema.parse(envelope.detail);
 
-			logger.info("[GenerateGlobalSummary] processing", { url: command.url });
-
 			const article = await findArticleContent(command.url);
 			assert(article, `Article content not found: ${command.url}`);
 

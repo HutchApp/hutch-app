@@ -26,8 +26,6 @@ export function initLinkSummariser(deps: {
 	isTooShortToSummarize: (cleanedText: string) => boolean;
 }): { summarizeArticle: SummarizeArticle } {
 	const summarizeArticle: SummarizeArticle = async (params) => {
-		deps.logger.info("[summarize] starting", { url: params.url });
-
 		const cached = await deps.findGeneratedSummary(params.url);
 		// "failed" is retryable on redrive; "ready" and "skipped" are terminal — short-circuit those.
 		if (cached?.status === "ready" || cached?.status === "skipped") {
@@ -43,8 +41,6 @@ export function initLinkSummariser(deps: {
 			await deps.markSummarySkipped({ url: params.url });
 			return null;
 		}
-
-		deps.logger.info("[summarize] cache miss, calling AI", { url: params.url, visibleLength });
 
 		const response = await deps.createMessage({
 			model: "deepseek-chat",
@@ -98,7 +94,6 @@ export function initLinkSummariser(deps: {
 			inputTokens: response.usage.input_tokens,
 			outputTokens: response.usage.output_tokens,
 		});
-		deps.logger.info("[summarize] saved", { url: params.url, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens });
 		return {
 			summary,
 			inputTokens: response.usage.input_tokens,

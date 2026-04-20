@@ -46,7 +46,6 @@ export function initDownloadMedia(deps: {
 					const cdnUrl = articleResourceUniqueId.toImageCdnUrl({ baseUrl: imagesCdnBaseUrl, filename });
 
 					await putImageObject({ key, body: downloaded.body, contentType: downloaded.contentType });
-					logger.info("[DownloadMedia] cached image", { originalUrl, cdnUrl });
 					results.push({ originalUrl, cdnUrl });
 				} catch (error) {
 					logger.error("[DownloadMedia] failed to process image", { url: originalUrl, error });

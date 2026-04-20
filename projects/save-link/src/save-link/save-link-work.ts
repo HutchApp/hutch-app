@@ -78,7 +78,6 @@ export function initSaveLinkWork(deps: {
 			etag: crawlResult.etag,
 			lastModified: crawlResult.lastModified,
 		});
-		logger.info(`${logPrefix} saved content to S3`, { url, contentLocation });
 
 		if (crawlResult.thumbnailImage) {
 			const cdnUrl = await uploadThumbnail({
@@ -88,8 +87,9 @@ export function initSaveLinkWork(deps: {
 				imagesCdnBaseUrl,
 			});
 			await updateThumbnailUrl({ url, imageUrl: cdnUrl });
-			logger.info(`${logPrefix} saved thumbnail to S3`, { url, cdnUrl });
 		}
+
+		logger.info(`${logPrefix} saved`, { url, hasThumbnail: crawlResult.thumbnailImage ? 1 : 0 });
 	};
 
 	return { saveLinkWork };

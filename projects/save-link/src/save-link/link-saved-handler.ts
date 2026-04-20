@@ -17,13 +17,8 @@ export function initLinkSavedHandler(deps: {
 			const envelope = JSON.parse(record.body);
 			const detail = LinkSavedEvent.detailSchema.parse(envelope.detail);
 
-			logger.info("[LinkSaved] processing", { url: detail.url, userId: detail.userId });
-
 			const content = await findArticleContent(detail.url);
-			if (!content) {
-				logger.info("[LinkSaved] no content available, skipping summary", { url: detail.url });
-				continue;
-			}
+			if (!content) continue;
 
 			await dispatchGenerateSummary({ url: detail.url });
 

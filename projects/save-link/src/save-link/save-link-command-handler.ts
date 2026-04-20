@@ -59,8 +59,6 @@ export function initSaveLinkCommandHandler(deps: {
 			const envelope = JSON.parse(record.body);
 			const detail = SaveLinkCommand.detailSchema.parse(envelope.detail);
 
-			logger.info("[SaveLinkCommand] processing", { url: detail.url, userId: detail.userId });
-
 			await saveLinkWork(detail.url);
 
 			await publishLinkSaved({ url: detail.url, userId: detail.userId });

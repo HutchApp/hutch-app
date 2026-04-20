@@ -37,7 +37,6 @@ export const lambdaExpress = ({
 					lambda ? compression.filter(req, res) : false,
 			}),
 		)
-		.use(log)
 		.use(ban)
 		.use(analytics)
 		.use(app)
@@ -49,6 +48,6 @@ export const lambdaExpress = ({
 		return serverless(application);
 	}
 
-	localServer(application, log.logger);
+	localServer(application, log);
 	return () => {}; // local noop handler
 };
