@@ -223,7 +223,7 @@ describe("View routes", () => {
 			expect(btn.getAttribute("data-share-title")).toBe("Hello World");
 		});
 
-		it("renders a dismiss button that the inline script persists via localStorage", async () => {
+		it("renders a dismiss button with an accessible label", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
 
@@ -233,20 +233,15 @@ describe("View routes", () => {
 			const closeBtn = doc.querySelector("[data-test-view-share-close]");
 			assert(closeBtn, "share balloon close button must be rendered");
 			expect(closeBtn.getAttribute("aria-label")).toBe("Dismiss message");
-			expect(response.text).toContain("readplace.share-dismissed");
-			expect(response.text).toContain("view__share-balloon-wrap--open");
 		});
 
-		it("schedules the balloon open behind a scroll threshold and timeout", async () => {
+		it("boots the share balloon client via the inlined initShareBalloon call", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
-			expect(response.text).toContain("SCROLL_THRESHOLD_PX");
-			expect(response.text).toContain("OPEN_DELAY_MS");
-			expect(response.text).toContain("addEventListener('scroll'");
-			expect(response.text).toContain("setTimeout(openBalloon");
+			expect(response.text).toContain("initShareBalloon(");
 		});
 
 		it("renders an aria-live status region for share feedback", async () => {
@@ -262,17 +257,6 @@ describe("View routes", () => {
 			expect(status.getAttribute("aria-live")).toBe("polite");
 		});
 
-		it("inlines the share script that copies to clipboard and invokes navigator.share", async () => {
-			const parseArticle: ParseArticle = async () => buildParseResult();
-			const { app } = createTestApp({ parseArticle });
-
-			const response = await request(app).get(`/view/${ENCODED}`);
-
-			expect(response.text).toContain("navigator.share");
-			expect(response.text).toContain("navigator.clipboard");
-			expect(response.text).toContain("writeText");
-		});
-
 		it("renders the 'Link copied!' feedback label", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
@@ -283,7 +267,6 @@ describe("View routes", () => {
 			const label = doc.querySelector("[data-test-view-share-copied]");
 			assert(label, "copied feedback label must be rendered");
 			expect(label.textContent?.trim()).toBe("Link copied!");
-			expect(response.text).toContain("view__share-balloon-copied--visible");
 		});
 
 		it("escapes special characters in the share title attribute", async () => {

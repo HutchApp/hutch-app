@@ -7,6 +7,7 @@ module.exports = {
     'src/**/*.component.ts',
     'src/**/*.styles.ts',
     'src/**/*.client.js',
+    'src/**/*.client.ts',
   ],
   safelist: { standard: [], deep: [], greedy: [] },
   rejected: true,
