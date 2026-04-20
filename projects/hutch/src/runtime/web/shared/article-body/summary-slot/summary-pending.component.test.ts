@@ -20,7 +20,7 @@ describe("renderSummaryPending", () => {
 		expect(slot.getAttribute("hx-trigger")).toBe("every 3s");
 		expect(slot.getAttribute("hx-swap")).toBe("outerHTML");
 		expect(doc.querySelector(".article-body__summary-loading")?.textContent).toBe(
-			"Generating summary…",
+			"Generating summary",
 		);
 	});
 

@@ -13,7 +13,7 @@ export interface SummaryPendingInput {
 
 export function renderSummaryPending(input: SummaryPendingInput): string {
 	const message = input.pollUrl
-		? "Generating summary…"
+		? "Generating summary"
 		: "Still generating — refresh to check again.";
 	return render(TEMPLATE, { pollUrl: input.pollUrl, message });
 }
