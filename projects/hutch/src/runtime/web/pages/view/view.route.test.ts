@@ -187,7 +187,7 @@ describe("View routes", () => {
 			expect(action.getAttribute("href")?.startsWith("/save?")).toBe(true);
 		});
 
-		it("renders a 'View another article' action pointing to /view", async () => {
+		it("renders a 'Paste another link' action pointing to /view", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
 
@@ -198,7 +198,7 @@ describe("View routes", () => {
 			expect(actions.length).toBe(2);
 			const second = actions[1];
 			assert(second, "second cta action must be rendered");
-			expect(second.textContent).toBe("View another article");
+			expect(second.textContent).toBe("Paste another link");
 			expect(second.getAttribute("href")).toBe("/view");
 		});
 	});

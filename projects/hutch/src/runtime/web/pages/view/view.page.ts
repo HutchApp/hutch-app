@@ -154,10 +154,12 @@ function handleViewArticle(deps: ViewDependencies) {
 			{
 				name: "Save to My Queue",
 				href: `/save?${new URLSearchParams([["url", articleUrl], ...utmParams]).toString()}`,
+				variant: "primary",
 			},
 			{
-				name: "View another article",
+				name: "Paste another link",
 				href: "/view",
+				variant: "secondary",
 			},
 		];
 

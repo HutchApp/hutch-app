@@ -30,22 +30,40 @@
   padding: 0.875rem 1.25rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
-  background: var(--color-brand);
-  border: none;
+  border: 1px solid var(--color-brand);
   border-radius: 8px;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
 }
 
-.view__cta-btn:hover {
+/* purgecss-ignore-start: modifier suffix is interpolated from ViewAction.variant in view.template.html */
+.view__cta-btn--primary {
+  color: #fff;
+  background: var(--color-brand);
+}
+
+.view__cta-btn--primary:hover {
   filter: brightness(1.05);
 }
 
-.view__cta-btn:active {
+.view__cta-btn--primary:active {
   filter: brightness(0.95);
 }
+
+.view__cta-btn--secondary {
+  color: var(--color-brand);
+  background: transparent;
+}
+
+.view__cta-btn--secondary:hover {
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+}
+
+.view__cta-btn--secondary:active {
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+}
+/* purgecss-ignore-end */
 
 .view__share-row {
   position: sticky;

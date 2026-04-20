@@ -19,6 +19,7 @@ const baseInput: ViewPageInput = {
 		{
 			name: "Save to My Queue",
 			href: "/save?url=https%3A%2F%2Fexample.com%2Fpost",
+			variant: "primary",
 		},
 	],
 };
@@ -56,7 +57,9 @@ describe("ViewPage", () => {
 	it("renders each action as an anchor with name and href from the model", () => {
 		const doc = render({
 			...baseInput,
-			actions: [{ name: "Save to My Queue", href: "/save?url=x" }],
+			actions: [
+				{ name: "Save to My Queue", href: "/save?url=x", variant: "primary" },
+			],
 		});
 
 		const links = doc.querySelectorAll("[data-test-view-cta-action]");
@@ -72,7 +75,11 @@ describe("ViewPage", () => {
 		const doc = render({
 			...baseInput,
 			actions: [
-				{ name: "Read in your queue", href: "/queue/abc123/read" },
+				{
+					name: "Read in your queue",
+					href: "/queue/abc123/read",
+					variant: "primary",
+				},
 			],
 		});
 
@@ -86,8 +93,16 @@ describe("ViewPage", () => {
 		const doc = render({
 			...baseInput,
 			actions: [
-				{ name: "Read in your queue", href: "/queue/abc/read" },
-				{ name: "Save to My Queue", href: "/save?url=x" },
+				{
+					name: "Read in your queue",
+					href: "/queue/abc/read",
+					variant: "primary",
+				},
+				{
+					name: "Save to My Queue",
+					href: "/save?url=x",
+					variant: "secondary",
+				},
 			],
 		});
 

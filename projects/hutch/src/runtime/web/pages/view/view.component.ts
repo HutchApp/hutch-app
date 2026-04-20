@@ -43,6 +43,7 @@ const VIEW_TEMPLATE = readFileSync(
 export interface ViewAction {
 	name: string;
 	href: string;
+	variant: "primary" | "secondary";
 }
 
 export interface ViewPageInput {
