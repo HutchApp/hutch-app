@@ -341,7 +341,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(visitor_hash)",
 						"| filter is_authenticated",
-						"| filter path like /^\\/[^/]+\\/read$/",
+						"| filter path like /^\\/[^\\/]+\\/read$/",
 						"| stats count_distinct(visitor_hash) as authenticated_readers by bin(1d)",
 					].join(" "),
 					x: 12, y: 24, width: 12, height: 8,
