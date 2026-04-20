@@ -342,6 +342,9 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
+      esbuild:
+        specifier: 0.27.3
+        version: 0.27.3
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@22.15.21)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.15.21)(typescript@5.9.3))

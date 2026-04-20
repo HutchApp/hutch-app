@@ -4,6 +4,7 @@ node_modules/
 # Build output
 dist/
 .lib/
+projects/hutch/src/runtime/web/client-dist/
 
 # IDE
 .idea/

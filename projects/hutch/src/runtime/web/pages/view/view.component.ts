@@ -10,25 +10,12 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
-import { initShareBalloon } from "./view.share.client";
 import { SHARE_ICON_SVG } from "./view.share-icon";
 import { VIEW_STYLES } from "./view.styles";
 
-const SHARE_SCRIPT = `<script>
-(function () {
-  var initShareBalloon = ${initShareBalloon.toString()};
-  initShareBalloon({
-    window: window,
-    document: window.document,
-    storage: window.localStorage,
-    navigator: window.navigator,
-    setTimeoutFn: function (cb, ms) { return window.setTimeout(cb, ms); },
-    clearTimeoutFn: function (id) { window.clearTimeout(id); }
-  }).attach();
-})();
-</script>`;
-
 const STATIC_BASE_URL = requireEnv("STATIC_BASE_URL");
+
+const SHARE_SCRIPT = `<script src="/client-dist/view.share.client.js" defer></script>`;
 const CANONICAL_BASE_URL = "https://readplace.com";
 const DEFAULT_OG_IMAGE = `${STATIC_BASE_URL}/og-image-1200x630.png`;
 const DEFAULT_TWITTER_IMAGE = `${STATIC_BASE_URL}/twitter-card-1200x600.png`;

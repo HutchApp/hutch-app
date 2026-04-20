@@ -235,13 +235,18 @@ describe("View routes", () => {
 			expect(closeBtn.getAttribute("aria-label")).toBe("Dismiss message");
 		});
 
-		it("boots the share balloon client via the inlined initShareBalloon call", async () => {
+		it("boots the share balloon client via the external script bundle", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const { app } = createTestApp({ parseArticle });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
-			expect(response.text).toContain("initShareBalloon(");
+			const doc = new JSDOM(response.text).window.document;
+			const script = doc.querySelector(
+				'script[src$="/client-dist/view.share.client.js"]',
+			);
+			assert(script, "share balloon client script must be rendered");
+			expect(script.hasAttribute("defer")).toBe(true);
 		});
 
 		it("renders an aria-live status region for share feedback", async () => {

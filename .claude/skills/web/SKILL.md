@@ -139,6 +139,27 @@ form.querySelectorAll('[name]').forEach(function(el) {
 });
 ```
 
+### Browser JS Is Bundled and Served Same-Origin
+
+Compile `*.client.ts` to a browser IIFE bundle and reference it via a relative `<script src="/...">`. Do not route the URL through the static asset base URL used for images.
+
+**Why not inline via `Function.prototype.toString()`**: the dev TypeScript transformer wraps compiled functions with runtime helpers (e.g. `__name`) that only live at module scope. Stringifying the function body into a `<script>` tag strips it from that scope and the page throws `ReferenceError` on load.
+
+**Why same-origin, not the CDN**: the bundle changes per commit and must ship atomically with the HTML that references it. A CDN URL lets the asset and the HTML drift out of sync — any developer who points the static base URL at a remote CDN gets a 404 (and in Chrome an ORB-blocked response) for the latest bundle until the next deploy.
+
+```html
+<!-- ❌ BAD — inline Function.toString() leaks compiler helpers -->
+<script>(function () { var init = ${initThing.toString()}; init(...); })();</script>
+
+<!-- ❌ BAD — CDN URL drifts from the HTML per commit -->
+<script src="${STATIC_BASE_URL}/.../thing.client.js" defer></script>
+
+<!-- ✅ GOOD — same-origin bundle, atomic with the HTML -->
+<script src="/client-dist/thing.client.js" defer></script>
+```
+
+The bundle output directory must be inside the runtime asset tree so the Lambda packaging step ships it alongside the handler; the Express app mounts the matching URL prefix as `express.static` so the same relative URL resolves in dev and in prod.
+
 ## Structured Parsing Over Regex
 
 Use a proper parser for any structured format (HTML, XML, JSON, etc.). Never use regex to extract data from structured markup — regex cannot handle nesting, attribute ordering, or encoding edge cases reliably.
@@ -174,3 +195,4 @@ When staged changes include `.css`, `.html`, or `.client.js` files:
 - [ ] Field names are discovered from DOM, not hardcoded
 - [ ] URL/query string represents page state
 - [ ] Interactive features work without JavaScript
+- [ ] Browser JS is bundled and referenced via a same-origin `<script src>`, not inlined via `Function.toString()` or served through the static asset CDN base URL

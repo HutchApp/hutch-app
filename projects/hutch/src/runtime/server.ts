@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
@@ -140,6 +140,17 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use(express.urlencoded({ extended: true }));
 	app.use(express.json());
 	app.use(cookieParser());
+
+	// Same-origin client bundles — the Lambda packaging step copies
+	// src/runtime/web/client-dist/ into the bundle, so `__dirname/web/client-dist`
+	// resolves both in dev (tsx → src/runtime/) and in prod (Lambda → /var/task/).
+	app.use(
+		"/client-dist",
+		express.static(resolve(__dirname, "web", "client-dist"), {
+			maxAge: "5m",
+			fallthrough: false,
+		}),
+	);
 
 	app.use(async (req: Request, _res: Response, next: NextFunction) => {
 		const sessionId = req.cookies?.[SESSION_COOKIE_NAME];
