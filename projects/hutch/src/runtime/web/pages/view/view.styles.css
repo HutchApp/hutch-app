@@ -67,18 +67,12 @@
 
 .view__share-row {
   position: sticky;
-  bottom: calc(5.75rem + env(safe-area-inset-bottom, 0));
+  bottom: calc(8.875rem + env(safe-area-inset-bottom, 0));
   z-index: 11;
   display: flex;
   justify-content: flex-end;
   margin-top: 1.5rem;
   pointer-events: none;
-}
-
-@media (max-width: 767px) {
-  .view__share-row {
-    bottom: calc(8.875rem + env(safe-area-inset-bottom, 0));
-  }
 }
 
 .view__share-balloon-wrap {
