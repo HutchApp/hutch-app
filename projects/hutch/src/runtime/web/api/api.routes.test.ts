@@ -152,7 +152,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 		expect(response.body.properties.page).toBe(2);
 	});
 
-	it("includes filter-by-status action", async () => {
+	it("includes search action", async () => {
 		const testApp = createTestApp();
 		const accessToken = await createAccessToken(testApp);
 
@@ -162,15 +162,16 @@ describe("GET /queue (Siren content negotiation)", () => {
 			.set("Authorization", `Bearer ${accessToken}`);
 
 		const filterAction = response.body.actions?.find(
-			(a: { name: string }) => a.name === "filter-by-status",
+			(a: { name: string }) => a.name === "search",
 		);
-		assert(filterAction, "expected filter-by-status action");
+		assert(filterAction, "expected search action");
 		expect(filterAction.method).toBe("GET");
 		expect(filterAction.fields.map((f: { name: string }) => f.name)).toEqual([
 			"status",
 			"order",
 			"page",
 			"pageSize",
+			"url",
 		]);
 	});
 
@@ -336,7 +337,7 @@ describe("POST /queue (Siren re-save read article)", () => {
 });
 
 describe("POST /queue/:id/delete (Siren)", () => {
-	it("deletes an article and returns 204", async () => {
+	it("redirects to collection via 303 after deleting", async () => {
 		const testApp = createTestApp();
 		const accessToken = await createAccessToken(testApp);
 
@@ -352,16 +353,84 @@ describe("POST /queue/:id/delete (Siren)", () => {
 		const deleteResponse = await request(testApp.app)
 			.post(`/queue/${articleId}/delete`)
 			.set("Accept", SIREN_MEDIA_TYPE)
-			.set("Authorization", `Bearer ${accessToken}`);
+			.set("Authorization", `Bearer ${accessToken}`)
+			.redirects(0);
 
-		expect(deleteResponse.status).toBe(204);
+		expect(deleteResponse.status).toBe(303);
+		expect(deleteResponse.headers.location).toBe("/queue");
+	});
 
-		const listResponse = await request(testApp.app)
-			.get("/queue")
+	it("returns empty collection after following the redirect", async () => {
+		const testApp = createTestApp();
+		const accessToken = await createAccessToken(testApp);
+
+		const saveResponse = await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ url: "https://example.com/article" });
+
+		const articleId = saveResponse.body.properties.id;
+
+		const deleteResponse = await request(testApp.app)
+			.post(`/queue/${articleId}/delete`)
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.redirects(0);
+
+		assert(deleteResponse.headers.location, "expected Location header");
+		const collectionResponse = await request(testApp.app)
+			.get(deleteResponse.headers.location)
 			.set("Accept", SIREN_MEDIA_TYPE)
 			.set("Authorization", `Bearer ${accessToken}`);
 
-		expect(listResponse.body.properties.total).toBe(0);
+		expect(collectionResponse.status).toBe(200);
+		expect(collectionResponse.body.class).toContain("collection");
+		expect(collectionResponse.body.properties.total).toBe(0);
+	});
+});
+
+describe("GET / (Siren entry point)", () => {
+	it("redirects Siren clients to /queue", async () => {
+		const testApp = createTestApp();
+
+		const response = await request(testApp.app)
+			.get("/")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.redirects(0);
+
+		expect(response.status).toBe(303);
+		expect(response.headers.location).toBe("/queue");
+	});
+
+	it("returns home page HTML when Accept is not Siren", async () => {
+		const testApp = createTestApp();
+
+		const response = await request(testApp.app)
+			.get("/")
+			.set("Accept", "text/html");
+
+		expect(response.status).toBe(200);
+		expect(response.type).toContain("text/html");
+	});
+
+	/** Firefox extensions send a CORS preflight for fetches with non-simple headers (Accept: application/vnd.siren+json, Authorization). Without an OPTIONS handler here the preflight 404s and firefox aborts the fetch with NetworkError. */
+	it("handles CORS preflight from extension origin", async () => {
+		const testApp = createTestApp();
+
+		const response = await request(testApp.app)
+			.options("/")
+			.set("Origin", "moz-extension://d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12")
+			.set("Access-Control-Request-Method", "GET")
+			.set("Access-Control-Request-Headers", "authorization,accept");
+
+		expect(response.status).toBe(204);
+		expect(response.headers["access-control-allow-origin"]).toBe(
+			"moz-extension://d3b07384-d113-4ec6-a7b8-5f7e3b4c9a12",
+		);
+		expect(response.headers["access-control-allow-headers"]?.toLowerCase()).toContain("authorization");
+		expect(response.headers["access-control-allow-headers"]?.toLowerCase()).toContain("accept");
 	});
 });
 

@@ -63,6 +63,7 @@ import { initBlogRoutes } from "./web/pages/blog";
 import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
+import { wantsSiren } from "./web/content-negotiation";
 import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
@@ -246,7 +247,32 @@ export function createApp(dependencies: AppDependencies): Express {
 		);
 	});
 
-	app.get("/", async (req: Request, res: Response) => {
+	const extensionCors = cors({
+		origin: (origin, callback) => {
+			if (
+				!origin ||
+				origin === appOrigin ||
+				origin === "https://hutch-app.com" ||
+				/^(moz|chrome)-extension:\/\//.test(origin)
+			) {
+				callback(null, true);
+			} else {
+				callback(null, false);
+			}
+		},
+		methods: ["GET", "POST", "PUT", "DELETE"],
+		allowedHeaders: ["Authorization", "Content-Type", "Accept"],
+		maxAge: 86400,
+	});
+
+	/** Firefox extensions enforce CORS preflight for fetches with non-simple headers (Accept: application/vnd.siren+json, Authorization). Register OPTIONS so the preflight succeeds; without this it returns 404 and firefox aborts the fetch with NetworkError. */
+	app.options("/", extensionCors);
+	app.get("/", extensionCors, async (req: Request, res: Response) => {
+		if (wantsSiren(req)) {
+			res.redirect(303, "/queue");
+			return;
+		}
+
 		const ua = req.headers["user-agent"] ?? "";
 		const browser: "firefox" | "chrome" | "other" =
 			ua.includes("Firefox/") ? "firefox"
@@ -330,24 +356,6 @@ export function createApp(dependencies: AppDependencies): Express {
 		logError: deps.logError,
 	});
 	app.use(forgotPasswordRouter);
-
-	const extensionCors = cors({
-		origin: (origin, callback) => {
-			if (
-				!origin ||
-				origin === appOrigin ||
-				origin === "https://hutch-app.com" ||
-				/^(moz|chrome)-extension:\/\//.test(origin)
-			) {
-				callback(null, true);
-			} else {
-				callback(null, false);
-			}
-		},
-		methods: ["GET", "POST", "PUT", "DELETE"],
-		allowedHeaders: ["Authorization", "Content-Type", "Accept"],
-		maxAge: 86400,
-	});
 
 	const dualAuthMiddleware = initDualAuth({
 		validateAccessToken: deps.validateAccessToken,

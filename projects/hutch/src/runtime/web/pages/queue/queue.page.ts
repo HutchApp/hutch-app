@@ -325,11 +325,6 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			await deps.deleteArticle(parsedId.data, userId);
 		}
 
-		if (wantsSiren(req)) {
-			res.status(204).send();
-			return;
-		}
-
 		res.redirect(303, buildQueueUrl(parseQueueUrl(req.query)));
 	});
 

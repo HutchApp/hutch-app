@@ -69,7 +69,7 @@ export function toArticleCollectionEntity(
 				fields: [{ name: "url", type: "url" }],
 			},
 			{
-				name: "filter-by-status",
+				name: "search",
 				href: "/queue",
 				method: "GET",
 				fields: [
@@ -77,6 +77,7 @@ export function toArticleCollectionEntity(
 					{ name: "order", type: "text" },
 					{ name: "page", type: "number" },
 					{ name: "pageSize", type: "number" },
+					{ name: "url", type: "url" },
 				],
 			},
 		],

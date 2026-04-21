@@ -202,7 +202,7 @@ describe("toArticleCollectionEntity", () => {
 		expect(saveAction?.fields?.some((f) => f.name === "url")).toBe(true);
 	});
 
-	it("includes filter-by-status action with filter fields", () => {
+	it("includes search action with filter fields", () => {
 		const result: FindArticlesResult = {
 			articles: [],
 			total: 0,
@@ -213,7 +213,7 @@ describe("toArticleCollectionEntity", () => {
 		const entity = toArticleCollectionEntity(result, {});
 
 		const filterAction = entity.actions?.find(
-			(a) => a.name === "filter-by-status",
+			(a) => a.name === "search",
 		);
 		expect(filterAction?.method).toBe("GET");
 		expect(filterAction?.fields?.map((f) => f.name)).toEqual([
@@ -221,6 +221,7 @@ describe("toArticleCollectionEntity", () => {
 			"order",
 			"page",
 			"pageSize",
+			"url",
 		]);
 	});
 });
