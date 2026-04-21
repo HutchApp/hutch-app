@@ -8,13 +8,12 @@ export interface AnalyticsPageview {
 	event: "pageview";
 	timestamp: string;
 	path: string;
-	utm_source: string | null;
-	utm_medium: string | null;
-	utm_campaign: string | null;
-	utm_content: string | null;
-	referrer_host: string | null;
+	utm_source?: string;
+	utm_medium?: string;
+	utm_campaign?: string;
+	utm_content?: string;
+	referrer_host?: string;
 	visitor_hash: string | null;
-	user_agent: string | null;
 	is_authenticated: 0 | 1;
 }
 
@@ -33,18 +32,23 @@ function shouldLog(req: Request, statusCode: number): boolean {
 	return true;
 }
 
-function extractQueryString(req: Request, name: string): string | null {
+/**
+ * Returns undefined (not null) for missing/empty params so JSON.stringify
+ * drops the key from the emitted payload — null would serialize as
+ * "utm_source":null and waste ~80 bytes on every no-UTM pageview.
+ */
+function extractQueryString(req: Request, name: string): string | undefined {
 	const value = req.query[name];
-	return typeof value === "string" ? value : null;
+	return typeof value === "string" && value !== "" ? value : undefined;
 }
 
-function extractReferrerHost(req: Request): string | null {
+function extractReferrerHost(req: Request): string | undefined {
 	const referer = req.get("referer");
-	if (!referer) return null;
+	if (!referer) return undefined;
 	try {
 		return new URL(referer).hostname;
 	} catch {
-		return null;
+		return undefined;
 	}
 }
 
@@ -75,7 +79,6 @@ export function createAnalyticsMiddleware(deps: {
 				utm_content: extractQueryString(req, "utm_content"),
 				referrer_host: extractReferrerHost(req),
 				visitor_hash: hashIp({ ip: req.ip, salt: deps.salt }),
-				user_agent: req.get("user-agent") ?? null,
 				is_authenticated: req.userId ? 1 : 0,
 			});
 		});

@@ -6,7 +6,7 @@ import compression from "compression";
 import serverless from "serverless-http";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { logger as requestLogger } from "./logger";
-import { type AnalyticsPageview, createAnalyticsMiddleware } from "./analytics";
+import { type AnalyticsPageview, createAnalyticsMiddleware } from "../runtime/analytics";
 import { createBanMiddleware } from "./ban";
 import { logAndRespondOnError } from "./error-handler";
 import { localServer } from "../runtime/app";

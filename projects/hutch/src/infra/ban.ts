@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import { hashIp } from "./analytics";
+import { hashIp } from "../runtime/analytics";
 
 function loadBannedHashes(): Set<string> {
 	const raw = readFileSync(join(__dirname, "banned-visitors.txt"), "utf-8");

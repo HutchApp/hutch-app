@@ -222,6 +222,13 @@ function sourceClause(logGroupNames: readonly string[]): string {
 	return `SOURCE logGroups(namePrefix: [${prefixes}])`;
 }
 
+/**
+ * start: "-PT1H" pins the widget's scan window to the last hour regardless of
+ * the dashboard's global time selector. CloudWatch Logs Insights charges on
+ * bytes scanned; a wider selector on a frequently-refreshed dashboard is the
+ * usual way a free-tier account blows past 5GB/month on Global-DataScannedBytes.
+ * See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Insights-Query-Syntax.html
+ */
 function logWidget(params: {
 	title: string;
 	logGroupNames: string[];
@@ -243,6 +250,7 @@ function logWidget(params: {
 			title: params.title,
 			query: `${sourceClause(params.logGroupNames)} | ${params.query}`,
 			view: params.view,
+			start: "-PT1H",
 		},
 	};
 }
@@ -268,7 +276,6 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, utm_source",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
-						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(utm_source) and utm_source != \"\"",
 						"| stats count(*) as visits by utm_source",
 						"| sort visits desc",
@@ -283,7 +290,6 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, referrer_host",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
-						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(referrer_host) and referrer_host != \"\"",
 						"| stats count(*) as visits by referrer_host",
 						"| sort visits desc",
@@ -310,7 +316,6 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, utm_content",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
-						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(utm_content) and utm_content != \"\"",
 						"| stats count(*) as visits by utm_content",
 						"| sort visits desc",
@@ -325,7 +330,6 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, visitor_hash",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
-						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(visitor_hash)",
 						"| stats count_distinct(visitor_hash) as visitors by bin(1d)",
 					].join(" "),
@@ -338,7 +342,6 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, visitor_hash, path, is_authenticated",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
-						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(visitor_hash)",
 						"| filter is_authenticated",
 						"| filter path like /^\\/[^\\/]+\\/read$/",
@@ -353,7 +356,6 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, path, visitor_hash",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
-						"| filter user_agent not like /(?i)(bot|crawl|spider|slurp|preview|fetch)/",
 						"| filter ispresent(visitor_hash)",
 						"| filter path like /^\\/https?:\\//",
 						"| stats count_distinct(visitor_hash) as unique_visitors, count(*) as total_hits by path",
