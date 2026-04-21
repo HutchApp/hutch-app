@@ -33,7 +33,7 @@ export class HutchDLQEventHandler extends pulumi.ComponentResource {
 		});
 
 		const lambda = new HutchLambda(name, {
-			entryPoint: `./src/infra/${name}.main.ts`,
+			entryPoint: `./src/runtime/${name}.main.ts`,
 			outputDir: `.lib/${name}`,
 			assetDir: "./src",
 			memorySize: 256,

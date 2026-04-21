@@ -390,17 +390,12 @@ See the [git-commit skill](./.claude/skills/git-commit/SKILL.md) for pre-commit 
 
 Monorepo at the repository root. Main application lives in `projects/hutch/src/` with two top-level directories:
 
-- `src/runtime/` — Application code (Express SSR app)
-- `src/infra/` — Infrastructure as Code (Pulumi) and Lambda adapter
+- `src/runtime/` — Application code (Express SSR app and Lambda entry points)
+- `src/infra/` — Infrastructure as Code (Pulumi)
 
 ### Runtime vs Infra Code
 
-A module belongs under an `infra` directory only if at least one of these is true:
-
-- It imports Pulumi.
-- It is a thin composition root or Lambda adapter that wires dependencies and has no test-worthy logic.
-
-If a module has no Pulumi import and contains logic that would otherwise have a test written for it, that is runtime code and belongs under `runtime`.
+A module belongs under an `infra` directory only if it imports Pulumi. Everything else belongs under `runtime` — including Lambda entry points and composition roots that wire dependencies but have no test-worthy logic. Nothing outside `infra` should import from `infra`.
 
 
 <!-- nx configuration start-->

@@ -81,7 +81,7 @@ const saveLinkCommandDynamodb = new HutchDynamoDBAccess("save-link-command-dynam
 });
 
 const saveLinkCommandLambda = new HutchLambda("save-link-command", {
-	entryPoint: "./src/infra/save-link-command.main.ts",
+	entryPoint: "./src/runtime/save-link-command.main.ts",
 	outputDir: ".lib/save-link-command",
 	assetDir: "./src",
 	memorySize: 256,
@@ -116,7 +116,7 @@ const saveAnonymousLinkCommandDynamodb = new HutchDynamoDBAccess("save-anonymous
 });
 
 const saveAnonymousLinkCommandLambda = new HutchLambda("save-anonymous-link-command", {
-	entryPoint: "./src/infra/save-anonymous-link-command.main.ts",
+	entryPoint: "./src/runtime/save-anonymous-link-command.main.ts",
 	outputDir: ".lib/save-anonymous-link-command",
 	assetDir: "./src",
 	memorySize: 256,
@@ -151,7 +151,7 @@ const generateSummaryDynamodb = new HutchDynamoDBAccess("generate-summary-dynamo
 });
 
 const generateSummaryLambda = new HutchLambda("generate-summary", {
-	entryPoint: "./src/infra/generate-summary.main.ts",
+	entryPoint: "./src/runtime/generate-summary.main.ts",
 	outputDir: ".lib/generate-summary",
 	assetDir: "./src",
 	memorySize: 512,
@@ -179,7 +179,7 @@ new HutchSQSBackedLambda("generate-summary", {
 // --- GenerateSummary DLQ consumer ---
 // Flips the summaryStatus row to "failed" and publishes SummaryGenerationFailedEvent
 // when a message lands in generate-summary-dlq. The entry point is derived from the
-// component name, i.e. ./src/infra/generate-summary-dlq.main.ts.
+// component name, i.e. ./src/runtime/generate-summary-dlq.main.ts.
 new HutchDLQEventHandler("generate-summary-dlq", {
 	sourceQueue: generateSummaryQueue,
 	tableArn: articlesTableArn,
@@ -195,7 +195,7 @@ const linkSavedDynamodb = new HutchDynamoDBAccess("link-saved-dynamodb", {
 });
 
 const linkSavedLambda = new HutchLambda("link-saved", {
-	entryPoint: "./src/infra/link-saved.main.ts",
+	entryPoint: "./src/runtime/link-saved.main.ts",
 	outputDir: ".lib/link-saved",
 	assetDir: "./src",
 	memorySize: 256,
@@ -228,7 +228,7 @@ const anonymousLinkSavedDynamodb = new HutchDynamoDBAccess("anonymous-link-saved
 });
 
 const anonymousLinkSavedLambda = new HutchLambda("anonymous-link-saved", {
-	entryPoint: "./src/infra/anonymous-link-saved.main.ts",
+	entryPoint: "./src/runtime/anonymous-link-saved.main.ts",
 	outputDir: ".lib/anonymous-link-saved",
 	assetDir: "./src",
 	memorySize: 256,
@@ -258,7 +258,7 @@ eventBus.subscribe(AnonymousLinkSavedEvent, anonymousLinkSavedLambdaWithSQS);
 // --- SummaryGenerated handler ---
 
 const summaryGeneratedLambda = new HutchLambda("summary-generated", {
-	entryPoint: "./src/infra/summary-generated.main.ts",
+	entryPoint: "./src/runtime/summary-generated.main.ts",
 	outputDir: ".lib/summary-generated",
 	assetDir: "./src",
 	memorySize: 128,
@@ -278,7 +278,7 @@ eventBus.subscribe(SummaryGeneratedEvent, summaryGeneratedLambdaWithSQS);
 // --- SummaryGenerationFailed handler ---
 
 const summaryGenerationFailedLambda = new HutchLambda("summary-generation-failed", {
-	entryPoint: "./src/infra/summary-generation-failed.main.ts",
+	entryPoint: "./src/runtime/summary-generation-failed.main.ts",
 	outputDir: ".lib/summary-generation-failed",
 	assetDir: "./src",
 	memorySize: 128,
@@ -307,7 +307,7 @@ const refreshArticleContentDynamodb = new HutchDynamoDBAccess("refresh-article-c
 });
 
 const refreshArticleContentLambda = new HutchLambda("refresh-article-content", {
-	entryPoint: "./src/infra/refresh-article-content.main.ts",
+	entryPoint: "./src/runtime/refresh-article-content.main.ts",
 	outputDir: ".lib/refresh-article-content",
 	assetDir: "./src",
 	memorySize: 256,
@@ -340,7 +340,7 @@ const updateFetchTimestampDynamodb = new HutchDynamoDBAccess("update-fetch-times
 });
 
 const updateFetchTimestampLambda = new HutchLambda("update-fetch-timestamp", {
-	entryPoint: "./src/infra/update-fetch-timestamp.main.ts",
+	entryPoint: "./src/runtime/update-fetch-timestamp.main.ts",
 	outputDir: ".lib/update-fetch-timestamp",
 	assetDir: "./src",
 	memorySize: 128,

@@ -120,7 +120,7 @@ export const appOrigin: pulumi.Input<string> = canonicalDomain
 	: api.apiEndpoint;
 
 const lambda = new HutchLambda("hutch", {
-	entryPoint: "./src/infra/lambda.ts",
+	entryPoint: "./src/runtime/lambda.main.ts",
 	outputDir: ".lib/hutch-api",
 	assetDir: "./src/runtime",
 	memorySize: 512,
