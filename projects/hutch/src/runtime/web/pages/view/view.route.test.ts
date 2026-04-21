@@ -319,7 +319,7 @@ describe("View routes", () => {
 				doc
 					.querySelector("[data-test-view-share-greeting]")
 					?.textContent?.trim(),
-			).toBe("Hi, I'm Fayner.");
+			).toBe("Hi, I'm Fayner Brack.");
 		});
 	});
 
