@@ -551,6 +551,45 @@ body {
   color: var(--popup-label);
 }
 
+/* --- Spinner overlay --- */
+
+/**
+ * 1. Blocks all pointer events underneath to prevent double clicks during delete
+ */
+.spinner-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: all; /* 1 */
+  z-index: 999;
+}
+
+@media (prefers-color-scheme: dark) {
+  .spinner-overlay {
+    background: rgba(26, 35, 50, 0.7);
+  }
+}
+
+.spinner-overlay[hidden] {
+  display: none;
+}
+
+.spinner-overlay__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--popup-brand);
+  animation: spinner-pulse 1s ease-in-out infinite;
+}
+
+@keyframes spinner-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
 /* --- Focus accessibility --- */
 
 button:focus-visible,

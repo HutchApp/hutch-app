@@ -26,37 +26,83 @@ const SirenPropertiesSchema = z.object({
 	savedAt: z.string(),
 });
 
-interface SirenLink {
-	rel: string[];
-	href: string;
-}
+const SirenLinkSchema = z.object({
+	rel: z.array(z.string()),
+	href: z.string(),
+});
 
-interface SirenSubEntity {
-	properties?: Record<string, unknown>;
-	links?: SirenLink[];
-	actions?: Array<{ name: string; href: string; method: string }>;
-}
+const SirenActionSchema = z.object({
+	name: z.string(),
+	href: z.string(),
+	method: z.string(),
+	type: z.string().optional(),
+	fields: z
+		.array(z.object({ name: z.string(), type: z.string() }))
+		.optional(),
+});
 
-interface SirenResponse {
-	entities?: SirenSubEntity[];
-}
+const SirenSubEntitySchema = z.object({
+	properties: z.record(z.string(), z.unknown()).optional(),
+	links: z.array(SirenLinkSchema).optional(),
+	actions: z.array(SirenActionSchema).optional(),
+});
 
-export interface SirenReadingListDeps {
+type SirenAction = z.infer<typeof SirenActionSchema>;
+type SirenSubEntity = z.infer<typeof SirenSubEntitySchema>;
+
+const SirenCollectionResponseSchema = z.object({
+	class: z.array(z.string()).optional(),
+	properties: z.record(z.string(), z.unknown()).optional(),
+	entities: z.array(SirenSubEntitySchema).optional(),
+	links: z.array(SirenLinkSchema).optional(),
+	actions: z.array(SirenActionSchema).optional(),
+});
+
+type SirenCollectionResponse = z.infer<typeof SirenCollectionResponseSchema>;
+
+type DoFetchInit = Omit<RequestInit, "headers"> & {
+	headers?: Record<string, string>;
+};
+
+type DoFetch = (url: string, init?: DoFetchInit) => Promise<Response>;
+
+type ActionContext = {
 	serverUrl: string;
-	getAccessToken: () => Promise<string | null>;
-	fetchFn: typeof fetch;
-}
+	doFetch: DoFetch;
+	resolveItem: (entity: SirenSubEntity) => ArticleItem;
+	parseCollection: (body: SirenCollectionResponse) => NavigationResult;
+};
+
+type ActionHandler = (
+	sirenAction: SirenAction,
+	context: ActionContext,
+) => BoundAction;
+
+export type BoundAction = (
+	fields?: Record<string, string>,
+) => Promise<NavigationResult>;
+
+export type NavigationResult = {
+	items: ArticleItem[];
+	actions: Record<string, BoundAction>;
+};
+
+export type ArticleItem = ReadingListItem & {
+	actions: Record<string, BoundAction>;
+};
 
 function findLinkHref(entity: SirenSubEntity, rel: string): string | undefined {
 	return entity.links?.find((link) => link.rel.includes(rel))?.href;
 }
 
-function toReadingListItem(entity: SirenSubEntity, serverUrl: string): ReadingListItem {
+function toReadingListItem(
+	entity: SirenSubEntity,
+	serverUrl: string,
+): ReadingListItem {
 	assert(entity.properties, "Server response entity missing properties");
 	const props = SirenPropertiesSchema.parse(entity.properties);
 	const readHref = findLinkHref(entity, "read");
 	return {
-		// Zod validates id is a string; branded type narrowing is safe after schema validation
 		id: props.id as ReadingListItemId,
 		url: props.url,
 		title: props.title,
@@ -65,87 +111,319 @@ function toReadingListItem(entity: SirenSubEntity, serverUrl: string): ReadingLi
 	};
 }
 
+export function initSaveArticleUnderstanding(): Map<string, ActionHandler> {
+	const handlers = new Map<string, ActionHandler>();
+	handlers.set("save-article", (sirenAction, context) => {
+		return async (fields) => {
+			assert(fields?.url, "save-article requires a url field");
+			const response = await context.doFetch(
+				`${context.serverUrl}${sirenAction.href}`,
+				{
+					method: sirenAction.method,
+					headers: {
+						"Content-Type": sirenAction.type ?? "application/json",
+					},
+					body: JSON.stringify({ url: fields.url }),
+				},
+			);
+			assert(response.ok, `Save failed: ${response.status}`);
+			const body = SirenSubEntitySchema.parse(await response.json());
+			const item = context.resolveItem(body);
+			return { items: [item], actions: {} };
+		};
+	});
+	return handlers;
+}
+
+export function initDeleteArticleUnderstanding(): Map<string, ActionHandler> {
+	const handlers = new Map<string, ActionHandler>();
+	handlers.set("delete", (sirenAction, context) => {
+		return async () => {
+			const response = await context.doFetch(
+				`${context.serverUrl}${sirenAction.href}`,
+				{ method: sirenAction.method },
+			);
+			assert(response.ok, `Delete failed: ${response.status}`);
+			const body = SirenCollectionResponseSchema.parse(await response.json());
+			return context.parseCollection(body);
+		};
+	});
+	return handlers;
+}
+
+export function initListArticlesUnderstanding(): Map<string, ActionHandler> {
+	const handlers = new Map<string, ActionHandler>();
+	handlers.set("search", (sirenAction, context) => {
+		return async (fields) => {
+			const filterUrl = new URL(
+				`${context.serverUrl}${sirenAction.href}`,
+			);
+			if (fields?.url) filterUrl.searchParams.set("url", fields.url);
+			if (fields?.status)
+				filterUrl.searchParams.set("status", fields.status);
+			const response = await context.doFetch(filterUrl.toString(), {
+				method: sirenAction.method,
+			});
+			if (!response.ok) return { items: [], actions: {} };
+			const body = SirenCollectionResponseSchema.parse(await response.json());
+			const items = (body.entities ?? []).map((e) =>
+				context.resolveItem(e),
+			);
+			return { items, actions: {} };
+		};
+	});
+	return handlers;
+}
+
+export function groupOf(
+	...groups: Map<string, ActionHandler>[]
+): Map<string, ActionHandler> {
+	const combined = new Map<string, ActionHandler>();
+	for (const group of groups) {
+		for (const [key, handler] of group) {
+			assert(!combined.has(key), `Duplicate action handler: ${key}`);
+			combined.set(key, handler);
+		}
+	}
+	return combined;
+}
+
+function createCachingFetch(
+	cache: Map<string, { etag: string; body: unknown }>,
+	original: DoFetch,
+): DoFetch {
+	return async (url, init) => {
+		if (init?.method && init.method.toUpperCase() !== "GET")
+			return original(url, init);
+
+		const headers: Record<string, string> = { ...(init?.headers ?? {}) };
+		const cached = cache.get(url);
+		if (cached) headers["If-None-Match"] = cached.etag;
+
+		const response = await original(url, { ...init, headers });
+
+		if (response.status === 304 && cached) {
+			return new Response(JSON.stringify(cached.body), {
+				status: 200,
+				headers: { "Content-Type": SIREN_MEDIA_TYPE },
+			});
+		}
+
+		if (response.ok) {
+			const etag = response.headers.get("etag");
+			if (etag) {
+				const clone = response.clone();
+				cache.set(url, { etag, body: await clone.json() });
+			}
+		}
+
+		return response;
+	};
+}
+
+export function httpCacheable(
+	understanding: Map<string, ActionHandler>,
+): Map<string, ActionHandler> {
+	const cache = new Map<string, { etag: string; body: unknown }>();
+
+	const wrapped = new Map<string, ActionHandler>();
+	for (const [name, handler] of understanding) {
+		wrapped.set(name, (sirenAction, context) => {
+			return handler(sirenAction, {
+				...context,
+				doFetch: createCachingFetch(cache, context.doFetch),
+			});
+		});
+	}
+	return wrapped;
+}
+
+export interface ExtensionDeps {
+	serverUrl: string;
+	getAccessToken: () => Promise<string | null>;
+	fetchFn: typeof fetch;
+}
+
+const ENTRY_POINT = "/";
+
+export function initExtension(
+	handlers: Map<string, ActionHandler>,
+	deps: ExtensionDeps,
+): () => Promise<NavigationResult> {
+	let resolvedUrl: string | null = null;
+	const navigationCache = new Map<
+		string,
+		{ etag: string; body: unknown }
+	>();
+
+	function createDoFetch(): DoFetch {
+		return async (url, init) => {
+			const token = await deps.getAccessToken();
+			assert(token, "No access token available");
+			const headers: Record<string, string> = {
+				Authorization: `Bearer ${token}`,
+				Accept: SIREN_MEDIA_TYPE,
+				...(init?.headers ?? {}),
+			};
+			return deps.fetchFn(url, { ...init, headers });
+		};
+	}
+
+	function createActionContext(doFetch: DoFetch): ActionContext {
+		return {
+			serverUrl: deps.serverUrl,
+			doFetch,
+			resolveItem: (e) => resolveItem(e, doFetch),
+			parseCollection: (body) => parseResponse(body, doFetch),
+		};
+	}
+
+	function resolveItem(
+		entity: SirenSubEntity,
+		doFetch: DoFetch,
+	): ArticleItem {
+		const item = toReadingListItem(entity, deps.serverUrl);
+		const itemActions: Record<string, BoundAction> = {};
+		const context = createActionContext(doFetch);
+		for (const sirenAction of entity.actions ?? []) {
+			const handler = handlers.get(sirenAction.name);
+			if (handler) {
+				itemActions[sirenAction.name] = handler(sirenAction, context);
+			}
+		}
+		return { ...item, actions: itemActions };
+	}
+
+	function bindCollectionActions(
+		sirenActions: SirenAction[],
+		doFetch: DoFetch,
+	): Record<string, BoundAction> {
+		const bound: Record<string, BoundAction> = {};
+		const context = createActionContext(doFetch);
+		for (const sirenAction of sirenActions) {
+			const handler = handlers.get(sirenAction.name);
+			if (handler) {
+				bound[sirenAction.name] = handler(sirenAction, context);
+			}
+		}
+		return bound;
+	}
+
+	function parseResponse(
+		body: SirenCollectionResponse,
+		doFetch: DoFetch,
+	): NavigationResult {
+		const items = (body.entities ?? []).map((e) => resolveItem(e, doFetch));
+		const actions = bindCollectionActions(body.actions ?? [], doFetch);
+		return { items, actions };
+	}
+
+	return async () => {
+		const doFetch = createCachingFetch(navigationCache, createDoFetch());
+
+		const targetUrl = resolvedUrl ?? `${deps.serverUrl}${ENTRY_POINT}`;
+		const response = await doFetch(targetUrl, { method: "GET" });
+		assert(response.ok, `Navigation failed: ${response.status}`);
+
+		const body = SirenCollectionResponseSchema.parse(await response.json());
+
+		if (!resolvedUrl) {
+			const selfLink = body.links?.find((l) => l.rel.includes("self"));
+			assert(selfLink, "Collection response missing self link");
+			resolvedUrl = selfLink.href.startsWith("/")
+				? `${deps.serverUrl}${selfLink.href}`
+				: selfLink.href;
+
+			const cachedEntry = navigationCache.get(targetUrl);
+			if (cachedEntry && resolvedUrl !== targetUrl) {
+				navigationCache.set(resolvedUrl, cachedEntry);
+			}
+		}
+
+		return parseResponse(body, doFetch);
+	};
+}
+
+export interface SirenReadingListDeps {
+	serverUrl: string;
+	getAccessToken: () => Promise<string | null>;
+	fetchFn: typeof fetch;
+}
+
 export function initSirenReadingList(deps: SirenReadingListDeps): {
 	saveUrl: SaveUrl;
 	removeUrl: RemoveUrl;
 	findByUrl: FindByUrl;
 	getAllItems: GetAllItems;
 } {
-	async function authHeaders(): Promise<Record<string, string>> {
-		const token = await deps.getAccessToken();
-		assert(token, "No access token available");
-		return {
-			Authorization: `Bearer ${token}`,
-			Accept: SIREN_MEDIA_TYPE,
-		};
+	const understandings = groupOf(
+		initSaveArticleUnderstanding(),
+		initDeleteArticleUnderstanding(),
+		httpCacheable(initListArticlesUnderstanding()),
+	);
+	const start = initExtension(understandings, deps);
+
+	const knownItems = new Map<string, ArticleItem>();
+
+	function trackItems(items: ArticleItem[]): void {
+		for (const item of items) {
+			knownItems.set(item.id, item);
+		}
 	}
 
 	const saveUrl: SaveUrl = async ({ url }) => {
-		const headers = await authHeaders();
-		const response = await deps.fetchFn(`${deps.serverUrl}/queue`, {
-			method: "POST",
-			headers: { ...headers, "Content-Type": "application/json" },
-			body: JSON.stringify({ url }),
-		});
-
-		if (!response.ok) {
-			throw new Error(`Save failed: ${response.status}`);
-		}
-
-		const body = await response.json() as SirenSubEntity;
-		return { ok: true, item: toReadingListItem(body, deps.serverUrl) };
+		const collection = await start();
+		trackItems(collection.items);
+		const saveAction = collection.actions["save-article"];
+		assert(
+			saveAction,
+			'Expected Siren action "save-article" not found in response',
+		);
+		const result = await saveAction({ url });
+		const item = result.items[0];
+		trackItems(result.items);
+		return { ok: true, item };
 	};
 
 	const removeUrl: RemoveUrl = async (id) => {
-		const headers = await authHeaders();
-		const response = await deps.fetchFn(`${deps.serverUrl}/queue/${id}/delete`, {
-			method: "POST",
-			headers,
-			redirect: "manual",
-		});
-
-		if (response.status === 204 || response.status === 303) {
-			return { ok: true };
+		let item = knownItems.get(id);
+		if (!item) {
+			const collection = await start();
+			trackItems(collection.items);
+			item = knownItems.get(id);
 		}
-
-		return { ok: false, reason: "not-found" };
+		assert(item?.actions.delete, `No delete action found for item ${id}`);
+		try {
+			const result = await item.actions.delete();
+			knownItems.clear();
+			trackItems(result.items);
+			return { ok: true, items: result.items };
+		} catch (err) {
+			if (err instanceof Error && err.message === "Delete failed: 404") {
+				return { ok: false, reason: "not-found" };
+			}
+			throw err;
+		}
 	};
 
 	const findByUrl: FindByUrl = async (url) => {
-		const headers = await authHeaders();
-		const encoded = encodeURIComponent(url);
-		const response = await deps.fetchFn(`${deps.serverUrl}/queue?url=${encoded}`, {
-			method: "GET",
-			headers,
-		});
-
-		if (!response.ok) {
-			return null;
-		}
-
-		const body = await response.json() as SirenResponse;
-		const entities = body.entities ?? [];
-
-		if (entities.length === 0) {
-			return null;
-		}
-
-		return toReadingListItem(entities[0], deps.serverUrl);
+		const collection = await start();
+		trackItems(collection.items);
+		const filterAction = collection.actions["search"];
+		assert(
+			filterAction,
+			'Expected Siren action "search" not found in response',
+		);
+		const result = await filterAction({ url });
+		trackItems(result.items);
+		const found = result.items[0];
+		return found ?? null;
 	};
 
 	const getAllItems: GetAllItems = async () => {
-		const headers = await authHeaders();
-		const response = await deps.fetchFn(`${deps.serverUrl}/queue`, {
-			method: "GET",
-			headers,
-		});
-
-		if (!response.ok) {
-			throw new Error(`Fetch failed: ${response.status}`);
-		}
-
-		const body = await response.json() as SirenResponse;
-		return (body.entities ?? []).map((entity) => toReadingListItem(entity, deps.serverUrl));
+		const collection = await start();
+		trackItems(collection.items);
+		return collection.items;
 	};
 
 	return { saveUrl, removeUrl, findByUrl, getAllItems };

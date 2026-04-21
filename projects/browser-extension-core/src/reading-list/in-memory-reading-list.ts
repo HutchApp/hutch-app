@@ -40,7 +40,7 @@ export function initInMemoryReadingList(): {
 			return { ok: false, reason: "not-found" };
 		}
 		items.delete(id);
-		return { ok: true };
+		return { ok: true, items: Array.from(items.values()) };
 	};
 
 	const findByUrl: FindByUrl = async (url) => {

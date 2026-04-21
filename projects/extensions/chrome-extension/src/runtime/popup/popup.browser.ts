@@ -161,14 +161,20 @@ function renderLinks(items: ReadingListItem[]) {
 		deleteButton.title = "Remove from list";
 		deleteButton.setAttribute("aria-label", "Remove from list");
 		deleteButton.addEventListener("click", async () => {
-			const result = (await send({
-				type: "remove-item",
-				id: item.id,
-			})) as GuardedResult<RemoveUrlResult>;
+			const overlay = document.getElementById("spinner-overlay");
+			if (overlay) overlay.hidden = false;
+			try {
+				const result = (await send({
+					type: "remove-item",
+					id: item.id,
+				})) as GuardedResult<RemoveUrlResult>;
 
-			if (result.ok && result.value.ok) {
-				allItems = allItems.filter((i) => i.id !== item.id);
-				renderLinks(filterItems());
+				if (result.ok && result.value.ok) {
+					allItems = result.value.items;
+					renderLinks(filterItems());
+				}
+			} finally {
+				if (overlay) overlay.hidden = true;
 			}
 		});
 

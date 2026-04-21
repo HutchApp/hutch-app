@@ -8,7 +8,7 @@ export type SaveUrlResult =
 	| { ok: false; reason: "already-saved" };
 
 export type RemoveUrlResult =
-	| { ok: true }
+	| { ok: true; items: ReadingListItem[] }
 	| { ok: false; reason: "not-found" };
 
 export type SaveUrl = (params: {

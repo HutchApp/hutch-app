@@ -20,8 +20,22 @@ export type {
 	TokenStorage,
 } from "./auth/auth.types";
 export { initOAuthAuth } from "./auth/oauth-auth";
-export { initSirenReadingList } from "./reading-list/siren-reading-list";
-export type { SirenReadingListDeps } from "./reading-list/siren-reading-list";
+export {
+	initSirenReadingList,
+	initExtension,
+	initSaveArticleUnderstanding,
+	initDeleteArticleUnderstanding,
+	initListArticlesUnderstanding,
+	groupOf,
+	httpCacheable,
+} from "./reading-list/siren-reading-list";
+export type {
+	SirenReadingListDeps,
+	ExtensionDeps,
+	NavigationResult,
+	ArticleItem,
+	BoundAction,
+} from "./reading-list/siren-reading-list";
 export type { SaveUrl, RemoveUrl, FindByUrl, GetAllItems } from "./reading-list/reading-list.types";
 export type { PopupMessage } from "./popup-message.types";
 export { filterByUrl } from "./popup/filter-by-url";

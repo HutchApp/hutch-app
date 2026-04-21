@@ -43,7 +43,7 @@ describe("initInMemoryReadingList", () => {
 	});
 
 	describe("removeUrl", () => {
-		it("should remove an item and verify it is gone", async () => {
+		it("should remove an item and return remaining items", async () => {
 			const list = initInMemoryReadingList();
 			const saveResult = await list.saveUrl({
 				url: "https://example.com/article",
@@ -53,7 +53,8 @@ describe("initInMemoryReadingList", () => {
 
 			const removeResult = await list.removeUrl(saveResult.item.id);
 
-			expect(removeResult).toEqual({ ok: true });
+			expect(removeResult.ok).toBe(true);
+			if (removeResult.ok) expect(removeResult.items).toEqual([]);
 			expect(
 				await list.findByUrl("https://example.com/article"),
 			).toBeNull();
