@@ -121,7 +121,7 @@ export function initDynamoDbAuth(deps: {
 		const normalizedEmail = normalizeEmail(email);
 		const row = await users.get(
 			{ email: normalizedEmail },
-			{ projection: ["userId", "emailVerified", "registeredAt"] },
+			{ projection: ["email", "userId", "emailVerified", "registeredAt"] },
 		);
 		if (!row) return null;
 		return {
