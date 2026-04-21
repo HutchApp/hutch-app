@@ -3,5 +3,6 @@
     <div class="founding-progress__fill" style="width: {{progressPercent}}%"></div>
   </div>
   <p class="founding-progress__label">{{userCount}} / {{foundingMemberLimit}} founding members</p>
+  {{#if caption}}<p class="founding-progress__caption" data-test-founding-caption>{{caption}}</p>{{/if}}
   <p class="founding-progress__exhausted {{exhaustedStateClass}}" data-test-founding-exhausted>The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.</p>
 </div>

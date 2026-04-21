@@ -9,8 +9,8 @@ const FOUNDING_PROGRESS_TEMPLATE = readFileSync(
 	"utf-8",
 );
 
-export function renderFoundingProgress(input: { userCount: number }): string {
-	const { userCount } = input;
+export function renderFoundingProgress(input: { userCount: number; caption?: string }): string {
+	const { userCount, caption } = input;
 	const progressPercent = Math.min(
 		Math.round((userCount / FOUNDING_MEMBER_LIMIT) * 100),
 		100,
@@ -24,5 +24,6 @@ export function renderFoundingProgress(input: { userCount: number }): string {
 		foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
 		progressPercent,
 		exhaustedStateClass,
+		caption,
 	});
 }

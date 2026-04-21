@@ -51,7 +51,10 @@ export function LoginPage(data: AuthFormData): Component {
 		returnUrl: data.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
-		foundingProgressHtml: renderFoundingProgress({ userCount: data.userCount }),
+		foundingProgressHtml: renderFoundingProgress({
+			userCount: data.userCount,
+			caption: "First 100 accounts are free, forever.",
+		}),
 	});
 
 	return Base({
@@ -93,7 +96,10 @@ export function SignupPage(data: AuthFormData): Component {
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),
-		foundingProgressHtml: renderFoundingProgress({ userCount: data.userCount }),
+		foundingProgressHtml: renderFoundingProgress({
+			userCount: data.userCount,
+			caption: "First 100 accounts are free, forever.",
+		}),
 	});
 
 	return Base({

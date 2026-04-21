@@ -513,6 +513,24 @@ describe("Auth routes", () => {
 			expect(label?.textContent).toBe("0 / 100 founding members");
 		});
 
+		it("should render an explanatory caption on /login for visitors who skipped the homepage", async () => {
+			const response = await request(app).get("/login");
+			const doc = new JSDOM(response.text).window.document;
+
+			const caption = doc.querySelector("[data-test-founding-caption]");
+			assert(caption, "founding caption must be rendered");
+			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
+		});
+
+		it("should render an explanatory caption on /signup for visitors who skipped the homepage", async () => {
+			const response = await request(app).get("/signup");
+			const doc = new JSDOM(response.text).window.document;
+
+			const caption = doc.querySelector("[data-test-founding-caption]");
+			assert(caption, "founding caption must be rendered");
+			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
+		});
+
 		it("should keep the progress bar on POST /login 422 responses", async () => {
 			const response = await request(app)
 				.post("/login")
