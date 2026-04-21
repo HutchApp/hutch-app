@@ -2,7 +2,7 @@
 import assert from "node:assert";
 import type { Express } from "express";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
-import type { Logger } from "../infra/logger";
+import type { Logger } from "./logger";
 import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";

@@ -5,10 +5,10 @@ import helmet from "helmet";
 import compression from "compression";
 import serverless from "serverless-http";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
-import { logger as requestLogger } from "./logger";
-import { type AnalyticsPageview, createAnalyticsMiddleware } from "../runtime/analytics";
-import { createBanMiddleware } from "./ban";
-import { logAndRespondOnError } from "./error-handler";
+import { logger as requestLogger } from "../runtime/logger";
+import { type AnalyticsPageview, createAnalyticsMiddleware, hashIp } from "../runtime/analytics";
+import { createBanMiddleware } from "../runtime/ban";
+import { logAndRespondOnError } from "../runtime/error-handler";
 import { localServer } from "../runtime/app";
 import { getEnv, requireEnv } from "../runtime/require-env";
 
@@ -21,7 +21,7 @@ export const lambdaExpress = ({
 	const log = requestLogger();
 	const logger = HutchLogger.from(consoleLogger);
 	const salt = requireEnv("ANALYTICS_SALT");
-	const ban = createBanMiddleware({ salt });
+	const ban = createBanMiddleware({ salt, hashIp });
 	const analytics = createAnalyticsMiddleware({
 		logger: HutchLogger.fromJSON<AnalyticsPageview>(),
 		salt,
