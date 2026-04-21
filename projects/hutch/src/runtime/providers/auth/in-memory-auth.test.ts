@@ -182,7 +182,11 @@ describe("initInMemoryAuth", () => {
 
 			const result = await auth.findUserByEmail("test@example.com");
 
-			expect(result).toEqual({ userId: created.userId, emailVerified: false });
+			expect(result).toEqual({
+				userId: created.userId,
+				emailVerified: false,
+				registeredAt: expect.any(String),
+			});
 		});
 
 		it("should reflect markEmailVerified", async () => {
@@ -202,7 +206,42 @@ describe("initInMemoryAuth", () => {
 
 			const result = await auth.findUserByEmail("USER@Example.COM");
 
-			expect(result).toEqual({ userId: created.userId, emailVerified: false });
+			expect(result).toEqual({
+				userId: created.userId,
+				emailVerified: false,
+				registeredAt: expect.any(String),
+			});
+		});
+
+		it("should record registeredAt as an ISO 8601 UTC timestamp captured at user creation", async () => {
+			const auth = initInMemoryAuth();
+			const before = Date.now();
+			await auth.createUser({ email: "test@example.com", password: "password123" });
+			const after = Date.now();
+
+			const result = await auth.findUserByEmail("test@example.com");
+			assert(result?.registeredAt, "registeredAt must be set");
+			expect(result.registeredAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+
+			const ts = new Date(result.registeredAt).getTime();
+			expect(ts).toBeGreaterThanOrEqual(before);
+			expect(ts).toBeLessThanOrEqual(after);
+		});
+
+		it("should record registeredAt for Google users too", async () => {
+			const auth = initInMemoryAuth();
+			const userId = UserIdSchema.parse("google-user-rt");
+			const before = Date.now();
+			await auth.createGoogleUser({ email: "google@example.com", userId });
+			const after = Date.now();
+
+			const result = await auth.findUserByEmail("google@example.com");
+			assert(result?.registeredAt, "registeredAt must be set");
+			expect(result.registeredAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+
+			const ts = new Date(result.registeredAt).getTime();
+			expect(ts).toBeGreaterThanOrEqual(before);
+			expect(ts).toBeLessThanOrEqual(after);
 		});
 	});
 
@@ -215,7 +254,11 @@ describe("initInMemoryAuth", () => {
 
 			expect(result).toEqual({ ok: true, userId });
 			const lookup = await auth.findUserByEmail("google@example.com");
-			expect(lookup).toEqual({ userId, emailVerified: true });
+			expect(lookup).toEqual({
+				userId,
+				emailVerified: true,
+				registeredAt: expect.any(String),
+			});
 		});
 
 		it("should reject duplicate email", async () => {

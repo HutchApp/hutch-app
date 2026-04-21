@@ -24,6 +24,7 @@ interface StoredUser {
 	email: string;
 	passwordHash: string | undefined;
 	emailVerified: boolean;
+	registeredAt: string;
 }
 
 interface StoredSession {
@@ -58,7 +59,13 @@ export function initInMemoryAuth(): {
 		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 		const passwordHash = await hashPassword(password);
 
-		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash, emailVerified: false });
+		users.set(normalizedEmail, {
+			id: userId,
+			email: normalizedEmail,
+			passwordHash,
+			emailVerified: false,
+			registeredAt: new Date().toISOString(),
+		});
 
 		return { ok: true, userId };
 	};
@@ -70,7 +77,13 @@ export function initInMemoryAuth(): {
 			return { ok: false, reason: "email-already-exists" };
 		}
 
-		users.set(normalizedEmail, { id: userId, email: normalizedEmail, passwordHash: undefined, emailVerified: true });
+		users.set(normalizedEmail, {
+			id: userId,
+			email: normalizedEmail,
+			passwordHash: undefined,
+			emailVerified: true,
+			registeredAt: new Date().toISOString(),
+		});
 
 		return { ok: true, userId };
 	};
@@ -79,7 +92,11 @@ export function initInMemoryAuth(): {
 		const normalizedEmail = normalizeEmail(email);
 		const user = users.get(normalizedEmail);
 		if (!user) return null;
-		return { userId: user.id, emailVerified: user.emailVerified };
+		return {
+			userId: user.id,
+			emailVerified: user.emailVerified,
+			registeredAt: user.registeredAt,
+		};
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {

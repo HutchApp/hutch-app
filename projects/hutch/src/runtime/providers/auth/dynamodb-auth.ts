@@ -30,6 +30,8 @@ const UserRow = z.object({
 	userId: UserIdSchema,
 	passwordHash: dynamoField(z.string()),
 	emailVerified: dynamoField(z.boolean()),
+	/* Optional in the schema so reads of pre-backfill rows don't throw; new writes always set it. */
+	registeredAt: dynamoField(z.string()),
 });
 
 const SessionRow = z.object({
@@ -75,7 +77,13 @@ export function initDynamoDbAuth(deps: {
 
 		try {
 			await users.put({
-				Item: { email: normalizedEmail, userId, passwordHash, emailVerified: false },
+				Item: {
+					email: normalizedEmail,
+					userId,
+					passwordHash,
+					emailVerified: false,
+					registeredAt: new Date().toISOString(),
+				},
 				ConditionExpression: "attribute_not_exists(email)",
 			});
 			return { ok: true, userId };
@@ -92,7 +100,12 @@ export function initDynamoDbAuth(deps: {
 
 		try {
 			await users.put({
-				Item: { email: normalizedEmail, userId, emailVerified: true },
+				Item: {
+					email: normalizedEmail,
+					userId,
+					emailVerified: true,
+					registeredAt: new Date().toISOString(),
+				},
 				ConditionExpression: "attribute_not_exists(email)",
 			});
 			return { ok: true, userId };
@@ -108,10 +121,14 @@ export function initDynamoDbAuth(deps: {
 		const normalizedEmail = normalizeEmail(email);
 		const row = await users.get(
 			{ email: normalizedEmail },
-			{ projection: ["userId", "emailVerified"] },
+			{ projection: ["userId", "emailVerified", "registeredAt"] },
 		);
 		if (!row) return null;
-		return { userId: row.userId, emailVerified: row.emailVerified === true };
+		return {
+			userId: row.userId,
+			emailVerified: row.emailVerified === true,
+			registeredAt: row.registeredAt,
+		};
 	};
 
 	const verifyCredentials: VerifyCredentials = async ({ email, password }) => {

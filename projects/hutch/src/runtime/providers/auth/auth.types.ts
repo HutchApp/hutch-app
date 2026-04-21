@@ -40,7 +40,7 @@ export type UserExistsByEmail = (email: string) => Promise<boolean>;
 export type UpdatePassword = (args: { email: string; password: string }) => Promise<void>;
 
 export type FindUserByEmailResult =
-	| { userId: UserId; emailVerified: boolean }
+	| { userId: UserId; emailVerified: boolean; registeredAt?: string }
 	| null;
 
 export type FindUserByEmail = (email: string) => Promise<FindUserByEmailResult>;

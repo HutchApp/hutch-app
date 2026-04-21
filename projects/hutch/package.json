@@ -22,6 +22,7 @@
     "dev": "npx --yes kill-port 35729 >/dev/null 2>&1; concurrently --kill-others \"livereload src --exts html,css,ts --wait 500\" \"node scripts/build-client-bundles.js --watch\" \"LIVERELOAD=true tsx watch src/runtime/server.main.ts\"",
     "dev:lambda": "tsx watch src/infra/lambda.ts",
     "permalink": "tsx src/runtime/web/pages/save/save-permalink.cli.main.ts",
+    "backfill-registered-at": "tsx src/runtime/providers/auth/backfill-registered-at.cli.main.ts",
     "test": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000",
     "test:sequential": "jest --testMatch='**/dist/**/*.test.js' --testTimeout=10000 --runInBand",
     "test-integration": "jest --testMatch='**/dist/**/*.integration.js' --testTimeout=30000",
