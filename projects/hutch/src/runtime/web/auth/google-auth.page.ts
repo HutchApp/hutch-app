@@ -6,6 +6,7 @@ import { z } from "zod";
 import { UserIdSchema } from "../../domain/user/user.schema";
 import type { UserId } from "../../domain/user/user.types";
 import type {
+	CountUsers,
 	CreateGoogleUser,
 	CreateSession,
 	FindUserByEmail,
@@ -15,6 +16,7 @@ import type { ExchangeGoogleCode } from "../../providers/google-auth/google-toke
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "./session-cookie";
 import { LoginPage } from "./auth.component";
+import { initFetchUserCount } from "./fetch-user-count";
 
 const CallbackQuerySchema = z.object({
 	code: z.string().min(1),
@@ -37,6 +39,7 @@ interface GoogleAuthDependencies {
 	createSession: CreateSession;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
+	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
 	exchangeGoogleCode: ExchangeGoogleCode;
 	logError: (message: string, error?: Error) => void;
@@ -61,6 +64,11 @@ const verifyState = (signed: string, secret: string): string | null => {
 export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 	const router = express.Router();
 	const redirectUri = `${deps.appOrigin}/auth/google/callback`;
+	const fetchUserCount = initFetchUserCount({
+		countUsers: deps.countUsers,
+		logError: deps.logError,
+		logPrefix: "[Google Auth]",
+	});
 
 	router.get("/auth/google", (req: Request, res: Response) => {
 		const returnUrl = extractReturnUrl(req.query);
@@ -91,24 +99,27 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 
 		res.clearCookie(STATE_COOKIE, { path: "/" });
 
-		if (!parsedQuery.success || !stateCookie || parsedQuery.data.state !== stateCookie) {
-			const result = LoginPage({ globalError: "Google sign-in failed. Please try again." }).to("text/html");
+		const renderError = async (globalError: string) => {
+			const userCount = await fetchUserCount();
+			const result = LoginPage({ userCount, globalError }).to("text/html");
 			res.status(400).type("html").send(result.body);
+		};
+
+		if (!parsedQuery.success || !stateCookie || parsedQuery.data.state !== stateCookie) {
+			await renderError("Google sign-in failed. Please try again.");
 			return;
 		}
 		const { code, state: stateParam } = parsedQuery.data;
 
 		const payload = verifyState(stateParam, deps.googleClientSecret);
 		if (!payload) {
-			const result = LoginPage({ globalError: "Google sign-in failed. Please try again." }).to("text/html");
-			res.status(400).type("html").send(result.body);
+			await renderError("Google sign-in failed. Please try again.");
 			return;
 		}
 
 		const stateData = StatePayloadSchema.parse(JSON.parse(payload));
 		if (Date.now() - stateData.createdAt > STATE_TTL_MS) {
-			const result = LoginPage({ globalError: "Google sign-in expired. Please try again." }).to("text/html");
-			res.status(400).type("html").send(result.body);
+			await renderError("Google sign-in expired. Please try again.");
 			return;
 		}
 
@@ -117,14 +128,12 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 			tokenResult = await deps.exchangeGoogleCode(code);
 		} catch (error) {
 			deps.logError("[Google Auth] Token exchange failed", error instanceof Error ? error : new Error(String(error)));
-			const result = LoginPage({ globalError: "Google sign-in failed. Please try again." }).to("text/html");
-			res.status(400).type("html").send(result.body);
+			await renderError("Google sign-in failed. Please try again.");
 			return;
 		}
 
 		if (!tokenResult.emailVerified) {
-			const result = LoginPage({ globalError: "Your Google account email is not verified." }).to("text/html");
-			res.status(400).type("html").send(result.body);
+			await renderError("Your Google account email is not verified.");
 			return;
 		}
 

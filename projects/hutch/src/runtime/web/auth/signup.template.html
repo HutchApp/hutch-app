@@ -2,6 +2,7 @@
       <div class="auth-card">
         <h1 class="auth-card__title">Create your account</h1>
         <p class="auth-card__subtitle">Start saving articles to read later</p>
+        {{{foundingProgressHtml}}}
         {{#if globalError}}<div class="auth-form__global-error" data-test-global-error>{{globalError}}</div>{{/if}}
         <form class="auth-form" method="POST" action="/signup{{#if returnUrl}}?return={{returnUrl}}{{/if}}" data-test-form="signup">
           <div class="auth-form__field">

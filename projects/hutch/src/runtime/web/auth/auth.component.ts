@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Base } from "../base.component";
 import type { Component } from "../component.types";
 import { render } from "../render";
+import { renderFoundingProgress } from "../shared/founding-progress/founding-progress.component";
 import { AUTH_STYLES } from "./auth.styles";
 
 const LOGIN_TEMPLATE = readFileSync(join(__dirname, "login.template.html"), "utf-8");
@@ -21,6 +22,7 @@ interface AuthFormData {
 	errors?: FieldError[];
 	globalError?: string;
 	returnUrl?: string;
+	userCount: number;
 }
 
 interface FieldViewModel {
@@ -39,16 +41,17 @@ function toFieldViewModel(
 	};
 }
 
-export function LoginPage(data?: AuthFormData): Component {
-	const email = data?.email ?? "";
-	const errors = data?.errors;
+export function LoginPage(data: AuthFormData): Component {
+	const email = data.email ?? "";
+	const errors = data.errors;
 
 	const content = render(LOGIN_TEMPLATE, {
 		email,
-		globalError: data?.globalError,
-		returnUrl: data?.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
+		globalError: data.globalError,
+		returnUrl: data.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
+		foundingProgressHtml: renderFoundingProgress({ userCount: data.userCount }),
 	});
 
 	return Base({
@@ -79,17 +82,18 @@ export function VerifyEmailPage(data: { success: boolean; error?: string }): Com
 	});
 }
 
-export function SignupPage(data?: AuthFormData): Component {
-	const email = data?.email ?? "";
-	const errors = data?.errors;
+export function SignupPage(data: AuthFormData): Component {
+	const email = data.email ?? "";
+	const errors = data.errors;
 
 	const content = render(SIGNUP_TEMPLATE, {
 		email,
-		globalError: data?.globalError,
-		returnUrl: data?.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
+		globalError: data.globalError,
+		returnUrl: data.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),
+		foundingProgressHtml: renderFoundingProgress({ userCount: data.userCount }),
 	});
 
 	return Base({

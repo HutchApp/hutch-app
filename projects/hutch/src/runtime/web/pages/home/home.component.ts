@@ -4,6 +4,7 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { switchHelpers } from "../../handlebars-switch";
+import { renderFoundingProgress } from "../../shared/founding-progress/founding-progress.component";
 import { HOME_PAGE_STYLES } from "./home.styles";
 
 const HOME_TEMPLATE = readFileSync(join(__dirname, "home.template.html"), "utf-8");
@@ -78,12 +79,9 @@ const HOME_HEADLINE_SCRIPT = `<script>
 })();
 </script>`;
 
-const FOUNDING_MEMBER_LIMIT = 100;
-
 export function HomePage(params: { userCount: number; staticBaseUrl: string; browser: "firefox" | "chrome" | "other" }): Component {
 	const { userCount, staticBaseUrl, browser } = params;
-	const progressPercent = Math.min(Math.round((userCount / FOUNDING_MEMBER_LIMIT) * 100), 100);
-	const allocationExhausted = userCount >= FOUNDING_MEMBER_LIMIT;
+	const foundingProgressHtml = renderFoundingProgress({ userCount });
 	return Base({
 		seo: {
 			title: "Readplace — Read-It-Later App | Save Articles, Read Them Later",
@@ -259,10 +257,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 			staticBaseUrl,
 			browserName: browser,
 			founderAvatarUrl: `${staticBaseUrl}/fayner-brack.jpg`,
-			userCount,
-			foundingMemberLimit: FOUNDING_MEMBER_LIMIT,
-			progressPercent,
-			allocationExhausted,
+			foundingProgressHtml,
 			featuredFeatures: [
 				{
 					name: "Reader View",

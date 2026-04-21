@@ -1,6 +1,7 @@
 import type { Request, Response, Router } from "express";
 import express from "express";
 import type {
+	CountUsers,
 	CreateSession,
 	CreateUser,
 	DestroySession,
@@ -21,6 +22,7 @@ import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "./session-cookie";
 import { buildVerificationEmailHtml } from "./verification-email";
 import { flattenZodErrors } from "./flatten-zod-errors";
+import { initFetchUserCount } from "./fetch-user-count";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
@@ -31,6 +33,7 @@ interface AuthDependencies {
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	destroySession: DestroySession;
+	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
 	markSessionEmailVerified: MarkSessionEmailVerified;
 	sendEmail: SendEmail;
@@ -43,13 +46,20 @@ interface AuthDependencies {
 export function initAuthRoutes(deps: AuthDependencies): Router {
 	const router = express.Router();
 
-	router.get("/login", (req: Request, res: Response) => {
+	const fetchUserCount = initFetchUserCount({
+		countUsers: deps.countUsers,
+		logError: deps.logError,
+		logPrefix: "[Auth]",
+	});
+
+	router.get("/login", async (req: Request, res: Response) => {
 		if (req.userId) {
 			res.redirect(303, "/queue");
 			return;
 		}
 		const returnUrl = extractReturnUrl(req.query);
-		const result = LoginPage({ returnUrl }).to("text/html");
+		const userCount = await fetchUserCount();
+		const result = LoginPage({ returnUrl, userCount }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
@@ -58,8 +68,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const parsed = LoginSchema.safeParse(req.body);
 
 		if (!parsed.success) {
+			const userCount = await fetchUserCount();
 			const result = LoginPage({
 				returnUrl,
+				userCount,
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
 			}).to("text/html");
@@ -71,8 +83,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const credentials = await deps.verifyCredentials({ email, password });
 
 		if (!credentials.ok) {
+			const userCount = await fetchUserCount();
 			const result = LoginPage({
 				returnUrl,
+				userCount,
 				email,
 				globalError: "Invalid email or password",
 			}).to("text/html");
@@ -85,13 +99,14 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		res.redirect(303, parseReturnUrl(req.query));
 	});
 
-	router.get("/signup", (req: Request, res: Response) => {
+	router.get("/signup", async (req: Request, res: Response) => {
 		if (req.userId) {
 			res.redirect(303, "/queue");
 			return;
 		}
 		const returnUrl = extractReturnUrl(req.query);
-		const result = SignupPage({ returnUrl }).to("text/html");
+		const userCount = await fetchUserCount();
+		const result = SignupPage({ returnUrl, userCount }).to("text/html");
 		res.status(result.statusCode).type("html").send(result.body);
 	});
 
@@ -100,8 +115,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const parsed = SignupSchema.safeParse(req.body);
 
 		if (!parsed.success) {
+			const userCount = await fetchUserCount();
 			const result = SignupPage({
 				returnUrl,
+				userCount,
 				email: req.body?.email,
 				errors: flattenZodErrors(parsed.error.issues),
 			}).to("text/html");
@@ -113,8 +130,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const createResult = await deps.createUser({ email, password });
 
 		if (!createResult.ok) {
+			const userCount = await fetchUserCount();
 			const result = SignupPage({
 				returnUrl,
+				userCount,
 				email,
 				globalError: "An account with this email already exists",
 			}).to("text/html");

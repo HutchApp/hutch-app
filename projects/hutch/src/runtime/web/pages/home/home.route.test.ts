@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
@@ -164,12 +165,13 @@ describe("GET /", () => {
 		expect(fill?.getAttribute("style")).toBe("width: 0%");
 	});
 
-	it("should not render the exhausted message when under the limit", async () => {
+	it("should hide the exhausted message when under the limit", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;
 
 		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
-		expect(exhausted).toBeNull();
+		assert(exhausted, "exhausted message must be rendered");
+		expect(exhausted.classList.contains("founding-progress__exhausted--hidden")).toBe(true);
 	});
 
 	it("should render the comparison table", async () => {
@@ -293,7 +295,9 @@ describe("GET / with exhausted founding allocation", () => {
 		const doc = new JSDOM(response.text).window.document;
 
 		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
-		expect(exhausted?.textContent).toBe("The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.");
+		assert(exhausted, "exhausted message must be rendered");
+		expect(exhausted.textContent).toBe("The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.");
+		expect(exhausted.classList.contains("founding-progress__exhausted--visible")).toBe(true);
 
 		const fill = doc.querySelector(".founding-progress__fill");
 		expect(fill?.getAttribute("style")).toBe("width: 100%");

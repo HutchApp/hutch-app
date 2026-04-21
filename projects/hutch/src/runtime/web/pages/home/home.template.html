@@ -195,15 +195,7 @@
         <div class="section-header">
           <h2 class="section-header__title">Free for the first 100 users.</h2>
         </div>
-        <div class="founding-progress" data-test-founding-progress>
-          <div class="founding-progress__bar">
-            <div class="founding-progress__fill" style="width: {{progressPercent}}%"></div>
-          </div>
-          <p class="founding-progress__label">{{userCount}} / {{foundingMemberLimit}} founding members</p>
-          {{#if allocationExhausted}}
-          <p class="founding-progress__exhausted" data-test-founding-exhausted>The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.</p>
-          {{/if}}
-        </div>
+        {{{foundingProgressHtml}}}
         <div class="pricing-grid">
           <div class="pricing-card pricing-card--featured" data-test-plan="founding">
             <span class="pricing-card__badge">First 100 Users</span>
