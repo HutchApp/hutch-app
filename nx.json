@@ -23,7 +23,7 @@
       "cache": true
     },
     "compile": {
-      "inputs": ["production", "^production"],
+      "inputs": ["default", "^production"],
       "outputs": ["{projectRoot}/dist"],
       "dependsOn": ["^compile"],
       "cache": true
