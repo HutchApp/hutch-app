@@ -378,6 +378,9 @@ export const VERIFY_BANNER_STYLES = `
     font-weight: 500;
     padding: 8px 16px;
   }
+
+  .verify-banner--visible { display: block; }
+  .verify-banner--hidden { display: none; }
 `;
 
 export const BANNER_AREA_STYLES = `

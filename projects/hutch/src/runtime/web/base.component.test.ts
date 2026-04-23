@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { Base, type PageContent } from "./base.component";
 import type { SupportedMediaType } from "./component.types";
@@ -118,8 +119,10 @@ describe("Base component", () => {
 		const result = Base(page).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		const banner = doc.querySelector(".verify-banner");
-		expect(banner?.textContent).toContain("Please verify your email");
+		const banner = doc.querySelector("[data-test-verify-banner]");
+		assert(banner, "verify banner must be rendered");
+		expect(banner.classList.contains("verify-banner--visible")).toBe(true);
+		expect(banner.textContent).toContain("Please verify your email");
 	});
 
 	it("should hide verification banner when email is verified", () => {
@@ -127,7 +130,9 @@ describe("Base component", () => {
 		const result = Base(page).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.querySelector(".verify-banner")).toBeNull();
+		const banner = doc.querySelector("[data-test-verify-banner]");
+		assert(banner, "verify banner must be rendered");
+		expect(banner.classList.contains("verify-banner--hidden")).toBe(true);
 	});
 
 	it("should hide verification banner when not authenticated", () => {
@@ -135,7 +140,9 @@ describe("Base component", () => {
 		const result = Base(page).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.querySelector(".verify-banner")).toBeNull();
+		const banner = doc.querySelector("[data-test-verify-banner]");
+		assert(banner, "verify banner must be rendered");
+		expect(banner.classList.contains("verify-banner--hidden")).toBe(true);
 	});
 
 	it("should hide verification banner when emailVerified is not provided", () => {
@@ -143,7 +150,9 @@ describe("Base component", () => {
 		const result = Base(page).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.querySelector(".verify-banner")).toBeNull();
+		const banner = doc.querySelector("[data-test-verify-banner]");
+		assert(banner, "verify banner must be rendered");
+		expect(banner.classList.contains("verify-banner--hidden")).toBe(true);
 	});
 
 	it("should rewrite relative canonical URLs to absolute readplace.com URLs", () => {
