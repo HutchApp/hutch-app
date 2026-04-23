@@ -3,6 +3,22 @@ import { createHmac } from "node:crypto";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
+import { initInMemoryArticleCrawl } from "../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../test-app-fakes";
+
 import { GoogleIdSchema } from "../../providers/google-auth/google-auth.schema";
 import type { ExchangeGoogleCode } from "../../providers/google-auth/google-token.types";
 
@@ -37,7 +53,30 @@ function freshState(overrides?: { returnUrl?: string }) {
 describe("Google auth routes", () => {
 	describe("GET /auth/google", () => {
 		it("should redirect to Google with correct params and set state cookie", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange() });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange(),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const response = await request(app).get("/auth/google");
 
 			expect(response.status).toBe(303);
@@ -55,7 +94,30 @@ describe("Google auth routes", () => {
 
 	describe("GET /auth/google/callback", () => {
 		it("should 400 when required params are missing", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange() });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange(),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const response = await request(app).get("/auth/google/callback");
 
 			expect(response.status).toBe(400);
@@ -64,7 +126,30 @@ describe("Google auth routes", () => {
 		});
 
 		it("should 400 when state cookie is missing", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange() });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange(),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const response = await request(app)
 				.get("/auth/google/callback?code=test-code&state=something");
 
@@ -72,7 +157,30 @@ describe("Google auth routes", () => {
 		});
 
 		it("should 400 when state cookie does not match state param", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange() });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange(),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const state = signState(freshState());
 			const response = await request(app)
 				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(state)}`)
@@ -82,7 +190,30 @@ describe("Google auth routes", () => {
 		});
 
 		it("should 400 when state signature is tampered", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange() });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange(),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const valid = signState(freshState());
 			const tampered = `${valid.slice(0, -4)}XXXX`;
 			const response = await request(app)
@@ -93,7 +224,30 @@ describe("Google auth routes", () => {
 		});
 
 		it("should 400 when state is expired", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange() });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange(),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const expiredState = signState({ nonce: "n", createdAt: Date.now() - 10 * 60 * 1000 });
 			const response = await request(app)
 				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(expiredState)}`)
@@ -106,9 +260,29 @@ describe("Google auth routes", () => {
 
 		it("should 400 when token exchange throws", async () => {
 			const errors: string[] = [];
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
 			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: async () => { throw new Error("network down"); },
 				logError: (msg) => { errors.push(msg); },
+				appOrigin: TEST_APP_ORIGIN,
 			});
 			const state = signState(freshState());
 			const response = await request(app)
@@ -120,7 +294,30 @@ describe("Google auth routes", () => {
 		});
 
 		it("should 400 when Google email is not verified", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange({ emailVerified: false }) });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange({ emailVerified: false }),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const state = signState(freshState());
 			const response = await request(app)
 				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(state)}`)
@@ -132,8 +329,29 @@ describe("Google auth routes", () => {
 		});
 
 		it("should create a new user and redirect to /queue by default", async () => {
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
 			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: stubExchange({ email: "brand-new@example.com" }),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
 			});
 			const state = signState(freshState());
 
@@ -150,7 +368,30 @@ describe("Google auth routes", () => {
 		});
 
 		it("should redirect to return URL from state payload", async () => {
-			const { app } = createTestApp({ exchangeGoogleCode: stubExchange({ email: "return@example.com" }) });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: stubExchange({ email: "return@example.com" }),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const state = signState(freshState({ returnUrl: "/save?url=https%3A%2F%2Fexample.com" }));
 
 			const response = await request(app)
@@ -162,8 +403,29 @@ describe("Google auth routes", () => {
 		});
 
 		it("should reuse an existing verified email/password account and keep the password working", async () => {
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
 			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: stubExchange({ email: "existing@example.com" }),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
 			});
 			const createResult = await auth.createUser({ email: "existing@example.com", password: "password123" });
 			assert(createResult.ok, "setup failed");
@@ -187,8 +449,29 @@ describe("Google auth routes", () => {
 		});
 
 		it("should upgrade an unverified email/password account to verified", async () => {
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
 			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: stubExchange({ email: "unverified@example.com" }),
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "unverified@example.com", password: "password123" });
 			const beforeLookup = await auth.findUserByEmail("unverified@example.com");

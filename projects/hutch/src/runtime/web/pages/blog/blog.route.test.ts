@@ -1,12 +1,51 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
+
 import { getAllPosts } from "./blog.posts";
 
 const firstPost = getAllPosts()[0];
 
 describe("GET /blog", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return 200 and HTML content", async () => {
 		const response = await request(app).get("/blog");
@@ -67,7 +106,30 @@ describe("GET /blog", () => {
 });
 
 describe("GET /blog/:slug", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return 200 for a valid post slug", async () => {
 		const response = await request(app).get(
@@ -164,7 +226,30 @@ describe("GET /blog/:slug", () => {
 
 describe("hutch-app.com blog redirect", () => {
 	it("should 301 redirect /blog to readplace.com", async () => {
-		const { app } = createTestApp({ appOrigin: "https://readplace.com" });
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: "https://readplace.com",
+		});
 		const response = await request(app)
 			.get("/blog")
 			.set("Host", "hutch-app.com");
@@ -173,7 +258,30 @@ describe("hutch-app.com blog redirect", () => {
 	});
 
 	it("should 301 redirect /blog/:slug to readplace.com", async () => {
-		const { app } = createTestApp({ appOrigin: "https://readplace.com" });
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: "https://readplace.com",
+		});
 		const response = await request(app)
 			.get(`/blog/${firstPost.slug}`)
 			.set("Host", "hutch-app.com");
@@ -185,7 +293,30 @@ describe("hutch-app.com blog redirect", () => {
 });
 
 describe("GET /sitemap.xml", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should include /blog in the sitemap", async () => {
 		const response = await request(app).get("/sitemap.xml");

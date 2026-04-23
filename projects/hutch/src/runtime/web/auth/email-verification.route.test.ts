@@ -2,6 +2,21 @@ import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
+import { initInMemoryArticleCrawl } from "../../providers/article-crawl/in-memory-article-crawl";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../test-app-fakes";
+
 import { initInMemoryAuth } from "../../providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
@@ -15,7 +30,30 @@ import { httpErrorMessageMapping } from "../pages/queue/queue.error";
 describe("Email verification", () => {
 	describe("POST /signup", () => {
 		it("should send a verification email on successful signup", async () => {
-			const { app, email } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, email } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			await request(app).post("/signup").type("form").send({
 				email: "new@example.com",
@@ -78,7 +116,30 @@ describe("Email verification", () => {
 		});
 
 		it("should not send a verification email when signup fails", async () => {
-			const { app, auth, email } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth, email } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
 
 			await request(app).post("/signup").type("form").send({
@@ -93,7 +154,30 @@ describe("Email verification", () => {
 
 	describe("GET /verify-email", () => {
 		it("should verify email with a valid token", async () => {
-			const { app, email } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, email } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			await request(app).post("/signup").type("form").send({
 				email: "verify@example.com",
@@ -114,7 +198,30 @@ describe("Email verification", () => {
 		});
 
 		it("should reject an invalid token", async () => {
-			const { app } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			const response = await request(app).get("/verify-email?token=invalidtoken");
 
@@ -124,7 +231,30 @@ describe("Email verification", () => {
 		});
 
 		it("should reject when no token is provided", async () => {
-			const { app } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			const response = await request(app).get("/verify-email");
 
@@ -134,7 +264,30 @@ describe("Email verification", () => {
 		});
 
 		it("should reject a token that has already been used", async () => {
-			const { app, email } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, email } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			await request(app).post("/signup").type("form").send({
 				email: "once@example.com",
@@ -156,7 +309,30 @@ describe("Email verification", () => {
 		});
 
 		it("should mark email as verified after successful verification", async () => {
-			const { app, auth, email } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth, email } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			const signupResponse = await request(app).post("/signup").type("form").send({
 				email: "flag@example.com",
@@ -187,7 +363,30 @@ describe("Email verification", () => {
 		});
 
 		it("should not mark email as verified when token is invalid", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			const signupResponse = await request(app).post("/signup").type("form").send({
 				email: "noverify@example.com",

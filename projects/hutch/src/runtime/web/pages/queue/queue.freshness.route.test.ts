@@ -1,9 +1,21 @@
 import request from "supertest";
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
 import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
 import { initRefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type { PublishRefreshArticleContent } from "../../../providers/events/publish-refresh-article-content.types";
 import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
 import { createTestApp } from "../../../test-app";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createNoopLogError,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
 
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -49,10 +61,27 @@ describe("Queue freshness integration", () => {
 			staleTtlMs: 0,
 		});
 
+		const articleCrawl = initInMemoryArticleCrawl();
+		const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
 		const { app, auth } = createTestApp({
 			articleStore,
-			refreshArticleIfStale,
+			articleCrawl,
+			parseArticle,
+			crawlArticle: stubCrawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 			publishUpdateFetchTimestamp: async (p) => { timestampPublished.push(p); },
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale,
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
 

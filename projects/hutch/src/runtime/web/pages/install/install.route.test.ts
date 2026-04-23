@@ -1,7 +1,22 @@
 import { firefoxS3Config } from "browser-extension-core/s3-config";
 import { JSDOM } from "jsdom";
 import request from "supertest";
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
 import { createTestApp } from "../../../test-app";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
 
 const TEST_XPI_FILENAME = "abc123-1.0.0.xpi";
 
@@ -24,7 +39,29 @@ afterEach(() => {
 });
 
 describe("GET /install", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle: stubCrawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return 200 and HTML content", async () => {
 		const response = await request(app).get("/install");

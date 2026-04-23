@@ -6,6 +6,21 @@ import { fetchAllArticles } from "./export.page";
 import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
 import { createTestApp } from "../../../test-app";
 
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
+
 async function loginAgent(
 	app: ReturnType<typeof createTestApp>["app"],
 	auth: ReturnType<typeof createTestApp>["auth"],
@@ -22,7 +37,30 @@ async function loginAgent(
 describe("Export routes", () => {
 	describe("GET /export (unauthenticated)", () => {
 		it("should redirect to /login", async () => {
-			const { app } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const response = await request(app).get("/export");
 
 			expect(response.status).toBe(303);
@@ -32,7 +70,30 @@ describe("Export routes", () => {
 
 	describe("GET /export (authenticated)", () => {
 		it("should render the export page", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/export");
@@ -52,7 +113,30 @@ describe("Export routes", () => {
 
 	describe("GET /export/download (unauthenticated)", () => {
 		it("should redirect to /login", async () => {
-			const { app } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const response = await request(app).get("/export/download");
 
 			expect(response.status).toBe(303);
@@ -62,7 +146,30 @@ describe("Export routes", () => {
 
 	describe("GET /export/download (authenticated)", () => {
 		it("should return JSON file with content-disposition header", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/export/download");
@@ -77,7 +184,30 @@ describe("Export routes", () => {
 		});
 
 		it("should return empty articles array when user has no articles", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/export/download");
@@ -89,7 +219,30 @@ describe("Export routes", () => {
 		});
 
 		it("should include all saved articles in the export", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -109,7 +262,30 @@ describe("Export routes", () => {
 		});
 
 		it("should export article fields correctly", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -132,7 +308,30 @@ describe("Export routes", () => {
 		});
 
 		it("should not include articles from other users", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 
 			await auth.createUser({
 				email: "user1@example.com",
@@ -173,7 +372,30 @@ describe("Export routes", () => {
 		});
 
 		it("should include articles of all statuses", async () => {
-			const { app, auth } = createTestApp();
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
 			const agent = await loginAgent(app, auth);
 
 			await agent

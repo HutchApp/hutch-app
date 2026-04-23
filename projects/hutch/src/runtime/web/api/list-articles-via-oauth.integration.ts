@@ -1,6 +1,21 @@
 import { createHash, randomBytes } from "node:crypto";
 import request from "supertest";
+import { initInMemoryArticleCrawl } from "../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
 import { createTestApp } from "../../test-app";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../test-app-fakes";
 import { SIREN_MEDIA_TYPE } from "./siren";
 
 const CLIENT_ID = "hutch-firefox-extension";
@@ -16,7 +31,29 @@ function generatePkce() {
 
 describe("List articles via OAuth flow", () => {
 	it("returns empty collection after logging in via OAuth", async () => {
-		const testApp = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const testApp = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle: stubCrawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
 		const agent = request.agent(testApp.app);

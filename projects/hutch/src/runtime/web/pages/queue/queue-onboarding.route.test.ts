@@ -5,6 +5,22 @@ import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboar
 import { ONBOARDING_VERSION } from "../../onboarding/onboarding.steps";
 import { createTestApp } from "../../../test-app";
 
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
+
 async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
 	const agent = request.agent(app);
@@ -17,7 +33,30 @@ async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: Re
 
 describe("Queue onboarding", () => {
 	it("shows onboarding visible with both steps incomplete on empty queue", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent.get("/queue");
@@ -37,7 +76,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("keeps onboarding visible after saving an article when extension cookie is absent", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		await agent
@@ -61,7 +123,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("marks install-extension complete when extension cookie is present", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent
@@ -75,7 +160,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows success message when both extension cookie and saved article are present", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		await agent
@@ -98,7 +206,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows 'Install the Chrome browser extension' for Chrome user-agent", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent
@@ -112,7 +243,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows 'Install the Firefox browser extension' for Firefox user-agent", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent
@@ -126,7 +280,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows 'Install a browser extension' for unrecognised user-agent", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent
@@ -140,7 +317,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows success state even when viewing an empty filter tab", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		await agent
@@ -162,7 +362,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("does not render onboarding when dismiss cookie matches current version", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent
@@ -175,7 +398,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("re-renders onboarding when dismiss cookie has a stale version", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent
@@ -189,7 +435,30 @@ describe("Queue onboarding", () => {
 	});
 
 	it("POST /queue/dismiss-onboarding sets dismiss cookie to current version and redirects to /queue", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 		const agent = await loginAgent(app, auth);
 
 		const response = await agent.post("/queue/dismiss-onboarding");

@@ -34,8 +34,45 @@ const TEST_LINK_TITLE = "Test Article";
 
 async function startTestServer(): Promise<http.Server> {
 	const { createTestApp } = await import("hutch/test-app");
+	const { initInMemoryArticleCrawl } = await import("hutch/in-memory-article-crawl");
+	const { initInMemoryArticleStore } = await import("hutch/in-memory-article-store");
+	const {
+		createFakeApplyParseResult,
+		createFakePublishLinkSaved,
+		createFakePublishSaveAnonymousLink,
+		createFakeSummaryProvider,
+		createInMemoryPublishUpdateFetchTimestamp,
+		createNoopLogError,
+		createNoopRefreshArticleIfStale,
+		defaultHttpErrorMessageMapping,
+		initReadabilityParser,
+		stubCrawlArticle,
+	} = await import("hutch/test-app-fakes");
+
 	const origin = `http://127.0.0.1:${TEST_PORT}`;
-	const { app, auth } = createTestApp({ appOrigin: origin });
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app, auth } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle: stubCrawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: origin,
+	});
 	await auth.createUser({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
 	return new Promise((resolve) => {

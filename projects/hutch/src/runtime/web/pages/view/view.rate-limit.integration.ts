@@ -1,6 +1,21 @@
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
 
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
+
 const ARTICLE_URL = "https://example.com/post";
 const ENCODED = encodeURIComponent(ARTICLE_URL);
 
@@ -16,8 +31,29 @@ describe("View article rate limit", () => {
 	});
 
 	it("blocks the 21st request in a 10s window and resets after the window slides", async () => {
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
 		const { app } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
 			publishSaveAnonymousLink: async () => {},
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
 		});
 
 		for (let i = 0; i < 20; i++) {
@@ -34,8 +70,29 @@ describe("View article rate limit", () => {
 	});
 
 	it("tracks each URL in its own counter (per-URL isolation)", async () => {
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
 		const { app } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
 			publishSaveAnonymousLink: async () => {},
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
 		});
 		const urlA = encodeURIComponent("https://example.com/a");
 		const urlB = encodeURIComponent("https://example.com/b");

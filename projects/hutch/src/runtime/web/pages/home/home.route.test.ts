@@ -2,10 +2,49 @@ import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../../test-app";
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakePublishSaveAnonymousLink,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	initReadabilityParser,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
+
 import { getAllSlugs } from "../blog/blog.posts";
 
 describe("GET /", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return 200 and HTML content", async () => {
 		const response = await request(app).get("/");
@@ -285,7 +324,30 @@ describe("GET /", () => {
 
 describe("GET / with exhausted founding allocation", () => {
 	it("should render the exhausted message and cap progress at 100% when users exceed the limit", async () => {
-		const { app, auth } = createTestApp();
+		const articleStore = initInMemoryArticleStore();
+		const articleCrawl = initInMemoryArticleCrawl();
+		const crawlArticle = stubCrawlArticle;
+		const { parseArticle } = initReadabilityParser({ crawlArticle });
+		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const summary = createFakeSummaryProvider();
+		const { app, auth } = createTestApp({
+			articleStore,
+			articleCrawl,
+			parseArticle,
+			crawlArticle,
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			findGeneratedSummary: summary.findGeneratedSummary,
+			markSummaryPending: summary.markSummaryPending,
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			exchangeGoogleCode: undefined,
+			logError: createNoopLogError(),
+			appOrigin: TEST_APP_ORIGIN,
+		});
 
 		for (let i = 0; i < 101; i++) {
 			await auth.createUser({ email: `user${i}@test.com`, password: "password123" });
@@ -308,7 +370,30 @@ describe("GET / with exhausted founding allocation", () => {
 });
 
 describe("GET /robots.txt", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return a text response with crawl directives", async () => {
 		const response = await request(app).get("/robots.txt");
@@ -322,7 +407,30 @@ describe("GET /robots.txt", () => {
 });
 
 describe("GET /llms.txt", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return a text response with the product overview", async () => {
 		const response = await request(app).get("/llms.txt");
@@ -335,7 +443,30 @@ describe("GET /llms.txt", () => {
 });
 
 describe("GET /llms-full.txt", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return a text response with the full product details", async () => {
 		const response = await request(app).get("/llms-full.txt");
@@ -349,7 +480,30 @@ describe("GET /llms-full.txt", () => {
 });
 
 describe("GET /sitemap.xml", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return an XML sitemap with exactly the public pages", async () => {
 		const response = await request(app).get("/sitemap.xml");
@@ -374,7 +528,30 @@ describe("GET /sitemap.xml", () => {
 });
 
 describe("GET /nonexistent", () => {
-	const { app } = createTestApp();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({ crawlArticle });
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+	const { app } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		appOrigin: TEST_APP_ORIGIN,
+	});
 
 	it("should return 404", async () => {
 		const response = await request(app).get("/nonexistent");

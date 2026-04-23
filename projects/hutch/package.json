@@ -8,12 +8,33 @@
     "./test-app": {
       "types": "./dist/runtime/test-app.d.ts",
       "default": "./dist/runtime/test-app.js"
+    },
+    "./test-app-fakes": {
+      "types": "./dist/runtime/test-app-fakes.d.ts",
+      "default": "./dist/runtime/test-app-fakes.js"
+    },
+    "./in-memory-article-store": {
+      "types": "./dist/runtime/providers/article-store/in-memory-article-store.d.ts",
+      "default": "./dist/runtime/providers/article-store/in-memory-article-store.js"
+    },
+    "./in-memory-article-crawl": {
+      "types": "./dist/runtime/providers/article-crawl/in-memory-article-crawl.d.ts",
+      "default": "./dist/runtime/providers/article-crawl/in-memory-article-crawl.js"
     }
   },
   "typesVersions": {
     "*": {
       "test-app": [
         "./dist/runtime/test-app.d.ts"
+      ],
+      "test-app-fakes": [
+        "./dist/runtime/test-app-fakes.d.ts"
+      ],
+      "in-memory-article-store": [
+        "./dist/runtime/providers/article-store/in-memory-article-store.d.ts"
+      ],
+      "in-memory-article-crawl": [
+        "./dist/runtime/providers/article-crawl/in-memory-article-crawl.d.ts"
       ]
     }
   },

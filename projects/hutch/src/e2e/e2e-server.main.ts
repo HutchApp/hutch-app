@@ -1,7 +1,16 @@
 import express from 'express'
 import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
 import { createTestApp } from '../runtime/test-app'
+import {
+  createFakeApplyParseResult,
+  createFakePublishLinkSaved,
+  createFakePublishSaveAnonymousLink,
+  createFakeSummaryProvider,
+  defaultHttpErrorMessageMapping,
+  initReadabilityParser,
+} from '../runtime/test-app-fakes'
 import { requireEnv } from '../runtime/require-env'
+import { initInMemoryArticleCrawl } from '../runtime/providers/article-crawl/in-memory-article-crawl'
 import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
 import { initRefreshArticleIfStale } from '../runtime/providers/article-freshness/check-content-freshness'
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from '@packages/crawl-article'
@@ -20,6 +29,7 @@ const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, heade
 // event-driven refresh/update-timestamp paths (publishRefreshArticleContent
 // and publishUpdateFetchTimestamp) end-to-end.
 const articleStore = initInMemoryArticleStore()
+const articleCrawl = initInMemoryArticleCrawl()
 const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger })
 const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger })
 const { refreshArticleIfStale } = initRefreshArticleIfStale({
@@ -32,11 +42,26 @@ const { refreshArticleIfStale } = initRefreshArticleIfStale({
   staleTtlMs: 0,
 })
 
+const { parseArticle } = initReadabilityParser({ crawlArticle })
+const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle })
+const summary = createFakeSummaryProvider()
+
 const { app: hutchApp, email } = createTestApp({
   articleStore,
+  articleCrawl,
+  parseArticle,
   crawlArticle,
-  refreshArticleIfStale,
+  publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+  publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
   publishUpdateFetchTimestamp,
+  findGeneratedSummary: summary.findGeneratedSummary,
+  markSummaryPending: summary.markSummaryPending,
+  findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+  markCrawlPending: articleCrawl.markCrawlPending,
+  refreshArticleIfStale,
+  httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+  exchangeGoogleCode: undefined,
+  logError,
   appOrigin: origin,
 })
 
