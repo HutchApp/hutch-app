@@ -7,6 +7,7 @@ import type {
 	ParseArticle,
 	ParseArticleResult,
 } from "../../../providers/article-parser/article-parser.types";
+import type { FindArticleCrawlStatus } from "../../../providers/article-crawl/article-crawl.types";
 import type { FindGeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { createTestApp } from "../../../test-app";
 
@@ -399,6 +400,23 @@ describe("View routes", () => {
 				slot.classList.contains("article-body__summary-slot--hidden"),
 			).toBe(true);
 		});
+
+		it("hides the summary slot when the crawl has failed (reader-failed card already signals the problem)", async () => {
+			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
+			const { app } = createTestApp({ parseArticle, findGeneratedSummary });
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("skipped");
+			expect(
+				slot.classList.contains("article-body__summary-slot--hidden"),
+			).toBe(true);
+			expect(slot.hasAttribute("hx-get")).toBe(false);
+		});
 	});
 
 	describe("GET /view/summary fragment", () => {
@@ -460,6 +478,26 @@ describe("View routes", () => {
 			const response = await request(app).get("/view/summary?url=not-a-url");
 
 			expect(response.status).toBe(400);
+		});
+
+		it("hides the summary slot on poll when the crawl has failed (no further polling)", async () => {
+			const findArticleCrawlStatus: FindArticleCrawlStatus = async () => ({
+				status: "failed",
+				reason: "blocked",
+			});
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
+			const { app } = createTestApp({ findArticleCrawlStatus, findGeneratedSummary });
+
+			const response = await request(app).get(
+				`/view/summary?url=${encodeURIComponent(ARTICLE_URL)}&poll=5`,
+			);
+
+			expect(response.status).toBe(200);
+			const doc = new JSDOM(response.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-summary-status")).toBe("skipped");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
 		});
 	});
 

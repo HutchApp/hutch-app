@@ -49,6 +49,7 @@ test.describe('Queue management flow (local)', () => {
 
     const viewPageProgress: ViewPageProgress = {
       visitedAnonymously: false,
+      visitedCrawlFailure: false,
     }
 
     await runQueueFlow(page, {
@@ -58,7 +59,7 @@ test.describe('Queue management flow (local)', () => {
       passwordResetProgress,
       preQueueActionFactories: {
         anonymousView: createAnonymousViewPageActions(
-          { baseUrl: BASE_URL, testUrl: `${BASE_URL}/privacy?view=1` },
+          { baseUrl: BASE_URL, testUrl: `${BASE_URL}/privacy?view=1`, unfetchableUrl: `${BASE_URL}/e2e/unfetchable` },
           viewPageProgress,
         ),
         onboarding: createOnboardingActions(onboardingProgress),

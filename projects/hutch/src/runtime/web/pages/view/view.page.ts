@@ -182,15 +182,17 @@ function handleViewSummary(deps: ViewDependencies) {
 			return;
 		}
 		const articleUrl = parsed.data;
+		const crawl = await deps.findArticleCrawlStatus(articleUrl);
 		const summary = await deps.findGeneratedSummary(articleUrl);
+		const crawlFailed = crawl?.status === "failed";
 		const status = summary?.status ?? "pending";
 		const pollCount = Number(req.query.poll ?? "0");
 		const MAX_POLLS = 40;
-		const summaryPollUrl = status === "pending" && pollCount < MAX_POLLS
+		const summaryPollUrl = !crawlFailed && status === "pending" && pollCount < MAX_POLLS
 			? `/view/summary?url=${encodeURIComponent(articleUrl)}&poll=${pollCount + 1}`
 			: undefined;
 
-		const html = renderSummarySlot({ summary, summaryPollUrl, summaryOpen: true });
+		const html = renderSummarySlot({ crawl, summary, summaryPollUrl, summaryOpen: true });
 		res.type("html").send(html);
 	};
 }

@@ -1,3 +1,4 @@
+import type { ArticleCrawl } from "../../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../../providers/article-summary/article-summary.types";
 import { renderSummaryFailed } from "./summary-failed.component";
 import { renderSummaryPending } from "./summary-pending.component";
@@ -5,12 +6,18 @@ import { renderSummaryReady } from "./summary-ready.component";
 import { renderSummarySkipped } from "./summary-skipped.component";
 
 export interface SummarySlotInput {
+	crawl?: ArticleCrawl;
 	summary: GeneratedSummary | undefined;
 	summaryPollUrl?: string;
 	summaryOpen?: boolean;
 }
 
 export function renderSummarySlot(input: SummarySlotInput): string {
+	// When the crawl has failed there is no article to summarise; the
+	// reader-failed card already tells the user the problem. Collapse the
+	// summary slot to its hidden (skipped) state so we don't keep telling them
+	// we're "still generating a summary" for an article we couldn't fetch.
+	if (input.crawl?.status === "failed") return renderSummarySkipped();
 	const summary = input.summary ?? { status: "pending" };
 	switch (summary.status) {
 		case "ready":

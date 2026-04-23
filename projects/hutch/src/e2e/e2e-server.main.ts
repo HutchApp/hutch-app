@@ -47,6 +47,13 @@ server.get('/e2e/sent-emails', (_req, res) => {
   res.json(email.getSentEmails())
 })
 
+// Deterministic crawl-failure fixture: any GET returns 500 so tests can exercise
+// the reader-failed / summary-hidden flow against a URL that's guaranteed to
+// fail regardless of network conditions.
+server.get('/e2e/unfetchable', (_req, res) => {
+  res.status(500).type('text/plain').send('e2e: intentional crawl failure')
+})
+
 server.use(hutchApp)
 
 // Graceful shutdown so V8 writes coverage data to NODE_V8_COVERAGE directory

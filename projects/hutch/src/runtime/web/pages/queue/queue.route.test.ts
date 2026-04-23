@@ -845,6 +845,69 @@ describe("Queue routes", () => {
 			).toBe(true);
 		});
 
+		it("should hide the summary slot on the reader page when the crawl has failed", async () => {
+			// The reader-failed card already tells the user we couldn't fetch the
+			// article — showing "Generating summary…" on top of that is confusing.
+			// A parseArticle returning {ok:false} makes the fake publish pipeline
+			// call markCrawlFailed, producing the same state as a production DLQ
+			// delivery.
+			const articleHtml = `<html><body><article><p>Placeholder — parse will report failure below.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const parseArticle = async () => ({ ok: false as const, reason: "blocked" });
+			const findGeneratedSummary = async () => ({ status: "pending" as const });
+			const { app, auth } = createTestApp({ crawlArticle, parseArticle, findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/crawl-failed-post" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			const summarySlot = doc.querySelector("[data-test-reader-summary]");
+			assert(summarySlot, "summary slot must be rendered");
+			expect(summarySlot.getAttribute("data-summary-status")).toBe("skipped");
+			expect(
+				summarySlot.classList.contains("article-body__summary-slot--hidden"),
+			).toBe(true);
+			expect(summarySlot.hasAttribute("hx-get")).toBe(false);
+		});
+
+		it("GET /queue/:id/summary hides the slot when the crawl has failed (no further polling)", async () => {
+			const articleHtml = `<html><body><article><p>Placeholder.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const parseArticle = async () => ({ ok: false as const, reason: "blocked" });
+			const findGeneratedSummary = async () => ({ status: "pending" as const });
+			const { app, auth } = createTestApp({ crawlArticle, parseArticle, findGeneratedSummary });
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/crawl-failed-poll" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const pollResponse = await agent.get(`/queue/${articleId}/summary?poll=3`);
+			expect(pollResponse.status).toBe(200);
+			const doc = new JSDOM(pollResponse.text).window.document;
+			const summarySlot = doc.querySelector("[data-test-reader-summary]");
+			assert(summarySlot, "summary slot fragment must be rendered");
+			expect(summarySlot.getAttribute("data-summary-status")).toBe("skipped");
+			expect(summarySlot.hasAttribute("hx-get")).toBe(false);
+		});
+
 		it("GET /queue/:id/summary returns a ready fragment without polling when status=ready", async () => {
 			const articleHtml = `
 			<html><head><title>Summarized Post</title></head>

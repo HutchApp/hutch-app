@@ -39,6 +39,7 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 	});
 
 	const summarySlotHtml = renderSummarySlot({
+		crawl: input.crawl,
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: input.summaryOpen,

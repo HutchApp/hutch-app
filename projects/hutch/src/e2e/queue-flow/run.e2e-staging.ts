@@ -51,6 +51,10 @@ test.describe('Queue management flow (staging)', () => {
 
     const viewPageProgress: ViewPageProgress = {
       visitedAnonymously: false,
+      // Staging has no deterministic crawl-failure endpoint (/e2e/unfetchable
+      // is local-only), so mark the crawl-failure leg complete up front. Its
+      // action skips itself via the missing `unfetchableUrl` config option.
+      visitedCrawlFailure: true,
     }
 
     // All-true stubs: staging skips these flows (no /e2e/sent-emails endpoint,

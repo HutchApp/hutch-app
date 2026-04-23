@@ -288,15 +288,17 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
+		const crawl = await deps.findArticleCrawlStatus(article.url);
 		const summary = await deps.findGeneratedSummary(article.url);
+		const crawlFailed = crawl?.status === "failed";
 		const status = summary?.status ?? "pending";
 		const pollCount = Number(req.query.poll ?? "0");
 		const MAX_POLLS = 40;
-		const summaryPollUrl = status === "pending" && pollCount < MAX_POLLS
+		const summaryPollUrl = !crawlFailed && status === "pending" && pollCount < MAX_POLLS
 			? `/queue/${article.id.value}/summary?poll=${pollCount + 1}`
 			: undefined;
 
-		const html = renderSummarySlot({ summary, summaryPollUrl });
+		const html = renderSummarySlot({ crawl, summary, summaryPollUrl });
 		res.type("html").send(html);
 	});
 

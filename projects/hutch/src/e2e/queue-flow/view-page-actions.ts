@@ -6,13 +6,53 @@ import type { AuthProgress } from './auth-actions'
 
 export type ViewPageProgress = {
 	visitedAnonymously: boolean
+	visitedCrawlFailure: boolean
 }
 
 export function createAnonymousViewPageActions(
-	config: { baseUrl: string; testUrl: string },
+	config: { baseUrl: string; testUrl: string; unfetchableUrl?: string },
 	progress: ViewPageProgress,
 ): (authProgress: AuthProgress) => Record<ViewPageActionKey, PageAction> {
 	return (authProgress) => ({
+		'anonymous-visit-view-page-crawl-fails': {
+			isAvailable: async (page) => {
+				if (authProgress.accountCreated) return false
+				if (progress.visitedCrawlFailure) return false
+				if (!config.unfetchableUrl) return false
+				return isOnPage(page, 'page-home')
+			},
+			execute: async (page) => {
+				// Unique per-run query param so the crawl always hits the fixture
+				// (bypasses any cached-article short-circuit). The `unfetchableUrl`
+				// is a bare path with no query string of its own.
+				const target = `${config.unfetchableUrl}?e2e=${Date.now()}`
+				await page.goto(
+					`${config.baseUrl}/view/${encodeURIComponent(target)}`,
+					{ waitUntil: 'domcontentloaded' },
+				)
+				await expect(page.locator('body.page-view')).toHaveCount(1)
+
+				// Reader slot must reach crawl-failed terminal state. With the
+				// in-memory test fixture applyParseResult marks failure
+				// synchronously, so the SSR response already carries the failed
+				// status and no HTMX poll wait is required.
+				await expect(
+					page.locator('[data-test-reader-slot][data-reader-status="failed"]'),
+				).toHaveCount(1)
+
+				// Regression guard: when the crawl fails, the summary slot must
+				// collapse to skipped (hidden) rather than sit on "Generating
+				// summary…" indefinitely. Without this check the bug that stuck
+				// the hex.ooo row at summaryStatus=pending would re-emerge unseen.
+				const summarySlot = page.locator('[data-test-reader-summary]')
+				await expect(summarySlot).toHaveAttribute('data-summary-status', 'skipped')
+
+				// Return to home so the main anonymous-visit-view-page action can
+				// pick up from its expected entry state.
+				await page.goto(`${config.baseUrl}/`, { waitUntil: 'domcontentloaded' })
+				progress.visitedCrawlFailure = true
+			},
+		},
 		'anonymous-visit-view-page': {
 			isAvailable: async (page) => {
 				if (authProgress.accountCreated) return false

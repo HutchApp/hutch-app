@@ -1,4 +1,6 @@
-export type ViewPageActionKey = 'anonymous-visit-view-page'
+export type ViewPageActionKey =
+	| 'anonymous-visit-view-page'
+	| 'anonymous-visit-view-page-crawl-fails'
 
 export type AuthActionKey =
 	| 'navigate-to-signup'
