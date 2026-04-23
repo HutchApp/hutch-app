@@ -97,4 +97,32 @@ exports.HEALTH_SOURCES = [
     expectedContent: 'buying Coca-Cola to put the cocaine back in',
     expectsThumbnail: false,
   },
+  {
+    // NYTimes news articles sit behind DataDome (Fastly + server: DataDome,
+    // x-datadome: protected). A vanilla fetch returns 403 with a captcha
+    // page; the crawler's browser-like headers defeat that locally, but CI
+    // egress IPs may be flagged differently.
+    label: 'NYTimes (business article, DataDome)',
+    url: 'https://www.nytimes.com/2026/04/20/business/infowars-alex-jones-the-onion.html',
+    expectedContent: 'probably sometime in the next two weeks',
+    expectsThumbnail: true,
+  },
+  {
+    // Minimal static HTML — no edge sniffer, no og:image. The article body
+    // contains the snippet but wrapped around newlines inside <p> tags, so
+    // use a snippet that does not cross a line break.
+    label: 'Static HTML (hex.ooo)',
+    url: 'https://hex.ooo/library/last_question.html',
+    expectedContent: 'he had had to carry the ice and glassware',
+    expectsThumbnail: false,
+  },
+  {
+    // qwen.ai renders the blog client-side: the HTML body is a bootstrap
+    // <script> tag and the article text only materialises after JS runs.
+    // A fetch-based crawler cannot see the content without headless rendering.
+    label: 'Qwen.ai (SPA blog)',
+    url: 'https://qwen.ai/blog?id=qwen3.6-27b',
+    expectedContent: 'Qwen3.6-27B demonstrates that a well-trained dense model can surpass much larger predecessors on the tasks that matter most for developers',
+    expectsThumbnail: true,
+  },
 ];
