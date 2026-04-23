@@ -13,6 +13,7 @@ import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import type {
 	FindGeneratedSummary,
+	GeneratedSummary,
 	MarkSummaryPending,
 } from "./providers/article-summary/article-summary.types";
 import type {
@@ -75,6 +76,30 @@ export function createTestApp(options?: {
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
 
+	// Test-only fake for the Deepseek-backed summary generation. Local E2E
+	// doesn't call a real LLM, so we simulate the pending → ready transition
+	// with a short setTimeout — long enough that the UI briefly shows the
+	// "Generating summary…" indicator so HTMX polling is exercised end-to-end,
+	// short enough to finish well inside Playwright's default test timeout.
+	const summaryState = new Map<string, GeneratedSummary>();
+	const SUMMARY_READY_DELAY_MS = 500;
+	const fakeFindGeneratedSummary: FindGeneratedSummary = async (url) => {
+		const id = ArticleResourceUniqueId.parse(url).value;
+		return summaryState.get(id);
+	};
+	const fakeMarkSummaryPending: MarkSummaryPending = async ({ url }) => {
+		const id = ArticleResourceUniqueId.parse(url).value;
+		if (summaryState.get(id)?.status === "ready") return;
+		summaryState.set(id, { status: "pending" });
+		setTimeout(() => {
+			if (summaryState.get(id)?.status !== "pending") return;
+			summaryState.set(id, {
+				status: "ready",
+				summary: `Fake summary for ${url}.`,
+			});
+		}, SUMMARY_READY_DELAY_MS).unref();
+	};
+
 	// Test-only fixture for the async crawl worker: parses (using the injected
 	// parseArticle so test cases can simulate parse failures or specific
 	// metadata), writes parsed metadata + content, then flips crawlStatus
@@ -123,8 +148,8 @@ export function createTestApp(options?: {
 		publishLinkSaved: options?.publishLinkSaved ?? defaultPublishLinkSaved,
 		publishSaveAnonymousLink: options?.publishSaveAnonymousLink ?? defaultPublishSaveAnonymousLink,
 		publishUpdateFetchTimestamp: options?.publishUpdateFetchTimestamp ?? defaultPublishUpdateFetchTimestamp,
-		findGeneratedSummary: options?.findGeneratedSummary ?? (async () => undefined),
-		markSummaryPending: options?.markSummaryPending ?? (async () => {}),
+		findGeneratedSummary: options?.findGeneratedSummary ?? fakeFindGeneratedSummary,
+		markSummaryPending: options?.markSummaryPending ?? fakeMarkSummaryPending,
 		findArticleCrawlStatus: options?.findArticleCrawlStatus ?? articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: options?.markCrawlPending ?? articleCrawl.markCrawlPending,
 		refreshArticleIfStale: options?.refreshArticleIfStale ?? noopCheckFreshness,

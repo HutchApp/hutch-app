@@ -23,7 +23,13 @@ export function createAnonymousViewPageActions(
 				await page.goto(`${config.baseUrl}/view`, { waitUntil: 'domcontentloaded' })
 				await expect(page.locator('body.page-view-landing')).toHaveCount(1)
 
-				await page.locator('[data-test-view-landing-input]').fill(config.testUrl)
+				// Force a URL the staging DB hasn't seen before, so the crawl + summary
+				// actually go through pending → ready. Reusing a cached URL would miss
+				// the specific regression this flow guards against (summary slot never
+				// reaching the DOM until a full page refresh).
+				const separator = config.testUrl.includes('?') ? '&' : '?'
+				const freshTestUrl = `${config.testUrl}${separator}e2e=${Date.now()}`
+				await page.locator('[data-test-view-landing-input]').fill(freshTestUrl)
 				await clickAndWaitForPageReload(
 					page,
 					page.locator('[data-test-view-landing-form] button[type="submit"]'),
@@ -33,6 +39,23 @@ export function createAnonymousViewPageActions(
 				await expect(page.locator('body.page-view')).toHaveCount(1)
 				await expect(page.locator('[data-test-reader-title]')).toBeVisible()
 				await expect(saveAction).toBeVisible()
+
+				// Summary slot must render in the SSR HTML from t=0 (even while the
+				// crawl is still pending) so its own HTMX poll is already attached to
+				// the DOM. The reader-slot poll only swaps its own <div>; without the
+				// summary slot rendered up-front, the summary would only appear after
+				// a full page refresh. Regression guard for that specific UX bug.
+				const summarySlot = page.locator('[data-test-reader-summary]')
+				await expect(summarySlot).toHaveCount(1)
+				// Transition out of pending via the summary slot's own HTMX poll —
+				// no navigation, no reload. Staging hits the real Deepseek API (slow);
+				// locally test-app fakes the same pending → ready transition with a
+				// short setTimeout so this assertion works end-to-end in both envs.
+				await expect(summarySlot).toHaveAttribute(
+					'data-summary-status',
+					/^(ready|skipped|failed)$/,
+					{ timeout: 120_000 },
+				)
 
 				// Share balloon: scroll past the threshold, wait for it to animate in,
 				// dismiss it, and confirm localStorage persists the dismiss so the
