@@ -75,12 +75,16 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 			expect(await findGeneratedSummary(URL)).toEqual({ status: "ready", summary: "legacy" });
 		});
 
-		it("returns pending when the row has neither summary nor status", async () => {
+		it("returns undefined for a legacy row that has neither summaryStatus nor summary", async () => {
+			// Legacy rows pre-date the summary state machine. Return undefined so
+			// the caller (summariser or view handler) can treat the row as
+			// untouched and re-prime the pipeline instead of treating it as
+			// actively pending.
 			const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
 				client: clientForGet({}) as DynamoDBDocumentClient,
 				tableName: TABLE,
 			});
-			expect(await findGeneratedSummary(URL)).toEqual({ status: "pending" });
+			expect(await findGeneratedSummary(URL)).toBeUndefined();
 		});
 	});
 

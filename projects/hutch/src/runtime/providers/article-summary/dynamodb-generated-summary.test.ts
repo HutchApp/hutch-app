@@ -20,7 +20,11 @@ describe("initDynamoDbGeneratedSummary", () => {
 		expect(result).toBeUndefined();
 	});
 
-	it("returns pending when row exists without summary or status", async () => {
+	it("returns undefined for a legacy row that has neither summaryStatus nor summary", async () => {
+		// Legacy rows pre-date the summary state machine. The summaryStatus column
+		// is absent and no backfilled summary column exists. Return undefined so
+		// the caller can distinguish a stuck stub from an actively-pending row and
+		// re-prime the pipeline rather than polling forever.
 		const client = createFakeClient({ url: "https://example.com/article" });
 		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
 			client: client as typeof client & DynamoDBDocumentClient,
@@ -29,7 +33,7 @@ describe("initDynamoDbGeneratedSummary", () => {
 
 		const result = await findGeneratedSummary("https://example.com/article");
 
-		expect(result).toEqual({ status: "pending" });
+		expect(result).toBeUndefined();
 	});
 
 	it("returns ready for a legacy row with summary and no status (backfill)", async () => {

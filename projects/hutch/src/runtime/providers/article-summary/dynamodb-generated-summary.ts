@@ -33,7 +33,11 @@ function rowToGeneratedSummary(
 	}
 	if (row.summaryStatus === "skipped") return { status: "skipped" };
 	if (row.summaryStatus === "pending") return { status: "pending" };
-	return row.summary ? { status: "ready", summary: row.summary } : { status: "pending" };
+	// Legacy row (summaryStatus absent). A backfilled `summary` column means the
+	// row pre-dates the state machine but carried a pre-computed summary — expose
+	// as ready. Otherwise return undefined so the caller can re-prime the pipeline
+	// rather than rendering a stuck pending row that polls forever.
+	return row.summary ? { status: "ready", summary: row.summary } : undefined;
 }
 
 export function initDynamoDbGeneratedSummary(deps: {

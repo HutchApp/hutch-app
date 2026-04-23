@@ -89,23 +89,36 @@ function handleViewArticle(deps: ViewDependencies) {
 		const articleUrl = parsedUrl.data;
 
 		const cached = await deps.findArticleByUrl(articleUrl);
+		const existingCrawl = cached
+			? await deps.findArticleCrawlStatus(articleUrl)
+			: undefined;
+		const existingSummary = cached
+			? await deps.findGeneratedSummary(articleUrl)
+			: undefined;
+		// A cached row with neither crawlStatus nor summaryStatus is a legacy
+		// stub written before the state machines existed. Re-prime the pipeline
+		// so it reaches a terminal state instead of sitting on "Generating
+		// summary…" forever on every view.
+		const isLegacyStub =
+			cached !== null && existingCrawl === undefined && existingSummary === undefined;
 
-		if (!cached) {
-			// First visit for this URL — save a hostname-only stub immediately and
-			// dispatch SaveAnonymousLinkCommand so the worker crawls, parses, and
-			// writes content + real metadata asynchronously. The reader slot below
-			// shows a pending state until polling picks up the completed crawl.
-			const hostname = hostnameFrom(articleUrl);
-			await deps.saveArticleGlobally({
-				url: articleUrl,
-				metadata: {
-					title: hostname,
-					siteName: hostname,
-					excerpt: "",
-					wordCount: 0,
-				},
-				estimatedReadTime: calculateReadTime(0),
-			});
+		if (!cached || isLegacyStub) {
+			if (!cached) {
+				// First visit for this URL — save a hostname-only stub so the reader
+				// and summary slots can render metadata while the worker populates
+				// content + real metadata asynchronously.
+				const hostname = hostnameFrom(articleUrl);
+				await deps.saveArticleGlobally({
+					url: articleUrl,
+					metadata: {
+						title: hostname,
+						siteName: hostname,
+						excerpt: "",
+						wordCount: 0,
+					},
+					estimatedReadTime: calculateReadTime(0),
+				});
+			}
 			await deps.markCrawlPending({ url: articleUrl });
 			await deps.markSummaryPending({ url: articleUrl });
 			await deps.publishSaveAnonymousLink({ url: articleUrl });

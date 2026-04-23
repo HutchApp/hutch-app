@@ -60,7 +60,7 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		assert.deepEqual(result, { status: "ready", summary: "Legacy summary" });
 	});
 
-	it("treats a bare row (no summary, no summaryStatus) as pending", async () => {
+	it("treats a bare row (no summary, no summaryStatus) as undefined so the caller re-primes the pipeline", async () => {
 		const client = createDynamoDocumentClient();
 		const seedTable = defineDynamoTable({ client, tableName, schema: SeedRow });
 		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({ client, tableName });
@@ -69,7 +69,7 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		await seedTable.put({ Item: { url: ArticleResourceUniqueId.parse(url).value } });
 
 		const result = await findGeneratedSummary(url);
-		assert.deepEqual(result, { status: "pending" });
+		assert.equal(result, undefined);
 	});
 
 	it("marks a new row as pending", async () => {

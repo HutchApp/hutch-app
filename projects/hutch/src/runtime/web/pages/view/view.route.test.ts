@@ -648,7 +648,7 @@ describe("View routes", () => {
 			const parseSpy = jest.fn(
 				async (_url: string): Promise<ParseArticleResult> => buildParseResult(),
 			);
-			const { app, articleStore } = createTestApp({ parseArticle: parseSpy });
+			const { app, articleStore, articleCrawl } = createTestApp({ parseArticle: parseSpy });
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
 				url: ARTICLE_URL,
@@ -665,6 +665,7 @@ describe("View routes", () => {
 				url: ARTICLE_URL,
 				content: "<p>Cached body.</p>",
 			});
+			await articleCrawl.markCrawlReady({ url: ARTICLE_URL });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
@@ -686,7 +687,7 @@ describe("View routes", () => {
 					reason: "blocked",
 				}),
 			);
-			const { app, articleStore } = createTestApp({ parseArticle: parseSpy });
+			const { app, articleStore, articleCrawl } = createTestApp({ parseArticle: parseSpy });
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
 				url: ARTICLE_URL,
@@ -698,16 +699,17 @@ describe("View routes", () => {
 				},
 				estimatedReadTime: MinutesSchema.parse(5),
 			});
+			await articleCrawl.markCrawlFailed({ url: ARTICLE_URL, reason: "blocked" });
 
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			expect(response.status).toBe(200);
-			// Cache hit short-circuits the async crawl: parser is never invoked.
+			// Terminal crawl state short-circuits re-priming: parser is not invoked.
 			expect(parseSpy).not.toHaveBeenCalled();
 			const doc = new JSDOM(response.text).window.document;
 			const slot = doc.querySelector("[data-test-reader-slot]");
 			assert(slot, "reader slot must be rendered");
-			expect(slot.getAttribute("data-reader-status")).toBe("unavailable");
+			expect(slot.getAttribute("data-reader-status")).toBe("failed");
 			expect(
 				doc.querySelector('meta[property="og:title"]')?.getAttribute("content"),
 			).toBe("Cached Only Title | Reader View");
@@ -751,10 +753,18 @@ describe("View routes", () => {
 			expect(publishSaveAnonymousLink).toHaveBeenCalledWith({ url: ARTICLE_URL });
 		});
 
-		it("is idempotent — skips priming when the article is already in the global cache", async () => {
+		it("skips priming when the cached article has terminal crawl and summary state", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const publishSaveAnonymousLink = jest.fn(async () => {});
-			const { app, articleStore } = createTestApp({ parseArticle, publishSaveAnonymousLink });
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({
+				status: "ready",
+				summary: "Cached summary.",
+			});
+			const { app, articleStore, articleCrawl } = createTestApp({
+				parseArticle,
+				publishSaveAnonymousLink,
+				findGeneratedSummary,
+			});
 			await articleStore.saveArticleGlobally({
 				url: ARTICLE_URL,
 				metadata: {
@@ -765,10 +775,40 @@ describe("View routes", () => {
 				},
 				estimatedReadTime: MinutesSchema.parse(2),
 			});
+			await articleCrawl.markCrawlReady({ url: ARTICLE_URL });
 
 			await request(app).get(`/view/${ENCODED}`);
 
 			expect(publishSaveAnonymousLink).not.toHaveBeenCalled();
+		});
+
+		it("re-primes the pipeline for a legacy stub (cached row with no crawl and no summary state)", async () => {
+			// A stub row written before the crawl+summary state machines existed
+			// carries metadata but neither crawlStatus nor summaryStatus. Without
+			// a re-prime the row sits undefined/undefined forever and the UI
+			// polls "Generating summary…" indefinitely. The view handler must
+			// detect this and re-publish SaveAnonymousLinkCommand so the worker
+			// populates the state-machine rows.
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const publishSaveAnonymousLink = jest.fn(async () => {});
+			const { app, articleStore } = createTestApp({
+				parseArticle,
+				publishSaveAnonymousLink,
+			});
+			await articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: new URL(ARTICLE_URL).hostname,
+					siteName: new URL(ARTICLE_URL).hostname,
+					excerpt: "",
+					wordCount: 0,
+				},
+				estimatedReadTime: MinutesSchema.parse(0),
+			});
+
+			await request(app).get(`/view/${ENCODED}`);
+
+			expect(publishSaveAnonymousLink).toHaveBeenCalledWith({ url: ARTICLE_URL });
 		});
 
 		it("primes the async crawl pipeline regardless of eventual parse outcome (worker owns failure handling)", async () => {
