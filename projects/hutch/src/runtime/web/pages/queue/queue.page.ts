@@ -23,8 +23,8 @@ import type {
 	FindGeneratedSummary,
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
-import { renderReaderSlot } from "../../shared/article-body/reader-slot/reader-slot.component";
-import { renderSummarySlot } from "../../shared/article-body/summary-slot/summary-slot.component";
+import { initArticleReader } from "../../shared/article-reader/article-reader";
+import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
@@ -235,6 +235,15 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 	});
 
+	const reader = initArticleReader(deps);
+
+	function pollUrlBuilderForId(articleId: string): PollUrlBuilder {
+		return {
+			summary: (n) => `/queue/${articleId}/summary?poll=${n}`,
+			reader: (n) => `/queue/${articleId}/reader?poll=${n}`,
+		};
+	}
+
 	router.get("/:id/read", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
@@ -252,24 +261,22 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			await deps.updateArticleStatus(article.id, userId, "read");
 		}
 
-		const content = await deps.readArticleContent(article.url);
-		const summary = await deps.findGeneratedSummary(article.url);
-		const crawl = await deps.findArticleCrawlStatus(article.url);
 		const audioEnabled = req.query.feature === "audio";
-		const summaryStatus = summary?.status ?? "pending";
-		const summaryPollUrl = summaryStatus === "pending"
-			? `/queue/${article.id.value}/summary?poll=1`
-			: undefined;
-		const readerPollUrl = crawl?.status === "pending"
-			? `/queue/${article.id.value}/reader?poll=1`
-			: undefined;
+		const state = await reader.resolveReaderState({
+			article: {
+				url: article.url,
+				metadata: article.metadata,
+				estimatedReadTime: article.estimatedReadTime,
+			},
+			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
+		});
 
-		const html = ReaderPage({ ...article, content }, {
+		const html = ReaderPage({ ...article, content: state.content }, {
 			emailVerified: req.emailVerified,
-			summary,
-			summaryPollUrl,
-			crawl,
-			readerPollUrl,
+			summary: state.summary,
+			summaryPollUrl: state.summaryPollUrl,
+			crawl: state.crawl,
+			readerPollUrl: state.readerPollUrl,
 			audioEnabled,
 		}).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
@@ -288,18 +295,14 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const crawl = await deps.findArticleCrawlStatus(article.url);
-		const summary = await deps.findGeneratedSummary(article.url);
-		const crawlFailed = crawl?.status === "failed";
-		const status = summary?.status ?? "pending";
 		const pollCount = Number(req.query.poll ?? "0");
-		const MAX_POLLS = 40;
-		const summaryPollUrl = !crawlFailed && status === "pending" && pollCount < MAX_POLLS
-			? `/queue/${article.id.value}/summary?poll=${pollCount + 1}`
-			: undefined;
-
-		const html = renderSummarySlot({ crawl, summary, summaryPollUrl });
-		res.type("html").send(html);
+		const component = await reader.handleSummaryPoll({
+			articleUrl: article.url,
+			pollCount,
+			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
+		});
+		const html = component.to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
 	});
 
 	router.get("/:id/reader", async (req: Request, res: Response) => {
@@ -315,16 +318,14 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const crawl = await deps.findArticleCrawlStatus(article.url);
-		const content = await deps.readArticleContent(article.url);
 		const pollCount = Number(req.query.poll ?? "0");
-		const MAX_POLLS = 40;
-		const readerPollUrl = crawl?.status === "pending" && pollCount < MAX_POLLS
-			? `/queue/${article.id.value}/reader?poll=${pollCount + 1}`
-			: undefined;
-
-		const html = renderReaderSlot({ crawl, content, url: article.url, readerPollUrl });
-		res.type("html").send(html);
+		const component = await reader.handleReaderPoll({
+			articleUrl: article.url,
+			pollCount,
+			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
+		});
+		const html = component.to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
 	});
 
 	router.post("/:id/status", async (req: Request, res: Response) => {

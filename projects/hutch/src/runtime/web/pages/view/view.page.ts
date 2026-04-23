@@ -21,8 +21,8 @@ import type {
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
-import { renderReaderSlot } from "../../shared/article-body/reader-slot/reader-slot.component";
-import { renderSummarySlot } from "../../shared/article-body/summary-slot/summary-slot.component";
+import { initArticleReader } from "../../shared/article-reader/article-reader";
+import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
 import { ViewLandingPage } from "./view-landing.component";
@@ -53,6 +53,13 @@ function hostnameFrom(validatedUrl: string): string {
 	return new URL(validatedUrl).hostname;
 }
 
+function pollUrlBuilderFor(articleUrl: string): PollUrlBuilder {
+	return {
+		summary: (n) => `/view/summary?url=${encodeURIComponent(articleUrl)}&poll=${n}`,
+		reader: (n) => `/view/reader?url=${encodeURIComponent(articleUrl)}&poll=${n}`,
+	};
+}
+
 function handleViewLanding(req: Request, res: Response) {
 	const submittedUrl =
 		typeof req.query.url === "string" ? req.query.url : undefined;
@@ -72,6 +79,7 @@ function handleViewLanding(req: Request, res: Response) {
 }
 
 function handleViewArticle(deps: ViewDependencies) {
+	const reader = initArticleReader(deps);
 	return async (
 		req: Request<Record<string, string>>,
 		res: Response,
@@ -97,8 +105,8 @@ function handleViewArticle(deps: ViewDependencies) {
 			: undefined;
 		// A cached row with neither crawlStatus nor summaryStatus is a legacy
 		// stub written before the state machines existed. Re-prime the pipeline
-		// so it reaches a terminal state instead of sitting on "Generating
-		// summary…" forever on every view.
+		// and re-publish the anonymous-save event so it reaches a terminal state
+		// instead of sitting on "Generating summary…" forever on every view.
 		const isLegacyStub =
 			cached !== null && existingCrawl === undefined && existingSummary === undefined;
 
@@ -124,27 +132,21 @@ function handleViewArticle(deps: ViewDependencies) {
 			await deps.publishSaveAnonymousLink({ url: articleUrl });
 		}
 
-		// Re-read metadata + content after the dispatch above. In production this
-		// returns the same stub the web layer just wrote (the worker is async); in
-		// tests where the in-memory worker fixture runs synchronously inside the
-		// awaited dispatch, this picks up the parsed metadata + content + ready
-		// crawl status that the fixture wrote.
+		// Re-read metadata after any first-visit save. In production this returns
+		// the stub we just wrote (the worker is async); in tests where the
+		// in-memory worker fixture runs synchronously inside the awaited dispatch,
+		// this picks up the parsed metadata the fixture wrote.
 		const articleSnapshot = await deps.findArticleByUrl(articleUrl);
 		assert(articleSnapshot, "article row must exist after saveArticleGlobally");
 		const metadata: ArticleMetadata = articleSnapshot.metadata;
 		const estimatedReadTime: Minutes = articleSnapshot.estimatedReadTime;
-		const content = await deps.readArticleContent(articleUrl);
 
-		const crawl = await deps.findArticleCrawlStatus(articleUrl);
-		const summary = await deps.findGeneratedSummary(articleUrl);
+		const pollUrlBuilder = pollUrlBuilderFor(articleUrl);
+		const state = await reader.resolveReaderState({
+			article: { url: articleUrl, metadata, estimatedReadTime },
+			pollUrlBuilder,
+		});
 		const utmParams = collectUtmParams(req.query);
-		const summaryStatus = summary?.status ?? "pending";
-		const summaryPollUrl = summaryStatus === "pending"
-			? `/view/summary?url=${encodeURIComponent(articleUrl)}&poll=1`
-			: undefined;
-		const readerPollUrl = crawl?.status === "pending"
-			? `/view/reader?url=${encodeURIComponent(articleUrl)}&poll=1`
-			: undefined;
 
 		const actions: ViewAction[] = [
 			{
@@ -163,11 +165,11 @@ function handleViewArticle(deps: ViewDependencies) {
 			articleUrl,
 			metadata,
 			estimatedReadTime,
-			content,
-			crawl,
-			readerPollUrl,
-			summary,
-			summaryPollUrl,
+			content: state.content,
+			crawl: state.crawl,
+			readerPollUrl: state.readerPollUrl,
+			summary: state.summary,
+			summaryPollUrl: state.summaryPollUrl,
 			actions,
 		}).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
@@ -175,6 +177,7 @@ function handleViewArticle(deps: ViewDependencies) {
 }
 
 function handleViewSummary(deps: ViewDependencies) {
+	const reader = initArticleReader(deps);
 	return async (req: Request, res: Response): Promise<void> => {
 		const parsed = ViewUrlSchema.safeParse(req.query.url);
 		if (!parsed.success) {
@@ -182,22 +185,19 @@ function handleViewSummary(deps: ViewDependencies) {
 			return;
 		}
 		const articleUrl = parsed.data;
-		const crawl = await deps.findArticleCrawlStatus(articleUrl);
-		const summary = await deps.findGeneratedSummary(articleUrl);
-		const crawlFailed = crawl?.status === "failed";
-		const status = summary?.status ?? "pending";
 		const pollCount = Number(req.query.poll ?? "0");
-		const MAX_POLLS = 40;
-		const summaryPollUrl = !crawlFailed && status === "pending" && pollCount < MAX_POLLS
-			? `/view/summary?url=${encodeURIComponent(articleUrl)}&poll=${pollCount + 1}`
-			: undefined;
-
-		const html = renderSummarySlot({ crawl, summary, summaryPollUrl, summaryOpen: true });
-		res.type("html").send(html);
+		const component = await reader.handleSummaryPoll({
+			articleUrl,
+			pollCount,
+			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
+		});
+		const html = component.to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
 	};
 }
 
 function handleViewReader(deps: ViewDependencies) {
+	const reader = initArticleReader(deps);
 	return async (req: Request, res: Response): Promise<void> => {
 		const parsed = ViewUrlSchema.safeParse(req.query.url);
 		if (!parsed.success) {
@@ -205,16 +205,14 @@ function handleViewReader(deps: ViewDependencies) {
 			return;
 		}
 		const articleUrl = parsed.data;
-		const crawl = await deps.findArticleCrawlStatus(articleUrl);
-		const content = await deps.readArticleContent(articleUrl);
 		const pollCount = Number(req.query.poll ?? "0");
-		const MAX_POLLS = 40;
-		const readerPollUrl = crawl?.status === "pending" && pollCount < MAX_POLLS
-			? `/view/reader?url=${encodeURIComponent(articleUrl)}&poll=${pollCount + 1}`
-			: undefined;
-
-		const html = renderReaderSlot({ crawl, content, url: articleUrl, readerPollUrl });
-		res.type("html").send(html);
+		const component = await reader.handleReaderPoll({
+			articleUrl,
+			pollCount,
+			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
+		});
+		const html = component.to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
 	};
 }
 

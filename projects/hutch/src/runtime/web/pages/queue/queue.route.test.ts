@@ -2171,6 +2171,299 @@ describe("Queue routes", () => {
 				audioSlot.classList.contains("article-body__audio-slot--hidden"),
 			).toBe(true);
 		});
+
+		it("should render a ready summary expanded on /queue/:id/read (matches /view)", async () => {
+			const articleHtml = `<html><head><title>Post</title></head><body><article><p>Body.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({
+				status: "ready" as const,
+				summary: "Ready summary.",
+			});
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/summary-open-on-read" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const readerResponse = await agent.get(`/queue/${articleId}/read`);
+			const doc = new JSDOM(readerResponse.text).window.document;
+			const details = doc.querySelector(".article-body__summary");
+			assert(details, "summary details element must be rendered");
+			expect(details.hasAttribute("open")).toBe(true);
+		});
+
+		it("GET /queue/:id/summary renders a ready summary expanded on poll (matches /view)", async () => {
+			const articleHtml = `<html><head><title>Post</title></head><body><article><p>Body.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({
+				status: "ready" as const,
+				summary: "Poll ready summary.",
+			});
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/summary-open-on-poll" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const pollResponse = await agent.get(`/queue/${articleId}/summary`);
+			const doc = new JSDOM(pollResponse.text).window.document;
+			const details = doc.querySelector(".article-body__summary");
+			assert(details, "summary details element must be rendered");
+			expect(details.hasAttribute("open")).toBe(true);
+		});
+
+		it("GET /queue/:id/reader returns the reader-pending fragment with next-poll URL when crawl is pending", async () => {
+			const articleHtml = `<html><body><article><p>Pending body.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findArticleCrawlStatus = async () => ({ status: "pending" as const });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/pending-crawl" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const pollResponse = await agent.get(`/queue/${articleId}/reader?poll=3`);
+			expect(pollResponse.status).toBe(200);
+			const doc = new JSDOM(pollResponse.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-reader-status")).toBe("pending");
+			expect(slot.getAttribute("hx-get")).toBe(`/queue/${articleId}/reader?poll=4`);
+		});
+
+		it("GET /queue/:id/reader stops polling at the cap", async () => {
+			const articleHtml = `<html><body><article><p>Pending body.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findArticleCrawlStatus = async () => ({ status: "pending" as const });
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/poll-cap" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			const pollResponse = await agent.get(`/queue/${articleId}/reader?poll=40`);
+			expect(pollResponse.status).toBe(200);
+			const doc = new JSDOM(pollResponse.text).window.document;
+			const slot = doc.querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-reader-status")).toBe("pending");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
+		});
+
+		it("GET /queue/:id/reader returns 404 for a missing article", async () => {
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const crawlArticle = stubCrawlArticle;
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+			const summary = createFakeSummaryProvider();
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary: summary.findGeneratedSummary,
+				markSummaryPending: summary.markSummaryPending,
+				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+				markCrawlPending: articleCrawl.markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent.get("/queue/not-a-valid-hash/reader");
+			expect(response.status).toBe(404);
+		});
+
+		it("GET /queue/:id/read heals a legacy row by re-priming both state machines when both state attrs are missing", async () => {
+			const crawlArticle = stubCrawlArticle;
+			const articleStore = initInMemoryArticleStore();
+			const articleCrawl = initInMemoryArticleCrawl();
+			const { parseArticle } = initReadabilityParser({ crawlArticle });
+			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+
+			// State-machine providers always report "no state" so the cached row
+			// looks like a legacy stub to the reader core.
+			const findArticleCrawlStatus: typeof articleCrawl.findArticleCrawlStatus = async () => undefined;
+			const findGeneratedSummary: ReturnType<typeof createFakeSummaryProvider>["findGeneratedSummary"] = async () => undefined;
+			let markCrawlPendingCalls = 0;
+			let markSummaryPendingCalls = 0;
+			const markCrawlPending = async (params: { url: string }) => {
+				markCrawlPendingCalls += 1;
+				await articleCrawl.markCrawlPending(params);
+			};
+			const markSummaryPending = async (_params: { url: string }) => {
+				markSummaryPendingCalls += 1;
+			};
+
+			const { app, auth } = createTestApp({
+				articleStore,
+				articleCrawl,
+				parseArticle,
+				crawlArticle,
+				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+				findGeneratedSummary,
+				markSummaryPending,
+				findArticleCrawlStatus,
+				markCrawlPending,
+				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+				exchangeGoogleCode: undefined,
+				logError: createNoopLogError(),
+				appOrigin: TEST_APP_ORIGIN,
+			});
+			const agent = await loginAgent(app, auth);
+
+			await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/legacy-queue-row" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const articleId = queueDoc
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+
+			// Baseline after the save: one call each from saveArticleFromUrl.
+			const baseline = { crawl: markCrawlPendingCalls, summary: markSummaryPendingCalls };
+
+			await agent.get(`/queue/${articleId}/read`);
+
+			// The shared reader core re-primed both state machines because the
+			// overridden findArticleCrawlStatus + findGeneratedSummary return
+			// undefined (simulating a legacy row with no state attributes).
+			expect(markCrawlPendingCalls).toBe(baseline.crawl + 1);
+			expect(markSummaryPendingCalls).toBe(baseline.summary + 1);
+		});
 	});
 
 	describe("Parse failure", () => {

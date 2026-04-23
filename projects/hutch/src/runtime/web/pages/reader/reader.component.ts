@@ -32,6 +32,7 @@ export function ReaderPage(
 		readerPollUrl: options?.readerPollUrl,
 		summary: options?.summary,
 		summaryPollUrl: options?.summaryPollUrl,
+		summaryOpen: true,
 		audioEnabled: options?.audioEnabled,
 		backLink: { href: "/queue", label: "← Back to queue" },
 	});
