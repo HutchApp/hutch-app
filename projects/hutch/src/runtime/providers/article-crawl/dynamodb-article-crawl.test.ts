@@ -36,7 +36,11 @@ describe("initDynamoDbArticleCrawl", () => {
 			expect(result).toBeUndefined();
 		});
 
-		it("returns pending when row exists without crawlStatus and without content", async () => {
+		it("returns undefined for a legacy row that has no crawlStatus attribute", async () => {
+			// Legacy rows pre-date the crawl state machine. The crawlStatus column
+			// is absent on rows whose content was migrated to S3, and we can't tell
+			// from the row alone whether the body exists. Return undefined and let
+			// the caller (which can read S3) decide ready vs unavailable.
 			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
 				client: clientReturning({ url: URL }),
 				tableName: TABLE,
@@ -44,21 +48,7 @@ describe("initDynamoDbArticleCrawl", () => {
 
 			const result = await findArticleCrawlStatus(URL);
 
-			expect(result).toEqual({ status: "pending" });
-		});
-
-		it("returns ready for a legacy row with content and no crawlStatus", async () => {
-			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
-				client: clientReturning({
-					url: URL,
-					content: "<p>Legacy content</p>",
-				}),
-				tableName: TABLE,
-			});
-
-			const result = await findArticleCrawlStatus(URL);
-
-			expect(result).toEqual({ status: "ready" });
+			expect(result).toBeUndefined();
 		});
 
 		it("returns pending when crawlStatus=pending", async () => {

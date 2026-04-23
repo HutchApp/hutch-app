@@ -15,7 +15,6 @@ import type {
 
 const ArticleCrawlRow = z.object({
 	url: z.string(),
-	content: dynamoField(z.string()),
 	crawlStatus: dynamoField(z.enum(["pending", "ready", "failed"])),
 	crawlFailureReason: dynamoField(z.string()),
 });
@@ -35,9 +34,12 @@ function rowToArticleCrawl(
 	}
 	if (row.crawlStatus === "pending") return { status: "pending" };
 	if (row.crawlStatus === "ready") return { status: "ready" };
-	// Legacy row (status attribute missing). Treat as ready iff content is
-	// already present in the row (pre-S3 migration layout); otherwise pending.
-	return row.content ? { status: "ready" } : { status: "pending" };
+	// Legacy row (status attribute missing). Return undefined so the caller
+	// defers to whether S3 content exists — pre-S3-migration content lived in
+	// the row, but post-migration rows have empty `content` while S3 holds the
+	// body. Either way, the reader-slot dispatcher's content check resolves to
+	// ready (content present) or unavailable (no content anywhere).
+	return undefined;
 }
 
 export function initDynamoDbArticleCrawl(deps: {
