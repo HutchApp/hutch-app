@@ -38,16 +38,11 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		readerPollUrl: input.readerPollUrl,
 	});
 
-	// Summary makes no sense while the article body is unfetched. Hide the slot
-	// during pending/failed crawl so users don't see a phantom "Generating
-	// summary…" indicator alongside a missing or failed reader view.
-	const summarySlotHtml = isCrawlReady(input)
-		? renderSummarySlot({
-				summary: input.summary,
-				summaryPollUrl: input.summaryPollUrl,
-				summaryOpen: input.summaryOpen,
-			})
-		: "";
+	const summarySlotHtml = renderSummarySlot({
+		summary: input.summary,
+		summaryPollUrl: input.summaryPollUrl,
+		summaryOpen: input.summaryOpen,
+	});
 
 	return render(ARTICLE_BODY_TEMPLATE, {
 		title: input.title,
@@ -60,13 +55,4 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		backLink: input.backLink,
 		staticBaseUrl: STATIC_BASE_URL,
 	});
-}
-
-function isCrawlReady(input: ArticleBodyInput): boolean {
-	if (input.crawl?.status === "pending" || input.crawl?.status === "failed") {
-		return false;
-	}
-	// Explicit ready, or a legacy row with no crawl status — defer to whether
-	// the body content is actually present.
-	return Boolean(input.content);
 }
