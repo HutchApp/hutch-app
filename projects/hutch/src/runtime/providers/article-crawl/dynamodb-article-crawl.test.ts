@@ -1,0 +1,171 @@
+import {
+	ConditionalCheckFailedException,
+	type DynamoDBDocumentClient,
+} from "@packages/hutch-storage-client";
+import { initDynamoDbArticleCrawl } from "./dynamodb-article-crawl";
+
+type SendFn = DynamoDBDocumentClient["send"];
+
+function createFakeClient(
+	impl: (input: unknown) => unknown,
+): Partial<DynamoDBDocumentClient> {
+	return {
+		send: (async (input: unknown) => impl(input)) as unknown as SendFn,
+	};
+}
+
+function clientReturning(
+	item: Record<string, unknown> | undefined,
+): DynamoDBDocumentClient {
+	return createFakeClient(() => ({ Item: item })) as DynamoDBDocumentClient;
+}
+
+const TABLE = "test-table";
+const URL = "https://example.com/article";
+
+describe("initDynamoDbArticleCrawl", () => {
+	describe("findArticleCrawlStatus", () => {
+		it("returns undefined when no row exists", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning(undefined),
+				tableName: TABLE,
+			});
+
+			const result = await findArticleCrawlStatus(URL);
+
+			expect(result).toBeUndefined();
+		});
+
+		it("returns pending when row exists without crawlStatus and without content", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning({ url: URL }),
+				tableName: TABLE,
+			});
+
+			const result = await findArticleCrawlStatus(URL);
+
+			expect(result).toEqual({ status: "pending" });
+		});
+
+		it("returns ready for a legacy row with content and no crawlStatus", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning({
+					url: URL,
+					content: "<p>Legacy content</p>",
+				}),
+				tableName: TABLE,
+			});
+
+			const result = await findArticleCrawlStatus(URL);
+
+			expect(result).toEqual({ status: "ready" });
+		});
+
+		it("returns pending when crawlStatus=pending", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning({ url: URL, crawlStatus: "pending" }),
+				tableName: TABLE,
+			});
+
+			const result = await findArticleCrawlStatus(URL);
+
+			expect(result).toEqual({ status: "pending" });
+		});
+
+		it("returns ready when crawlStatus=ready", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning({ url: URL, crawlStatus: "ready" }),
+				tableName: TABLE,
+			});
+
+			const result = await findArticleCrawlStatus(URL);
+
+			expect(result).toEqual({ status: "ready" });
+		});
+
+		it("returns failed with reason when crawlStatus=failed", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning({
+					url: URL,
+					crawlStatus: "failed",
+					crawlFailureReason: "connect timeout",
+				}),
+				tableName: TABLE,
+			});
+
+			const result = await findArticleCrawlStatus(URL);
+
+			expect(result).toEqual({ status: "failed", reason: "connect timeout" });
+		});
+
+		it("throws when crawlStatus=failed is persisted without a crawlFailureReason", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning({ url: URL, crawlStatus: "failed" }),
+				tableName: TABLE,
+			});
+
+			await expect(findArticleCrawlStatus(URL)).rejects.toThrow(
+				"crawlStatus=failed row must carry a crawlFailureReason",
+			);
+		});
+	});
+
+	describe("markCrawlPending", () => {
+		it("issues an UpdateItem that sets crawlStatus=pending with a guard against ready rows", async () => {
+			let received: unknown;
+			const client = createFakeClient((input) => {
+				received = input;
+				return {};
+			});
+			const { markCrawlPending } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await markCrawlPending({ url: URL });
+
+			const command = received as {
+				input: {
+					UpdateExpression?: string;
+					ConditionExpression?: string;
+					ExpressionAttributeValues?: Record<string, unknown>;
+				};
+			};
+			expect(command.input.UpdateExpression).toBe("SET crawlStatus = :pending");
+			expect(command.input.ConditionExpression).toBe(
+				"attribute_not_exists(crawlStatus) OR crawlStatus <> :ready",
+			);
+			expect(command.input.ExpressionAttributeValues?.[":pending"]).toBe(
+				"pending",
+			);
+			expect(command.input.ExpressionAttributeValues?.[":ready"]).toBe("ready");
+		});
+
+		it("swallows ConditionalCheckFailedException so ready rows stay ready", async () => {
+			const client = createFakeClient(() => {
+				throw new ConditionalCheckFailedException({
+					$metadata: {},
+					message: "condition failed",
+				});
+			});
+			const { markCrawlPending } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await expect(markCrawlPending({ url: URL })).resolves.toBeUndefined();
+		});
+
+		it("rethrows non-ConditionalCheck errors", async () => {
+			const client = createFakeClient(() => {
+				throw new Error("throttled");
+			});
+			const { markCrawlPending } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await expect(markCrawlPending({ url: URL })).rejects.toThrow("throttled");
+		});
+	});
+});

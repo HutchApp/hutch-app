@@ -1,20 +1,8 @@
 import request from "supertest";
-import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import { createTestApp } from "../../../test-app";
 
 const ARTICLE_URL = "https://example.com/post";
 const ENCODED = encodeURIComponent(ARTICLE_URL);
-
-const parseArticle: ParseArticle = async () => ({
-	ok: true,
-	article: {
-		title: "Rate limit probe",
-		siteName: "example.com",
-		excerpt: "probe",
-		wordCount: 100,
-		content: "<p>Body.</p>",
-	},
-});
 
 describe("View article rate limit", () => {
 	let nowMock: jest.SpyInstance<number, []>;
@@ -29,7 +17,6 @@ describe("View article rate limit", () => {
 
 	it("blocks the 21st request in a 10s window and resets after the window slides", async () => {
 		const { app } = createTestApp({
-			parseArticle,
 			publishSaveAnonymousLink: async () => {},
 		});
 
@@ -48,7 +35,6 @@ describe("View article rate limit", () => {
 
 	it("tracks each URL in its own counter (per-URL isolation)", async () => {
 		const { app } = createTestApp({
-			parseArticle,
 			publishSaveAnonymousLink: async () => {},
 		});
 		const urlA = encodeURIComponent("https://example.com/a");

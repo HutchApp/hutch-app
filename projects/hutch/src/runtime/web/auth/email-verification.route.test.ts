@@ -5,22 +5,12 @@ import { createTestApp } from "../../test-app";
 import { initInMemoryAuth } from "../../providers/auth/in-memory-auth";
 import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
-import type { CrawlArticle } from "@packages/crawl-article";
-import { initReadabilityParser } from "../../providers/article-parser/readability-parser";
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "../../providers/password-reset/in-memory-password-reset";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
 import { httpErrorMessageMapping } from "../pages/queue/queue.error";
-
-const stubCrawlArticle: CrawlArticle = async ({ url }) => {
-	const hostname = new URL(url).hostname;
-	return {
-		status: "fetched",
-		html: `<html><head><title>Article from ${hostname}</title></head><body><article><p>Content</p></article></body></html>`,
-	};
-};
 
 describe("Email verification", () => {
 	describe("POST /signup", () => {
@@ -44,7 +34,6 @@ describe("Email verification", () => {
 		it("should complete signup even when email sending fails", async () => {
 			const auth = initInMemoryAuth();
 			const articleStore = initInMemoryArticleStore();
-			const parser = initReadabilityParser({ crawlArticle: stubCrawlArticle });
 			const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 			const emailVerification = initInMemoryEmailVerification();
 			const passwordReset = initInMemoryPasswordReset();
@@ -60,19 +49,19 @@ describe("Email verification", () => {
 				...auth,
 				...articleStore,
 				readArticleContent: (url: string) => articleStore.readContent(ArticleResourceUniqueId.parse(url)),
-				...parser,
 				...emailVerification,
 				...passwordReset,
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
 				logError: () => { resolveErrorLogged(); },
-				logParseError: () => {},
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
 				publishLinkSaved: async () => {},
 				publishSaveAnonymousLink: async () => {},
 				findGeneratedSummary: async () => undefined,
 				markSummaryPending: async () => {},
+				findArticleCrawlStatus: async () => undefined,
+				markCrawlPending: async () => {},
 				refreshArticleIfStale: async () => ({ action: "new" as const }),
 				publishUpdateFetchTimestamp: async () => {},
 				httpErrorMessageMapping,

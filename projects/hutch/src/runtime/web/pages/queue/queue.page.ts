@@ -5,7 +5,6 @@ import express from "express";
 import { SaveArticleInputSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
-import type { ParseArticle } from "../../../providers/article-parser/article-parser.types";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type {
 	DeleteArticle,
@@ -17,12 +16,16 @@ import type {
 import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type {
+	FindArticleCrawlStatus,
+	MarkCrawlPending,
+} from "../../../providers/article-crawl/article-crawl.types";
+import type {
 	FindGeneratedSummary,
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
+import { renderReaderSlot } from "../../shared/article-body/reader-slot/reader-slot.component";
 import { renderSummarySlot } from "../../shared/article-body/summary-slot/summary-slot.component";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
-import type { LogParseError } from "../../../providers/parse-errors/log-parse-error";
 import type { UserId } from "../../../domain/user/user.types";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
@@ -39,18 +42,18 @@ interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
 	findArticleById: FindArticleById;
 	saveArticle: SaveArticle;
-	parseArticle: ParseArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
 	publishLinkSaved: PublishLinkSaved;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
+	findArticleCrawlStatus: FindArticleCrawlStatus;
+	markCrawlPending: MarkCrawlPending;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
-	logParseError: LogParseError;
 }
 
 import type { SavedArticle } from "../../../domain/article/article.types";
@@ -73,52 +76,35 @@ async function saveArticleFromUrl(deps: QueueDependencies, params: {
 	const { userId, url, freshness } = params;
 
 	if (freshness.action === "new") {
-		const parseResult = await deps.parseArticle(url);
-		if (!parseResult.ok) {
-			deps.logParseError({
-				url,
-				reason: parseResult.reason,
-				source: "hutch-queue",
-			});
-			const hostname = new URL(url).hostname;
-			const saved = await deps.saveArticle({
-				userId,
-				url,
-				metadata: {
-					title: `Article from ${hostname}`,
-					siteName: hostname,
-					excerpt: `Saved from ${hostname}.`,
-					wordCount: 0,
-				},
-				estimatedReadTime: calculateReadTime(0),
-			});
-			return { ok: true, saved: await markUnreadIfRead(deps, saved) };
-		}
-
-		const { article } = parseResult;
+		// Save a hostname-only stub immediately so the queue card has something to
+		// render at t=0. The real metadata + content arrive asynchronously via the
+		// SaveLinkCommand handler; markCrawlPending is what flips the reader slot
+		// into the polling state.
+		const hostname = new URL(url).hostname;
 		const saved = await deps.saveArticle({
 			userId,
 			url,
 			metadata: {
-				title: article.title,
-				siteName: article.siteName,
-				excerpt: article.excerpt,
-				wordCount: article.wordCount,
-				imageUrl: article.imageUrl,
+				title: `Article from ${hostname}`,
+				siteName: hostname,
+				excerpt: `Saved from ${hostname}.`,
+				wordCount: 0,
 			},
-			estimatedReadTime: calculateReadTime(article.wordCount),
+			estimatedReadTime: calculateReadTime(0),
 		});
-
-		deps.publishUpdateFetchTimestamp({
+		await deps.markCrawlPending({ url });
+		await deps.markSummaryPending({ url });
+		// Pre-populate the freshness window with the request time so a quick
+		// re-save can skip dispatching a duplicate SaveLinkCommand while the
+		// worker is mid-crawl. The worker overwrites contentFetchedAt with the
+		// actual fetch time after success. Must succeed — awaited (not
+		// fire-and-forget) because a missing freshness row would let the next
+		// save dispatch a duplicate worker invocation.
+		await deps.publishUpdateFetchTimestamp({
 			url,
 			contentFetchedAt: new Date().toISOString(),
-		}).catch((error) => deps.logError("Failed to publish fetch timestamp", error instanceof Error ? error : undefined));
-
-		if (article.content) {
-			await deps.markSummaryPending({ url });
-			await deps.publishLinkSaved({ url, userId });
-		}
-
+		});
+		await deps.publishLinkSaved({ url, userId });
 		return { ok: true, saved: await markUnreadIfRead(deps, saved) };
 	}
 
@@ -268,13 +254,24 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 		const content = await deps.readArticleContent(article.url);
 		const summary = await deps.findGeneratedSummary(article.url);
+		const crawl = await deps.findArticleCrawlStatus(article.url);
 		const audioEnabled = req.query.feature === "audio";
-		const status = summary?.status ?? "pending";
-		const summaryPollUrl = status === "pending"
+		const summaryStatus = summary?.status ?? "pending";
+		const summaryPollUrl = summaryStatus === "pending"
 			? `/queue/${article.id.value}/summary?poll=1`
 			: undefined;
+		const readerPollUrl = crawl?.status === "pending"
+			? `/queue/${article.id.value}/reader?poll=1`
+			: undefined;
 
-		const html = ReaderPage({ ...article, content }, { emailVerified: req.emailVerified, summary, summaryPollUrl, audioEnabled }).to("text/html");
+		const html = ReaderPage({ ...article, content }, {
+			emailVerified: req.emailVerified,
+			summary,
+			summaryPollUrl,
+			crawl,
+			readerPollUrl,
+			audioEnabled,
+		}).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 	});
 
@@ -300,6 +297,31 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			: undefined;
 
 		const html = renderSummarySlot({ summary, summaryPollUrl });
+		res.type("html").send(html);
+	});
+
+	router.get("/:id/reader", async (req: Request, res: Response) => {
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
+		const parsedId = ReaderArticleHashIdSchema.safeParse(req.params.id);
+		const article = parsedId.success
+			? await deps.findArticleById(parsedId.data, userId)
+			: null;
+
+		if (!article) {
+			res.status(404).type("html").send("");
+			return;
+		}
+
+		const crawl = await deps.findArticleCrawlStatus(article.url);
+		const content = await deps.readArticleContent(article.url);
+		const pollCount = Number(req.query.poll ?? "0");
+		const MAX_POLLS = 40;
+		const readerPollUrl = crawl?.status === "pending" && pollCount < MAX_POLLS
+			? `/queue/${article.id.value}/reader?poll=${pollCount + 1}`
+			: undefined;
+
+		const html = renderReaderSlot({ crawl, content, url: article.url, readerPollUrl });
 		res.type("html").send(html);
 	});
 

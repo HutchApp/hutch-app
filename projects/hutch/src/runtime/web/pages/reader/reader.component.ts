@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SavedArticle } from "../../../domain/article/article.types";
+import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
@@ -16,6 +17,8 @@ export function ReaderPage(
 		emailVerified?: boolean;
 		summary?: GeneratedSummary;
 		summaryPollUrl?: string;
+		crawl?: ArticleCrawl;
+		readerPollUrl?: string;
 		audioEnabled?: boolean;
 	},
 ): Component {
@@ -25,6 +28,8 @@ export function ReaderPage(
 		estimatedReadTime: article.estimatedReadTime,
 		url: article.url,
 		content: article.content,
+		crawl: options?.crawl,
+		readerPollUrl: options?.readerPollUrl,
 		summary: options?.summary,
 		summaryPollUrl: options?.summaryPollUrl,
 		audioEnabled: options?.audioEnabled,

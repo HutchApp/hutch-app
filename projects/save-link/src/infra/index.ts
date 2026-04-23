@@ -108,6 +108,17 @@ const saveLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-command
 
 eventBus.subscribe(SaveLinkCommand, saveLinkCommandLambdaWithSQS);
 
+// --- SaveLinkCommand DLQ consumer ---
+// Flips crawlStatus to "failed" and publishes CrawlArticleFailedEvent when a
+// SaveLinkCommand message exhausts maxReceiveCount. The HutchSQSBackedLambda
+// above already wires the DLQ-arrival CloudWatch alarm + admin email.
+new HutchDLQEventHandler("save-link-dlq", {
+	sourceQueue: saveLinkCommandQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+});
+
 // --- SaveAnonymousLinkCommand handler ---
 
 const saveAnonymousLinkCommandDynamodb = new HutchDynamoDBAccess("save-anonymous-link-command-dynamodb", {
@@ -142,6 +153,14 @@ const saveAnonymousLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-ano
 });
 
 eventBus.subscribe(SaveAnonymousLinkCommand, saveAnonymousLinkCommandLambdaWithSQS);
+
+// --- SaveAnonymousLinkCommand DLQ consumer ---
+new HutchDLQEventHandler("save-anonymous-link-dlq", {
+	sourceQueue: saveAnonymousLinkCommandQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+});
 
 // --- GenerateSummary handler ---
 

@@ -114,16 +114,53 @@ describe("renderArticleBody", () => {
 		);
 	});
 
-	it("renders the no-content fallback when content is undefined", () => {
+	it("renders the unavailable fallback when content is undefined and no crawl status is provided", () => {
 		const html = renderArticleBody({
 			...baseInput,
 			content: undefined,
 		});
 		const doc = parse(html);
 
+		const slot = doc.querySelector("[data-test-reader-slot]");
+		assert(slot, "reader slot must be rendered");
+		expect(slot.getAttribute("data-reader-status")).toBe("unavailable");
 		const fallback = doc.querySelector("[data-test-no-content]");
-		assert(fallback, "no-content fallback must be rendered");
-		const originalLink = fallback.querySelector("a");
-		expect(originalLink?.getAttribute("href")).toBe("https://example.com/post");
+		assert(fallback, "no-content fallback must be rendered inside the unavailable slot");
+		expect(fallback.querySelector("a")?.getAttribute("href")).toBe(
+			"https://example.com/post",
+		);
 	});
+
+	it("renders the reader-pending slot with poll attributes when crawl is pending", () => {
+		const html = renderArticleBody({
+			...baseInput,
+			content: undefined,
+			crawl: { status: "pending" },
+			readerPollUrl: "/queue/abc/reader?poll=1",
+		});
+		const doc = parse(html);
+
+		const slot = doc.querySelector("[data-test-reader-slot]");
+		assert(slot, "reader slot must be rendered");
+		expect(slot.getAttribute("data-reader-status")).toBe("pending");
+		expect(slot.getAttribute("hx-get")).toBe("/queue/abc/reader?poll=1");
+		expect(slot.getAttribute("hx-trigger")).toBe("every 3s");
+		expect(slot.getAttribute("hx-swap")).toBe("outerHTML");
+	});
+
+	it("renders the reader-failed slot when crawl status is failed", () => {
+		const html = renderArticleBody({
+			...baseInput,
+			content: undefined,
+			crawl: { status: "failed", reason: "exceeded SQS maxReceiveCount" },
+		});
+		const doc = parse(html);
+
+		const slot = doc.querySelector("[data-test-reader-slot]");
+		assert(slot, "reader slot must be rendered");
+		expect(slot.getAttribute("data-reader-status")).toBe("failed");
+		const link = slot.querySelector(".article-body__reader-failed-link");
+		expect(link?.getAttribute("href")).toBe("https://example.com/post");
+	});
+
 });

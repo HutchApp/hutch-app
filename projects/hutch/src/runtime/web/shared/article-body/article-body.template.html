@@ -11,6 +11,4 @@
     {{#if audioEnabled}}<div class="article-body__audio-slot article-body__audio-slot--visible" data-test-audio-player><div class="article-body__audio-player">
       <audio controls preload="metadata" src="{{staticBaseUrl}}/sample-audio.opus" data-audio-element></audio>
     </div></div>{{else}}<div class="article-body__audio-slot article-body__audio-slot--hidden" data-test-audio-player></div>{{/if}}
-    <div class="article-body__content" data-test-reader-content>
-      {{{content}}}
-    </div>
+    {{{readerSlotHtml}}}

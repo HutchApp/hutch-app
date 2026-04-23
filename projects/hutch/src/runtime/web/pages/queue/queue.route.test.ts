@@ -1068,7 +1068,7 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-article-title]")?.textContent).toContain("Article from example.com");
 		});
 
-		it("should show no-content template on read page when fetch fails", async () => {
+		it("should show the reader-failed slot on read page when fetch fails", async () => {
 			const crawlArticle = async () => ({ status: "failed" as const });
 			const { app, auth } = createTestApp({ crawlArticle });
 			const agent = await loginAgent(app, auth);
@@ -1086,8 +1086,9 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			const fallback = doc.querySelector("[data-test-no-content]");
-			assert(fallback, "no-content fallback must be rendered");
+			const slot = doc.querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-reader-status")).toBe("failed");
 		});
 
 		it("should link article title to reader view when article has no content", async () => {
@@ -1106,23 +1107,6 @@ describe("Queue routes", () => {
 			expect(titleLink?.getAttribute("href")).toContain("/read");
 		});
 
-		it("reports parse failures via logParseError with source 'hutch-queue'", async () => {
-			const crawlArticle = async () => ({ status: "failed" as const });
-			const logParseError = jest.fn();
-			const { app, auth } = createTestApp({ crawlArticle, logParseError });
-			const agent = await loginAgent(app, auth);
-
-			await agent
-				.post("/queue/save")
-				.type("form")
-				.send({ url: "https://example.com/broken" });
-
-			expect(logParseError).toHaveBeenCalledWith({
-				url: "https://example.com/broken",
-				reason: expect.any(String),
-				source: "hutch-queue",
-			});
-		});
 	});
 
 	describe("Pagination", () => {
@@ -1412,34 +1396,6 @@ describe("Queue routes", () => {
 				.set("Access-Control-Request-Method", "GET");
 
 			expect(response.headers["access-control-allow-origin"]).toBeUndefined();
-		});
-	});
-
-	describe("save article without content", () => {
-		it("should save article without publishing link-saved when parse returns no content", async () => {
-			let publishCalled = false;
-			const { app, auth } = createTestApp({
-				parseArticle: async () => ({
-					ok: true as const,
-					article: {
-						title: "No Content",
-						siteName: "example.com",
-						excerpt: "Test excerpt",
-						wordCount: 0,
-						content: "",
-						imageUrl: undefined,
-					},
-				}),
-				publishLinkSaved: async () => { publishCalled = true; },
-			});
-			const agent = await loginAgent(app, auth);
-
-			await agent
-				.post("/queue/save")
-				.type("form")
-				.send({ url: "https://example.com/no-content" });
-
-			expect(publishCalled).toBe(false);
 		});
 	});
 

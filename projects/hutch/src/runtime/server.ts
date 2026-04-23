@@ -19,7 +19,6 @@ import type {
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
 import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
-import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type {
 	DeleteArticle,
 	FindArticleById,
@@ -33,12 +32,15 @@ import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-upd
 import type { ReadArticleContent } from "./providers/article-store/read-article-content";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type {
+	FindArticleCrawlStatus,
+	MarkCrawlPending,
+} from "./providers/article-crawl/article-crawl.types";
+import type {
 	FindGeneratedSummary,
 	MarkSummaryPending,
 } from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
-import type { LogParseError } from "./providers/parse-errors/log-parse-error";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
 	CreateVerificationToken,
@@ -92,7 +94,6 @@ interface AppDependencies {
 		clientId: string;
 		clientSecret: string;
 	};
-	parseArticle: ParseArticle;
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
 	findArticlesByUser: FindArticlesByUser;
@@ -115,11 +116,12 @@ interface AppDependencies {
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
+	findArticleCrawlStatus: FindArticleCrawlStatus;
+	markCrawlPending: MarkCrawlPending;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
-	logParseError: LogParseError;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -365,18 +367,18 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticlesByUser: deps.findArticlesByUser,
 		findArticleById: deps.findArticleById,
 		saveArticle: deps.saveArticle,
-		parseArticle: deps.parseArticle,
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
 		publishLinkSaved: deps.publishLinkSaved,
 		findGeneratedSummary: deps.findGeneratedSummary,
 		markSummaryPending: deps.markSummaryPending,
+		findArticleCrawlStatus: deps.findArticleCrawlStatus,
+		markCrawlPending: deps.markCrawlPending,
 		refreshArticleIfStale: deps.refreshArticleIfStale,
 		publishUpdateFetchTimestamp: deps.publishUpdateFetchTimestamp,
 		readArticleContent: deps.readArticleContent,
 		httpErrorMessageMapping: deps.httpErrorMessageMapping,
 		logError: deps.logError,
-		logParseError: deps.logParseError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 
@@ -386,12 +388,12 @@ export function createApp(dependencies: AppDependencies): Express {
 	const viewRouter = initViewRoutes({
 		findArticleByUrl: deps.findArticleByUrl,
 		readArticleContent: deps.readArticleContent,
-		parseArticle: deps.parseArticle,
 		findGeneratedSummary: deps.findGeneratedSummary,
 		markSummaryPending: deps.markSummaryPending,
+		findArticleCrawlStatus: deps.findArticleCrawlStatus,
+		markCrawlPending: deps.markCrawlPending,
 		saveArticleGlobally: deps.saveArticleGlobally,
 		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
-		logParseError: deps.logParseError,
 	});
 	app.use("/view", viewRouter);
 

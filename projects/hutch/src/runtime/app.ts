@@ -7,7 +7,6 @@ import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
-import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { parseHtml } from "./providers/article-parser/readability-parser";
 import { initRefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
@@ -24,6 +23,8 @@ import { initDynamoDbEmailVerification } from "./providers/email-verification/dy
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
 import { initDynamoDbPasswordReset } from "./providers/password-reset/dynamodb-password-reset";
 import { initDynamoDbGeneratedSummary } from "./providers/article-summary/dynamodb-generated-summary";
+import { initDynamoDbArticleCrawl } from "./providers/article-crawl/dynamodb-article-crawl";
+import { initInMemoryArticleCrawl } from "./providers/article-crawl/in-memory-article-crawl";
 import { S3Client } from "@aws-sdk/client-s3";
 import { initS3ReadContent } from "./providers/article-store/s3-read-content";
 import { initReadArticleContent } from "./providers/article-store/read-article-content";
@@ -37,9 +38,7 @@ import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save
 import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
-import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
-import type { ParseErrorEvent } from "@packages/hutch-infra-components";
-import { initLogParseError } from "./providers/parse-errors/log-parse-error";
+import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { getEnv, requireEnv } from "./require-env";
@@ -47,10 +46,6 @@ import { getEnv, requireEnv } from "./require-env";
 function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
-	const { logParseError } = initLogParseError({
-		logger: HutchLogger.fromJSON<ParseErrorEvent>(),
-		now: () => new Date(),
-	});
 
 	const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } });
 	const staleTtlMs = 86400000;
@@ -82,6 +77,7 @@ function initProviders() {
 		});
 		const oauthModel = initDynamoDbOAuthModel({ client, tableName: oauthTable });
 		const summaryStore = initDynamoDbGeneratedSummary({ client, tableName: articlesTable });
+		const crawlStore = initDynamoDbArticleCrawl({ client, tableName: articlesTable });
 		const { publishEvent } = initEventBridgePublisher({
 			client: new EventBridgeClient({}),
 			eventBusName,
@@ -126,8 +122,9 @@ function initProviders() {
 			publishUpdateFetchTimestamp,
 			findGeneratedSummary: summaryStore.findGeneratedSummary,
 			markSummaryPending: summaryStore.markSummaryPending,
+			findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,
+			markCrawlPending: crawlStore.markCrawlPending,
 			refreshArticleIfStale,
-			logParseError,
 		};
 	}
 
@@ -152,25 +149,38 @@ function initProviders() {
 			clientSecret: devGoogleClientSecret,
 		}
 		: undefined;
+	const crawlStore = initInMemoryArticleCrawl();
 	const { publishLinkSaved: logOnlyPublishLinkSaved } = initInMemoryLinkSaved({ logger: consoleLogger });
 	const publishLinkSaved: typeof logOnlyPublishLinkSaved = async (params) => {
 		await logOnlyPublishLinkSaved(params);
 		const crawlResult = await crawlArticle({ url: params.url });
-		if (crawlResult.status !== "fetched") return;
-		const result = parseHtml({ url: params.url, html: crawlResult.html });
-		if (result.ok) {
-			await articleStore.writeContent({ url: params.url, content: result.article.content });
+		if (crawlResult.status !== "fetched") {
+			await crawlStore.markCrawlFailed({ url: params.url, reason: `crawl-${crawlResult.status}` });
+			return;
 		}
+		const result = parseHtml({ url: params.url, html: crawlResult.html });
+		if (!result.ok) {
+			await crawlStore.markCrawlFailed({ url: params.url, reason: result.reason });
+			return;
+		}
+		await articleStore.writeContent({ url: params.url, content: result.article.content });
+		await crawlStore.markCrawlReady({ url: params.url });
 	};
 	const { publishSaveAnonymousLink: logOnlyPublishSaveAnonymousLink } = initInMemorySaveAnonymousLink({ logger: consoleLogger });
 	const publishSaveAnonymousLink: typeof logOnlyPublishSaveAnonymousLink = async (params) => {
 		await logOnlyPublishSaveAnonymousLink(params);
 		const crawlResult = await crawlArticle({ url: params.url });
-		if (crawlResult.status !== "fetched") return;
-		const result = parseHtml({ url: params.url, html: crawlResult.html });
-		if (result.ok) {
-			await articleStore.writeContent({ url: params.url, content: result.article.content });
+		if (crawlResult.status !== "fetched") {
+			await crawlStore.markCrawlFailed({ url: params.url, reason: `crawl-${crawlResult.status}` });
+			return;
 		}
+		const result = parseHtml({ url: params.url, html: crawlResult.html });
+		if (!result.ok) {
+			await crawlStore.markCrawlFailed({ url: params.url, reason: result.reason });
+			return;
+		}
+		await articleStore.writeContent({ url: params.url, content: result.article.content });
+		await crawlStore.markCrawlReady({ url: params.url });
 	};
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
@@ -205,18 +215,18 @@ function initProviders() {
 		publishUpdateFetchTimestamp,
 		findGeneratedSummary: stubFindGeneratedSummary,
 		markSummaryPending: stubMarkSummaryPending,
+		findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,
+		markCrawlPending: crawlStore.markCrawlPending,
 		refreshArticleIfStale,
-		logParseError,
 	};
 }
 
-export function createHutchApp(deps: {
-	parseArticle: ParseArticle;
+export function createHutchApp(deps?: {
 	appOrigin?: string;
 }) {
 	const { auth, articleStore, oauthModel, validateAccessToken, ...providers } = initProviders();
 
-	const appOrigin = deps.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
+	const appOrigin = deps?.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 	const staticBaseUrl = requireEnv("STATIC_BASE_URL");
 
 	const app = createApp({
@@ -224,7 +234,6 @@ export function createHutchApp(deps: {
 		staticBaseUrl,
 		...auth,
 		...articleStore,
-		parseArticle: deps.parseArticle,
 		...providers,
 		baseUrl: appOrigin,
 		logError: (message, error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack })),

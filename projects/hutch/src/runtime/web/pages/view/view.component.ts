@@ -4,6 +4,7 @@ import type {
 	ArticleMetadata,
 	Minutes,
 } from "../../../domain/article/article.types";
+import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { requireEnv } from "../../../require-env";
 import { Base } from "../../base.component";
@@ -38,6 +39,8 @@ export interface ViewPageInput {
 	metadata: ArticleMetadata;
 	estimatedReadTime: Minutes;
 	content?: string;
+	crawl?: ArticleCrawl;
+	readerPollUrl?: string;
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
 	actions: ViewAction[];
@@ -50,6 +53,8 @@ export function ViewPage(input: ViewPageInput): Component {
 		estimatedReadTime: input.estimatedReadTime,
 		url: input.articleUrl,
 		content: input.content,
+		crawl: input.crawl,
+		readerPollUrl: input.readerPollUrl,
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: true,

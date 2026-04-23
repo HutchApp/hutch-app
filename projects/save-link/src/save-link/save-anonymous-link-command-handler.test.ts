@@ -81,7 +81,10 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		putImageObject: jest.fn().mockResolvedValue(undefined),
 		updateContentLocation: jest.fn().mockResolvedValue(undefined),
 		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
+		updateArticleMetadata: jest.fn().mockResolvedValue(undefined),
+		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		publishAnonymousLinkSaved: jest.fn().mockResolvedValue(undefined),
+		publishEvent: jest.fn().mockResolvedValue(undefined),
 		downloadMedia: noopDownloadMedia,
 		processContent,
 		updateThumbnailUrl: jest.fn().mockResolvedValue(undefined),
@@ -112,6 +115,51 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 			contentLocation: expect.stringMatching(/^s3:\/\//),
 		});
 		expect(publishAnonymousLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article" });
+	});
+
+	it("writes parsed metadata to the article row before publishing", async () => {
+		const updateArticleMetadata = jest.fn().mockResolvedValue(undefined);
+		const parseHtml: ParseHtml = () => ({
+			ok: true,
+			article: {
+				title: "Real Title",
+				siteName: "Example",
+				excerpt: "An excerpt.",
+				wordCount: 480,
+				content: "<p>body</p>",
+				imageUrl: "https://example.com/og.png",
+			},
+		});
+
+		const handler = createHandler({ updateArticleMetadata, parseHtml });
+
+		await handler(createSqsEvent({ url: "https://example.com/article" }), stubContext, () => {});
+
+		expect(updateArticleMetadata).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			title: "Real Title",
+			siteName: "Example",
+			excerpt: "An excerpt.",
+			wordCount: 480,
+			estimatedReadTime: 3,
+			imageUrl: "https://example.com/og.png",
+		});
+	});
+
+	it("marks the crawl ready and publishes CrawlArticleCompletedEvent on success", async () => {
+		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const handler = createHandler({ markCrawlReady, publishEvent });
+
+		await handler(createSqsEvent({ url: "https://example.com/article" }), stubContext, () => {});
+
+		expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.save-link",
+			detailType: "CrawlArticleCompleted",
+			detail: JSON.stringify({ url: "https://example.com/article" }),
+		});
 	});
 
 	it("records contentFetchedAt + etag + lastModified after successful crawl so later saves skip the re-crawl", async () => {
@@ -156,18 +204,22 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 
 		const handler = createHandler({ crawlArticle: failedCrawl, updateFetchTimestamp });
 
-		await handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {});
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {}),
+		).rejects.toThrow();
 
 		expect(updateFetchTimestamp).not.toHaveBeenCalled();
 	});
 
-	it("reports crawl failures via logParseError with the crawl status as reason", async () => {
+	it("reports crawl failures via logParseError with the crawl status as reason and rethrows for SQS retry", async () => {
 		const logParseError = jest.fn();
 		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
 
 		const handler = createHandler({ crawlArticle: failedCrawl, logParseError });
 
-		await handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {});
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {}),
+		).rejects.toThrow();
 
 		expect(logParseError).toHaveBeenCalledWith({
 			url: "https://example.com/unreachable",
@@ -175,13 +227,15 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		});
 	});
 
-	it("reports parse failures via logParseError with the parser's reason", async () => {
+	it("reports parse failures via logParseError with the parser's reason and rethrows for SQS retry", async () => {
 		const logParseError = jest.fn();
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "Invalid URL" });
 
 		const handler = createHandler({ parseHtml: failedParse, logParseError });
 
-		await handler(createSqsEvent({ url: "https://example.com/bad" }), stubContext, () => {});
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad" }), stubContext, () => {}),
+		).rejects.toThrow();
 
 		expect(logParseError).toHaveBeenCalledWith({
 			url: "https://example.com/bad",
@@ -189,30 +243,42 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		});
 	});
 
-	it("skips content save and still publishes the event when the article fetch fails", async () => {
+	it("skips content save and does not publish events when the article fetch fails (DLQ owns the failure path)", async () => {
 		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
 		const putObject = jest.fn();
 		const publishAnonymousLinkSaved = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
 
-		const handler = createHandler({ crawlArticle: failedCrawl, putObject, publishAnonymousLinkSaved });
+		const handler = createHandler({ crawlArticle: failedCrawl, putObject, publishAnonymousLinkSaved, publishEvent, markCrawlReady });
 
-		await handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {});
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {}),
+		).rejects.toThrow();
 
 		expect(putObject).not.toHaveBeenCalled();
-		expect(publishAnonymousLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/unreachable" });
+		expect(publishAnonymousLinkSaved).not.toHaveBeenCalled();
+		expect(publishEvent).not.toHaveBeenCalled();
+		expect(markCrawlReady).not.toHaveBeenCalled();
 	});
 
-	it("skips content save and still publishes the event when parsing fails", async () => {
+	it("skips content save and does not publish events when parsing fails (DLQ owns the failure path)", async () => {
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "Invalid URL" });
 		const putObject = jest.fn();
 		const publishAnonymousLinkSaved = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
 
-		const handler = createHandler({ parseHtml: failedParse, putObject, publishAnonymousLinkSaved });
+		const handler = createHandler({ parseHtml: failedParse, putObject, publishAnonymousLinkSaved, publishEvent, markCrawlReady });
 
-		await handler(createSqsEvent({ url: "https://example.com/bad" }), stubContext, () => {});
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad" }), stubContext, () => {}),
+		).rejects.toThrow();
 
 		expect(putObject).not.toHaveBeenCalled();
-		expect(publishAnonymousLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/bad" });
+		expect(publishAnonymousLinkSaved).not.toHaveBeenCalled();
+		expect(publishEvent).not.toHaveBeenCalled();
+		expect(markCrawlReady).not.toHaveBeenCalled();
 	});
 
 	it("throws on invalid event detail", async () => {

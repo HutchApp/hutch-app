@@ -624,7 +624,7 @@ describe("View routes", () => {
 			expect(meta?.getAttribute("content")).toBe("5;url=/");
 		});
 
-		it("renders a fallback body with the Save action when parseArticle fails on a cache miss", async () => {
+		it("renders the reader-failed slot with the Save action when the async crawl fails on a cache miss", async () => {
 			const parseArticle: ParseArticle = async () => ({
 				ok: false,
 				reason: "blocked",
@@ -635,8 +635,9 @@ describe("View routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			const fallback = doc.querySelector("[data-test-no-content]");
-			assert(fallback, "no-content fallback must be rendered");
+			const slot = doc.querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-reader-status")).toBe("failed");
 			const action = ctaAction(doc);
 			expect(action.textContent).toBe("Save to My Queue");
 		});
@@ -678,7 +679,7 @@ describe("View routes", () => {
 			).toBe("<p>Cached body.</p>");
 		});
 
-		it("uses cached metadata as the fallback body when parseArticle fails and only metadata is cached", async () => {
+		it("renders cached metadata with the unavailable reader fallback when only metadata is cached (no content available)", async () => {
 			const parseSpy = jest.fn(
 				async (_url: string): Promise<ParseArticleResult> => ({
 					ok: false,
@@ -701,44 +702,15 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			expect(response.status).toBe(200);
-			expect(parseSpy).toHaveBeenCalledTimes(1);
+			// Cache hit short-circuits the async crawl: parser is never invoked.
+			expect(parseSpy).not.toHaveBeenCalled();
 			const doc = new JSDOM(response.text).window.document;
-			const fallback = doc.querySelector("[data-test-no-content]");
-			assert(fallback, "no-content fallback must be rendered");
+			const slot = doc.querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-reader-status")).toBe("unavailable");
 			expect(
 				doc.querySelector('meta[property="og:title"]')?.getAttribute("content"),
 			).toBe("Cached Only Title | Reader View");
-		});
-
-		it("falls back to parseArticle when metadata is cached but content is missing", async () => {
-			const parseSpy = jest.fn(
-				async (_url: string): Promise<ParseArticleResult> =>
-					buildParseResult({
-						title: "Fresh Title",
-						content: "<p>Fresh body.</p>",
-					}),
-			);
-			const { app, articleStore } = createTestApp({ parseArticle: parseSpy });
-			await articleStore.saveArticle({
-				userId: UserIdSchema.parse("seed-user"),
-				url: ARTICLE_URL,
-				metadata: {
-					title: "Partial",
-					siteName: "example.com",
-					excerpt: "Partial excerpt.",
-					wordCount: 100,
-				},
-				estimatedReadTime: MinutesSchema.parse(1),
-			});
-
-			const response = await request(app).get(`/view/${ENCODED}`);
-
-			expect(response.status).toBe(200);
-			expect(parseSpy).toHaveBeenCalledTimes(1);
-			const doc = new JSDOM(response.text).window.document;
-			expect(
-				doc.querySelector("[data-test-reader-content]")?.innerHTML.trim(),
-			).toBe("<p>Fresh body.</p>");
 		});
 	});
 
@@ -753,8 +725,12 @@ describe("View routes", () => {
 			expect(response.status).toBe(200);
 			expect(publishSaveAnonymousLink).toHaveBeenCalledTimes(1);
 			expect(publishSaveAnonymousLink).toHaveBeenCalledWith({ url: ARTICLE_URL });
+			// Stub metadata is written synchronously by the web layer; the worker
+			// (mocked here as a noop publish) is what would later overwrite it
+			// with the parsed title.
 			const cached = await articleStore.findArticleByUrl(ARTICLE_URL);
-			expect(cached?.metadata.title).toBe("Hello World");
+			expect(cached?.url).toBe(ARTICLE_URL);
+			expect(cached?.metadata.siteName).toBe(new URL(ARTICLE_URL).hostname);
 		});
 
 		it("dispatches SaveAnonymousLinkCommand for an authenticated visitor (no user association, viewing only)", async () => {
@@ -795,28 +771,14 @@ describe("View routes", () => {
 			expect(publishSaveAnonymousLink).not.toHaveBeenCalled();
 		});
 
-		it("skips priming when parseArticle fails", async () => {
+		it("primes the async crawl pipeline regardless of eventual parse outcome (worker owns failure handling)", async () => {
 			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
 			const publishSaveAnonymousLink = jest.fn(async () => {});
 			const { app } = createTestApp({ parseArticle, publishSaveAnonymousLink });
 
 			await request(app).get(`/view/${ENCODED}`);
 
-			expect(publishSaveAnonymousLink).not.toHaveBeenCalled();
-		});
-
-		it("reports parse failures via logParseError with source 'hutch-view'", async () => {
-			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
-			const logParseError = jest.fn();
-			const { app } = createTestApp({ parseArticle, logParseError });
-
-			await request(app).get(`/view/${ENCODED}`);
-
-			expect(logParseError).toHaveBeenCalledWith({
-				url: ARTICLE_URL,
-				reason: "blocked",
-				source: "hutch-view",
-			});
+			expect(publishSaveAnonymousLink).toHaveBeenCalledWith({ url: ARTICLE_URL });
 		});
 	});
 });

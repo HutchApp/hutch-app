@@ -13,6 +13,8 @@ import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { initUpdateThumbnailUrl } from "../save-link/update-thumbnail-url";
 import { initUpdateFetchTimestamp } from "../save-link/update-fetch-timestamp";
+import { initUpdateArticleMetadata } from "../save-link/update-article-metadata";
+import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
 import { initDownloadMedia } from "../save-link/download-media";
 import { initSaveLinkCommandHandler } from "../save-link/save-link-command-handler";
 import { initLogParseError } from "../save-link/log-parse-error";
@@ -50,6 +52,16 @@ const { updateThumbnailUrl } = initUpdateThumbnailUrl({
 });
 
 const { updateFetchTimestamp } = initUpdateFetchTimestamp({
+	client,
+	tableName: articlesTable,
+});
+
+const { updateArticleMetadata } = initUpdateArticleMetadata({
+	client,
+	tableName: articlesTable,
+});
+
+const { markCrawlReady } = initDynamoDbArticleCrawl({
 	client,
 	tableName: articlesTable,
 });
@@ -93,7 +105,10 @@ export const handler = initSaveLinkCommandHandler({
 	putImageObject,
 	updateContentLocation,
 	updateFetchTimestamp,
+	updateArticleMetadata,
+	markCrawlReady,
 	publishLinkSaved,
+	publishEvent,
 	downloadMedia,
 	processContent,
 	updateThumbnailUrl,

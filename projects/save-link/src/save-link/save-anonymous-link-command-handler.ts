@@ -1,12 +1,18 @@
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle } from "@packages/crawl-article";
-import { SaveAnonymousLinkCommand } from "@packages/hutch-infra-components";
+import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
+import {
+	CrawlArticleCompletedEvent,
+	SaveAnonymousLinkCommand,
+} from "@packages/hutch-infra-components";
+import type { MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
+import type { UpdateArticleMetadata } from "./update-article-metadata";
 import type { LogParseError } from "./log-parse-error";
 import {
 	initSaveLinkWork,
@@ -24,7 +30,10 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	putImageObject: PutImageObject;
 	updateContentLocation: UpdateContentLocation;
 	updateFetchTimestamp: UpdateFetchTimestamp;
+	updateArticleMetadata: UpdateArticleMetadata;
+	markCrawlReady: MarkCrawlReady;
 	publishAnonymousLinkSaved: PublishAnonymousLinkSaved;
+	publishEvent: PublishEvent;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	updateThumbnailUrl: UpdateThumbnailUrl;
@@ -33,7 +42,7 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	logger: HutchLogger;
 	logParseError: LogParseError;
 }): SQSHandler {
-	const { publishAnonymousLinkSaved, logger } = deps;
+	const { publishAnonymousLinkSaved, publishEvent, logger } = deps;
 
 	const { saveLinkWork } = initSaveLinkWork({
 		crawlArticle: deps.crawlArticle,
@@ -42,6 +51,8 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 		putImageObject: deps.putImageObject,
 		updateContentLocation: deps.updateContentLocation,
 		updateFetchTimestamp: deps.updateFetchTimestamp,
+		updateArticleMetadata: deps.updateArticleMetadata,
+		markCrawlReady: deps.markCrawlReady,
 		downloadMedia: deps.downloadMedia,
 		processContent: deps.processContent,
 		updateThumbnailUrl: deps.updateThumbnailUrl,
@@ -60,6 +71,12 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 			logger.info("[SaveAnonymousLinkCommand] processing", { url: detail.url });
 
 			await saveLinkWork(detail.url);
+
+			await publishEvent({
+				source: CrawlArticleCompletedEvent.source,
+				detailType: CrawlArticleCompletedEvent.detailType,
+				detail: JSON.stringify({ url: detail.url }),
+			});
 
 			await publishAnonymousLinkSaved({ url: detail.url });
 			logger.info("[SaveAnonymousLinkCommand] published AnonymousLinkSavedEvent", { url: detail.url });

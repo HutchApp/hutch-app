@@ -271,3 +271,51 @@
 .article-body__no-content-link:hover {
   text-decoration: underline;
 }
+
+.article-body__reader-slot--pending {
+  display: block;
+  padding: 2rem 1.5rem;
+  background: var(--color-surface);
+  border-radius: 8px;
+  border-left: 3px solid var(--color-brand);
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+.article-body__reader-loading::after {
+  content: "";
+  display: inline-block;
+  width: 0.4em;
+  margin-left: 0.3em;
+  animation: article-body-summary-dots 1.4s steps(4, end) infinite;
+}
+
+.article-body__reader-slot--failed {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: var(--color-surface);
+  border-left: 3px solid var(--color-error);
+  border-radius: 8px;
+}
+
+.article-body__reader-failed-title {
+  font-size: 1.25rem;
+  margin: 0 0 0.75rem;
+  color: var(--color-error);
+}
+
+.article-body__reader-failed-text {
+  margin: 0 0 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.article-body__reader-failed-link {
+  color: var(--color-brand);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.article-body__reader-failed-link:hover {
+  text-decoration: underline;
+}

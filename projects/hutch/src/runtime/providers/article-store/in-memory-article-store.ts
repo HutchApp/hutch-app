@@ -68,6 +68,7 @@ export function initInMemoryArticleStore(): {
 	updateArticleStatus: UpdateArticleStatus;
 	readContent: ContentProvider;
 	writeContent: (params: { url: string; content: string }) => Promise<void>;
+	writeMetadata: (params: { url: string; metadata: ArticleMetadata; estimatedReadTime: Minutes }) => Promise<void>;
 } {
 	const articles = new Map<string, GlobalArticle>();
 	const userArticles = new Map<string, UserArticle>();
@@ -235,6 +236,14 @@ export function initInMemoryArticleStore(): {
 		article.content = params.content;
 	};
 
+	const writeMetadata = async (params: { url: string; metadata: ArticleMetadata; estimatedReadTime: Minutes }) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const article = articles.get(articleResourceUniqueId.value);
+		assert(article, `Article not found for URL: ${articleResourceUniqueId.value}`);
+		article.metadata = params.metadata;
+		article.estimatedReadTime = params.estimatedReadTime;
+	};
+
 	return {
 		saveArticle,
 		saveArticleGlobally,
@@ -246,5 +255,6 @@ export function initInMemoryArticleStore(): {
 		updateArticleStatus,
 		readContent,
 		writeContent,
+		writeMetadata,
 	};
 }

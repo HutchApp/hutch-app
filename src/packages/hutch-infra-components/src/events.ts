@@ -98,6 +98,32 @@ export type SummaryGenerationFailedDetail = z.infer<
 	typeof SummaryGenerationFailedEvent.detailSchema
 >;
 
+export const CrawlArticleCompletedEvent = defineEvent({
+	name: "crawl-article-completed",
+	source: "hutch.save-link",
+	detailType: "CrawlArticleCompleted",
+	detailSchema: z.object({
+		url: z.string(),
+	}),
+});
+export type CrawlArticleCompletedDetail = z.infer<
+	typeof CrawlArticleCompletedEvent.detailSchema
+>;
+
+export const CrawlArticleFailedEvent = defineEvent({
+	name: "crawl-article-failed",
+	source: "hutch.save-link",
+	detailType: "CrawlArticleFailed",
+	detailSchema: z.object({
+		url: z.string(),
+		reason: z.string(),
+		receiveCount: z.number(),
+	}),
+});
+export type CrawlArticleFailedDetail = z.infer<
+	typeof CrawlArticleFailedEvent.detailSchema
+>;
+
 export const GenerateSummaryCommand = defineCommand({
 	detailSchema: z.object({
 		url: z.string(),
