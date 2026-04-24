@@ -193,6 +193,25 @@
   margin: 1rem 0;
 }
 
+/*
+ * Inline nav-icon SVGs from extracted articles often have only a viewBox
+ * and no width/height — the browser then stretches them to fill the column
+ * (an icon with viewBox="0 0 32 44" inside a 680px reader column renders
+ * ~680×935px). Treat unsized SVGs as inline icons so nav fragments that
+ * survive Readability don't dominate the page. Author-sized SVGs (real
+ * diagrams with width/height) match the general .article-body__content svg
+ * rule below and stay at their authored size, capped to column width.
+ */
+.article-body__content svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.article-body__content svg:not([width]):not([height]) {
+  max-height: 1.5rem;
+  vertical-align: middle;
+}
+
 .article-body__content a {
   color: var(--color-brand);
 }
