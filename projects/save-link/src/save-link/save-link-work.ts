@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle, ThumbnailImage } from "@packages/crawl-article";
-import type { MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
+import type { MarkCrawlFailed, MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia, DownloadedMedia } from "./download-media";
@@ -32,6 +32,7 @@ export function initSaveLinkWork(deps: {
 	updateFetchTimestamp: UpdateFetchTimestamp;
 	updateArticleMetadata: UpdateArticleMetadata;
 	markCrawlReady: MarkCrawlReady;
+	markCrawlFailed: MarkCrawlFailed;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	updateThumbnailUrl: UpdateThumbnailUrl;
@@ -50,6 +51,7 @@ export function initSaveLinkWork(deps: {
 		updateFetchTimestamp,
 		updateArticleMetadata,
 		markCrawlReady,
+		markCrawlFailed,
 		downloadMedia,
 		processContent,
 		updateThumbnailUrl,
@@ -71,6 +73,12 @@ export function initSaveLinkWork(deps: {
 		const parseResult = parseHtml({ url, html: crawlResult.html });
 		if (!parseResult.ok) {
 			logParseError({ url, reason: parseResult.reason });
+			// Parse failures are terminal: re-running the worker against the
+			// same HTML will re-fail the same way. Flip the crawl state to
+			// `failed` immediately so readers and the Tier 1+ canary see the
+			// terminal state on the next poll, instead of waiting for SQS
+			// retries → DLQ (~90s+) before the DLQ handler updates it.
+			await markCrawlFailed({ url, reason: parseResult.reason });
 			throw new Error(`crawl failed for ${url}: ${parseResult.reason}`);
 		}
 

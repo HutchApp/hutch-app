@@ -68,7 +68,7 @@ const { updateArticleMetadata } = initUpdateArticleMetadata({
 	tableName: articlesTable,
 });
 
-const { markCrawlReady } = initDynamoDbArticleCrawl({
+const { markCrawlReady, markCrawlFailed } = initDynamoDbArticleCrawl({
 	client,
 	tableName: articlesTable,
 });
@@ -114,6 +114,7 @@ export const handler = initSaveLinkCommandHandler({
 	updateFetchTimestamp,
 	updateArticleMetadata,
 	markCrawlReady,
+	markCrawlFailed,
 	publishLinkSaved,
 	publishEvent,
 	downloadMedia,

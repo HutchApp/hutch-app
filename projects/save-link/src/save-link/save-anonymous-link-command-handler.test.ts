@@ -83,6 +83,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
 		updateArticleMetadata: jest.fn().mockResolvedValue(undefined),
 		markCrawlReady: jest.fn().mockResolvedValue(undefined),
+		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		publishAnonymousLinkSaved: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
 		downloadMedia: noopDownloadMedia,
@@ -260,6 +261,35 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		expect(publishAnonymousLinkSaved).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();
 		expect(markCrawlReady).not.toHaveBeenCalled();
+	});
+
+	it("marks the crawl 'failed' immediately when parsing fails, so readers and the Tier 1+ canary see the terminal state without waiting ~90s for SQS retries → DLQ", async () => {
+		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
+		const failedParse: ParseHtml = () => ({ ok: false, reason: "Readability crashed on this DOM" });
+
+		const handler = createHandler({ parseHtml: failedParse, markCrawlFailed });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad" }), stubContext, () => {}),
+		).rejects.toThrow("crawl failed for https://example.com/bad: Readability crashed on this DOM");
+
+		expect(markCrawlFailed).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			reason: "Readability crashed on this DOM",
+		});
+	});
+
+	it("does NOT mark crawl 'failed' on a crawl-fetch failure — transient fetch issues stay on the SQS retry / DLQ path, which can recover if the origin transiently 5xx'd", async () => {
+		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
+		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
+
+		const handler = createHandler({ crawlArticle: failedCrawl, markCrawlFailed });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {}),
+		).rejects.toThrow();
+
+		expect(markCrawlFailed).not.toHaveBeenCalled();
 	});
 
 	it("skips content save and does not publish events when parsing fails (DLQ owns the failure path)", async () => {
