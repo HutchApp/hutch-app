@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
-import type { Request, Response, Router } from "express";
+import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
 import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_BYTES } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
@@ -214,7 +214,40 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 	});
 
-	router.post("/save-html", express.json({ limit: MAX_RAW_HTML_BYTES }), async (req: Request, res: Response) => {
+	/** Translates body-parser oversize errors into a Siren 500 carrying the save-article action, so the extension can drop the oversized rawHtml and degrade onto the URL-only tier. Also gated on err.limit as defense-in-depth against a future middleware in the chain raising entity.too.large for a different parser. */
+	const saveHtmlLimitHandler: ErrorRequestHandler = (err, req, res, next) => {
+		const bodyErr = err as { type?: string; limit?: number } | null;
+		if (
+			bodyErr?.type === "entity.too.large" &&
+			bodyErr.limit === MAX_RAW_HTML_BYTES &&
+			wantsSiren(req)
+		) {
+			const mb = MAX_RAW_HTML_BYTES / (1024 * 1024);
+			deps.logError(
+				`request body exceeded ${mb}MB`,
+				err instanceof Error ? err : undefined,
+			);
+			res.status(500).type(SIREN_MEDIA_TYPE).json(
+				sirenError({
+					code: "html-too-large",
+					message: `Submitting the HTML of this page has failed due to being too large exceeding ${mb}MB`,
+					actions: [
+						{
+							name: "save-article",
+							href: "/queue",
+							method: "POST",
+							type: "application/json",
+							fields: [{ name: "url", type: "url" }],
+						},
+					],
+				}),
+			);
+			return;
+		}
+		next(err);
+	};
+
+	router.post("/save-html", express.json({ limit: MAX_RAW_HTML_BYTES }), saveHtmlLimitHandler, async (req: Request, res: Response) => {
 		if (!wantsSiren(req)) {
 			res.status(406).send("Not Acceptable");
 			return;
