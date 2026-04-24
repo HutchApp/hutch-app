@@ -1,23 +1,14 @@
 import request from "supertest";
-import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
-import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
 import { initRefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type { PublishRefreshArticleContent } from "../../../providers/events/publish-refresh-article-content.types";
 import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
-import { createTestApp } from "../../../test-app";
+import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
-	createFakeApplyParseResult,
-	createFakePublishLinkSaved,
-	createFakePublishSaveAnonymousLink,
-	createFakeSummaryProvider,
-	createNoopLogError,
-	defaultHttpErrorMessageMapping,
-	initReadabilityParser,
-	stubCrawlArticle,
+	createDefaultTestAppFixture,
 } from "../../../test-app-fakes";
 
-async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: ReturnType<typeof createTestApp>["auth"]) {
+async function loginAgent(app: TestAppResult["app"], auth: TestAppResult["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
 	const agent = request.agent(app);
 	await agent
@@ -29,12 +20,12 @@ async function loginAgent(app: ReturnType<typeof createTestApp>["app"], auth: Re
 
 describe("Queue freshness integration", () => {
 	it("publishes UpdateFetchTimestampCommand on first save, then RefreshArticleContentCommand on re-save", async () => {
-		const articleStore = initInMemoryArticleStore();
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const refreshPublished: Parameters<PublishRefreshArticleContent>[0][] = [];
 		const timestampPublished: Parameters<PublishUpdateFetchTimestamp>[0][] = [];
 
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
-			findArticleFreshness: articleStore.findArticleFreshness,
+			findArticleFreshness: fixture.articleStore.findArticleFreshness,
 			crawlArticle: async (params) => {
 				if (!params.etag && !params.lastModified) {
 					return {
@@ -61,30 +52,15 @@ describe("Queue freshness integration", () => {
 			staleTtlMs: 0,
 		});
 
-		const articleCrawl = initInMemoryArticleCrawl();
-		const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-		const summary = createFakeSummaryProvider();
-		const { app, auth } = createTestApp({
-			articleStore,
-			articleCrawl,
-			parseArticle,
-			crawlArticle: stubCrawlArticle,
-			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-			publishUpdateFetchTimestamp: async (p) => { timestampPublished.push(p); },
-			findGeneratedSummary: summary.findGeneratedSummary,
-			markSummaryPending: summary.markSummaryPending,
-			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-			markCrawlPending: articleCrawl.markCrawlPending,
-			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-			refreshArticleIfStale,
-			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-			exchangeGoogleCode: undefined,
-			logError: createNoopLogError(),
-			adminEmails: [],
-			recrawlServiceToken: "test-service-token-abcdefghij",
-			appOrigin: TEST_APP_ORIGIN,
+		const { app, auth } = createTestAppFromFixture({
+			...fixture,
+			events: {
+				publishLinkSaved: fixture.events.publishLinkSaved,
+				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
+				publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+				publishUpdateFetchTimestamp: async (p) => { timestampPublished.push(p); },
+			},
+			freshness: { refreshArticleIfStale },
 		});
 		const agent = await loginAgent(app, auth);
 

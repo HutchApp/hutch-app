@@ -1,26 +1,14 @@
 import assert from "node:assert";
 import request from "supertest";
 import type { Token, Client } from "@node-oauth/oauth2-server";
-import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
-import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
-import { initInMemoryPendingHtml } from "../../../providers/pending-html/in-memory-pending-html";
 import type { PublishSaveLinkRawHtmlCommand } from "../../../providers/events/publish-save-link-raw-html-command.types";
 import type { UserId } from "../../../domain/user/user.types";
-import { createTestApp } from "../../../test-app";
-import { SIREN_MEDIA_TYPE } from "../../api/siren";
+import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
-	createFakeApplyParseResult,
-	createFakePublishLinkSaved,
-	createFakePublishSaveAnonymousLink,
-	createFakeSummaryProvider,
-	createInMemoryPublishUpdateFetchTimestamp,
-	createNoopLogError,
-	createNoopRefreshArticleIfStale,
-	defaultHttpErrorMessageMapping,
-	initReadabilityParser,
-	stubCrawlArticle,
+	createDefaultTestAppFixture,
 } from "../../../test-app-fakes";
+import { SIREN_MEDIA_TYPE } from "../../api/siren";
 
 const TEST_USER_ID = "test-user-123" as UserId;
 
@@ -39,7 +27,7 @@ function createTestToken(): Token {
 	};
 }
 
-async function createAccessToken(testApp: ReturnType<typeof createTestApp>): Promise<string> {
+async function createAccessToken(testApp: TestAppResult): Promise<string> {
 	const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
 	assert(client, "Test client must exist");
 	const testToken = createTestToken();
@@ -50,46 +38,27 @@ async function createAccessToken(testApp: ReturnType<typeof createTestApp>): Pro
 
 describe("POST /queue/save-html", () => {
 	function setup() {
-		const articleStore = initInMemoryArticleStore();
-		const articleCrawl = initInMemoryArticleCrawl();
-		const pendingHtml = initInMemoryPendingHtml();
-		const summary = createFakeSummaryProvider();
-		const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const publishedSaveHtml: Parameters<PublishSaveLinkRawHtmlCommand>[0][] = [];
 		const publishedLinkSaved: { url: string; userId: string }[] = [];
-		const fakePublishLinkSaved = createFakePublishLinkSaved(applyParseResult);
+		const fakePublishLinkSaved = fixture.events.publishLinkSaved;
 		const publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand = async (params) => {
 			publishedSaveHtml.push(params);
 		};
 
-		const testApp = createTestApp({
-			articleStore,
-			articleCrawl,
-			parseArticle,
-			crawlArticle: stubCrawlArticle,
-			publishLinkSaved: async (params) => {
-				publishedLinkSaved.push(params);
-				await fakePublishLinkSaved(params);
+		const testApp = createTestAppFromFixture({
+			...fixture,
+			events: {
+				publishLinkSaved: async (params) => {
+					publishedLinkSaved.push(params);
+					await fakePublishLinkSaved(params);
+				},
+				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
+				publishSaveLinkRawHtmlCommand: publishSaveLinkRawHtmlCommand,
+				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 			},
-			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-			publishSaveLinkRawHtmlCommand,
-			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-			putPendingHtml: pendingHtml.putPendingHtml,
-			findGeneratedSummary: summary.findGeneratedSummary,
-			markSummaryPending: summary.markSummaryPending,
-			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-			markCrawlPending: articleCrawl.markCrawlPending,
-			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-			exchangeGoogleCode: undefined,
-			logError: createNoopLogError(),
-			appOrigin: TEST_APP_ORIGIN,
-			adminEmails: [],
-			recrawlServiceToken: "test-service-token-abcdefghij",
 		});
-		return { testApp, pendingHtml, publishedSaveHtml, publishedLinkSaved };
+		return { testApp, pendingHtml: testApp.pendingHtml, publishedSaveHtml, publishedLinkSaved };
 	}
 
 	it("returns 201 with a Siren article entity", async () => {
@@ -155,36 +124,23 @@ describe("POST /queue/save-html", () => {
 	});
 
 	it("returns 500 when the underlying article save throws", async () => {
-		const articleStore = initInMemoryArticleStore();
-		const articleCrawl = initInMemoryArticleCrawl();
-		const pendingHtml = initInMemoryPendingHtml();
-		const summary = createFakeSummaryProvider();
-		const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const errors: Error[] = [];
 
-		const testApp = createTestApp({
-			articleStore,
-			articleCrawl,
-			parseArticle,
-			crawlArticle: stubCrawlArticle,
-			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-			publishSaveLinkRawHtmlCommand: async () => {},
-			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-			putPendingHtml: pendingHtml.putPendingHtml,
-			findGeneratedSummary: summary.findGeneratedSummary,
-			markSummaryPending: summary.markSummaryPending,
-			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-			markCrawlPending: articleCrawl.markCrawlPending,
-			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-			refreshArticleIfStale: async () => { throw new Error("boom"); },
-			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-			exchangeGoogleCode: undefined,
-			logError: (_msg, err) => { if (err) errors.push(err); },
-			appOrigin: TEST_APP_ORIGIN,
-			adminEmails: [],
-			recrawlServiceToken: "test-service-token-abcdefghij",
+		const testApp = createTestAppFromFixture({
+			...fixture,
+			events: {
+				publishLinkSaved: fixture.events.publishLinkSaved,
+				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
+				publishSaveLinkRawHtmlCommand: async () => {},
+				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+			},
+			freshness: { refreshArticleIfStale: async () => { throw new Error("boom"); } },
+			shared: {
+				appOrigin: fixture.shared.appOrigin,
+				httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
+				logError: (_msg, err) => { if (err) errors.push(err); },
+			},
 		});
 		const accessToken = await createAccessToken(testApp);
 
@@ -254,35 +210,15 @@ describe("POST /queue/save-html", () => {
 
 describe("Collection-Siren advertises both save actions", () => {
 	it("includes both save-article and save-html actions on the queue collection", async () => {
-		const articleStore = initInMemoryArticleStore();
-		const articleCrawl = initInMemoryArticleCrawl();
-		const pendingHtml = initInMemoryPendingHtml();
-		const summary = createFakeSummaryProvider();
-		const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-
-		const testApp = createTestApp({
-			articleStore,
-			articleCrawl,
-			parseArticle,
-			crawlArticle: stubCrawlArticle,
-			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-			publishSaveLinkRawHtmlCommand: async () => {},
-			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-			putPendingHtml: pendingHtml.putPendingHtml,
-			findGeneratedSummary: summary.findGeneratedSummary,
-			markSummaryPending: summary.markSummaryPending,
-			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-			markCrawlPending: articleCrawl.markCrawlPending,
-			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-			exchangeGoogleCode: undefined,
-			logError: createNoopLogError(),
-			appOrigin: TEST_APP_ORIGIN,
-			adminEmails: [],
-			recrawlServiceToken: "test-service-token-abcdefghij",
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+		const testApp = createTestAppFromFixture({
+			...fixture,
+			events: {
+				publishLinkSaved: fixture.events.publishLinkSaved,
+				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
+				publishSaveLinkRawHtmlCommand: async () => {},
+				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+			},
 		});
 		const accessToken = await createAccessToken(testApp);
 

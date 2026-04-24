@@ -49,6 +49,7 @@ import type {
 	DeleteArticle,
 	FindArticleById,
 	FindArticleByUrl,
+	FindArticleFreshness,
 	FindArticlesByUser,
 	SaveArticle,
 	SaveArticleGlobally,
@@ -99,6 +100,7 @@ export interface AuthBundle {
 export interface ArticleStoreBundle {
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
+	findArticleFreshness: FindArticleFreshness;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;
 	saveArticleGlobally: SaveArticleGlobally;
@@ -136,6 +138,7 @@ export interface EventsBundle {
 
 export interface PendingHtmlBundle {
 	putPendingHtml: PutPendingHtml;
+	readPendingHtml: (url: string) => string | undefined;
 }
 
 export interface SummaryBundle {
@@ -207,6 +210,7 @@ export interface TestAppResult {
 	auth: AuthBundle;
 	articleStore: ArticleStoreBundle;
 	articleCrawl: ArticleCrawlBundle;
+	pendingHtml: PendingHtmlBundle;
 	oauthModel: OAuthModel;
 	email: EmailBundle;
 	emailVerification: EmailVerificationBundle;
@@ -273,6 +277,7 @@ export function createTestAppFromFixture(fixture: TestAppFixture): TestAppResult
 		auth: fixture.auth,
 		articleStore: fixture.articleStore,
 		articleCrawl: fixture.articleCrawl,
+		pendingHtml: fixture.pendingHtml,
 		oauthModel: fixture.oauth.oauthModel,
 		email: fixture.email,
 		emailVerification: fixture.emailVerification,

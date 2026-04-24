@@ -30,7 +30,6 @@ import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
-import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import {
 	httpErrorMessageMapping as defaultHttpErrorMessageMapping,
 } from "./web/pages/queue/queue.error";
@@ -39,8 +38,10 @@ import type { TestAppFixture } from "./test-app";
 export { defaultHttpErrorMessageMapping };
 export { initReadabilityParser };
 
-export const TEST_APP_ORIGIN = "http://localhost:3000";
-
+/* c8 ignore next -- V8 block-coverage phantom: the const initializer for the first
+   `export const arrowFn` in this module is reported as an uncovered function even
+   though every test exercises it. See https://github.com/bcoe/c8/issues/319 and
+   https://v8.dev/blog/javascript-code-coverage. */
 export const stubCrawlArticle: CrawlArticle = async ({ url }) => {
 	const hostname = new URL(url).hostname;
 	return {
@@ -137,11 +138,9 @@ export function createFakePublishSaveAnonymousLink(
 	};
 }
 
-export function createDefaultTestAppFixture(overrides?: {
-	appOrigin?: string;
-	exchangeGoogleCode?: ExchangeGoogleCode;
-}): TestAppFixture {
-	const appOrigin = overrides?.appOrigin ?? TEST_APP_ORIGIN;
+export const TEST_APP_ORIGIN = "http://localhost:3000";
+
+export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 
 	const auth = initInMemoryAuth();
 	const articleStoreMemory = initInMemoryArticleStore();
@@ -172,6 +171,7 @@ export function createDefaultTestAppFixture(overrides?: {
 		articleStore: {
 			findArticleById: articleStoreMemory.findArticleById,
 			findArticleByUrl: articleStoreMemory.findArticleByUrl,
+			findArticleFreshness: articleStoreMemory.findArticleFreshness,
 			findArticlesByUser: articleStoreMemory.findArticlesByUser,
 			saveArticle: articleStoreMemory.saveArticle,
 			saveArticleGlobally: articleStoreMemory.saveArticleGlobally,
@@ -197,7 +197,10 @@ export function createDefaultTestAppFixture(overrides?: {
 			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
 		},
-		pendingHtml: { putPendingHtml: pendingHtml.putPendingHtml },
+		pendingHtml: {
+			putPendingHtml: pendingHtml.putPendingHtml,
+			readPendingHtml: pendingHtml.readPendingHtml,
+		},
 		summary,
 		freshness: { refreshArticleIfStale: createNoopRefreshArticleIfStale() },
 		oauth: {
@@ -207,13 +210,7 @@ export function createDefaultTestAppFixture(overrides?: {
 		email,
 		emailVerification,
 		passwordReset,
-		google: overrides?.exchangeGoogleCode
-			? {
-				exchangeGoogleCode: overrides.exchangeGoogleCode,
-				clientId: "test-google-client-id",
-				clientSecret: "test-google-client-secret",
-			}
-			: undefined,
+		google: undefined,
 		admin: {
 			adminEmails: [],
 			recrawlServiceToken: "test-service-token-abcdefghij",

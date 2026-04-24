@@ -1,54 +1,17 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "../../test-app";
+import { createTestAppFromFixture } from "../../test-app";
 
-import { initInMemoryArticleCrawl } from "../../providers/article-crawl/in-memory-article-crawl";
-import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
 import {
 	TEST_APP_ORIGIN,
-	createFakeApplyParseResult,
-	createFakePublishLinkSaved,
-	createFakePublishSaveAnonymousLink,
-	createFakeSummaryProvider,
-	createInMemoryPublishUpdateFetchTimestamp,
-	createNoopLogError,
-	createNoopRefreshArticleIfStale,
-	defaultHttpErrorMessageMapping,
-	initReadabilityParser,
-	stubCrawlArticle,
+	createDefaultTestAppFixture,
 } from "../../test-app-fakes";
 
 describe("Auth routes", () => {
 	describe("GET /login", () => {
 		it("should render the login form", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/login");
 
 			expect(response.status).toBe(200);
@@ -59,33 +22,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should redirect authenticated user to /queue", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const agent = request.agent(app);
@@ -98,33 +35,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should include return URL in form action when provided", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
 
 			expect(response.status).toBe(200);
@@ -134,33 +45,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should pass return URL to signup link", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
 
 			expect(response.status).toBe(200);
@@ -172,33 +57,7 @@ describe("Auth routes", () => {
 
 	describe("POST /login", () => {
 		it("should redirect to /queue on valid credentials", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const agent = request.agent(app);
@@ -213,33 +72,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should show error on invalid credentials", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/login")
@@ -254,33 +87,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should redirect to return URL after successful login", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const response = await request(app)
@@ -293,33 +100,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should ignore protocol-relative return URLs", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const response = await request(app)
@@ -332,33 +113,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should ignore non-relative return URLs", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const response = await request(app)
@@ -371,33 +126,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should show validation error for empty email", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/login")
@@ -410,33 +139,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should preserve return URL in form action after invalid credentials", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
@@ -450,33 +153,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should preserve return URL in form action after validation error", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
@@ -492,33 +169,7 @@ describe("Auth routes", () => {
 
 	describe("GET /signup", () => {
 		it("should render the signup form", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/signup");
 
 			expect(response.status).toBe(200);
@@ -528,33 +179,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should redirect authenticated user to /queue", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const agent = request.agent(app);
@@ -567,33 +192,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should include return URL in form action when provided", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
 
 			expect(response.status).toBe(200);
@@ -603,33 +202,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should pass return URL to login link", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
 
 			expect(response.status).toBe(200);
@@ -641,33 +214,7 @@ describe("Auth routes", () => {
 
 	describe("POST /signup", () => {
 		it("should create user and redirect to /queue", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).post("/signup").type("form").send({
 				email: "new@example.com",
@@ -681,33 +228,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should redirect to return URL after successful signup", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
@@ -723,33 +244,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should ignore protocol-relative return URLs on signup", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/signup?return=%2F%2Fevil.com")
@@ -765,33 +260,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should ignore non-relative return URLs on signup", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/signup?return=https%3A%2F%2Fevil.com")
@@ -807,33 +276,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should show error for duplicate email", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
 
 			const response = await request(app).post("/signup").type("form").send({
@@ -850,33 +293,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should show error for mismatched passwords", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).post("/signup").type("form").send({
 				email: "new@example.com",
@@ -892,33 +309,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should preserve return URL in form action after mismatched passwords", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
@@ -936,33 +327,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should preserve return URL in form action after duplicate email", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
 
 			const response = await request(app)
@@ -981,33 +346,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should show error for short password", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).post("/signup").type("form").send({
 				email: "new@example.com",
@@ -1023,33 +362,7 @@ describe("Auth routes", () => {
 
 	describe("GET /verify-email", () => {
 		it("should show error when no token is provided", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/verify-email");
 
 			expect(response.status).toBe(400);
@@ -1060,33 +373,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should show error for invalid token", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/verify-email?token=invalid-token");
 
 			expect(response.status).toBe(400);
@@ -1097,33 +384,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should verify email with valid token", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth, emailVerification } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth, emailVerification } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const createResult = await auth.createUser({ email: "verify@example.com", password: "password123" });
 			expect(createResult.ok).toBe(true);
 			if (!createResult.ok) return;
@@ -1139,33 +400,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should mark session email verified when user is logged in during verification", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth, emailVerification } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth, emailVerification } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const createResult = await auth.createUser({ email: "session@example.com", password: "password123" });
 			expect(createResult.ok).toBe(true);
 			if (!createResult.ok) return;
@@ -1186,33 +421,7 @@ describe("Auth routes", () => {
 
 	describe("POST /logout", () => {
 		it("should clear session and redirect to /", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const agent = request.agent(app);
@@ -1228,33 +437,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should handle logout when no session cookie exists", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).post("/logout");
 
@@ -1274,33 +457,7 @@ describe("Auth routes", () => {
 		}
 
 		it("should render Sign in with Google on /login with the Google logo", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/login");
 
 			const link = getGoogleButton(response.text);
@@ -1317,33 +474,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should pass return URL through to the Google sign-in link on /login", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/login?return=%2Fsave%3Furl%3Dhttps%253A%252F%252Fexample.com");
 
 			const link = getGoogleButton(response.text);
@@ -1351,33 +482,7 @@ describe("Auth routes", () => {
 		});
 
 		it("should render Sign up with Google on /signup with the Google logo", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/signup");
 
 			const link = getGoogleButton(response.text);
@@ -1388,33 +493,7 @@ describe("Auth routes", () => {
 	});
 
 	describe("Founding members progress", () => {
-		const articleStore = initInMemoryArticleStore();
-		const articleCrawl = initInMemoryArticleCrawl();
-		const crawlArticle = stubCrawlArticle;
-		const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-		const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-		const summary = createFakeSummaryProvider();
-		const { app } = createTestApp({
-			articleStore,
-			articleCrawl,
-			parseArticle,
-			crawlArticle,
-			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-			findGeneratedSummary: summary.findGeneratedSummary,
-			markSummaryPending: summary.markSummaryPending,
-			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-			markCrawlPending: articleCrawl.markCrawlPending,
-			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-			exchangeGoogleCode: undefined,
-			logError: createNoopLogError(),
-			adminEmails: [],
-			recrawlServiceToken: "test-service-token-abcdefghij",
-			appOrigin: TEST_APP_ORIGIN,
-		});
+		const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		it("should render the progress bar on GET /login with zero users", async () => {
 			const response = await request(app).get("/login");
@@ -1484,33 +563,7 @@ describe("Auth routes", () => {
 
 	describe("Founding members progress — exhausted allocation", () => {
 		it("should render the exhausted message on both /login and /signup when over the limit", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			for (let i = 0; i < 101; i++) {
 				await auth.createUser({ email: `user${i}@test.com`, password: "password123" });
 			}

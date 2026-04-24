@@ -1,54 +1,17 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp } from "../../test-app";
+import { createTestAppFromFixture } from "../../test-app";
 
-import { initInMemoryArticleCrawl } from "../../providers/article-crawl/in-memory-article-crawl";
-import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
 import {
 	TEST_APP_ORIGIN,
-	createFakeApplyParseResult,
-	createFakePublishLinkSaved,
-	createFakePublishSaveAnonymousLink,
-	createFakeSummaryProvider,
-	createInMemoryPublishUpdateFetchTimestamp,
-	createNoopLogError,
-	createNoopRefreshArticleIfStale,
-	defaultHttpErrorMessageMapping,
-	initReadabilityParser,
-	stubCrawlArticle,
+	createDefaultTestAppFixture,
 } from "../../test-app-fakes";
 
 describe("Forgot password", () => {
 	describe("GET /forgot-password", () => {
 		it("should render the forgot password form", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/forgot-password");
 
 			expect(response.status).toBe(200);
@@ -60,33 +23,7 @@ describe("Forgot password", () => {
 
 	describe("POST /forgot-password", () => {
 		it("should show confirmation page for existing user", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "user@example.com", password: "password123" });
 
 			const response = await request(app)
@@ -100,33 +37,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should show same confirmation page for non-existing user", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/forgot-password")
@@ -139,33 +50,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should send a password reset email for existing user", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth, email } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "user@example.com", password: "password123" });
 
 			await request(app)
@@ -182,33 +67,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should not send email for non-existing user", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, email } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			await request(app)
 				.post("/forgot-password")
@@ -219,33 +78,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should show validation error for invalid email", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/forgot-password")
@@ -260,33 +93,7 @@ describe("Forgot password", () => {
 
 	describe("GET /reset-password", () => {
 		it("should render the reset password form with a valid token", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/reset-password?token=sometoken");
 
@@ -296,33 +103,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should show error when no token is provided", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/reset-password");
 
@@ -334,33 +115,7 @@ describe("Forgot password", () => {
 
 	describe("POST /reset-password", () => {
 		it("should reset password with a valid token", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth, email } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "user@example.com", password: "oldpassword1" });
 
 			await request(app)
@@ -390,33 +145,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should reject an invalid token", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/reset-password?token=invalidtoken")
@@ -429,33 +158,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should reject a token that has already been used", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth, email } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "user@example.com", password: "oldpassword1" });
 
 			await request(app)
@@ -484,33 +187,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should show error when no token is provided", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/reset-password")
@@ -523,33 +200,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should show validation error for mismatched passwords", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/reset-password?token=sometoken")
@@ -562,33 +213,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should show validation error for short password", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.post("/reset-password?token=sometoken")
@@ -601,33 +226,7 @@ describe("Forgot password", () => {
 		});
 
 		it("should not allow login with old password after reset", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth, email } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "user@example.com", password: "oldpassword1" });
 
 			await request(app)
@@ -655,33 +254,7 @@ describe("Forgot password", () => {
 
 	describe("Login page", () => {
 		it("should have a forgot password link", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/login");
 
 			expect(response.status).toBe(200);

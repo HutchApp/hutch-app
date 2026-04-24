@@ -9,22 +9,13 @@ import type {
 } from "../../../providers/article-parser/article-parser.types";
 import type { FindArticleCrawlStatus } from "../../../providers/article-crawl/article-crawl.types";
 import type { FindGeneratedSummary } from "../../../providers/article-summary/article-summary.types";
-import { createTestApp } from "../../../test-app";
-
-import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
-import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
+import { createTestAppFromFixture } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
+	createDefaultTestAppFixture,
 	createFakeApplyParseResult,
 	createFakePublishLinkSaved,
 	createFakePublishSaveAnonymousLink,
-	createFakeSummaryProvider,
-	createInMemoryPublishUpdateFetchTimestamp,
-	createNoopLogError,
-	createNoopRefreshArticleIfStale,
-	defaultHttpErrorMessageMapping,
-	initReadabilityParser,
-	stubCrawlArticle,
 } from "../../../test-app-fakes";
 
 const ARTICLE_URL = "https://example.com/post";
@@ -60,31 +51,24 @@ describe("View routes", () => {
 	describe("GET /view/<encoded-url>", () => {
 		it("renders the article body for an anonymous visitor (200)", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -101,31 +85,24 @@ describe("View routes", () => {
 
 		it("renders the article when the path arrives with decoded slashes (API Gateway shape)", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ARTICLE_URL}`);
@@ -139,31 +116,24 @@ describe("View routes", () => {
 
 		it("renders the article when the scheme's second slash has been collapsed", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(
@@ -179,31 +149,24 @@ describe("View routes", () => {
 
 		it("renders a Save action pointing to /save with the article URL in the href", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -220,31 +183,24 @@ describe("View routes", () => {
 
 		it("includes utm_* query params in the Save action href", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(
@@ -263,31 +219,24 @@ describe("View routes", () => {
 
 		it("renders the Save action for an authenticated viewer when the URL is not in the store", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app, auth } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 			await auth.createUser({
 				email: "reader@example.com",
@@ -309,31 +258,24 @@ describe("View routes", () => {
 
 		it("renders the Save action for an authenticated viewer even when the URL is already in their queue", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app, auth } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 			await auth.createUser({
 				email: "reader@example.com",
@@ -356,31 +298,24 @@ describe("View routes", () => {
 
 		it("renders the Save action for an anonymous viewer even when another user has saved the URL", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app, auth } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 			await auth.createUser({
 				email: "owner@example.com",
@@ -406,31 +341,24 @@ describe("View routes", () => {
 
 		it("renders a 'Paste another link' action pointing to /view", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -448,31 +376,24 @@ describe("View routes", () => {
 	describe("Share balloon", () => {
 		it("renders a share button with the canonical view URL and article title", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -492,31 +413,24 @@ describe("View routes", () => {
 
 		it("renders a dismiss button with an accessible label", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -529,31 +443,24 @@ describe("View routes", () => {
 
 		it("boots the share balloon client via the external script bundle", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -568,31 +475,24 @@ describe("View routes", () => {
 
 		it("renders an aria-live status region for share feedback", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -606,31 +506,24 @@ describe("View routes", () => {
 
 		it("renders the 'Link copied!' feedback label", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -644,31 +537,24 @@ describe("View routes", () => {
 		it("escapes special characters in the share title attribute", async () => {
 			const parseArticle: ParseArticle = async () =>
 				buildParseResult({ title: `Ampersand & "Quotes"` });
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -680,33 +566,7 @@ describe("View routes", () => {
 		});
 
 		it("is not rendered on the /view landing page", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view");
 
@@ -716,31 +576,24 @@ describe("View routes", () => {
 
 		it("includes the founder avatar inside the balloon", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -753,31 +606,24 @@ describe("View routes", () => {
 
 		it("renders the founder greeting and share hint inside the balloon", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -798,31 +644,28 @@ describe("View routes", () => {
 				status: "ready",
 				summary: "Key points from the article.",
 			});
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -843,31 +686,28 @@ describe("View routes", () => {
 		it("shows a loading indicator with a poll attribute when status=pending", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -888,31 +728,28 @@ describe("View routes", () => {
 				status: "failed",
 				reason: "deepseek timeout",
 			});
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -930,31 +767,28 @@ describe("View routes", () => {
 		it("marks the summary slot hidden when status=skipped", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "skipped" });
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -971,31 +805,28 @@ describe("View routes", () => {
 		it("hides the summary slot when the crawl has failed (reader-failed card already signals the problem)", async () => {
 			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -1017,32 +848,13 @@ describe("View routes", () => {
 				status: "ready",
 				summary: "Fragment summary.",
 			});
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(
@@ -1059,32 +871,13 @@ describe("View routes", () => {
 
 		it("increments the poll counter when status=pending under the cap", async () => {
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(
@@ -1100,32 +893,13 @@ describe("View routes", () => {
 
 		it("stops polling at the cap and renders a terminal message", async () => {
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(
@@ -1143,33 +917,7 @@ describe("View routes", () => {
 		});
 
 		it("returns 400 for an invalid url", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view/summary?url=not-a-url");
 
@@ -1182,32 +930,20 @@ describe("View routes", () => {
 				reason: "blocked",
 			});
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				articleCrawl:{
+ 	findArticleCrawlStatus: findArticleCrawlStatus,
+ 	markCrawlPending: fixture.articleCrawl.markCrawlPending,
+ 	forceMarkCrawlPending: fixture.articleCrawl.forceMarkCrawlPending,
+ 	markCrawlReady: fixture.articleCrawl.markCrawlReady,
+ 	markCrawlFailed: fixture.articleCrawl.markCrawlFailed,
+ },
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 
 			const response = await request(app).get(
@@ -1226,31 +962,24 @@ describe("View routes", () => {
 	describe("OG metadata", () => {
 		it("emits article title, excerpt, image, type and canonical as the publisher URL", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -1286,31 +1015,24 @@ describe("View routes", () => {
 					content: "<p>Body</p>",
 				},
 			});
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -1328,31 +1050,24 @@ describe("View routes", () => {
 
 		it("emits JSON-LD Article with isBasedOn attributed to the source URL", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -1367,31 +1082,24 @@ describe("View routes", () => {
 
 		it("emits robots: index, follow", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -1405,33 +1113,7 @@ describe("View routes", () => {
 
 	describe("Error paths", () => {
 		it("renders the error page for an invalid URL path param (unauthenticated)", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get(
 				`/view/${encodeURIComponent("not-a-url")}`,
@@ -1445,33 +1127,7 @@ describe("View routes", () => {
 		});
 
 		it("renders the error page redirecting to /queue when authenticated", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({
 				email: "test@example.com",
 				password: "password123",
@@ -1496,33 +1152,7 @@ describe("View routes", () => {
 		});
 
 		it("renders the landing form for GET /view without a path param", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view");
 
@@ -1541,33 +1171,7 @@ describe("View routes", () => {
 		});
 
 		it("redirects GET /view?url=<valid> to /view/<encoded-url>", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get(
 				`/view?url=${encodeURIComponent(ARTICLE_URL)}`,
@@ -1578,33 +1182,7 @@ describe("View routes", () => {
 		});
 
 		it("renders the save-error page when GET /view?url=<invalid>", async () => {
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
-				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
-			});
+			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view?url=not-a-url");
 
@@ -1619,31 +1197,24 @@ describe("View routes", () => {
 				ok: false,
 				reason: "blocked",
 			});
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -1663,32 +1234,25 @@ describe("View routes", () => {
 			const parseSpy = jest.fn(
 				async (_url: string): Promise<ParseArticleResult> => buildParseResult(),
 			);
-			const _articleStore = initInMemoryArticleStore();
-			const _articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
 			const parseArticle = parseSpy;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: _articleStore, articleCrawl: _articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, articleStore, articleCrawl } = createTestApp({
-				articleStore: _articleStore,
-				articleCrawl: _articleCrawl,
-				parseArticle: parseSpy,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: _articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: _articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: _articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
+				parseArticle,
+			});
+			const { app, articleStore, articleCrawl } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
@@ -1728,32 +1292,25 @@ describe("View routes", () => {
 					reason: "blocked",
 				}),
 			);
-			const _articleStore = initInMemoryArticleStore();
-			const _articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
 			const parseArticle = parseSpy;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: _articleStore, articleCrawl: _articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, articleStore, articleCrawl } = createTestApp({
-				articleStore: _articleStore,
-				articleCrawl: _articleCrawl,
-				parseArticle: parseSpy,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: _articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: _articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: _articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
+				parseArticle,
+			});
+			const { app, articleStore, articleCrawl } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
@@ -1787,31 +1344,24 @@ describe("View routes", () => {
 		it("calls saveArticleGlobally and publishSaveAnonymousLink on a fresh-parse cache miss", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const publishSaveAnonymousLink = jest.fn(async () => {});
-			const _articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: _articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, articleStore } = createTestApp({
-				articleStore: _articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink,
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app, articleStore } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: publishSaveAnonymousLink,
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			const response = await request(app).get(`/view/${ENCODED}`);
@@ -1830,31 +1380,24 @@ describe("View routes", () => {
 		it("dispatches SaveAnonymousLinkCommand for an authenticated visitor (no user association, viewing only)", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const publishSaveAnonymousLink = jest.fn(async () => {});
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, auth } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink,
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app, auth } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: publishSaveAnonymousLink,
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 			const agent = request.agent(app);
@@ -1877,31 +1420,28 @@ describe("View routes", () => {
 				status: "ready",
 				summary: "Cached summary.",
 			});
-			const _articleStore = initInMemoryArticleStore();
-			const _articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: _articleStore, articleCrawl: _articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, articleStore, articleCrawl } = createTestApp({
-				articleStore: _articleStore,
-				articleCrawl: _articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink,
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: _articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: _articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: _articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app, articleStore, articleCrawl } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: publishSaveAnonymousLink,
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				summary:{
+ 	findGeneratedSummary: findGeneratedSummary,
+ 	markSummaryPending: fixture.summary.markSummaryPending,
+ },
 			});
 			await articleStore.saveArticleGlobally({
 				url: ARTICLE_URL,
@@ -1929,31 +1469,24 @@ describe("View routes", () => {
 			// populates the state-machine rows.
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const publishSaveAnonymousLink = jest.fn(async () => {});
-			const _articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: _articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app, articleStore } = createTestApp({
-				articleStore: _articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink,
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app, articleStore } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: publishSaveAnonymousLink,
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 			await articleStore.saveArticleGlobally({
 				url: ARTICLE_URL,
@@ -1974,31 +1507,24 @@ describe("View routes", () => {
 		it("primes the async crawl pipeline regardless of eventual parse outcome (worker owns failure handling)", async () => {
 			const parseArticle: ParseArticle = async () => ({ ok: false, reason: "blocked" });
 			const publishSaveAnonymousLink = jest.fn(async () => {});
-			const articleStore = initInMemoryArticleStore();
-			const articleCrawl = initInMemoryArticleCrawl();
-			const crawlArticle = stubCrawlArticle;
-			const applyParseResult = createFakeApplyParseResult({ articleStore: articleStore, articleCrawl: articleCrawl, parseArticle });
-			const summary = createFakeSummaryProvider();
-			const { app } = createTestApp({
-				articleStore,
-				articleCrawl,
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
 				parseArticle,
-				crawlArticle,
-				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-				publishSaveAnonymousLink,
-				publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-				findGeneratedSummary: summary.findGeneratedSummary,
-				markSummaryPending: summary.markSummaryPending,
-				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-				markCrawlPending: articleCrawl.markCrawlPending,
-				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-				exchangeGoogleCode: undefined,
-				logError: createNoopLogError(),
-				adminEmails: [],
-				recrawlServiceToken: "test-service-token-abcdefghij",
-				appOrigin: TEST_APP_ORIGIN,
+			});
+			const { app } = createTestAppFromFixture({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: publishSaveAnonymousLink,
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
 			});
 
 			await request(app).get(`/view/${ENCODED}`);

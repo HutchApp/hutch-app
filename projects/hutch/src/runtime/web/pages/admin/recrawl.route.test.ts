@@ -2,19 +2,10 @@ import { JSDOM } from "jsdom";
 import request from "supertest";
 import { MinutesSchema } from "../../../domain/article/article.schema";
 import type { ParseArticle, ParseArticleResult } from "../../../providers/article-parser/article-parser.types";
-import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
-import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
-import { createTestApp } from "../../../test-app";
+import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
-	createFakeApplyParseResult,
-	createFakePublishLinkSaved,
-	createFakeSummaryProvider,
-	createInMemoryPublishUpdateFetchTimestamp,
-	createNoopLogError,
-	createNoopRefreshArticleIfStale,
-	defaultHttpErrorMessageMapping,
-	stubCrawlArticle,
+	createDefaultTestAppFixture,
 } from "../../../test-app-fakes";
 
 const ADMIN_EMAIL = "ops@readplace.com";
@@ -39,19 +30,16 @@ function buildParseResult(): ParseArticleResult {
 }
 
 interface RecrawlHarness {
-	app: ReturnType<typeof createTestApp>["app"];
-	auth: ReturnType<typeof createTestApp>["auth"];
-	articleStore: ReturnType<typeof initInMemoryArticleStore>;
-	articleCrawl: ReturnType<typeof initInMemoryArticleCrawl>;
+	app: TestAppResult["app"];
+	auth: TestAppResult["auth"];
+	articleStore: TestAppResult["articleStore"];
+	articleCrawl: TestAppResult["articleCrawl"];
 	anonymousPublishedCalls: { url: string }[];
 }
 
 function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarness {
 	const parseArticle: ParseArticle = async () => buildParseResult();
-	const articleStore = initInMemoryArticleStore();
-	const articleCrawl = initInMemoryArticleCrawl();
-	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-	const summary = createFakeSummaryProvider();
+	const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 
 	// The admin route is supposed to force `crawlStatus = pending` and then
 	// publish. We want to assert the page renders in pending state, so the
@@ -63,26 +51,22 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
 		anonymousPublishedCalls.push(params);
 	};
 
-	const { app, auth } = createTestApp({
-		articleStore,
-		articleCrawl,
-		parseArticle,
-		crawlArticle: stubCrawlArticle,
-		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-		publishSaveAnonymousLink,
-		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-		findGeneratedSummary: summary.findGeneratedSummary,
-		markSummaryPending: summary.markSummaryPending,
-		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-		markCrawlPending: articleCrawl.markCrawlPending,
-		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-		exchangeGoogleCode: undefined,
-		logError: createNoopLogError(),
-		adminEmails: options.adminEmails,
-		recrawlServiceToken: "test-service-token-abcdefghij",
-		appOrigin: TEST_APP_ORIGIN,
+	const { app, auth, articleStore, articleCrawl } = createTestAppFromFixture({
+		...fixture,
+		parser:{
+ 	parseArticle: parseArticle,
+ 	crawlArticle: fixture.parser.crawlArticle,
+ },
+		events: {
+			publishLinkSaved: fixture.events.publishLinkSaved,
+			publishSaveAnonymousLink: publishSaveAnonymousLink,
+			publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+			publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+		},
+		admin:{
+ 	adminEmails: options.adminEmails,
+ 	recrawlServiceToken: fixture.admin.recrawlServiceToken,
+ },
 	});
 
 	return { app, auth, articleStore, articleCrawl, anonymousPublishedCalls };

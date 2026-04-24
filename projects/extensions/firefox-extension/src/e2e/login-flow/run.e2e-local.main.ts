@@ -33,49 +33,11 @@ const TEST_LINK_URL = "https://example.com/test-article";
 const TEST_LINK_TITLE = "Test Article";
 
 async function startTestServer(): Promise<http.Server> {
-	const { createTestApp } = await import("hutch/test-app");
-	const { initInMemoryArticleCrawl } = await import("hutch/in-memory-article-crawl");
-	const { initInMemoryArticleStore } = await import("hutch/in-memory-article-store");
-	const {
-		createFakeApplyParseResult,
-		createFakePublishLinkSaved,
-		createFakePublishSaveAnonymousLink,
-		createFakeSummaryProvider,
-		createInMemoryPublishUpdateFetchTimestamp,
-		createNoopLogError,
-		createNoopRefreshArticleIfStale,
-		defaultHttpErrorMessageMapping,
-		initReadabilityParser,
-		stubCrawlArticle,
-	} = await import("hutch/test-app-fakes");
+	const { createTestAppFromFixture } = await import("hutch/test-app");
+	const { createDefaultTestAppFixture } = await import("hutch/test-app-fakes");
 
 	const origin = `http://127.0.0.1:${TEST_PORT}`;
-	const articleStore = initInMemoryArticleStore();
-	const articleCrawl = initInMemoryArticleCrawl();
-	const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
-	const summary = createFakeSummaryProvider();
-	const { app, auth } = createTestApp({
-		articleStore,
-		articleCrawl,
-		parseArticle,
-		crawlArticle: stubCrawlArticle,
-		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-		publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
-		findGeneratedSummary: summary.findGeneratedSummary,
-		markSummaryPending: summary.markSummaryPending,
-		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-		markCrawlPending: articleCrawl.markCrawlPending,
-		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
-		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-		exchangeGoogleCode: undefined,
-		logError: createNoopLogError(),
-		adminEmails: [],
-		recrawlServiceToken: "test-service-token-abcdefghij",
-		appOrigin: origin,
-	});
+	const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(origin));
 	await auth.createUser({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
 	return new Promise((resolve) => {

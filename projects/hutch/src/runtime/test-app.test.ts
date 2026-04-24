@@ -1,11 +1,14 @@
 import request from "supertest";
 import { GoogleIdSchema } from "./providers/google-auth/google-auth.schema";
 import { createTestAppFromFixture } from "./test-app";
-import { createDefaultTestAppFixture } from "./test-app-fakes";
+import {
+	TEST_APP_ORIGIN,
+	createDefaultTestAppFixture,
+} from "./test-app-fakes";
 
 describe("createTestAppFromFixture + createDefaultTestAppFixture", () => {
 	it("produces a working app with default in-memory dependencies", async () => {
-		const { app } = createTestAppFromFixture(createDefaultTestAppFixture());
+		const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(app).get("/");
 
@@ -14,7 +17,7 @@ describe("createTestAppFromFixture + createDefaultTestAppFixture", () => {
 	});
 
 	it("exposes back-compat handles so tests can drive state directly", async () => {
-		const result = createTestAppFromFixture(createDefaultTestAppFixture());
+		const result = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		expect(typeof result.auth.createUser).toBe("function");
 		expect(typeof result.articleStore.writeContent).toBe("function");
@@ -31,28 +34,46 @@ describe("createTestAppFromFixture + createDefaultTestAppFixture", () => {
 		).toBeUndefined();
 	});
 
-	it("wires Google auth when an exchangeGoogleCode override is provided", () => {
-		const fixture = createDefaultTestAppFixture({
-			exchangeGoogleCode: async () => ({
-				googleId: GoogleIdSchema.parse("google-sub"),
-				email: "user@example.com",
-				emailVerified: true,
-			}),
+	it("requires the caller to declare a full google bundle when wiring Google auth", () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+		const result = createTestAppFromFixture({
+			auth: fixture.auth,
+			articleStore: fixture.articleStore,
+			articleCrawl: fixture.articleCrawl,
+			parser: fixture.parser,
+			events: fixture.events,
+			pendingHtml: fixture.pendingHtml,
+			summary: fixture.summary,
+			freshness: fixture.freshness,
+			oauth: fixture.oauth,
+			email: fixture.email,
+			emailVerification: fixture.emailVerification,
+			passwordReset: fixture.passwordReset,
+			google: {
+				exchangeGoogleCode: async () => ({
+					googleId: GoogleIdSchema.parse("google-sub"),
+					email: "user@example.com",
+					emailVerified: true,
+				}),
+				clientId: "test-google-client-id",
+				clientSecret: "test-google-client-secret",
+			},
+			admin: fixture.admin,
+			shared: fixture.shared,
 		});
 
-		expect(fixture.google).toBeDefined();
-		expect(fixture.google?.clientId).toBe("test-google-client-id");
+		expect(typeof result.app).toBe("function");
 	});
 
-	it("defaults google to undefined when no exchangeGoogleCode is provided", () => {
-		const fixture = createDefaultTestAppFixture();
+	it("defaults google to undefined", () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 
 		expect(fixture.google).toBeUndefined();
 	});
 
-	it("uses the appOrigin override for shared.appOrigin", () => {
-		const fixture = createDefaultTestAppFixture({ appOrigin: "http://127.0.0.1:4000" });
+	it("uses the default shared.appOrigin", () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 
-		expect(fixture.shared.appOrigin).toBe("http://127.0.0.1:4000");
+		expect(fixture.shared.appOrigin).toBe("http://localhost:3000");
 	});
 });
