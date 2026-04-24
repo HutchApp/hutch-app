@@ -151,7 +151,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	const app: Express = express();
 
 	app.use(express.urlencoded({ extended: true }));
-	app.use(express.json());
+	app.use(express.json({ limit: 10 * 1024 * 1024 }));
 	app.use(cookieParser());
 
 	// Same-origin client bundles — the Lambda packaging step copies
