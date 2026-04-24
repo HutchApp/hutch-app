@@ -1,0 +1,212 @@
+import assert from "node:assert";
+import type { NextFunction, Request, Response, Router } from "express";
+import express from "express";
+import { z } from "zod";
+import type {
+	FindArticleCrawlStatus,
+	ForceMarkCrawlPending,
+	MarkCrawlPending,
+} from "../../../providers/article-crawl/article-crawl.types";
+import type { FindArticleByUrl } from "../../../providers/article-store/article-store.types";
+import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
+import type {
+	FindGeneratedSummary,
+	MarkSummaryPending,
+} from "../../../providers/article-summary/article-summary.types";
+import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
+import type { FindUserByEmail } from "../../../providers/auth/auth.types";
+import { initArticleReader } from "../../shared/article-reader/article-reader";
+import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
+import { SaveErrorPage } from "../save/save-error.component";
+import { AdminRecrawlLandingPage } from "./recrawl-landing.component";
+import { AdminRecrawlPage } from "./recrawl.component";
+import { initRequireAdmin } from "./require-admin.middleware";
+
+const RecrawlUrlSchema = z.url();
+
+export interface AdminRecrawlDependencies {
+	findArticleByUrl: FindArticleByUrl;
+	readArticleContent: ReadArticleContent;
+	findGeneratedSummary: FindGeneratedSummary;
+	markSummaryPending: MarkSummaryPending;
+	findArticleCrawlStatus: FindArticleCrawlStatus;
+	markCrawlPending: MarkCrawlPending;
+	forceMarkCrawlPending: ForceMarkCrawlPending;
+	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	findUserByEmail: FindUserByEmail;
+	adminEmails: readonly string[];
+}
+
+function pollUrlBuilderFor(articleUrl: string): PollUrlBuilder {
+	return {
+		summary: (n) =>
+			`/admin/recrawl/summary?url=${encodeURIComponent(articleUrl)}&poll=${n}`,
+		reader: (n) =>
+			`/admin/recrawl/reader?url=${encodeURIComponent(articleUrl)}&poll=${n}`,
+	};
+}
+
+function noStore(_req: Request, res: Response, next: NextFunction): void {
+	res.setHeader("Cache-Control", "no-store");
+	next();
+}
+
+function renderNotFound(res: Response) {
+	const html = SaveErrorPage({
+		redirectUrl: "/admin/recrawl",
+		linkLabel: "Back to recrawl",
+	}).to("text/html");
+	res.status(404).type("html").send(html.body);
+}
+
+function handleLanding(req: Request, res: Response): void {
+	const submittedUrl =
+		typeof req.query.url === "string" ? req.query.url : undefined;
+	if (submittedUrl === undefined) {
+		const html = AdminRecrawlLandingPage({
+			isAuthenticated: Boolean(req.userId),
+		}).to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
+		return;
+	}
+	const parsed = RecrawlUrlSchema.safeParse(submittedUrl);
+	if (!parsed.success) {
+		renderNotFound(res);
+		return;
+	}
+	res.redirect(302, `/admin/recrawl/${encodeURIComponent(parsed.data)}`);
+}
+
+function handleRecrawlArticle(
+	deps: AdminRecrawlDependencies,
+	reader: ReturnType<typeof initArticleReader>,
+) {
+	return async (
+		req: Request<Record<string, string>>,
+		res: Response,
+	): Promise<void> => {
+		const rawPath = req.params[0];
+		// API Gateway v2 HTTP API decodes %2F to /, restore https:/ → https://
+		// (same normalisation as /view).
+		const normalizedUrl = rawPath.replace(/^(https?):\/(?!\/)/i, "$1://");
+		const parsed = RecrawlUrlSchema.safeParse(normalizedUrl);
+		if (!parsed.success) {
+			renderNotFound(res);
+			return;
+		}
+		const articleUrl = parsed.data;
+
+		const existing = await deps.findArticleByUrl(articleUrl);
+		if (!existing) {
+			// The endpoint is explicitly for human intervention on an existing
+			// saved URL. Do not create a stub; surface 404.
+			renderNotFound(res);
+			return;
+		}
+
+		// Always recrawl. No cache, no TTL. Force the crawl state back to
+		// pending (even if currently `ready`) so the reader slot shows the
+		// "recrawl in progress" skeleton, then publish the command.
+		await deps.forceMarkCrawlPending({ url: articleUrl });
+		await deps.markSummaryPending({ url: articleUrl });
+		await deps.publishSaveAnonymousLink({ url: articleUrl });
+
+		const state = await reader.resolveReaderState({
+			article: {
+				url: articleUrl,
+				metadata: existing.metadata,
+				estimatedReadTime: existing.estimatedReadTime,
+			},
+			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
+		});
+
+		const html = AdminRecrawlPage({
+			articleUrl,
+			metadata: existing.metadata,
+			estimatedReadTime: existing.estimatedReadTime,
+			content: state.content,
+			crawl: state.crawl,
+			readerPollUrl: state.readerPollUrl,
+			summary: state.summary,
+			summaryPollUrl: state.summaryPollUrl,
+			isAuthenticated: Boolean(req.userId),
+		}).to("text/html");
+		assert(
+			state.crawl?.status === "pending",
+			"force-pending + resolveReaderState must leave the crawl in 'pending'",
+		);
+		res.status(html.statusCode).type("html").send(html.body);
+	};
+}
+
+function handleSummaryPoll(reader: ReturnType<typeof initArticleReader>) {
+	return async (req: Request, res: Response): Promise<void> => {
+		const parsed = RecrawlUrlSchema.safeParse(req.query.url);
+		if (!parsed.success) {
+			res.status(400).type("html").send("");
+			return;
+		}
+		const articleUrl = parsed.data;
+		const pollCount = Number(req.query.poll ?? "0");
+		const component = await reader.handleSummaryPoll({
+			articleUrl,
+			pollCount,
+			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
+		});
+		const html = component.to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
+	};
+}
+
+function handleReaderPoll(reader: ReturnType<typeof initArticleReader>) {
+	return async (req: Request, res: Response): Promise<void> => {
+		const parsed = RecrawlUrlSchema.safeParse(req.query.url);
+		if (!parsed.success) {
+			res.status(400).type("html").send("");
+			return;
+		}
+		const articleUrl = parsed.data;
+		const pollCount = Number(req.query.poll ?? "0");
+		const component = await reader.handleReaderPoll({
+			articleUrl,
+			pollCount,
+			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
+		});
+		const html = component.to("text/html");
+		res.status(html.statusCode).type("html").send(html.body);
+	};
+}
+
+export function initAdminRecrawlRoutes(deps: AdminRecrawlDependencies): Router {
+	const router = express.Router();
+	const requireAdmin = initRequireAdmin({
+		findUserByEmail: deps.findUserByEmail,
+		adminEmails: deps.adminEmails,
+	});
+
+	// The admin path always calls forceMarkCrawlPending before resolveReaderState,
+	// so the reader core's legacy-stub healing branch (which uses markCrawlPending)
+	// never fires in this flow. We still thread the real markCrawlPending through
+	// so the ArticleReaderDeps contract is satisfied with the same function
+	// reference the /view and /queue paths use.
+	const reader = initArticleReader({
+		findArticleCrawlStatus: deps.findArticleCrawlStatus,
+		markCrawlPending: deps.markCrawlPending,
+		findGeneratedSummary: deps.findGeneratedSummary,
+		markSummaryPending: deps.markSummaryPending,
+		readArticleContent: deps.readArticleContent,
+	});
+
+	router.use(noStore);
+	router.use(requireAdmin);
+
+	router.get("/", handleLanding);
+	router.get("/summary", handleSummaryPoll(reader));
+	router.get("/reader", handleReaderPoll(reader));
+	router.get<string, Record<string, string>>(
+		"/*",
+		handleRecrawlArticle(deps, reader),
+	);
+
+	return router;
+}

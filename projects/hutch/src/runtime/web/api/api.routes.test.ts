@@ -70,10 +70,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -105,10 +107,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -145,10 +149,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -205,10 +211,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -240,10 +248,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -276,10 +286,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -312,10 +324,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -348,10 +362,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -394,10 +410,12 @@ describe("GET /queue (Siren content negotiation)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -435,10 +453,12 @@ describe("POST /queue (Siren save article)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -477,10 +497,12 @@ describe("POST /queue (Siren save article)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -515,10 +537,12 @@ describe("POST /queue (Siren save article)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -550,10 +574,12 @@ describe("POST /queue (Siren save article)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
@@ -590,10 +616,12 @@ describe("POST /queue (Siren save article)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
@@ -632,10 +660,12 @@ describe("POST /queue (Siren save article)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -676,10 +706,12 @@ describe("POST /queue (Siren re-save read article)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -739,10 +771,12 @@ describe("POST /queue/:id/delete (Siren)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -785,10 +819,12 @@ describe("POST /queue/:id/delete (Siren)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -840,10 +876,12 @@ describe("GET / (Siren entry point)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -875,10 +913,12 @@ describe("GET / (Siren entry point)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -910,10 +950,12 @@ describe("GET / (Siren entry point)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -952,10 +994,12 @@ describe("GET /queue?url= (Siren URL filter)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -1003,10 +1047,12 @@ describe("GET /queue?url= (Siren URL filter)", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -1048,10 +1094,12 @@ describe("Article sub-entity actions", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -1098,10 +1146,12 @@ describe("Content negotiation", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
@@ -1138,10 +1188,12 @@ describe("Content negotiation", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
@@ -1178,10 +1230,12 @@ describe("Content negotiation", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);

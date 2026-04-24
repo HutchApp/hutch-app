@@ -1,0 +1,9 @@
+.admin-recrawl {
+  max-width: var(--reader-max-width);
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.admin-recrawl__body {
+  display: block;
+}

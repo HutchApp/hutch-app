@@ -40,10 +40,12 @@ describe("GET /blog", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -124,10 +126,12 @@ describe("GET /blog/:slug", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -244,10 +248,12 @@ describe("hutch-app.com blog redirect", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: "https://readplace.com",
 		});
 		const response = await request(app)
@@ -276,10 +282,12 @@ describe("hutch-app.com blog redirect", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: "https://readplace.com",
 		});
 		const response = await request(app)
@@ -311,10 +319,12 @@ describe("GET /sitemap.xml", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 

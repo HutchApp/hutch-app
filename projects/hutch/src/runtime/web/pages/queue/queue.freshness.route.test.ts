@@ -77,10 +77,12 @@ describe("Queue freshness integration", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale,
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);

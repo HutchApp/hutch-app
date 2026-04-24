@@ -40,10 +40,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/login");
@@ -74,10 +76,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -110,10 +114,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
@@ -143,10 +149,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/login?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
@@ -178,10 +186,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -216,10 +226,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -254,10 +266,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -290,10 +304,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -326,10 +342,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -362,10 +380,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -398,10 +418,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -435,10 +457,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -474,10 +498,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/signup");
@@ -507,10 +533,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -543,10 +571,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
@@ -576,10 +606,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest");
@@ -611,10 +643,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -648,10 +682,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -687,10 +723,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -726,10 +764,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -765,10 +805,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
@@ -805,10 +847,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -844,10 +888,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -885,10 +931,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
@@ -927,10 +975,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -966,10 +1016,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/verify-email");
@@ -1000,10 +1052,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/verify-email?token=invalid-token");
@@ -1034,10 +1088,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const createResult = await auth.createUser({ email: "verify@example.com", password: "password123" });
@@ -1073,10 +1129,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const createResult = await auth.createUser({ email: "session@example.com", password: "password123" });
@@ -1117,10 +1175,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -1156,10 +1216,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1199,10 +1261,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/login");
@@ -1239,10 +1303,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/login?return=%2Fsave%3Furl%3Dhttps%253A%252F%252Fexample.com");
@@ -1270,10 +1336,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/signup");
@@ -1304,10 +1372,12 @@ describe("Auth routes", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -1397,10 +1467,12 @@ describe("Auth routes", () => {
 				markSummaryPending: summary.markSummaryPending,
 				findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 				markCrawlPending: articleCrawl.markCrawlPending,
+				forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 				refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 				httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
+				adminEmails: [],
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			for (let i = 0; i < 101; i++) {

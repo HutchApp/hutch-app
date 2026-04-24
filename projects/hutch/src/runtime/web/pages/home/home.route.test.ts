@@ -39,10 +39,12 @@ describe("GET /", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -342,10 +344,12 @@ describe("GET / with exhausted founding allocation", () => {
 			markSummaryPending: summary.markSummaryPending,
 			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
+			adminEmails: [],
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -388,10 +392,12 @@ describe("GET /robots.txt", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -425,10 +431,12 @@ describe("GET /llms.txt", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -461,10 +469,12 @@ describe("GET /llms-full.txt", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -498,10 +508,12 @@ describe("GET /sitemap.xml", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -546,10 +558,12 @@ describe("GET /nonexistent", () => {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: TEST_APP_ORIGIN,
 	});
 

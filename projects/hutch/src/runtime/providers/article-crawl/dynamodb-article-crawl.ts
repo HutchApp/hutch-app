@@ -10,6 +10,7 @@ import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type {
 	ArticleCrawl,
 	FindArticleCrawlStatus,
+	ForceMarkCrawlPending,
 	MarkCrawlPending,
 } from "./article-crawl.types";
 
@@ -48,6 +49,7 @@ export function initDynamoDbArticleCrawl(deps: {
 }): {
 	findArticleCrawlStatus: FindArticleCrawlStatus;
 	markCrawlPending: MarkCrawlPending;
+	forceMarkCrawlPending: ForceMarkCrawlPending;
 } {
 	const table = defineDynamoTable({
 		client: deps.client,
@@ -79,5 +81,17 @@ export function initDynamoDbArticleCrawl(deps: {
 		}
 	};
 
-	return { findArticleCrawlStatus, markCrawlPending };
+	const forceMarkCrawlPending: ForceMarkCrawlPending = async ({ url }) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		await table.update({
+			Key: { url: articleResourceUniqueId.value },
+			UpdateExpression:
+				"SET crawlStatus = :pending REMOVE crawlFailureReason",
+			ExpressionAttributeValues: {
+				":pending": "pending",
+			},
+		});
+	};
+
+	return { findArticleCrawlStatus, markCrawlPending, forceMarkCrawlPending };
 }

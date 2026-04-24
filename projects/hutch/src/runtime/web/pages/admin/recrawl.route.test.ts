@@ -1,0 +1,324 @@
+import { JSDOM } from "jsdom";
+import request from "supertest";
+import { MinutesSchema } from "../../../domain/article/article.schema";
+import type { ParseArticle, ParseArticleResult } from "../../../providers/article-parser/article-parser.types";
+import { initInMemoryArticleCrawl } from "../../../providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
+import { createTestApp } from "../../../test-app";
+import {
+	TEST_APP_ORIGIN,
+	createFakeApplyParseResult,
+	createFakePublishLinkSaved,
+	createFakeSummaryProvider,
+	createInMemoryPublishUpdateFetchTimestamp,
+	createNoopLogError,
+	createNoopRefreshArticleIfStale,
+	defaultHttpErrorMessageMapping,
+	stubCrawlArticle,
+} from "../../../test-app-fakes";
+
+const ADMIN_EMAIL = "ops@readplace.com";
+const ADMIN_PASSWORD = "password123";
+const OTHER_EMAIL = "other@readplace.com";
+const OTHER_PASSWORD = "password456";
+const ARTICLE_URL = "https://example.com/post";
+const ENCODED = encodeURIComponent(ARTICLE_URL);
+
+function buildParseResult(): ParseArticleResult {
+	return {
+		ok: true,
+		article: {
+			title: "Hello World",
+			siteName: "example.com",
+			excerpt: "A lovely article.",
+			wordCount: 500,
+			content: "<p>Body copy.</p>",
+			imageUrl: "https://cdn.example.com/hero.jpg",
+		},
+	};
+}
+
+interface RecrawlHarness {
+	app: ReturnType<typeof createTestApp>["app"];
+	auth: ReturnType<typeof createTestApp>["auth"];
+	articleStore: ReturnType<typeof initInMemoryArticleStore>;
+	articleCrawl: ReturnType<typeof initInMemoryArticleCrawl>;
+	anonymousPublishedCalls: { url: string }[];
+}
+
+function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarness {
+	const parseArticle: ParseArticle = async () => buildParseResult();
+	const articleStore = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
+	const summary = createFakeSummaryProvider();
+
+	// The admin route is supposed to force `crawlStatus = pending` and then
+	// publish. We want to assert the page renders in pending state, so the
+	// publisher here is a pure recorder — it does NOT synchronously run
+	// applyParseResult. The eventual worker run is out of scope for these
+	// route tests (it's covered by save-link's own tests).
+	const anonymousPublishedCalls: { url: string }[] = [];
+	const publishSaveAnonymousLink = async (params: { url: string }) => {
+		anonymousPublishedCalls.push(params);
+	};
+
+	const { app, auth } = createTestApp({
+		articleStore,
+		articleCrawl,
+		parseArticle,
+		crawlArticle: stubCrawlArticle,
+		publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+		publishSaveAnonymousLink,
+		publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		findGeneratedSummary: summary.findGeneratedSummary,
+		markSummaryPending: summary.markSummaryPending,
+		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
+		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
+		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+		exchangeGoogleCode: undefined,
+		logError: createNoopLogError(),
+		adminEmails: options.adminEmails,
+		appOrigin: TEST_APP_ORIGIN,
+	});
+
+	return { app, auth, articleStore, articleCrawl, anonymousPublishedCalls };
+}
+
+async function loginAs(
+	app: RecrawlHarness["app"],
+	email: string,
+	password: string,
+) {
+	const agent = request.agent(app);
+	await agent.post("/login").type("form").send({ email, password });
+	return agent;
+}
+
+describe("Admin recrawl routes", () => {
+	describe("authorization", () => {
+		it("redirects unauthenticated visitors to /login (303)", async () => {
+			const { app } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+
+			const response = await request(app).get(`/admin/recrawl/${ENCODED}`);
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/login");
+		});
+
+		it("returns 403 when the logged-in user's email is not in the allowlist", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await auth.createUser({ email: OTHER_EMAIL, password: OTHER_PASSWORD });
+			const agent = await loginAs(app, OTHER_EMAIL, OTHER_PASSWORD);
+
+			const response = await agent.get(`/admin/recrawl/${ENCODED}`);
+
+			expect(response.status).toBe(403);
+			expect(response.text).toContain("Admin access required");
+		});
+
+		it("returns 403 when the allowlist is empty (fail-closed)", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [] });
+			await auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(`/admin/recrawl/${ENCODED}`);
+
+			expect(response.status).toBe(403);
+		});
+	});
+
+	describe("GET /admin/recrawl (landing)", () => {
+		it("renders the landing form for an admin with no ?url query", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get("/admin/recrawl");
+
+			expect(response.status).toBe(200);
+			expect(response.headers["cache-control"]).toBe("no-store");
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-admin-recrawl-form]")).not.toBeNull();
+			expect(doc.querySelector("[data-test-admin-recrawl-input]")).not.toBeNull();
+		});
+
+		it("redirects submitted ?url to the encoded article path", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(`/admin/recrawl?url=${encodeURIComponent(ARTICLE_URL)}`);
+
+			expect(response.status).toBe(302);
+			expect(response.headers.location).toBe(`/admin/recrawl/${ENCODED}`);
+		});
+
+		it("returns 404 when the submitted ?url is not a valid URL", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get("/admin/recrawl?url=not-a-url");
+
+			expect(response.status).toBe(404);
+		});
+	});
+
+	describe("GET /admin/recrawl/:url", () => {
+		it("returns 404 when the URL is not already in the articles DB", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(`/admin/recrawl/${ENCODED}`);
+
+			expect(response.status).toBe(404);
+		});
+
+		it("triggers a fresh recrawl for a known URL and renders the page in pending state", async () => {
+			const harness = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await harness.auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			// Seed an article so the admin path has something to recrawl.
+			await harness.articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Stale Title",
+					siteName: "example.com",
+					excerpt: "Stale excerpt",
+					wordCount: 10,
+				},
+				estimatedReadTime: MinutesSchema.parse(1),
+			});
+			// Previous crawl left the row in a terminal `ready` state. Admin
+			// recrawl must flip it back to `pending` via forceMarkCrawlPending.
+			await harness.articleCrawl.markCrawlReady({ url: ARTICLE_URL });
+
+			const agent = await loginAs(harness.app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(`/admin/recrawl/${ENCODED}`);
+
+			expect(response.status).toBe(200);
+			expect(response.headers["cache-control"]).toBe("no-store");
+			expect(harness.anonymousPublishedCalls).toEqual([{ url: ARTICLE_URL }]);
+			const doc = new JSDOM(response.text).window.document;
+			const readerSlot = doc.querySelector("[data-test-reader-slot]");
+			expect(readerSlot?.getAttribute("data-reader-status")).toBe("pending");
+			expect(doc.querySelector("[data-test-admin-recrawl]")).not.toBeNull();
+			expect(doc.querySelector("[data-view-share]")).toBeNull();
+			expect(doc.querySelector("[data-test-view-cta]")).toBeNull();
+			expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe(
+				"noindex, nofollow",
+			);
+		});
+	});
+
+	describe("GET /admin/recrawl/reader (poll) — validation", () => {
+		it("returns 400 when the ?url query is missing", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get("/admin/recrawl/reader");
+
+			expect(response.status).toBe(400);
+		});
+	});
+
+	describe("GET /admin/recrawl/summary (poll) — validation", () => {
+		it("returns 400 when the ?url query is missing", async () => {
+			const { app, auth } = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			const agent = await loginAs(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get("/admin/recrawl/summary");
+
+			expect(response.status).toBe(400);
+		});
+	});
+
+	describe("GET /admin/recrawl/summary (poll)", () => {
+		it("renders the summary slot fragment when the crawl is still pending", async () => {
+			const harness = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await harness.auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			await harness.articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Stale Title",
+					siteName: "example.com",
+					excerpt: "",
+					wordCount: 0,
+				},
+				estimatedReadTime: MinutesSchema.parse(1),
+			});
+			await harness.articleCrawl.markCrawlPending({ url: ARTICLE_URL });
+			const agent = await loginAs(harness.app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(
+				`/admin/recrawl/summary?url=${encodeURIComponent(ARTICLE_URL)}`,
+			);
+
+			expect(response.status).toBe(200);
+			expect(response.headers["cache-control"]).toBe("no-store");
+			expect(response.text).toContain("data-test-reader-summary");
+		});
+	});
+
+	describe("GET /admin/recrawl/reader (poll)", () => {
+		it("defaults pollCount to 0 when the ?poll query is absent", async () => {
+			const harness = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await harness.auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			await harness.articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Stale Title",
+					siteName: "example.com",
+					excerpt: "",
+					wordCount: 0,
+				},
+				estimatedReadTime: MinutesSchema.parse(1),
+			});
+			await harness.articleCrawl.markCrawlPending({ url: ARTICLE_URL });
+			const agent = await loginAs(harness.app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(
+				`/admin/recrawl/reader?url=${encodeURIComponent(ARTICLE_URL)}`,
+			);
+
+			expect(response.status).toBe(200);
+			// First poll URL must reference poll=1 (pollCount defaulted to 0, then +1)
+			const pollUrl = response.text.match(/hx-get="([^"]+)"/)?.[1];
+			expect(pollUrl).toContain("poll");
+		});
+
+		it("renders the reader slot fragment and targets /admin/recrawl/reader for the next poll", async () => {
+			const harness = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await harness.auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			await harness.articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Stale Title",
+					siteName: "example.com",
+					excerpt: "",
+					wordCount: 0,
+				},
+				estimatedReadTime: MinutesSchema.parse(1),
+			});
+			await harness.articleCrawl.markCrawlPending({ url: ARTICLE_URL });
+
+			const agent = await loginAs(harness.app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(
+				`/admin/recrawl/reader?url=${encodeURIComponent(ARTICLE_URL)}&poll=1`,
+			);
+
+			expect(response.status).toBe(200);
+			expect(response.headers["cache-control"]).toBe("no-store");
+			const pollUrl = response.text.match(/hx-get="([^"]+)"/)?.[1];
+			expect(pollUrl).toContain("/admin/recrawl/reader");
+			expect(pollUrl).toContain(encodeURIComponent(ARTICLE_URL));
+		});
+	});
+});

@@ -12,6 +12,7 @@ import type {
 } from "./providers/article-summary/article-summary.types";
 import type {
 	FindArticleCrawlStatus,
+	ForceMarkCrawlPending,
 	MarkCrawlPending,
 } from "./providers/article-crawl/article-crawl.types";
 import type { initInMemoryArticleCrawl } from "./providers/article-crawl/in-memory-article-crawl";
@@ -40,11 +41,13 @@ export function createTestApp(options: {
 	markSummaryPending: MarkSummaryPending;
 	findArticleCrawlStatus: FindArticleCrawlStatus;
 	markCrawlPending: MarkCrawlPending;
+	forceMarkCrawlPending: ForceMarkCrawlPending;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	exchangeGoogleCode: ExchangeGoogleCode | undefined;
 	logError: (message: string, error?: Error) => void;
 	appOrigin: string;
+	adminEmails: readonly string[];
 }) {
 	const auth = initInMemoryAuth();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin: options.appOrigin });
@@ -66,6 +69,8 @@ export function createTestApp(options: {
 		markSummaryPending: options.markSummaryPending,
 		findArticleCrawlStatus: options.findArticleCrawlStatus,
 		markCrawlPending: options.markCrawlPending,
+		forceMarkCrawlPending: options.forceMarkCrawlPending,
+		adminEmails: options.adminEmails,
 		refreshArticleIfStale: options.refreshArticleIfStale,
 		httpErrorMessageMapping: options.httpErrorMessageMapping,
 		...email,

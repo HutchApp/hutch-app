@@ -67,10 +67,12 @@ async function startTestServer(): Promise<http.Server> {
 		markSummaryPending: summary.markSummaryPending,
 		findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
 		markCrawlPending: articleCrawl.markCrawlPending,
+		forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 		refreshArticleIfStale: createNoopRefreshArticleIfStale(),
 		httpErrorMessageMapping: defaultHttpErrorMessageMapping,
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
+		adminEmails: [],
 		appOrigin: origin,
 	});
 	await auth.createUser({ email: TEST_EMAIL, password: TEST_PASSWORD });

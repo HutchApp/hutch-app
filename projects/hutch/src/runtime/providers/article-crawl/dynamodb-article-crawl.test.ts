@@ -158,4 +158,49 @@ describe("initDynamoDbArticleCrawl", () => {
 			await expect(markCrawlPending({ url: URL })).rejects.toThrow("throttled");
 		});
 	});
+
+	describe("forceMarkCrawlPending", () => {
+		it("issues an unconditional UpdateItem that sets crawlStatus=pending and clears crawlFailureReason", async () => {
+			let received: unknown;
+			const client = createFakeClient((input) => {
+				received = input;
+				return {};
+			});
+			const { forceMarkCrawlPending } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await forceMarkCrawlPending({ url: URL });
+
+			const command = received as {
+				input: {
+					UpdateExpression?: string;
+					ConditionExpression?: string;
+					ExpressionAttributeValues?: Record<string, unknown>;
+				};
+			};
+			expect(command.input.UpdateExpression).toBe(
+				"SET crawlStatus = :pending REMOVE crawlFailureReason",
+			);
+			expect(command.input.ConditionExpression).toBeUndefined();
+			expect(command.input.ExpressionAttributeValues?.[":pending"]).toBe(
+				"pending",
+			);
+		});
+
+		it("propagates any DynamoDB error (no condition-failed swallow)", async () => {
+			const client = createFakeClient(() => {
+				throw new Error("throttled");
+			});
+			const { forceMarkCrawlPending } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await expect(forceMarkCrawlPending({ url: URL })).rejects.toThrow(
+				"throttled",
+			);
+		});
+	});
 });

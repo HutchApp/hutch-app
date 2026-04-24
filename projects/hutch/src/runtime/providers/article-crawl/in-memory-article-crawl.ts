@@ -2,6 +2,7 @@ import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type {
 	ArticleCrawl,
 	FindArticleCrawlStatus,
+	ForceMarkCrawlPending,
 	MarkCrawlPending,
 } from "./article-crawl.types";
 
@@ -14,6 +15,7 @@ export type InMemoryMarkCrawlFailed = (params: {
 export function initInMemoryArticleCrawl(): {
 	findArticleCrawlStatus: FindArticleCrawlStatus;
 	markCrawlPending: MarkCrawlPending;
+	forceMarkCrawlPending: ForceMarkCrawlPending;
 	markCrawlReady: InMemoryMarkCrawlReady;
 	markCrawlFailed: InMemoryMarkCrawlFailed;
 } {
@@ -31,6 +33,11 @@ export function initInMemoryArticleCrawl(): {
 		states.set(id.value, { status: "pending" });
 	};
 
+	const forceMarkCrawlPending: ForceMarkCrawlPending = async ({ url }) => {
+		const id = ArticleResourceUniqueId.parse(url);
+		states.set(id.value, { status: "pending" });
+	};
+
 	const markCrawlReady: InMemoryMarkCrawlReady = async ({ url }) => {
 		const id = ArticleResourceUniqueId.parse(url);
 		states.set(id.value, { status: "ready" });
@@ -43,5 +50,11 @@ export function initInMemoryArticleCrawl(): {
 		states.set(id.value, { status: "failed", reason });
 	};
 
-	return { findArticleCrawlStatus, markCrawlPending, markCrawlReady, markCrawlFailed };
+	return {
+		findArticleCrawlStatus,
+		markCrawlPending,
+		forceMarkCrawlPending,
+		markCrawlReady,
+		markCrawlFailed,
+	};
 }

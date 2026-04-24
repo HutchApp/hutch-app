@@ -33,6 +33,7 @@ import type { ReadArticleContent } from "./providers/article-store/read-article-
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type {
 	FindArticleCrawlStatus,
+	ForceMarkCrawlPending,
 	MarkCrawlPending,
 } from "./providers/article-crawl/article-crawl.types";
 import type {
@@ -59,6 +60,7 @@ import { initQueueRoutes } from "./web/pages/queue/queue.page";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { initSaveRoutes } from "./web/pages/save/save.page";
 import { initViewRoutes } from "./web/pages/view/view.page";
+import { initAdminRecrawlRoutes } from "./web/pages/admin/recrawl.page";
 import { initEmbedRoutes } from "./web/pages/embed/embed.page";
 import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
@@ -118,7 +120,9 @@ interface AppDependencies {
 	markSummaryPending: MarkSummaryPending;
 	findArticleCrawlStatus: FindArticleCrawlStatus;
 	markCrawlPending: MarkCrawlPending;
+	forceMarkCrawlPending: ForceMarkCrawlPending;
 	refreshArticleIfStale: RefreshArticleIfStale;
+	adminEmails: readonly string[];
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
@@ -396,6 +400,20 @@ export function createApp(dependencies: AppDependencies): Express {
 		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
 	});
 	app.use("/view", viewRouter);
+
+	const adminRecrawlRouter = initAdminRecrawlRoutes({
+		findArticleByUrl: deps.findArticleByUrl,
+		readArticleContent: deps.readArticleContent,
+		findGeneratedSummary: deps.findGeneratedSummary,
+		markSummaryPending: deps.markSummaryPending,
+		findArticleCrawlStatus: deps.findArticleCrawlStatus,
+		markCrawlPending: deps.markCrawlPending,
+		forceMarkCrawlPending: deps.forceMarkCrawlPending,
+		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
+		findUserByEmail: deps.findUserByEmail,
+		adminEmails: deps.adminEmails,
+	});
+	app.use("/admin/recrawl", adminRecrawlRouter);
 
 	const exportRouter = initExportRoutes({
 		findArticlesByUser: deps.findArticlesByUser,

@@ -58,11 +58,13 @@ const { app: hutchApp, email } = createTestApp({
   markSummaryPending: summary.markSummaryPending,
   findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
   markCrawlPending: articleCrawl.markCrawlPending,
+  forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
   refreshArticleIfStale,
   httpErrorMessageMapping: defaultHttpErrorMessageMapping,
   exchangeGoogleCode: undefined,
   logError,
   appOrigin: origin,
+  adminEmails: [],
 })
 
 const server = express()

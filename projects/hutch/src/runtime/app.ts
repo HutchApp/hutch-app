@@ -130,6 +130,7 @@ function initProviders() {
 			markSummaryPending: summaryStore.markSummaryPending,
 			findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,
 			markCrawlPending: crawlStore.markCrawlPending,
+			forceMarkCrawlPending: crawlStore.forceMarkCrawlPending,
 			refreshArticleIfStale,
 		};
 	}
@@ -223,8 +224,16 @@ function initProviders() {
 		markSummaryPending: stubMarkSummaryPending,
 		findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,
 		markCrawlPending: crawlStore.markCrawlPending,
+		forceMarkCrawlPending: crawlStore.forceMarkCrawlPending,
 		refreshArticleIfStale,
 	};
+}
+
+function parseAdminEmails(raw: string): readonly string[] {
+	return raw
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
 }
 
 export function createHutchApp(deps?: {
@@ -234,6 +243,7 @@ export function createHutchApp(deps?: {
 
 	const appOrigin = deps?.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 	const staticBaseUrl = requireEnv("STATIC_BASE_URL");
+	const adminEmails = parseAdminEmails(requireEnv("ADMIN_EMAILS"));
 
 	const app = createApp({
 		appOrigin,
@@ -241,6 +251,7 @@ export function createHutchApp(deps?: {
 		...auth,
 		...articleStore,
 		...providers,
+		adminEmails,
 		baseUrl: appOrigin,
 		logError: (message, error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack })),
 		oauthModel,
