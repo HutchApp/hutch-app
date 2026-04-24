@@ -50,9 +50,13 @@ exports.HEALTH_SOURCES = [
     expectsThumbnail: true,
   },
   {
+    // expectedContent is picked from Readability's parsed output (not the
+    // raw HTML) so the tier-1+ canary's substring check survives the parser.
+    // The "funnel / twisting gorge" passage exists in the raw HTML but does
+    // not land in what Readability extracts for this interactive page.
     label: 'NYTimes',
     url: 'https://www.nytimes.com/projects/2012/snow-fall/index.html',
-    expectedContent: 'shaped like a funnel, squeezed the growing swell of churning snow into a steep, twisting gorge',
+    expectedContent: "When you’re up on top of a peak like that",
     expectsThumbnail: true,
   },
   {
@@ -68,9 +72,13 @@ exports.HEALTH_SOURCES = [
     expectsThumbnail: true,
   },
   {
+    // The Ars Technica "linux features" URL is an index of multiple short
+    // articles. Readability deterministically extracts one of them
+    // ("Monitoring network traffic with Ruby and Pcap"); expectedContent
+    // targets a distinctive substring inside that extraction.
     label: 'Ars Technica',
     url: 'https://arstechnica.com/features/2005/10/linux/',
-    expectedContent: 'following is the complete AIM sniffer',
+    expectedContent: "take a gander at The GIMP’s procedure database",
     expectsThumbnail: true,
   },
   {

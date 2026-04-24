@@ -32,10 +32,14 @@ if (!SERVICE_TOKEN) {
   throw new Error('RECRAWL_SERVICE_TOKEN env var is required');
 }
 
-// 3s poll interval × up to 20 polls = 60s budget per source. A Lambda
-// cold start + crawl + parse + write typically lands well inside that.
+// 3s poll interval × 60 polls = 180s budget per source. A successful
+// Lambda cold start + crawl + parse + write lands well inside that.
+// The upper bound also covers save-link's SQS retry → DLQ → terminal
+// markCrawlFailed path, which takes ~90s on an origin that blocks the
+// Lambda egress or a parser crash — both of which this canary MUST
+// surface as a failing test, not a timeout.
 const POLL_INTERVAL_MS = 3000;
-const POLL_TIMEOUT_MS = 60_000;
+const POLL_TIMEOUT_MS = 180_000;
 
 async function forceRecrawl(url) {
   const res = await fetch(`${ORIGIN}/admin/recrawl/${encodeURIComponent(url)}`, {
