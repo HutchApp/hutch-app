@@ -31,9 +31,15 @@ export interface SirenSubEntity extends SirenEntity {
 
 export const SIREN_MEDIA_TYPE = "application/vnd.siren+json";
 
-export function sirenError(error: { code: string; message: string }): SirenEntity {
-	return {
+export function sirenError(error: {
+	code: string;
+	message: string;
+	actions?: SirenAction[];
+}): SirenEntity {
+	const entity: SirenEntity = {
 		class: ["error"],
 		properties: { code: error.code, message: error.message },
 	};
+	if (error.actions) entity.actions = error.actions;
+	return entity;
 }

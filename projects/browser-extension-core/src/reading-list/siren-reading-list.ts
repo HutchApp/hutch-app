@@ -47,6 +47,15 @@ const SirenSubEntitySchema = z.object({
 	actions: z.array(SirenActionSchema).optional(),
 });
 
+const SirenErrorSchema = z.object({
+	class: z.array(z.string()).optional(),
+	properties: z.object({
+		code: z.string(),
+		message: z.string(),
+	}),
+	actions: z.array(SirenActionSchema).optional(),
+});
+
 type SirenAction = z.infer<typeof SirenActionSchema>;
 type SirenSubEntity = z.infer<typeof SirenSubEntitySchema>;
 
@@ -156,7 +165,45 @@ export function initSaveHtmlUnderstanding(): Map<string, ActionHandler> {
 					body: JSON.stringify(body),
 				},
 			);
-			assert(response.ok, `Save failed: ${response.status}`);
+			if (!response.ok) {
+				/** The server may carry a fallback action inside a Siren error body — follow it with {url, title} (dropping rawHtml) to degrade onto the URL-only save path. */
+				const errorJson = await response.json().catch(() => null);
+				const errorParsed = SirenErrorSchema.safeParse(errorJson);
+				if (!errorParsed.success) {
+					throw new Error(`Save failed: ${response.status}`);
+				}
+				const errorActions = errorParsed.data.actions;
+				if (errorActions === undefined) {
+					throw new Error(`Save failed: ${response.status}`);
+				}
+				if (errorActions.length === 0) {
+					throw new Error(`Save failed: ${response.status}`);
+				}
+				const fallbackAction = errorActions[0];
+				console.warn(errorParsed.data.properties.message);
+				const fallbackBody: Record<string, string> = { url: fields.url };
+				if (fields.title) fallbackBody.title = fields.title;
+				const fallbackContentType = fallbackAction.type === undefined
+					? "application/json"
+					: fallbackAction.type;
+				const fallbackResponse = await context.doFetch(
+					`${context.serverUrl}${fallbackAction.href}`,
+					{
+						method: fallbackAction.method,
+						headers: { "Content-Type": fallbackContentType },
+						body: JSON.stringify(fallbackBody),
+					},
+				);
+				assert(
+					fallbackResponse.ok,
+					`Save failed: ${fallbackResponse.status}`,
+				);
+				const fallbackResponseBody = SirenSubEntitySchema.parse(
+					await fallbackResponse.json(),
+				);
+				const fallbackItem = context.resolveItem(fallbackResponseBody);
+				return { items: [fallbackItem], actions: {} };
+			}
 			const responseBody = SirenSubEntitySchema.parse(await response.json());
 			const item = context.resolveItem(responseBody);
 			return { items: [item], actions: {} };

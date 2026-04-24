@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
+import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_BYTES } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
@@ -185,7 +185,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		res.redirect(303, "/queue");
 	});
 
-	router.post("/", async (req: Request, res: Response) => {
+	router.post("/", express.json(), async (req: Request, res: Response) => {
 		if (!wantsSiren(req)) {
 			res.status(406).send("Not Acceptable");
 			return;
@@ -214,7 +214,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 	});
 
-	router.post("/save-html", async (req: Request, res: Response) => {
+	router.post("/save-html", express.json({ limit: MAX_RAW_HTML_BYTES }), async (req: Request, res: Response) => {
 		if (!wantsSiren(req)) {
 			res.status(406).send("Not Acceptable");
 			return;

@@ -9,6 +9,7 @@ import {
 	createDefaultTestAppFixture,
 } from "../../../test-app-fakes";
 import { SIREN_MEDIA_TYPE } from "../../api/siren";
+import { MAX_RAW_HTML_BYTES } from "../../../domain/article/article.schema";
 
 const TEST_USER_ID = "test-user-123" as UserId;
 
@@ -156,6 +157,32 @@ describe("POST /queue/save-html", () => {
 		expect(response.status).toBe(500);
 		expect(response.body.properties.code).toBe("save-failed");
 		expect(errors).toHaveLength(1);
+	});
+
+	it("returns 500 with a save-article fallback action when the payload exceeds MAX_RAW_HTML_BYTES", async () => {
+		const { testApp } = setup();
+		const accessToken = await createAccessToken(testApp);
+
+		const oversized = "x".repeat(MAX_RAW_HTML_BYTES + 1);
+		const response = await request(testApp.app)
+			.post("/queue/save-html")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.send({ url: "https://example.com/article", rawHtml: oversized });
+
+		expect(response.status).toBe(500);
+		expect(response.headers["content-type"]).toContain(SIREN_MEDIA_TYPE);
+		expect(response.body.properties.code).toBe("html-too-large");
+		const mb = MAX_RAW_HTML_BYTES / (1024 * 1024);
+		expect(response.body.properties.message).toContain(`${mb}MB`);
+		const fallback = response.body.actions.find(
+			(a: { name: string }) => a.name === "save-article",
+		);
+		expect(fallback).toEqual(
+			expect.objectContaining({ href: "/queue", method: "POST" }),
+		);
+		const fallbackFields = fallback.fields.map((f: { name: string }) => f.name);
+		expect(fallbackFields).toEqual(["url"]);
 	});
 
 	it("returns 422 when the body fails schema validation", async () => {

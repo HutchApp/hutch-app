@@ -1005,6 +1005,183 @@ describe("save-html action", () => {
 		).rejects.toThrow("Save failed: 422");
 	});
 
+	it("follows the fallback save-article action from the Siren error body when save-html errors", async () => {
+		const savedAt = "2026-01-15T10:00:00.000Z";
+		const fallbackBodies: (string | undefined)[] = [];
+		const { fetchFn, calls } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": {
+					status: 500,
+					body: JSON.stringify({
+						class: ["error"],
+						properties: {
+							code: "html-too-large",
+							message: "Submitting the HTML of this page has failed due to being too large exceeding 10MB",
+						},
+						actions: [
+							{
+								name: "save-article",
+								href: "/queue",
+								method: "POST",
+								type: "application/json",
+								fields: [{ name: "url", type: "url" }],
+							},
+						],
+					}),
+				},
+				"POST http://localhost:3000/queue": (init) => {
+					fallbackBodies.push(typeof init?.body === "string" ? init.body : undefined);
+					return { status: 201, body: articleResponse(savedAt) };
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		const result = await collection.actions["save-html"]({
+			url: "https://example.com/article",
+			rawHtml: "<html>captured</html>",
+			title: "Captured Article",
+		});
+		expect(result.items[0].id).toBe("article-1");
+		expect(calls).toContain("POST http://localhost:3000/queue/save-html");
+		expect(calls).toContain("POST http://localhost:3000/queue");
+		expect(fallbackBodies[0]).toBe(
+			JSON.stringify({ url: "https://example.com/article", title: "Captured Article" }),
+		);
+	});
+
+	it("throws when the save-html error body has no actions field at all", async () => {
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": {
+					status: 500,
+					body: JSON.stringify({
+						class: ["error"],
+						properties: { code: "save-failed", message: "Could not save article" },
+					}),
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await expect(
+			collection.actions["save-html"]({ url: "https://example.com/article", rawHtml: "<html>x</html>" }),
+		).rejects.toThrow("Save failed: 500");
+	});
+
+	it("throws when the save-html error body carries an empty actions array", async () => {
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": {
+					status: 500,
+					body: JSON.stringify({
+						class: ["error"],
+						properties: { code: "save-failed", message: "Could not save article" },
+						actions: [],
+					}),
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await expect(
+			collection.actions["save-html"]({ url: "https://example.com/article", rawHtml: "<html>x</html>" }),
+		).rejects.toThrow("Save failed: 500");
+	});
+
+	it("defaults Content-Type to application/json when the fallback action has no type", async () => {
+		const savedAt = "2026-01-15T10:00:00.000Z";
+		const fallbackHeaders: Record<string, string>[] = [];
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": {
+					status: 500,
+					body: JSON.stringify({
+						class: ["error"],
+						properties: { code: "html-too-large", message: "too big" },
+						actions: [
+							{
+								name: "save-article",
+								href: "/queue",
+								method: "POST",
+								fields: [{ name: "url", type: "url" }],
+							},
+						],
+					}),
+				},
+				"POST http://localhost:3000/queue": (init) => {
+					fallbackHeaders.push((init?.headers ?? {}) as Record<string, string>);
+					return { status: 201, body: articleResponse(savedAt) };
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await collection.actions["save-html"]({
+			url: "https://example.com/article",
+			rawHtml: "<html>x</html>",
+		});
+		expect(fallbackHeaders[0]["Content-Type"]).toBe("application/json");
+	});
+
+	it("omits title from the fallback body when the original save-html call had no title", async () => {
+		const savedAt = "2026-01-15T10:00:00.000Z";
+		const fallbackBodies: (string | undefined)[] = [];
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": {
+					status: 500,
+					body: JSON.stringify({
+						class: ["error"],
+						properties: { code: "html-too-large", message: "too big" },
+						actions: [
+							{
+								name: "save-article",
+								href: "/queue",
+								method: "POST",
+								type: "application/json",
+								fields: [{ name: "url", type: "url" }],
+							},
+						],
+					}),
+				},
+				"POST http://localhost:3000/queue": (init) => {
+					fallbackBodies.push(typeof init?.body === "string" ? init.body : undefined);
+					return { status: 201, body: articleResponse(savedAt) };
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await collection.actions["save-html"]({
+			url: "https://example.com/article",
+			rawHtml: "<html>x</html>",
+		});
+		expect(fallbackBodies[0]).toBe(
+			JSON.stringify({ url: "https://example.com/article" }),
+		);
+	});
+
 	it("asserts when the url field is missing", async () => {
 		const { fetchFn } = createRoutingFetch(
 			withEntryPoint({

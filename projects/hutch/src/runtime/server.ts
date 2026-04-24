@@ -71,12 +71,14 @@ import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middlewa
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { sendComponent } from "./web/send-component";
 import { wantsSiren } from "./web/content-negotiation";
+import { SIREN_MEDIA_TYPE, sirenError } from "./web/api/siren";
 import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv, getEnv } from "./require-env";
+import { MAX_RAW_HTML_BYTES } from "./domain/article/article.schema";
 import "./web/session.types";
 
 export const PORT = requireEnv("PORT", { defaultValue: "3000" });
@@ -151,7 +153,6 @@ export function createApp(dependencies: AppDependencies): Express {
 	const app: Express = express();
 
 	app.use(express.urlencoded({ extended: true }));
-	app.use(express.json({ limit: 10 * 1024 * 1024 }));
 	app.use(cookieParser());
 
 	// Same-origin client bundles — the Lambda packaging step copies
@@ -434,6 +435,39 @@ export function createApp(dependencies: AppDependencies): Express {
 
 	app.use((_req: Request, res: Response) => {
 		sendComponent(res, NotFoundPage());
+	});
+
+	/** Translates body-parser oversize errors from the save-html parser into a Siren 500 carrying the save-article action, so the extension can drop the oversized rawHtml and degrade onto the URL-only tier. Keyed on err.limit (the configured byte limit that tripped) rather than req.path or a handler name, so route renames and handler restructuring cannot desynchronise this. */
+	app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+		const bodyErr = err as { type?: string; limit?: number } | null;
+		if (
+			bodyErr?.type === "entity.too.large" &&
+			bodyErr.limit === MAX_RAW_HTML_BYTES &&
+			wantsSiren(req)
+		) {
+			const mb = MAX_RAW_HTML_BYTES / (1024 * 1024);
+			deps.logError(
+				`request body exceeded ${mb}MB`,
+				err instanceof Error ? err : undefined,
+			);
+			res.status(500).type(SIREN_MEDIA_TYPE).json(
+				sirenError({
+					code: "html-too-large",
+					message: `Submitting the HTML of this page has failed due to being too large exceeding ${mb}MB`,
+					actions: [
+						{
+							name: "save-article",
+							href: "/queue",
+							method: "POST",
+							type: "application/json",
+							fields: [{ name: "url", type: "url" }],
+						},
+					],
+				}),
+			);
+			return;
+		}
+		next(err);
 	});
 
 	return app;

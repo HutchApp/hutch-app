@@ -5,7 +5,7 @@ export const SaveArticleInputSchema = z.object({
 	url: z.url({ message: "Please enter a valid URL" }),
 });
 
-const MAX_RAW_HTML_BYTES = 10 * 1024 * 1024;
+export const MAX_RAW_HTML_BYTES = 10 * 1024 * 1024;
 
 export const SaveHtmlInputSchema = z.object({
 	url: z.url({ message: "Please enter a valid URL" }),

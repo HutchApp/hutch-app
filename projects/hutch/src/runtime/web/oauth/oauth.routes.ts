@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import ExpressOAuthServer from "@node-oauth/express-oauth-server";
@@ -135,7 +135,7 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 
 	router.post("/token", oauthServer.token());
 
-	router.post("/revoke", async (req: Request, res: Response) => {
+	router.post("/revoke", express.json(), async (req: Request, res: Response) => {
 		const token = req.body.token;
 		if (!token) {
 			res.status(400).json({

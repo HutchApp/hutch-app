@@ -33,7 +33,7 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
 		id: "save-first-article",
 		title: () => "Save your first article",
 		description:
-			"Paste a URL to save, or press your browser extension button on any page you want to read later to save the current tab to your reading list.",
+			"Paste a URL to save, or press your browser extension button on any page you want to read later to save the current tab to your reading list. Saving via the extension is more reliable — it captures the page directly from your browser, so anti-bot protections can't block the content from being retrieved.",
 		isComplete: (ctx) => ctx.savedArticleCount > 0,
 	},
 ];
