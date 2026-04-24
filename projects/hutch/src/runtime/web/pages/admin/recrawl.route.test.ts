@@ -81,6 +81,7 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: options.adminEmails,
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 

@@ -83,6 +83,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -123,6 +124,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -160,6 +162,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -199,6 +202,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -239,6 +243,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -281,6 +286,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({
@@ -326,6 +332,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({
@@ -372,6 +379,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({
@@ -421,6 +429,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -462,6 +471,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -505,6 +515,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -541,6 +552,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -579,6 +591,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -616,6 +629,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -653,6 +667,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -689,6 +704,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -723,6 +739,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -759,6 +776,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -803,6 +821,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -847,6 +866,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -891,6 +911,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -932,6 +953,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -972,6 +994,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1018,6 +1041,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1059,6 +1083,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1099,6 +1124,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1141,6 +1167,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1179,6 +1206,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1221,6 +1249,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1280,6 +1309,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1321,6 +1351,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1359,6 +1390,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1397,6 +1429,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1436,6 +1469,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({
@@ -1486,6 +1520,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1530,6 +1565,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1566,6 +1602,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1605,6 +1642,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1649,6 +1687,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await articleStore.saveArticle({
@@ -1713,6 +1752,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await articleStore.saveArticle({
@@ -1770,6 +1810,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -1812,6 +1853,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -1858,6 +1900,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await articleStore.saveArticleGlobally({
@@ -1909,6 +1952,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await articleStore.saveArticleGlobally({
@@ -1953,6 +1997,7 @@ describe("View routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 

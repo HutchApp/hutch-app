@@ -76,6 +76,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -113,6 +114,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -155,6 +157,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -217,6 +220,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -254,6 +258,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -292,6 +297,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -330,6 +336,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -368,6 +375,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -416,6 +424,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -459,6 +468,7 @@ describe("POST /queue (Siren save article)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -503,6 +513,7 @@ describe("POST /queue (Siren save article)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -543,6 +554,7 @@ describe("POST /queue (Siren save article)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -580,6 +592,7 @@ describe("POST /queue (Siren save article)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
@@ -622,6 +635,7 @@ describe("POST /queue (Siren save article)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");
@@ -666,6 +680,7 @@ describe("POST /queue (Siren save article)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -712,6 +727,7 @@ describe("POST /queue (Siren re-save read article)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -777,6 +793,7 @@ describe("POST /queue/:id/delete (Siren)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -825,6 +842,7 @@ describe("POST /queue/:id/delete (Siren)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -882,6 +900,7 @@ describe("GET / (Siren entry point)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -919,6 +938,7 @@ describe("GET / (Siren entry point)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -956,6 +976,7 @@ describe("GET / (Siren entry point)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -1000,6 +1021,7 @@ describe("GET /queue?url= (Siren URL filter)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -1053,6 +1075,7 @@ describe("GET /queue?url= (Siren URL filter)", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -1100,6 +1123,7 @@ describe("Article sub-entity actions", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -1152,6 +1176,7 @@ describe("Content negotiation", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
@@ -1194,6 +1219,7 @@ describe("Content negotiation", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
@@ -1236,6 +1262,7 @@ describe("Content negotiation", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const accessToken = await createAccessToken(testApp);

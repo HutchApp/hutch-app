@@ -73,6 +73,7 @@ async function startTestServer(): Promise<http.Server> {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: origin,
 	});
 	await auth.createUser({ email: TEST_EMAIL, password: TEST_PASSWORD });

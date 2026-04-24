@@ -1,18 +1,33 @@
+import { timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import type { FindUserByEmail } from "../../../providers/auth/auth.types";
 
 export interface RequireAdminDeps {
 	findUserByEmail: FindUserByEmail;
 	adminEmails: readonly string[];
+	/**
+	 * Shared secret accepted via the `x-service-token` header for server-to-
+	 * server callers (e.g. the Tier 1+ crawl pipeline health workflow). Empty
+	 * string disables this auth path entirely so a misconfigured env cannot
+	 * silently accept header-less requests.
+	 */
+	serviceToken: string;
+}
+
+function constantTimeEquals(a: string, b: string): boolean {
+	if (a.length !== b.length) return false;
+	return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
 /**
- * Gate for operator-only routes. Requires:
- *   1. a populated session cookie (req.userId), else 303 → /login
- *   2. the session's user to match one of the allowlisted emails, else 403
+ * Gate for operator-only routes. Accepts either:
+ *   1. a valid `x-service-token` header (server-to-server caller), OR
+ *   2. a populated session cookie (req.userId) whose user matches one of the
+ *      allowlisted emails.
  *
- * Matching is by userId comparison (findUserByEmail → userId), so existing
- * sessions need no schema change.
+ * Session-less human requests → 303 /login. Authenticated non-admin → 403.
+ * An empty `serviceToken` disables the S2S path (fail-closed); an unmatched
+ * header falls through to the session check.
  */
 export function initRequireAdmin(deps: RequireAdminDeps) {
 	return async (
@@ -20,6 +35,16 @@ export function initRequireAdmin(deps: RequireAdminDeps) {
 		res: Response,
 		next: NextFunction,
 	): Promise<void> => {
+		const headerToken = req.headers["x-service-token"];
+		if (
+			typeof headerToken === "string" &&
+			deps.serviceToken.length > 0 &&
+			constantTimeEquals(headerToken, deps.serviceToken)
+		) {
+			next();
+			return;
+		}
+
 		if (!req.userId) {
 			res.redirect(303, "/login");
 			return;

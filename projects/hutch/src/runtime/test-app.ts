@@ -48,6 +48,7 @@ export function createTestApp(options: {
 	logError: (message: string, error?: Error) => void;
 	appOrigin: string;
 	adminEmails: readonly string[];
+	recrawlServiceToken: string;
 }) {
 	const auth = initInMemoryAuth();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin: options.appOrigin });
@@ -71,6 +72,7 @@ export function createTestApp(options: {
 		markCrawlPending: options.markCrawlPending,
 		forceMarkCrawlPending: options.forceMarkCrawlPending,
 		adminEmails: options.adminEmails,
+		recrawlServiceToken: options.recrawlServiceToken,
 		refreshArticleIfStale: options.refreshArticleIfStale,
 		httpErrorMessageMapping: options.httpErrorMessageMapping,
 		...email,

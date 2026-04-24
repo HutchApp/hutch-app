@@ -46,6 +46,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/forgot-password");
@@ -83,6 +84,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "user@example.com", password: "password123" });
@@ -122,6 +124,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -160,6 +163,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "user@example.com", password: "password123" });
@@ -202,6 +206,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -238,6 +243,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -278,6 +284,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -313,6 +320,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -350,6 +358,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "user@example.com", password: "oldpassword1" });
@@ -405,6 +414,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -443,6 +453,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "user@example.com", password: "oldpassword1" });
@@ -497,6 +508,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -535,6 +547,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -573,6 +586,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -611,6 +625,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "user@example.com", password: "oldpassword1" });
@@ -664,6 +679,7 @@ describe("Forgot password", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/login");

@@ -5,9 +5,8 @@
       "command": "pnpm lint",
       "options": { "cwd": "{projectRoot}" }
     },
-    "check-sources": {
-      "dependsOn": ["compile"],
-      "command": "node --test --test-reporter=spec scripts/check-sources.js",
+    "tier-1-plus-pipeline-health": {
+      "command": "node --test --test-reporter=spec scripts/tier-1-plus-pipeline-health.js",
       "options": { "cwd": "{projectRoot}" }
     }
   }

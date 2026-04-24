@@ -65,6 +65,7 @@ const { app: hutchApp, email } = createTestApp({
   logError,
   appOrigin: origin,
   adminEmails: [],
+  recrawlServiceToken: "test-service-token-abcdefghij",
 })
 
 const server = express()

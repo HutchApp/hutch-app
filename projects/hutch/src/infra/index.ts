@@ -146,6 +146,7 @@ const lambda = new HutchLambda("hutch", {
 		CONTENT_BUCKET_NAME: contentBucketName,
 		ANALYTICS_SALT: requireEnv("ANALYTICS_SALT"),
 		ADMIN_EMAILS: requireEnv("ADMIN_EMAILS"),
+		RECRAWL_SERVICE_TOKEN: requireEnv("RECRAWL_SERVICE_TOKEN"),
 	},
 	policies: [
 		...dynamodb.policies,

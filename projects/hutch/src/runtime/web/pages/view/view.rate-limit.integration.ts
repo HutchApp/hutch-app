@@ -55,6 +55,7 @@ describe("View article rate limit", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -96,6 +97,7 @@ describe("View article rate limit", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const urlA = encodeURIComponent("https://example.com/a");

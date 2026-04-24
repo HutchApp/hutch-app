@@ -57,6 +57,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -102,6 +103,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -151,6 +153,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -190,6 +193,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -238,6 +242,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -277,6 +282,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -316,6 +322,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -355,6 +362,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -402,6 +410,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -440,6 +449,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);
@@ -479,6 +489,7 @@ describe("Queue onboarding", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 		const agent = await loginAgent(app, auth);

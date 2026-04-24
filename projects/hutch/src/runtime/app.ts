@@ -244,6 +244,7 @@ export function createHutchApp(deps?: {
 	const appOrigin = deps?.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 	const staticBaseUrl = requireEnv("STATIC_BASE_URL");
 	const adminEmails = parseAdminEmails(requireEnv("ADMIN_EMAILS"));
+	const recrawlServiceToken = requireEnv("RECRAWL_SERVICE_TOKEN");
 
 	const app = createApp({
 		appOrigin,
@@ -252,6 +253,7 @@ export function createHutchApp(deps?: {
 		...articleStore,
 		...providers,
 		adminEmails,
+		recrawlServiceToken,
 		baseUrl: appOrigin,
 		logError: (message, error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack })),
 		oauthModel,

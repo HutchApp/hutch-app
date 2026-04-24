@@ -1,0 +1,39 @@
+name: Tier 1+ crawl pipeline health
+
+# Exercises the prod Lambda's crawl pipeline end-to-end by forcing a
+# re-crawl via https://readplace.com/admin/recrawl/<url> and asserting
+# the parsed article contains expected content. Routes through prod so
+# a green run means prod's Lambda can reach the origin, not that the
+# GitHub Actions runner can.
+
+on:
+  schedule:
+    - cron: '0 19 * * *'    # 06:00 AEST daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tier-1-plus-crawl-pipeline-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      READPLACE_ORIGIN: https://readplace.com
+      RECRAWL_SERVICE_TOKEN: ${{ secrets.RECRAWL_SERVICE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run Tier 1+ crawl pipeline health
+        run: pnpm nx run @packages/crawl-article:tier-1-plus-pipeline-health

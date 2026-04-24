@@ -54,6 +54,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -85,6 +86,7 @@ describe("Email verification", () => {
 
 			const app = createApp({
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: "http://localhost:3000",
 				staticBaseUrl: "",
 				...auth,
@@ -144,6 +146,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
@@ -184,6 +187,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -230,6 +234,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -265,6 +270,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -300,6 +306,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -347,6 +354,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -403,6 +411,7 @@ describe("Email verification", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 

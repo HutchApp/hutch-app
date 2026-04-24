@@ -46,6 +46,7 @@ describe("GET /blog", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -132,6 +133,7 @@ describe("GET /blog/:slug", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -254,6 +256,7 @@ describe("hutch-app.com blog redirect", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: "https://readplace.com",
 		});
 		const response = await request(app)
@@ -288,6 +291,7 @@ describe("hutch-app.com blog redirect", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: "https://readplace.com",
 		});
 		const response = await request(app)
@@ -325,6 +329,7 @@ describe("GET /sitemap.xml", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 

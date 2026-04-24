@@ -61,6 +61,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/export");
@@ -96,6 +97,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const agent = await loginAgent(app, auth);
@@ -141,6 +143,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const response = await request(app).get("/export/download");
@@ -176,6 +179,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const agent = await loginAgent(app, auth);
@@ -216,6 +220,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const agent = await loginAgent(app, auth);
@@ -253,6 +258,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const agent = await loginAgent(app, auth);
@@ -298,6 +304,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const agent = await loginAgent(app, auth);
@@ -346,6 +353,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 
@@ -412,6 +420,7 @@ describe("Export routes", () => {
 				exchangeGoogleCode: undefined,
 				logError: createNoopLogError(),
 				adminEmails: [],
+				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: TEST_APP_ORIGIN,
 			});
 			const agent = await loginAgent(app, auth);

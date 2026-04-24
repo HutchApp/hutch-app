@@ -124,6 +124,7 @@ interface AppDependencies {
 	forceMarkCrawlPending: ForceMarkCrawlPending;
 	refreshArticleIfStale: RefreshArticleIfStale;
 	adminEmails: readonly string[];
+	recrawlServiceToken: string;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
@@ -409,6 +410,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
 		findUserByEmail: deps.findUserByEmail,
 		adminEmails: deps.adminEmails,
+		serviceToken: deps.recrawlServiceToken,
 	});
 	app.use("/admin/recrawl", adminRecrawlRouter);
 

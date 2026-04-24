@@ -45,6 +45,7 @@ describe("GET /", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -350,6 +351,7 @@ describe("GET / with exhausted founding allocation", () => {
 			exchangeGoogleCode: undefined,
 			logError: createNoopLogError(),
 			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
 			appOrigin: TEST_APP_ORIGIN,
 		});
 
@@ -398,6 +400,7 @@ describe("GET /robots.txt", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -437,6 +440,7 @@ describe("GET /llms.txt", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -475,6 +479,7 @@ describe("GET /llms-full.txt", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -514,6 +519,7 @@ describe("GET /sitemap.xml", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 
@@ -564,6 +570,7 @@ describe("GET /nonexistent", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 

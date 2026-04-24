@@ -10,7 +10,7 @@ interface RecordedRes {
 }
 
 function makeReq(partial: Partial<Request>): Request {
-	return partial as Request;
+	return { headers: {}, ...partial } as Request;
 }
 
 function makeRes(): { res: Response; recorded: RecordedRes } {
@@ -36,6 +36,7 @@ function makeRes(): { res: Response; recorded: RecordedRes } {
 describe("initRequireAdmin", () => {
 	const ADMIN_ID = "user-alice" as UserId;
 	const OTHER_ID = "user-bob" as UserId;
+	const SERVICE_TOKEN = "test-service-token-abc123";
 	const adminEmails = ["alice@example.com", "carol@example.com"];
 	const findUserByEmail: FindUserByEmail = async (email) => {
 		if (email === "alice@example.com") {
@@ -45,7 +46,7 @@ describe("initRequireAdmin", () => {
 	};
 
 	it("redirects to /login when there is no session", async () => {
-		const middleware = initRequireAdmin({ findUserByEmail, adminEmails });
+		const middleware = initRequireAdmin({ findUserByEmail, adminEmails, serviceToken: SERVICE_TOKEN });
 		const { res, recorded } = makeRes();
 		let nextCalls = 0;
 		const next: NextFunction = () => {
@@ -59,7 +60,7 @@ describe("initRequireAdmin", () => {
 	});
 
 	it("responds 403 when the session user is not in the admin allowlist", async () => {
-		const middleware = initRequireAdmin({ findUserByEmail, adminEmails });
+		const middleware = initRequireAdmin({ findUserByEmail, adminEmails, serviceToken: SERVICE_TOKEN });
 		const { res, recorded } = makeRes();
 		let nextCalls = 0;
 		const next: NextFunction = () => {
@@ -74,7 +75,7 @@ describe("initRequireAdmin", () => {
 	});
 
 	it("calls next() when the session user matches one of the allowlisted emails", async () => {
-		const middleware = initRequireAdmin({ findUserByEmail, adminEmails });
+		const middleware = initRequireAdmin({ findUserByEmail, adminEmails, serviceToken: SERVICE_TOKEN });
 		const { res, recorded } = makeRes();
 		let nextCalls = 0;
 		const next: NextFunction = () => {
@@ -89,7 +90,7 @@ describe("initRequireAdmin", () => {
 	});
 
 	it("responds 403 when the allowlist is empty even if the user is logged in", async () => {
-		const middleware = initRequireAdmin({ findUserByEmail, adminEmails: [] });
+		const middleware = initRequireAdmin({ findUserByEmail, adminEmails: [], serviceToken: SERVICE_TOKEN });
 		const { res, recorded } = makeRes();
 		let nextCalls = 0;
 		const next: NextFunction = () => {
@@ -99,6 +100,61 @@ describe("initRequireAdmin", () => {
 		await middleware(makeReq({ userId: ADMIN_ID }), res, next);
 
 		expect(recorded.statusCalledWith).toBe(403);
+		expect(nextCalls).toBe(0);
+	});
+
+	it("calls next() when x-service-token header matches the configured token (no session required)", async () => {
+		const middleware = initRequireAdmin({ findUserByEmail, adminEmails, serviceToken: SERVICE_TOKEN });
+		const { res, recorded } = makeRes();
+		let nextCalls = 0;
+		const next: NextFunction = () => {
+			nextCalls += 1;
+		};
+
+		await middleware(
+			makeReq({ headers: { "x-service-token": SERVICE_TOKEN } }),
+			res,
+			next,
+		);
+
+		expect(nextCalls).toBe(1);
+		expect(recorded.statusCalledWith).toBeUndefined();
+		expect(recorded.redirectCalledWith).toBeUndefined();
+	});
+
+	it("falls through to session auth when x-service-token header is wrong", async () => {
+		const middleware = initRequireAdmin({ findUserByEmail, adminEmails, serviceToken: SERVICE_TOKEN });
+		const { res, recorded } = makeRes();
+		let nextCalls = 0;
+		const next: NextFunction = () => {
+			nextCalls += 1;
+		};
+
+		await middleware(
+			makeReq({ headers: { "x-service-token": "wrong-token-wrong-token-ab" } }),
+			res,
+			next,
+		);
+
+		expect(recorded.redirectCalledWith).toEqual([303, "/login"]);
+		expect(nextCalls).toBe(0);
+	});
+
+	it("never auto-accepts when serviceToken is empty (fail-closed)", async () => {
+		const middleware = initRequireAdmin({ findUserByEmail, adminEmails, serviceToken: "" });
+		const { res, recorded } = makeRes();
+		let nextCalls = 0;
+		const next: NextFunction = () => {
+			nextCalls += 1;
+		};
+
+		await middleware(
+			makeReq({ headers: { "x-service-token": "" } }),
+			res,
+			next,
+		);
+
+		expect(recorded.redirectCalledWith).toEqual([303, "/login"]);
 		expect(nextCalls).toBe(0);
 	});
 });

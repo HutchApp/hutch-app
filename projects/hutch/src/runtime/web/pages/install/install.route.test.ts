@@ -62,6 +62,7 @@ describe("GET /install", () => {
 		exchangeGoogleCode: undefined,
 		logError: createNoopLogError(),
 		adminEmails: [],
+		recrawlServiceToken: "test-service-token-abcdefghij",
 		appOrigin: TEST_APP_ORIGIN,
 	});
 

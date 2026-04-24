@@ -35,6 +35,7 @@ export interface AdminRecrawlDependencies {
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	findUserByEmail: FindUserByEmail;
 	adminEmails: readonly string[];
+	serviceToken: string;
 }
 
 function pollUrlBuilderFor(articleUrl: string): PollUrlBuilder {
@@ -182,6 +183,7 @@ export function initAdminRecrawlRoutes(deps: AdminRecrawlDependencies): Router {
 	const requireAdmin = initRequireAdmin({
 		findUserByEmail: deps.findUserByEmail,
 		adminEmails: deps.adminEmails,
+		serviceToken: deps.serviceToken,
 	});
 
 	// The admin path always calls forceMarkCrawlPending before resolveReaderState,
