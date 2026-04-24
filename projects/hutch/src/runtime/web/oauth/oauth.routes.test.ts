@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { createHash, randomBytes } from "node:crypto";
 import request from "supertest";
 import type { Token } from "@node-oauth/oauth2-server";
-import { createTestAppFromFixture } from "../../test-app";
+import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -48,7 +48,7 @@ describe("OAuthCallbackPage", () => {
 describe("OAuth routes", () => {
 	describe("GET /oauth/authorize", () => {
 		it("redirects to login if not authenticated", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app).get("/oauth/authorize").query({
 				client_id: TEST_CLIENT_ID,
@@ -63,7 +63,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("shows authorization form when authenticated", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await testApp.auth.createUser({
 				email: "test@example.com",
 				password: "password123",
@@ -89,7 +89,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("returns 400 for unknown client", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app).get("/oauth/authorize").query({
 				client_id: "unknown-client",
@@ -104,7 +104,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("returns 400 for invalid redirect_uri", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app).get("/oauth/authorize").query({
 				client_id: TEST_CLIENT_ID,
@@ -119,7 +119,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("returns 400 for missing parameters", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app).get("/oauth/authorize").query({
 				client_id: TEST_CLIENT_ID,
@@ -132,7 +132,7 @@ describe("OAuth routes", () => {
 
 	describe("POST /oauth/authorize", () => {
 		it("returns 401 if not authenticated", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app)
 				.post("/oauth/authorize")
@@ -150,7 +150,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("redirects with error when denied", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await testApp.auth.createUser({
 				email: "test@example.com",
 				password: "password123",
@@ -179,7 +179,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("includes state in deny redirect when provided", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await testApp.auth.createUser({
 				email: "test@example.com",
 				password: "password123",
@@ -209,7 +209,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("approves authorization and redirects with code", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const pkce = generatePKCE();
 			await testApp.auth.createUser({
 				email: "test@example.com",
@@ -240,7 +240,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("returns 400 for deny with missing required fields", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await testApp.auth.createUser({
 				email: "test@example.com",
 				password: "password123",
@@ -264,7 +264,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("returns 400 for deny with invalid redirect_uri (prevents open redirect)", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await testApp.auth.createUser({
 				email: "test@example.com",
 				password: "password123",
@@ -292,7 +292,7 @@ describe("OAuth routes", () => {
 
 	describe("POST /oauth/token", () => {
 		it("exchanges authorization code for access token", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const pkce = generatePKCE();
 			await testApp.auth.createUser({
 				email: "test@example.com",
@@ -342,7 +342,7 @@ describe("OAuth routes", () => {
 
 	describe("POST /oauth/revoke", () => {
 		it("revokes refresh token and returns 200", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const client = await testApp.oauthModel.getClient(TEST_CLIENT_ID, "");
 			assert(client, "Test client must exist");
 
@@ -370,7 +370,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("returns 400 without token parameter", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app)
 				.post("/oauth/revoke")
@@ -381,7 +381,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("revokes via access token and removes associated refresh token", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const client = await testApp.oauthModel.getClient(TEST_CLIENT_ID, "");
 			assert(client, "Test client must exist");
 
@@ -409,7 +409,7 @@ describe("OAuth routes", () => {
 		});
 
 		it("returns 200 for non-existent token (RFC compliance)", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app)
 				.post("/oauth/revoke")
@@ -421,7 +421,7 @@ describe("OAuth routes", () => {
 
 	describe("GET /oauth/callback", () => {
 		it("returns authorization complete page", async () => {
-			const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(testApp.app).get("/oauth/callback");
 

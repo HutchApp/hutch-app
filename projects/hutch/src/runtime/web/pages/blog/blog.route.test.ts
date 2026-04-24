@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestAppFromFixture } from "../../../test-app";
+import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -11,7 +11,7 @@ import { getAllPosts } from "./blog.posts";
 const firstPost = getAllPosts()[0];
 
 describe("GET /blog", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return 200 and HTML content", async () => {
 		const response = await request(app).get("/blog");
@@ -72,7 +72,7 @@ describe("GET /blog", () => {
 });
 
 describe("GET /blog/:slug", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return 200 for a valid post slug", async () => {
 		const response = await request(app).get(
@@ -169,7 +169,7 @@ describe("GET /blog/:slug", () => {
 
 describe("hutch-app.com blog redirect", () => {
 	it("should 301 redirect /blog to readplace.com", async () => {
-		const { app } = createTestAppFromFixture(
+		const { app } = createTestApp(
 			createDefaultTestAppFixture("https://readplace.com"),
 		);
 		const response = await request(app)
@@ -180,7 +180,7 @@ describe("hutch-app.com blog redirect", () => {
 	});
 
 	it("should 301 redirect /blog/:slug to readplace.com", async () => {
-		const { app } = createTestAppFromFixture(
+		const { app } = createTestApp(
 			createDefaultTestAppFixture("https://readplace.com"),
 		);
 		const response = await request(app)
@@ -194,7 +194,7 @@ describe("hutch-app.com blog redirect", () => {
 });
 
 describe("GET /sitemap.xml", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should include /blog in the sitemap", async () => {
 		const response = await request(app).get("/sitemap.xml");

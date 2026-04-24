@@ -9,7 +9,7 @@ import type {
 } from "../../../providers/article-parser/article-parser.types";
 import type { FindArticleCrawlStatus } from "../../../providers/article-crawl/article-crawl.types";
 import type { FindGeneratedSummary } from "../../../providers/article-summary/article-summary.types";
-import { createTestAppFromFixture } from "../../../test-app";
+import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -57,7 +57,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -91,7 +91,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -122,7 +122,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -155,7 +155,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -189,7 +189,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -225,7 +225,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -264,7 +264,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -304,7 +304,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -347,7 +347,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -382,7 +382,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -419,7 +419,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -449,7 +449,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -481,7 +481,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -512,7 +512,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -543,7 +543,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -566,7 +566,7 @@ describe("View routes", () => {
 		});
 
 		it("is not rendered on the /view landing page", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view");
 
@@ -582,7 +582,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -612,7 +612,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -650,7 +650,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -692,7 +692,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -734,7 +734,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -773,7 +773,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -811,7 +811,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -849,7 +849,7 @@ describe("View routes", () => {
 				summary: "Fragment summary.",
 			});
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -872,7 +872,7 @@ describe("View routes", () => {
 		it("increments the poll counter when status=pending under the cap", async () => {
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -894,7 +894,7 @@ describe("View routes", () => {
 		it("stops polling at the cap and renders a terminal message", async () => {
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -917,7 +917,7 @@ describe("View routes", () => {
 		});
 
 		it("returns 400 for an invalid url", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view/summary?url=not-a-url");
 
@@ -931,7 +931,7 @@ describe("View routes", () => {
 			});
 			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "pending" });
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				articleCrawl:{
  	findArticleCrawlStatus: findArticleCrawlStatus,
@@ -968,7 +968,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1021,7 +1021,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1056,7 +1056,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1088,7 +1088,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1113,7 +1113,7 @@ describe("View routes", () => {
 
 	describe("Error paths", () => {
 		it("renders the error page for an invalid URL path param (unauthenticated)", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get(
 				`/view/${encodeURIComponent("not-a-url")}`,
@@ -1127,7 +1127,7 @@ describe("View routes", () => {
 		});
 
 		it("renders the error page redirecting to /queue when authenticated", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({
 				email: "test@example.com",
 				password: "password123",
@@ -1152,7 +1152,7 @@ describe("View routes", () => {
 		});
 
 		it("renders the landing form for GET /view without a path param", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view");
 
@@ -1171,7 +1171,7 @@ describe("View routes", () => {
 		});
 
 		it("redirects GET /view?url=<valid> to /view/<encoded-url>", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get(
 				`/view?url=${encodeURIComponent(ARTICLE_URL)}`,
@@ -1182,7 +1182,7 @@ describe("View routes", () => {
 		});
 
 		it("renders the save-error page when GET /view?url=<invalid>", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/view?url=not-a-url");
 
@@ -1203,7 +1203,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1241,7 +1241,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, articleStore, articleCrawl } = createTestAppFromFixture({
+			const { app, articleStore, articleCrawl } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1299,7 +1299,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, articleStore, articleCrawl } = createTestAppFromFixture({
+			const { app, articleStore, articleCrawl } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1350,7 +1350,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, articleStore } = createTestAppFromFixture({
+			const { app, articleStore } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1386,7 +1386,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1426,7 +1426,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, articleStore, articleCrawl } = createTestAppFromFixture({
+			const { app, articleStore, articleCrawl } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1475,7 +1475,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, articleStore } = createTestAppFromFixture({
+			const { app, articleStore } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,
@@ -1513,7 +1513,7 @@ describe("View routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				parser: {
 					parseArticle,

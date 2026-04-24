@@ -4,7 +4,7 @@ import type { Minutes } from "../../../domain/article/article.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { fetchAllArticles } from "./export.page";
 import { initInMemoryArticleStore } from "../../../providers/article-store/in-memory-article-store";
-import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
+import { createTestApp, type TestAppResult } from "../../../test-app";
 
 import {
 	TEST_APP_ORIGIN,
@@ -27,7 +27,7 @@ async function loginAgent(
 describe("Export routes", () => {
 	describe("GET /export (unauthenticated)", () => {
 		it("should redirect to /login", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/export");
 
 			expect(response.status).toBe(303);
@@ -37,7 +37,7 @@ describe("Export routes", () => {
 
 	describe("GET /export (authenticated)", () => {
 		it("should render the export page", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/export");
@@ -57,7 +57,7 @@ describe("Export routes", () => {
 
 	describe("GET /export/download (unauthenticated)", () => {
 		it("should redirect to /login", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/export/download");
 
 			expect(response.status).toBe(303);
@@ -67,7 +67,7 @@ describe("Export routes", () => {
 
 	describe("GET /export/download (authenticated)", () => {
 		it("should return JSON file with content-disposition header", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/export/download");
@@ -82,7 +82,7 @@ describe("Export routes", () => {
 		});
 
 		it("should return empty articles array when user has no articles", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/export/download");
@@ -94,7 +94,7 @@ describe("Export routes", () => {
 		});
 
 		it("should include all saved articles in the export", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -114,7 +114,7 @@ describe("Export routes", () => {
 		});
 
 		it("should export article fields correctly", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -137,7 +137,7 @@ describe("Export routes", () => {
 		});
 
 		it("should not include articles from other users", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			await auth.createUser({
 				email: "user1@example.com",
@@ -178,7 +178,7 @@ describe("Export routes", () => {
 		});
 
 		it("should include articles of all statuses", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent

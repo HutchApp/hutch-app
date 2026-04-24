@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import request from "supertest";
 import type { Token, Client } from "@node-oauth/oauth2-server";
-import { createTestAppFromFixture, type TestAppResult } from "../../test-app";
+import { createTestApp, type TestAppResult } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -46,7 +46,7 @@ async function createAccessToken(
 
 describe("GET /queue (Siren content negotiation)", () => {
 	it("returns 401 without token when requesting Siren", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(testApp.app)
 			.get("/queue")
@@ -58,7 +58,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("returns empty collection for new user", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -75,7 +75,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("returns articles after saving via HTML form", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
 		const agent = request.agent(testApp.app);
@@ -112,7 +112,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("returns 401 with invalid token", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(testApp.app)
 			.get("/queue")
@@ -124,7 +124,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("supports status filter parameter", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -137,7 +137,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("supports order parameter", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -150,7 +150,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("supports page parameter", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -163,7 +163,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("includes search action", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -186,7 +186,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 	});
 
 	it("includes save-article action", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -204,7 +204,7 @@ describe("GET /queue (Siren content negotiation)", () => {
 
 describe("POST /queue (Siren save article)", () => {
 	it("saves an article and returns Siren entity", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -223,7 +223,7 @@ describe("POST /queue (Siren save article)", () => {
 	});
 
 	it("returns 422 for invalid URL", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -238,7 +238,7 @@ describe("POST /queue (Siren save article)", () => {
 	});
 
 	it("returns 401 without token", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(testApp.app)
 			.post("/queue")
@@ -250,7 +250,7 @@ describe("POST /queue (Siren save article)", () => {
 	});
 
 	it("returns 406 when session-authenticated user POSTs without Siren Accept", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
 		const agent = request.agent(testApp.app);
 		await agent
@@ -275,7 +275,7 @@ describe("POST /queue (Siren save article)", () => {
 			articleCrawl: fixture.articleCrawl,
 			parseArticle,
 		});
-		const testApp = createTestAppFromFixture({
+		const testApp = createTestApp({
 			...fixture,
 			parser: { parseArticle, crawlArticle },
 			events: {
@@ -303,7 +303,7 @@ describe("POST /queue (Siren save article)", () => {
 	});
 
 	it("includes delete action on saved article", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
@@ -324,7 +324,7 @@ describe("POST /queue (Siren save article)", () => {
 
 describe("POST /queue (Siren re-save read article)", () => {
 	it("marks a read article as unread when saved again", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const saveResponse = await request(testApp.app)
@@ -364,7 +364,7 @@ describe("POST /queue (Siren re-save read article)", () => {
 
 describe("POST /queue/:id/delete (Siren)", () => {
 	it("redirects to collection via 303 after deleting", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const saveResponse = await request(testApp.app)
@@ -387,7 +387,7 @@ describe("POST /queue/:id/delete (Siren)", () => {
 	});
 
 	it("returns empty collection after following the redirect", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const saveResponse = await request(testApp.app)
@@ -419,7 +419,7 @@ describe("POST /queue/:id/delete (Siren)", () => {
 
 describe("GET / (Siren entry point)", () => {
 	it("redirects Siren clients to /queue", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(testApp.app)
 			.get("/")
@@ -431,7 +431,7 @@ describe("GET / (Siren entry point)", () => {
 	});
 
 	it("returns home page HTML when Accept is not Siren", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(testApp.app)
 			.get("/")
@@ -443,7 +443,7 @@ describe("GET / (Siren entry point)", () => {
 
 	/** Firefox extensions send a CORS preflight for fetches with non-simple headers (Accept: application/vnd.siren+json, Authorization). Without an OPTIONS handler here the preflight 404s and firefox aborts the fetch with NetworkError. */
 	it("handles CORS preflight from extension origin", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(testApp.app)
 			.options("/")
@@ -462,7 +462,7 @@ describe("GET / (Siren entry point)", () => {
 
 describe("GET /queue?url= (Siren URL filter)", () => {
 	it("returns matching article when URL filter matches", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		await request(testApp.app)
@@ -490,7 +490,7 @@ describe("GET /queue?url= (Siren URL filter)", () => {
 	});
 
 	it("returns empty collection when URL filter has no match", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		await request(testApp.app)
@@ -512,7 +512,7 @@ describe("GET /queue?url= (Siren URL filter)", () => {
 
 describe("Article sub-entity actions", () => {
 	it("includes delete action on article sub-entities in collection", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		await request(testApp.app)
@@ -539,7 +539,7 @@ describe("Article sub-entity actions", () => {
 
 describe("Content negotiation", () => {
 	it("returns HTML when Accept header is text/html", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
 		const agent = request.agent(testApp.app);
 		await agent
@@ -556,7 +556,7 @@ describe("Content negotiation", () => {
 	});
 
 	it("returns HTML when Accept header is */*", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
 		const agent = request.agent(testApp.app);
 		await agent
@@ -573,7 +573,7 @@ describe("Content negotiation", () => {
 	});
 
 	it("returns Siren when Accept header is application/vnd.siren+json", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
+import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -27,7 +27,7 @@ async function loginAgent(app: TestAppResult['app'], auth: TestAppResult['auth']
 describe("Queue routes", () => {
 	describe("GET /queue (unauthenticated)", () => {
 		it("should redirect to /login", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/queue");
 
 			expect(response.status).toBe(303);
@@ -37,7 +37,7 @@ describe("Queue routes", () => {
 
 	describe("GET /queue (authenticated)", () => {
 		it("should render the empty queue", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");
@@ -49,7 +49,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should show article count", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");
@@ -61,7 +61,7 @@ describe("Queue routes", () => {
 
 	describe("POST /queue/save", () => {
 		it("should save an article and redirect", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const saveResponse = await agent
@@ -79,7 +79,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should show error for invalid URL", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent
@@ -93,7 +93,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect with error code when save throws", async () => {
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...createDefaultTestAppFixture(TEST_APP_ORIGIN),
 				freshness: { refreshArticleIfStale: async () => { throw new Error("boom"); } },
 			});
@@ -109,7 +109,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should render error banner when queue is loaded with error_code=save_failed", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue?error_code=save_failed");
@@ -120,7 +120,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should bump a re-saved article to the top so #latest-saved points to it", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -157,7 +157,7 @@ describe("Queue routes", () => {
 
 	describe("POST /queue/:id/status", () => {
 		it("should mark article as read", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -183,7 +183,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect preserving queue view state from query params", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -204,7 +204,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect to queue when status value is invalid", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -226,7 +226,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect without error for malformed article id", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const statusResponse = await agent
@@ -241,7 +241,7 @@ describe("Queue routes", () => {
 
 	describe("POST /queue/:id/delete", () => {
 		it("should delete article", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -264,7 +264,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect preserving queue view state from query params", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -282,7 +282,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect without error for malformed article id", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const deleteResponse = await agent.post("/queue/not-a-valid-hash/delete");
@@ -294,7 +294,7 @@ describe("Queue routes", () => {
 
 	describe("Read status indicators", () => {
 		it("should show unread indicator on newly saved articles", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -310,7 +310,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should remove unread indicator after marking as read", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -335,7 +335,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should restore unread indicator when marking back as unread", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -365,7 +365,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should not include htmx attributes on article title links", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -396,7 +396,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -423,7 +423,7 @@ describe("Queue routes", () => {
 
 		it("should not render URL link when siteName is empty", async () => {
 			const skipFreshness: RefreshArticleIfStale = async () => ({ action: "skip" });
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...createDefaultTestAppFixture(TEST_APP_ORIGIN),
 				freshness: { refreshArticleIfStale: skipFreshness },
 			});
@@ -442,7 +442,7 @@ describe("Queue routes", () => {
 
 	describe("Action forms", () => {
 		it("should render action forms from view model for each article", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -460,7 +460,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should disable htmx boost on the read action form", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -494,7 +494,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -536,7 +536,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -561,7 +561,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should not render thumbnail when page has no images", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -588,7 +588,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -627,7 +627,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -669,7 +669,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -715,7 +715,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -765,7 +765,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -798,7 +798,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect to queue for non-existent article", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue/nonexistent/read");
@@ -808,7 +808,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should redirect unauthenticated users to login", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/queue/someid/read");
 
@@ -833,7 +833,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -876,7 +876,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -932,7 +932,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -986,7 +986,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1041,7 +1041,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1093,7 +1093,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1137,7 +1137,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1189,7 +1189,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1238,7 +1238,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1278,7 +1278,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1312,7 +1312,7 @@ describe("Queue routes", () => {
 		});
 
 		it("GET /queue/:id/summary returns 404 for a missing article", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue/00000000000000000000000000000000/summary");
@@ -1328,7 +1328,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1375,7 +1375,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1426,7 +1426,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1472,7 +1472,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1520,7 +1520,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1565,7 +1565,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1615,7 +1615,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1655,7 +1655,7 @@ describe("Queue routes", () => {
 		});
 
 		it("GET /queue/:id/reader returns 404 for a missing article", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue/not-a-valid-hash/reader");
@@ -1668,7 +1668,7 @@ describe("Queue routes", () => {
 			// looks like a legacy stub to the reader core.
 			let markCrawlPendingCalls = 0;
 			let markSummaryPendingCalls = 0;
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				articleCrawl: {
 					findArticleCrawlStatus: async () => undefined,
@@ -1723,7 +1723,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1753,7 +1753,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1784,7 +1784,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1823,7 +1823,7 @@ describe("Queue routes", () => {
 				articleCrawl: fixture.articleCrawl,
 				parseArticle,
 			});
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				parser: { parseArticle, crawlArticle },
 				events: {
@@ -1850,7 +1850,7 @@ describe("Queue routes", () => {
 
 	describe("Pagination", () => {
 		it("should render pagination links when articles span multiple pages", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			for (let i = 0; i < 21; i++) {
@@ -1867,7 +1867,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should render previous link on page 2", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			for (let i = 0; i < 21; i++) {
@@ -1886,7 +1886,7 @@ describe("Queue routes", () => {
 
 	describe("Filter and sort", () => {
 		it("should filter by status", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -1908,7 +1908,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should render sort toggle", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");
@@ -1917,7 +1917,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should include status in sort toggle URL when on read tab", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue?status=read");
@@ -1927,7 +1927,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should toggle sort order from desc to asc", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");
@@ -1938,7 +1938,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should toggle sort order from asc to desc", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue?order=asc");
@@ -1951,7 +1951,7 @@ describe("Queue routes", () => {
 
 	describe("Re-saving a read article marks it unread", () => {
 		it("should mark a read article as unread when saved again via form", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -1991,7 +1991,7 @@ describe("Queue routes", () => {
 	describe("POST /queue/save with existing article (skip freshness)", () => {
 		it("should save user-article relationship without re-fetching", async () => {
 			const skipFreshness: RefreshArticleIfStale = async () => ({ action: "skip" });
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...createDefaultTestAppFixture(TEST_APP_ORIGIN),
 				freshness: { refreshArticleIfStale: skipFreshness },
 			});
@@ -2008,7 +2008,7 @@ describe("Queue routes", () => {
 
 		it("should save for unchanged content (304)", async () => {
 			const unchangedFreshness: RefreshArticleIfStale = async () => ({ action: "unchanged" });
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...createDefaultTestAppFixture(TEST_APP_ORIGIN),
 				freshness: { refreshArticleIfStale: unchangedFreshness },
 			});
@@ -2038,7 +2038,7 @@ describe("Queue routes", () => {
 				},
 			});
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				events: {
 					publishLinkSaved: async () => { linkSavedPublished = true; },
@@ -2062,7 +2062,7 @@ describe("Queue routes", () => {
 
 	describe("Unread tab count", () => {
 		it("should show unread count on the Unread tab", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent.post("/queue/save").type("form").send({ url: "https://example.com/1" });
@@ -2075,7 +2075,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should show unread count when viewing read tab", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			await agent.post("/queue/save").type("form").send({ url: "https://example.com/1" });
@@ -2094,7 +2094,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should not show count on the Read tab", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");
@@ -2104,7 +2104,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should show zero unread count on empty queue", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");
@@ -2116,7 +2116,7 @@ describe("Queue routes", () => {
 
 	describe("CORS for browser extensions", () => {
 		it("should allow requests from browser extensions", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent
@@ -2128,7 +2128,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should allow requests from the legacy hutch-app.com origin", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent
@@ -2140,7 +2140,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should reject requests from non-extension origins", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app)
 				.options("/queue")
@@ -2153,7 +2153,7 @@ describe("Queue routes", () => {
 
 	describe("GET /queue?url=", () => {
 		it("should pre-fill save input and add auto-submit attribute", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue?url=https%3A%2F%2Fexample.com%2Farticle");
@@ -2167,7 +2167,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should include auto-submit script", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue?url=https%3A%2F%2Fexample.com%2Farticle");
@@ -2177,7 +2177,7 @@ describe("Queue routes", () => {
 		});
 
 		it("should not add auto-submit when url is absent", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/queue");

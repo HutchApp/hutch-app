@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestAppFromFixture } from "../../test-app";
+import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -43,7 +43,7 @@ describe("Google auth routes", () => {
 	describe("GET /auth/google", () => {
 		it("should redirect to Google with correct params and set state cookie", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange(),
@@ -69,7 +69,7 @@ describe("Google auth routes", () => {
 	describe("GET /auth/google/callback", () => {
 		it("should 400 when required params are missing", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange(),
@@ -86,7 +86,7 @@ describe("Google auth routes", () => {
 
 		it("should 400 when state cookie is missing", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange(),
@@ -102,7 +102,7 @@ describe("Google auth routes", () => {
 
 		it("should 400 when state cookie does not match state param", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange(),
@@ -120,7 +120,7 @@ describe("Google auth routes", () => {
 
 		it("should 400 when state signature is tampered", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange(),
@@ -139,7 +139,7 @@ describe("Google auth routes", () => {
 
 		it("should 400 when state is expired", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange(),
@@ -160,7 +160,7 @@ describe("Google auth routes", () => {
 		it("should 400 when token exchange throws", async () => {
 			const errors: string[] = [];
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: async () => { throw new Error("network down"); },
@@ -184,7 +184,7 @@ describe("Google auth routes", () => {
 
 		it("should 400 when Google email is not verified", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange({ emailVerified: false }),
@@ -204,7 +204,7 @@ describe("Google auth routes", () => {
 
 		it("should create a new user and redirect to /queue by default", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange({ email: "brand-new@example.com" }),
@@ -228,7 +228,7 @@ describe("Google auth routes", () => {
 
 		it("should redirect to return URL from state payload", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestAppFromFixture({
+			const { app } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange({ email: "return@example.com" }),
@@ -248,7 +248,7 @@ describe("Google auth routes", () => {
 
 		it("should reuse an existing verified email/password account and keep the password working", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange({ email: "existing@example.com" }),
@@ -279,7 +279,7 @@ describe("Google auth routes", () => {
 
 		it("should upgrade an unverified email/password account to verified", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app, auth } = createTestAppFromFixture({
+			const { app, auth } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange({ email: "unverified@example.com" }),

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
+import { createTestApp, type TestAppResult } from "../../../test-app";
 
 import {
 	TEST_APP_ORIGIN,
@@ -21,7 +21,7 @@ async function loginAgent(app: TestAppResult['app'], auth: TestAppResult['auth']
 describe("Save routes", () => {
 	describe("GET /save (no url, unauthenticated)", () => {
 		it("should render an error page with a meta refresh to home", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/save");
 
 			expect(response.status).toBe(200);
@@ -33,7 +33,7 @@ describe("Save routes", () => {
 		});
 
 		it("should show a fallback link to home", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/save");
 			const doc = new JSDOM(response.text).window.document;
 			const link = doc.querySelector(".save-error__link");
@@ -44,7 +44,7 @@ describe("Save routes", () => {
 
 	describe("GET /save (no url, authenticated)", () => {
 		it("should render an error page with a meta refresh to queue", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 			const response = await agent.get("/save");
 
@@ -57,7 +57,7 @@ describe("Save routes", () => {
 		});
 
 		it("should show a fallback link to queue", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 			const response = await agent.get("/save");
 			const doc = new JSDOM(response.text).window.document;
@@ -67,7 +67,7 @@ describe("Save routes", () => {
 		});
 
 		it("should display the countdown seconds", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 			const response = await agent.get("/save");
 			const doc = new JSDOM(response.text).window.document;
@@ -79,7 +79,7 @@ describe("Save routes", () => {
 
 	describe("GET /save?url=invalid", () => {
 		it("should render an error page for an invalid URL when unauthenticated", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/save?url=not-a-url");
 
 			expect(response.status).toBe(200);
@@ -91,7 +91,7 @@ describe("Save routes", () => {
 		});
 
 		it("should render an error page for an invalid URL when authenticated", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 			const response = await agent.get("/save?url=not-a-url");
 
@@ -106,7 +106,7 @@ describe("Save routes", () => {
 
 	describe("GET /save with Referer but no url param", () => {
 		it("should ignore the Referer and render the error page", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 			const response = await agent
 				.get("/save")
@@ -123,7 +123,7 @@ describe("Save routes", () => {
 
 	describe("GET /save?url=https://example.com (unauthenticated)", () => {
 		it("should redirect to login with return URL", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const response = await request(app).get("/save?url=https://example.com/article");
 
 			expect(response.status).toBe(303);
@@ -136,7 +136,7 @@ describe("Save routes", () => {
 
 	describe("GET /save?url=https://example.com (authenticated)", () => {
 		it("should redirect to queue with url", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/save?url=https://example.com/article");
@@ -148,7 +148,7 @@ describe("Save routes", () => {
 
 	describe("login round-trip", () => {
 		it("should carry URL through login and redirect to queue with url", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 			const agent = request.agent(app);
 
@@ -171,7 +171,7 @@ describe("Save routes", () => {
 
 	describe("utm_* passthrough", () => {
 		it("forwards utm_* params on the authenticated /queue redirect", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/save?url=https://example.com/article&utm_source=medium&utm_campaign=spring");
@@ -185,7 +185,7 @@ describe("Save routes", () => {
 		});
 
 		it("drops non-utm query params from the /queue redirect", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
 			const response = await agent.get("/save?url=https://example.com/article&foo=bar&utm_source=twitter");
@@ -197,7 +197,7 @@ describe("Save routes", () => {
 		});
 
 		it("preserves the full originalUrl (utm included) in the /login return param", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/save?url=https://example.com/article&utm_source=medium");
 

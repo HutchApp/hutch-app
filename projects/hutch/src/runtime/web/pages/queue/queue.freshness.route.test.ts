@@ -2,7 +2,7 @@ import request from "supertest";
 import { initRefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type { PublishRefreshArticleContent } from "../../../providers/events/publish-refresh-article-content.types";
 import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
-import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
+import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -52,7 +52,7 @@ describe("Queue freshness integration", () => {
 			staleTtlMs: 0,
 		});
 
-		const { app, auth } = createTestAppFromFixture({
+		const { app, auth } = createTestApp({
 			...fixture,
 			events: {
 				publishLinkSaved: fixture.events.publishLinkSaved,

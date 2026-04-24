@@ -1,14 +1,14 @@
 import request from "supertest";
 import { GoogleIdSchema } from "./providers/google-auth/google-auth.schema";
-import { createTestAppFromFixture } from "./test-app";
+import { createTestApp } from "./test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
 } from "./test-app-fakes";
 
-describe("createTestAppFromFixture + createDefaultTestAppFixture", () => {
+describe("createTestApp + createDefaultTestAppFixture", () => {
 	it("produces a working app with default in-memory dependencies", async () => {
-		const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		const response = await request(app).get("/");
 
@@ -17,7 +17,7 @@ describe("createTestAppFromFixture + createDefaultTestAppFixture", () => {
 	});
 
 	it("exposes back-compat handles so tests can drive state directly", async () => {
-		const result = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const result = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		expect(typeof result.auth.createUser).toBe("function");
 		expect(typeof result.articleStore.writeContent).toBe("function");
@@ -36,7 +36,7 @@ describe("createTestAppFromFixture + createDefaultTestAppFixture", () => {
 
 	it("requires the caller to declare a full google bundle when wiring Google auth", () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-		const result = createTestAppFromFixture({
+		const result = createTestApp({
 			auth: fixture.auth,
 			articleStore: fixture.articleStore,
 			articleCrawl: fixture.articleCrawl,

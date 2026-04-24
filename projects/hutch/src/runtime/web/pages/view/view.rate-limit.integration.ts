@@ -1,5 +1,5 @@
 import request from "supertest";
-import { createTestAppFromFixture } from "../../../test-app";
+import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -21,7 +21,7 @@ describe("View article rate limit", () => {
 
 	it("blocks the 21st request in a 10s window and resets after the window slides", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-		const { app } = createTestAppFromFixture({
+		const { app } = createTestApp({
 			...fixture,
 			events: {
 				publishLinkSaved: fixture.events.publishLinkSaved,
@@ -46,7 +46,7 @@ describe("View article rate limit", () => {
 
 	it("tracks each URL in its own counter (per-URL isolation)", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-		const { app } = createTestAppFromFixture({
+		const { app } = createTestApp({
 			...fixture,
 			events: {
 				publishLinkSaved: fixture.events.publishLinkSaved,

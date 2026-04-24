@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestAppFromFixture } from "../../test-app";
+import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -20,7 +20,7 @@ import { httpErrorMessageMapping } from "../pages/queue/queue.error";
 describe("Email verification", () => {
 	describe("POST /signup", () => {
 		it("should send a verification email on successful signup", async () => {
-			const { app, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			await request(app).post("/signup").type("form").send({
 				email: "new@example.com",
@@ -88,7 +88,7 @@ describe("Email verification", () => {
 		});
 
 		it("should not send a verification email when signup fails", async () => {
-			const { app, auth, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
 
 			await request(app).post("/signup").type("form").send({
@@ -103,7 +103,7 @@ describe("Email verification", () => {
 
 	describe("GET /verify-email", () => {
 		it("should verify email with a valid token", async () => {
-			const { app, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			await request(app).post("/signup").type("form").send({
 				email: "verify@example.com",
@@ -124,7 +124,7 @@ describe("Email verification", () => {
 		});
 
 		it("should reject an invalid token", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/verify-email?token=invalidtoken");
 
@@ -134,7 +134,7 @@ describe("Email verification", () => {
 		});
 
 		it("should reject when no token is provided", async () => {
-			const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).get("/verify-email");
 
@@ -144,7 +144,7 @@ describe("Email verification", () => {
 		});
 
 		it("should reject a token that has already been used", async () => {
-			const { app, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			await request(app).post("/signup").type("form").send({
 				email: "once@example.com",
@@ -166,7 +166,7 @@ describe("Email verification", () => {
 		});
 
 		it("should mark email as verified after successful verification", async () => {
-			const { app, auth, email } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const signupResponse = await request(app).post("/signup").type("form").send({
 				email: "flag@example.com",
@@ -197,7 +197,7 @@ describe("Email verification", () => {
 		});
 
 		it("should not mark email as verified when token is invalid", async () => {
-			const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const signupResponse = await request(app).post("/signup").type("form").send({
 				email: "noverify@example.com",

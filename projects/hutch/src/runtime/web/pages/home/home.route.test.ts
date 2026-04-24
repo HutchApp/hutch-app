@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestAppFromFixture } from "../../../test-app";
+import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -10,7 +10,7 @@ import {
 import { getAllSlugs } from "../blog/blog.posts";
 
 describe("GET /", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return 200 and HTML content", async () => {
 		const response = await request(app).get("/");
@@ -290,7 +290,7 @@ describe("GET /", () => {
 
 describe("GET / with exhausted founding allocation", () => {
 	it("should render the exhausted message and cap progress at 100% when users exceed the limit", async () => {
-		const { app, auth } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		for (let i = 0; i < 101; i++) {
 			await auth.createUser({ email: `user${i}@test.com`, password: "password123" });
@@ -313,7 +313,7 @@ describe("GET / with exhausted founding allocation", () => {
 });
 
 describe("GET /robots.txt", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return a text response with crawl directives", async () => {
 		const response = await request(app).get("/robots.txt");
@@ -327,7 +327,7 @@ describe("GET /robots.txt", () => {
 });
 
 describe("GET /llms.txt", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return a text response with the product overview", async () => {
 		const response = await request(app).get("/llms.txt");
@@ -340,7 +340,7 @@ describe("GET /llms.txt", () => {
 });
 
 describe("GET /llms-full.txt", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return a text response with the full product details", async () => {
 		const response = await request(app).get("/llms-full.txt");
@@ -354,7 +354,7 @@ describe("GET /llms-full.txt", () => {
 });
 
 describe("GET /sitemap.xml", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return an XML sitemap with exactly the public pages", async () => {
 		const response = await request(app).get("/sitemap.xml");
@@ -379,7 +379,7 @@ describe("GET /sitemap.xml", () => {
 });
 
 describe("GET /nonexistent", () => {
-	const { app } = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 	it("should return 404", async () => {
 		const response = await request(app).get("/nonexistent");

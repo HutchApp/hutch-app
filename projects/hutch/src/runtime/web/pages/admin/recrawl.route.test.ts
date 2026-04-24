@@ -2,7 +2,7 @@ import { JSDOM } from "jsdom";
 import request from "supertest";
 import { MinutesSchema } from "../../../domain/article/article.schema";
 import type { ParseArticle, ParseArticleResult } from "../../../providers/article-parser/article-parser.types";
-import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
+import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -51,7 +51,7 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
 		anonymousPublishedCalls.push(params);
 	};
 
-	const { app, auth, articleStore, articleCrawl } = createTestAppFromFixture({
+	const { app, auth, articleStore, articleCrawl } = createTestApp({
 		...fixture,
 		parser:{
  	parseArticle: parseArticle,

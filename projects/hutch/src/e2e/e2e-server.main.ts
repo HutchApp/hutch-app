@@ -2,16 +2,13 @@ import express from 'express'
 import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
 import { createTestApp } from '../runtime/test-app'
 import {
+  createDefaultTestAppFixture,
   createFakeApplyParseResult,
   createFakePublishLinkSaved,
   createFakePublishSaveAnonymousLink,
-  createFakeSummaryProvider,
-  defaultHttpErrorMessageMapping,
   initReadabilityParser,
 } from '../runtime/test-app-fakes'
 import { requireEnv } from '../runtime/require-env'
-import { initInMemoryArticleCrawl } from '../runtime/providers/article-crawl/in-memory-article-crawl'
-import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
 import { initRefreshArticleIfStale } from '../runtime/providers/article-freshness/check-content-freshness'
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from '@packages/crawl-article'
 import { theInformationPreParser } from '../runtime/providers/article-parser/the-information-pre-parser'
@@ -26,15 +23,15 @@ const logError = (message: string, error?: Error) => console.error(JSON.stringif
 const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } })
 const { parseArticle, parseHtml } = initReadabilityParser({ crawlArticle, sitePreParsers: [theInformationPreParser], logError })
 
+const fixture = createDefaultTestAppFixture(origin)
+
 // Wire real refresh stack with in-memory publishers so e2e exercises the
 // event-driven refresh/update-timestamp paths (publishRefreshArticleContent
 // and publishUpdateFetchTimestamp) end-to-end.
-const articleStore = initInMemoryArticleStore()
-const articleCrawl = initInMemoryArticleCrawl()
 const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger })
 const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger })
 const { refreshArticleIfStale } = initRefreshArticleIfStale({
-  findArticleFreshness: articleStore.findArticleFreshness,
+  findArticleFreshness: fixture.articleStore.findArticleFreshness,
   crawlArticle,
   parseHtml,
   publishRefreshArticleContent,
@@ -43,29 +40,27 @@ const { refreshArticleIfStale } = initRefreshArticleIfStale({
   staleTtlMs: 0,
 })
 
-const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle })
-const summary = createFakeSummaryProvider()
+const applyParseResult = createFakeApplyParseResult({
+  articleStore: fixture.articleStore,
+  articleCrawl: fixture.articleCrawl,
+  parseArticle,
+})
 
 const { app: hutchApp, email } = createTestApp({
-  articleStore,
-  articleCrawl,
-  parseArticle,
-  crawlArticle,
-  publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-  publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-  publishUpdateFetchTimestamp,
-  findGeneratedSummary: summary.findGeneratedSummary,
-  markSummaryPending: summary.markSummaryPending,
-  findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
-  markCrawlPending: articleCrawl.markCrawlPending,
-  forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
-  refreshArticleIfStale,
-  httpErrorMessageMapping: defaultHttpErrorMessageMapping,
-  exchangeGoogleCode: undefined,
-  logError,
-  appOrigin: origin,
-  adminEmails: [],
-  recrawlServiceToken: "test-service-token-abcdefghij",
+  ...fixture,
+  parser: { parseArticle, crawlArticle },
+  events: {
+    publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+    publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+    publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+    publishUpdateFetchTimestamp,
+  },
+  freshness: { refreshArticleIfStale },
+  shared: {
+    appOrigin: fixture.shared.appOrigin,
+    httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
+    logError,
+  },
 })
 
 const server = express()

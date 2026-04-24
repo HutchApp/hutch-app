@@ -1,17 +1,11 @@
 import type { Express } from "express";
-import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
-import type { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
-import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type { CrawlArticle } from "@packages/crawl-article";
-import { noopLogger } from "@packages/hutch-logger";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { PublishSaveLinkRawHtmlCommand } from "./providers/events/publish-save-link-raw-html-command.types";
-import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
 import type { PutPendingHtml } from "./providers/pending-html/pending-html.types";
-import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import type {
 	FindGeneratedSummary,
 	MarkSummaryPending,
@@ -24,7 +18,6 @@ import type {
 import type {
 	InMemoryMarkCrawlFailed,
 	InMemoryMarkCrawlReady,
-	initInMemoryArticleCrawl,
 } from "./providers/article-crawl/in-memory-article-crawl";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type {
@@ -60,24 +53,16 @@ import type {
 	ReadArticleContent,
 } from "./providers/article-store/read-article-content";
 import type { SendEmail, EmailMessage } from "./providers/email/email.types";
-import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import type {
 	CreateVerificationToken,
 	VerifyEmailToken,
 } from "./providers/email-verification/email-verification.types";
-import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import type {
 	CreatePasswordResetToken,
 	VerifyPasswordResetToken,
 } from "./providers/password-reset/password-reset.types";
-import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
 import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
-import {
-	createOAuthModel,
-	initInMemoryOAuthModel,
-	type OAuthModel,
-} from "./providers/oauth/oauth-model";
-import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
+import type { OAuthModel } from "./providers/oauth/oauth-model";
 import type { ValidateAccessToken } from "./web/dual-auth.middleware";
 import { createApp } from "./server";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
@@ -270,7 +255,7 @@ function flattenFixtureToAppDependencies(
 	};
 }
 
-export function createTestAppFromFixture(fixture: TestAppFixture): TestAppResult {
+export function createTestApp(fixture: TestAppFixture): TestAppResult {
 	const app = createApp(flattenFixtureToAppDependencies(fixture));
 	return {
 		app,
@@ -282,88 +267,5 @@ export function createTestAppFromFixture(fixture: TestAppFixture): TestAppResult
 		email: fixture.email,
 		emailVerification: fixture.emailVerification,
 		passwordReset: fixture.passwordReset,
-	};
-}
-
-export function createTestApp(options: {
-	articleStore: ReturnType<typeof initInMemoryArticleStore>;
-	articleCrawl: ReturnType<typeof initInMemoryArticleCrawl>;
-	parseArticle: ParseArticle;
-	crawlArticle: CrawlArticle;
-	publishLinkSaved: PublishLinkSaved;
-	publishSaveAnonymousLink: PublishSaveAnonymousLink;
-	publishSaveLinkRawHtmlCommand?: PublishSaveLinkRawHtmlCommand;
-	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
-	putPendingHtml?: PutPendingHtml;
-	findGeneratedSummary: FindGeneratedSummary;
-	markSummaryPending: MarkSummaryPending;
-	findArticleCrawlStatus: FindArticleCrawlStatus;
-	markCrawlPending: MarkCrawlPending;
-	forceMarkCrawlPending: ForceMarkCrawlPending;
-	refreshArticleIfStale: RefreshArticleIfStale;
-	httpErrorMessageMapping: HttpErrorMessageMapping;
-	exchangeGoogleCode: ExchangeGoogleCode | undefined;
-	logError: (message: string, error?: Error) => void;
-	appOrigin: string;
-	adminEmails: readonly string[];
-	recrawlServiceToken: string;
-}) {
-	const auth = initInMemoryAuth();
-	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin: options.appOrigin });
-	const email = initInMemoryEmail();
-	const emailVerification = initInMemoryEmailVerification();
-	const passwordReset = initInMemoryPasswordReset();
-
-	const publishSaveLinkRawHtmlCommand =
-		options.publishSaveLinkRawHtmlCommand
-		?? initInMemorySaveLinkRawHtmlCommand({ logger: noopLogger }).publishSaveLinkRawHtmlCommand;
-	const putPendingHtml = options.putPendingHtml ?? initInMemoryPendingHtml().putPendingHtml;
-
-	const app = createApp({
-		appOrigin: options.appOrigin,
-		staticBaseUrl: "",
-		...auth,
-		...options.articleStore,
-		readArticleContent: (url) =>
-			options.articleStore.readContent(ArticleResourceUniqueId.parse(url)),
-		publishLinkSaved: options.publishLinkSaved,
-		publishSaveAnonymousLink: options.publishSaveAnonymousLink,
-		publishSaveLinkRawHtmlCommand,
-		publishUpdateFetchTimestamp: options.publishUpdateFetchTimestamp,
-		putPendingHtml,
-		findGeneratedSummary: options.findGeneratedSummary,
-		markSummaryPending: options.markSummaryPending,
-		findArticleCrawlStatus: options.findArticleCrawlStatus,
-		markCrawlPending: options.markCrawlPending,
-		forceMarkCrawlPending: options.forceMarkCrawlPending,
-		adminEmails: options.adminEmails,
-		recrawlServiceToken: options.recrawlServiceToken,
-		refreshArticleIfStale: options.refreshArticleIfStale,
-		httpErrorMessageMapping: options.httpErrorMessageMapping,
-		...email,
-		...emailVerification,
-		...passwordReset,
-		googleAuth: options.exchangeGoogleCode
-			? {
-				exchangeGoogleCode: options.exchangeGoogleCode,
-				clientId: "test-google-client-id",
-				clientSecret: "test-google-client-secret",
-			}
-			: undefined,
-		baseUrl: options.appOrigin,
-		logError: options.logError,
-		oauthModel,
-		validateAccessToken: createValidateAccessToken(oauthModel),
-	});
-
-	return {
-		app,
-		auth,
-		articleStore: options.articleStore,
-		articleCrawl: options.articleCrawl,
-		oauthModel,
-		email,
-		emailVerification,
-		passwordReset,
 	};
 }

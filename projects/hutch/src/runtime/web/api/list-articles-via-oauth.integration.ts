@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import request from "supertest";
-import { createTestAppFromFixture } from "../../test-app";
+import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -20,7 +20,7 @@ function generatePkce() {
 
 describe("List articles via OAuth flow", () => {
 	it("returns empty collection after logging in via OAuth", async () => {
-		const testApp = createTestAppFromFixture(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
 		const agent = request.agent(testApp.app);

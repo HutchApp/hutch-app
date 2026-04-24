@@ -30,12 +30,9 @@ import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
-import {
-	httpErrorMessageMapping as defaultHttpErrorMessageMapping,
-} from "./web/pages/queue/queue.error";
+import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import type { TestAppFixture } from "./test-app";
 
-export { defaultHttpErrorMessageMapping };
 export { initReadabilityParser };
 
 /* c8 ignore next -- V8 block-coverage phantom: the const initializer for the first
@@ -217,7 +214,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 		},
 		shared: {
 			appOrigin,
-			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			httpErrorMessageMapping,
 			logError: createNoopLogError(),
 		},
 	};

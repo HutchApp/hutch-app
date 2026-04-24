@@ -3,7 +3,7 @@ import request from "supertest";
 import type { Token, Client } from "@node-oauth/oauth2-server";
 import type { PublishSaveLinkRawHtmlCommand } from "../../../providers/events/publish-save-link-raw-html-command.types";
 import type { UserId } from "../../../domain/user/user.types";
-import { createTestAppFromFixture, type TestAppResult } from "../../../test-app";
+import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -46,7 +46,7 @@ describe("POST /queue/save-html", () => {
 			publishedSaveHtml.push(params);
 		};
 
-		const testApp = createTestAppFromFixture({
+		const testApp = createTestApp({
 			...fixture,
 			events: {
 				publishLinkSaved: async (params) => {
@@ -127,7 +127,7 @@ describe("POST /queue/save-html", () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const errors: Error[] = [];
 
-		const testApp = createTestAppFromFixture({
+		const testApp = createTestApp({
 			...fixture,
 			events: {
 				publishLinkSaved: fixture.events.publishLinkSaved,
@@ -211,7 +211,7 @@ describe("POST /queue/save-html", () => {
 describe("Collection-Siren advertises both save actions", () => {
 	it("includes both save-article and save-html actions on the queue collection", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-		const testApp = createTestAppFromFixture({
+		const testApp = createTestApp({
 			...fixture,
 			events: {
 				publishLinkSaved: fixture.events.publishLinkSaved,
