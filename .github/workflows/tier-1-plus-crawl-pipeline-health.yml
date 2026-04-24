@@ -17,6 +17,11 @@ permissions:
 jobs:
   tier-1-plus-crawl-pipeline-health:
     runs-on: ubuntu-latest
+    # Bind to the prod environment so `secrets.RECRAWL_SERVICE_TOKEN` resolves
+    # to the prod-scoped secret — the test calls readplace.com/admin/recrawl,
+    # which is the prod Lambda, so prod's token is the one the middleware
+    # compares against.
+    environment: prod
     timeout-minutes: 10
     env:
       READPLACE_ORIGIN: https://readplace.com
