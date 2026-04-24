@@ -191,6 +191,26 @@ async function initCore() {
 
 const corePromise = initCore();
 
+const CAPTURE_HTML_TIMEOUT_MS = 5000;
+
+async function captureActiveTabHtml(): Promise<string | undefined> {
+	const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+	const tab = tabs[0];
+	if (tab?.id == null) return undefined;
+	const tabId = tab.id;
+	const captured = await Promise.race([
+		browser.tabs.sendMessage(tabId, { type: "capture-html" }),
+		new Promise<undefined>((resolve) =>
+			setTimeout(() => resolve(undefined), CAPTURE_HTML_TIMEOUT_MS),
+		),
+	]).catch(() => undefined);
+	if (captured && typeof captured === "object" && "rawHtml" in captured) {
+		const rawHtml = (captured as { rawHtml: unknown }).rawHtml;
+		if (typeof rawHtml === "string" && rawHtml.length > 0) return rawHtml;
+	}
+	return undefined;
+}
+
 browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 	if ((raw as { type: string }).type === "shortcut-pressed") {
 		return;
@@ -229,10 +249,20 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 							failure: (err) => resolve({ ok: false, ...err }),
 						});
 					});
-					core.save("current-tab", {
-						url: message.url,
-						title: message.title,
-					});
+					captureActiveTabHtml()
+						.then((rawHtml) => {
+							core.save("current-tab", {
+								url: message.url,
+								title: message.title,
+								rawHtml,
+							});
+						})
+						.catch(() => {
+							core.save("current-tab", {
+								url: message.url,
+								title: message.title,
+							});
+						});
 					pending.then(sendResponse);
 					break;
 				}

@@ -135,6 +135,36 @@ export function initSaveArticleUnderstanding(): Map<string, ActionHandler> {
 	return handlers;
 }
 
+export function initSaveHtmlUnderstanding(): Map<string, ActionHandler> {
+	const handlers = new Map<string, ActionHandler>();
+	handlers.set("save-html", (sirenAction, context) => {
+		return async (fields) => {
+			assert(fields?.url, "save-html requires a url field");
+			assert(fields?.rawHtml, "save-html requires a rawHtml field");
+			const body: Record<string, string> = {
+				url: fields.url,
+				rawHtml: fields.rawHtml,
+			};
+			if (fields.title) body.title = fields.title;
+			const response = await context.doFetch(
+				`${context.serverUrl}${sirenAction.href}`,
+				{
+					method: sirenAction.method,
+					headers: {
+						"Content-Type": sirenAction.type ?? "application/json",
+					},
+					body: JSON.stringify(body),
+				},
+			);
+			assert(response.ok, `Save failed: ${response.status}`);
+			const responseBody = SirenSubEntitySchema.parse(await response.json());
+			const item = context.resolveItem(responseBody);
+			return { items: [item], actions: {} };
+		};
+	});
+	return handlers;
+}
+
 export function initDeleteArticleUnderstanding(): Map<string, ActionHandler> {
 	const handlers = new Map<string, ActionHandler>();
 	handlers.set("delete", (sirenAction, context) => {
@@ -358,6 +388,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 } {
 	const understandings = groupOf(
 		initSaveArticleUnderstanding(),
+		initSaveHtmlUnderstanding(),
 		initDeleteArticleUnderstanding(),
 		httpCacheable(initListArticlesUnderstanding()),
 	);
@@ -371,9 +402,16 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		}
 	}
 
-	const saveUrl: SaveUrl = async ({ url }) => {
+	const saveUrl: SaveUrl = async ({ url, title, rawHtml }) => {
 		const collection = await start();
 		trackItems(collection.items);
+		const saveHtmlAction = collection.actions["save-html"];
+		if (rawHtml && saveHtmlAction) {
+			const result = await saveHtmlAction({ url, rawHtml, title });
+			const item = result.items[0];
+			trackItems(result.items);
+			return { ok: true, item };
+		}
 		const saveAction = collection.actions["save-article"];
 		assert(
 			saveAction,

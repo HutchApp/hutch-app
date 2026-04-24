@@ -4,6 +4,7 @@ import {
 	initSirenReadingList,
 	initExtension,
 	initSaveArticleUnderstanding,
+	initSaveHtmlUnderstanding,
 	initDeleteArticleUnderstanding,
 	initListArticlesUnderstanding,
 	groupOf,
@@ -30,6 +31,31 @@ const COLLECTION_ACTIONS = [
 		],
 	},
 ];
+
+const COLLECTION_ACTIONS_WITH_SAVE_HTML = [
+	COLLECTION_ACTIONS[0],
+	{
+		name: "save-html",
+		href: "/queue/save-html",
+		method: "POST",
+		type: "application/json",
+		fields: [
+			{ name: "url", type: "url" },
+			{ name: "rawHtml", type: "text" },
+			{ name: "title", type: "text" },
+		],
+	},
+	COLLECTION_ACTIONS[1],
+];
+
+function collectionWithSaveHtmlResponse(entities: unknown[] = []) {
+	return JSON.stringify({
+		class: ["collection", "articles"],
+		entities,
+		links: [{ rel: ["self"], href: "/queue" }],
+		actions: COLLECTION_ACTIONS_WITH_SAVE_HTML,
+	});
+}
 
 function collectionResponse(entities: unknown[] = []) {
 	return JSON.stringify({
@@ -872,6 +898,282 @@ describe("initExtension", () => {
 			expect(calls).toContain("GET http://localhost:3000/queue");
 			expect(calls).toHaveLength(2);
 		});
+	});
+});
+
+describe("save-html action", () => {
+	function createUnderstandingsWithSaveHtml() {
+		return groupOf(
+			initSaveArticleUnderstanding(),
+			initSaveHtmlUnderstanding(),
+			initDeleteArticleUnderstanding(),
+			httpCacheable(initListArticlesUnderstanding()),
+		);
+	}
+
+	function articleResponse(savedAt: string) {
+		return JSON.stringify({
+			class: ["article"],
+			properties: {
+				id: "article-1",
+				url: "https://example.com/article",
+				title: "Captured Article",
+				savedAt,
+			},
+			actions: [
+				{
+					name: "delete",
+					href: "/queue/article-1/delete",
+					method: "POST",
+				},
+			],
+		});
+	}
+
+	it("POSTs to the save-html action with url + rawHtml + title and returns the saved item", async () => {
+		const savedAt = "2026-01-15T10:00:00.000Z";
+		let capturedBody: string | undefined;
+		const { fetchFn, calls } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": (init) => {
+					capturedBody = typeof init?.body === "string" ? init.body : undefined;
+					return { status: 201, body: articleResponse(savedAt) };
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		const result = await collection.actions["save-html"]({
+			url: "https://example.com/article",
+			rawHtml: "<html>captured</html>",
+			title: "Captured Article",
+		});
+		expect(result.items[0].url).toBe("https://example.com/article");
+		expect(result.items[0].id).toBe("article-1");
+		expect(calls).toContain("POST http://localhost:3000/queue/save-html");
+		expect(capturedBody).toBe(JSON.stringify({
+			url: "https://example.com/article",
+			rawHtml: "<html>captured</html>",
+			title: "Captured Article",
+		}));
+	});
+
+	it("omits the title field from the body when not provided", async () => {
+		let capturedBody: string | undefined;
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": (init) => {
+					capturedBody = typeof init?.body === "string" ? init.body : undefined;
+					return { status: 201, body: articleResponse("2026-01-15T10:00:00.000Z") };
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await collection.actions["save-html"]({
+			url: "https://example.com/article",
+			rawHtml: "<html>captured</html>",
+		});
+		expect(capturedBody).toBe(JSON.stringify({
+			url: "https://example.com/article",
+			rawHtml: "<html>captured</html>",
+		}));
+	});
+
+	it("throws when the save-html POST fails", async () => {
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": { status: 422 },
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await expect(
+			collection.actions["save-html"]({ url: "https://example.com/article", rawHtml: "<html>x</html>" }),
+		).rejects.toThrow("Save failed: 422");
+	});
+
+	it("asserts when the url field is missing", async () => {
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await expect(
+			collection.actions["save-html"]({ rawHtml: "<html>x</html>" }),
+		).rejects.toThrow("save-html requires a url field");
+	});
+
+	it("asserts when the rawHtml field is missing", async () => {
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		await expect(
+			collection.actions["save-html"]({ url: "https://example.com/article" }),
+		).rejects.toThrow("save-html requires a rawHtml field");
+	});
+
+	it("falls back to application/json when the action has no type", async () => {
+		const actionsWithoutType = [
+			COLLECTION_ACTIONS[0],
+			{
+				name: "save-html",
+				href: "/queue/save-html",
+				method: "POST",
+				fields: [
+					{ name: "url", type: "url" },
+					{ name: "rawHtml", type: "text" },
+				],
+			},
+			COLLECTION_ACTIONS[1],
+		];
+		const { fetchFn } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: JSON.stringify({
+						actions: actionsWithoutType,
+						links: [{ rel: ["self"], href: "/queue" }],
+					}),
+				},
+				"POST http://localhost:3000/queue/save-html": {
+					status: 201,
+					body: articleResponse("2026-01-15T10:00:00.000Z"),
+				},
+			}),
+		);
+		const start = initExtension(createUnderstandingsWithSaveHtml(), createDeps(fetchFn));
+		const collection = await start();
+		const result = await collection.actions["save-html"]({
+			url: "https://example.com/article",
+			rawHtml: "<html>x</html>",
+		});
+		assert.equal(result.items[0].id, "article-1");
+	});
+});
+
+describe("initSirenReadingList capability negotiation", () => {
+	function createAdapterDeps(fetchFn: SirenReadingListDeps["fetchFn"]): SirenReadingListDeps {
+		return {
+			serverUrl: "http://localhost:3000",
+			getAccessToken: async () => "test-token",
+			fetchFn,
+		};
+	}
+
+	function articleResponseFor(href: string) {
+		return JSON.stringify({
+			class: ["article"],
+			properties: {
+				id: "article-1",
+				url: "https://example.com/article",
+				title: "Captured Article",
+				savedAt: "2026-01-15T10:00:00.000Z",
+			},
+			links: [{ rel: ["self"], href }],
+			actions: [
+				{
+					name: "delete",
+					href: "/queue/article-1/delete",
+					method: "POST",
+				},
+			],
+		});
+	}
+
+	it("prefers save-html when rawHtml is provided AND the server advertises save-html", async () => {
+		const { fetchFn, calls } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue/save-html": {
+					status: 201,
+					body: articleResponseFor("/queue/article-1"),
+				},
+			}),
+		);
+		const list = initSirenReadingList(createAdapterDeps(fetchFn));
+		const result = await list.saveUrl({
+			url: "https://example.com/article",
+			title: "Captured Article",
+			rawHtml: "<html>captured</html>",
+		});
+		assert.equal(result.ok, true);
+		expect(calls).toContain("POST http://localhost:3000/queue/save-html");
+		expect(calls).not.toContain("POST http://localhost:3000/queue");
+	});
+
+	it("falls back to save-article when rawHtml is provided but save-html is not advertised", async () => {
+		const { fetchFn, calls } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionResponse(),
+				},
+				"POST http://localhost:3000/queue": {
+					status: 201,
+					body: articleResponseFor("/queue/article-1"),
+				},
+			}),
+		);
+		const list = initSirenReadingList(createAdapterDeps(fetchFn));
+		const result = await list.saveUrl({
+			url: "https://example.com/article",
+			title: "Captured Article",
+			rawHtml: "<html>captured</html>",
+		});
+		assert.equal(result.ok, true);
+		expect(calls).toContain("POST http://localhost:3000/queue");
+		expect(calls).not.toContain("POST http://localhost:3000/queue/save-html");
+	});
+
+	it("uses save-article when rawHtml is missing even if save-html is advertised", async () => {
+		const { fetchFn, calls } = createRoutingFetch(
+			withEntryPoint({
+				"GET http://localhost:3000/queue": {
+					status: 200,
+					body: collectionWithSaveHtmlResponse(),
+				},
+				"POST http://localhost:3000/queue": {
+					status: 201,
+					body: articleResponseFor("/queue/article-1"),
+				},
+			}),
+		);
+		const list = initSirenReadingList(createAdapterDeps(fetchFn));
+		const result = await list.saveUrl({
+			url: "https://example.com/article",
+			title: "Captured Article",
+		});
+		assert.equal(result.ok, true);
+		expect(calls).toContain("POST http://localhost:3000/queue");
+		expect(calls).not.toContain("POST http://localhost:3000/queue/save-html");
 	});
 });
 

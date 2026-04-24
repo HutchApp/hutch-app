@@ -14,6 +14,7 @@ export type RemoveUrlResult =
 export type SaveUrl = (params: {
 	url: string;
 	title: string;
+	rawHtml?: string;
 }) => Promise<SaveUrlResult>;
 
 export type RemoveUrl = (

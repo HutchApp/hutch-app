@@ -24,6 +24,7 @@ export {
 	initSirenReadingList,
 	initExtension,
 	initSaveArticleUnderstanding,
+	initSaveHtmlUnderstanding,
 	initDeleteArticleUnderstanding,
 	initListArticlesUnderstanding,
 	groupOf,

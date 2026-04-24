@@ -24,4 +24,15 @@ document.addEventListener(
 	},
 	true,
 );
+
+browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
+	if ((raw as { type: string }).type === "capture-html") {
+		sendResponse({
+			rawHtml: document.documentElement.outerHTML,
+			title: document.title,
+		});
+		return true;
+	}
+	return undefined;
+});
 /* c8 ignore stop */
