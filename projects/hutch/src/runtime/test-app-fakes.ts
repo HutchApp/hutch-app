@@ -12,6 +12,8 @@ import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
+import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
+import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -159,6 +161,10 @@ export function createDefaultTestAppFixture(overrides?: {
 	const email = initInMemoryEmail();
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
+	const pendingHtml = initInMemoryPendingHtml();
+	const { publishSaveLinkRawHtmlCommand } = initInMemorySaveLinkRawHtmlCommand({
+		logger: noopLogger,
+	});
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin });
 
 	return {
@@ -188,8 +194,10 @@ export function createDefaultTestAppFixture(overrides?: {
 		events: {
 			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
 			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
 		},
+		pendingHtml: { putPendingHtml: pendingHtml.putPendingHtml },
 		summary,
 		freshness: { refreshArticleIfStale: createNoopRefreshArticleIfStale() },
 		oauth: {

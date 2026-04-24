@@ -130,7 +130,12 @@ export interface ParserBundle {
 export interface EventsBundle {
 	publishLinkSaved: PublishLinkSaved;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
+}
+
+export interface PendingHtmlBundle {
+	putPendingHtml: PutPendingHtml;
 }
 
 export interface SummaryBundle {
@@ -185,6 +190,7 @@ export interface TestAppFixture {
 	articleCrawl: ArticleCrawlBundle;
 	parser: ParserBundle;
 	events: EventsBundle;
+	pendingHtml: PendingHtmlBundle;
 	summary: SummaryBundle;
 	freshness: FreshnessBundle;
 	oauth: OAuthBundle;
@@ -241,7 +247,9 @@ function flattenFixtureToAppDependencies(
 		forceMarkCrawlPending: fixture.articleCrawl.forceMarkCrawlPending,
 		publishLinkSaved: fixture.events.publishLinkSaved,
 		publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
+		publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+		putPendingHtml: fixture.pendingHtml.putPendingHtml,
 		findGeneratedSummary: fixture.summary.findGeneratedSummary,
 		markSummaryPending: fixture.summary.markSummaryPending,
 		refreshArticleIfStale: fixture.freshness.refreshArticleIfStale,
