@@ -23,6 +23,7 @@ jobs:
       GOOGLE_LOGIN_CLIENT_ID: ${{ secrets.GOOGLE_LOGIN_CLIENT_ID }}
       GOOGLE_LOGIN_CLIENT_SECRET: ${{ secrets.GOOGLE_LOGIN_CLIENT_SECRET }}
       ANALYTICS_SALT: ${{ secrets.ANALYTICS_SALT }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
     steps:
       - uses: actions/checkout@v6
 
@@ -67,6 +68,7 @@ jobs:
       GOOGLE_LOGIN_CLIENT_ID: ${{ secrets.GOOGLE_LOGIN_CLIENT_ID }}
       GOOGLE_LOGIN_CLIENT_SECRET: ${{ secrets.GOOGLE_LOGIN_CLIENT_SECRET }}
       ANALYTICS_SALT: ${{ secrets.ANALYTICS_SALT }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
     steps:
       - uses: actions/checkout@v6
 
