@@ -20,6 +20,7 @@ export type {
 	TokenStorage,
 } from "./auth/auth.types";
 export { initOAuthAuth } from "./auth/oauth-auth";
+export { UnauthorizedError } from "./auth/unauthorized-error";
 export {
 	initSirenReadingList,
 	initExtension,

@@ -25,6 +25,15 @@ function send(message: PopupMessage): Promise<unknown> {
 	return browser.runtime.sendMessage(message);
 }
 
+async function performLogout() {
+	await send({ type: "logout" });
+	showView("login-view");
+}
+
+function isNotLoggedIn(result: { ok: boolean; reason?: string }): boolean {
+	return !result.ok && result.reason === "not-logged-in";
+}
+
 let allItems: ReadingListItem[] = [];
 let currentPage = 1;
 
@@ -168,6 +177,11 @@ function renderLinks(items: ReadingListItem[]) {
 					id: item.id,
 				})) as GuardedResult<RemoveUrlResult>;
 
+				if (isNotLoggedIn(result)) {
+					await performLogout();
+					return;
+				}
+
 				if (result.ok && result.value.ok) {
 					allItems = result.value.items;
 					renderLinks(filterItems());
@@ -195,6 +209,11 @@ async function loadAllItems() {
 	const result = (await send({
 		type: "get-all-items",
 	})) as GuardedResult<ReadingListItem[]>;
+
+	if (isNotLoggedIn(result)) {
+		await performLogout();
+		return;
+	}
 
 	if (!result.ok) {
 		const listError = document.getElementById("list-error");
@@ -237,11 +256,12 @@ async function saveAndShowList() {
 		url: activeTab.url,
 	})) as GuardedResult<ReadingListItem | null>;
 
+	if (isNotLoggedIn(checkResult)) {
+		await performLogout();
+		return;
+	}
+
 	if (!checkResult.ok) {
-		if (checkResult.reason === "not-logged-in") {
-			showView("login-view");
-			return;
-		}
 		return;
 	}
 
@@ -255,6 +275,11 @@ async function saveAndShowList() {
 		url: activeTab.url,
 		title: activeTab.title,
 	})) as GuardedResult<SaveUrlResult>;
+
+	if (isNotLoggedIn(saveResult)) {
+		await performLogout();
+		return;
+	}
 
 	if (saveResult.ok && saveResult.value.ok) {
 		showView("saved-view");
@@ -298,10 +323,7 @@ document
 
 document
 	.getElementById("logout-button")
-	?.addEventListener("click", async () => {
-		await send({ type: "logout" });
-		showView("login-view");
-	});
+	?.addEventListener("click", performLogout);
 
 document.getElementById("filter-input")?.addEventListener("input", () => {
 	currentPage = 1;

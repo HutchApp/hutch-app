@@ -4,6 +4,7 @@ import type {
 	ReadingListItem,
 	ReadingListItemId,
 } from "../domain/reading-list-item.types";
+import { UnauthorizedError } from "../auth/unauthorized-error";
 import type {
 	FindByUrl,
 	GetAllItems,
@@ -319,6 +320,7 @@ export interface ExtensionDeps {
 	serverUrl: string;
 	getAccessToken: () => Promise<string | null>;
 	fetchFn: typeof fetch;
+	onUnauthorized: () => Promise<void>;
 }
 
 const ENTRY_POINT = "/";
@@ -342,7 +344,12 @@ export function initExtension(
 				Accept: SIREN_MEDIA_TYPE,
 				...(init?.headers ?? {}),
 			};
-			return deps.fetchFn(url, { ...init, headers });
+			const response = await deps.fetchFn(url, { ...init, headers });
+			if (response.status === 401) {
+				await deps.onUnauthorized();
+				throw new UnauthorizedError();
+			}
+			return response;
 		};
 	}
 
@@ -425,6 +432,7 @@ export interface SirenReadingListDeps {
 	serverUrl: string;
 	getAccessToken: () => Promise<string | null>;
 	fetchFn: typeof fetch;
+	onUnauthorized: () => Promise<void>;
 }
 
 export function initSirenReadingList(deps: SirenReadingListDeps): {

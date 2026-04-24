@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import type { ReadingListItemId } from "../domain/reading-list-item.types";
+import { UnauthorizedError } from "../auth/unauthorized-error";
 import {
 	initSirenReadingList,
 	initExtension,
@@ -139,11 +140,15 @@ function withEntryPoint(
 	return { "GET http://localhost:3000/": queueRoute, ...routes };
 }
 
-function createDeps(fetchFn: ExtensionDeps["fetchFn"]): ExtensionDeps {
+function createDeps(
+	fetchFn: ExtensionDeps["fetchFn"],
+	onUnauthorized: ExtensionDeps["onUnauthorized"] = async () => {},
+): ExtensionDeps {
 	return {
 		serverUrl: "http://localhost:3000",
 		getAccessToken: async () => "test-token",
 		fetchFn,
+		onUnauthorized,
 	};
 }
 
@@ -374,6 +379,7 @@ describe("initExtension", () => {
 				serverUrl: "http://localhost:3000",
 				getAccessToken: async () => null,
 				fetchFn,
+				onUnauthorized: async () => {},
 			};
 			const start = initExtension(createUnderstandings(), deps);
 			await expect(start()).rejects.toThrow(
@@ -819,7 +825,7 @@ describe("initExtension", () => {
 			expect(result.items).toEqual([]);
 		});
 
-		it("should return empty items on server error", async () => {
+		it("should throw UnauthorizedError and call onUnauthorized on 401", async () => {
 			const { fetchFn } = createRoutingFetch(
 				withEntryPoint({
 					"GET http://localhost:3000/queue": {
@@ -828,6 +834,33 @@ describe("initExtension", () => {
 					},
 					"GET http://localhost:3000/queue?url=https%3A%2F%2Fexample.com%2Farticle":
 						{ status: 401 },
+				}),
+			);
+			let onUnauthorizedCallCount = 0;
+			const start = initExtension(
+				createUnderstandings(),
+				createDeps(fetchFn, async () => {
+					onUnauthorizedCallCount++;
+				}),
+			);
+			const collection = await start();
+			await expect(
+				collection.actions["search"]({
+					url: "https://example.com/article",
+				}),
+			).rejects.toBeInstanceOf(UnauthorizedError);
+			expect(onUnauthorizedCallCount).toBe(1);
+		});
+
+		it("should return empty items on non-401 server error", async () => {
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: collectionResponse(),
+					},
+					"GET http://localhost:3000/queue?url=https%3A%2F%2Fexample.com%2Farticle":
+						{ status: 500 },
 				}),
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
@@ -1254,11 +1287,15 @@ describe("save-html action", () => {
 });
 
 describe("initSirenReadingList capability negotiation", () => {
-	function createAdapterDeps(fetchFn: SirenReadingListDeps["fetchFn"]): SirenReadingListDeps {
+	function createAdapterDeps(
+		fetchFn: SirenReadingListDeps["fetchFn"],
+		onUnauthorized: SirenReadingListDeps["onUnauthorized"] = async () => {},
+	): SirenReadingListDeps {
 		return {
 			serverUrl: "http://localhost:3000",
 			getAccessToken: async () => "test-token",
 			fetchFn,
+			onUnauthorized,
 		};
 	}
 
@@ -1515,11 +1552,13 @@ describe("toReadingListItem error handling", () => {
 describe("initSirenReadingList", () => {
 	function createAdapterDeps(
 		fetchFn: SirenReadingListDeps["fetchFn"],
+		onUnauthorized: SirenReadingListDeps["onUnauthorized"] = async () => {},
 	): SirenReadingListDeps {
 		return {
 			serverUrl: "http://localhost:3000",
 			getAccessToken: async () => "test-token",
 			fetchFn,
+			onUnauthorized,
 		};
 	}
 
@@ -1981,7 +2020,7 @@ describe("initSirenReadingList", () => {
 			).toBeNull();
 		});
 
-		it("should return null when server returns an error on filter", async () => {
+		it("should throw UnauthorizedError and call onUnauthorized on 401 during findByUrl", async () => {
 			const { fetchFn } = createRoutingFetch(
 				withEntryPoint({
 					"GET http://localhost:3000/queue": {
@@ -1990,6 +2029,29 @@ describe("initSirenReadingList", () => {
 					},
 					"GET http://localhost:3000/queue?url=https%3A%2F%2Fexample.com%2Farticle":
 						{ status: 401 },
+				}),
+			);
+			let onUnauthorizedCallCount = 0;
+			const list = initSirenReadingList(
+				createAdapterDeps(fetchFn, async () => {
+					onUnauthorizedCallCount++;
+				}),
+			);
+			await expect(
+				list.findByUrl("https://example.com/article"),
+			).rejects.toBeInstanceOf(UnauthorizedError);
+			expect(onUnauthorizedCallCount).toBe(1);
+		});
+
+		it("should return null when server returns a non-401 error on filter", async () => {
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: collectionResponse(),
+					},
+					"GET http://localhost:3000/queue?url=https%3A%2F%2Fexample.com%2Farticle":
+						{ status: 500 },
 				}),
 			);
 			const list = initSirenReadingList(createAdapterDeps(fetchFn));
@@ -2110,6 +2172,7 @@ describe("initSirenReadingList", () => {
 				serverUrl: "http://localhost:3000",
 				getAccessToken: async () => null,
 				fetchFn,
+				onUnauthorized: async () => {},
 			};
 			const list = initSirenReadingList(deps);
 			await expect(list.getAllItems()).rejects.toThrow(

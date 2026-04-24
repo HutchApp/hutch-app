@@ -176,6 +176,7 @@ async function initCore() {
 		serverUrl: SERVER_URL,
 		getAccessToken: auth.getAccessToken,
 		fetchFn: (...args) => fetch(...args),
+		onUnauthorized: auth.logout,
 	});
 
 	const core = BrowserExtensionCore(shell, { auth, logger, readingList });

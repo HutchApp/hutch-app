@@ -4,6 +4,7 @@ import type { SaveUrlResult, RemoveUrlResult, SaveUrl, RemoveUrl, FindByUrl, Get
 import type { BrowserShell } from "./shell.types";
 import type { HutchLogger } from "@packages/hutch-logger";
 import { createEventBus } from "./event-bus";
+import { UnauthorizedError } from "./auth/unauthorized-error";
 import { initSaveCurrentTab } from "./save-current-tab";
 import { initIconStatus } from "./icon-status";
 import { initSaveFromContextMenu } from "./save-from-context-menu";
@@ -87,6 +88,10 @@ export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; lo
 			value
 				.then((resolved) => eventBus.emit(event, "success", resolved))
 				.catch((err: unknown) => {
+					if (err instanceof UnauthorizedError) {
+						eventBus.emit(event, "failure", { reason: "not-logged-in" } as CoreError);
+						return;
+					}
 					const error = err instanceof Error ? err : new Error(String(err));
 					eventBus.emit(event, "failure", { reason: "error", error } as CoreError);
 				});
