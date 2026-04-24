@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Readability } from "@mozilla/readability";
 import { initReadabilityParser } from "./readability-parser";
 import type { SitePreParser } from "./article-parser.types";
@@ -448,6 +450,45 @@ describe("initReadabilityParser", () => {
 				}
 			} finally {
 				spy.mockRestore();
+			}
+		});
+
+		it("returns ok:false when the pre-Readability normalization step throws (linkedom returns documentElement=null for empty HTML, and the safety net must cover it)", () => {
+			const { parseHtml } = initParser();
+
+			const result = parseHtml({ url: "https://example.com/article", html: "" });
+
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.reason).toContain("Readability parse failed:");
+			}
+		});
+
+		/* Upstream Readability bug — linkedom leaves flow content as a
+		 * sibling of the synthetic <body> when the source HTML omits a
+		 * <body> tag, which makes Readability's _grabArticle parent walk
+		 * overshoot into the document node and crash on null.tagName.
+		 * See https://github.com/mozilla/readability/issues/435 and
+		 * https://github.com/mozilla/readability/issues/757 — neither
+		 * fixed in @mozilla/readability@0.6.0. */
+		it("parses documents whose HTML omits <body> and leaves flow content as direct children of <html> (hex.ooo shape)", () => {
+			const html = readFileSync(
+				join(__dirname, "fixtures", "implicit-body-minimal.html"),
+				"utf-8",
+			);
+			const { parseHtml } = initParser();
+
+			const result = parseHtml({
+				url: "https://hex.ooo/library/last_question.html",
+				html,
+			});
+
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.article.title).toBe("Isaac Asimov: The Last Question");
+				expect(result.article.content).toContain(
+					"he had had to carry the ice and glassware",
+				);
 			}
 		});
 

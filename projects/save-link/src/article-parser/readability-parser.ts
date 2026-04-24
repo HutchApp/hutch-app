@@ -34,17 +34,18 @@ export function initReadabilityParser(deps: {
 		const { document } = parseHTML(
 			extracted ? buildSyntheticHtml(extracted) : params.html,
 		);
-		const reader = new Readability(document);
-		// Readability occasionally throws on pages whose DOM shape trips
-		// its heuristics (e.g. hex.ooo/library/last_question.html raises
-		// `Cannot read properties of null (reading 'tagName')` inside
-		// _grabArticle). Surface this as a terminal parse failure so
-		// save-link-work can markCrawlFailed immediately — otherwise the
-		// throw escapes the whole pipeline and the reader slot is stuck
-		// on "pending" until the SQS → DLQ path ticks over.
-		let parsed: ReturnType<typeof reader.parse>;
+		// Any throw from normalization, Readability construction, or
+		// Readability.parse() becomes a terminal parse failure so
+		// save-link-work can markCrawlFailed immediately — otherwise it
+		// escapes the whole pipeline and the reader slot is stuck on
+		// "pending" until the SQS → DLQ path ticks over. Readability 0.6
+		// still crashes on pages whose DOM shape trips its heuristics
+		// (mozilla/readability #435, #757); we normalize the common
+		// linkedom-implicit-body shape above but other shapes remain.
+		let parsed: ReturnType<Readability["parse"]>;
 		try {
-			parsed = reader.parse();
+			normalizeImplicitBody(document);
+			parsed = new Readability(document).parse();
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			return { ok: false, reason: `Readability parse failed: ${message}` };
@@ -131,6 +132,34 @@ function buildSyntheticHtml(extracted: SiteArticleContent): string {
 	const titleTag = extracted.title ? `<title>${escapedTitle}</title>` : "";
 	const h1 = extracted.title ? `<h1>${escapedTitle}</h1>` : "";
 	return `<!DOCTYPE html><html><head>${titleTag}</head><body><article>${h1}${extracted.bodyHtml}</article></body></html>`;
+}
+
+/* Move direct children of <html> into <head> or <body> so the DOM matches
+ * what a spec-compliant HTML5 parser would produce. linkedom doesn't
+ * implement the HTML5 tree construction algorithm: when the source omits
+ * <head>/<body> (as hex.ooo does), linkedom leaves metadata and flow
+ * content as siblings of the synthetic empty <body>. Readability's
+ * _grabArticle then walks parent chains expecting to reach <body> and
+ * crashes with "Cannot read properties of null (reading 'tagName')" when
+ * the walk overshoots into the document node. See mozilla/readability
+ * #435 and #757 — the upstream fix (null-guard the while loop) has not
+ * shipped as of @mozilla/readability@0.6.0. */
+function normalizeImplicitBody(document: Document): void {
+	const head = document.head;
+	const body = document.body;
+	const METADATA_TAGS = new Set([
+		"META",
+		"LINK",
+		"TITLE",
+		"STYLE",
+		"SCRIPT",
+		"BASE",
+	]);
+	for (const child of Array.from(document.documentElement.children)) {
+		if (child === head || child === body) continue;
+		if (METADATA_TAGS.has(child.tagName)) head.appendChild(child);
+		else body.appendChild(child);
+	}
 }
 
 function escapeHtmlText(text: string): string {
