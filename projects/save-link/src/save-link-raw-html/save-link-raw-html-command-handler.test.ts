@@ -3,10 +3,12 @@ import urls from "@11ty/posthtml-urls";
 import { noopLogger } from "@packages/hutch-logger";
 import { initSaveLinkRawHtmlCommandHandler } from "./save-link-raw-html-command-handler";
 import { initInMemorySourceContent } from "./in-memory-source-content";
+import { initInMemoryCanonicalContent } from "./in-memory-canonical-content";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "../save-link/download-media";
 import type { ReadPendingHtml } from "./read-pending-html";
+import type { SelectMostCompleteContent } from "./select-content";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
 const stubAttributes: SQSRecordAttributes = {
@@ -67,21 +69,43 @@ const successfulParse: ParseHtml = () => ({
 	},
 });
 
+const tierZeroWinsSelector: SelectMostCompleteContent = async () => ({
+	winner: "tier-0",
+	reason: "tier-0 has more prose",
+});
+
+const canonicalWinsSelector: SelectMostCompleteContent = async () => ({
+	winner: "canonical",
+	reason: "canonical is better",
+});
+
 type HandlerDeps = Parameters<typeof initSaveLinkRawHtmlCommandHandler>[0];
 
 function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	const sourceContent = initInMemorySourceContent();
-	return {
-		handler: initSaveLinkRawHtmlCommandHandler({
-			readPendingHtml: jest.fn().mockResolvedValue("<html><body><p>Article content</p></body></html>"),
-			parseHtml: successfulParse,
-			downloadMedia: noopDownloadMedia,
-			processContent,
-			putSourceContent: sourceContent.putSourceContent,
-			logger: noopLogger,
-			...overrides,
-		}),
+	const canonicalContent = initInMemoryCanonicalContent({
 		readSourceContent: sourceContent.readSourceContent,
+	});
+	const deps: HandlerDeps = {
+		readPendingHtml: jest.fn().mockResolvedValue("<html><body><p>Article content</p></body></html>"),
+		parseHtml: successfulParse,
+		downloadMedia: noopDownloadMedia,
+		processContent,
+		putSourceContent: sourceContent.putSourceContent,
+		readCanonicalContent: canonicalContent.readCanonicalContent,
+		promoteSourceToCanonical: canonicalContent.promoteSourceToCanonical,
+		selectMostCompleteContent: jest.fn(tierZeroWinsSelector),
+		publishLinkSaved: jest.fn().mockResolvedValue(undefined),
+		logger: noopLogger,
+		...overrides,
+	};
+	return {
+		handler: initSaveLinkRawHtmlCommandHandler(deps),
+		readSourceContent: sourceContent.readSourceContent,
+		readCanonicalContent: canonicalContent.readCanonicalContent,
+		seedCanonical: canonicalContent.seedCanonical,
+		publishLinkSaved: deps.publishLinkSaved as jest.Mock,
+		selectMostCompleteContent: deps.selectMostCompleteContent as jest.Mock,
 	};
 }
 
@@ -153,8 +177,10 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		expect(readSourceContent({ url: "https://example.com/bad", tier: "tier-0" })).toBeUndefined();
 	});
 
-	it("accepts an optional title in the command detail", async () => {
-		const { handler, readSourceContent } = createHandler();
+	it("logs the extension-captured title alongside the tier-0 save for debuggability", async () => {
+		const info = jest.fn();
+		const logger = { ...noopLogger, info };
+		const { handler } = createHandler({ logger });
 
 		await handler(
 			createSqsEvent({ url: "https://example.com/article", userId: "user-1", title: "Captured Title" }),
@@ -162,6 +188,82 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 			() => {},
 		);
 
-		expect(readSourceContent({ url: "https://example.com/article", tier: "tier-0" })).toBe("<p>Article content</p>");
+		expect(info).toHaveBeenCalledWith(
+			"[SaveLinkRawHtmlCommand] saved tier-0 source",
+			expect.objectContaining({ url: "https://example.com/article", capturedTitle: "Captured Title" }),
+		);
+	});
+
+	describe("canonical contest", () => {
+		it("promotes tier-0 to canonical and publishes LinkSavedEvent when no canonical exists", async () => {
+			const { handler, readCanonicalContent, publishLinkSaved, selectMostCompleteContent } = createHandler();
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
+				html: "<p>Article content</p>",
+				metadata: { title: "Test", wordCount: 10 },
+			});
+			expect(publishLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article", userId: "user-1" });
+			expect(selectMostCompleteContent).not.toHaveBeenCalled();
+		});
+
+		it("promotes and publishes when a canonical exists and tier-0 wins the selector contest", async () => {
+			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved, selectMostCompleteContent } =
+				createHandler({ selectMostCompleteContent: jest.fn(tierZeroWinsSelector) });
+			seedCanonical({
+				url: "https://example.com/article",
+				html: "<p>old canonical body</p>",
+				metadata: { title: "Old", wordCount: 5 },
+			});
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(selectMostCompleteContent).toHaveBeenCalledTimes(1);
+			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
+				html: "<p>Article content</p>",
+				metadata: { title: "Test", wordCount: 10 },
+			});
+			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
+		});
+
+		it("leaves canonical untouched and does not publish when canonical wins the selector", async () => {
+			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved, selectMostCompleteContent } =
+				createHandler({ selectMostCompleteContent: jest.fn(canonicalWinsSelector) });
+			seedCanonical({
+				url: "https://example.com/article",
+				html: "<p>winning canonical body</p>",
+				metadata: { title: "Existing", wordCount: 50 },
+			});
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(selectMostCompleteContent).toHaveBeenCalledTimes(1);
+			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
+				html: "<p>winning canonical body</p>",
+				metadata: { title: "Existing", wordCount: 50 },
+			});
+			expect(publishLinkSaved).not.toHaveBeenCalled();
+		});
+
+		it("leaves canonical untouched and does not publish when the selector returns tie", async () => {
+			const tieSelector: SelectMostCompleteContent = async () => ({ winner: "tie", reason: "comparable" });
+			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved } = createHandler({
+				selectMostCompleteContent: jest.fn(tieSelector),
+			});
+			seedCanonical({
+				url: "https://example.com/article",
+				html: "<p>existing</p>",
+				metadata: { title: "Existing", wordCount: 30 },
+			});
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
+				html: "<p>existing</p>",
+				metadata: { title: "Existing", wordCount: 30 },
+			});
+			expect(publishLinkSaved).not.toHaveBeenCalled();
+		});
 	});
 });

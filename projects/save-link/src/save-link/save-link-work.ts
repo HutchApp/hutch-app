@@ -10,13 +10,7 @@ import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
 import type { UpdateArticleMetadata } from "./update-article-metadata";
 import type { LogParseError } from "./log-parse-error";
-
-const WORDS_PER_MINUTE = 238;
-
-function estimatedReadTimeFromWordCount(wordCount: number): number {
-	if (wordCount <= 0) return 1;
-	return Math.max(1, Math.ceil(wordCount / WORDS_PER_MINUTE));
-}
+import { estimatedReadTimeFromWordCount } from "./estimated-read-time";
 
 export type PutObject = (params: { key: string; content: string }) => Promise<string>;
 export type UpdateContentLocation = (params: { url: string; contentLocation: string }) => Promise<void>;

@@ -153,10 +153,15 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 		PENDING_HTML_BUCKET_NAME: pendingHtmlBucketName,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
+		DEEPSEEK_API_KEY: deepseekApiKey,
 	},
 	policies: [
 		...saveLinkRawHtmlCommandDynamodb.policies,
 		...pendingHtmlBucket.readPolicies("save-link-raw-html-command-pending-html"),
+		// Read on contentBucket lets the worker GetObject the existing canonical
+		// for the selector contest, and is the source-side permission required
+		// for S3 CopyObject (sources/<tier>.html → content.html).
+		...contentBucket.readPolicies("save-link-raw-html-command-content-read"),
 		...contentBucket.writePolicies("save-link-raw-html-command-s3"),
 	],
 });
@@ -170,6 +175,18 @@ const saveLinkRawHtmlCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-
 });
 
 eventBus.subscribe(SaveLinkRawHtmlCommand, saveLinkRawHtmlCommandLambdaWithSQS);
+
+// --- SaveLinkRawHtmlCommand DLQ consumer ---
+// Mirrors save-link-dlq: flips crawlStatus to "failed" and publishes
+// CrawlArticleFailedEvent when a SaveLinkRawHtmlCommand message exhausts
+// maxReceiveCount. The HutchSQSBackedLambda above already wires the
+// DLQ-arrival CloudWatch alarm + admin email.
+new HutchDLQEventHandler("save-link-raw-html-dlq", {
+	sourceQueue: saveLinkRawHtmlCommandQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+});
 
 // --- SaveAnonymousLinkCommand handler ---
 
