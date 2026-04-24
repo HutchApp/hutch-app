@@ -27,6 +27,7 @@ import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import type { UserId } from "../../../domain/user/user.types";
+import { sendComponent } from "../../send-component";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
@@ -169,8 +170,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
 		const ua = req.headers["user-agent"] ?? "";
 		const browser = ua.includes("Firefox/") ? "firefox" as const : ua.includes("Chrome/") ? "chrome" as const : "other" as const;
-		const html = QueuePage(vm, { emailVerified: req.emailVerified, saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed }).to("text/html");
-		res.status(html.statusCode).type("html").send(html.body);
+		sendComponent(
+			res,
+			QueuePage(vm, { emailVerified: req.emailVerified, saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed }),
+		);
 	});
 
 	router.post("/dismiss-onboarding", (_req: Request, res: Response) => {
@@ -220,8 +223,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				saveError: "Please enter a valid URL",
 				unreadCount,
 			});
-			const html = QueuePage(vm, { emailVerified: req.emailVerified }).to("text/html");
-			res.status(422).type("html").send(html.body);
+			sendComponent(res, QueuePage(vm, { emailVerified: req.emailVerified, statusCode: 422 }));
 			return;
 		}
 
@@ -271,15 +273,17 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
 		});
 
-		const html = ReaderPage({ ...article, content: state.content }, {
-			emailVerified: req.emailVerified,
-			summary: state.summary,
-			summaryPollUrl: state.summaryPollUrl,
-			crawl: state.crawl,
-			readerPollUrl: state.readerPollUrl,
-			audioEnabled,
-		}).to("text/html");
-		res.status(html.statusCode).type("html").send(html.body);
+		sendComponent(
+			res,
+			ReaderPage({ ...article, content: state.content }, {
+				emailVerified: req.emailVerified,
+				summary: state.summary,
+				summaryPollUrl: state.summaryPollUrl,
+				crawl: state.crawl,
+				readerPollUrl: state.readerPollUrl,
+				audioEnabled,
+			}),
+		);
 	});
 
 	router.get("/:id/summary", async (req: Request, res: Response) => {
@@ -301,8 +305,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			pollCount,
 			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
 		});
-		const html = component.to("text/html");
-		res.status(html.statusCode).type("html").send(html.body);
+		sendComponent(res, component);
 	});
 
 	router.get("/:id/reader", async (req: Request, res: Response) => {
@@ -324,8 +327,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			pollCount,
 			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
 		});
-		const html = component.to("text/html");
-		res.status(html.statusCode).type("html").send(html.body);
+		sendComponent(res, component);
 	});
 
 	router.post("/:id/status", async (req: Request, res: Response) => {

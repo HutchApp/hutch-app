@@ -67,6 +67,7 @@ import { initBlogRoutes } from "./web/pages/blog";
 import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
+import { sendComponent } from "./web/send-component";
 import { wantsSiren } from "./web/content-negotiation";
 import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
@@ -285,18 +286,15 @@ export function createApp(dependencies: AppDependencies): Express {
 			: ua.includes("Chrome/") ? "chrome"
 			: "other";
 		const userCount = await countUsers().catch(() => 0);
-		const result = HomePage({ userCount, staticBaseUrl, browser }).to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, HomePage({ userCount, staticBaseUrl, browser }));
 	});
 
 	app.get("/privacy", (_req: Request, res: Response) => {
-		const result = PrivacyPage().to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, PrivacyPage());
 	});
 
 	app.get("/terms", (_req: Request, res: Response) => {
-		const result = TermsPage().to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, TermsPage());
 	});
 
 	app.get("/install", async (req: Request, res: Response) => {
@@ -305,8 +303,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			fetchFirefoxDownloadUrl(),
 			fetchChromeDownloadUrl(),
 		]);
-		const result = InstallPage({ firefox, chrome, browser }).to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, InstallPage({ firefox, chrome, browser }));
 	});
 
 	const blogRouter = initBlogRoutes();
@@ -428,8 +425,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/oauth", oauthRouter);
 
 	app.use((_req: Request, res: Response) => {
-		const result = NotFoundPage().to("text/html");
-		res.status(404).type("html").send(result.body);
+		sendComponent(res, NotFoundPage());
 	});
 
 	return app;

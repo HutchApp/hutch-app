@@ -1,5 +1,6 @@
 import express, { type Router } from "express";
 import helmet from "helmet";
+import { sendComponent } from "../../send-component";
 import { EmbedPage } from "./embed.component";
 import { PreviewPage } from "./preview.component";
 import { EMBED_ICON_SVG } from "./icon";
@@ -17,13 +18,11 @@ export function initEmbedRoutes(deps: { appOrigin: string }): Router {
 	);
 
 	router.get("/", (_req, res) => {
-		const result = EmbedPage({ appOrigin: deps.appOrigin, embedOrigin }).to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, EmbedPage({ appOrigin: deps.appOrigin, embedOrigin }));
 	});
 
 	router.get("/preview", (_req, res) => {
-		const result = PreviewPage({ appOrigin: deps.appOrigin, embedOrigin }).to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, PreviewPage({ appOrigin: deps.appOrigin, embedOrigin }));
 	});
 
 	router.get("/icon.svg", (_req, res) => {

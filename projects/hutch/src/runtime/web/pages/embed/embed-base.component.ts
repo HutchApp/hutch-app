@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EMBED_BASE_STYLES } from "./embed-base.styles";
 import type { Component } from "../../component.types";
+import { HtmlPage } from "../../html-page";
 import { render } from "../../render";
 
 const BASE_TEMPLATE = readFileSync(join(__dirname, "embed-base.template.html"), "utf-8");
@@ -38,7 +39,5 @@ function renderBaseTemplate(input: EmbedBaseInput): string {
 }
 
 export function EmbedBase(input: EmbedBaseInput): Component {
-	return {
-		to: () => ({ statusCode: 200, body: renderBaseTemplate(input) }),
-	};
+	return HtmlPage(renderBaseTemplate(input));
 }

@@ -18,5 +18,6 @@ export function NotFoundPage(): Component {
 		styles: NOT_FOUND_STYLES,
 		bodyClass: "page-not-found",
 		content: render(NOT_FOUND_TEMPLATE, {}),
+		statusCode: 404,
 	});
 }

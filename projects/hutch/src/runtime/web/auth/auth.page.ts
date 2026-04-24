@@ -16,6 +16,7 @@ import type {
 } from "../../providers/email-verification/email-verification.types";
 import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
 import { z } from "zod";
+import { sendComponent } from "../send-component";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
@@ -59,8 +60,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		const result = LoginPage({ returnUrl, userCount }).to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, LoginPage({ returnUrl, userCount }));
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
@@ -69,13 +69,18 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!parsed.success) {
 			const userCount = await fetchUserCount();
-			const result = LoginPage({
-				returnUrl,
-				userCount,
-				email: req.body?.email,
-				errors: flattenZodErrors(parsed.error.issues),
-			}).to("text/html");
-			res.status(422).type("html").send(result.body);
+			sendComponent(
+				res,
+				LoginPage(
+					{
+						returnUrl,
+						userCount,
+						email: req.body?.email,
+						errors: flattenZodErrors(parsed.error.issues),
+					},
+					{ statusCode: 422 },
+				),
+			);
 			return;
 		}
 
@@ -84,13 +89,18 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!credentials.ok) {
 			const userCount = await fetchUserCount();
-			const result = LoginPage({
-				returnUrl,
-				userCount,
-				email,
-				globalError: "Invalid email or password",
-			}).to("text/html");
-			res.status(422).type("html").send(result.body);
+			sendComponent(
+				res,
+				LoginPage(
+					{
+						returnUrl,
+						userCount,
+						email,
+						globalError: "Invalid email or password",
+					},
+					{ statusCode: 422 },
+				),
+			);
 			return;
 		}
 
@@ -106,8 +116,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		const result = SignupPage({ returnUrl, userCount }).to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, SignupPage({ returnUrl, userCount }));
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
@@ -116,13 +125,18 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!parsed.success) {
 			const userCount = await fetchUserCount();
-			const result = SignupPage({
-				returnUrl,
-				userCount,
-				email: req.body?.email,
-				errors: flattenZodErrors(parsed.error.issues),
-			}).to("text/html");
-			res.status(422).type("html").send(result.body);
+			sendComponent(
+				res,
+				SignupPage(
+					{
+						returnUrl,
+						userCount,
+						email: req.body?.email,
+						errors: flattenZodErrors(parsed.error.issues),
+					},
+					{ statusCode: 422 },
+				),
+			);
 			return;
 		}
 
@@ -131,13 +145,18 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!createResult.ok) {
 			const userCount = await fetchUserCount();
-			const result = SignupPage({
-				returnUrl,
-				userCount,
-				email,
-				globalError: "An account with this email already exists",
-			}).to("text/html");
-			res.status(422).type("html").send(result.body);
+			sendComponent(
+				res,
+				SignupPage(
+					{
+						returnUrl,
+						userCount,
+						email,
+						globalError: "An account with this email already exists",
+					},
+					{ statusCode: 422 },
+				),
+			);
 			return;
 		}
 
@@ -167,22 +186,26 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const token = parsed.success ? (parsed.data.token ?? "") : "";
 
 		if (!token) {
-			const result = VerifyEmailPage({
-				success: false,
-				error: "No verification token provided.",
-			}).to("text/html");
-			res.status(400).type("html").send(result.body);
+			sendComponent(
+				res,
+				VerifyEmailPage({
+					success: false,
+					error: "No verification token provided.",
+				}),
+			);
 			return;
 		}
 
 		const verifyResult = await deps.verifyEmailToken(VerificationTokenSchema.parse(token));
 
 		if (!verifyResult.ok) {
-			const result = VerifyEmailPage({
-				success: false,
-				error: "This verification link is invalid or has already been used.",
-			}).to("text/html");
-			res.status(400).type("html").send(result.body);
+			sendComponent(
+				res,
+				VerifyEmailPage({
+					success: false,
+					error: "This verification link is invalid or has already been used.",
+				}),
+			);
 			return;
 		}
 
@@ -193,8 +216,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			await deps.markSessionEmailVerified(sessionId);
 		}
 
-		const result = VerifyEmailPage({ success: true }).to("text/html");
-		res.status(200).type("html").send(result.body);
+		sendComponent(res, VerifyEmailPage({ success: true }));
 	});
 
 	router.post("/logout", async (req: Request, res: Response) => {

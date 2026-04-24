@@ -1,12 +1,18 @@
-import type { Component } from "./component.types";
+import type { Component, ParsedComponent } from "./component.types";
 
-export function HtmlPage(body: string): Component {
+const HTML_CONTENT_TYPE = "text/html; charset=utf-8";
+
+export function HtmlPage(body: string, statusCode: number = 200): Component {
   return {
-    to: (mediaType) => {
+    to: (mediaType): ParsedComponent => {
       if (mediaType !== 'text/html') {
-        return { statusCode: 415, body: '' };
+        return { statusCode: 415, headers: {}, body: '' };
       }
-      return { statusCode: 200, body };
+      return {
+        statusCode,
+        headers: { "content-type": HTML_CONTENT_TYPE },
+        body,
+      };
     },
   };
 }

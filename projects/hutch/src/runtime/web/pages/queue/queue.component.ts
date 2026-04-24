@@ -128,7 +128,7 @@ const AUTO_SUBMIT_SCRIPT = `
 </script>
 `;
 
-export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean; saveUrl?: string; extensionInstalled?: boolean; browser?: BrowserName; onboardingDismissed?: boolean }): Component {
+export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean; saveUrl?: string; extensionInstalled?: boolean; browser?: BrowserName; onboardingDismissed?: boolean; statusCode?: number }): Component {
 	const saveUrl = options?.saveUrl;
 	const displayModel = toQueueDisplayModel(vm, { extensionInstalled: options?.extensionInstalled ?? false, browser: options?.browser ?? "other", onboardingDismissed: options?.onboardingDismissed ?? false });
 	const content = render(QUEUE_TEMPLATE, { ...displayModel, saveUrl });
@@ -146,5 +146,6 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 		scripts: saveUrl ? AUTO_SUBMIT_SCRIPT : undefined,
 		isAuthenticated: true,
 		emailVerified: options?.emailVerified,
+		statusCode: options?.statusCode,
 	});
 }

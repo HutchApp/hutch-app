@@ -8,6 +8,7 @@ import type {
 } from "../../providers/password-reset/password-reset.types";
 import { PasswordResetTokenSchema } from "../../providers/password-reset/password-reset.schema";
 import { z } from "zod";
+import { sendComponent } from "../send-component";
 import { ForgotPasswordSchema, ResetPasswordSchema } from "./auth.schema";
 import { ForgotPasswordPage, ResetPasswordPage } from "./auth.component";
 import { buildPasswordResetEmailHtml } from "./password-reset-email";
@@ -31,26 +32,29 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 	const router = express.Router();
 
 	router.get("/forgot-password", (_req: Request, res: Response) => {
-		const result = ForgotPasswordPage().to("text/html");
-		res.status(result.statusCode).type("html").send(result.body);
+		sendComponent(res, ForgotPasswordPage());
 	});
 
 	router.post("/forgot-password", async (req: Request, res: Response) => {
 		const parsed = ForgotPasswordSchema.safeParse(req.body);
 
 		if (!parsed.success) {
-			const result = ForgotPasswordPage({
-				email: req.body?.email,
-				errors: flattenZodErrors(parsed.error.issues),
-			}).to("text/html");
-			res.status(422).type("html").send(result.body);
+			sendComponent(
+				res,
+				ForgotPasswordPage(
+					{
+						email: req.body?.email,
+						errors: flattenZodErrors(parsed.error.issues),
+					},
+					{ statusCode: 422 },
+				),
+			);
 			return;
 		}
 
 		const { email } = parsed.data;
 
-		const result = ForgotPasswordPage({ sent: true }).to("text/html");
-		res.status(200).type("html").send(result.body);
+		sendComponent(res, ForgotPasswordPage({ sent: true }));
 
 		deps.userExistsByEmail(email)
 			.then(async (exists) => {
@@ -76,15 +80,14 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 		const token = parsed.success ? (parsed.data.token ?? "") : "";
 
 		if (!token) {
-			const result = ResetPasswordPage({
-				error: "No reset token provided.",
-			}).to("text/html");
-			res.status(400).type("html").send(result.body);
+			sendComponent(
+				res,
+				ResetPasswordPage({ error: "No reset token provided." }, { statusCode: 400 }),
+			);
 			return;
 		}
 
-		const result = ResetPasswordPage({ token }).to("text/html");
-		res.status(200).type("html").send(result.body);
+		sendComponent(res, ResetPasswordPage({ token }));
 	});
 
 	router.post("/reset-password", async (req: Request, res: Response) => {
@@ -92,38 +95,45 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 		const token = queryParsed.success ? (queryParsed.data.token ?? "") : "";
 
 		if (!token) {
-			const result = ResetPasswordPage({
-				error: "No reset token provided.",
-			}).to("text/html");
-			res.status(400).type("html").send(result.body);
+			sendComponent(
+				res,
+				ResetPasswordPage({ error: "No reset token provided." }, { statusCode: 400 }),
+			);
 			return;
 		}
 
 		const parsed = ResetPasswordSchema.safeParse(req.body);
 
 		if (!parsed.success) {
-			const result = ResetPasswordPage({
-				token,
-				errors: flattenZodErrors(parsed.error.issues),
-			}).to("text/html");
-			res.status(422).type("html").send(result.body);
+			sendComponent(
+				res,
+				ResetPasswordPage(
+					{
+						token,
+						errors: flattenZodErrors(parsed.error.issues),
+					},
+					{ statusCode: 422 },
+				),
+			);
 			return;
 		}
 
 		const verifyResult = await deps.verifyPasswordResetToken(PasswordResetTokenSchema.parse(token));
 
 		if (!verifyResult.ok) {
-			const result = ResetPasswordPage({
-				error: "This reset link is invalid or has already been used.",
-			}).to("text/html");
-			res.status(400).type("html").send(result.body);
+			sendComponent(
+				res,
+				ResetPasswordPage(
+					{ error: "This reset link is invalid or has already been used." },
+					{ statusCode: 400 },
+				),
+			);
 			return;
 		}
 
 		await deps.updatePassword({ email: verifyResult.email, password: parsed.data.password });
 
-		const result = ResetPasswordPage({ success: true }).to("text/html");
-		res.status(200).type("html").send(result.body);
+		sendComponent(res, ResetPasswordPage({ success: true }));
 	});
 
 	return router;

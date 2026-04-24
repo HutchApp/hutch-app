@@ -1,6 +1,7 @@
 import type { Router } from "express";
 import express from "express";
 import { z } from "zod";
+import { sendComponent } from "../../send-component";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "./save-error.component";
 
@@ -21,8 +22,7 @@ export function initSaveRoutes(): Router {
 		if (!url) {
 			const redirectUrl = req.userId ? "/queue" : "/";
 			const linkLabel = req.userId ? "Go to your queue" : "Go to homepage";
-			const html = SaveErrorPage({ redirectUrl, linkLabel }).to("text/html");
-			res.status(html.statusCode).type("html").send(html.body);
+			sendComponent(res, SaveErrorPage({ redirectUrl, linkLabel }));
 			return;
 		}
 

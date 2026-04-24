@@ -1,5 +1,6 @@
 export interface ParsedComponent {
   statusCode: number;
+  headers: Record<string, string>;
   body: string;
 }
 

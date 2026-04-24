@@ -45,6 +45,7 @@ export interface PageContent {
 	scripts?: string;
 	isAuthenticated?: boolean;
 	emailVerified?: boolean;
+	statusCode?: number;
 }
 
 function renderHeader(
@@ -211,5 +212,5 @@ function renderBaseTemplate(page: PageContent): string {
 }
 
 export function Base(page: PageContent): Component {
-	return HtmlPage(renderBaseTemplate(page));
+	return HtmlPage(renderBaseTemplate(page), page.statusCode);
 }

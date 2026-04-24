@@ -1,5 +1,6 @@
 import type { Request, Response, Router } from "express";
 import express from "express";
+import { sendComponent } from "../../send-component";
 import { BlogIndexPage } from "./blog-index.component";
 import { BlogPostPage } from "./blog-post.component";
 import { NotFoundPage } from "../not-found";
@@ -10,19 +11,16 @@ export function initBlogRoutes(): Router {
 
 	router.get("/", (_req: Request, res: Response) => {
 		const posts = getAllPosts();
-		const html = BlogIndexPage({ posts }).to("text/html");
-		res.status(html.statusCode).type("html").send(html.body);
+		sendComponent(res, BlogIndexPage({ posts }));
 	});
 
 	router.get("/:slug", (req: Request, res: Response) => {
 		const post = findPostBySlug(req.params.slug);
 		if (!post) {
-			const html = NotFoundPage().to("text/html");
-			res.status(404).type("html").send(html.body);
+			sendComponent(res, NotFoundPage());
 			return;
 		}
-		const html = BlogPostPage({ post }).to("text/html");
-		res.status(html.statusCode).type("html").send(html.body);
+		sendComponent(res, BlogPostPage({ post }));
 	});
 
 	return router;

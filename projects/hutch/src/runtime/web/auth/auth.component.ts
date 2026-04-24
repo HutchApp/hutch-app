@@ -41,7 +41,7 @@ function toFieldViewModel(
 	};
 }
 
-export function LoginPage(data: AuthFormData): Component {
+export function LoginPage(data: AuthFormData, options?: { statusCode?: number }): Component {
 	const email = data.email ?? "";
 	const errors = data.errors;
 
@@ -66,6 +66,7 @@ export function LoginPage(data: AuthFormData): Component {
 		styles: AUTH_STYLES,
 		bodyClass: "page-login",
 		content,
+		statusCode: options?.statusCode,
 	});
 }
 
@@ -82,10 +83,11 @@ export function VerifyEmailPage(data: { success: boolean; error?: string }): Com
 		styles: AUTH_STYLES,
 		bodyClass: "page-verify-email",
 		content,
+		statusCode: data.success ? 200 : 400,
 	});
 }
 
-export function SignupPage(data: AuthFormData): Component {
+export function SignupPage(data: AuthFormData, options?: { statusCode?: number }): Component {
 	const email = data.email ?? "";
 	const errors = data.errors;
 
@@ -112,10 +114,14 @@ export function SignupPage(data: AuthFormData): Component {
 		styles: AUTH_STYLES,
 		bodyClass: "page-signup",
 		content,
+		statusCode: options?.statusCode,
 	});
 }
 
-export function ForgotPasswordPage(data?: { email?: string; errors?: FieldError[]; globalError?: string; sent?: boolean }): Component {
+export function ForgotPasswordPage(
+	data?: { email?: string; errors?: FieldError[]; globalError?: string; sent?: boolean },
+	options?: { statusCode?: number },
+): Component {
 	const email = data?.email ?? "";
 	const errors = data?.errors;
 
@@ -136,10 +142,14 @@ export function ForgotPasswordPage(data?: { email?: string; errors?: FieldError[
 		styles: AUTH_STYLES,
 		bodyClass: "page-forgot-password",
 		content,
+		statusCode: options?.statusCode,
 	});
 }
 
-export function ResetPasswordPage(data: { token?: string; errors?: FieldError[]; globalError?: string; success?: boolean; error?: string }): Component {
+export function ResetPasswordPage(
+	data: { token?: string; errors?: FieldError[]; globalError?: string; success?: boolean; error?: string },
+	options?: { statusCode?: number },
+): Component {
 	const errors = data.errors;
 
 	const content = render(RESET_PASSWORD_TEMPLATE, {
@@ -161,5 +171,6 @@ export function ResetPasswordPage(data: { token?: string; errors?: FieldError[];
 		styles: AUTH_STYLES,
 		bodyClass: "page-reset-password",
 		content,
+		statusCode: options?.statusCode,
 	});
 }
