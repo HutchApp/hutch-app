@@ -37,6 +37,18 @@ export const SaveLinkCommand = defineEvent({
 });
 export type SaveLinkDetail = z.infer<typeof SaveLinkCommand.detailSchema>;
 
+export const SaveLinkRawHtmlCommand = defineEvent({
+	name: "save-link-raw-html-command",
+	source: "hutch.api",
+	detailType: "SaveLinkRawHtmlCommand",
+	detailSchema: z.object({
+		url: z.string(),
+		userId: z.string(),
+		title: z.string().optional(),
+	}),
+});
+export type SaveLinkRawHtmlDetail = z.infer<typeof SaveLinkRawHtmlCommand.detailSchema>;
+
 export const SaveAnonymousLinkCommand = defineEvent({
 	name: "save-anonymous-link-command",
 	source: "hutch.api",

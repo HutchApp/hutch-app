@@ -18,6 +18,7 @@ const staticDomains = config.requireObject<string[]>("staticDomains");
 assert(staticDomains.length > 0, "staticDomains must have at least one entry");
 const staticBucketName = config.require("staticBucketName");
 const contentBucketName = config.require("contentBucketName");
+const pendingHtmlBucketName = config.require("pendingHtmlBucketName");
 const tableNames = {
 	articles: config.require("dynamodbArticlesTable"),
 	userArticles: config.require("dynamodbUserArticlesTable"),
@@ -144,6 +145,7 @@ const lambda = new HutchLambda("hutch", {
 		STATIC_BASE_URL: staticAssets.baseUrl,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		CONTENT_BUCKET_NAME: contentBucketName,
+		PENDING_HTML_BUCKET_NAME: pendingHtmlBucketName,
 		ANALYTICS_SALT: requireEnv("ANALYTICS_SALT"),
 		ADMIN_EMAILS: requireEnv("ADMIN_EMAILS"),
 		RECRAWL_SERVICE_TOKEN: requireEnv("RECRAWL_SERVICE_TOKEN"),
@@ -151,6 +153,7 @@ const lambda = new HutchLambda("hutch", {
 	policies: [
 		...dynamodb.policies,
 		...HutchS3ReadWrite.readPoliciesForBucket("hutch-content-s3", contentBucketName),
+		...HutchS3ReadWrite.writePoliciesForBucket("hutch-pending-html", pendingHtmlBucketName),
 	],
 });
 

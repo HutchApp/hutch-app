@@ -32,12 +32,16 @@ import { initReadArticleContent } from "./providers/article-store/read-article-c
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
 import { initEventBridgeSaveAnonymousLink } from "./providers/events/eventbridge-save-anonymous-link";
+import { initEventBridgeSaveLinkRawHtmlCommand } from "./providers/events/eventbridge-save-link-raw-html-command";
 import { initEventBridgeRefreshArticleContent } from "./providers/events/eventbridge-refresh-article-content";
 import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbridge-update-fetch-timestamp";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
+import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
 import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
+import { initPutPendingHtml } from "./providers/pending-html/put-pending-html";
+import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
 import { consoleLogger } from "@packages/hutch-logger";
 import { createApp } from "./server";
@@ -70,6 +74,7 @@ function initProviders() {
 		const resendApiKey = requireEnv("RESEND_API_KEY");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
+		const pendingHtmlBucketName = requireEnv("PENDING_HTML_BUCKET_NAME");
 		const client = createDynamoDocumentClient();
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
@@ -90,8 +95,10 @@ function initProviders() {
 		});
 		const { publishLinkSaved } = initEventBridgeLinkSaved({ publishEvent });
 		const { publishSaveAnonymousLink } = initEventBridgeSaveAnonymousLink({ publishEvent });
+		const { publishSaveLinkRawHtmlCommand } = initEventBridgeSaveLinkRawHtmlCommand({ publishEvent });
 		const { publishRefreshArticleContent } = initEventBridgeRefreshArticleContent({ publishEvent });
 		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
+		const { putPendingHtml } = initPutPendingHtml({ client: new S3Client({}), bucketName: pendingHtmlBucketName });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
 			crawlArticle,
@@ -125,7 +132,9 @@ function initProviders() {
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			publishLinkSaved,
 			publishSaveAnonymousLink,
+			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp,
+			putPendingHtml,
 			findGeneratedSummary: summaryStore.findGeneratedSummary,
 			markSummaryPending: summaryStore.markSummaryPending,
 			findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,
@@ -191,6 +200,8 @@ function initProviders() {
 	};
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
+	const { publishSaveLinkRawHtmlCommand } = initInMemorySaveLinkRawHtmlCommand({ logger: consoleLogger });
+	const { putPendingHtml } = initInMemoryPendingHtml();
 	const stubFindGeneratedSummary = async (_url: string) => undefined;
 	const stubMarkSummaryPending = async (_params: { url: string }) => {};
 	const { refreshArticleIfStale } = initRefreshArticleIfStale({
@@ -219,7 +230,9 @@ function initProviders() {
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		publishLinkSaved,
 		publishSaveAnonymousLink,
+		publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp,
+		putPendingHtml,
 		findGeneratedSummary: stubFindGeneratedSummary,
 		markSummaryPending: stubMarkSummaryPending,
 		findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,

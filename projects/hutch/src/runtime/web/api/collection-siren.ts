@@ -69,6 +69,17 @@ export function toArticleCollectionEntity(
 				fields: [{ name: "url", type: "url" }],
 			},
 			{
+				name: "save-html",
+				href: "/queue/save-html",
+				method: "POST",
+				type: "application/json",
+				fields: [
+					{ name: "url", type: "url" },
+					{ name: "rawHtml", type: "text" },
+					{ name: "title", type: "text" },
+				],
+			},
+			{
 				name: "search",
 				href: "/queue",
 				method: "GET",

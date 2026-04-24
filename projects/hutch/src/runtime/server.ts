@@ -42,6 +42,8 @@ import type {
 } from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
+import type { PublishSaveLinkRawHtmlCommand } from "./providers/events/publish-save-link-raw-html-command.types";
+import type { PutPendingHtml } from "./providers/pending-html/pending-html.types";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
 	CreateVerificationToken,
@@ -117,6 +119,8 @@ interface AppDependencies {
 	validateAccessToken: ValidateAccessToken;
 	publishLinkSaved: PublishLinkSaved;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
+	putPendingHtml: PutPendingHtml;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
 	findArticleCrawlStatus: FindArticleCrawlStatus;
@@ -372,6 +376,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
 		publishLinkSaved: deps.publishLinkSaved,
+		publishSaveLinkRawHtmlCommand: deps.publishSaveLinkRawHtmlCommand,
+		putPendingHtml: deps.putPendingHtml,
 		findGeneratedSummary: deps.findGeneratedSummary,
 		markSummaryPending: deps.markSummaryPending,
 		findArticleCrawlStatus: deps.findArticleCrawlStatus,

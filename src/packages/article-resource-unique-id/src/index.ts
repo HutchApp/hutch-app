@@ -20,6 +20,12 @@ export class ArticleResourceUniqueId {
 	toS3ImageKey(filename: string): string {
 		return `content/${encodeURIComponent(this.value)}/images/${filename}`;
 	}
+	toS3PendingHtmlKey(): string {
+		return `pending-html/${encodeURIComponent(this.value)}.html`;
+	}
+	toS3SourceKey({ tier }: { tier: string }): string {
+		return `articles/${encodeURIComponent(this.value)}/sources/${tier}.html`;
+	}
 	toImageCdnUrl({ baseUrl, filename }: { baseUrl: string; filename: string }): string {
 		// Double-encoded: the CDN URL-decodes once before looking up the singly-encoded S3 key.
 		return `${baseUrl}/content/${encodeURIComponent(encodeURIComponent(this.value))}/images/${filename}`;

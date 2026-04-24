@@ -101,6 +101,7 @@ describe("Email verification", () => {
 				validateAccessToken: createValidateAccessToken(oauthModel),
 				publishLinkSaved: async () => {},
 				publishSaveAnonymousLink: async () => {},
+				publishSaveLinkRawHtmlCommand: async () => {},
 				findGeneratedSummary: async () => undefined,
 				markSummaryPending: async () => {},
 				findArticleCrawlStatus: async () => undefined,
@@ -108,6 +109,7 @@ describe("Email verification", () => {
 				forceMarkCrawlPending: async () => {},
 				refreshArticleIfStale: async () => ({ action: "new" as const }),
 				publishUpdateFetchTimestamp: async () => {},
+				putPendingHtml: async () => {},
 				httpErrorMessageMapping,
 			});
 

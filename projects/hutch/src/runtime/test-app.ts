@@ -2,10 +2,15 @@ import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
 import type { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type { CrawlArticle } from "@packages/crawl-article";
+import { noopLogger } from "@packages/hutch-logger";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
+import type { PublishSaveLinkRawHtmlCommand } from "./providers/events/publish-save-link-raw-html-command.types";
+import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
+import type { PutPendingHtml } from "./providers/pending-html/pending-html.types";
+import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import type {
 	FindGeneratedSummary,
 	MarkSummaryPending,
@@ -36,7 +41,9 @@ export function createTestApp(options: {
 	crawlArticle: CrawlArticle;
 	publishLinkSaved: PublishLinkSaved;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	publishSaveLinkRawHtmlCommand?: PublishSaveLinkRawHtmlCommand;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
+	putPendingHtml?: PutPendingHtml;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
 	findArticleCrawlStatus: FindArticleCrawlStatus;
@@ -56,6 +63,11 @@ export function createTestApp(options: {
 	const emailVerification = initInMemoryEmailVerification();
 	const passwordReset = initInMemoryPasswordReset();
 
+	const publishSaveLinkRawHtmlCommand =
+		options.publishSaveLinkRawHtmlCommand
+		?? initInMemorySaveLinkRawHtmlCommand({ logger: noopLogger }).publishSaveLinkRawHtmlCommand;
+	const putPendingHtml = options.putPendingHtml ?? initInMemoryPendingHtml().putPendingHtml;
+
 	const app = createApp({
 		appOrigin: options.appOrigin,
 		staticBaseUrl: "",
@@ -65,7 +77,9 @@ export function createTestApp(options: {
 			options.articleStore.readContent(ArticleResourceUniqueId.parse(url)),
 		publishLinkSaved: options.publishLinkSaved,
 		publishSaveAnonymousLink: options.publishSaveAnonymousLink,
+		publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp: options.publishUpdateFetchTimestamp,
+		putPendingHtml,
 		findGeneratedSummary: options.findGeneratedSummary,
 		markSummaryPending: options.markSummaryPending,
 		findArticleCrawlStatus: options.findArticleCrawlStatus,

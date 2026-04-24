@@ -113,3 +113,39 @@ describe("ArticleResourceUniqueId.toString", () => {
 		expect(`${ArticleResourceUniqueId.parse("https://example.com/path")}`).toBe("example.com/path");
 	});
 });
+
+describe("ArticleResourceUniqueId.toS3PendingHtmlKey", () => {
+	it("produces the canonical S3 pending-html key", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com/blog/post").toS3PendingHtmlKey())
+			.toBe("pending-html/example.com%2Fblog%2Fpost.html");
+	});
+
+	it("encodes colon in port", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com:8080/path").toS3PendingHtmlKey())
+			.toBe("pending-html/example.com%3A8080%2Fpath.html");
+	});
+
+	it("matches between write and read sides for the same URL regardless of scheme", () => {
+		const write = ArticleResourceUniqueId.parse("https://example.com/article").toS3PendingHtmlKey();
+		const read = ArticleResourceUniqueId.parse("http://example.com/article").toS3PendingHtmlKey();
+		expect(write).toBe(read);
+	});
+});
+
+describe("ArticleResourceUniqueId.toS3SourceKey", () => {
+	it("produces the canonical S3 source key for a tier", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com/blog/post").toS3SourceKey({ tier: "tier-0" }))
+			.toBe("articles/example.com%2Fblog%2Fpost/sources/tier-0.html");
+	});
+
+	it("encodes the id but not the tier", () => {
+		expect(ArticleResourceUniqueId.parse("https://example.com:8080/path").toS3SourceKey({ tier: "tier-1" }))
+			.toBe("articles/example.com%3A8080%2Fpath/sources/tier-1.html");
+	});
+
+	it("matches between write and read sides for the same URL regardless of scheme", () => {
+		const write = ArticleResourceUniqueId.parse("https://example.com/article").toS3SourceKey({ tier: "tier-0" });
+		const read = ArticleResourceUniqueId.parse("http://example.com/article").toS3SourceKey({ tier: "tier-0" });
+		expect(write).toBe(read);
+	});
+});

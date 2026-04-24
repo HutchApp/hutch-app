@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import { SaveArticleInputSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
+import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
@@ -26,6 +26,8 @@ import type {
 import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
+import type { PublishSaveLinkRawHtmlCommand } from "../../../providers/events/publish-save-link-raw-html-command.types";
+import type { PutPendingHtml } from "../../../providers/pending-html/pending-html.types";
 import type { UserId } from "../../../domain/user/user.types";
 import { sendComponent } from "../../send-component";
 import { wantsSiren } from "../../content-negotiation";
@@ -46,6 +48,8 @@ interface QueueDependencies {
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
 	publishLinkSaved: PublishLinkSaved;
+	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
+	putPendingHtml: PutPendingHtml;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
 	findArticleCrawlStatus: FindArticleCrawlStatus;
@@ -204,6 +208,43 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
 		} catch (error) {
 			deps.logError("Failed to save article", error instanceof Error ? error : undefined);
+			res.status(500).type(SIREN_MEDIA_TYPE).json(
+				sirenError({ code: "save-failed", message: "Could not save article" }),
+			);
+		}
+	});
+
+	router.post("/save-html", async (req: Request, res: Response) => {
+		if (!wantsSiren(req)) {
+			res.status(406).send("Not Acceptable");
+			return;
+		}
+
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const userId = req.userId;
+		const parsed = SaveHtmlInputSchema.safeParse(req.body);
+
+		if (!parsed.success) {
+			res.status(422).type(SIREN_MEDIA_TYPE).json(
+				sirenError({ code: "invalid-save-html", message: "Invalid save-html request" }),
+			);
+			return;
+		}
+
+		try {
+			const freshness = await deps.refreshArticleIfStale({ url: parsed.data.url });
+
+			await deps.putPendingHtml({ url: parsed.data.url, html: parsed.data.rawHtml });
+			await deps.publishSaveLinkRawHtmlCommand({
+				url: parsed.data.url,
+				userId,
+				title: parsed.data.title,
+			});
+
+			const result = await saveArticleFromUrl(deps, { userId, url: parsed.data.url, freshness });
+			res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
+		} catch (error) {
+			deps.logError("Failed to save article from html", error instanceof Error ? error : undefined);
 			res.status(500).type(SIREN_MEDIA_TYPE).json(
 				sirenError({ code: "save-failed", message: "Could not save article" }),
 			);

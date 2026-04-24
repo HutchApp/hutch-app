@@ -12,6 +12,7 @@ import {
 import {
 	SaveLinkCommand,
 	SaveAnonymousLinkCommand,
+	SaveLinkRawHtmlCommand,
 	LinkSavedEvent,
 	AnonymousLinkSavedEvent,
 	SummaryGeneratedEvent,
@@ -26,11 +27,21 @@ const alertEmail = config.require("alertEmail");
 const articlesTableName = config.require("articlesTableName");
 const articlesTableArn = config.require("articlesTableArn");
 const contentBucketName = config.require("contentBucketName");
+const pendingHtmlBucketName = config.require("pendingHtmlBucketName");
 
 // --- Content S3 Bucket ---
 
 const contentBucket = new HutchS3ReadWrite("content-bucket", {
 	bucketName: contentBucketName,
+});
+
+// --- Pending-HTML S3 Bucket ---
+// Holds extension-captured raw HTML between the web Lambda's PutObject and the
+// save-link-raw-html worker's GetObject. Separate from content-bucket so we can
+// add an aggressive lifecycle rule later (pending-html is staging, not canonical).
+
+const pendingHtmlBucket = new HutchS3ReadWrite("pending-html-bucket", {
+	bucketName: pendingHtmlBucketName,
 });
 
 // --- Content Images CDN ---
@@ -58,6 +69,10 @@ const saveLinkCommandQueue = new HutchSQS("save-link-command", {
 });
 
 const saveAnonymousLinkCommandQueue = new HutchSQS("save-anonymous-link-command", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const saveLinkRawHtmlCommandQueue = new HutchSQS("save-link-raw-html-command", {
 	visibilityTimeoutSeconds: 60,
 });
 
@@ -118,6 +133,43 @@ new HutchDLQEventHandler("save-link-dlq", {
 	tableName: articlesTableName,
 	eventBus,
 });
+
+// --- SaveLinkRawHtmlCommand handler ---
+
+const saveLinkRawHtmlCommandDynamodb = new HutchDynamoDBAccess("save-link-raw-html-command-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+});
+
+const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command", {
+	entryPoint: "./src/runtime/save-link-raw-html-command.main.ts",
+	outputDir: ".lib/save-link-raw-html-command",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: 30,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+		CONTENT_BUCKET_NAME: contentBucketName,
+		PENDING_HTML_BUCKET_NAME: pendingHtmlBucketName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
+		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
+	},
+	policies: [
+		...saveLinkRawHtmlCommandDynamodb.policies,
+		...pendingHtmlBucket.readPolicies("save-link-raw-html-command-pending-html"),
+		...contentBucket.writePolicies("save-link-raw-html-command-s3"),
+	],
+});
+
+eventBus.grantPublish(saveLinkRawHtmlCommandLambda);
+
+const saveLinkRawHtmlCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-raw-html-command", {
+	lambda: saveLinkRawHtmlCommandLambda,
+	queue: saveLinkRawHtmlCommandQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(SaveLinkRawHtmlCommand, saveLinkRawHtmlCommandLambdaWithSQS);
 
 // --- SaveAnonymousLinkCommand handler ---
 
@@ -386,6 +438,8 @@ export const saveLinkCommandQueueUrl = saveLinkCommandQueue.queueUrl;
 export const saveLinkCommandDlqUrl = saveLinkCommandQueue.dlqUrl;
 export const saveAnonymousLinkCommandQueueUrl = saveAnonymousLinkCommandQueue.queueUrl;
 export const saveAnonymousLinkCommandDlqUrl = saveAnonymousLinkCommandQueue.dlqUrl;
+export const saveLinkRawHtmlCommandQueueUrl = saveLinkRawHtmlCommandQueue.queueUrl;
+export const saveLinkRawHtmlCommandDlqUrl = saveLinkRawHtmlCommandQueue.dlqUrl;
 export const linkSavedQueueUrl = linkSavedQueue.queueUrl;
 export const linkSavedDlqUrl = linkSavedQueue.dlqUrl;
 export const anonymousLinkSavedQueueUrl = anonymousLinkSavedQueue.queueUrl;
