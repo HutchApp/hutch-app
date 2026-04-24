@@ -6,8 +6,17 @@ import type {
 	ParseArticle,
 } from "./providers/article-parser/article-parser.types";
 import { initReadabilityParser } from "./providers/article-parser/readability-parser";
-import type { initInMemoryArticleCrawl } from "./providers/article-crawl/in-memory-article-crawl";
-import type { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
+import { initInMemoryArticleCrawl } from "./providers/article-crawl/in-memory-article-crawl";
+import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
+import { initInMemoryAuth } from "./providers/auth/in-memory-auth";
+import { initInMemoryEmail } from "./providers/email/in-memory-email";
+import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
+import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
+import {
+	createOAuthModel,
+	initInMemoryOAuthModel,
+} from "./providers/oauth/oauth-model";
+import { createValidateAccessToken } from "./providers/oauth/validate-access-token";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type {
 	FindGeneratedSummary,
@@ -19,8 +28,13 @@ import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
+import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
+import {
+	httpErrorMessageMapping as defaultHttpErrorMessageMapping,
+} from "./web/pages/queue/queue.error";
+import type { TestAppFixture } from "./test-app";
 
-export { httpErrorMessageMapping as defaultHttpErrorMessageMapping } from "./web/pages/queue/queue.error";
+export { defaultHttpErrorMessageMapping };
 export { initReadabilityParser };
 
 export const TEST_APP_ORIGIN = "http://localhost:3000";
@@ -118,5 +132,88 @@ export function createFakePublishSaveAnonymousLink(
 	return async (params) => {
 		await log(params);
 		await applyParseResult(params.url);
+	};
+}
+
+export function createDefaultTestAppFixture(overrides?: {
+	appOrigin?: string;
+	exchangeGoogleCode?: ExchangeGoogleCode;
+}): TestAppFixture {
+	const appOrigin = overrides?.appOrigin ?? TEST_APP_ORIGIN;
+
+	const auth = initInMemoryAuth();
+	const articleStoreMemory = initInMemoryArticleStore();
+	const articleCrawl = initInMemoryArticleCrawl();
+	const crawlArticle = stubCrawlArticle;
+	const { parseArticle } = initReadabilityParser({
+		crawlArticle,
+		sitePreParsers: [],
+		logError: createNoopLogError(),
+	});
+	const applyParseResult = createFakeApplyParseResult({
+		articleStore: articleStoreMemory,
+		articleCrawl,
+		parseArticle,
+	});
+	const summary = createFakeSummaryProvider();
+	const email = initInMemoryEmail();
+	const emailVerification = initInMemoryEmailVerification();
+	const passwordReset = initInMemoryPasswordReset();
+	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin });
+
+	return {
+		auth,
+		articleStore: {
+			findArticleById: articleStoreMemory.findArticleById,
+			findArticleByUrl: articleStoreMemory.findArticleByUrl,
+			findArticlesByUser: articleStoreMemory.findArticlesByUser,
+			saveArticle: articleStoreMemory.saveArticle,
+			saveArticleGlobally: articleStoreMemory.saveArticleGlobally,
+			deleteArticle: articleStoreMemory.deleteArticle,
+			updateArticleStatus: articleStoreMemory.updateArticleStatus,
+			readArticleContent: (url) =>
+				articleStoreMemory.readContent(ArticleResourceUniqueId.parse(url)),
+			readContent: articleStoreMemory.readContent,
+			writeContent: articleStoreMemory.writeContent,
+			writeMetadata: articleStoreMemory.writeMetadata,
+		},
+		articleCrawl: {
+			findArticleCrawlStatus: articleCrawl.findArticleCrawlStatus,
+			markCrawlPending: articleCrawl.markCrawlPending,
+			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
+			markCrawlReady: articleCrawl.markCrawlReady,
+			markCrawlFailed: articleCrawl.markCrawlFailed,
+		},
+		parser: { parseArticle, crawlArticle },
+		events: {
+			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+		},
+		summary,
+		freshness: { refreshArticleIfStale: createNoopRefreshArticleIfStale() },
+		oauth: {
+			oauthModel,
+			validateAccessToken: createValidateAccessToken(oauthModel),
+		},
+		email,
+		emailVerification,
+		passwordReset,
+		google: overrides?.exchangeGoogleCode
+			? {
+				exchangeGoogleCode: overrides.exchangeGoogleCode,
+				clientId: "test-google-client-id",
+				clientSecret: "test-google-client-secret",
+			}
+			: undefined,
+		admin: {
+			adminEmails: [],
+			recrawlServiceToken: "test-service-token-abcdefghij",
+		},
+		shared: {
+			appOrigin,
+			httpErrorMessageMapping: defaultHttpErrorMessageMapping,
+			logError: createNoopLogError(),
+		},
 	};
 }
