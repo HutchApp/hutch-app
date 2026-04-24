@@ -52,7 +52,7 @@ async function startTestServer(): Promise<http.Server> {
 	const origin = `http://127.0.0.1:${TEST_PORT}`;
 	const articleStore = initInMemoryArticleStore();
 	const articleCrawl = initInMemoryArticleCrawl();
-	const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle });
+	const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle, sitePreParsers: [], logError: createNoopLogError() });
 	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
 	const summary = createFakeSummaryProvider();
 	const { app, auth } = createTestApp({

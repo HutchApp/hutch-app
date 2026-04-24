@@ -19,7 +19,7 @@ import {
 describe("GET /terms", () => {
 	const articleStore = initInMemoryArticleStore();
 	const articleCrawl = initInMemoryArticleCrawl();
-	const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle });
+	const { parseArticle } = initReadabilityParser({ crawlArticle: stubCrawlArticle, sitePreParsers: [], logError: createNoopLogError() });
 	const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle });
 	const summary = createFakeSummaryProvider();
 	const { app } = createTestApp({

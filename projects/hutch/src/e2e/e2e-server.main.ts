@@ -14,7 +14,7 @@ import { initInMemoryArticleCrawl } from '../runtime/providers/article-crawl/in-
 import { initInMemoryArticleStore } from '../runtime/providers/article-store/in-memory-article-store'
 import { initRefreshArticleIfStale } from '../runtime/providers/article-freshness/check-content-freshness'
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from '@packages/crawl-article'
-import { parseHtml } from '../runtime/providers/article-parser/readability-parser'
+import { theInformationPreParser } from '../runtime/providers/article-parser/the-information-pre-parser'
 import { initInMemoryRefreshArticleContent } from '../runtime/providers/events/in-memory-refresh-article-content'
 import { initInMemoryUpdateFetchTimestamp } from '../runtime/providers/events/in-memory-update-fetch-timestamp'
 
@@ -24,6 +24,7 @@ const logger = HutchLogger.from(consoleLogger)
 
 const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }))
 const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } })
+const { parseArticle, parseHtml } = initReadabilityParser({ crawlArticle, sitePreParsers: [theInformationPreParser], logError })
 
 // Wire real refresh stack with in-memory publishers so e2e exercises the
 // event-driven refresh/update-timestamp paths (publishRefreshArticleContent
@@ -42,7 +43,6 @@ const { refreshArticleIfStale } = initRefreshArticleIfStale({
   staleTtlMs: 0,
 })
 
-const { parseArticle } = initReadabilityParser({ crawlArticle })
 const applyParseResult = createFakeApplyParseResult({ articleStore, articleCrawl, parseArticle })
 const summary = createFakeSummaryProvider()
 

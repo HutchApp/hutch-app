@@ -8,7 +8,8 @@ import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "./providers/article-store/in-memory-article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
-import { parseHtml } from "./providers/article-parser/readability-parser";
+import { initReadabilityParser } from "./providers/article-parser/readability-parser";
+import { theInformationPreParser } from "./providers/article-parser/the-information-pre-parser";
 import { initRefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import {
 	createOAuthModel,
@@ -48,6 +49,11 @@ function initProviders() {
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
 	const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } });
+	const { parseHtml } = initReadabilityParser({
+		crawlArticle,
+		sitePreParsers: [theInformationPreParser],
+		logError,
+	});
 	const staleTtlMs = 86400000;
 
 	if (persistence === "prod") {
