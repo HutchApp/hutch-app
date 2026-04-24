@@ -22,7 +22,7 @@ export type BlogPost = z.infer<typeof BlogFrontmatter> & {
 };
 
 function formatDate(isoDate: string): string {
-	const date = new Date(isoDate + "T00:00:00Z");
+	const date = new Date(`${isoDate}T00:00:00Z`);
 	return date.toLocaleDateString("en-AU", {
 		day: "numeric",
 		month: "long",
