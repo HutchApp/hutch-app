@@ -102,5 +102,22 @@ exports.HEALTH_SOURCES = [
     url: 'https://hex.ooo/library/last_question.html',
     expectedContent: 'he had had to carry the ice and glassware',
     expectsThumbnail: false,
-  }
+  },
+  {
+    // The Information serves a plain Cloudflare "Attention Required!" 403 to
+    // HTTP/1.1 clients, with no `cf-mitigated: challenge` header (unlike
+    // Medium's managed challenge). The H2 fallback triggers on any Cloudflare
+    // 403 (`server: cloudflare`), not just managed challenges — this source
+    // exercises that broader gate.
+    //
+    // Article body is paywalled server-side (`fullText: null` for non-
+    // subscribers; no UA/referer trick unlocks it). The public page exposes
+    // the opening paragraphs via the React-on-Rails `freeBlurb` JSON island,
+    // so the canary anchors on a phrase from that lead paragraph — specific
+    // article content, not site chrome.
+    label: 'The Information',
+    url: 'https://www.theinformation.com/articles/musk-bought-1-4-billion-spacex-shares-helping-boost-control',
+    expectedContent: 'his stake in SpaceX last year by purchasing $1.4 billion of stock',
+    expectsThumbnail: true,
+  },
 ];

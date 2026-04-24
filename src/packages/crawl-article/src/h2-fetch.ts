@@ -105,9 +105,11 @@ function toFetchHeaders(incoming: http2.IncomingHttpHeaders): Headers {
 }
 
 /**
- * Wraps a fetch with an HTTP/2 fallback that kicks in when the origin
- * returns a Cloudflare managed challenge (403 + cf-mitigated: challenge).
- * Non-challenge responses pass through unchanged.
+ * Wraps a fetch with an HTTP/2 fallback that kicks in on any Cloudflare 403
+ * (`server: cloudflare`). Covers both managed challenges (`cf-mitigated:
+ * challenge`) and plain "Attention Required!" interstitials (no cf-mitigated
+ * header), since both are TLS-fingerprint blocks that real browsers bypass
+ * via h2. Non-Cloudflare 403s and non-403 responses pass through unchanged.
  */
 export function withH2Fallback(
 	baseFetch: typeof fetch,
@@ -116,7 +118,7 @@ export function withH2Fallback(
 	return async (input, init) => {
 		const response = await baseFetch(input, init);
 		if (response.status !== 403) return response;
-		if (response.headers.get("cf-mitigated") !== "challenge") return response;
+		if (response.headers.get("server")?.toLowerCase() !== "cloudflare") return response;
 		await response.text();
 		return h2FetchImpl(urlFromInput(input), {
 			headers: toPlainHeaders(init?.headers),

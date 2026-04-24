@@ -124,9 +124,9 @@ describe("withH2Fallback", () => {
 		expect(h2Impl).not.toHaveBeenCalled();
 	});
 
-	it("passes through 403 when cf-mitigated is not 'challenge'", async () => {
+	it("passes through 403 when server header is not 'cloudflare'", async () => {
 		const baseFetch: typeof fetch = async () =>
-			new Response("Forbidden", { status: 403, headers: { "cf-mitigated": "block" } });
+			new Response("Forbidden", { status: 403, headers: { server: "nginx" } });
 		const h2Impl = jest.fn();
 		const wrapped = withH2Fallback(baseFetch, h2Impl as unknown as typeof fetchH2);
 
@@ -136,11 +136,11 @@ describe("withH2Fallback", () => {
 		expect(h2Impl).not.toHaveBeenCalled();
 	});
 
-	it("retries via h2 when Cloudflare returns a challenge", async () => {
+	it("retries via h2 when Cloudflare returns a managed challenge", async () => {
 		const baseFetch: typeof fetch = async () =>
 			new Response("challenge page", {
 				status: 403,
-				headers: { "cf-mitigated": "challenge" },
+				headers: { server: "cloudflare", "cf-mitigated": "challenge" },
 			});
 		const h2Impl = jest.fn(async () =>
 			new Response("<html>real</html>", { status: 200, headers: { "content-type": "text/html" } }),
@@ -161,9 +161,53 @@ describe("withH2Fallback", () => {
 		});
 	});
 
+	it("retries via h2 on a plain Cloudflare 403 interstitial (no cf-mitigated header)", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("<html><title>Attention Required! | Cloudflare</title></html>", {
+				status: 403,
+				headers: { server: "cloudflare" },
+			});
+		const h2Impl = jest.fn(async () =>
+			new Response("<html>real</html>", { status: 200, headers: { "content-type": "text/html" } }),
+		);
+		const wrapped = withH2Fallback(baseFetch, h2Impl as unknown as typeof fetchH2);
+
+		const response = await wrapped("https://example.com");
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toBe("<html>real</html>");
+		expect(h2Impl).toHaveBeenCalledTimes(1);
+	});
+
+	it("matches the server header case-insensitively", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("blocked", { status: 403, headers: { server: "Cloudflare" } });
+		const h2Impl = jest.fn(async () =>
+			new Response("<html>ok</html>", { status: 200, headers: { "content-type": "text/html" } }),
+		);
+		const wrapped = withH2Fallback(baseFetch, h2Impl as unknown as typeof fetchH2);
+
+		const response = await wrapped("https://example.com");
+
+		expect(response.status).toBe(200);
+		expect(h2Impl).toHaveBeenCalledTimes(1);
+	});
+
+	it("passes through 403 when the server header is missing", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("Forbidden", { status: 403 });
+		const h2Impl = jest.fn();
+		const wrapped = withH2Fallback(baseFetch, h2Impl as unknown as typeof fetchH2);
+
+		const response = await wrapped("https://example.com");
+
+		expect(response.status).toBe(403);
+		expect(h2Impl).not.toHaveBeenCalled();
+	});
+
 	it("extracts the URL string from a URL object input", async () => {
 		const baseFetch: typeof fetch = async () =>
-			new Response("challenge", { status: 403, headers: { "cf-mitigated": "challenge" } });
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
 		const h2Impl = jest.fn(async () =>
 			new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } }),
 		);
@@ -176,7 +220,7 @@ describe("withH2Fallback", () => {
 
 	it("extracts the URL from a Request input", async () => {
 		const baseFetch: typeof fetch = async () =>
-			new Response("challenge", { status: 403, headers: { "cf-mitigated": "challenge" } });
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
 		const h2Impl = jest.fn(async () =>
 			new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } }),
 		);
@@ -189,7 +233,7 @@ describe("withH2Fallback", () => {
 
 	it("normalizes a Headers instance in init.headers to a plain object before passing to h2", async () => {
 		const baseFetch: typeof fetch = async () =>
-			new Response("challenge", { status: 403, headers: { "cf-mitigated": "challenge" } });
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
 		const h2Impl = jest.fn(async () =>
 			new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } }),
 		);
@@ -208,7 +252,7 @@ describe("withH2Fallback", () => {
 
 	it("passes undefined headers to h2 when init is omitted", async () => {
 		const baseFetch: typeof fetch = async () =>
-			new Response("challenge", { status: 403, headers: { "cf-mitigated": "challenge" } });
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
 		const h2Impl = jest.fn(async () =>
 			new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } }),
 		);
