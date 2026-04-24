@@ -35,7 +35,20 @@ export function initReadabilityParser(deps: {
 			extracted ? buildSyntheticHtml(extracted) : params.html,
 		);
 		const reader = new Readability(document);
-		const parsed = reader.parse();
+		// Readability occasionally throws on pages whose DOM shape trips
+		// its heuristics (e.g. hex.ooo/library/last_question.html raises
+		// `Cannot read properties of null (reading 'tagName')` inside
+		// _grabArticle). Surface this as a terminal parse failure so
+		// save-link-work can markCrawlFailed immediately — otherwise the
+		// throw escapes the whole pipeline and the reader slot is stuck
+		// on "pending" until the SQS → DLQ path ticks over.
+		let parsed: ReturnType<typeof reader.parse>;
+		try {
+			parsed = reader.parse();
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			return { ok: false, reason: `Readability parse failed: ${message}` };
+		}
 
 		if (!parsed) {
 			return {

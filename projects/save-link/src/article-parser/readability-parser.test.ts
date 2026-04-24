@@ -1,3 +1,4 @@
+import { Readability } from "@mozilla/readability";
 import { initReadabilityParser } from "./readability-parser";
 import type { SitePreParser } from "./article-parser.types";
 
@@ -404,6 +405,50 @@ describe("initReadabilityParser", () => {
 			expect(logged).toHaveLength(1);
 			expect(logged[0].error).toBeInstanceOf(Error);
 			expect(logged[0].error?.message).toBe("string-not-error");
+		});
+
+		it("returns ok:false with the thrown error message when Readability crashes on the DOM (e.g. hex.ooo's _grabArticle null parent)", () => {
+			const spy = jest.spyOn(Readability.prototype, "parse").mockImplementation(() => {
+				throw new Error("Cannot read properties of null (reading 'tagName')");
+			});
+			try {
+				const { parseHtml } = initParser();
+
+				const result = parseHtml({
+					url: "https://example.com/article",
+					html: ARTICLE_HTML,
+				});
+
+				expect(result.ok).toBe(false);
+				if (!result.ok) {
+					expect(result.reason).toBe(
+						"Readability parse failed: Cannot read properties of null (reading 'tagName')",
+					);
+				}
+			} finally {
+				spy.mockRestore();
+			}
+		});
+
+		it("stringifies non-Error throws from Readability into the reason", () => {
+			const spy = jest.spyOn(Readability.prototype, "parse").mockImplementation(() => {
+				throw "bare-string-thrown";
+			});
+			try {
+				const { parseHtml } = initParser();
+
+				const result = parseHtml({
+					url: "https://example.com/article",
+					html: ARTICLE_HTML,
+				});
+
+				expect(result.ok).toBe(false);
+				if (!result.ok) {
+					expect(result.reason).toBe("Readability parse failed: bare-string-thrown");
+				}
+			} finally {
+				spy.mockRestore();
+			}
 		});
 
 		it("escapes HTML-significant characters in the extracted title", () => {
