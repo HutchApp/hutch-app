@@ -11,6 +11,7 @@ import type { PutSourceContent } from "./source-content.types";
 import type { ReadCanonicalContent } from "./canonical-content.types";
 import type { PromoteSourceToCanonical } from "./promote-source.types";
 import type { SelectMostCompleteContent } from "./select-content";
+import type { MarkCrawlFailed } from "../crawl-article-state/article-crawl.types";
 
 const TIER = "tier-0";
 
@@ -27,6 +28,7 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 	promoteSourceToCanonical: PromoteSourceToCanonical;
 	selectMostCompleteContent: SelectMostCompleteContent;
 	publishLinkSaved: PublishLinkSaved;
+	markCrawlFailed: MarkCrawlFailed;
 	logger: HutchLogger;
 }): SQSHandler {
 	const {
@@ -39,6 +41,7 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 		promoteSourceToCanonical,
 		selectMostCompleteContent,
 		publishLinkSaved,
+		markCrawlFailed,
 		logger,
 	} = deps;
 
@@ -50,6 +53,12 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 			const rawHtml = await readPendingHtml(detail.url);
 			const parseResult = parseHtml({ url: detail.url, html: rawHtml });
 			if (!parseResult.ok) {
+				/* Parse errors are terminal on the same HTML — re-running yields the
+				 * same failure. Flip crawlStatus immediately so the reader shows a
+				 * failed state at t+0 instead of polling for ~90s until SQS exhausts
+				 * retries and the DLQ handler marks failed. Re-throw preserves the
+				 * SQS retry + DLQ observability path. */
+				await markCrawlFailed({ url: detail.url, reason: parseResult.reason });
 				throw new Error(`save-link-raw-html parse failed for ${detail.url}: ${parseResult.reason}`);
 			}
 

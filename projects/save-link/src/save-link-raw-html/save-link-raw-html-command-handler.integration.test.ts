@@ -91,6 +91,7 @@ function buildSystem(opts: {
 		promoteSourceToCanonical: canonicalContent.promoteSourceToCanonical,
 		selectMostCompleteContent,
 		publishLinkSaved,
+		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		logger: noopLogger,
 	});
 	return {

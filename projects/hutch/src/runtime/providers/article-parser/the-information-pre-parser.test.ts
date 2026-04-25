@@ -47,6 +47,9 @@ describe("theInformationPreParser.extract", () => {
 		expect(result?.bodyHtml).toContain(
 			"This is the publicly available preview from The Information",
 		);
+		expect(result?.bodyHtml).toContain(
+			"Try to open the full article using a browser extension",
+		);
 	});
 
 	it("omits title when absent in the JSON", () => {

@@ -19,6 +19,7 @@ import { initReadCanonicalContent } from "../save-link-raw-html/read-canonical-c
 import { initPromoteSourceToCanonical } from "../save-link-raw-html/promote-source-to-canonical";
 import { initSelectMostCompleteContent } from "../save-link-raw-html/select-content";
 import { initSaveLinkRawHtmlCommandHandler } from "../save-link-raw-html/save-link-raw-html-command-handler";
+import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
@@ -69,6 +70,11 @@ const { selectMostCompleteContent } = initSelectMostCompleteContent({
 	logger: consoleLogger,
 });
 
+const { markCrawlFailed } = initDynamoDbArticleCrawl({
+	client: dynamoClient,
+	tableName: articlesTable,
+});
+
 const { putImageObject } = initS3PutImageObject({
 	client: s3Client,
 	bucketName: contentBucketName,
@@ -111,5 +117,6 @@ export const handler = initSaveLinkRawHtmlCommandHandler({
 	promoteSourceToCanonical,
 	selectMostCompleteContent,
 	publishLinkSaved,
+	markCrawlFailed,
 	logger: consoleLogger,
 });

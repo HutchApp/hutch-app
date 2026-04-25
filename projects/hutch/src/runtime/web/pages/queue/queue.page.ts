@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
-import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_BYTES } from "../../../domain/article/article.schema";
+import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_REQUEST_BYTES, RAW_HTML_FIELD } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
@@ -214,15 +214,15 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		}
 	});
 
-	/** Translates body-parser oversize errors into a Siren 500 carrying the save-article action, so the extension can drop the oversized rawHtml and degrade onto the URL-only tier. Also gated on err.limit as defense-in-depth against a future middleware in the chain raising entity.too.large for a different parser. */
+	/** Translates body-parser oversize errors (bodies above MAX_RAW_HTML_REQUEST_BYTES, where we can't reach req.body.url to salvage) into a Siren 500 carrying the save-article action, so the extension can drop the oversized rawHtml and degrade onto the URL-only tier. Also gated on err.limit as defense-in-depth against a future middleware in the chain raising entity.too.large for a different parser. */
 	const saveHtmlLimitHandler: ErrorRequestHandler = (err, req, res, next) => {
 		const bodyErr = err as { type?: string; limit?: number } | null;
 		if (
 			bodyErr?.type === "entity.too.large" &&
-			bodyErr.limit === MAX_RAW_HTML_BYTES &&
+			bodyErr.limit === MAX_RAW_HTML_REQUEST_BYTES &&
 			wantsSiren(req)
 		) {
-			const mb = MAX_RAW_HTML_BYTES / (1024 * 1024);
+			const mb = MAX_RAW_HTML_REQUEST_BYTES / (1024 * 1024);
 			deps.logError(
 				`request body exceeded ${mb}MB`,
 				err instanceof Error ? err : undefined,
@@ -247,7 +247,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		next(err);
 	};
 
-	router.post("/save-html", express.json({ limit: MAX_RAW_HTML_BYTES }), saveHtmlLimitHandler, async (req: Request, res: Response) => {
+	router.post("/save-html", express.json({ limit: MAX_RAW_HTML_REQUEST_BYTES }), saveHtmlLimitHandler, async (req: Request, res: Response) => {
 		if (!wantsSiren(req)) {
 			res.status(406).send("Not Acceptable");
 			return;
@@ -255,16 +255,39 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
-		const parsed = SaveHtmlInputSchema.safeParse(req.body);
-
-		if (!parsed.success) {
-			res.status(422).type(SIREN_MEDIA_TYPE).json(
-				sirenError({ code: "invalid-save-html", message: "Invalid save-html request" }),
-			);
-			return;
-		}
 
 		try {
+			const parsed = SaveHtmlInputSchema.safeParse(req.body);
+
+			if (!parsed.success) {
+				/* rawHtml-too-big is the one schema failure the user can still recover
+				 * from: the URL is valid, the content is just too bulky to capture via
+				 * Tier 0. Fall back to a URL-only save so Tier 1 crawls the page the
+				 * ordinary way. Any other schema failure (missing/bad url, empty
+				 * rawHtml) is a client bug and stays a 422. */
+				const rawHtmlTooBig = parsed.error.issues.some(
+					(i) => i.code === "too_big" && i.path[i.path.length - 1] === RAW_HTML_FIELD,
+				);
+				const urlOnly = rawHtmlTooBig ? SaveArticleInputSchema.safeParse(req.body) : undefined;
+				if (urlOnly?.success) {
+					const rawHtml: unknown = req.body?.rawHtml;
+					const sizeBytes = typeof rawHtml === "string" ? rawHtml.length : 0;
+					/* logError (not warn) on purpose: feeds the alarm so oversize Tier-0
+					 * captures stay visible — they're the signal for raising MAX_RAW_HTML_BYTES. */
+					deps.logError(
+						`[SaveHtmlOversize] falling back to URL-only url=${urlOnly.data.url} userId=${userId} sizeBytes=${sizeBytes}`,
+					);
+					const freshness = await deps.refreshArticleIfStale({ url: urlOnly.data.url });
+					const result = await saveArticleFromUrl(deps, { userId, url: urlOnly.data.url, freshness });
+					res.status(201).type(SIREN_MEDIA_TYPE).json(toArticleEntity(result.saved));
+					return;
+				}
+				res.status(422).type(SIREN_MEDIA_TYPE).json(
+					sirenError({ code: "invalid-save-html", message: "Invalid save-html request" }),
+				);
+				return;
+			}
+
 			const freshness = await deps.refreshArticleIfStale({ url: parsed.data.url });
 
 			await deps.putPendingHtml({ url: parsed.data.url, html: parsed.data.rawHtml });

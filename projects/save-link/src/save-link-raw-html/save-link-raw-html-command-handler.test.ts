@@ -96,6 +96,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		promoteSourceToCanonical: canonicalContent.promoteSourceToCanonical,
 		selectMostCompleteContent: jest.fn(tierZeroWinsSelector),
 		publishLinkSaved: jest.fn().mockResolvedValue(undefined),
+		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		logger: noopLogger,
 		...overrides,
 	};
@@ -106,6 +107,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		seedCanonical: canonicalContent.seedCanonical,
 		publishLinkSaved: deps.publishLinkSaved as jest.Mock,
 		selectMostCompleteContent: deps.selectMostCompleteContent as jest.Mock,
+		markCrawlFailed: deps.markCrawlFailed as jest.Mock,
 	};
 }
 
@@ -166,14 +168,18 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		await expect(handler(invalidEvent, stubContext, () => {})).rejects.toThrow();
 	});
 
-	it("throws when the parser rejects the captured html so SQS retries / DLQs the message", async () => {
+	it("marks the crawl failed and re-throws on parser rejection so the reader sees failed at t+0 while SQS still retries / DLQs the message", async () => {
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
-		const { handler, readSourceContent } = createHandler({ parseHtml: failedParse });
+		const { handler, readSourceContent, markCrawlFailed } = createHandler({ parseHtml: failedParse });
 
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
 		).rejects.toThrow(/save-link-raw-html parse failed for https:\/\/example.com\/bad: no-readable-content/);
 
+		expect(markCrawlFailed).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			reason: "no-readable-content",
+		});
 		expect(readSourceContent({ url: "https://example.com/bad", tier: "tier-0" })).toBeUndefined();
 	});
 

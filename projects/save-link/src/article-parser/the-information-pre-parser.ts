@@ -18,7 +18,7 @@ const ArticleJson = z.object({
 });
 
 const PAYWALL_NOTICE =
-	"This is the publicly available preview from The Information. The full article requires a subscription.";
+	"This is the publicly available preview from The Information. The full article requires a subscription. Try to open the full article using a browser extension and save it from there.";
 
 /* Pre-parser for The Information.
  *

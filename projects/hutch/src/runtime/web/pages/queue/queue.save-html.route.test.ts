@@ -9,7 +9,7 @@ import {
 	createDefaultTestAppFixture,
 } from "../../../test-app-fakes";
 import { SIREN_MEDIA_TYPE } from "../../api/siren";
-import { MAX_RAW_HTML_BYTES } from "../../../domain/article/article.schema";
+import { MAX_RAW_HTML_BYTES, MAX_RAW_HTML_REQUEST_BYTES } from "../../../domain/article/article.schema";
 
 const TEST_USER_ID = "test-user-123" as UserId;
 
@@ -159,11 +159,50 @@ describe("POST /queue/save-html", () => {
 		expect(errors).toHaveLength(1);
 	});
 
-	it("returns 500 with a save-article fallback action when the payload exceeds MAX_RAW_HTML_BYTES", async () => {
+	it("returns 201 via URL-only fallback when rawHtml exceeds MAX_RAW_HTML_BYTES but fits within the body-parser limit", async () => {
+		const { testApp, publishedSaveHtml, publishedLinkSaved, pendingHtml } = setup();
+		const accessToken = await createAccessToken(testApp);
+
+		const oversized = "x".repeat(MAX_RAW_HTML_BYTES + 1024);
+		const response = await request(testApp.app)
+			.post("/queue/save-html")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.send({ url: "https://example.com/article", rawHtml: oversized });
+
+		expect(response.status).toBe(201);
+		expect(response.headers["content-type"]).toContain(SIREN_MEDIA_TYPE);
+		expect(response.body.properties).toEqual(expect.objectContaining({
+			url: "https://example.com/article",
+		}));
+		expect(publishedSaveHtml).toHaveLength(0);
+		expect(publishedLinkSaved).toHaveLength(1);
+		expect(pendingHtml.readPendingHtml("https://example.com/article")).toBeUndefined();
+	});
+
+	it("returns 422 when rawHtml is oversized but the URL is also invalid (unrecoverable)", async () => {
+		const { testApp, publishedSaveHtml, publishedLinkSaved } = setup();
+		const accessToken = await createAccessToken(testApp);
+
+		const oversized = "x".repeat(MAX_RAW_HTML_BYTES + 1024);
+		const response = await request(testApp.app)
+			.post("/queue/save-html")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.send({ url: "not-a-url", rawHtml: oversized });
+
+		expect(response.status).toBe(422);
+		expect(response.headers["content-type"]).toContain(SIREN_MEDIA_TYPE);
+		expect(response.body.properties.code).toBe("invalid-save-html");
+		expect(publishedSaveHtml).toHaveLength(0);
+		expect(publishedLinkSaved).toHaveLength(0);
+	});
+
+	it("returns 500 with a save-article fallback action when the request body exceeds MAX_RAW_HTML_REQUEST_BYTES", async () => {
 		const { testApp } = setup();
 		const accessToken = await createAccessToken(testApp);
 
-		const oversized = "x".repeat(MAX_RAW_HTML_BYTES + 1);
+		const oversized = "x".repeat(MAX_RAW_HTML_REQUEST_BYTES + 1024);
 		const response = await request(testApp.app)
 			.post("/queue/save-html")
 			.set("Accept", SIREN_MEDIA_TYPE)
@@ -173,7 +212,7 @@ describe("POST /queue/save-html", () => {
 		expect(response.status).toBe(500);
 		expect(response.headers["content-type"]).toContain(SIREN_MEDIA_TYPE);
 		expect(response.body.properties.code).toBe("html-too-large");
-		const mb = MAX_RAW_HTML_BYTES / (1024 * 1024);
+		const mb = MAX_RAW_HTML_REQUEST_BYTES / (1024 * 1024);
 		expect(response.body.properties.message).toContain(`${mb}MB`);
 		const fallback = response.body.actions.find(
 			(a: { name: string }) => a.name === "save-article",
