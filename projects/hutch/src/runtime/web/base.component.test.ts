@@ -71,8 +71,12 @@ describe("Base component", () => {
 		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.querySelector('[data-test-nav-item="login"]')).not.toBeNull();
-		expect(doc.querySelector('[data-test-nav-item="queue"]')).toBeNull();
+		const nav = doc.querySelector("[data-test-nav-variant]");
+		assert(nav, "nav variant must be rendered");
+		expect(nav.getAttribute("data-test-nav-variant")).toBe("guest");
+
+		const loginItem = doc.querySelector('[data-test-nav-item="login"]');
+		assert(loginItem, "login nav item must be rendered for guests");
 	});
 
 	it("should render authenticated navigation when state is authenticated", () => {
@@ -80,9 +84,15 @@ describe("Base component", () => {
 		const result = Base(page, { isAuthenticated: true, emailVerified: true }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.querySelector('[data-test-nav-item="queue"]')).not.toBeNull();
-		expect(doc.querySelector('[data-test-nav-item="logout"]')).not.toBeNull();
-		expect(doc.querySelector('[data-test-nav-item="login"]')).toBeNull();
+		const nav = doc.querySelector("[data-test-nav-variant]");
+		assert(nav, "nav variant must be rendered");
+		expect(nav.getAttribute("data-test-nav-variant")).toBe("authenticated");
+
+		const queueItem = doc.querySelector('[data-test-nav-item="queue"]');
+		assert(queueItem, "queue nav item must be rendered for authenticated users");
+
+		const logoutItem = doc.querySelector('[data-test-nav-item="logout"]');
+		assert(logoutItem, "logout nav item must be rendered for authenticated users");
 	});
 
 	it("should include the footer with copyright", () => {

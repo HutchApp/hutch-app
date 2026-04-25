@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import type { Request } from "express";
 import { JSDOM } from "jsdom";
 import { UserIdSchema } from "../domain/user/user.schema";
+import type { BannerStateSource } from "./banner-state";
 import type { PageBody } from "./page-body.types";
 import { renderPage } from "./render-page";
 
@@ -19,35 +19,39 @@ function createTestPageBody(): PageBody {
 
 const USER_ID = UserIdSchema.parse("user-1");
 
-function createRequest(overrides: Partial<Request> = {}): Request {
-	return overrides as Request;
-}
-
 describe("renderPage", () => {
 	it("should render guest navigation for an unauthenticated request", () => {
-		const result = renderPage(createRequest(), createTestPageBody()).to("text/html");
+		const req: BannerStateSource = {};
+		const result = renderPage(req, createTestPageBody()).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.querySelector('[data-test-nav-item="login"]')).not.toBeNull();
-		expect(doc.querySelector('[data-test-nav-item="queue"]')).toBeNull();
+		const nav = doc.querySelector("[data-test-nav-variant]");
+		assert(nav, "nav variant must be rendered");
+		expect(nav.getAttribute("data-test-nav-variant")).toBe("guest");
+
+		const loginItem = doc.querySelector('[data-test-nav-item="login"]');
+		assert(loginItem, "login nav item must be rendered for guests");
 	});
 
 	it("should render authenticated navigation for a request with a userId", () => {
-		const result = renderPage(
-			createRequest({ userId: USER_ID, emailVerified: true }),
-			createTestPageBody(),
-		).to("text/html");
+		const req: BannerStateSource = { userId: USER_ID, emailVerified: true };
+		const result = renderPage(req, createTestPageBody()).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
-		expect(doc.querySelector('[data-test-nav-item="queue"]')).not.toBeNull();
-		expect(doc.querySelector('[data-test-nav-item="logout"]')).not.toBeNull();
+		const nav = doc.querySelector("[data-test-nav-variant]");
+		assert(nav, "nav variant must be rendered");
+		expect(nav.getAttribute("data-test-nav-variant")).toBe("authenticated");
+
+		const queueItem = doc.querySelector('[data-test-nav-item="queue"]');
+		assert(queueItem, "queue nav item must be rendered for authenticated users");
+
+		const logoutItem = doc.querySelector('[data-test-nav-item="logout"]');
+		assert(logoutItem, "logout nav item must be rendered for authenticated users");
 	});
 
 	it("should show the verification banner for an authenticated, unverified request", () => {
-		const result = renderPage(
-			createRequest({ userId: USER_ID, emailVerified: false }),
-			createTestPageBody(),
-		).to("text/html");
+		const req: BannerStateSource = { userId: USER_ID, emailVerified: false };
+		const result = renderPage(req, createTestPageBody()).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -56,10 +60,8 @@ describe("renderPage", () => {
 	});
 
 	it("should hide the verification banner for an authenticated, verified request", () => {
-		const result = renderPage(
-			createRequest({ userId: USER_ID, emailVerified: true }),
-			createTestPageBody(),
-		).to("text/html");
+		const req: BannerStateSource = { userId: USER_ID, emailVerified: true };
+		const result = renderPage(req, createTestPageBody()).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -68,10 +70,8 @@ describe("renderPage", () => {
 	});
 
 	it("should hide the verification banner for a request without an emailVerified flag", () => {
-		const result = renderPage(
-			createRequest({ userId: USER_ID }),
-			createTestPageBody(),
-		).to("text/html");
+		const req: BannerStateSource = { userId: USER_ID };
+		const result = renderPage(req, createTestPageBody()).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -80,7 +80,8 @@ describe("renderPage", () => {
 	});
 
 	it("should hide the verification banner for an unauthenticated request", () => {
-		const result = renderPage(createRequest(), createTestPageBody()).to("text/html");
+		const req: BannerStateSource = {};
+		const result = renderPage(req, createTestPageBody()).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
