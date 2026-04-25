@@ -75,7 +75,7 @@ const saveAnonymousLinkCommandQueue = new HutchSQS("save-anonymous-link-command"
 });
 
 const saveLinkRawHtmlCommandQueue = new HutchSQS("save-link-raw-html-command", {
-	visibilityTimeoutSeconds: 60,
+	visibilityTimeoutSeconds: SELECT_CONTENT_TIMEOUTS.sqsVisibilitySeconds,
 });
 
 const anonymousLinkSavedQueue = new HutchSQS("anonymous-link-saved", {

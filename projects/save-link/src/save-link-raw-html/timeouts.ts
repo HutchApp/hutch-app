@@ -3,5 +3,6 @@
 // Lambda timeout swallows the Deepseek error and we lose the underlying cause.
 export const SELECT_CONTENT_TIMEOUTS = {
 	lambdaSeconds: 300,
+	sqsVisibilitySeconds: 300,
 	deepseekMs: 240_000,
 } as const;
