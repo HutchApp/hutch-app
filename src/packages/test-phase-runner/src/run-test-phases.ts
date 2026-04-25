@@ -88,10 +88,12 @@ export interface TestPlan {
 
 type ExecSyncFn = (command: string, options: ExecSyncOptions) => Buffer | string;
 type GlobSyncFn = (pattern: string) => string[];
+type LogFn = (message: string) => void;
 
 export interface TestPhaseRunnerDeps {
 	execSync: ExecSyncFn;
 	globSync: GlobSyncFn;
+	log: LogFn;
 }
 
 function resolveJestPhase(phase: JestPhase): ResolvedJestPhase {
@@ -141,11 +143,12 @@ function resolvePlaywrightPhase(phase: PlaywrightPhase): ResolvedPlaywrightPhase
 export const defaultDeps: TestPhaseRunnerDeps = {
 	execSync: defaultExecSync as ExecSyncFn,
 	globSync: defaultGlobSync,
+	log: console.log,
 };
 
 export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 	function runCommand(displayName: string, command: string, options: { cwd: string; extraEnv?: Record<string, string> }) {
-		console.log(`\n=== ${displayName} ===\n`);
+		deps.log(`\n=== ${displayName} ===\n`);
 		deps.execSync(command, {
 			cwd: options.cwd,
 			stdio: "inherit",
@@ -154,7 +157,7 @@ export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 	}
 
 	function runPlaywrightPhase(displayName: string, phase: ResolvedPlaywrightPhase, projectRoot: string) {
-		console.log(`\n=== ${displayName} ===\n`);
+		deps.log(`\n=== ${displayName} ===\n`);
 
 		deps.execSync(phase.browserInstallCommand, {
 			cwd: projectRoot,
@@ -212,7 +215,7 @@ export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 						});
 					}
 
-					console.log(`\n=== ${input.config.projectName} - All tests completed successfully ===\n`);
+					deps.log(`\n=== ${input.config.projectName} - All tests completed successfully ===\n`);
 				},
 			};
 		},

@@ -14,6 +14,7 @@ function createInMemoryDeps() {
 			if (pattern.includes("empty")) return [];
 			return ["dist/e2e/test1.test.js", "dist/e2e/test2.test.js"];
 		},
+		log: () => {},
 	};
 
 	return { deps, executedCommands };
