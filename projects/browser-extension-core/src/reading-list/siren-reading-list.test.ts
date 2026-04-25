@@ -201,7 +201,7 @@ describe("initExtension", () => {
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const result = await start();
 			expect(result.actions["save-article"]).toBeDefined();
-			expect(result.actions["search"]).toBeDefined();
+			expect(result.actions.search).toBeDefined();
 		});
 
 		it("should use resolved URL for subsequent calls", async () => {
@@ -505,7 +505,7 @@ describe("initExtension", () => {
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const result = await start();
-			expect(result.actions["unknown"]).toBeUndefined();
+			expect(result.actions.unknown).toBeUndefined();
 		});
 	});
 
@@ -701,7 +701,7 @@ describe("initExtension", () => {
 			const result = await collection.items[0].actions.delete();
 			expect(result.items).toEqual([]);
 			expect(result.actions["save-article"]).toBeDefined();
-			expect(result.actions["search"]).toBeDefined();
+			expect(result.actions.search).toBeDefined();
 			expect(calls).toContain(
 				"POST http://localhost:3000/queue/article-1/delete",
 			);
@@ -793,7 +793,7 @@ describe("initExtension", () => {
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const collection = await start();
-			const result = await collection.actions["search"]({
+			const result = await collection.actions.search({
 				url: "https://example.com/article",
 			});
 			expect(result.items[0].url).toBe("https://example.com/article");
@@ -819,7 +819,7 @@ describe("initExtension", () => {
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const collection = await start();
-			const result = await collection.actions["search"]({
+			const result = await collection.actions.search({
 				url: "https://example.com/missing",
 			});
 			expect(result.items).toEqual([]);
@@ -845,7 +845,7 @@ describe("initExtension", () => {
 			);
 			const collection = await start();
 			await expect(
-				collection.actions["search"]({
+				collection.actions.search({
 					url: "https://example.com/article",
 				}),
 			).rejects.toBeInstanceOf(UnauthorizedError);
@@ -865,7 +865,7 @@ describe("initExtension", () => {
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const collection = await start();
-			const result = await collection.actions["search"]({
+			const result = await collection.actions.search({
 				url: "https://example.com/article",
 			});
 			expect(result.items).toEqual([]);
@@ -886,7 +886,7 @@ describe("initExtension", () => {
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const collection = await start();
-			await collection.actions["search"]({ status: "unread" });
+			await collection.actions.search({ status: "unread" });
 			expect(calls).toContain(
 				"GET http://localhost:3000/queue?status=unread",
 			);
@@ -910,7 +910,7 @@ describe("initExtension", () => {
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const collection = await start();
-			const result = await collection.actions["search"]({
+			const result = await collection.actions.search({
 				url: "https://example.com/a",
 			});
 			expect(result.items).toEqual([]);
@@ -927,7 +927,7 @@ describe("initExtension", () => {
 			);
 			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 			const collection = await start();
-			await collection.actions["search"]();
+			await collection.actions.search();
 			expect(calls).toContain("GET http://localhost:3000/queue");
 			expect(calls).toHaveLength(2);
 		});
@@ -1441,10 +1441,10 @@ describe("httpCacheable", () => {
 		);
 		const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 		const collection = await start();
-		const first = await collection.actions["search"]({
+		const first = await collection.actions.search({
 			url: "https://example.com/a",
 		});
-		const second = await collection.actions["search"]({
+		const second = await collection.actions.search({
 			url: "https://example.com/a",
 		});
 		expect(first.items).toHaveLength(1);
@@ -1507,10 +1507,10 @@ describe("httpCacheable", () => {
 		);
 		const start = initExtension(createUnderstandings(), createDeps(fetchFn));
 		const collection = await start();
-		await collection.actions["search"]({
+		await collection.actions.search({
 			url: "https://example.com/a",
 		});
-		await collection.actions["search"]({
+		await collection.actions.search({
 			url: "https://example.com/a",
 		});
 		expect(calls.filter((c) => c.includes("url="))).toHaveLength(2);

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { join } from "node:path";
 import { initBuildExtension } from "./build-extension";
 
@@ -303,8 +304,8 @@ describe("plan.buildExtension", () => {
 
 		const manifestPath = join("/projects/chrome-extension", "dist-extension-compiled", "manifest.json");
 		const written = writtenFiles.get(manifestPath);
-		expect(written).toBeDefined();
-		const manifest = JSON.parse(written!);
+		assert(written, `Expected manifest written at ${manifestPath}`);
+		const manifest = JSON.parse(written);
 		expect(manifest.host_permissions).toEqual(["https://readplace.com/*", "http://127.0.0.1:3000/*"]);
 	});
 
@@ -323,8 +324,8 @@ describe("plan.buildExtension", () => {
 
 		const manifestPath = join("/projects/firefox-extension", "dist-extension-compiled", "manifest.json");
 		const written = writtenFiles.get(manifestPath);
-		expect(written).toBeDefined();
-		const manifest = JSON.parse(written!);
+		assert(written, `Expected manifest written at ${manifestPath}`);
+		const manifest = JSON.parse(written);
 		expect(manifest.permissions).toEqual(["activeTab", "tabs", "https://readplace.com/*", "http://127.0.0.1:3000/*"]);
 	});
 

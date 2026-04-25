@@ -19,6 +19,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"complexity": {
+				"useLiteralKeys": "error"
+			},
 			"correctness": {
 				"noUnusedVariables": "error",
 				"noUnusedImports": "error"
@@ -28,6 +31,7 @@
 			},
 			"style": {
 				"noCommonJs": "error",
+				"noNonNullAssertion": "error",
 				"noRestrictedImports": {
 					"level": "error",
 					"options": {

@@ -502,7 +502,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 	const findByUrl: FindByUrl = async (url) => {
 		const collection = await start();
 		trackItems(collection.items);
-		const filterAction = collection.actions["search"];
+		const filterAction = collection.actions.search;
 		assert(
 			filterAction,
 			'Expected Siren action "search" not found in response',
