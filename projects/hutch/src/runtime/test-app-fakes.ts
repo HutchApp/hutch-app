@@ -56,28 +56,35 @@ export const createInMemoryPublishUpdateFetchTimestamp = () =>
 export const createNoopLogError = (): ((msg: string, err?: Error) => void) =>
 	() => {};
 
-export function createFakeSummaryProvider(): {
+export function createFakeSummaryProvider(opts?: { readyAfterReads?: number }): {
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
 } {
 	// Test-only fake for the Deepseek-backed summary generation. Local E2E
 	// doesn't call a real LLM, so we simulate the pending → ready transition
-	// with a short setTimeout — long enough that the UI briefly shows the
-	// "Generating summary…" indicator so HTMX polling is exercised end-to-end,
-	// short enough to finish well inside Playwright's default test timeout.
+	// by counting reads of a pending row and flipping it once the count hits
+	// readyAfterReads. Default (no opts) = stays pending forever, so unit/route
+	// tests get deterministic HTML. E2E opts in (e.g. readyAfterReads: 3) to
+	// exercise the polling UI end-to-end without depending on wall-clock time.
 	const state = new Map<string, GeneratedSummary>();
-	const READY_DELAY_MS = 500;
+	const reads = new Map<string, number>();
 	const findGeneratedSummary: FindGeneratedSummary = async (url) => {
 		const id = ArticleResourceUniqueId.parse(url).value;
+		const current = state.get(id);
+		if (opts?.readyAfterReads !== undefined && current?.status === "pending") {
+			const count = (reads.get(id) ?? 0) + 1;
+			reads.set(id, count);
+			if (count >= opts.readyAfterReads) {
+				state.set(id, { status: "ready", summary: `Fake summary for ${url}.` });
+			}
+		}
 		return state.get(id);
 	};
 	const markSummaryPending: MarkSummaryPending = async ({ url }) => {
 		const id = ArticleResourceUniqueId.parse(url).value;
 		if (state.get(id)?.status === "ready") return;
 		state.set(id, { status: "pending" });
-		setTimeout(() => {
-			state.set(id, { status: "ready", summary: `Fake summary for ${url}.` });
-		}, READY_DELAY_MS).unref();
+		reads.set(id, 0);
 	};
 	return { findGeneratedSummary, markSummaryPending };
 }

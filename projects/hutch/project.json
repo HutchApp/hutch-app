@@ -13,7 +13,8 @@
     },
     "check": {
       "command": "pnpm lint && pnpm test-with-coverage",
-      "options": { "cwd": "{projectRoot}" }
+      "options": { "cwd": "{projectRoot}" },
+      "dependsOn": ["compile"]
     },
     "test": {},
     "test-integration": {}
