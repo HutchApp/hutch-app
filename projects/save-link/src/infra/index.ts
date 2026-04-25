@@ -19,6 +19,7 @@ import {
 	SummaryGenerationFailedEvent,
 	RefreshArticleContentCommand,
 	UpdateFetchTimestampCommand,
+	TierContentExtractedEvent,
 } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 
@@ -158,15 +159,12 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 		PENDING_HTML_BUCKET_NAME: pendingHtmlBucketName,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
-		DEEPSEEK_API_KEY: deepseekApiKey,
 	},
 	policies: [
 		...saveLinkRawHtmlCommandDynamodb.policies,
 		...pendingHtmlBucket.readPolicies("save-link-raw-html-command-pending-html"),
-		// Read on contentBucket lets the worker GetObject the existing canonical
-		// for the selector contest, and is the source-side permission required
-		// for S3 CopyObject (sources/<tier>.html → content.html).
-		...contentBucket.readPolicies("save-link-raw-html-command-content-read"),
+		// Worker writes sources/tier-0.html + sidecar; the select-content Lambda
+		// owns canonical reads/writes and the Deepseek selector contest.
 		...contentBucket.writePolicies("save-link-raw-html-command-s3"),
 	],
 });
@@ -236,6 +234,64 @@ eventBus.subscribe(SaveAnonymousLinkCommand, saveAnonymousLinkCommandLambdaWithS
 // --- SaveAnonymousLinkCommand DLQ consumer ---
 new HutchDLQEventHandler("save-anonymous-link-dlq", {
 	sourceQueue: saveAnonymousLinkCommandQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+});
+
+// --- SelectMostCompleteContent handler ---
+// Subscribes to TierContentExtractedEvent emitted by the three save-link
+// workers. Reads available per-tier sources from S3, runs the Deepseek
+// selector when there is competition, short-circuits when only one tier is
+// present, and is the only Lambda that promotes to canonical (S3 CopyObject
+// + Dynamo UpdateItem with contentSourceTier). Emits LinkSavedEvent /
+// AnonymousLinkSavedEvent (only on canonical change) and
+// CrawlArticleCompletedEvent (every successful selection).
+
+const selectMostCompleteContentQueue = new HutchSQS("select-most-complete-content", {
+	visibilityTimeoutSeconds: 90,
+});
+
+const selectMostCompleteContentDynamodb = new HutchDynamoDBAccess("select-most-complete-content-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+});
+
+const selectMostCompleteContentLambda = new HutchLambda("select-most-complete-content", {
+	entryPoint: "./src/runtime/select-most-complete-content.main.ts",
+	outputDir: ".lib/select-most-complete-content",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: 60,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+		CONTENT_BUCKET_NAME: contentBucketName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
+		DEEPSEEK_API_KEY: deepseekApiKey,
+	},
+	policies: [
+		...selectMostCompleteContentDynamodb.policies,
+		...contentBucket.readPolicies("select-most-complete-content-content-read"),
+		...contentBucket.writePolicies("select-most-complete-content-content-write"),
+	],
+});
+
+eventBus.grantPublish(selectMostCompleteContentLambda);
+
+const selectMostCompleteContentLambdaWithSQS = new HutchSQSBackedLambda("select-most-complete-content", {
+	lambda: selectMostCompleteContentLambda,
+	queue: selectMostCompleteContentQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(TierContentExtractedEvent, selectMostCompleteContentLambdaWithSQS);
+
+// --- SelectMostCompleteContent DLQ consumer ---
+// Mirrors save-link-dlq: flips crawlStatus to "failed" and publishes
+// CrawlArticleFailedEvent when a TierContentExtractedEvent message
+// exhausts maxReceiveCount on the selector queue.
+new HutchDLQEventHandler("select-most-complete-content-dlq", {
+	sourceQueue: selectMostCompleteContentQueue,
 	tableArn: articlesTableArn,
 	tableName: articlesTableName,
 	eventBus,
@@ -481,5 +537,7 @@ export const refreshArticleContentQueueUrl = refreshArticleContentQueue.queueUrl
 export const refreshArticleContentDlqUrl = refreshArticleContentQueue.dlqUrl;
 export const updateFetchTimestampQueueUrl = updateFetchTimestampQueue.queueUrl;
 export const updateFetchTimestampDlqUrl = updateFetchTimestampQueue.dlqUrl;
+export const selectMostCompleteContentQueueUrl = selectMostCompleteContentQueue.queueUrl;
+export const selectMostCompleteContentDlqUrl = selectMostCompleteContentQueue.dlqUrl;
 export const contentBucketOutputName = contentBucket.bucket;
 export const contentBucketOutputArn = contentBucket.arn;

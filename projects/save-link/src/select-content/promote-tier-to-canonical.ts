@@ -7,8 +7,9 @@ import {
 	dynamoField,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
-import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
-import type { PromoteSourceToCanonical } from "./promote-source.types";
+import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
+import type { Tier } from "./tier.types";
+import type { TierSourceMetadata } from "./tier-source.types";
 
 const ArticleRow = z.object({
 	title: dynamoField(z.string()),
@@ -18,16 +19,23 @@ const ArticleRow = z.object({
 	estimatedReadTime: dynamoField(z.number()),
 	imageUrl: dynamoField(z.string()),
 	contentLocation: dynamoField(z.string()),
+	contentSourceTier: dynamoField(z.string()),
 	contentFetchedAt: dynamoField(z.string()),
 });
 
-export function initPromoteSourceToCanonical(deps: {
+export type PromoteTierToCanonical = (params: {
+	url: string;
+	tier: Tier;
+	metadata: TierSourceMetadata;
+}) => Promise<void>;
+
+export function initPromoteTierToCanonical(deps: {
 	dynamoClient: DynamoDBDocumentClient;
 	s3Client: S3Client;
 	tableName: string;
 	bucketName: string;
 	now: () => Date;
-}): { promoteSourceToCanonical: PromoteSourceToCanonical } {
+}): { promoteTierToCanonical: PromoteTierToCanonical } {
 	const { dynamoClient, s3Client, tableName, bucketName, now } = deps;
 
 	const articleTable = defineDynamoTable({
@@ -36,10 +44,10 @@ export function initPromoteSourceToCanonical(deps: {
 		schema: ArticleRow,
 	});
 
-	const promoteSourceToCanonical: PromoteSourceToCanonical = async (params) => {
-		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
-		const sourceKey = articleResourceUniqueId.toS3SourceKey({ tier: params.tier });
-		const canonicalKey = articleResourceUniqueId.toS3ContentKey();
+	const promoteTierToCanonical: PromoteTierToCanonical = async (params) => {
+		const id = ArticleResourceUniqueId.parse(params.url);
+		const sourceKey = id.toS3SourceKey({ tier: params.tier });
+		const canonicalKey = id.toS3ContentKey();
 
 		await s3Client.send(
 			new CopyObjectCommand({
@@ -58,6 +66,7 @@ export function initPromoteSourceToCanonical(deps: {
 			"wordCount = :w",
 			"estimatedReadTime = :r",
 			"contentLocation = :cl",
+			"contentSourceTier = :cst",
 			"contentFetchedAt = :cfa",
 			"canonicalSourceTier = :cst",
 		];
@@ -68,6 +77,7 @@ export function initPromoteSourceToCanonical(deps: {
 			":w": params.metadata.wordCount,
 			":r": params.metadata.estimatedReadTime,
 			":cl": `s3://${bucketName}/${canonicalKey}`,
+			":cst": params.tier,
 			":cfa": now().toISOString(),
 			":cst": params.tier,
 		};
@@ -77,12 +87,12 @@ export function initPromoteSourceToCanonical(deps: {
 		}
 
 		await articleTable.update({
-			Key: { url: articleResourceUniqueId.value },
+			Key: { url: id.value },
 			UpdateExpression: `SET ${setClauses.join(", ")}`,
 			ExpressionAttributeValues: values,
 		});
 	};
 
-	return { promoteSourceToCanonical };
+	return { promoteTierToCanonical };
 }
 /* c8 ignore stop */

@@ -7,7 +7,7 @@ import { initProcessContentWithLocalMedia } from "./process-content-with-local-m
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
-import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
+import type { PutTierSource } from "../select-content/put-tier-source";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
 const stubAttributes: SQSRecordAttributes = {
@@ -77,18 +77,14 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	return initSaveLinkCommandHandler({
 		crawlArticle: successfulCrawl,
 		parseHtml: successfulParse,
-		putObject: jest.fn().mockResolvedValue("s3://bucket/key"),
+		putTierSource: jest.fn().mockResolvedValue(undefined),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
-		updateContentLocation: jest.fn().mockResolvedValue(undefined),
 		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
-		updateArticleMetadata: jest.fn().mockResolvedValue(undefined),
 		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
-		publishLinkSaved: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
 		downloadMedia: noopDownloadMedia,
 		processContent,
-		updateThumbnailUrl: jest.fn().mockResolvedValue(undefined),
 		imagesCdnBaseUrl,
 		now: fixedNow,
 		logger: noopLogger,
@@ -100,75 +96,49 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 }
 
 describe("initSaveLinkCommandHandler", () => {
-	it("fetches article, saves content to S3, and publishes LinkSavedEvent", async () => {
-		const putObject = jest.fn().mockResolvedValue("s3://test-bucket/content/example.com%2Farticle/content.html");
-		const updateContentLocation = jest.fn().mockResolvedValue(undefined);
-		const publishLinkSaved = jest.fn().mockResolvedValue(undefined);
+	it("writes a tier-1 source with metadata and emits TierContentExtractedEvent carrying userId", async () => {
+		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
 
-		const handler = createHandler({ putObject, updateContentLocation, publishLinkSaved });
+		const handler = createHandler({ putTierSource, publishEvent });
 
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(putObject).toHaveBeenCalledWith({
-			key: expect.stringContaining("example.com"),
-			content: "<p>Article content</p>",
-		});
-
-		expect(updateContentLocation).toHaveBeenCalledWith({
+		expect(putTierSource).toHaveBeenCalledWith({
 			url: "https://example.com/article",
-			contentLocation: expect.stringMatching(/^s3:\/\//),
 			tier: "tier-1",
-		});
-
-		expect(publishLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article", userId: "user-1" });
-	});
-
-	it("writes parsed metadata to the article row before publishing", async () => {
-		const updateArticleMetadata = jest.fn().mockResolvedValue(undefined);
-		const parseHtml: ParseHtml = () => ({
-			ok: true,
-			article: {
-				title: "Real Title",
-				siteName: "Example",
-				excerpt: "An excerpt.",
-				wordCount: 480,
-				content: "<p>body</p>",
-				imageUrl: "https://example.com/og.png",
+			html: "<p>Article content</p>",
+			metadata: {
+				title: "Test",
+				siteName: "example.com",
+				excerpt: "test",
+				wordCount: 10,
+				estimatedReadTime: 1,
+				imageUrl: undefined,
 			},
 		});
 
-		const handler = createHandler({ updateArticleMetadata, parseHtml });
-
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-		expect(updateArticleMetadata).toHaveBeenCalledWith({
-			url: "https://example.com/article",
-			title: "Real Title",
-			siteName: "Example",
-			excerpt: "An excerpt.",
-			wordCount: 480,
-			estimatedReadTime: 3,
-			imageUrl: "https://example.com/og.png",
-		});
-	});
-
-	it("marks the crawl ready and publishes CrawlArticleCompletedEvent on success", async () => {
-		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
-		const publishEvent = jest.fn().mockResolvedValue(undefined);
-
-		const handler = createHandler({ markCrawlReady, publishEvent });
-
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-		expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
 		expect(publishEvent).toHaveBeenCalledWith({
 			source: "hutch.save-link",
-			detailType: "CrawlArticleCompleted",
-			detail: JSON.stringify({ url: "https://example.com/article" }),
+			detailType: "TierContentExtracted",
+			detail: JSON.stringify({ url: "https://example.com/article", tier: "tier-1", userId: "user-1" }),
 		});
 	});
 
-	it("records contentFetchedAt + etag + lastModified after successful crawl so later saves skip the re-crawl", async () => {
+	it("marks crawl ready before publishing the extracted event so the reader UI un-sticks immediately", async () => {
+		const calls: string[] = [];
+		const markCrawlReady = jest.fn(async () => { calls.push("markCrawlReady"); });
+		const publishEvent = jest.fn(async () => { calls.push("publishEvent"); });
+		const putTierSource: PutTierSource = jest.fn(async () => { calls.push("putTierSource"); });
+
+		const handler = createHandler({ markCrawlReady, publishEvent, putTierSource });
+
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		expect(calls).toEqual(["putTierSource", "markCrawlReady", "publishEvent"]);
+	});
+
+	it("records contentFetchedAt + etag + lastModified after a successful fetch so future saves can short-circuit on TTL", async () => {
 		const updateFetchTimestamp = jest.fn().mockResolvedValue(undefined);
 		const crawlArticle: CrawlArticle = async () => ({
 			status: "fetched",
@@ -189,17 +159,21 @@ describe("initSaveLinkCommandHandler", () => {
 		});
 	});
 
-	it("does not record the fetch timestamp when the crawl failed", async () => {
-		const updateFetchTimestamp = jest.fn().mockResolvedValue(undefined);
+	it("does not write a tier source or publish anything when the crawl fails (DLQ owns transient failures)", async () => {
 		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
+		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
 
-		const handler = createHandler({ crawlArticle: failedCrawl, updateFetchTimestamp });
+		const handler = createHandler({ crawlArticle: failedCrawl, putTierSource, publishEvent, markCrawlReady });
 
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/unreachable", userId: "user-1" }), stubContext, () => {}),
 		).rejects.toThrow();
 
-		expect(updateFetchTimestamp).not.toHaveBeenCalled();
+		expect(putTierSource).not.toHaveBeenCalled();
+		expect(publishEvent).not.toHaveBeenCalled();
+		expect(markCrawlReady).not.toHaveBeenCalled();
 	});
 
 	it("reports crawl failures via logParseError with the crawl status as reason and rethrows for SQS retry", async () => {
@@ -231,81 +205,6 @@ describe("initSaveLinkCommandHandler", () => {
 		expect(logParseError).toHaveBeenCalledWith({
 			url: "https://example.com/bad",
 			reason: "Invalid URL",
-		});
-	});
-
-	it("reports post-parse step failures via logParseError so S3 / DynamoDB / thumbnail errors surface in the parse-errors widget instead of being buried in raw Lambda logs", async () => {
-		const logParseError = jest.fn();
-		const putObject = jest.fn().mockRejectedValue(new Error("S3 PutObject AccessDenied"));
-
-		const handler = createHandler({ putObject, logParseError });
-
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toThrow("S3 PutObject AccessDenied");
-
-		expect(logParseError).toHaveBeenCalledWith({
-			url: "https://example.com/article",
-			reason: "post-parse-step-failed: S3 PutObject AccessDenied",
-		});
-	});
-
-	it("reports a CrawlArticleCompletedEvent publish failure via logParseError with SDK metadata so a 403 hides nothing — without this the Lambda logs only 'UnknownError' and the article stays stuck in summaryStatus=pending", async () => {
-		const logParseError = jest.fn();
-		const sdkError = Object.assign(new Error("UnknownError"), {
-			$fault: "client" as const,
-			$metadata: { httpStatusCode: 403, requestId: "F172QMTAPW18EQ08", extendedRequestId: "cZFJ81aE2zsou1Q" },
-		});
-		sdkError.name = "Unknown";
-		const publishEvent = jest.fn().mockRejectedValue(sdkError);
-
-		const handler = createHandler({ publishEvent, logParseError });
-
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toBe(sdkError);
-
-		expect(logParseError).toHaveBeenCalledWith({
-			url: "https://example.com/article",
-			reason: expect.stringContaining("post-publish-step-failed:"),
-		});
-		const reason = (logParseError.mock.calls[0]?.[0] as { reason: string }).reason;
-		expect(reason).toContain("status=403");
-		expect(reason).toContain("requestId=F172QMTAPW18EQ08");
-		expect(reason).toContain("extendedRequestId=cZFJ81aE2zsou1Q");
-	});
-
-	it("reports a LinkSavedEvent publish failure via logParseError so a downstream summary stuck at pending has a discoverable trail", async () => {
-		const logParseError = jest.fn();
-		const publishLinkSaved = jest.fn().mockRejectedValue(new Error("EventBridge throttled"));
-
-		const handler = createHandler({ publishLinkSaved, logParseError });
-
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toThrow("EventBridge throttled");
-
-		expect(logParseError).toHaveBeenCalledWith({
-			url: "https://example.com/article",
-			reason: expect.stringContaining("post-publish-step-failed:"),
-		});
-		const reason = (logParseError.mock.calls[0]?.[0] as { reason: string }).reason;
-		expect(reason).toContain("message=EventBridge throttled");
-	});
-
-	it("stringifies non-Error throws from a post-parse step into the parse-errors reason", async () => {
-		const logParseError = jest.fn();
-		const putObject = jest.fn().mockRejectedValue("bare-string-thrown");
-
-		const handler = createHandler({ putObject, logParseError });
-
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toBe("bare-string-thrown");
-
-		expect(logParseError).toHaveBeenCalledWith({
-			url: "https://example.com/article",
-			reason: "post-parse-step-failed: bare-string-thrown",
 		});
 	});
 
@@ -394,26 +293,7 @@ describe("initSaveLinkCommandHandler", () => {
 		});
 	});
 
-	it("skips content save and does not publish events when the article fetch fails (DLQ owns the failure path)", async () => {
-		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
-		const putObject = jest.fn();
-		const publishLinkSaved = jest.fn().mockResolvedValue(undefined);
-		const publishEvent = jest.fn().mockResolvedValue(undefined);
-		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
-
-		const handler = createHandler({ crawlArticle: failedCrawl, putObject, publishLinkSaved, publishEvent, markCrawlReady });
-
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/unreachable", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toThrow();
-
-		expect(putObject).not.toHaveBeenCalled();
-		expect(publishLinkSaved).not.toHaveBeenCalled();
-		expect(publishEvent).not.toHaveBeenCalled();
-		expect(markCrawlReady).not.toHaveBeenCalled();
-	});
-
-	it("marks the crawl 'failed' immediately when parsing fails, so readers and the Tier 1+ canary see the terminal state without waiting ~90s for SQS retries → DLQ", async () => {
+	it("marks crawl 'failed' inline on terminal parse errors so readers see failure at t+0 instead of waiting ~90s for the DLQ", async () => {
 		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "Readability crashed on this DOM" });
 
@@ -429,7 +309,7 @@ describe("initSaveLinkCommandHandler", () => {
 		});
 	});
 
-	it("does NOT mark crawl 'failed' on a crawl-fetch failure — transient fetch issues stay on the SQS retry / DLQ path, which can recover if the origin transiently 5xx'd", async () => {
+	it("does NOT mark crawl 'failed' on a transient fetch failure (those stay on the SQS retry / DLQ path)", async () => {
 		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
 		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
 
@@ -442,26 +322,85 @@ describe("initSaveLinkCommandHandler", () => {
 		expect(markCrawlFailed).not.toHaveBeenCalled();
 	});
 
-	it("skips content save and does not publish events when the article parse fails (DLQ owns the failure path)", async () => {
-		const failedParse: ParseHtml = () => ({ ok: false, reason: "Invalid URL" });
-		const putObject = jest.fn();
-		const publishLinkSaved = jest.fn().mockResolvedValue(undefined);
-		const publishEvent = jest.fn().mockResolvedValue(undefined);
-		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
+	it("uploads the crawled thumbnail to S3 and threads the resolved CDN URL into the tier-source metadata", async () => {
+		const imageBody = Buffer.from([0xff, 0xd8, 0xff]);
+		const crawlArticle: CrawlArticle = async () => ({
+			status: "fetched",
+			html: "<html></html>",
+			thumbnailImage: {
+				body: imageBody,
+				contentType: "image/jpeg",
+				url: "https://cdn.example.com/thumb.jpg",
+				extension: ".jpg",
+			},
+		});
+		const putImageObject: PutImageObject = jest.fn().mockResolvedValue(undefined);
+		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
 
-		const handler = createHandler({ parseHtml: failedParse, putObject, publishLinkSaved, publishEvent, markCrawlReady });
+		const handler = createHandler({ crawlArticle, putImageObject, putTierSource });
 
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toThrow();
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(putObject).not.toHaveBeenCalled();
-		expect(publishLinkSaved).not.toHaveBeenCalled();
-		expect(publishEvent).not.toHaveBeenCalled();
-		expect(markCrawlReady).not.toHaveBeenCalled();
+		expect(putImageObject).toHaveBeenCalledWith({
+			key: expect.stringMatching(/^content\/example\.com%2Farticle\/images\/[0-9a-f]{16}\.jpg$/),
+			body: imageBody,
+			contentType: "image/jpeg",
+		});
+		expect(putTierSource).toHaveBeenCalledWith(
+			expect.objectContaining({
+				metadata: expect.objectContaining({
+					imageUrl: expect.stringMatching(/^https:\/\/cdn\.example\.com\/content\/example\.com%252Farticle\/images\/[0-9a-f]{16}\.jpg$/),
+				}),
+			}),
+		);
 	});
 
-	it("throws on invalid event detail", async () => {
+	it("falls back to the parsed og:image URL when the crawler did not fetch a thumbnail", async () => {
+		const parseHtml: ParseHtml = () => ({
+			ok: true,
+			article: {
+				title: "T", siteName: "s", excerpt: "e", wordCount: 1,
+				content: "<p>x</p>",
+				imageUrl: "https://example.com/og.png",
+			},
+		});
+		const putImageObject: PutImageObject = jest.fn().mockResolvedValue(undefined);
+		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
+
+		const handler = createHandler({ parseHtml, putImageObject, putTierSource });
+
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		expect(putImageObject).not.toHaveBeenCalled();
+		expect(putTierSource).toHaveBeenCalledWith(
+			expect.objectContaining({
+				metadata: expect.objectContaining({ imageUrl: "https://example.com/og.png" }),
+			}),
+		);
+	});
+
+	it("threads downloaded media through processContent so HTML references the CDN URLs", async () => {
+		const parseWithImage: ParseHtml = () => ({
+			ok: true,
+			article: { title: "T", siteName: "s", excerpt: "e", wordCount: 1, content: '<img src="https://example.com/img.png">' },
+		});
+		const downloadMedia: DownloadMedia = jest.fn().mockResolvedValue([
+			{ originalUrl: "https://example.com/img.png", cdnUrl: "https://cdn/images/abc.png" },
+		]);
+		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
+
+		const handler = createHandler({ parseHtml: parseWithImage, downloadMedia, putTierSource });
+
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		expect(putTierSource).toHaveBeenCalledWith(
+			expect.objectContaining({
+				html: expect.stringContaining("https://cdn/images/abc.png"),
+			}),
+		);
+	});
+
+	it("throws on invalid event detail (a Zod failure surfaces before the worker runs)", async () => {
 		const handler = createHandler();
 
 		const invalidEvent: SQSEvent = {
@@ -481,91 +420,5 @@ describe("initSaveLinkCommandHandler", () => {
 		await expect(
 			handler(invalidEvent, stubContext, () => {}),
 		).rejects.toThrow();
-	});
-
-	it("passes downloaded media through processContentWithLocalMedia to rewrite HTML", async () => {
-		const parseWithImage: ParseHtml = () => ({
-			ok: true,
-			article: { title: "T", siteName: "s", excerpt: "e", wordCount: 1, content: '<img src="https://example.com/img.png">' },
-		});
-		const downloadMedia: DownloadMedia = jest.fn().mockResolvedValue([
-			{ originalUrl: "https://example.com/img.png", cdnUrl: "https://cdn/images/abc.png" },
-		]);
-		const putObject = jest.fn().mockResolvedValue("s3://bucket/key");
-
-		const handler = createHandler({ parseHtml: parseWithImage, downloadMedia, putObject });
-
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-		expect(putObject).toHaveBeenCalledWith(
-			expect.objectContaining({ content: expect.stringContaining("https://cdn/images/abc.png") }),
-		);
-	});
-
-	it("uploads the crawled thumbnail to S3 and updates the DynamoDB imageUrl", async () => {
-		const imageBody = Buffer.from([0xff, 0xd8, 0xff]);
-		const crawlArticle: CrawlArticle = async () => ({
-			status: "fetched",
-			html: "<html></html>",
-			thumbnailImage: {
-				body: imageBody,
-				contentType: "image/jpeg",
-				url: "https://cdn.example.com/thumb.jpg",
-				extension: ".jpg",
-			},
-		});
-		const putImageObject: PutImageObject = jest.fn().mockResolvedValue(undefined);
-		const updateThumbnailUrl: UpdateThumbnailUrl = jest.fn().mockResolvedValue(undefined);
-
-		const handler = createHandler({ crawlArticle, putImageObject, updateThumbnailUrl });
-
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-		expect(putImageObject).toHaveBeenCalledWith({
-			key: expect.stringMatching(/^content\/example\.com%2Farticle\/images\/[0-9a-f]{16}\.jpg$/),
-			body: imageBody,
-			contentType: "image/jpeg",
-		});
-		expect(updateThumbnailUrl).toHaveBeenCalledWith({
-			url: "https://example.com/article",
-			imageUrl: expect.stringMatching(/^https:\/\/cdn\.example\.com\/content\/example\.com%252Farticle\/images\/[0-9a-f]{16}\.jpg$/),
-		});
-	});
-
-	it("does not upload or update the thumbnail when the crawler did not return one", async () => {
-		const putImageObject: PutImageObject = jest.fn().mockResolvedValue(undefined);
-		const updateThumbnailUrl: UpdateThumbnailUrl = jest.fn().mockResolvedValue(undefined);
-
-		const handler = createHandler({ putImageObject, updateThumbnailUrl });
-
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-		expect(putImageObject).not.toHaveBeenCalled();
-		expect(updateThumbnailUrl).not.toHaveBeenCalled();
-	});
-
-	it("derives the thumbnail filename from the original URL and content-type", async () => {
-		const crawlArticle: CrawlArticle = async () => ({
-			status: "fetched",
-			html: "<html></html>",
-			thumbnailImage: {
-				body: Buffer.from("png-bytes"),
-				contentType: "image/png",
-				url: "https://cdn.example.com/different.png",
-				extension: ".png",
-			},
-		});
-		const putImageObject: PutImageObject = jest.fn().mockResolvedValue(undefined);
-
-		const handler = createHandler({ crawlArticle, putImageObject });
-
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-		expect(putImageObject).toHaveBeenCalledWith(
-			expect.objectContaining({
-				key: expect.stringMatching(/\.png$/),
-				contentType: "image/png",
-			}),
-		);
 	});
 });

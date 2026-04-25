@@ -2,13 +2,10 @@ import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { noopLogger } from "@packages/hutch-logger";
 import { initSaveLinkRawHtmlCommandHandler } from "./save-link-raw-html-command-handler";
-import { initInMemorySourceContent } from "./in-memory-source-content";
-import { initInMemoryCanonicalContent } from "./in-memory-canonical-content";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "../save-link/download-media";
-import type { ReadPendingHtml } from "./read-pending-html";
-import type { SelectMostCompleteContent } from "./select-content";
+import type { PutTierSource } from "../select-content/put-tier-source";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
 const stubAttributes: SQSRecordAttributes = {
@@ -69,149 +66,140 @@ const successfulParse: ParseHtml = () => ({
 	},
 });
 
-const tierZeroWinsSelector: SelectMostCompleteContent = async () => ({
-	winner: "tier-0",
-	reason: "tier-0 has more prose",
-});
-
-const canonicalWinsSelector: SelectMostCompleteContent = async () => ({
-	winner: "canonical",
-	reason: "canonical is better",
-});
-
 type HandlerDeps = Parameters<typeof initSaveLinkRawHtmlCommandHandler>[0];
 
 function createHandler(overrides: Partial<HandlerDeps> = {}) {
-	const sourceContent = initInMemorySourceContent();
-	const canonicalContent = initInMemoryCanonicalContent({
-		readSourceContent: sourceContent.readSourceContent,
-	});
-	const publishLinkSaved = jest.fn().mockResolvedValue(undefined);
-	const selectMostCompleteContent = jest.fn(tierZeroWinsSelector);
-	const markCrawlReady = jest.fn().mockResolvedValue(undefined);
-	const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
-	const logParseError = jest.fn();
-	const logCrawlOutcome = jest.fn();
-	const readTierSnapshot = jest.fn().mockResolvedValue({
-		tier0Status: "success",
-		tier1Status: "not_attempted",
-		pickedTier: "tier-0",
-	});
 	const deps: HandlerDeps = {
 		readPendingHtml: jest.fn().mockResolvedValue("<html><body><p>Article content</p></body></html>"),
 		parseHtml: successfulParse,
 		downloadMedia: noopDownloadMedia,
 		processContent,
-		putSourceContent: sourceContent.putSourceContent,
-		readCanonicalContent: canonicalContent.readCanonicalContent,
-		promoteSourceToCanonical: canonicalContent.promoteSourceToCanonical,
-		selectMostCompleteContent,
-		publishLinkSaved,
-		markCrawlReady,
-		markCrawlFailed,
+		putTierSource: jest.fn().mockResolvedValue(undefined),
+		publishEvent: jest.fn().mockResolvedValue(undefined),
+		markCrawlReady: jest.fn().mockResolvedValue(undefined),
+		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		logger: noopLogger,
-		logParseError,
-		logCrawlOutcome,
-		readTierSnapshot,
+		logParseError: jest.fn(),
+		logCrawlOutcome: jest.fn(),
+		readTierSnapshot: jest.fn().mockResolvedValue({
+			tier0Status: "success",
+			tier1Status: "not_attempted",
+			pickedTier: "tier-0",
+		}),
 		...overrides,
 	};
-	return {
-		handler: initSaveLinkRawHtmlCommandHandler(deps),
-		readSourceContent: sourceContent.readSourceContent,
-		readCanonicalContent: canonicalContent.readCanonicalContent,
-		seedCanonical: canonicalContent.seedCanonical,
-		publishLinkSaved,
-		selectMostCompleteContent,
-		markCrawlReady,
-		markCrawlFailed,
-		logParseError,
-		logCrawlOutcome,
-		readTierSnapshot,
-	};
+	return { handler: initSaveLinkRawHtmlCommandHandler(deps), deps };
 }
 
 describe("initSaveLinkRawHtmlCommandHandler", () => {
-	it("reads pending html, parses, and writes the processed result to the tier-0 source key", async () => {
-		const readPendingHtml: ReadPendingHtml = jest.fn().mockResolvedValue(
-			"<html><body><p>Article content</p></body></html>",
+	it("reads pending HTML, writes a tier-0 source with metadata, and emits TierContentExtractedEvent carrying userId", async () => {
+		const { handler, deps } = createHandler();
+
+		await handler(
+			createSqsEvent({ url: "https://example.com/article", userId: "user-1", title: "Captured Title" }),
+			stubContext,
+			() => {},
 		);
-		const { handler, readSourceContent } = createHandler({ readPendingHtml });
+
+		expect(deps.readPendingHtml).toHaveBeenCalledWith("https://example.com/article");
+		expect(deps.putTierSource).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			tier: "tier-0",
+			html: "<p>Article content</p>",
+			metadata: {
+				title: "Test",
+				siteName: "example.com",
+				excerpt: "test",
+				wordCount: 10,
+				estimatedReadTime: 1,
+				imageUrl: undefined,
+			},
+		});
+		expect(deps.publishEvent).toHaveBeenCalledWith({
+			source: "hutch.save-link",
+			detailType: "TierContentExtracted",
+			detail: JSON.stringify({
+				url: "https://example.com/article",
+				tier: "tier-0",
+				userId: "user-1",
+			}),
+		});
+	});
+
+	it("marks crawl ready before publishing the extracted event so the reader UI un-sticks immediately", async () => {
+		const calls: string[] = [];
+		const markCrawlReady = jest.fn(async () => { calls.push("markCrawlReady"); });
+		const publishEvent = jest.fn(async () => { calls.push("publishEvent"); });
+		const putTierSource: PutTierSource = jest.fn(async () => { calls.push("putTierSource"); });
+
+		const { handler } = createHandler({ markCrawlReady, publishEvent, putTierSource });
 
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(readPendingHtml).toHaveBeenCalledWith("https://example.com/article");
-		expect(readSourceContent({ url: "https://example.com/article", tier: "tier-0" })).toBe("<p>Article content</p>");
+		expect(calls).toEqual(["putTierSource", "markCrawlReady", "publishEvent"]);
 	});
 
-	it("does not write any other tier", async () => {
-		const { handler, readSourceContent } = createHandler();
+	it("marks crawl 'failed' inline on terminal parse errors and rethrows so SQS retries observe the failure", async () => {
+		const failedParse: ParseHtml = () => ({ ok: false, reason: "Readability returned null" });
+		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
+		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
 
-		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+		const { handler } = createHandler({
+			parseHtml: failedParse,
+			markCrawlFailed,
+			putTierSource,
+			publishEvent,
+		});
 
-		expect(readSourceContent({ url: "https://example.com/article", tier: "tier-1" })).toBeUndefined();
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow("save-link-raw-html parse failed for https://example.com/bad: Readability returned null");
+
+		expect(markCrawlFailed).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			reason: "Readability returned null",
+		});
+		expect(putTierSource).not.toHaveBeenCalled();
+		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
-	it("rewrites image URLs through downloadMedia + processContent", async () => {
+	it("threads downloaded media into processContent so HTML references the CDN URLs", async () => {
 		const parseWithImage: ParseHtml = () => ({
 			ok: true,
-			article: { title: "T", siteName: "s", excerpt: "e", wordCount: 1, content: '<img src="https://example.com/img.png">' },
+			article: {
+				title: "T",
+				siteName: "s",
+				excerpt: "e",
+				wordCount: 1,
+				content: '<img src="https://example.com/img.png">',
+			},
 		});
 		const downloadMedia: DownloadMedia = jest.fn().mockResolvedValue([
 			{ originalUrl: "https://example.com/img.png", cdnUrl: "https://cdn/images/abc.png" },
 		]);
-		const { handler, readSourceContent } = createHandler({ parseHtml: parseWithImage, downloadMedia });
+		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
+
+		const { handler } = createHandler({ parseHtml: parseWithImage, downloadMedia, putTierSource });
 
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(readSourceContent({ url: "https://example.com/article", tier: "tier-0" }))
-			.toContain("https://cdn/images/abc.png");
-	});
-
-	it("rejects events whose detail does not match the SaveLinkRawHtmlCommand schema", async () => {
-		const { handler } = createHandler();
-
-		const invalidEvent: SQSEvent = {
-			Records: [{
-				messageId: "msg-1",
-				receiptHandle: "receipt-1",
-				body: JSON.stringify({ detail: { invalid: true } }),
-				attributes: stubAttributes,
-				messageAttributes: {},
-				md5OfBody: "",
-				eventSource: "aws:sqs",
-				eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:SaveLinkRawHtmlCommand",
-				awsRegion: "ap-southeast-2",
-			}],
-		};
-
-		await expect(handler(invalidEvent, stubContext, () => {})).rejects.toThrow();
-	});
-
-	it("marks the crawl failed and re-throws on parser rejection so the reader sees failed at t+0 while SQS still retries / DLQs the message", async () => {
-		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
-		const { handler, readSourceContent, markCrawlFailed, markCrawlReady } = createHandler({ parseHtml: failedParse });
-
-		await expect(
-			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
-		).rejects.toThrow(/save-link-raw-html parse failed for https:\/\/example.com\/bad: no-readable-content/);
-
-		expect(markCrawlFailed).toHaveBeenCalledWith({
-			url: "https://example.com/bad",
-			reason: "no-readable-content",
-		});
-		expect(markCrawlReady).not.toHaveBeenCalled();
-		expect(readSourceContent({ url: "https://example.com/bad", tier: "tier-0" })).toBeUndefined();
+		expect(putTierSource).toHaveBeenCalledWith(
+			expect.objectContaining({
+				html: expect.stringContaining("https://cdn/images/abc.png"),
+			}),
+		);
 	});
 
 	it("emits logParseError before throwing when the parser rejects the captured html, so the failure reaches the parse-errors dashboard", async () => {
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
-		const { handler, logParseError } = createHandler({ parseHtml: failedParse });
+		const { handler, deps } = createHandler({ parseHtml: failedParse });
 
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
 		).rejects.toThrow();
 
-		expect(logParseError).toHaveBeenCalledWith({
+		expect(deps.logParseError).toHaveBeenCalledWith({
 			url: "https://example.com/bad",
 			reason: "no-readable-content",
 		});
@@ -224,13 +212,13 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 			tier1Status: "success",
 			pickedTier: "tier-1",
 		});
-		const { handler, logCrawlOutcome } = createHandler({ parseHtml: failedParse, readTierSnapshot });
+		const { handler, deps } = createHandler({ parseHtml: failedParse, readTierSnapshot });
 
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
 		).rejects.toThrow();
 
-		expect(logCrawlOutcome).toHaveBeenCalledWith({
+		expect(deps.logCrawlOutcome).toHaveBeenCalledWith({
 			url: "https://example.com/bad",
 			thisTier: "tier-0",
 			thisTierStatus: "failed",
@@ -246,13 +234,13 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 			tier1Status: "failed",
 			pickedTier: "none",
 		});
-		const { handler, logCrawlOutcome } = createHandler({ parseHtml: failedParse, readTierSnapshot });
+		const { handler, deps } = createHandler({ parseHtml: failedParse, readTierSnapshot });
 
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
 		).rejects.toThrow();
 
-		expect(logCrawlOutcome).toHaveBeenCalledWith({
+		expect(deps.logCrawlOutcome).toHaveBeenCalledWith({
 			url: "https://example.com/bad",
 			thisTier: "tier-0",
 			thisTierStatus: "failed",
@@ -267,11 +255,11 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 			tier1Status: "not_attempted",
 			pickedTier: "tier-0",
 		});
-		const { handler, logCrawlOutcome } = createHandler({ readTierSnapshot });
+		const { handler, deps } = createHandler({ readTierSnapshot });
 
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(logCrawlOutcome).toHaveBeenCalledWith({
+		expect(deps.logCrawlOutcome).toHaveBeenCalledWith({
 			url: "https://example.com/article",
 			thisTier: "tier-0",
 			thisTierStatus: "success",
@@ -286,11 +274,11 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 			tier1Status: "success",
 			pickedTier: "tier-1",
 		});
-		const { handler, logCrawlOutcome } = createHandler({ readTierSnapshot });
+		const { handler, deps } = createHandler({ readTierSnapshot });
 
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(logCrawlOutcome).toHaveBeenCalledWith({
+		expect(deps.logCrawlOutcome).toHaveBeenCalledWith({
 			url: "https://example.com/article",
 			thisTier: "tier-0",
 			thisTierStatus: "success",
@@ -311,154 +299,31 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		);
 
 		expect(info).toHaveBeenCalledWith(
-			"[SaveLinkRawHtmlCommand] saved tier-0 source",
+			"[SaveLinkRawHtmlCommand] tier-0 source written",
 			expect.objectContaining({ url: "https://example.com/article", capturedTitle: "Captured Title" }),
 		);
 	});
 
-	describe("canonical contest", () => {
-		it("promotes tier-0 to canonical and publishes LinkSavedEvent when no canonical exists", async () => {
-			const { handler, readCanonicalContent, publishLinkSaved, selectMostCompleteContent } = createHandler();
+	it("throws on invalid event detail", async () => {
+		const { handler } = createHandler();
 
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+		const invalidEvent: SQSEvent = {
+			Records: [{
+				messageId: "msg-1",
+				receiptHandle: "receipt-1",
+				body: JSON.stringify({ detail: { wrong: "shape" } }),
+				attributes: stubAttributes,
+				messageAttributes: {},
+				md5OfBody: "",
+				eventSource: "aws:sqs",
+				eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:SaveLinkRawHtmlCommand",
+				awsRegion: "ap-southeast-2",
+			}],
+		};
 
-			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
-				html: "<p>Article content</p>",
-				metadata: { title: "Test", wordCount: 10 },
-			});
-			expect(publishLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article", userId: "user-1" });
-			expect(selectMostCompleteContent).not.toHaveBeenCalled();
-		});
-
-		it("promotes and publishes when a canonical exists and tier-0 wins the selector contest", async () => {
-			const selectMostCompleteContent = jest.fn(tierZeroWinsSelector);
-			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved } =
-				createHandler({ selectMostCompleteContent });
-			seedCanonical({
-				url: "https://example.com/article",
-				html: "<p>old canonical body</p>",
-				metadata: { title: "Old", wordCount: 5 },
-			});
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(selectMostCompleteContent).toHaveBeenCalledTimes(1);
-			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
-				html: "<p>Article content</p>",
-				metadata: { title: "Test", wordCount: 10 },
-			});
-			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
-		});
-
-		it("leaves canonical untouched and does not publish when canonical wins the selector", async () => {
-			const selectMostCompleteContent = jest.fn(canonicalWinsSelector);
-			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved } =
-				createHandler({ selectMostCompleteContent });
-			seedCanonical({
-				url: "https://example.com/article",
-				html: "<p>winning canonical body</p>",
-				metadata: { title: "Existing", wordCount: 50 },
-			});
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(selectMostCompleteContent).toHaveBeenCalledTimes(1);
-			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
-				html: "<p>winning canonical body</p>",
-				metadata: { title: "Existing", wordCount: 50 },
-			});
-			expect(publishLinkSaved).not.toHaveBeenCalled();
-		});
-
-		it("leaves canonical untouched and does not publish when the selector returns tie", async () => {
-			const tieSelector: SelectMostCompleteContent = async () => ({ winner: "tie", reason: "comparable" });
-			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved } = createHandler({
-				selectMostCompleteContent: jest.fn(tieSelector),
-			});
-			seedCanonical({
-				url: "https://example.com/article",
-				html: "<p>existing</p>",
-				metadata: { title: "Existing", wordCount: 30 },
-			});
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(await readCanonicalContent({ url: "https://example.com/article" })).toEqual({
-				html: "<p>existing</p>",
-				metadata: { title: "Existing", wordCount: 30 },
-			});
-			expect(publishLinkSaved).not.toHaveBeenCalled();
-		});
-	});
-
-	describe("crawl status reset", () => {
-		it("marks the crawl row ready after promoting tier-0 to a fresh canonical so a stale failed row no longer pins the reader to the failure card", async () => {
-			const { handler, markCrawlReady } = createHandler();
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
-		});
-
-		it("marks the crawl row ready after tier-0 wins the selector contest over an existing canonical", async () => {
-			const { handler, markCrawlReady, seedCanonical } = createHandler({
-				selectMostCompleteContent: jest.fn(tierZeroWinsSelector),
-			});
-			seedCanonical({
-				url: "https://example.com/article",
-				html: "<p>old canonical body</p>",
-				metadata: { title: "Old", wordCount: 5 },
-			});
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
-		});
-
-		it("marks the crawl row ready when canonical wins the selector and is left in place — the row may be stuck on failed from a prior tier-1 attempt even though canonical content is good", async () => {
-			const { handler, markCrawlReady, seedCanonical } = createHandler({
-				selectMostCompleteContent: jest.fn(canonicalWinsSelector),
-			});
-			seedCanonical({
-				url: "https://example.com/article",
-				html: "<p>winning canonical body</p>",
-				metadata: { title: "Existing", wordCount: 50 },
-			});
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
-		});
-
-		it("marks the crawl row ready when the selector returns tie and canonical is left in place", async () => {
-			const tieSelector: SelectMostCompleteContent = async () => ({ winner: "tie", reason: "comparable" });
-			const { handler, markCrawlReady, seedCanonical } = createHandler({
-				selectMostCompleteContent: jest.fn(tieSelector),
-			});
-			seedCanonical({
-				url: "https://example.com/article",
-				html: "<p>existing</p>",
-				metadata: { title: "Existing", wordCount: 30 },
-			});
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
-		});
-
-		// If publishLinkSaved fails and SQS retries, the row is already consistent
-		// (good content + ready). The inverse order would publish a regen request
-		// against a row still flagged failed, leaving the reader stuck.
-		it("marks the crawl ready before publishing LinkSavedEvent so a publish failure still leaves the row consistent", async () => {
-			const { handler, markCrawlReady, publishLinkSaved } = createHandler();
-
-			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
-
-			expect(markCrawlReady).toHaveBeenCalledTimes(1);
-			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
-			expect(markCrawlReady.mock.invocationCallOrder[0])
-				.toBeLessThan(publishLinkSaved.mock.invocationCallOrder[0]);
-		});
+		await expect(
+			handler(invalidEvent, stubContext, () => {}),
+		).rejects.toThrow();
 	});
 
 	it("reports a LinkSavedEvent publish failure via logParseError with SDK metadata so a 403 surfaces in the parse-errors widget instead of only as 'UnknownError' in the raw Lambda log", async () => {

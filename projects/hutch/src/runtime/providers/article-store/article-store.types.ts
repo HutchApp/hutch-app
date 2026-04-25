@@ -53,6 +53,7 @@ export interface GlobalArticleData {
 	url: string;
 	metadata: SavedArticle["metadata"];
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
+	contentSourceTier?: "tier-0" | "tier-1";
 }
 
 export type FindArticleByUrl = (

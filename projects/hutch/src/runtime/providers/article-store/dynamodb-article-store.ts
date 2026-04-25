@@ -48,6 +48,7 @@ const ArticleRow = z.object({
 	imageUrl: dynamoField(z.string()),
 	content: dynamoField(z.string()),
 	estimatedReadTime: MinutesSchema,
+	contentSourceTier: dynamoField(z.enum(["tier-0", "tier-1"])),
 });
 
 const UserArticleRow = z.object({
@@ -357,6 +358,7 @@ export function initDynamoDbArticleStore(deps: {
 					"wordCount",
 					"imageUrl",
 					"estimatedReadTime",
+					"contentSourceTier",
 				],
 			},
 		);
@@ -372,6 +374,7 @@ export function initDynamoDbArticleStore(deps: {
 				imageUrl: row.imageUrl,
 			},
 			estimatedReadTime: row.estimatedReadTime,
+			contentSourceTier: row.contentSourceTier,
 		};
 	};
 

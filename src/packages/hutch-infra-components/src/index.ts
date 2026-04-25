@@ -13,6 +13,8 @@ export {
 	type SummaryGeneratedDetail,
 	SummaryGenerationFailedEvent,
 	type SummaryGenerationFailedDetail,
+	TierContentExtractedEvent,
+	type TierContentExtractedDetail,
 	CrawlArticleCompletedEvent,
 	type CrawlArticleCompletedDetail,
 	CrawlArticleFailedEvent,

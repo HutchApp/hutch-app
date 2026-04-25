@@ -26,6 +26,9 @@ export class ArticleResourceUniqueId {
 	toS3SourceKey({ tier }: { tier: string }): string {
 		return `articles/${encodeURIComponent(this.value)}/sources/${tier}.html`;
 	}
+	toS3SourceMetadataKey({ tier }: { tier: string }): string {
+		return `articles/${encodeURIComponent(this.value)}/sources/${tier}.metadata.json`;
+	}
 	toImageCdnUrl({ baseUrl, filename }: { baseUrl: string; filename: string }): string {
 		// Double-encoded: the CDN URL-decodes once before looking up the singly-encoded S3 key.
 		return `${baseUrl}/content/${encodeURIComponent(encodeURIComponent(this.value))}/images/${filename}`;

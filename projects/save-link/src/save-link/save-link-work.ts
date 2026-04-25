@@ -6,31 +6,25 @@ import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia, DownloadedMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
-import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
-import type { UpdateArticleMetadata } from "./update-article-metadata";
 import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-components";
 import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import { estimatedReadTimeFromWordCount } from "./estimated-read-time";
+import type { PutTierSource } from "../select-content/put-tier-source";
 
-export type PutObject = (params: { key: string; content: string }) => Promise<string>;
-export type UpdateContentLocation = (params: { url: string; contentLocation: string; tier: "tier-0" | "tier-1" }) => Promise<void>;
 export type ProcessContent = (params: { html: string; media: DownloadedMedia[] }) => Promise<string>;
 
 /* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
 export function initSaveLinkWork(deps: {
 	crawlArticle: CrawlArticle;
 	parseHtml: ParseHtml;
-	putObject: PutObject;
+	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
-	updateContentLocation: UpdateContentLocation;
 	updateFetchTimestamp: UpdateFetchTimestamp;
-	updateArticleMetadata: UpdateArticleMetadata;
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
-	updateThumbnailUrl: UpdateThumbnailUrl;
 	imagesCdnBaseUrl: string;
 	now: () => Date;
 	logger: HutchLogger;
@@ -42,16 +36,13 @@ export function initSaveLinkWork(deps: {
 	const {
 		crawlArticle,
 		parseHtml,
-		putObject,
+		putTierSource,
 		putImageObject,
-		updateContentLocation,
 		updateFetchTimestamp,
-		updateArticleMetadata,
 		markCrawlReady,
 		markCrawlFailed,
 		downloadMedia,
 		processContent,
-		updateThumbnailUrl,
 		imagesCdnBaseUrl,
 		now,
 		logger,
@@ -97,69 +88,62 @@ export function initSaveLinkWork(deps: {
 		const { article } = parseResult;
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 
-		// Wrap the post-parse pipeline so a thrown step (downloadMedia,
-		// processContent, putObject, updateContentLocation, updateFetchTimestamp,
-		// uploadThumbnail, updateThumbnailUrl, markCrawlReady) lands a structured
-		// event in the parse-errors stream — without this the failure was visible
-		// only as a raw console.error in the Lambda log group and was silently
-		// missing from the dashboard's parse-errors widgets. The crawlStatus row
-		// is left as-is: SQS retries the message and the DLQ handler owns the
-		// terminal failed state, mirroring the existing crawl-failure path.
-		try {
-			await updateArticleMetadata({
-				url,
+		const media = await downloadMedia({
+			html: article.content,
+			articleResourceUniqueId,
+		});
+
+		const html = await processContent({ html: article.content, media });
+
+		// Resolve the final imageUrl that lands in the metadata sidecar — the
+		// CDN-cached thumbnail wins when the crawler fetched one, otherwise the
+		// raw og:image / twitter:image URL Readability extracted. The selector
+		// reads this when it promotes the winning tier to canonical.
+		const resolvedImageUrl = crawlResult.thumbnailImage
+			? await uploadThumbnail({
+					thumbnailImage: crawlResult.thumbnailImage,
+					articleResourceUniqueId,
+					putImageObject,
+					imagesCdnBaseUrl,
+				})
+			: article.imageUrl;
+
+		await putTierSource({
+			url,
+			tier: "tier-1",
+			html,
+			metadata: {
 				title: article.title,
 				siteName: article.siteName,
 				excerpt: article.excerpt,
 				wordCount: article.wordCount,
 				estimatedReadTime: estimatedReadTimeFromWordCount(article.wordCount),
-				imageUrl: article.imageUrl,
-			});
+				imageUrl: resolvedImageUrl,
+			},
+		});
 
-			const media = await downloadMedia({
-				html: article.content,
-				articleResourceUniqueId,
-			});
+		await updateFetchTimestamp({
+			url,
+			contentFetchedAt: now().toISOString(),
+			etag: crawlResult.etag,
+			lastModified: crawlResult.lastModified,
+		});
 
-			const html = await processContent({ html: article.content, media });
+		await markCrawlReady({ url });
 
-			const key = articleResourceUniqueId.toS3ContentKey();
-			const contentLocation = await putObject({ key, content: html });
-			await updateContentLocation({ url, contentLocation, tier: "tier-1" });
-			await updateFetchTimestamp({
-				url,
-				contentFetchedAt: now().toISOString(),
-				etag: crawlResult.etag,
-				lastModified: crawlResult.lastModified,
-			});
+		const successSnapshot = await readTierSnapshot({ url });
+		logCrawlOutcome({
+			url,
+			thisTier: "tier-1",
+			thisTierStatus: "success",
+			otherTierStatus: successSnapshot.tier0Status,
+			pickedTier: successSnapshot.pickedTier,
+		});
 
-			if (crawlResult.thumbnailImage) {
-				const cdnUrl = await uploadThumbnail({
-					thumbnailImage: crawlResult.thumbnailImage,
-					articleResourceUniqueId,
-					putImageObject,
-					imagesCdnBaseUrl,
-				});
-				await updateThumbnailUrl({ url, imageUrl: cdnUrl });
-			}
-
-			await markCrawlReady({ url });
-
-			const snapshot = await readTierSnapshot({ url });
-			logCrawlOutcome({
-				url,
-				thisTier: "tier-1",
-				thisTierStatus: "success",
-				otherTierStatus: snapshot.tier0Status,
-				pickedTier: snapshot.pickedTier,
-			});
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			logParseError({ url, reason: `post-parse-step-failed: ${message}` });
-			throw error;
-		}
-
-		logger.info(`${logPrefix} saved`, { url, hasThumbnail: crawlResult.thumbnailImage ? 1 : 0 });
+		logger.info(`${logPrefix} tier-1 source written`, {
+			url,
+			hasThumbnail: crawlResult.thumbnailImage ? 1 : 0,
+		});
 	};
 
 	return { saveLinkWork };
