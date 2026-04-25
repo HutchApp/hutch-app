@@ -39,7 +39,14 @@ export class HutchS3ReadWrite extends pulumi.ComponentResource {
 		this.readPolicyDocument = bucket.arn.apply((arn) =>
 			JSON.stringify({
 				Version: "2012-10-17",
-				Statement: [{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `${arn}/*` }],
+				Statement: [
+					{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `${arn}/*` },
+					// s3:ListBucket on the bucket itself (not /*) so a missing key returns
+					// 404 NoSuchKey instead of S3's information-hiding 403 AccessDenied that
+					// names s3:ListBucket — the latter shows up in CloudWatch as a misleading
+					// permission failure on every cache miss.
+					{ Effect: "Allow", Action: ["s3:ListBucket"], Resource: arn },
+				],
 			}),
 		);
 
@@ -66,7 +73,11 @@ export class HutchS3ReadWrite extends pulumi.ComponentResource {
 			name: `${name}-read-pol`,
 			policy: JSON.stringify({
 				Version: "2012-10-17",
-				Statement: [{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `arn:aws:s3:::${bucketName}/*` }],
+				Statement: [
+					{ Effect: "Allow", Action: ["s3:GetObject"], Resource: `arn:aws:s3:::${bucketName}/*` },
+					// See readPolicyDocument above for why s3:ListBucket is required on the bucket itself.
+					{ Effect: "Allow", Action: ["s3:ListBucket"], Resource: `arn:aws:s3:::${bucketName}` },
+				],
 			}),
 		}];
 	}
