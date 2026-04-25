@@ -115,6 +115,11 @@ describe("createAnalyticsMiddleware", () => {
 		expect(runMiddleware(req, createRes(200))).toEqual([]);
 	});
 
+	it("skips logging for HTMX requests (HX-Request: true) — reader-pending fragment polls every 3s and would otherwise drown the analytics stream", () => {
+		const req = createReq({ headers: { "hx-request": "true" } });
+		expect(runMiddleware(req, createRes(200))).toEqual([]);
+	});
+
 	it("drops empty-string UTM params from the emitted JSON (utm_source=\"\" is not a meaningful source)", () => {
 		const req = createReq({ query: { utm_source: "" } });
 		const [event] = runMiddleware(req, createRes(200));

@@ -29,6 +29,7 @@ function shouldLog(req: Request, statusCode: number): boolean {
 	if (SKIP_PATHS.has(req.path)) return false;
 	if (statusCode >= 400) return false;
 	if (isbot(req.get("user-agent"))) return false;
+	if (req.get("hx-request") === "true") return false;
 	return true;
 }
 
