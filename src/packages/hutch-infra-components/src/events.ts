@@ -110,6 +110,20 @@ export type SummaryGenerationFailedDetail = z.infer<
 	typeof SummaryGenerationFailedEvent.detailSchema
 >;
 
+export const TierContentExtractedEvent = defineEvent({
+	name: "tier-content-extracted",
+	source: "hutch.save-link",
+	detailType: "TierContentExtracted",
+	detailSchema: z.object({
+		url: z.string(),
+		tier: z.enum(["tier-0", "tier-1"]),
+		userId: z.string().optional(),
+	}),
+});
+export type TierContentExtractedDetail = z.infer<
+	typeof TierContentExtractedEvent.detailSchema
+>;
+
 export const CrawlArticleCompletedEvent = defineEvent({
 	name: "crawl-article-completed",
 	source: "hutch.save-link",

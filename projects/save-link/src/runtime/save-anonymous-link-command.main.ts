@@ -2,19 +2,15 @@ import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { S3Client } from "@aws-sdk/client-s3";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
-import { AnonymousLinkSavedEvent, type ParseErrorEvent, initLogParseError, initLogCrawlOutcome, type CrawlOutcomeEvent } from "@packages/hutch-infra-components";
+import { initLogParseError, type ParseErrorEvent, initLogCrawlOutcome, type CrawlOutcomeEvent } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { initReadabilityParser } from "../article-parser/readability-parser";
 import { theInformationPreParser } from "../article-parser/the-information-pre-parser";
-import { initS3PutObject } from "../save-link/s3-put-object";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";
-import { initUpdateContentLocation } from "../save-link/update-content-location";
 import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
-import { initUpdateThumbnailUrl } from "../save-link/update-thumbnail-url";
 import { initUpdateFetchTimestamp } from "../save-link/update-fetch-timestamp";
-import { initUpdateArticleMetadata } from "../save-link/update-article-metadata";
 import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
 import { initCheckTier0SourceExistsS3 } from "../crawl-article-state/check-tier-0-source-exists-s3";
 import { initReadArticleCrawlStateDynamoDb } from "../crawl-article-state/read-article-crawl-state-dynamodb";
@@ -22,6 +18,7 @@ import { initReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot"
 import { initDownloadMedia } from "../save-link/download-media";
 import { initSaveAnonymousLinkCommandHandler } from "../save-link/save-anonymous-link-command-handler";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
+import { initPutTierSource } from "../select-content/put-tier-source";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
@@ -40,32 +37,17 @@ const { parseHtml } = initReadabilityParser({
 	logError,
 });
 
-const { putObject } = initS3PutObject({
-	client: s3Client,
-	bucketName: contentBucketName,
-});
-
 const { putImageObject } = initS3PutImageObject({
 	client: s3Client,
 	bucketName: contentBucketName,
 });
 
-const { updateContentLocation } = initUpdateContentLocation({
-	client,
-	tableName: articlesTable,
-});
-
-const { updateThumbnailUrl } = initUpdateThumbnailUrl({
-	client,
-	tableName: articlesTable,
+const { putTierSource } = initPutTierSource({
+	client: s3Client,
+	bucketName: contentBucketName,
 });
 
 const { updateFetchTimestamp } = initUpdateFetchTimestamp({
-	client,
-	tableName: articlesTable,
-});
-
-const { updateArticleMetadata } = initUpdateArticleMetadata({
 	client,
 	tableName: articlesTable,
 });
@@ -86,14 +68,6 @@ const { publishEvent } = initEventBridgePublisher({
 	client: new EventBridgeClient({}),
 	eventBusName,
 });
-
-const publishAnonymousLinkSaved = async (params: { url: string }) => {
-	await publishEvent({
-		source: AnonymousLinkSavedEvent.source,
-		detailType: AnonymousLinkSavedEvent.detailType,
-		detail: JSON.stringify({ url: params.url }),
-	});
-};
 
 const processContent = initProcessContentWithLocalMedia({
 	rewriteHtmlUrls: (html, rewriteUrl) => {
@@ -131,18 +105,14 @@ const { readTierSnapshot } = initReadTierSnapshot({
 export const handler = initSaveAnonymousLinkCommandHandler({
 	crawlArticle,
 	parseHtml,
-	putObject,
+	putTierSource,
 	putImageObject,
-	updateContentLocation,
 	updateFetchTimestamp,
-	updateArticleMetadata,
 	markCrawlReady,
 	markCrawlFailed,
-	publishAnonymousLinkSaved,
 	publishEvent,
 	downloadMedia,
 	processContent,
-	updateThumbnailUrl,
 	imagesCdnBaseUrl,
 	now: () => new Date(),
 	logger: consoleLogger,

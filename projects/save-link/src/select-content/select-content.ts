@@ -2,18 +2,19 @@ import { z } from "zod";
 import type { HutchLogger } from "@packages/hutch-logger";
 import {
 	SELECT_CONTENT_SYSTEM_PROMPT,
-	type ContentSource,
 	type SelectorCandidate,
 	buildSelectContentUserMessage,
-} from "./select-content.prompt";
+	labelForIndex,
+} from "./select-content-prompt";
+import type { Tier } from "./tier.types";
 
 // https://api-docs.deepseek.com/quick_start/pricing — deepseek-chat max output is 8K
 const DEEPSEEK_MAX_OUTPUT_TOKENS = 8192;
 
 export type SelectMostCompleteContent = (params: {
 	url: string;
-	candidates: [SelectorCandidate, SelectorCandidate];
-}) => Promise<{ winner: ContentSource | "tie"; reason: string }>;
+	candidates: readonly SelectorCandidate[];
+}) => Promise<{ winner: Tier | "tie"; reason: string }>;
 
 type ChatCompletionResponse = {
 	choices: Array<{ message?: { content?: string | null } }>;
@@ -27,7 +28,7 @@ export type CreateSelectorChatCompletion = (params: {
 }) => Promise<ChatCompletionResponse>;
 
 const ResponseSchema = z.object({
-	winner: z.enum(["A", "B", "tie"]),
+	winner: z.string(),
 	reason: z.string(),
 });
 
@@ -38,7 +39,6 @@ export function initSelectMostCompleteContent(deps: {
 	const { createChatCompletion, logger } = deps;
 
 	const selectMostCompleteContent: SelectMostCompleteContent = async (params) => {
-		const [a, b] = params.candidates;
 		const response = await createChatCompletion({
 			model: "deepseek-chat",
 			max_tokens: DEEPSEEK_MAX_OUTPUT_TOKENS,
@@ -71,12 +71,20 @@ export function initSelectMostCompleteContent(deps: {
 			return { winner: "tie", reason: "schema mismatch" };
 		}
 
-		const winnerLabel = validated.data.winner;
-		if (winnerLabel === "tie") {
+		const winnerLabel = validated.data.winner.toUpperCase();
+		if (winnerLabel === "TIE") {
 			return { winner: "tie", reason: validated.data.reason };
 		}
-		const candidate = winnerLabel === "A" ? a : b;
-		return { winner: candidate.source, reason: validated.data.reason };
+		const labels = params.candidates.map((_, index) => labelForIndex(index));
+		const winnerIndex = labels.indexOf(winnerLabel);
+		if (winnerIndex === -1) {
+			logger.info("[SelectContent] unknown winner label, returning tie", {
+				url: params.url,
+				winnerLabel,
+			});
+			return { winner: "tie", reason: "unknown winner label" };
+		}
+		return { winner: params.candidates[winnerIndex].tier, reason: validated.data.reason };
 	};
 
 	return { selectMostCompleteContent };
