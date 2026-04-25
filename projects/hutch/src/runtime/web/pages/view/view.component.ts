@@ -5,6 +5,7 @@ import type {
 	Minutes,
 } from "../../../domain/article/article.types";
 import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
+import { pickExcerpt, truncateForSeo } from "../../../providers/article-summary/article-summary.helpers";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { requireEnv } from "../../../require-env";
 import { Base } from "../../base.component";
@@ -77,7 +78,9 @@ export function ViewPage(input: ViewPageInput): Component {
 	const ogImageAlt = input.metadata.imageUrl
 		? input.metadata.title
 		: DEFAULT_OG_ALT;
-	const description = input.metadata.excerpt || "View on Readplace.";
+	const description = truncateForSeo(
+		pickExcerpt(input.summary, input.metadata.excerpt) || "View on Readplace.",
+	);
 
 	const structuredData: Record<string, unknown> = {
 		"@context": "https://schema.org",
