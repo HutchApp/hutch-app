@@ -1,4 +1,4 @@
-import { GetObjectCommand, NoSuchKey } from "@aws-sdk/client-s3";
+import { type GetObjectCommand, NoSuchKey } from "@aws-sdk/client-s3";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import { initS3ReadContent } from "./s3-read-content";
 import type { S3GetObject } from "./s3-read-content";

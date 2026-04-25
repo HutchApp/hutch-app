@@ -159,9 +159,13 @@ export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 	function runPlaywrightPhase(displayName: string, phase: ResolvedPlaywrightPhase, projectRoot: string) {
 		deps.log(`\n=== ${displayName} ===\n`);
 
+		const isCI = process.env.CI === "true";
+		if (isCI) {
+			deps.log("Installing browsers (output suppressed in CI; errors still shown)...");
+		}
 		deps.execSync(phase.browserInstallCommand, {
 			cwd: projectRoot,
-			stdio: "inherit",
+			stdio: isCI ? ["inherit", "ignore", "inherit"] : "inherit",
 		});
 
 		deps.execSync(phase.testCommand, {

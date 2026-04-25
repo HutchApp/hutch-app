@@ -19,9 +19,10 @@ const plan = createBuildPlan({
   serverUrl,
   appDomains,
   pack: ({ sourceDir, outputPath }) => {
+    const isCI = process.env.CI === 'true';
     execSync(`web-ext build --source-dir ${sourceDir} --artifacts-dir ${dirname(outputPath)} --overwrite-dest --filename ${basename(outputPath)}`, {
       cwd: projectDir,
-      stdio: 'inherit',
+      stdio: isCI ? ['inherit', 'ignore', 'inherit'] : 'inherit',
     });
   },
 });

@@ -45,10 +45,6 @@
   color: inherit;
 }
 
-.blog-card__link:hover .blog-card__title {
-  color: var(--color-brand);
-}
-
 .blog-card__title {
   font-size: 1.35rem;
   font-weight: 600;
@@ -56,6 +52,10 @@
   margin: 0 0 6px;
   line-height: 1.3;
   transition: color 0.15s ease;
+}
+
+.blog-card__link:hover .blog-card__title {
+  color: var(--color-brand);
 }
 
 .blog-card__date {

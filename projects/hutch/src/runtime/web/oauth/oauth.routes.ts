@@ -150,6 +150,7 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 			await deps.model.revokeToken(refreshToken);
 		} else {
 			const accessTokenResult = await deps.model.getAccessToken(token);
+			// biome-ignore lint/complexity/useOptionalChain: oauth2-server's Falsey type (false | "" | 0 | null | undefined) cannot be narrowed via ?. — needs a truthy guard
 			if (accessTokenResult && accessTokenResult.refreshToken) {
 				const associatedRefresh = await deps.model.getRefreshToken(accessTokenResult.refreshToken);
 				if (associatedRefresh) {

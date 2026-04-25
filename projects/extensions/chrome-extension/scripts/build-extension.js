@@ -21,7 +21,8 @@ const plan = createBuildPlan({
   serverUrl,
   appDomains,
   pack: ({ sourceDir, outputPath }) => {
-    execSync(`zip -r ${JSON.stringify(outputPath)} .`, {
+    const zipFlags = process.env.CI === 'true' ? '-rq' : '-r';
+    execSync(`zip ${zipFlags} ${JSON.stringify(outputPath)} .`, {
       cwd: sourceDir,
       stdio: 'inherit',
     });

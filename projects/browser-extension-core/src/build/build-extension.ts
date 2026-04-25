@@ -143,7 +143,7 @@ export function initBuildExtension(deps: Partial<BuildExtensionDeps> = {}) {
 							manifest.permissions.push(localhostPattern);
 						}
 
-						resolvedDeps.writeFileSync(manifestDest, JSON.stringify(manifest, null, 2) + "\n");
+						resolvedDeps.writeFileSync(manifestDest, `${JSON.stringify(manifest, null, 2)}\n`);
 					}
 
 					console.log("Extension built to dist-extension-compiled/");

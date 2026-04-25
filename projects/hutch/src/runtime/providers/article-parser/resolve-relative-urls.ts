@@ -17,7 +17,7 @@ export function resolveRelativeUrls(params: {
 
 	for (const a of document.querySelectorAll("a[href]")) {
 		const href = a.getAttribute("href");
-		if (href && href.startsWith("#")) continue;
+		if (href?.startsWith("#")) continue;
 		resolveAttribute(a, "href", base);
 	}
 

@@ -20,18 +20,23 @@
 		"rules": {
 			"recommended": true,
 			"complexity": {
-				"useLiteralKeys": "error"
+				"useLiteralKeys": "error",
+				"useOptionalChain": "error"
 			},
 			"correctness": {
 				"noUnusedVariables": "error",
 				"noUnusedImports": "error"
 			},
 			"suspicious": {
-				"noTemplateCurlyInString": "off"
+				"noTemplateCurlyInString": "off",
+				"noDocumentCookie": "error"
 			},
 			"style": {
 				"noCommonJs": "error",
 				"noNonNullAssertion": "error",
+				"noDescendingSpecificity": "error",
+				"useImportType": "error",
+				"useTemplate": "error",
 				"noRestrictedImports": {
 					"level": "error",
 					"options": {
