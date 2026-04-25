@@ -7,4 +7,7 @@ module.exports = {
   transform: {},
   moduleFileExtensions: ['js', 'json'],
   rootDir: '.',
+  // Suppress captured console.* output in CI to keep logs scannable; keep
+  // verbose output locally so debug logs remain visible during dev.
+  silent: process.env.CI === 'true',
 };

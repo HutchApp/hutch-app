@@ -38,9 +38,21 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --reporter=append-only --loglevel=warn
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: playwright-${{ runner.os }}-
+
+      # Pre-install Playwright OS deps quietly so test-phase-runner can skip --with-deps
+      - name: Install Playwright OS deps
+        run: pnpm exec playwright install-deps chromium >/dev/null
 
       - run: pnpm check
+        env:
+          PLAYWRIGHT_SKIP_DEPS: '1'
 
   # Only detect and deploy on pushes to main (not on PRs)
   detect-projects:
@@ -79,7 +91,7 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile --reporter=append-only --loglevel=warn
 
       - id: detect
         run: |

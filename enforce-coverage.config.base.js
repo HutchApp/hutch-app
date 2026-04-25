@@ -297,9 +297,11 @@ function enforceCoverage(options = {}) {
       ? JSON.parse(fs.readFileSync(detailedCoverageFile, 'utf8'))
       : null
 
-    if (showTextTable) {
-      console.log(formatCoverageTable(coverage, INCLUDE_PATTERNS, excludePatterns, detailedCoverage))
-      console.log('')
+    const printTable = () => {
+      if (showTextTable) {
+        console.log(formatCoverageTable(coverage, INCLUDE_PATTERNS, excludePatterns, detailedCoverage))
+        console.log('')
+      }
     }
 
     const totals = calculateTotals(coverage, INCLUDE_PATTERNS, excludePatterns)
@@ -328,6 +330,7 @@ function enforceCoverage(options = {}) {
     })
 
     if (failed) {
+      printTable()
       console.log('\n🚨 COVERAGE THRESHOLD FAILURE')
       console.log('==============================')
 
@@ -343,6 +346,9 @@ function enforceCoverage(options = {}) {
       console.log('   2. Removing dead code')
       process.exit(1)
     } else {
+      // Local dev keeps the per-file table visible; CI suppresses it on success
+      // since every row is at 100% and the noise pushes real failures out of view.
+      if (process.env.CI !== 'true') printTable()
       console.log('\n🎉 ALL COVERAGE THRESHOLDS MET!')
     }
   } catch (error) {

@@ -1,5 +1,5 @@
 import express from 'express'
-import { HutchLogger, consoleLogger } from '@packages/hutch-logger'
+import { HutchLogger, consoleLogger, noopLogger } from '@packages/hutch-logger'
 import { createTestApp } from '../runtime/test-app'
 import {
   createDefaultTestAppFixture,
@@ -27,9 +27,12 @@ const fixture = createDefaultTestAppFixture(origin)
 
 // Wire real refresh stack with in-memory publishers so e2e exercises the
 // event-driven refresh/update-timestamp paths (publishRefreshArticleContent
-// and publishUpdateFetchTimestamp) end-to-end.
-const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger })
-const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger })
+// and publishUpdateFetchTimestamp) end-to-end. In CI, swap to noopLogger so
+// per-request "in-memory no-op" lines don't flood the build log; locally keep
+// the consoleLogger so the lines are visible for debugging.
+const eventLogger = process.env.CI === 'true' ? noopLogger : logger
+const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: eventLogger })
+const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: eventLogger })
 const { refreshArticleIfStale } = initRefreshArticleIfStale({
   findArticleFreshness: fixture.articleStore.findArticleFreshness,
   crawlArticle,

@@ -302,6 +302,34 @@ describe("playwright phase resolution", () => {
 		const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
 		expect(phase.env).toEqual({ HEADLESS: "true", E2E_PORT: "12345" });
 	});
+
+	it("omits --with-deps when PLAYWRIGHT_SKIP_DEPS=1", () => {
+		const original = process.env.PLAYWRIGHT_SKIP_DEPS;
+		process.env.PLAYWRIGHT_SKIP_DEPS = "1";
+		try {
+			const runner = createRunner();
+			const plan = runner.createTestPlan({
+				config: {
+					projectName: "Readplace",
+					phases: [
+						{
+							type: "playwright",
+							name: "E2E tests",
+							config: "playwright.config.local-dev.ts",
+							browsers: ["chromium"],
+						},
+					],
+				},
+				projectRoot: "/projects/hutch",
+			});
+
+			const phase = plan.phases[0] as Extract<ResolvedPhase, { type: "playwright" }>;
+			expect(phase.browserInstallCommand).toBe("node_modules/.bin/playwright install chromium");
+		} finally {
+			if (original === undefined) delete process.env.PLAYWRIGHT_SKIP_DEPS;
+			else process.env.PLAYWRIGHT_SKIP_DEPS = original;
+		}
+	});
 });
 
 describe("runAllPhases execution", () => {
