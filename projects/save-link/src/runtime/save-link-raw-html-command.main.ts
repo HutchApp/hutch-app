@@ -19,6 +19,7 @@ import { initReadCanonicalContent } from "../save-link-raw-html/read-canonical-c
 import { initPromoteSourceToCanonical } from "../save-link-raw-html/promote-source-to-canonical";
 import { initSelectMostCompleteContent } from "../save-link-raw-html/select-content";
 import { initSaveLinkRawHtmlCommandHandler } from "../save-link-raw-html/save-link-raw-html-command-handler";
+import { SELECT_CONTENT_TIMEOUTS } from "../save-link-raw-html/timeouts";
 import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
 import { initCheckTier0SourceExistsS3 } from "../crawl-article-state/check-tier-0-source-exists-s3";
 import { initReadArticleCrawlStateDynamoDb } from "../crawl-article-state/read-article-crawl-state-dynamodb";
@@ -35,7 +36,7 @@ const logError = (message: string, error?: Error) => consoleLogger.error(message
 const s3Client = new S3Client({});
 const dynamoClient = createDynamoDocumentClient();
 const crawlArticle = initCrawlArticle({ fetch: globalThis.fetch, logError, headers: { ...DEFAULT_CRAWL_HEADERS } });
-const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com", timeout: 60_000 });
+const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com", timeout: SELECT_CONTENT_TIMEOUTS.deepseekMs });
 
 const { parseHtml } = initReadabilityParser({
 	crawlArticle,

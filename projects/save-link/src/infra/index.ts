@@ -21,6 +21,8 @@ import {
 	UpdateFetchTimestampCommand,
 } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
+import { GENERATE_SUMMARY_TIMEOUTS } from "../generate-summary/timeouts";
+import { SELECT_CONTENT_TIMEOUTS } from "../save-link-raw-html/timeouts";
 
 const config = new pulumi.Config();
 const alertEmail = config.require("alertEmail");
@@ -146,7 +148,7 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 	outputDir: ".lib/save-link-raw-html-command",
 	assetDir: "./src",
 	memorySize: 256,
-	timeout: 30,
+	timeout: SELECT_CONTENT_TIMEOUTS.lambdaSeconds,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
@@ -243,7 +245,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	outputDir: ".lib/generate-summary",
 	assetDir: "./src",
 	memorySize: 512,
-	timeout: 45,
+	timeout: GENERATE_SUMMARY_TIMEOUTS.lambdaSeconds,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		DEEPSEEK_API_KEY: deepseekApiKey,
