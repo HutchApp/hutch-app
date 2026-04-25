@@ -5,7 +5,7 @@
 
 A point-in-time map of the **extension-originated** save path — when a logged-in user clicks *Save* in the Firefox or Chrome extension, the content script captures the **rendered DOM** of the active tab and the server stages it as a "Tier 0" source for that URL. Tier 0 then competes with whatever the HTTP crawler (Tier 1) produces for the same URL: a Deepseek JSON-mode selector picks the more complete body, and only the winner is promoted to the canonical `content.html`. If the SQS worker fails past `maxReceiveCount`, a dedicated DLQ consumer flips the article row to `crawlStatus=failed` and emits a `CrawlArticleFailed` event.
 
-The broader article crawl pipeline (Tier 1 HTTP waterfall, Readability pre-parsers, anonymous `/view` and admin `/recrawl` entries, summary hand-off) is documented at [`../d5f38258/article-crawl-pipeline.md`](../d5f38258/article-crawl-pipeline.md). This snapshot zooms in on just the extension → raw-HTML → canonical-promotion → DLQ branch, which is net-new at this commit.
+The broader article crawl pipeline (Tier 1 HTTP waterfall, Readability pre-parsers, anonymous `/view` and admin `/recrawl` entries, summary hand-off) is documented at [`../2026-04-24-d5f38258/article-crawl-pipeline.md`](../2026-04-24-d5f38258/article-crawl-pipeline.md). This snapshot zooms in on just the extension → raw-HTML → canonical-promotion → DLQ branch, which is net-new at this commit.
 
 > Snapshots are historical. Any file path referenced below may have been renamed, moved, or deleted since this commit. Treat as an artefact, not a live guide.
 
@@ -274,7 +274,7 @@ Every command in this flow, the system that handles it, the events it publishes,
 |---|---|---|---|---|
 | `POST /queue/save-html` (HTTP, Bearer auth) | `queue.page.ts` save-html route | write: S3 pending-html bucket (pending.html), Dynamo articles (stub, crawlStatus=pending) | — (publishes two commands directly, no event) | `SaveLinkRawHtmlCommand`, `SaveLinkCommand` (Tier 1, parallel) |
 | `SaveLinkRawHtmlCommand { url, userId, title? }` | Tier 0 SQS worker `save-link-raw-html-command-handler` | read: S3 pending-html, Dynamo articles; write: S3 sources/tier-0.html; conditional write: S3 content.html + Dynamo articles (SET contentLocation, title, wordCount, etc.); external call: Deepseek `deepseek-chat` JSON mode | `LinkSaved { url, userId }` **only when canonical changed** | `GenerateSummaryCommand` (via link-saved worker, summary pipeline) |
-| `SaveLinkCommand { url, userId }` (Tier 1) | See [`../d5f38258/article-crawl-pipeline.md`](../d5f38258/article-crawl-pipeline.md) | HTTP crawl waterfall, Readability, markCrawlReady/Failed | `LinkSaved` | `GenerateSummaryCommand` |
+| `SaveLinkCommand { url, userId }` (Tier 1) | See [`../2026-04-24-d5f38258/article-crawl-pipeline.md`](../2026-04-24-d5f38258/article-crawl-pipeline.md) | HTTP crawl waterfall, Readability, markCrawlReady/Failed | `LinkSaved` | `GenerateSummaryCommand` |
 | *(reaction, no command)* — Deepseek selector loss or tie | Same Tier 0 worker branch | read-only; decides to skip promotion | — | — (message deleted, summary pipeline not re-kicked) |
 | *(reaction, no command)* — `maxReceiveCount` exceeded on raw-html queue | DLQ consumer `save-link-raw-html-dlq-handler` | write: Dynamo articles (SET crawlStatus=failed, reason) | `CrawlArticleFailed { url, reason, receiveCount }` | — (UI reads event for failure banner + retry affordance; SNS alarm fires on DLQ depth) |
 
