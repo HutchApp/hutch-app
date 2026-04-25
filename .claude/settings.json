@@ -11,5 +11,10 @@
         "repo": "nrwl/nx-ai-agents-config"
       }
     }
+  },
+  "permissions": {
+    "deny": [
+      "Edit(~/.claude/projects/**/memory/**)"
+    ]
   }
 }
