@@ -216,6 +216,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 			appOrigin,
 			httpErrorMessageMapping,
 			logError: createNoopLogError(),
+			logParseError: () => {},
 		},
 	};
 }

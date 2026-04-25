@@ -13,7 +13,8 @@ import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
 import type { UpdateArticleMetadata } from "./update-article-metadata";
-import type { LogParseError } from "./log-parse-error";
+import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-components";
+import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import {
 	initSaveLinkWork,
 	type ProcessContent,
@@ -42,6 +43,8 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	now: () => Date;
 	logger: HutchLogger;
 	logParseError: LogParseError;
+	logCrawlOutcome: LogCrawlOutcome;
+	readTierSnapshot: ReadTierSnapshot;
 }): SQSHandler {
 	const { publishAnonymousLinkSaved, publishEvent, logger } = deps;
 
@@ -62,6 +65,8 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 		now: deps.now,
 		logger,
 		logParseError: deps.logParseError,
+		logCrawlOutcome: deps.logCrawlOutcome,
+		readTierSnapshot: deps.readTierSnapshot,
 		logPrefix: "[SaveAnonymousLinkCommand]",
 	});
 

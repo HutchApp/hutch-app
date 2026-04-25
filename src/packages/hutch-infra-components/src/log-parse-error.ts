@@ -1,14 +1,11 @@
-import type { HutchLogger } from "@packages/hutch-logger";
-import {
-	PARSE_ERROR_STREAM,
-	type ParseErrorEvent,
-} from "@packages/hutch-infra-components";
+import { PARSE_ERROR_STREAM, type ParseErrorEvent } from "./logs";
 
-export type LogParseError = (params: { url: string; reason: string }) => void;
+export type LogParseError = (params: { url: string | null; reason: string }) => void;
 
 export function initLogParseError(deps: {
-	logger: HutchLogger.Typed<ParseErrorEvent>;
+	logger: { info: (event: ParseErrorEvent) => void };
 	now: () => Date;
+	source: ParseErrorEvent["source"];
 }): { logParseError: LogParseError } {
 	const logParseError: LogParseError = (params) => {
 		deps.logger.info({
@@ -17,7 +14,7 @@ export function initLogParseError(deps: {
 			timestamp: deps.now().toISOString(),
 			url: params.url,
 			reason: params.reason,
-			source: "save-link",
+			source: deps.source,
 		});
 	};
 	return { logParseError };

@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import type { CrawlArticle } from "@packages/crawl-article";
+import type { LogParseError } from "@packages/hutch-infra-components";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
@@ -170,6 +171,7 @@ export interface SharedBundle {
 	appOrigin: string;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
+	logParseError: LogParseError;
 }
 
 export interface TestAppFixture {
@@ -210,6 +212,7 @@ function flattenFixtureToAppDependencies(
 		staticBaseUrl: "",
 		baseUrl: fixture.shared.appOrigin,
 		logError: fixture.shared.logError,
+		logParseError: fixture.shared.logParseError,
 		httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
 		createUser: fixture.auth.createUser,
 		createGoogleUser: fixture.auth.createGoogleUser,

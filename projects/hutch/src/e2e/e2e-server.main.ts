@@ -63,6 +63,7 @@ const { app: hutchApp, email } = createTestApp({
     appOrigin: fixture.shared.appOrigin,
     httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
     logError,
+    logParseError: fixture.shared.logParseError,
   },
 })
 

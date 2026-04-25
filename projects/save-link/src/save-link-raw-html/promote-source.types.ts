@@ -1,3 +1,5 @@
+import type { TierName } from "@packages/hutch-infra-components";
+
 export type PromoteSourceMetadata = {
 	title: string;
 	siteName: string;
@@ -9,6 +11,6 @@ export type PromoteSourceMetadata = {
 
 export type PromoteSourceToCanonical = (params: {
 	url: string;
-	tier: string;
+	tier: TierName;
 	metadata: PromoteSourceMetadata;
 }) => Promise<void>;

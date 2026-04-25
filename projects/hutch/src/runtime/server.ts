@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import type { Express, NextFunction, Request, Response } from "express";
 import express from "express";
+import type { LogParseError } from "@packages/hutch-infra-components";
 import type {
 	CountUsers,
 	CreateGoogleUser,
@@ -132,6 +133,7 @@ interface AppDependencies {
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
+	logParseError: LogParseError;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -386,6 +388,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		readArticleContent: deps.readArticleContent,
 		httpErrorMessageMapping: deps.httpErrorMessageMapping,
 		logError: deps.logError,
+		logParseError: deps.logParseError,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 

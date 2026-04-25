@@ -3,7 +3,7 @@ import * as aws from "@pulumi/aws";
 import assert from "node:assert";
 import { resolve } from "node:path";
 import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus, HutchS3ReadWrite } from "@packages/hutch-infra-components/infra";
-import { PARSE_ERROR_STREAM } from "@packages/hutch-infra-components";
+import { PARSE_ERROR_STREAM, CRAWL_OUTCOME_STREAM } from "@packages/hutch-infra-components";
 import { DomainRegistration } from "./domain-registration";
 import { DomainRedirect } from "./domain-redirect";
 import { HutchStorage } from "./hutch-storage";
@@ -256,11 +256,16 @@ function logWidget(params: {
  * HutchLambda names it a Lambda `{name}-handler`, which makes the CloudWatch
  * log group `/aws/lambda/{name}-handler`. Names below mirror the HutchLambda
  * resource names in `projects/save-link/src/infra/index.ts`.
+ *
+ * The `tier` is derived from each log group's source — it's not an attribute of
+ * ParseErrorEvent (which stays at the generic parse-error abstraction, see
+ * `src/packages/hutch-infra-components/src/logs.ts`). The dashboard infers the
+ * tier by grouping widgets by handler log group and tagging the widget title.
  */
-const SAVE_LINK_PARSE_ERROR_LOG_GROUPS = [
-	"/aws/lambda/save-link-command-handler",
-	"/aws/lambda/save-anonymous-link-command-handler",
-	"/aws/lambda/save-link-raw-html-command-handler",
+const SAVE_LINK_HANDLER_LOG_GROUPS = [
+	{ logGroup: "/aws/lambda/save-link-command-handler", tier: "tier-1" },
+	{ logGroup: "/aws/lambda/save-anonymous-link-command-handler", tier: "tier-1" },
+	{ logGroup: "/aws/lambda/save-link-raw-html-command-handler", tier: "tier-0" },
 ] as const;
 
 new aws.cloudwatch.Dashboard("readplace-analytics", {
@@ -363,10 +368,13 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					x: 0, y: 32, width: 24, height: 8,
 					view: "table",
 				}),
-				...[hutchLogGroupName, ...SAVE_LINK_PARSE_ERROR_LOG_GROUPS].map((lg, i) =>
+				...[
+					{ logGroup: hutchLogGroupName, tier: "ingress / non-tier" },
+					...SAVE_LINK_HANDLER_LOG_GROUPS,
+				].map((entry, i) =>
 					logWidget({
-						title: `Parse Errors — ${lg}`,
-						logGroupNames: [lg],
+						title: `Parse Errors — ${entry.tier} — ${entry.logGroup}`,
+						logGroupNames: [entry.logGroup],
 						query: [
 							"fields @timestamp, url, reason, source",
 							`| filter stream = "${PARSE_ERROR_STREAM}"`,
@@ -374,6 +382,23 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 							"| limit 100",
 						].join(" "),
 						x: 0, y: 40 + i * 8, width: 24, height: 8,
+						view: "table",
+					}),
+				),
+				...SAVE_LINK_HANDLER_LOG_GROUPS.map(({ logGroup }, i) =>
+					logWidget({
+						title: `Crawl Outcomes — ${logGroup}`,
+						logGroupNames: [logGroup],
+						query: [
+							"fields @timestamp, url, thisTier, thisTierStatus, otherTierStatus, pickedTier",
+							`| filter stream = "${CRAWL_OUTCOME_STREAM}"`,
+							"| sort @timestamp desc",
+							"| limit 100",
+						].join(" "),
+						x: 0,
+						y: 40 + (1 + SAVE_LINK_HANDLER_LOG_GROUPS.length + i) * 8,
+						width: 24,
+						height: 8,
 						view: "table",
 					}),
 				),

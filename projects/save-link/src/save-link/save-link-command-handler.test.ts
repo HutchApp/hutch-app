@@ -93,6 +93,8 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		now: fixedNow,
 		logger: noopLogger,
 		logParseError: jest.fn(),
+		logCrawlOutcome: jest.fn(),
+		readTierSnapshot: jest.fn().mockResolvedValue({ tier0Status: "not_attempted", tier1Status: "not_attempted", pickedTier: "none" }),
 		...overrides,
 	});
 }
@@ -115,6 +117,7 @@ describe("initSaveLinkCommandHandler", () => {
 		expect(updateContentLocation).toHaveBeenCalledWith({
 			url: "https://example.com/article",
 			contentLocation: expect.stringMatching(/^s3:\/\//),
+			tier: "tier-1",
 		});
 
 		expect(publishLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article", userId: "user-1" });
@@ -260,6 +263,75 @@ describe("initSaveLinkCommandHandler", () => {
 		expect(logParseError).toHaveBeenCalledWith({
 			url: "https://example.com/article",
 			reason: "post-parse-step-failed: bare-string-thrown",
+		});
+	});
+
+	it("emits a tier-1 success crawl-outcome on successful save, snapshotting the other tier's state", async () => {
+		const logCrawlOutcome = jest.fn();
+		const readTierSnapshot = jest.fn().mockResolvedValue({
+			tier0Status: "success",
+			tier1Status: "success",
+			pickedTier: "tier-1",
+		});
+
+		const handler = createHandler({ logCrawlOutcome, readTierSnapshot });
+
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		expect(logCrawlOutcome).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			thisTier: "tier-1",
+			thisTierStatus: "success",
+			otherTierStatus: "success",
+			pickedTier: "tier-1",
+		});
+	});
+
+	it("emits a tier-1 failure crawl-outcome when the crawl fails, reflecting tier-0's snapshot at emission time", async () => {
+		const logCrawlOutcome = jest.fn();
+		const readTierSnapshot = jest.fn().mockResolvedValue({
+			tier0Status: "success",
+			tier1Status: "not_attempted",
+			pickedTier: "tier-0",
+		});
+		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
+
+		const handler = createHandler({ crawlArticle: failedCrawl, logCrawlOutcome, readTierSnapshot });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/unreachable", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow();
+
+		expect(logCrawlOutcome).toHaveBeenCalledWith({
+			url: "https://example.com/unreachable",
+			thisTier: "tier-1",
+			thisTierStatus: "failed",
+			otherTierStatus: "success",
+			pickedTier: "tier-0",
+		});
+	});
+
+	it("emits a tier-1 failure crawl-outcome when the parse fails and marks the other tier as not-attempted when tier-0 never captured", async () => {
+		const logCrawlOutcome = jest.fn();
+		const readTierSnapshot = jest.fn().mockResolvedValue({
+			tier0Status: "not_attempted",
+			tier1Status: "failed",
+			pickedTier: "none",
+		});
+		const failedParse: ParseHtml = () => ({ ok: false, reason: "Readability crashed" });
+
+		const handler = createHandler({ parseHtml: failedParse, logCrawlOutcome, readTierSnapshot });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow();
+
+		expect(logCrawlOutcome).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			thisTier: "tier-1",
+			thisTierStatus: "failed",
+			otherTierStatus: "not_attempted",
+			pickedTier: "none",
 		});
 	});
 

@@ -75,6 +75,7 @@ describe("Email verification", () => {
 				publishUpdateFetchTimestamp: async () => {},
 				putPendingHtml: async () => {},
 				httpErrorMessageMapping,
+				logParseError: () => {},
 			});
 
 			const response = await request(app).post("/signup").type("form").send({

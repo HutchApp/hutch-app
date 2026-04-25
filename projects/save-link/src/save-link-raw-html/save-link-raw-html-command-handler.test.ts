@@ -86,6 +86,17 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	const canonicalContent = initInMemoryCanonicalContent({
 		readSourceContent: sourceContent.readSourceContent,
 	});
+	const publishLinkSaved = jest.fn().mockResolvedValue(undefined);
+	const selectMostCompleteContent = jest.fn(tierZeroWinsSelector);
+	const markCrawlReady = jest.fn().mockResolvedValue(undefined);
+	const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
+	const logParseError = jest.fn();
+	const logCrawlOutcome = jest.fn();
+	const readTierSnapshot = jest.fn().mockResolvedValue({
+		tier0Status: "success",
+		tier1Status: "not_attempted",
+		pickedTier: "tier-0",
+	});
 	const deps: HandlerDeps = {
 		readPendingHtml: jest.fn().mockResolvedValue("<html><body><p>Article content</p></body></html>"),
 		parseHtml: successfulParse,
@@ -94,12 +105,14 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		putSourceContent: sourceContent.putSourceContent,
 		readCanonicalContent: canonicalContent.readCanonicalContent,
 		promoteSourceToCanonical: canonicalContent.promoteSourceToCanonical,
-		selectMostCompleteContent: jest.fn(tierZeroWinsSelector),
-		publishLinkSaved: jest.fn().mockResolvedValue(undefined),
-		markCrawlReady: jest.fn().mockResolvedValue(undefined),
-		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
-		logParseError: jest.fn(),
+		selectMostCompleteContent,
+		publishLinkSaved,
+		markCrawlReady,
+		markCrawlFailed,
 		logger: noopLogger,
+		logParseError,
+		logCrawlOutcome,
+		readTierSnapshot,
 		...overrides,
 	};
 	return {
@@ -107,11 +120,13 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		readSourceContent: sourceContent.readSourceContent,
 		readCanonicalContent: canonicalContent.readCanonicalContent,
 		seedCanonical: canonicalContent.seedCanonical,
-		publishLinkSaved: deps.publishLinkSaved as jest.Mock,
-		selectMostCompleteContent: deps.selectMostCompleteContent as jest.Mock,
-		markCrawlReady: deps.markCrawlReady as jest.Mock,
-		markCrawlFailed: deps.markCrawlFailed as jest.Mock,
-		logParseError: deps.logParseError as jest.Mock,
+		publishLinkSaved,
+		selectMostCompleteContent,
+		markCrawlReady,
+		markCrawlFailed,
+		logParseError,
+		logCrawlOutcome,
+		readTierSnapshot,
 	};
 }
 
@@ -188,7 +203,7 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		expect(readSourceContent({ url: "https://example.com/bad", tier: "tier-0" })).toBeUndefined();
 	});
 
-	it("reports parse failures via logParseError with the parser's reason so the dashboard parse-errors widget surfaces tier-0 failures", async () => {
+	it("emits logParseError before throwing when the parser rejects the captured html, so the failure reaches the parse-errors dashboard", async () => {
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
 		const { handler, logParseError } = createHandler({ parseHtml: failedParse });
 
@@ -199,6 +214,88 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		expect(logParseError).toHaveBeenCalledWith({
 			url: "https://example.com/bad",
 			reason: "no-readable-content",
+		});
+	});
+
+	it("emits a tier-0 failure crawl-outcome before throwing, reflecting tier-1's snapshot at emission time", async () => {
+		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
+		const readTierSnapshot = jest.fn().mockResolvedValue({
+			tier0Status: "not_attempted",
+			tier1Status: "success",
+			pickedTier: "tier-1",
+		});
+		const { handler, logCrawlOutcome } = createHandler({ parseHtml: failedParse, readTierSnapshot });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow();
+
+		expect(logCrawlOutcome).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			thisTier: "tier-0",
+			thisTierStatus: "failed",
+			otherTierStatus: "success",
+			pickedTier: "tier-1",
+		});
+	});
+
+	it("emits a tier-0 failure crawl-outcome with otherTierStatus=failed when tier-1 has already failed, distinguishing it from a never-attempted tier-1", async () => {
+		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
+		const readTierSnapshot = jest.fn().mockResolvedValue({
+			tier0Status: "not_attempted",
+			tier1Status: "failed",
+			pickedTier: "none",
+		});
+		const { handler, logCrawlOutcome } = createHandler({ parseHtml: failedParse, readTierSnapshot });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow();
+
+		expect(logCrawlOutcome).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			thisTier: "tier-0",
+			thisTierStatus: "failed",
+			otherTierStatus: "failed",
+			pickedTier: "none",
+		});
+	});
+
+	it("emits a tier-0 success crawl-outcome after a successful save, snapshotting whether tier-1 also succeeded", async () => {
+		const readTierSnapshot = jest.fn().mockResolvedValue({
+			tier0Status: "success",
+			tier1Status: "not_attempted",
+			pickedTier: "tier-0",
+		});
+		const { handler, logCrawlOutcome } = createHandler({ readTierSnapshot });
+
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		expect(logCrawlOutcome).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			thisTier: "tier-0",
+			thisTierStatus: "success",
+			otherTierStatus: "not_attempted",
+			pickedTier: "tier-0",
+		});
+	});
+
+	it("emits otherTierStatus=success in the tier-0 success crawl-outcome when tier-1 has already completed", async () => {
+		const readTierSnapshot = jest.fn().mockResolvedValue({
+			tier0Status: "success",
+			tier1Status: "success",
+			pickedTier: "tier-1",
+		});
+		const { handler, logCrawlOutcome } = createHandler({ readTierSnapshot });
+
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		expect(logCrawlOutcome).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			thisTier: "tier-0",
+			thisTierStatus: "success",
+			otherTierStatus: "success",
+			pickedTier: "tier-1",
 		});
 	});
 
@@ -234,8 +331,9 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		});
 
 		it("promotes and publishes when a canonical exists and tier-0 wins the selector contest", async () => {
-			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved, selectMostCompleteContent } =
-				createHandler({ selectMostCompleteContent: jest.fn(tierZeroWinsSelector) });
+			const selectMostCompleteContent = jest.fn(tierZeroWinsSelector);
+			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved } =
+				createHandler({ selectMostCompleteContent });
 			seedCanonical({
 				url: "https://example.com/article",
 				html: "<p>old canonical body</p>",
@@ -253,8 +351,9 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		});
 
 		it("leaves canonical untouched and does not publish when canonical wins the selector", async () => {
-			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved, selectMostCompleteContent } =
-				createHandler({ selectMostCompleteContent: jest.fn(canonicalWinsSelector) });
+			const selectMostCompleteContent = jest.fn(canonicalWinsSelector);
+			const { handler, readCanonicalContent, seedCanonical, publishLinkSaved } =
+				createHandler({ selectMostCompleteContent });
 			seedCanonical({
 				url: "https://example.com/article",
 				html: "<p>winning canonical body</p>",
