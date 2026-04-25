@@ -227,13 +227,6 @@ function sourceClause(logGroupNames: readonly string[]): string {
 	return `SOURCE logGroups(namePrefix: [${prefixes}])`;
 }
 
-/**
- * start: "-PT1H" pins the widget's scan window to the last hour regardless of
- * the dashboard's global time selector. CloudWatch Logs Insights charges on
- * bytes scanned; a wider selector on a frequently-refreshed dashboard is the
- * usual way a free-tier account blows past 5GB/month on Global-DataScannedBytes.
- * See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Insights-Query-Syntax.html
- */
 function logWidget(params: {
 	title: string;
 	logGroupNames: string[];
@@ -255,7 +248,6 @@ function logWidget(params: {
 			title: params.title,
 			query: `${sourceClause(params.logGroupNames)} | ${params.query}`,
 			view: params.view,
-			start: "-PT1H",
 		},
 	};
 }
