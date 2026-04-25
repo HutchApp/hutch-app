@@ -15,7 +15,8 @@ permissions:
 
 jobs:
   all-tests:
-    runs-on: ubuntu-latest
+    # TEMP: bumped from ubuntu-latest to isolate CPU/memory as a factor in flaky hutch:check
+    runs-on: ubuntu-latest-16-cores
     environment: staging
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
