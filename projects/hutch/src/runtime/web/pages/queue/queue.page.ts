@@ -70,8 +70,11 @@ async function loadSummaries(
 	findGeneratedSummary: FindGeneratedSummary,
 	articles: readonly SavedArticle[],
 ): Promise<Map<string, GeneratedSummary | undefined>> {
-	const summaries = await Promise.all(articles.map((a) => findGeneratedSummary(a.url)));
-	return new Map(articles.map((a, i) => [a.url, summaries[i]] as const));
+	const results = await Promise.allSettled(articles.map((a) => findGeneratedSummary(a.url)));
+	return new Map(articles.map((a, i) => {
+		const r = results[i];
+		return [a.url, r.status === "fulfilled" ? r.value : undefined] as const;
+	}));
 }
 
 async function markUnreadIfRead(deps: Pick<QueueDependencies, "updateArticleStatus">, saved: SavedArticle): Promise<SavedArticle> {
