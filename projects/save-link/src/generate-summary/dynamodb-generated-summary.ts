@@ -13,6 +13,7 @@ import type {
 	MarkSummaryFailed,
 	MarkSummaryPending,
 	MarkSummarySkipped,
+	MarkSummaryStage,
 	SaveGeneratedSummary,
 } from "./article-summary.types";
 
@@ -59,6 +60,7 @@ export function initDynamoDbGeneratedSummary(deps: {
 	markSummaryPending: MarkSummaryPending;
 	markSummaryFailed: MarkSummaryFailed;
 	markSummarySkipped: MarkSummarySkipped;
+	markSummaryStage: MarkSummaryStage;
 } {
 	const table = defineDynamoTable({
 		client: deps.client,
@@ -143,11 +145,24 @@ export function initDynamoDbGeneratedSummary(deps: {
 		);
 	};
 
+	const markSummaryStage: MarkSummaryStage = async ({ url, stage }) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		// Unconditional write: stages are monotonic by code order in the
+		// summariser; the summary worker is the only writer; SQS redelivery
+		// rewrites the same sequence.
+		await table.update({
+			Key: { url: articleResourceUniqueId.value },
+			UpdateExpression: "SET summaryStage = :stage",
+			ExpressionAttributeValues: { ":stage": stage },
+		});
+	};
+
 	return {
 		findGeneratedSummary,
 		saveGeneratedSummary,
 		markSummaryPending,
 		markSummaryFailed,
 		markSummarySkipped,
+		markSummaryStage,
 	};
 }

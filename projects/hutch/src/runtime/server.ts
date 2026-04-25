@@ -134,6 +134,7 @@ interface AppDependencies {
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logParseError: LogParseError;
+	now: () => Date;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -389,6 +390,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		httpErrorMessageMapping: deps.httpErrorMessageMapping,
 		logError: deps.logError,
 		logParseError: deps.logParseError,
+		now: deps.now,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 
@@ -404,6 +406,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		markCrawlPending: deps.markCrawlPending,
 		saveArticleGlobally: deps.saveArticleGlobally,
 		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
+		now: deps.now,
 	});
 	app.use("/view", viewRouter);
 
@@ -419,6 +422,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		findUserByEmail: deps.findUserByEmail,
 		adminEmails: deps.adminEmails,
 		serviceToken: deps.recrawlServiceToken,
+		now: deps.now,
 	});
 	app.use("/admin/recrawl", adminRecrawlRouter);
 

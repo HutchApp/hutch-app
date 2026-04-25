@@ -70,7 +70,7 @@ const { updateArticleMetadata } = initUpdateArticleMetadata({
 	tableName: articlesTable,
 });
 
-const { markCrawlReady, markCrawlFailed } = initDynamoDbArticleCrawl({
+const { markCrawlReady, markCrawlFailed, markCrawlStage } = initDynamoDbArticleCrawl({
 	client,
 	tableName: articlesTable,
 });
@@ -138,6 +138,7 @@ export const handler = initSaveAnonymousLinkCommandHandler({
 	updateArticleMetadata,
 	markCrawlReady,
 	markCrawlFailed,
+	markCrawlStage,
 	publishAnonymousLinkSaved,
 	publishEvent,
 	downloadMedia,

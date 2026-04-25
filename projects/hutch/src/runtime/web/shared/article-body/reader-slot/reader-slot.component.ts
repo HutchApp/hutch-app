@@ -1,4 +1,5 @@
 import type { ArticleCrawl } from "../../../../providers/article-crawl/article-crawl.types";
+import type { ProgressTick } from "../progress-mapping";
 import { renderReaderFailed } from "./reader-failed.component";
 import { renderReaderPending } from "./reader-pending.component";
 import { renderReaderReady } from "./reader-ready.component";
@@ -9,11 +10,15 @@ export interface ReaderSlotInput {
 	content?: string;
 	url: string;
 	readerPollUrl?: string;
+	crawlProgress?: ProgressTick;
 }
 
 export function renderReaderSlot(input: ReaderSlotInput): string {
 	if (input.crawl?.status === "pending") {
-		return renderReaderPending({ pollUrl: input.readerPollUrl });
+		return renderReaderPending({
+			pollUrl: input.readerPollUrl,
+			progress: input.crawlProgress,
+		});
 	}
 	if (input.crawl?.status === "failed") {
 		return renderReaderFailed({ url: input.url });

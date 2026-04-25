@@ -1,5 +1,6 @@
 import type { ArticleCrawl } from "../../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../../providers/article-summary/article-summary.types";
+import type { ProgressTick } from "../progress-mapping";
 import { renderSummaryFailed } from "./summary-failed.component";
 import { renderSummaryPending } from "./summary-pending.component";
 import { renderSummaryReady } from "./summary-ready.component";
@@ -10,6 +11,7 @@ export interface SummarySlotInput {
 	summary: GeneratedSummary | undefined;
 	summaryPollUrl?: string;
 	summaryOpen?: boolean;
+	summaryProgress?: ProgressTick;
 }
 
 export function renderSummarySlot(input: SummarySlotInput): string {
@@ -26,7 +28,10 @@ export function renderSummarySlot(input: SummarySlotInput): string {
 				open: input.summaryOpen === true,
 			});
 		case "pending":
-			return renderSummaryPending({ pollUrl: input.summaryPollUrl });
+			return renderSummaryPending({
+				pollUrl: input.summaryPollUrl,
+				progress: input.summaryProgress,
+			});
 		case "failed":
 			return renderSummaryFailed();
 		case "skipped":

@@ -18,6 +18,16 @@ const ArticleCrawlRow = z.object({
 	url: z.string(),
 	crawlStatus: dynamoField(z.enum(["pending", "ready", "failed"])),
 	crawlFailureReason: dynamoField(z.string()),
+	crawlStage: dynamoField(
+		z.enum([
+			"crawl-fetching",
+			"crawl-fetched",
+			"crawl-parsed",
+			"crawl-metadata-written",
+			"crawl-content-uploaded",
+			"crawl-ready",
+		]),
+	),
 });
 
 type ArticleCrawlRowShape = z.infer<typeof ArticleCrawlRow>;
@@ -33,7 +43,11 @@ function rowToArticleCrawl(
 		);
 		return { status: "failed", reason: row.crawlFailureReason };
 	}
-	if (row.crawlStatus === "pending") return { status: "pending" };
+	if (row.crawlStatus === "pending") {
+		return row.crawlStage
+			? { status: "pending", stage: row.crawlStage }
+			: { status: "pending" };
+	}
 	if (row.crawlStatus === "ready") return { status: "ready" };
 	// Legacy row (status attribute missing). Return undefined so the caller
 	// defers to whether S3 content exists — pre-S3-migration content lived in

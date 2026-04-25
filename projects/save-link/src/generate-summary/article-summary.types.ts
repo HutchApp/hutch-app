@@ -22,6 +22,22 @@ export type MarkSummaryPending = (params: { url: string }) => Promise<void>;
 export type MarkSummaryFailed = (params: { url: string; reason: string }) => Promise<void>;
 export type MarkSummarySkipped = (params: { url: string }) => Promise<void>;
 
+/**
+ * Worker-side stage strings for the summary progress bar. Mirror of the hutch
+ * progress-mapping module — the worker only writes the name, the reader maps
+ * to a percentage at render time.
+ */
+export type SummaryStage =
+	| "summary-started"
+	| "summary-content-loaded"
+	| "summary-generating"
+	| "summary-complete";
+
+export type MarkSummaryStage = (params: {
+	url: string;
+	stage: SummaryStage;
+}) => Promise<void>;
+
 export type DocumentBlock = {
 	type: "document";
 	source: { type: "text"; media_type: "text/plain"; data: string };

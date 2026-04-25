@@ -11,12 +11,14 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
+import type { ProgressTick } from "../../shared/article-body/progress-mapping";
 import { SHARE_ICON_SVG } from "./view.share-icon";
 import { VIEW_STYLES } from "./view.styles";
 
 const STATIC_BASE_URL = requireEnv("STATIC_BASE_URL");
 
 const SHARE_SCRIPT = `<script src="/client-dist/view.share.client.js" defer></script>`;
+const PROGRESS_BAR_SCRIPT = `<script src="/client-dist/progress-bar.client.js" defer></script>`;
 const CANONICAL_BASE_URL = "https://readplace.com";
 const DEFAULT_OG_IMAGE = `${STATIC_BASE_URL}/og-image-1200x630.png`;
 const DEFAULT_TWITTER_IMAGE = `${STATIC_BASE_URL}/twitter-card-1200x600.png`;
@@ -41,8 +43,10 @@ export interface ViewPageInput {
 	content?: string;
 	crawl?: ArticleCrawl;
 	readerPollUrl?: string;
+	crawlProgress?: ProgressTick;
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
+	summaryProgress?: ProgressTick;
 	actions: ViewAction[];
 }
 
@@ -55,8 +59,10 @@ export function ViewPage(input: ViewPageInput): Component {
 		content: input.content,
 		crawl: input.crawl,
 		readerPollUrl: input.readerPollUrl,
+		crawlProgress: input.crawlProgress,
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
+		summaryProgress: input.summaryProgress,
 		summaryOpen: true,
 	});
 
@@ -106,7 +112,7 @@ export function ViewPage(input: ViewPageInput): Component {
 		styles: VIEW_STYLES,
 		bodyClass: "page-view",
 		content,
-		scripts: SHARE_SCRIPT,
+		scripts: SHARE_SCRIPT + PROGRESS_BAR_SCRIPT,
 		isAuthenticated: false,
 	});
 }

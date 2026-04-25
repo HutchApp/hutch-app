@@ -281,6 +281,7 @@ export function createHutchApp(deps?: {
 		validateAccessToken,
 		httpErrorMessageMapping,
 		logParseError,
+		now: () => new Date(),
 	});
 
 	return { app, auth, articleStore, oauthModel };

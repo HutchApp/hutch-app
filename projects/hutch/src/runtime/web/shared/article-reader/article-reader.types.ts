@@ -13,6 +13,7 @@ import type {
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
+import type { ProgressTick } from "../article-body/progress-mapping";
 
 export interface ArticleReaderDeps {
 	findArticleCrawlStatus: FindArticleCrawlStatus;
@@ -20,6 +21,7 @@ export interface ArticleReaderDeps {
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
 	readArticleContent: ReadArticleContent;
+	now: () => Date;
 }
 
 export interface ArticleSnapshot {
@@ -39,6 +41,13 @@ export interface ReaderState {
 	summary: GeneratedSummary | undefined;
 	readerPollUrl: string | undefined;
 	summaryPollUrl: string | undefined;
+	/** Present when crawl status is `pending`. Drives the reader-slot progress bar. */
+	crawlProgress: ProgressTick | undefined;
+	/**
+	 * Present when summary status is `pending` AND the crawl has not failed.
+	 * On crawl-failed the summary slot collapses so no bar is rendered.
+	 */
+	summaryProgress: ProgressTick | undefined;
 }
 
 export interface ResolveReaderStateParams {

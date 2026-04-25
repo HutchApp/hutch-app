@@ -34,4 +34,43 @@ describe("renderReaderPending", () => {
 			doc.querySelector(".article-body__reader-loading")?.textContent,
 		).toContain("Still fetching");
 	});
+
+	it("renders progress data attributes and a fill bar at the supplied percentage", () => {
+		const doc = parse(
+			renderReaderPending({
+				pollUrl: "/queue/abc/reader?poll=1",
+				progress: {
+					stage: "crawl-parsed",
+					pct: 55,
+					tickAt: "2026-04-25T12:00:00.000Z",
+				},
+			}),
+		);
+
+		const slot = doc.querySelector("[data-test-reader-slot]");
+		assert(slot, "reader slot must be rendered");
+		expect(slot.getAttribute("data-progress-stage")).toBe("crawl-parsed");
+		expect(slot.getAttribute("data-progress-pct")).toBe("55");
+		expect(slot.getAttribute("data-progress-tick-at")).toBe(
+			"2026-04-25T12:00:00.000Z",
+		);
+
+		const fill = doc.querySelector<HTMLElement>(
+			".article-body__reader-progress-fill",
+		);
+		assert(fill, "progress fill element must be rendered");
+		expect(fill.style.width).toBe("55%");
+	});
+
+	it("falls back to the first crawl stage when no progress is supplied (SSR before first stage write)", () => {
+		const doc = parse(renderReaderPending({ pollUrl: "/q/abc/r?poll=1" }));
+
+		const slot = doc.querySelector("[data-test-reader-slot]");
+		assert(slot, "reader slot must be rendered");
+		expect(slot.getAttribute("data-progress-stage")).toBe("crawl-fetching");
+		expect(slot.getAttribute("data-progress-pct")).toBe("15");
+		// Empty tick-at signals the client to skip rate extrapolation until a
+		// real tick lands via a poll swap.
+		expect(slot.getAttribute("data-progress-tick-at")).toBe("");
+	});
 });

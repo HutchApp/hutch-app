@@ -46,6 +46,7 @@ const { summarizeArticle } = initLinkSummariser({
 	findGeneratedSummary: summaryStore.findGeneratedSummary,
 	saveGeneratedSummary: summaryStore.saveGeneratedSummary,
 	markSummarySkipped: summaryStore.markSummarySkipped,
+	markSummaryStage: summaryStore.markSummaryStage,
 });
 
 const { publishEvent } = initEventBridgePublisher({

@@ -1,5 +1,7 @@
+import type { CrawlStage } from "../../web/shared/article-body/progress-mapping";
+
 export type ArticleCrawl =
-	| { status: "pending" }
+	| { status: "pending"; stage?: CrawlStage }
 	| { status: "ready" }
 	| { status: "failed"; reason: string };
 
