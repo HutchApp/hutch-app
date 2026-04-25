@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../base.component";
-import type { Component } from "../component.types";
+import type { PageBody } from "../page-body.types";
 import { render } from "../render";
 
 const OAUTH_AUTHORIZE_TEMPLATE = readFileSync(join(__dirname, "oauth-authorize.template.html"), "utf-8");
@@ -13,7 +12,6 @@ interface AuthorizePageParams {
 	redirectUri: string;
 	codeChallenge: string;
 	state?: string;
-	emailVerified?: boolean;
 }
 
 const OAUTH_AUTHORIZE_STYLES = `
@@ -87,10 +85,10 @@ const OAUTH_CALLBACK_STYLES = `
 }
 `;
 
-export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
+export function OAuthAuthorizePage(params: AuthorizePageParams): PageBody {
 	const content = render(OAUTH_AUTHORIZE_TEMPLATE, params);
 
-	return Base({
+	return {
 		seo: {
 			title: `Authorize ${params.clientName} — Readplace`,
 			description: `${params.clientName} is requesting access to your Readplace account.`,
@@ -100,13 +98,11 @@ export function OAuthAuthorizePage(params: AuthorizePageParams): Component {
 		styles: OAUTH_AUTHORIZE_STYLES,
 		bodyClass: "page-oauth-authorize",
 		content,
-		isAuthenticated: true,
-		emailVerified: params.emailVerified,
-	});
+	};
 }
 
-export function OAuthCallbackPage(options?: { emailVerified?: boolean }): Component {
-	return Base({
+export function OAuthCallbackPage(): PageBody {
+	return {
 		seo: {
 			title: "Authorization Complete — Readplace",
 			description: "OAuth authorization is complete.",
@@ -116,7 +112,5 @@ export function OAuthCallbackPage(options?: { emailVerified?: boolean }): Compon
 		styles: OAUTH_CALLBACK_STYLES,
 		bodyClass: "page-oauth-callback",
 		content: render(OAUTH_CALLBACK_TEMPLATE, {}),
-		isAuthenticated: true,
-		emailVerified: options?.emailVerified,
-	});
+	};
 }

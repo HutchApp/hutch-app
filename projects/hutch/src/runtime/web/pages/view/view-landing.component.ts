@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { VIEW_LANDING_STYLES } from "./view-landing.styles";
 
@@ -10,12 +9,8 @@ const VIEW_LANDING_TEMPLATE = readFileSync(
 	"utf-8",
 );
 
-export interface ViewLandingPageInput {
-	isAuthenticated: boolean;
-}
-
-export function ViewLandingPage(input: ViewLandingPageInput): Component {
-	return Base({
+export function ViewLandingPage(): PageBody {
+	return {
 		seo: {
 			title: "Reader view — paste a link to read distraction-free | Readplace",
 			description:
@@ -27,6 +22,5 @@ export function ViewLandingPage(input: ViewLandingPageInput): Component {
 		styles: VIEW_LANDING_STYLES,
 		bodyClass: "page-view-landing",
 		content: render(VIEW_LANDING_TEMPLATE, {}),
-		isAuthenticated: input.isAuthenticated,
-	});
+	};
 }

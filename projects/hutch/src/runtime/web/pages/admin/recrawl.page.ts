@@ -15,6 +15,7 @@ import type {
 } from "../../../providers/article-summary/article-summary.types";
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
 import type { FindUserByEmail } from "../../../providers/auth/auth.types";
+import { renderPage } from "../../render-page";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
 import { SaveErrorPage } from "../save/save-error.component";
@@ -52,11 +53,11 @@ function noStore(_req: Request, res: Response, next: NextFunction): void {
 	next();
 }
 
-function renderNotFound(res: Response) {
-	const html = SaveErrorPage({
+function renderNotFound(req: Request, res: Response) {
+	const html = renderPage(req, SaveErrorPage({
 		redirectUrl: "/admin/recrawl",
 		linkLabel: "Back to recrawl",
-	}).to("text/html");
+	})).to("text/html");
 	res.status(404).type("html").send(html.body);
 }
 
@@ -64,15 +65,13 @@ function handleLanding(req: Request, res: Response): void {
 	const submittedUrl =
 		typeof req.query.url === "string" ? req.query.url : undefined;
 	if (submittedUrl === undefined) {
-		const html = AdminRecrawlLandingPage({
-			isAuthenticated: Boolean(req.userId),
-		}).to("text/html");
+		const html = renderPage(req, AdminRecrawlLandingPage()).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 		return;
 	}
 	const parsed = RecrawlUrlSchema.safeParse(submittedUrl);
 	if (!parsed.success) {
-		renderNotFound(res);
+		renderNotFound(req, res);
 		return;
 	}
 	res.redirect(302, `/admin/recrawl/${encodeURIComponent(parsed.data)}`);
@@ -92,7 +91,7 @@ function handleRecrawlArticle(
 		const normalizedUrl = rawPath.replace(/^(https?):\/(?!\/)/i, "$1://");
 		const parsed = RecrawlUrlSchema.safeParse(normalizedUrl);
 		if (!parsed.success) {
-			renderNotFound(res);
+			renderNotFound(req, res);
 			return;
 		}
 		const articleUrl = parsed.data;
@@ -101,7 +100,7 @@ function handleRecrawlArticle(
 		if (!existing) {
 			// The endpoint is explicitly for human intervention on an existing
 			// saved URL. Do not create a stub; surface 404.
-			renderNotFound(res);
+			renderNotFound(req, res);
 			return;
 		}
 
@@ -121,7 +120,7 @@ function handleRecrawlArticle(
 			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
 		});
 
-		const html = AdminRecrawlPage({
+		const html = renderPage(req, AdminRecrawlPage({
 			articleUrl,
 			metadata: existing.metadata,
 			estimatedReadTime: existing.estimatedReadTime,
@@ -131,8 +130,7 @@ function handleRecrawlArticle(
 			summary: state.summary,
 			summaryPollUrl: state.summaryPollUrl,
 			contentSourceTier: existing.contentSourceTier,
-			isAuthenticated: Boolean(req.userId),
-		}).to("text/html");
+		})).to("text/html");
 		assert(
 			state.crawl?.status === "pending",
 			"force-pending + resolveReaderState must leave the crawl in 'pending'",

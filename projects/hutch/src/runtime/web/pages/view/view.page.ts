@@ -22,6 +22,7 @@ import type {
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
+import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
@@ -47,7 +48,7 @@ interface ViewDependencies {
 function renderError(req: Request, res: Response) {
 	const redirectUrl = req.userId ? "/queue" : "/";
 	const linkLabel = req.userId ? "Go to your queue" : "Go to homepage";
-	sendComponent(res, SaveErrorPage({ redirectUrl, linkLabel }));
+	sendComponent(res, renderPage(req, SaveErrorPage({ redirectUrl, linkLabel })));
 }
 
 function hostnameFrom(validatedUrl: string): string {
@@ -65,10 +66,7 @@ function handleViewLanding(req: Request, res: Response) {
 	const submittedUrl =
 		typeof req.query.url === "string" ? req.query.url : undefined;
 	if (submittedUrl === undefined) {
-		sendComponent(
-			res,
-			ViewLandingPage({ isAuthenticated: Boolean(req.userId) }),
-		);
+		sendComponent(res, renderPage(req, ViewLandingPage()));
 		return;
 	}
 	const parsed = ViewUrlSchema.safeParse(submittedUrl);
@@ -153,7 +151,7 @@ function handleViewArticle(deps: ViewDependencies) {
 
 		sendComponent(
 			res,
-			ViewPage({
+			renderPage(req, ViewPage({
 				articleUrl,
 				metadata,
 				estimatedReadTime,
@@ -163,7 +161,7 @@ function handleViewArticle(deps: ViewDependencies) {
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
 				actions,
-			}),
+			})),
 		);
 	};
 }

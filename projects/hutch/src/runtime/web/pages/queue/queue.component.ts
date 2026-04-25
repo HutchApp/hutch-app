@@ -1,9 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
 import { OnboardingChecklist, ONBOARDING_STYLES } from "../../onboarding/onboarding.component";
 import type { BrowserName } from "../../onboarding/onboarding.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
@@ -128,12 +127,12 @@ const AUTO_SUBMIT_SCRIPT = `
 </script>
 `;
 
-export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolean; saveUrl?: string; extensionInstalled?: boolean; browser?: BrowserName; onboardingDismissed?: boolean; statusCode?: number }): Component {
+export function QueuePage(vm: QueueViewModel, options?: { saveUrl?: string; extensionInstalled?: boolean; browser?: BrowserName; onboardingDismissed?: boolean; statusCode?: number }): PageBody {
 	const saveUrl = options?.saveUrl;
 	const displayModel = toQueueDisplayModel(vm, { extensionInstalled: options?.extensionInstalled ?? false, browser: options?.browser ?? "other", onboardingDismissed: options?.onboardingDismissed ?? false });
 	const content = render(QUEUE_TEMPLATE, { ...displayModel, saveUrl });
 
-	return Base({
+	return {
 		seo: {
 			title: "My Queue — Readplace",
 			description: "Your saved articles reading queue.",
@@ -144,8 +143,6 @@ export function QueuePage(vm: QueueViewModel, options?: { emailVerified?: boolea
 		bodyClass: "page-queue",
 		content,
 		scripts: saveUrl ? AUTO_SUBMIT_SCRIPT : undefined,
-		isAuthenticated: true,
-		emailVerified: options?.emailVerified,
 		statusCode: options?.statusCode,
-	});
+	};
 }

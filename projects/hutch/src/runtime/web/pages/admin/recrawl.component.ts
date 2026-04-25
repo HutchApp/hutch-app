@@ -4,8 +4,7 @@ import type {
 } from "../../../domain/article/article.types";
 import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
 import { RECRAWL_STYLES } from "./recrawl.styles";
 
@@ -19,7 +18,6 @@ export interface AdminRecrawlPageInput {
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
 	contentSourceTier?: "tier-0" | "tier-1";
-	isAuthenticated: boolean;
 }
 
 /**
@@ -35,7 +33,7 @@ export interface AdminRecrawlPageInput {
  * Rows written before the selector existed have no `contentSourceTier`
  * column and surface as "(legacy)".
  */
-export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
+export function AdminRecrawlPage(input: AdminRecrawlPageInput): PageBody {
 	const innerContent = renderArticleBody({
 		title: input.metadata.title,
 		siteName: input.metadata.siteName,
@@ -52,7 +50,7 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
 	const tierBadge = renderTierBadge(input.contentSourceTier);
 	const content = `<main class="admin-recrawl" data-test-admin-recrawl>${tierBadge}<article class="admin-recrawl__body">${innerContent}</article></main>`;
 
-	return Base({
+	return {
 		seo: {
 			title: `Admin recrawl: ${input.metadata.title}`,
 			description: "Operator recrawl view. Not for public consumption.",
@@ -62,8 +60,7 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
 		styles: RECRAWL_STYLES,
 		bodyClass: "page-admin-recrawl",
 		content,
-		isAuthenticated: input.isAuthenticated,
-	});
+	};
 }
 
 function renderTierBadge(tier: "tier-0" | "tier-1" | undefined): string {

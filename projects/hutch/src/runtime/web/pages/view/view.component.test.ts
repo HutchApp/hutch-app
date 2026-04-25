@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import type { Minutes } from "../../../domain/article/article.types";
+import { Base } from "../../base.component";
 import { ViewPage, type ViewPageInput } from "./view.component";
 
 const baseInput: ViewPageInput = {
@@ -25,7 +26,7 @@ const baseInput: ViewPageInput = {
 };
 
 function render(input = baseInput) {
-	const html = ViewPage(input).to("text/html").body;
+	const html = Base(ViewPage(input), { isAuthenticated: false, emailVerified: undefined }).to("text/html").body;
 	return new JSDOM(html).window.document;
 }
 

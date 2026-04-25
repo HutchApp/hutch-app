@@ -11,42 +11,18 @@ import {
 	VERIFY_BANNER_STYLES,
 	UTILITY_STYLES,
 } from "./base.styles";
+import type { BannerState } from "./banner-state";
 import type { Component } from "./component.types";
 import { HtmlPage } from "./html-page";
+import type { PageBody, SeoMetadata } from "./page-body.types";
 import { render } from "./render";
 import { getEnv, requireEnv } from "../require-env";
+
+export type { SeoMetadata } from "./page-body.types";
 
 const HEADER_TEMPLATE = readFileSync(join(__dirname, "header.template.html"), "utf-8");
 const FOOTER_TEMPLATE = readFileSync(join(__dirname, "footer.template.html"), "utf-8");
 const BASE_TEMPLATE = readFileSync(join(__dirname, "base.template.html"), "utf-8");
-
-export interface SeoMetadata {
-	title: string;
-	description: string;
-	canonicalUrl: string;
-	ogImage?: string;
-	ogImageAlt?: string;
-	ogImageType?: string;
-	twitterImage?: string;
-	twitterSite?: string;
-	ogType?: "website" | "article";
-	robots?: string;
-	author?: string;
-	keywords?: string;
-	structuredData?: object[];
-}
-
-export interface PageContent {
-	seo: SeoMetadata;
-	styles: string;
-	headerVariant?: "default" | "transparent";
-	bodyClass?: string;
-	content: string;
-	scripts?: string;
-	isAuthenticated?: boolean;
-	emailVerified?: boolean;
-	statusCode?: number;
-}
 
 function renderHeader(
 	variant: "default" | "transparent",
@@ -168,9 +144,9 @@ function renderStructuredData(data: object[] | undefined): string {
 		.join("\n  ");
 }
 
-function renderBaseTemplate(page: PageContent): string {
-	const headerVariant = page.headerVariant || "default";
-	const seo = page.seo;
+function renderBaseTemplate(body: PageBody, state: BannerState): string {
+	const headerVariant = body.headerVariant || "default";
+	const seo: SeoMetadata = body.seo;
 
 	const ogType = seo.ogType || "website";
 	const robots = seo.robots || "index, follow";
@@ -199,18 +175,18 @@ function renderBaseTemplate(page: PageContent): string {
 		footerStyles: FOOTER_STYLES,
 		offlineBannerStyles: OFFLINE_BANNER_STYLES,
 		verifyBannerStyles: VERIFY_BANNER_STYLES,
-		showVerificationBanner: page.isAuthenticated === true && page.emailVerified === false,
-		pageStyles: page.styles,
-		bodyClass: page.bodyClass,
-		header: renderHeader(headerVariant, page.isAuthenticated ?? false),
-		content: page.content,
+		showVerificationBanner: state.isAuthenticated && state.emailVerified === false,
+		pageStyles: body.styles,
+		bodyClass: body.bodyClass,
+		header: renderHeader(headerVariant, state.isAuthenticated),
+		content: body.content,
 		footer: renderFooter(),
 		navScript: NAV_SCRIPT,
 		offlineScript: OFFLINE_INDICATOR_SCRIPT,
-		scripts: HTMX_SCRIPTS + (page.scripts ?? "") + LIVERELOAD_SCRIPT,
+		scripts: HTMX_SCRIPTS + (body.scripts ?? "") + LIVERELOAD_SCRIPT,
 	});
 }
 
-export function Base(page: PageContent): Component {
-	return HtmlPage(renderBaseTemplate(page), page.statusCode);
+export function Base(body: PageBody, state: BannerState): Component {
+	return HtmlPage(renderBaseTemplate(body, state), body.statusCode);
 }

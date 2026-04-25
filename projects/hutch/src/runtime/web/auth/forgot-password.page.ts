@@ -8,6 +8,7 @@ import type {
 } from "../../providers/password-reset/password-reset.types";
 import { PasswordResetTokenSchema } from "../../providers/password-reset/password-reset.schema";
 import { z } from "zod";
+import { renderPage } from "../render-page";
 import { sendComponent } from "../send-component";
 import { ForgotPasswordSchema, ResetPasswordSchema } from "./auth.schema";
 import { ForgotPasswordPage, ResetPasswordPage } from "./auth.component";
@@ -31,8 +32,8 @@ interface ForgotPasswordDependencies {
 export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Router {
 	const router = express.Router();
 
-	router.get("/forgot-password", (_req: Request, res: Response) => {
-		sendComponent(res, ForgotPasswordPage());
+	router.get("/forgot-password", (req: Request, res: Response) => {
+		sendComponent(res, renderPage(req, ForgotPasswordPage()));
 	});
 
 	router.post("/forgot-password", async (req: Request, res: Response) => {
@@ -41,20 +42,20 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 		if (!parsed.success) {
 			sendComponent(
 				res,
-				ForgotPasswordPage(
+				renderPage(req, ForgotPasswordPage(
 					{
 						email: req.body?.email,
 						errors: flattenZodErrors(parsed.error.issues),
 					},
 					{ statusCode: 422 },
-				),
+				)),
 			);
 			return;
 		}
 
 		const { email } = parsed.data;
 
-		sendComponent(res, ForgotPasswordPage({ sent: true }));
+		sendComponent(res, renderPage(req, ForgotPasswordPage({ sent: true })));
 
 		deps.userExistsByEmail(email)
 			.then(async (exists) => {
@@ -82,12 +83,12 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 		if (!token) {
 			sendComponent(
 				res,
-				ResetPasswordPage({ error: "No reset token provided." }, { statusCode: 400 }),
+				renderPage(req, ResetPasswordPage({ error: "No reset token provided." }, { statusCode: 400 })),
 			);
 			return;
 		}
 
-		sendComponent(res, ResetPasswordPage({ token }));
+		sendComponent(res, renderPage(req, ResetPasswordPage({ token })));
 	});
 
 	router.post("/reset-password", async (req: Request, res: Response) => {
@@ -97,7 +98,7 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 		if (!token) {
 			sendComponent(
 				res,
-				ResetPasswordPage({ error: "No reset token provided." }, { statusCode: 400 }),
+				renderPage(req, ResetPasswordPage({ error: "No reset token provided." }, { statusCode: 400 })),
 			);
 			return;
 		}
@@ -107,13 +108,13 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 		if (!parsed.success) {
 			sendComponent(
 				res,
-				ResetPasswordPage(
+				renderPage(req, ResetPasswordPage(
 					{
 						token,
 						errors: flattenZodErrors(parsed.error.issues),
 					},
 					{ statusCode: 422 },
-				),
+				)),
 			);
 			return;
 		}
@@ -123,17 +124,17 @@ export function initForgotPasswordRoutes(deps: ForgotPasswordDependencies): Rout
 		if (!verifyResult.ok) {
 			sendComponent(
 				res,
-				ResetPasswordPage(
+				renderPage(req, ResetPasswordPage(
 					{ error: "This reset link is invalid or has already been used." },
 					{ statusCode: 400 },
-				),
+				)),
 			);
 			return;
 		}
 
 		await deps.updatePassword({ email: verifyResult.email, password: parsed.data.password });
 
-		sendComponent(res, ResetPasswordPage({ success: true }));
+		sendComponent(res, renderPage(req, ResetPasswordPage({ success: true })));
 	});
 
 	return router;

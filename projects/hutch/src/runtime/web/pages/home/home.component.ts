@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { switchHelpers } from "../../handlebars-switch";
 import { renderFoundingProgress } from "../../shared/founding-progress/founding-progress.component";
@@ -100,10 +99,10 @@ const HOME_SCROLL_HINT_SCRIPT = `<script>
 })();
 </script>`;
 
-export function HomePage(params: { userCount: number; staticBaseUrl: string; browser: "firefox" | "chrome" | "other" }): Component {
+export function HomePage(params: { userCount: number; staticBaseUrl: string; browser: "firefox" | "chrome" | "other" }): PageBody {
 	const { userCount, staticBaseUrl, browser } = params;
 	const foundingProgressHtml = renderFoundingProgress({ userCount });
-	return Base({
+	return {
 		seo: {
 			title: "Readplace — Read-It-Later App | Save Articles, Read Them Later",
 			description:
@@ -352,5 +351,5 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				},
 			],
 		}, { helpers: switchHelpers }),
-	});
+	};
 }

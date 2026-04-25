@@ -16,6 +16,7 @@ import type {
 } from "../../providers/email-verification/email-verification.types";
 import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
 import { z } from "zod";
+import { renderPage } from "../render-page";
 import { sendComponent } from "../send-component";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
@@ -60,7 +61,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		sendComponent(res, LoginPage({ returnUrl, userCount }));
+		sendComponent(res, renderPage(req, LoginPage({ returnUrl, userCount })));
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
@@ -71,7 +72,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				res,
-				LoginPage(
+				renderPage(req, LoginPage(
 					{
 						returnUrl,
 						userCount,
@@ -79,7 +80,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						errors: flattenZodErrors(parsed.error.issues),
 					},
 					{ statusCode: 422 },
-				),
+				)),
 			);
 			return;
 		}
@@ -91,7 +92,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				res,
-				LoginPage(
+				renderPage(req, LoginPage(
 					{
 						returnUrl,
 						userCount,
@@ -99,7 +100,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						globalError: "Invalid email or password",
 					},
 					{ statusCode: 422 },
-				),
+				)),
 			);
 			return;
 		}
@@ -116,7 +117,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		sendComponent(res, SignupPage({ returnUrl, userCount }));
+		sendComponent(res, renderPage(req, SignupPage({ returnUrl, userCount })));
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
@@ -127,7 +128,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				res,
-				SignupPage(
+				renderPage(req, SignupPage(
 					{
 						returnUrl,
 						userCount,
@@ -135,7 +136,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						errors: flattenZodErrors(parsed.error.issues),
 					},
 					{ statusCode: 422 },
-				),
+				)),
 			);
 			return;
 		}
@@ -147,7 +148,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				res,
-				SignupPage(
+				renderPage(req, SignupPage(
 					{
 						returnUrl,
 						userCount,
@@ -155,7 +156,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						globalError: "An account with this email already exists",
 					},
 					{ statusCode: 422 },
-				),
+				)),
 			);
 			return;
 		}
@@ -188,10 +189,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!token) {
 			sendComponent(
 				res,
-				VerifyEmailPage({
+				renderPage(req, VerifyEmailPage({
 					success: false,
 					error: "No verification token provided.",
-				}),
+				})),
 			);
 			return;
 		}
@@ -201,10 +202,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!verifyResult.ok) {
 			sendComponent(
 				res,
-				VerifyEmailPage({
+				renderPage(req, VerifyEmailPage({
 					success: false,
 					error: "This verification link is invalid or has already been used.",
-				}),
+				})),
 			);
 			return;
 		}
@@ -216,7 +217,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			await deps.markSessionEmailVerified(sessionId);
 		}
 
-		sendComponent(res, VerifyEmailPage({ success: true }));
+		sendComponent(res, renderPage(req, VerifyEmailPage({ success: true })));
 	});
 
 	router.post("/logout", async (req: Request, res: Response) => {
