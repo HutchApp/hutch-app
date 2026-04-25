@@ -4,7 +4,7 @@ import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
-import { LinkSavedEvent, type ParseErrorEvent } from "@packages/hutch-infra-components";
+import { LinkSavedEvent, type ParseErrorEvent, initLogParseError, initLogCrawlOutcome, type CrawlOutcomeEvent } from "@packages/hutch-infra-components";
 import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { requireEnv } from "../require-env";
@@ -12,7 +12,6 @@ import { initReadabilityParser } from "../article-parser/readability-parser";
 import { theInformationPreParser } from "../article-parser/the-information-pre-parser";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";
 import { initDownloadMedia } from "../save-link/download-media";
-import { initLogParseError } from "../save-link/log-parse-error";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
 import { initReadPendingHtml } from "../save-link-raw-html/read-pending-html";
 import { initPutSourceContent } from "../save-link-raw-html/put-source-content";
@@ -21,6 +20,9 @@ import { initPromoteSourceToCanonical } from "../save-link-raw-html/promote-sour
 import { initSelectMostCompleteContent } from "../save-link-raw-html/select-content";
 import { initSaveLinkRawHtmlCommandHandler } from "../save-link-raw-html/save-link-raw-html-command-handler";
 import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
+import { initCheckTier0SourceExistsS3 } from "../crawl-article-state/check-tier-0-source-exists-s3";
+import { initReadArticleCrawlStateDynamoDb } from "../crawl-article-state/read-article-crawl-state-dynamodb";
+import { initReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
@@ -111,6 +113,27 @@ const publishLinkSaved = async (params: { url: string; userId: string }) => {
 const { logParseError } = initLogParseError({
 	logger: HutchLogger.fromJSON<ParseErrorEvent>(),
 	now: () => new Date(),
+	source: "save-link-raw-html",
+});
+
+const { logCrawlOutcome } = initLogCrawlOutcome({
+	logger: HutchLogger.fromJSON<CrawlOutcomeEvent>(),
+	now: () => new Date(),
+});
+
+const { checkTier0SourceExists } = initCheckTier0SourceExistsS3({
+	client: s3Client,
+	bucketName: contentBucketName,
+});
+
+const { readArticleCrawlState } = initReadArticleCrawlStateDynamoDb({
+	client: dynamoClient,
+	tableName: articlesTable,
+});
+
+const { readTierSnapshot } = initReadTierSnapshot({
+	checkTier0SourceExists,
+	readArticleCrawlState,
 });
 
 export const handler = initSaveLinkRawHtmlCommandHandler({
@@ -125,6 +148,8 @@ export const handler = initSaveLinkRawHtmlCommandHandler({
 	publishLinkSaved,
 	markCrawlReady,
 	markCrawlFailed,
-	logParseError,
 	logger: consoleLogger,
+	logParseError,
+	logCrawlOutcome,
+	readTierSnapshot,
 });

@@ -59,6 +59,7 @@ export function initPromoteSourceToCanonical(deps: {
 			"estimatedReadTime = :r",
 			"contentLocation = :cl",
 			"contentFetchedAt = :cfa",
+			"canonicalSourceTier = :cst",
 		];
 		const values: Record<string, unknown> = {
 			":t": params.metadata.title,
@@ -68,6 +69,7 @@ export function initPromoteSourceToCanonical(deps: {
 			":r": params.metadata.estimatedReadTime,
 			":cl": `s3://${bucketName}/${canonicalKey}`,
 			":cfa": now().toISOString(),
+			":cst": params.tier,
 		};
 		if (params.metadata.imageUrl) {
 			setClauses.push("imageUrl = :img");

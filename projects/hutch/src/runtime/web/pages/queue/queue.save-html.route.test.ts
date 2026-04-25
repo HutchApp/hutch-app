@@ -141,6 +141,7 @@ describe("POST /queue/save-html", () => {
 				appOrigin: fixture.shared.appOrigin,
 				httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
 				logError: (_msg, err) => { if (err) errors.push(err); },
+				logParseError: fixture.shared.logParseError,
 			},
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -222,6 +223,33 @@ describe("POST /queue/save-html", () => {
 		);
 		const fallbackFields = fallback.fields.map((f: { name: string }) => f.name);
 		expect(fallbackFields).toEqual(["url"]);
+	});
+
+	it("logs a parse-failure event with url=null and reason=payload-too-large when the body-parser rejects an oversized payload", async () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+		const parseErrorCalls: { url: string | null; reason: string }[] = [];
+
+		const testApp = createTestApp({
+			...fixture,
+			shared: {
+				appOrigin: fixture.shared.appOrigin,
+				httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
+				logError: () => {},
+				logParseError: (params) => { parseErrorCalls.push(params); },
+			},
+		});
+		const accessToken = await createAccessToken(testApp);
+
+		const oversized = "x".repeat(MAX_RAW_HTML_REQUEST_BYTES + 1);
+		await request(testApp.app)
+			.post("/queue/save-html")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.send({ url: "https://example.com/article", rawHtml: oversized });
+
+		expect(parseErrorCalls).toEqual([
+			{ url: null, reason: "payload-too-large" },
+		]);
 	});
 
 	it("returns 422 when the body fails schema validation", async () => {

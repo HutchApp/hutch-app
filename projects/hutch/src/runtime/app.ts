@@ -43,7 +43,8 @@ import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-u
 import { initPutPendingHtml } from "./providers/pending-html/put-pending-html";
 import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
-import { consoleLogger } from "@packages/hutch-logger";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
+import { initLogParseError, type ParseErrorEvent } from "@packages/hutch-infra-components";
 import { createApp } from "./server";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { getEnv, requireEnv } from "./require-env";
@@ -260,6 +261,12 @@ export function createHutchApp(deps?: {
 	const adminEmails = parseAdminEmails(requireEnv("ADMIN_EMAILS"));
 	const recrawlServiceToken = requireEnv("RECRAWL_SERVICE_TOKEN");
 
+	const { logParseError } = initLogParseError({
+		logger: HutchLogger.fromJSON<ParseErrorEvent>(),
+		now: () => new Date(),
+		source: "hutch-handler",
+	});
+
 	const app = createApp({
 		appOrigin,
 		staticBaseUrl,
@@ -273,6 +280,7 @@ export function createHutchApp(deps?: {
 		oauthModel,
 		validateAccessToken,
 		httpErrorMessageMapping,
+		logParseError,
 	});
 
 	return { app, auth, articleStore, oauthModel };

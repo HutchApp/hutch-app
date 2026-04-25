@@ -2,6 +2,7 @@ import assert from "node:assert";
 import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
+import type { LogParseError } from "@packages/hutch-infra-components";
 import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_REQUEST_BYTES, RAW_HTML_FIELD } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
@@ -59,6 +60,7 @@ interface QueueDependencies {
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
+	logParseError: LogParseError;
 }
 
 import type { SavedArticle } from "../../../domain/article/article.types";
@@ -227,6 +229,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				`request body exceeded ${mb}MB`,
 				err instanceof Error ? err : undefined,
 			);
+			// url=null because body-parser rejected before req.body was populated.
+			deps.logParseError({ url: null, reason: "payload-too-large" });
 			res.status(500).type(SIREN_MEDIA_TYPE).json(
 				sirenError({
 					code: "html-too-large",

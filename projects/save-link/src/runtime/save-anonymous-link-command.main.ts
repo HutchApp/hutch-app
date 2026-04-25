@@ -2,7 +2,7 @@ import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { S3Client } from "@aws-sdk/client-s3";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
-import { AnonymousLinkSavedEvent, type ParseErrorEvent } from "@packages/hutch-infra-components";
+import { AnonymousLinkSavedEvent, type ParseErrorEvent, initLogParseError, initLogCrawlOutcome, type CrawlOutcomeEvent } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { initReadabilityParser } from "../article-parser/readability-parser";
@@ -16,9 +16,11 @@ import { initUpdateThumbnailUrl } from "../save-link/update-thumbnail-url";
 import { initUpdateFetchTimestamp } from "../save-link/update-fetch-timestamp";
 import { initUpdateArticleMetadata } from "../save-link/update-article-metadata";
 import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
+import { initCheckTier0SourceExistsS3 } from "../crawl-article-state/check-tier-0-source-exists-s3";
+import { initReadArticleCrawlStateDynamoDb } from "../crawl-article-state/read-article-crawl-state-dynamodb";
+import { initReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import { initDownloadMedia } from "../save-link/download-media";
 import { initSaveAnonymousLinkCommandHandler } from "../save-link/save-anonymous-link-command-handler";
-import { initLogParseError } from "../save-link/log-parse-error";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
@@ -103,6 +105,27 @@ const processContent = initProcessContentWithLocalMedia({
 const { logParseError } = initLogParseError({
 	logger: HutchLogger.fromJSON<ParseErrorEvent>(),
 	now: () => new Date(),
+	source: "save-link",
+});
+
+const { logCrawlOutcome } = initLogCrawlOutcome({
+	logger: HutchLogger.fromJSON<CrawlOutcomeEvent>(),
+	now: () => new Date(),
+});
+
+const { checkTier0SourceExists } = initCheckTier0SourceExistsS3({
+	client: s3Client,
+	bucketName: contentBucketName,
+});
+
+const { readArticleCrawlState } = initReadArticleCrawlStateDynamoDb({
+	client,
+	tableName: articlesTable,
+});
+
+const { readTierSnapshot } = initReadTierSnapshot({
+	checkTier0SourceExists,
+	readArticleCrawlState,
 });
 
 export const handler = initSaveAnonymousLinkCommandHandler({
@@ -124,4 +147,6 @@ export const handler = initSaveAnonymousLinkCommandHandler({
 	now: () => new Date(),
 	logger: consoleLogger,
 	logParseError,
+	logCrawlOutcome,
+	readTierSnapshot,
 });

@@ -93,6 +93,8 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		now: fixedNow,
 		logger: noopLogger,
 		logParseError: jest.fn(),
+		logCrawlOutcome: jest.fn(),
+		readTierSnapshot: jest.fn().mockResolvedValue({ tier0Status: "not_attempted", tier1Status: "not_attempted", pickedTier: "none" }),
 		...overrides,
 	});
 }
@@ -114,6 +116,7 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		expect(updateContentLocation).toHaveBeenCalledWith({
 			url: "https://example.com/article",
 			contentLocation: expect.stringMatching(/^s3:\/\//),
+			tier: "tier-1",
 		});
 		expect(publishAnonymousLinkSaved).toHaveBeenCalledWith({ url: "https://example.com/article" });
 	});

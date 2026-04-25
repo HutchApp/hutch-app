@@ -27,3 +27,11 @@ export {
 	type HutchCommand,
 } from "./events";
 export { PARSE_ERROR_STREAM, type ParseErrorEvent } from "./logs";
+export { initLogParseError, type LogParseError } from "./log-parse-error";
+export {
+	CRAWL_OUTCOME_STREAM,
+	type CrawlOutcomeEvent,
+	type LogCrawlOutcome,
+	type TierName,
+	initLogCrawlOutcome,
+} from "./crawl-outcome";

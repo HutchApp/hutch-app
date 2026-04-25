@@ -1,12 +1,12 @@
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
-import { SaveLinkRawHtmlCommand } from "@packages/hutch-infra-components";
+import { SaveLinkRawHtmlCommand, type LogCrawlOutcome, type LogParseError } from "@packages/hutch-infra-components";
 import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "../save-link/download-media";
-import type { LogParseError } from "../save-link/log-parse-error";
 import type { ProcessContent } from "../save-link/save-link-work";
 import { estimatedReadTimeFromWordCount } from "../save-link/estimated-read-time";
+import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import type { ReadPendingHtml } from "./read-pending-html";
 import type { PutSourceContent } from "./source-content.types";
 import type { ReadCanonicalContent } from "./canonical-content.types";
@@ -31,8 +31,10 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 	publishLinkSaved: PublishLinkSaved;
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
-	logParseError: LogParseError;
 	logger: HutchLogger;
+	logParseError: LogParseError;
+	logCrawlOutcome: LogCrawlOutcome;
+	readTierSnapshot: ReadTierSnapshot;
 }): SQSHandler {
 	const {
 		readPendingHtml,
@@ -46,8 +48,10 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 		publishLinkSaved,
 		markCrawlReady,
 		markCrawlFailed,
-		logParseError,
 		logger,
+		logParseError,
+		logCrawlOutcome,
+		readTierSnapshot,
 	} = deps;
 
 	return async (event) => {
@@ -58,12 +62,21 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 			const rawHtml = await readPendingHtml(detail.url);
 			const parseResult = parseHtml({ url: detail.url, html: rawHtml });
 			if (!parseResult.ok) {
+				logParseError({ url: detail.url, reason: parseResult.reason });
+				const snapshot = await readTierSnapshot({ url: detail.url });
+				logCrawlOutcome({
+					url: detail.url,
+					thisTier: TIER,
+					thisTierStatus: "failed",
+					otherTierStatus: snapshot.tier1Status,
+					pickedTier: snapshot.pickedTier,
+				});
 				/* Parse errors are terminal on the same HTML — re-running yields the
 				 * same failure. Flip crawlStatus immediately so the reader shows a
 				 * failed state at t+0 instead of polling for ~90s until SQS exhausts
-				 * retries and the DLQ handler marks failed. Re-throw preserves the
-				 * SQS retry + DLQ observability path. */
-				logParseError({ url: detail.url, reason: parseResult.reason });
+				 * retries and the DLQ handler marks failed. Snapshot is read above
+				 * before this flip so otherTierStatus reflects tier-1's pre-flip
+				 * state. Re-throw preserves the SQS retry + DLQ observability path. */
 				await markCrawlFailed({ url: detail.url, reason: parseResult.reason });
 				throw new Error(`save-link-raw-html parse failed for ${detail.url}: ${parseResult.reason}`);
 			}
@@ -140,6 +153,15 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 			if (canonicalChanged) {
 				await publishLinkSaved({ url: detail.url, userId: detail.userId });
 			}
+
+			const snapshot = await readTierSnapshot({ url: detail.url });
+			logCrawlOutcome({
+				url: detail.url,
+				thisTier: TIER,
+				thisTierStatus: "success",
+				otherTierStatus: snapshot.tier1Status,
+				pickedTier: snapshot.pickedTier,
+			});
 		}
 	};
 }

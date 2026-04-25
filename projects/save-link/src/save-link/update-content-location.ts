@@ -11,6 +11,7 @@ import type { UpdateContentLocation } from "./save-link-command-handler";
 const ArticleRow = z.object({
 	url: z.string(),
 	contentLocation: dynamoField(z.string()),
+	canonicalSourceTier: dynamoField(z.enum(["tier-0", "tier-1"])),
 });
 
 export function initUpdateContentLocation(deps: {
@@ -27,8 +28,12 @@ export function initUpdateContentLocation(deps: {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 		await table.update({
 			Key: { url: articleResourceUniqueId.value },
-			UpdateExpression: "SET contentLocation = :cl REMOVE content",
-			ExpressionAttributeValues: { ":cl": params.contentLocation },
+			UpdateExpression:
+				"SET contentLocation = :cl, canonicalSourceTier = :cst REMOVE content",
+			ExpressionAttributeValues: {
+				":cl": params.contentLocation,
+				":cst": params.tier,
+			},
 		});
 	};
 

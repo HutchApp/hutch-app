@@ -4,7 +4,13 @@ export interface ParseErrorEvent {
 	stream: typeof PARSE_ERROR_STREAM;
 	event: "parse-failure";
 	timestamp: string;
-	url: string;
+	url: string | null;
 	reason: string;
-	source: "save-link" | "hutch-view" | "hutch-queue" | "generate-summary";
+	source:
+		| "save-link"
+		| "save-link-raw-html"
+		| "hutch-handler"
+		| "hutch-view"
+		| "hutch-queue"
+		| "generate-summary";
 }

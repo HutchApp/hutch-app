@@ -9,11 +9,12 @@ import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
 import type { UpdateArticleMetadata } from "./update-article-metadata";
-import type { LogParseError } from "./log-parse-error";
+import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-components";
+import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import { estimatedReadTimeFromWordCount } from "./estimated-read-time";
 
 export type PutObject = (params: { key: string; content: string }) => Promise<string>;
-export type UpdateContentLocation = (params: { url: string; contentLocation: string }) => Promise<void>;
+export type UpdateContentLocation = (params: { url: string; contentLocation: string; tier: "tier-0" | "tier-1" }) => Promise<void>;
 export type ProcessContent = (params: { html: string; media: DownloadedMedia[] }) => Promise<string>;
 
 /* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
@@ -34,6 +35,8 @@ export function initSaveLinkWork(deps: {
 	now: () => Date;
 	logger: HutchLogger;
 	logParseError: LogParseError;
+	logCrawlOutcome: LogCrawlOutcome;
+	readTierSnapshot: ReadTierSnapshot;
 	logPrefix: string;
 }): { saveLinkWork: (url: string) => Promise<void> } {
 	const {
@@ -53,14 +56,28 @@ export function initSaveLinkWork(deps: {
 		now,
 		logger,
 		logParseError,
+		logCrawlOutcome,
+		readTierSnapshot,
 		logPrefix,
 	} = deps;
+
+	const emitTier1Failure = async (url: string): Promise<void> => {
+		const snapshot = await readTierSnapshot({ url });
+		logCrawlOutcome({
+			url,
+			thisTier: "tier-1",
+			thisTierStatus: "failed",
+			otherTierStatus: snapshot.tier0Status,
+			pickedTier: snapshot.pickedTier,
+		});
+	};
 
 	const saveLinkWork = async (url: string): Promise<void> => {
 		const crawlResult = await crawlArticle({ url, fetchThumbnail: true });
 		if (crawlResult.status !== "fetched") {
 			const reason = `crawl-${crawlResult.status}`;
 			logParseError({ url, reason });
+			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${reason}`);
 		}
 
@@ -73,6 +90,7 @@ export function initSaveLinkWork(deps: {
 			// terminal state on the next poll, instead of waiting for SQS
 			// retries → DLQ (~90s+) before the DLQ handler updates it.
 			await markCrawlFailed({ url, reason: parseResult.reason });
+			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${parseResult.reason}`);
 		}
 
@@ -107,7 +125,7 @@ export function initSaveLinkWork(deps: {
 
 			const key = articleResourceUniqueId.toS3ContentKey();
 			const contentLocation = await putObject({ key, content: html });
-			await updateContentLocation({ url, contentLocation });
+			await updateContentLocation({ url, contentLocation, tier: "tier-1" });
 			await updateFetchTimestamp({
 				url,
 				contentFetchedAt: now().toISOString(),
@@ -131,6 +149,15 @@ export function initSaveLinkWork(deps: {
 			logParseError({ url, reason: `post-parse-step-failed: ${message}` });
 			throw error;
 		}
+
+		const snapshot = await readTierSnapshot({ url });
+		logCrawlOutcome({
+			url,
+			thisTier: "tier-1",
+			thisTierStatus: "success",
+			otherTierStatus: snapshot.tier0Status,
+			pickedTier: snapshot.pickedTier,
+		});
 
 		logger.info(`${logPrefix} saved`, { url, hasThumbnail: crawlResult.thumbnailImage ? 1 : 0 });
 	};
