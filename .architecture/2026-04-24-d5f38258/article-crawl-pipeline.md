@@ -3,7 +3,7 @@
 **Commit:** `d5f38258` &nbsp;•&nbsp; **Commit date:** 2026-04-24 &nbsp;•&nbsp; **Generated:** 2026-04-24 &nbsp;•&nbsp; **Branch:** `main`
 **Subject:** `fix(save-link): catch Readability.parse() throws in readability-parser`
 
-A point-in-time map of how a URL becomes a parsed article row — from the moment a user clicks *Save* (or an anonymous visitor opens `/view/<url>`, or an admin hits `/admin/recrawl/<url>`) all the way to `crawlStatus=ready` (happy path) or `crawlStatus=failed` (terminal parse error or DLQ). The summary-generation pipeline is triggered at the boundary but lives in its own snapshot at [`../52017f3/summary-generation-pipeline.md`](../52017f3/summary-generation-pipeline.md).
+A point-in-time map of how a URL becomes a parsed article row — from the moment a user clicks *Save* (or an anonymous visitor opens `/view/<url>`, or an admin hits `/admin/recrawl/<url>`) all the way to `crawlStatus=ready` (happy path) or `crawlStatus=failed` (terminal parse error or DLQ). The summary-generation pipeline is triggered at the boundary but lives in its own snapshot at [`../2026-04-20-52017f3/summary-generation-pipeline.md`](../2026-04-20-52017f3/summary-generation-pipeline.md).
 
 > Snapshots are historical. Any file path referenced below may have been renamed, moved, or deleted since this commit. Treat as an artefact, not a live guide.
 
@@ -298,7 +298,7 @@ flowchart TD
 | `SaveLinkCommand` (url, userId) | `POST /queue` (authenticated) after `markCrawlPending` / `refreshArticleIfStale` | `save-link-command` (vis 60s) → `save-link-command` Lambda → `saveLinkWork` | `save-link-command-dlq` | `LinkSavedEvent` (url, userId), `CrawlArticleCompletedEvent` (url) | Terminal parse: `markCrawlFailed` inline. DLQ: `CrawlArticleFailedEvent` (url, reason, receiveCount) | `GenerateSummaryCommand` (via `link-saved` handler) |
 | `SaveLinkRawHtmlCommand` (url, userId, title?) | `POST /queue/save-html` (authenticated browser extension) after `putPendingHtml` | `save-link-raw-html-command` (vis 60s) → `save-link-raw-html-command` Lambda — reads S3 pending-html, skips HTTP fetch | auto-pair via `HutchSQSBackedLambda` | `LinkSavedEvent` | Terminal parse: `markCrawlFailed` inline. DLQ: `CrawlArticleFailedEvent` | `GenerateSummaryCommand` (via `link-saved` handler) |
 | `SaveAnonymousLinkCommand` (url) | `GET /view/<url>` (anonymous), or `GET /admin/recrawl/<url>` (admin, preceded by `forceMarkCrawlPending`) | `save-anonymous-link-command` (vis 60s) → `save-anonymous-link-command` Lambda → `saveLinkWork` anonymous | `save-anonymous-link-dlq` | `AnonymousLinkSavedEvent` (url), `CrawlArticleCompletedEvent` (url) | Terminal parse: `markCrawlFailed` inline. DLQ: `CrawlArticleFailedEvent` | `GenerateSummaryCommand` (via `anonymous-link-saved` handler) |
-| `LinkSavedEvent` | emitted by `saveLinkWork` after `markCrawlReady` | `link-saved` (vis 60s) → `link-saved` Lambda | auto-pair | (dispatches) | (dispatches) | `GenerateSummaryCommand` onto `generate-summary` queue (out-of-scope, [`../52017f3/`](../52017f3/)) |
+| `LinkSavedEvent` | emitted by `saveLinkWork` after `markCrawlReady` | `link-saved` (vis 60s) → `link-saved` Lambda | auto-pair | (dispatches) | (dispatches) | `GenerateSummaryCommand` onto `generate-summary` queue (out-of-scope, [`../2026-04-20-52017f3/`](../2026-04-20-52017f3/)) |
 | `AnonymousLinkSavedEvent` | emitted by anonymous `saveLinkWork` after `markCrawlReady` | `anonymous-link-saved` (vis 60s) → `anonymous-link-saved` Lambda | auto-pair | (dispatches) | (dispatches) | `GenerateSummaryCommand` onto `generate-summary` queue |
 | `CrawlArticleCompletedEvent` | emitted alongside `LinkSavedEvent` / `AnonymousLinkSavedEvent` | — (observed only) | — | — | — | — (signals Tier 1+ health canary + dashboards that crawl reached ready) |
 | `CrawlArticleFailedEvent` | emitted by `HutchDLQEventHandler` after DLQ arrival **or** inline on terminal parse (via the same publish path in the DLQ handler scope) | parse-errors log consumers, admin alertEmail via CloudWatch alarm on DLQ | — | — | — | — (terminal; user must retry via admin recrawl) |
@@ -330,7 +330,7 @@ flowchart TD
   - **Transient crawl failure** — network timeout, HTTP 5xx: `logParseError` + throw, no inline write. SQS retries `maxReceiveCount` times; on exhaustion the DLQ handler (`save-link-dlq`, `save-anonymous-link-dlq`) calls `markCrawlFailed` with `reason = "exceeded SQS maxReceiveCount"` and publishes `CrawlArticleFailedEvent`.
   - In both cases the reader UI polls DynamoDB, sees `crawlStatus=failed` + `crawlFailureReason`, and renders the failure banner with the summary slot hidden.
 
-**8. Downstream summary dispatch.** `link-saved` / `anonymous-link-saved` Lambda handlers are minimal: they receive the post-ready event, look up the article, and dispatch `GenerateSummaryCommand` onto the `generate-summary` queue (see summary snapshot at [`../52017f3/summary-generation-pipeline.md`](../52017f3/summary-generation-pipeline.md)).
+**8. Downstream summary dispatch.** `link-saved` / `anonymous-link-saved` Lambda handlers are minimal: they receive the post-ready event, look up the article, and dispatch `GenerateSummaryCommand` onto the `generate-summary` queue (see summary snapshot at [`../2026-04-20-52017f3/summary-generation-pipeline.md`](../2026-04-20-52017f3/summary-generation-pipeline.md)).
 
 ---
 
