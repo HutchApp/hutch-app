@@ -70,6 +70,7 @@ import { initBlogRoutes } from "./web/pages/blog";
 import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
+import { renderPage } from "./web/render-page";
 import { sendComponent } from "./web/send-component";
 import { wantsSiren } from "./web/content-negotiation";
 import { HomePage } from "./web/pages/home";
@@ -292,15 +293,15 @@ export function createApp(dependencies: AppDependencies): Express {
 			: ua.includes("Chrome/") ? "chrome"
 			: "other";
 		const userCount = await countUsers().catch(() => 0);
-		sendComponent(res, HomePage({ userCount, staticBaseUrl, browser }));
+		sendComponent(res, renderPage(req, HomePage({ userCount, staticBaseUrl, browser })));
 	});
 
-	app.get("/privacy", (_req: Request, res: Response) => {
-		sendComponent(res, PrivacyPage());
+	app.get("/privacy", (req: Request, res: Response) => {
+		sendComponent(res, renderPage(req, PrivacyPage()));
 	});
 
-	app.get("/terms", (_req: Request, res: Response) => {
-		sendComponent(res, TermsPage());
+	app.get("/terms", (req: Request, res: Response) => {
+		sendComponent(res, renderPage(req, TermsPage()));
 	});
 
 	app.get("/install", async (req: Request, res: Response) => {
@@ -309,7 +310,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			fetchFirefoxDownloadUrl(),
 			fetchChromeDownloadUrl(),
 		]);
-		sendComponent(res, InstallPage({ firefox, chrome, browser }));
+		sendComponent(res, renderPage(req, InstallPage({ firefox, chrome, browser })));
 	});
 
 	const blogRouter = initBlogRoutes();
@@ -434,8 +435,8 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/oauth/revoke", extensionCors);
 	app.use("/oauth", oauthRouter);
 
-	app.use((_req: Request, res: Response) => {
-		sendComponent(res, NotFoundPage());
+	app.use((req: Request, res: Response) => {
+		sendComponent(res, renderPage(req, NotFoundPage()));
 	});
 
 	return app;

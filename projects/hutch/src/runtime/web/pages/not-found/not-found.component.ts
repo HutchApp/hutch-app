@@ -1,14 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { NOT_FOUND_STYLES } from "./not-found.styles";
 
 const NOT_FOUND_TEMPLATE = readFileSync(join(__dirname, "not-found.template.html"), "utf-8");
 
-export function NotFoundPage(): Component {
-	return Base({
+export function NotFoundPage(): PageBody {
+	return {
 		seo: {
 			title: "Page Not Found — Readplace",
 			description: "The page you are looking for does not exist.",
@@ -19,5 +18,5 @@ export function NotFoundPage(): Component {
 		bodyClass: "page-not-found",
 		content: render(NOT_FOUND_TEMPLATE, {}),
 		statusCode: 404,
-	});
+	};
 }

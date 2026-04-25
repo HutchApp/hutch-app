@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../base.component";
-import type { Component } from "../component.types";
+import type { PageBody } from "../page-body.types";
 import { render } from "../render";
 import { renderFoundingProgress } from "../shared/founding-progress/founding-progress.component";
 import { AUTH_STYLES } from "./auth.styles";
@@ -41,7 +40,7 @@ function toFieldViewModel(
 	};
 }
 
-export function LoginPage(data: AuthFormData, options?: { statusCode?: number }): Component {
+export function LoginPage(data: AuthFormData, options?: { statusCode?: number }): PageBody {
 	const email = data.email ?? "";
 	const errors = data.errors;
 
@@ -57,7 +56,7 @@ export function LoginPage(data: AuthFormData, options?: { statusCode?: number })
 		}),
 	});
 
-	return Base({
+	return {
 		seo: {
 			title: "Sign in — Readplace",
 			description: "Sign in to your Readplace read-it-later account.",
@@ -67,13 +66,13 @@ export function LoginPage(data: AuthFormData, options?: { statusCode?: number })
 		bodyClass: "page-login",
 		content,
 		statusCode: options?.statusCode,
-	});
+	};
 }
 
-export function VerifyEmailPage(data: { success: boolean; error?: string }): Component {
+export function VerifyEmailPage(data: { success: boolean; error?: string }): PageBody {
 	const content = render(VERIFY_EMAIL_TEMPLATE, data);
 
-	return Base({
+	return {
 		seo: {
 			title: "Verify email — Readplace",
 			description: "Email verification for your Readplace account.",
@@ -84,10 +83,10 @@ export function VerifyEmailPage(data: { success: boolean; error?: string }): Com
 		bodyClass: "page-verify-email",
 		content,
 		statusCode: data.success ? 200 : 400,
-	});
+	};
 }
 
-export function SignupPage(data: AuthFormData, options?: { statusCode?: number }): Component {
+export function SignupPage(data: AuthFormData, options?: { statusCode?: number }): PageBody {
 	const email = data.email ?? "";
 	const errors = data.errors;
 
@@ -104,7 +103,7 @@ export function SignupPage(data: AuthFormData, options?: { statusCode?: number }
 		}),
 	});
 
-	return Base({
+	return {
 		seo: {
 			title: "Sign up — Readplace",
 			description:
@@ -115,13 +114,13 @@ export function SignupPage(data: AuthFormData, options?: { statusCode?: number }
 		bodyClass: "page-signup",
 		content,
 		statusCode: options?.statusCode,
-	});
+	};
 }
 
 export function ForgotPasswordPage(
 	data?: { email?: string; errors?: FieldError[]; globalError?: string; sent?: boolean },
 	options?: { statusCode?: number },
-): Component {
+): PageBody {
 	const email = data?.email ?? "";
 	const errors = data?.errors;
 
@@ -132,7 +131,7 @@ export function ForgotPasswordPage(
 		emailField: toFieldViewModel(errors, "email"),
 	});
 
-	return Base({
+	return {
 		seo: {
 			title: "Forgot password — Readplace",
 			description: "Reset your Readplace account password.",
@@ -143,13 +142,13 @@ export function ForgotPasswordPage(
 		bodyClass: "page-forgot-password",
 		content,
 		statusCode: options?.statusCode,
-	});
+	};
 }
 
 export function ResetPasswordPage(
 	data: { token?: string; errors?: FieldError[]; globalError?: string; success?: boolean; error?: string },
 	options?: { statusCode?: number },
-): Component {
+): PageBody {
 	const errors = data.errors;
 
 	const content = render(RESET_PASSWORD_TEMPLATE, {
@@ -161,7 +160,7 @@ export function ResetPasswordPage(
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),
 	});
 
-	return Base({
+	return {
 		seo: {
 			title: "Reset password — Readplace",
 			description: "Set a new password for your Readplace account.",
@@ -172,5 +171,5 @@ export function ResetPasswordPage(
 		bodyClass: "page-reset-password",
 		content,
 		statusCode: options?.statusCode,
-	});
+	};
 }

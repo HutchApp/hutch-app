@@ -13,6 +13,7 @@ import type {
 	MarkEmailVerified,
 } from "../../providers/auth/auth.types";
 import type { ExchangeGoogleCode } from "../../providers/google-auth/google-token.types";
+import { renderPage } from "../render-page";
 import { sendComponent } from "../send-component";
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "./session-cookie";
@@ -102,7 +103,7 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 
 		const renderError = async (globalError: string) => {
 			const userCount = await fetchUserCount();
-			sendComponent(res, LoginPage({ userCount, globalError }, { statusCode: 400 }));
+			sendComponent(res, renderPage(req, LoginPage({ userCount, globalError }, { statusCode: 400 })));
 		};
 
 		if (!parsedQuery.success || !stateCookie || parsedQuery.data.state !== stateCookie) {

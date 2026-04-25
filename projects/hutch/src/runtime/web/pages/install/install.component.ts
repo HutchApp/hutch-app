@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { switchHelpers } from "../../handlebars-switch";
 import { INSTALL_PAGE_STYLES } from "./install.styles";
@@ -29,8 +28,8 @@ export async function fetchChromeDownloadUrl(): Promise<string | null> {
 	return CHROME_WEB_STORE_URL;
 }
 
-export function InstallPage(params: { firefox: string | null; chrome: string | null; browser: "firefox" | "chrome" }): Component {
-	return Base({
+export function InstallPage(params: { firefox: string | null; chrome: string | null; browser: "firefox" | "chrome" }): PageBody {
+	return {
 		seo: {
 			title: "Install Readplace Browser Extension",
 			description:
@@ -44,5 +43,5 @@ export function InstallPage(params: { firefox: string | null; chrome: string | n
 			firefoxDownloadUrl: params.firefox,
 			chromeDownloadUrl: params.chrome,
 		}, { helpers: switchHelpers }),
-	});
+	};
 }
