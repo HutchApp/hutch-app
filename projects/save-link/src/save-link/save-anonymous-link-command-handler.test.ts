@@ -244,6 +244,22 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		});
 	});
 
+	it("reports post-parse step failures via logParseError so S3 / DynamoDB / thumbnail errors surface in the parse-errors widget instead of being buried in raw Lambda logs", async () => {
+		const logParseError = jest.fn();
+		const putObject = jest.fn().mockRejectedValue(new Error("S3 PutObject AccessDenied"));
+
+		const handler = createHandler({ putObject, logParseError });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/article" }), stubContext, () => {}),
+		).rejects.toThrow("S3 PutObject AccessDenied");
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			reason: "post-parse-step-failed: S3 PutObject AccessDenied",
+		});
+	});
+
 	it("skips content save and does not publish events when the article fetch fails (DLQ owns the failure path)", async () => {
 		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
 		const putObject = jest.fn();

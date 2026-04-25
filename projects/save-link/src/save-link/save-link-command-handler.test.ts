@@ -231,6 +231,38 @@ describe("initSaveLinkCommandHandler", () => {
 		});
 	});
 
+	it("reports post-parse step failures via logParseError so S3 / DynamoDB / thumbnail errors surface in the parse-errors widget instead of being buried in raw Lambda logs", async () => {
+		const logParseError = jest.fn();
+		const putObject = jest.fn().mockRejectedValue(new Error("S3 PutObject AccessDenied"));
+
+		const handler = createHandler({ putObject, logParseError });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow("S3 PutObject AccessDenied");
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			reason: "post-parse-step-failed: S3 PutObject AccessDenied",
+		});
+	});
+
+	it("stringifies non-Error throws from a post-parse step into the parse-errors reason", async () => {
+		const logParseError = jest.fn();
+		const putObject = jest.fn().mockRejectedValue("bare-string-thrown");
+
+		const handler = createHandler({ putObject, logParseError });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toBe("bare-string-thrown");
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			reason: "post-parse-step-failed: bare-string-thrown",
+		});
+	});
+
 	it("opts into thumbnail fetching when calling crawlArticle", async () => {
 		const crawlArticle = jest.fn<ReturnType<CrawlArticle>, Parameters<CrawlArticle>>().mockResolvedValue({
 			status: "fetched",

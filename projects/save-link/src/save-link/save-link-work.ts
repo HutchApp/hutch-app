@@ -79,44 +79,58 @@ export function initSaveLinkWork(deps: {
 		const { article } = parseResult;
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 
-		await updateArticleMetadata({
-			url,
-			title: article.title,
-			siteName: article.siteName,
-			excerpt: article.excerpt,
-			wordCount: article.wordCount,
-			estimatedReadTime: estimatedReadTimeFromWordCount(article.wordCount),
-			imageUrl: article.imageUrl,
-		});
-
-		const media = await downloadMedia({
-			html: article.content,
-			articleResourceUniqueId,
-		});
-
-		const html = await processContent({ html: article.content, media });
-
-		const key = articleResourceUniqueId.toS3ContentKey();
-		const contentLocation = await putObject({ key, content: html });
-		await updateContentLocation({ url, contentLocation });
-		await updateFetchTimestamp({
-			url,
-			contentFetchedAt: now().toISOString(),
-			etag: crawlResult.etag,
-			lastModified: crawlResult.lastModified,
-		});
-
-		if (crawlResult.thumbnailImage) {
-			const cdnUrl = await uploadThumbnail({
-				thumbnailImage: crawlResult.thumbnailImage,
-				articleResourceUniqueId,
-				putImageObject,
-				imagesCdnBaseUrl,
+		// Wrap the post-parse pipeline so a thrown step (downloadMedia,
+		// processContent, putObject, updateContentLocation, updateFetchTimestamp,
+		// uploadThumbnail, updateThumbnailUrl, markCrawlReady) lands a structured
+		// event in the parse-errors stream — without this the failure was visible
+		// only as a raw console.error in the Lambda log group and was silently
+		// missing from the dashboard's parse-errors widgets. The crawlStatus row
+		// is left as-is: SQS retries the message and the DLQ handler owns the
+		// terminal failed state, mirroring the existing crawl-failure path.
+		try {
+			await updateArticleMetadata({
+				url,
+				title: article.title,
+				siteName: article.siteName,
+				excerpt: article.excerpt,
+				wordCount: article.wordCount,
+				estimatedReadTime: estimatedReadTimeFromWordCount(article.wordCount),
+				imageUrl: article.imageUrl,
 			});
-			await updateThumbnailUrl({ url, imageUrl: cdnUrl });
-		}
 
-		await markCrawlReady({ url });
+			const media = await downloadMedia({
+				html: article.content,
+				articleResourceUniqueId,
+			});
+
+			const html = await processContent({ html: article.content, media });
+
+			const key = articleResourceUniqueId.toS3ContentKey();
+			const contentLocation = await putObject({ key, content: html });
+			await updateContentLocation({ url, contentLocation });
+			await updateFetchTimestamp({
+				url,
+				contentFetchedAt: now().toISOString(),
+				etag: crawlResult.etag,
+				lastModified: crawlResult.lastModified,
+			});
+
+			if (crawlResult.thumbnailImage) {
+				const cdnUrl = await uploadThumbnail({
+					thumbnailImage: crawlResult.thumbnailImage,
+					articleResourceUniqueId,
+					putImageObject,
+					imagesCdnBaseUrl,
+				});
+				await updateThumbnailUrl({ url, imageUrl: cdnUrl });
+			}
+
+			await markCrawlReady({ url });
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			logParseError({ url, reason: `post-parse-step-failed: ${message}` });
+			throw error;
+		}
 
 		logger.info(`${logPrefix} saved`, { url, hasThumbnail: crawlResult.thumbnailImage ? 1 : 0 });
 	};
