@@ -10,6 +10,7 @@ interface JestPhase {
 	timeout: number;
 	testPathIgnorePatterns?: string;
 	passWithNoTests?: boolean;
+	e2e?: boolean;
 }
 
 interface NodeTestPhase {
@@ -19,6 +20,7 @@ interface NodeTestPhase {
 	files?: string[];
 	timeout?: number;
 	env?: Record<string, string>;
+	e2e?: boolean;
 }
 
 interface ScriptPhase {
@@ -26,6 +28,7 @@ interface ScriptPhase {
 	name: string;
 	command: string;
 	env?: Record<string, string>;
+	e2e?: boolean;
 }
 
 interface PlaywrightPhase {
@@ -34,6 +37,7 @@ interface PlaywrightPhase {
 	config: string;
 	browsers: string[];
 	env?: Record<string, string>;
+	e2e?: boolean;
 }
 
 export type TestPhase = JestPhase | NodeTestPhase | ScriptPhase | PlaywrightPhase;
@@ -48,6 +52,7 @@ interface ResolvedJestPhase {
 	name: string;
 	command: string;
 	skip: false;
+	e2e: boolean;
 }
 
 interface ResolvedNodeTestPhase {
@@ -57,6 +62,7 @@ interface ResolvedNodeTestPhase {
 	env: Record<string, string>;
 	files: string[];
 	skip: boolean;
+	e2e: boolean;
 }
 
 interface ResolvedScriptPhase {
@@ -64,6 +70,7 @@ interface ResolvedScriptPhase {
 	name: string;
 	command: string;
 	env: Record<string, string>;
+	e2e: boolean;
 }
 
 interface ResolvedPlaywrightPhase {
@@ -72,6 +79,7 @@ interface ResolvedPlaywrightPhase {
 	browserInstallCommand: string;
 	testCommand: string;
 	env: Record<string, string>;
+	e2e: boolean;
 }
 
 export type ResolvedPhase =
@@ -89,11 +97,13 @@ export interface TestPlan {
 type ExecSyncFn = (command: string, options: ExecSyncOptions) => Buffer | string;
 type GlobSyncFn = (pattern: string) => string[];
 type LogFn = (message: string) => void;
+type ShouldSkipE2EFn = () => boolean;
 
 export interface TestPhaseRunnerDeps {
 	execSync: ExecSyncFn;
 	globSync: GlobSyncFn;
 	log: LogFn;
+	shouldSkipE2E: ShouldSkipE2EFn;
 }
 
 function resolveJestPhase(phase: JestPhase): ResolvedJestPhase {
@@ -109,7 +119,7 @@ function resolveJestPhase(phase: JestPhase): ResolvedJestPhase {
 	if (phase.passWithNoTests) {
 		parts.push("--passWithNoTests");
 	}
-	return { type: "jest", name: phase.name, command: parts.join(" "), skip: false };
+	return { type: "jest", name: phase.name, command: parts.join(" "), skip: false, e2e: phase.e2e === true };
 }
 
 function resolveNodeTestPhase(phase: NodeTestPhase, globSync: GlobSyncFn): ResolvedNodeTestPhase {
@@ -122,11 +132,11 @@ function resolveNodeTestPhase(phase: NodeTestPhase, globSync: GlobSyncFn): Resol
 	const skip = files.length === 0;
 	const timeoutFlag = phase.timeout ? ` --test-timeout=${phase.timeout}` : "";
 	const command = skip ? "" : `node --test${timeoutFlag} ${files.join(" ")}`;
-	return { type: "node-test", name: phase.name, command, env: phase.env ?? {}, files, skip };
+	return { type: "node-test", name: phase.name, command, env: phase.env ?? {}, files, skip, e2e: phase.e2e === true };
 }
 
 function resolveScriptPhase(phase: ScriptPhase): ResolvedScriptPhase {
-	return { type: "script", name: phase.name, command: phase.command, env: phase.env ?? {} };
+	return { type: "script", name: phase.name, command: phase.command, env: phase.env ?? {}, e2e: phase.e2e === true };
 }
 
 function resolvePlaywrightPhase(phase: PlaywrightPhase): ResolvedPlaywrightPhase {
@@ -137,6 +147,7 @@ function resolvePlaywrightPhase(phase: PlaywrightPhase): ResolvedPlaywrightPhase
 		browserInstallCommand: `node_modules/.bin/playwright install --with-deps ${browsers}`,
 		testCommand: `node_modules/.bin/playwright test --config ${phase.config}`,
 		env: phase.env ?? {},
+		e2e: phase.e2e === true,
 	};
 }
 
@@ -144,6 +155,7 @@ export const defaultDeps: TestPhaseRunnerDeps = {
 	execSync: defaultExecSync as ExecSyncFn,
 	globSync: defaultGlobSync,
 	log: console.log,
+	shouldSkipE2E: () => process.env.CLAUDE_CODE_REMOTE === "true",
 };
 
 export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
@@ -201,8 +213,14 @@ export function initTestPhaseRunner(deps: TestPhaseRunnerDeps) {
 				projectName: input.config.projectName,
 				phases: resolvedPhases,
 				async runAllPhases() {
+					const skipE2E = deps.shouldSkipE2E();
 					for (const phase of resolvedPhases) {
 						const displayName = `${input.config.projectName} - ${phase.name}`;
+
+						if (phase.e2e && skipE2E) {
+							deps.log(`\n=== ${displayName} - skipped (CLAUDE_CODE_REMOTE) ===\n`);
+							continue;
+						}
 
 						if (phase.type === "node-test" && phase.skip) {
 							continue;

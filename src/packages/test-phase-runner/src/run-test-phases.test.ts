@@ -2,7 +2,7 @@ import type { ExecSyncOptions } from "node:child_process";
 import { defaultDeps, initTestPhaseRunner } from "./run-test-phases";
 import type { ResolvedPhase, TestPhaseRunnerDeps } from "./run-test-phases";
 
-function createInMemoryDeps() {
+function createInMemoryDeps(overrides: Partial<TestPhaseRunnerDeps> = {}) {
 	const executedCommands: Array<{ command: string; cwd?: string | URL; env?: NodeJS.ProcessEnv }> = [];
 
 	const deps: TestPhaseRunnerDeps = {
@@ -15,6 +15,8 @@ function createInMemoryDeps() {
 			return ["dist/e2e/test1.test.js", "dist/e2e/test2.test.js"];
 		},
 		log: () => {},
+		shouldSkipE2E: () => false,
+		...overrides,
 	};
 
 	return { deps, executedCommands };
@@ -66,6 +68,7 @@ describe("jest phase resolution", () => {
 			name: "unit tests",
 			command: 'node_modules/.bin/jest --testMatch="**/dist/**/*.test.js" --testTimeout=10000 --runInBand',
 			skip: false,
+			e2e: false,
 		});
 	});
 
@@ -214,6 +217,7 @@ describe("script phase resolution", () => {
 			name: "Building extension",
 			command: "node scripts/build-extension.js",
 			env: { HUTCH_SERVER_URL: "http://127.0.0.1:3000" },
+			e2e: false,
 		});
 	});
 });
@@ -426,6 +430,128 @@ describe("runAllPhases execution", () => {
 
 		expect(executedCommands[0].command).toContain("*.test.js");
 		expect(executedCommands[1].command).toContain("*.integration.js");
+	});
+});
+
+describe("e2e phase skipping", () => {
+	it("skips phases marked e2e when shouldSkipE2E returns true", async () => {
+		const { deps, executedCommands } = createInMemoryDeps({ shouldSkipE2E: () => true });
+		const runner = createRunner(deps);
+		const plan = runner.createTestPlan({
+			config: {
+				projectName: "My Project",
+				phases: [
+					{ type: "jest", name: "unit tests", testMatch: "**/dist/**/*.test.js", timeout: 10000 },
+					{ type: "node-test", name: "E2E unit tests", files: ["test.e2e.js"], e2e: true },
+					{ type: "script", name: "Build for E2E", command: "node build.js", e2e: true },
+					{
+						type: "playwright",
+						name: "E2E tests",
+						config: "playwright.config.ts",
+						browsers: ["chromium"],
+						e2e: true,
+					},
+				],
+			},
+			projectRoot: "/projects/test",
+		});
+
+		await plan.runAllPhases();
+
+		expect(executedCommands).toHaveLength(1);
+		expect(executedCommands[0].command).toContain("jest");
+	});
+
+	it("runs phases marked e2e when shouldSkipE2E returns false", async () => {
+		const { deps, executedCommands } = createInMemoryDeps({ shouldSkipE2E: () => false });
+		const runner = createRunner(deps);
+		const plan = runner.createTestPlan({
+			config: {
+				projectName: "My Project",
+				phases: [
+					{ type: "node-test", name: "E2E tests", files: ["test.e2e.js"], e2e: true },
+				],
+			},
+			projectRoot: "/projects/test",
+		});
+
+		await plan.runAllPhases();
+
+		expect(executedCommands).toHaveLength(1);
+		expect(executedCommands[0].command).toBe("node --test test.e2e.js");
+	});
+
+	it("defaults to e2e: false on resolved phases when not specified", () => {
+		const runner = createRunner();
+		const plan = runner.createTestPlan({
+			config: {
+				projectName: "My Project",
+				phases: [
+					{ type: "jest", name: "unit tests", testMatch: "**/*.test.js", timeout: 10000 },
+					{ type: "node-test", name: "E2E tests", files: ["test.e2e.js"] },
+					{ type: "script", name: "Build", command: "node build.js" },
+					{
+						type: "playwright",
+						name: "E2E tests",
+						config: "playwright.config.ts",
+						browsers: ["chromium"],
+					},
+				],
+			},
+			projectRoot: "/projects/test",
+		});
+
+		expect(plan.phases.map((p) => p.e2e)).toEqual([false, false, false, false]);
+	});
+
+	it("propagates e2e: true onto resolved phases", () => {
+		const runner = createRunner();
+		const plan = runner.createTestPlan({
+			config: {
+				projectName: "My Project",
+				phases: [
+					{ type: "jest", name: "e2e jest", testMatch: "**/e2e/*.test.js", timeout: 10000, e2e: true },
+					{ type: "node-test", name: "e2e node", files: ["test.e2e.js"], e2e: true },
+					{ type: "script", name: "build for e2e", command: "node build.js", e2e: true },
+					{
+						type: "playwright",
+						name: "e2e playwright",
+						config: "playwright.config.ts",
+						browsers: ["chromium"],
+						e2e: true,
+					},
+				],
+			},
+			projectRoot: "/projects/test",
+		});
+
+		expect(plan.phases.map((p) => p.e2e)).toEqual([true, true, true, true]);
+	});
+});
+
+describe("defaultDeps.shouldSkipE2E", () => {
+	const originalValue = process.env.CLAUDE_CODE_REMOTE;
+	afterEach(() => {
+		if (originalValue === undefined) {
+			delete process.env.CLAUDE_CODE_REMOTE;
+		} else {
+			process.env.CLAUDE_CODE_REMOTE = originalValue;
+		}
+	});
+
+	it("returns true when CLAUDE_CODE_REMOTE=true", () => {
+		process.env.CLAUDE_CODE_REMOTE = "true";
+		expect(defaultDeps.shouldSkipE2E()).toBe(true);
+	});
+
+	it("returns false when CLAUDE_CODE_REMOTE is unset", () => {
+		delete process.env.CLAUDE_CODE_REMOTE;
+		expect(defaultDeps.shouldSkipE2E()).toBe(false);
+	});
+
+	it("returns false when CLAUDE_CODE_REMOTE has a different value", () => {
+		process.env.CLAUDE_CODE_REMOTE = "1";
+		expect(defaultDeps.shouldSkipE2E()).toBe(false);
 	});
 });
 
