@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SavedArticle } from "../../../domain/article/article.types";
 import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
+import { pickExcerpt, truncateForSeo } from "../../../providers/article-summary/article-summary.helpers";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
@@ -41,7 +42,7 @@ export function ReaderPage(
 	return Base({
 		seo: {
 			title: `${article.metadata.title} — Readplace Reader`,
-			description: article.metadata.excerpt,
+			description: truncateForSeo(pickExcerpt(options?.summary, article.metadata.excerpt)),
 			canonicalUrl: `/queue/${article.id.value}/read`,
 			robots: "noindex, nofollow",
 		},

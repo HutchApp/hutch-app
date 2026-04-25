@@ -5,6 +5,7 @@ import type {
 import { ReaderArticleHashId } from "../../../domain/article/reader-article-hash-id";
 import type { UserId } from "../../../domain/user/user.types";
 import type { FindArticlesResult } from "../../../providers/article-store/article-store.types";
+import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { toQueueViewModel } from "./queue.viewmodel";
 
 const ARTICLE_URL = "https://example.com/post";
@@ -347,5 +348,41 @@ describe("toQueueViewModel", () => {
 		const vm = toQueueViewModel(makeResult([], 5), DEFAULT_FILTERS, { now: NOW });
 
 		expect(vm.totalArticles).toBe(5);
+	});
+
+	it("should replace metadata excerpt with the AI summary when status is ready", () => {
+		const article = makeArticle();
+		const summaryByUrl = new Map<string, GeneratedSummary | undefined>([
+			[ARTICLE_URL, { status: "ready", summary: "AI-generated summary." }],
+		]);
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+			summaryByUrl,
+		});
+
+		expect(vm.articles[0].excerpt).toBe("AI-generated summary.");
+	});
+
+	it("should fall back to the metadata excerpt when the summary is pending", () => {
+		const article = makeArticle();
+		const summaryByUrl = new Map<string, GeneratedSummary | undefined>([
+			[ARTICLE_URL, { status: "pending" }],
+		]);
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+			summaryByUrl,
+		});
+
+		expect(vm.articles[0].excerpt).toBe("An excerpt");
+	});
+
+	it("should fall back to the metadata excerpt when no summary record exists", () => {
+		const article = makeArticle();
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+			summaryByUrl: new Map(),
+		});
+
+		expect(vm.articles[0].excerpt).toBe("An excerpt");
 	});
 });
