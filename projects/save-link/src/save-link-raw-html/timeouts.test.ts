@@ -5,4 +5,10 @@ describe("SELECT_CONTENT_TIMEOUTS", () => {
 		const lambdaMs = SELECT_CONTENT_TIMEOUTS.lambdaSeconds * 1000;
 		expect(SELECT_CONTENT_TIMEOUTS.deepseekMs).toBeLessThan(lambdaMs);
 	});
+
+	it("SQS visibility timeout covers the full Lambda execution", () => {
+		expect(SELECT_CONTENT_TIMEOUTS.sqsVisibilitySeconds).toBeGreaterThanOrEqual(
+			SELECT_CONTENT_TIMEOUTS.lambdaSeconds,
+		);
+	});
 });
