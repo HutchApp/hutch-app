@@ -224,8 +224,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		const blogPriorityMap: Record<string, string> = {
 			"best-read-it-later-apps-2026": "0.9",
 			"omnivore-alternative": "0.9",
-			"hutch-vs-readwise-reader": "0.8",
-			"hutch-vs-instapaper": "0.8",
+			"readplace-vs-readwise-reader": "0.8",
+			"readplace-vs-instapaper": "0.8",
 			"how-ai-tldr-actually-works": "0.8",
 			"free-read-it-later-apps-2026": "0.8",
 		};
