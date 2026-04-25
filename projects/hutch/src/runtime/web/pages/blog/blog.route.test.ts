@@ -167,6 +167,28 @@ describe("GET /blog/:slug", () => {
 	});
 });
 
+describe("old hutch-vs-* slug redirects", () => {
+	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+	it("should 301 redirect hutch-vs-readwise-reader to readplace-vs-readwise-reader", async () => {
+		const response = await request(app).get("/blog/hutch-vs-readwise-reader");
+		expect(response.status).toBe(301);
+		expect(response.headers.location).toBe("/blog/readplace-vs-readwise-reader");
+	});
+
+	it("should 301 redirect hutch-vs-instapaper to readplace-vs-instapaper", async () => {
+		const response = await request(app).get("/blog/hutch-vs-instapaper");
+		expect(response.status).toBe(301);
+		expect(response.headers.location).toBe("/blog/readplace-vs-instapaper");
+	});
+
+	it("should 301 redirect hutch-vs-karakeep slug to readplace-vs-karakeep slug", async () => {
+		const response = await request(app).get("/blog/hutch-vs-karakeep-hosted-vs-self-hosted-read-it-later");
+		expect(response.status).toBe(301);
+		expect(response.headers.location).toBe("/blog/readplace-vs-karakeep-hosted-vs-self-hosted-read-it-later");
+	});
+});
+
 describe("hutch-app.com blog redirect", () => {
 	it("should 301 redirect /blog to readplace.com", async () => {
 		const { app } = createTestApp(
