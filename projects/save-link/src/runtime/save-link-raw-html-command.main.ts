@@ -70,7 +70,7 @@ const { selectMostCompleteContent } = initSelectMostCompleteContent({
 	logger: consoleLogger,
 });
 
-const { markCrawlFailed } = initDynamoDbArticleCrawl({
+const { markCrawlReady, markCrawlFailed } = initDynamoDbArticleCrawl({
 	client: dynamoClient,
 	tableName: articlesTable,
 });
@@ -117,6 +117,7 @@ export const handler = initSaveLinkRawHtmlCommandHandler({
 	promoteSourceToCanonical,
 	selectMostCompleteContent,
 	publishLinkSaved,
+	markCrawlReady,
 	markCrawlFailed,
 	logger: consoleLogger,
 });

@@ -96,6 +96,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		promoteSourceToCanonical: canonicalContent.promoteSourceToCanonical,
 		selectMostCompleteContent: jest.fn(tierZeroWinsSelector),
 		publishLinkSaved: jest.fn().mockResolvedValue(undefined),
+		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		logger: noopLogger,
 		...overrides,
@@ -107,6 +108,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		seedCanonical: canonicalContent.seedCanonical,
 		publishLinkSaved: deps.publishLinkSaved as jest.Mock,
 		selectMostCompleteContent: deps.selectMostCompleteContent as jest.Mock,
+		markCrawlReady: deps.markCrawlReady as jest.Mock,
 		markCrawlFailed: deps.markCrawlFailed as jest.Mock,
 	};
 }
@@ -170,7 +172,7 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 
 	it("marks the crawl failed and re-throws on parser rejection so the reader sees failed at t+0 while SQS still retries / DLQs the message", async () => {
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
-		const { handler, readSourceContent, markCrawlFailed } = createHandler({ parseHtml: failedParse });
+		const { handler, readSourceContent, markCrawlFailed, markCrawlReady } = createHandler({ parseHtml: failedParse });
 
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
@@ -180,6 +182,7 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 			url: "https://example.com/bad",
 			reason: "no-readable-content",
 		});
+		expect(markCrawlReady).not.toHaveBeenCalled();
 		expect(readSourceContent({ url: "https://example.com/bad", tier: "tier-0" })).toBeUndefined();
 	});
 
@@ -270,6 +273,76 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 				metadata: { title: "Existing", wordCount: 30 },
 			});
 			expect(publishLinkSaved).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("crawl status reset", () => {
+		it("marks the crawl row ready after promoting tier-0 to a fresh canonical so a stale failed row no longer pins the reader to the failure card", async () => {
+			const { handler, markCrawlReady } = createHandler();
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
+		});
+
+		it("marks the crawl row ready after tier-0 wins the selector contest over an existing canonical", async () => {
+			const { handler, markCrawlReady, seedCanonical } = createHandler({
+				selectMostCompleteContent: jest.fn(tierZeroWinsSelector),
+			});
+			seedCanonical({
+				url: "https://example.com/article",
+				html: "<p>old canonical body</p>",
+				metadata: { title: "Old", wordCount: 5 },
+			});
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
+		});
+
+		it("marks the crawl row ready when canonical wins the selector and is left in place — the row may be stuck on failed from a prior tier-1 attempt even though canonical content is good", async () => {
+			const { handler, markCrawlReady, seedCanonical } = createHandler({
+				selectMostCompleteContent: jest.fn(canonicalWinsSelector),
+			});
+			seedCanonical({
+				url: "https://example.com/article",
+				html: "<p>winning canonical body</p>",
+				metadata: { title: "Existing", wordCount: 50 },
+			});
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
+		});
+
+		it("marks the crawl row ready when the selector returns tie and canonical is left in place", async () => {
+			const tieSelector: SelectMostCompleteContent = async () => ({ winner: "tie", reason: "comparable" });
+			const { handler, markCrawlReady, seedCanonical } = createHandler({
+				selectMostCompleteContent: jest.fn(tieSelector),
+			});
+			seedCanonical({
+				url: "https://example.com/article",
+				html: "<p>existing</p>",
+				metadata: { title: "Existing", wordCount: 30 },
+			});
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/article" });
+		});
+
+		// If publishLinkSaved fails and SQS retries, the row is already consistent
+		// (good content + ready). The inverse order would publish a regen request
+		// against a row still flagged failed, leaving the reader stuck.
+		it("marks the crawl ready before publishing LinkSavedEvent so a publish failure still leaves the row consistent", async () => {
+			const { handler, markCrawlReady, publishLinkSaved } = createHandler();
+
+			await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+			expect(markCrawlReady).toHaveBeenCalledTimes(1);
+			expect(publishLinkSaved).toHaveBeenCalledTimes(1);
+			expect(markCrawlReady.mock.invocationCallOrder[0])
+				.toBeLessThan(publishLinkSaved.mock.invocationCallOrder[0]);
 		});
 	});
 });

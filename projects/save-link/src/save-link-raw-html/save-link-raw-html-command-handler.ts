@@ -11,7 +11,7 @@ import type { PutSourceContent } from "./source-content.types";
 import type { ReadCanonicalContent } from "./canonical-content.types";
 import type { PromoteSourceToCanonical } from "./promote-source.types";
 import type { SelectMostCompleteContent } from "./select-content";
-import type { MarkCrawlFailed } from "../crawl-article-state/article-crawl.types";
+import type { MarkCrawlFailed, MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
 
 const TIER = "tier-0";
 
@@ -28,6 +28,7 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 	promoteSourceToCanonical: PromoteSourceToCanonical;
 	selectMostCompleteContent: SelectMostCompleteContent;
 	publishLinkSaved: PublishLinkSaved;
+	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
 	logger: HutchLogger;
 }): SQSHandler {
@@ -41,6 +42,7 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 		promoteSourceToCanonical,
 		selectMostCompleteContent,
 		publishLinkSaved,
+		markCrawlReady,
 		markCrawlFailed,
 		logger,
 	} = deps;
@@ -122,6 +124,14 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 					canonicalChanged = true;
 				}
 			}
+
+			/* A canonical now exists (just-promoted, kept-after-contest, or kept-on-tie),
+			 * so the row has at least one good readable source. Resetting crawlStatus
+			 * unconditionally also corrects rows pinned to "failed" by an earlier tier-1
+			 * attempt — without this, the reader-slot short-circuits to renderReaderFailed
+			 * even after a successful tier-0 promotion. Run before publishLinkSaved so a
+			 * publish failure still leaves the row consistent (good content + ready). */
+			await markCrawlReady({ url: detail.url });
 
 			if (canonicalChanged) {
 				await publishLinkSaved({ url: detail.url, userId: detail.userId });

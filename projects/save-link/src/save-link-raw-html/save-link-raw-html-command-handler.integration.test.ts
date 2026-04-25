@@ -78,6 +78,7 @@ function buildSystem(opts: {
 		logger: noopLogger,
 	});
 	const publishLinkSaved = jest.fn().mockResolvedValue(undefined);
+	const markCrawlReady = jest.fn().mockResolvedValue(undefined);
 	const readPendingHtml: ReadPendingHtml = jest.fn().mockResolvedValue(
 		opts.rawHtml ?? "<html><body><p>captured</p></body></html>",
 	);
@@ -91,6 +92,7 @@ function buildSystem(opts: {
 		promoteSourceToCanonical: canonicalContent.promoteSourceToCanonical,
 		selectMostCompleteContent,
 		publishLinkSaved,
+		markCrawlReady,
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		logger: noopLogger,
 	});
@@ -100,6 +102,7 @@ function buildSystem(opts: {
 		readCanonicalContent: canonicalContent.readCanonicalContent,
 		seedCanonical: canonicalContent.seedCanonical,
 		publishLinkSaved,
+		markCrawlReady,
 		deepseek: opts.deepseek,
 	};
 }
@@ -217,5 +220,52 @@ describe("save-link-raw-html-command-handler [integration]", () => {
 			metadata: { title: "Existing", wordCount: 500 },
 		});
 		expect(sys.publishLinkSaved).not.toHaveBeenCalled();
+	});
+
+	// Reproduces the production regression where a row's crawlStatus was pinned
+	// to "failed" by an earlier tier-1 attempt; a subsequent tier-0 save left the
+	// reader stuck on the failed card even after a fresh canonical was promoted.
+	it("marks the crawl row ready after a successful canonical operation across every selector branch", async () => {
+		const parseHtml: ParseHtml = () => ({
+			ok: true,
+			article: {
+				title: "Recovered Article",
+				siteName: "example.com",
+				excerpt: "intro",
+				wordCount: 700,
+				content: "<p>tier-0 recovered body</p>",
+			},
+		});
+
+		const freshSave = buildSystem({ parseHtml, deepseek: fixedDeepseek("A") });
+		await freshSave.handler(createSqsEvent({ url: "https://example.com/a", userId: "user-1" }), stubContext, () => {});
+		expect(freshSave.markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/a" });
+
+		const tierZeroWins = buildSystem({ parseHtml, deepseek: fixedDeepseek("A") });
+		tierZeroWins.seedCanonical({
+			url: "https://example.com/b",
+			html: "<p>weak existing canonical</p>",
+			metadata: { title: "Weak", wordCount: 30 },
+		});
+		await tierZeroWins.handler(createSqsEvent({ url: "https://example.com/b", userId: "user-1" }), stubContext, () => {});
+		expect(tierZeroWins.markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/b" });
+
+		const canonicalWins = buildSystem({ parseHtml, deepseek: fixedDeepseek("B") });
+		canonicalWins.seedCanonical({
+			url: "https://example.com/c",
+			html: "<p>strong existing canonical body</p>",
+			metadata: { title: "Existing", wordCount: 1200 },
+		});
+		await canonicalWins.handler(createSqsEvent({ url: "https://example.com/c", userId: "user-1" }), stubContext, () => {});
+		expect(canonicalWins.markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/c" });
+
+		const tie = buildSystem({ parseHtml, deepseek: fixedDeepseek("tie") });
+		tie.seedCanonical({
+			url: "https://example.com/d",
+			html: "<p>existing canonical</p>",
+			metadata: { title: "Existing", wordCount: 700 },
+		});
+		await tie.handler(createSqsEvent({ url: "https://example.com/d", userId: "user-1" }), stubContext, () => {});
+		expect(tie.markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/d" });
 	});
 });
