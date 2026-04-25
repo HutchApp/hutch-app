@@ -96,7 +96,6 @@ function buildSystem(opts: {
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		logParseError: jest.fn(),
 		logger: noopLogger,
-		logParseError: jest.fn(),
 		logCrawlOutcome: jest.fn(),
 		readTierSnapshot: jest.fn().mockResolvedValue({ tier0Status: "success", tier1Status: "not_attempted", pickedTier: "tier-0" }),
 	});
