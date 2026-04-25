@@ -11,7 +11,10 @@ export default createPlaywrightConfig({
   outputDir: './test-results',
   baseURL: serverUrl,
   retries: 0,
-  headless: process.env.HEADLESS === 'true',
+  // Headless explicitly when HEADLESS=true; also default headless in CI where
+  // there is no X server (pnpm test:e2e in pnpm check would otherwise crash on
+  // 'Missing X server or $DISPLAY'). Local dev keeps headed mode.
+  headless: process.env.HEADLESS === 'true' || process.env.CI === 'true',
   video: 'off',
   launchOptions: {},
   webServer: {

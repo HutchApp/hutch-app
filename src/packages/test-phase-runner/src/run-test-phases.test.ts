@@ -218,6 +218,19 @@ describe("script phase resolution", () => {
 });
 
 describe("playwright phase resolution", () => {
+	// resolvePlaywrightPhase reads PLAYWRIGHT_SKIP_DEPS from process.env;
+	// strip it before each test so a CI env that sets it doesn't bleed into
+	// the default-behaviour tests below. The opt-in test sets it explicitly.
+	let originalSkipDeps: string | undefined;
+	beforeEach(() => {
+		originalSkipDeps = process.env.PLAYWRIGHT_SKIP_DEPS;
+		delete process.env.PLAYWRIGHT_SKIP_DEPS;
+	});
+	afterEach(() => {
+		if (originalSkipDeps === undefined) delete process.env.PLAYWRIGHT_SKIP_DEPS;
+		else process.env.PLAYWRIGHT_SKIP_DEPS = originalSkipDeps;
+	});
+
 	it("resolves browser install command", () => {
 		const runner = createRunner();
 		const plan = runner.createTestPlan({
