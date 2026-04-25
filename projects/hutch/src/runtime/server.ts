@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import cookieParser from "cookie-parser";
@@ -55,6 +56,8 @@ import type {
 	VerifyPasswordResetToken,
 } from "./providers/password-reset/password-reset.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
+import { createAbMiddleware } from "./web/ab-test/middleware";
+import type { GenerateVisitorId } from "./web/ab-test/visitor-id";
 import { initAuthRoutes } from "./web/auth/auth.page";
 import { initGoogleAuthRoutes } from "./web/auth/google-auth.page";
 import { SESSION_COOKIE_NAME } from "./web/auth/session-cookie";
@@ -87,6 +90,7 @@ export const PORT = requireEnv("PORT", { defaultValue: "3000" });
 interface AppDependencies {
 	appOrigin: string;
 	staticBaseUrl: string;
+	generateVisitorId: GenerateVisitorId;
 	createUser: CreateUser;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
@@ -151,11 +155,12 @@ const LLMS_FULL_TXT = readFileSync(join(__dirname, "llms-full.txt"), "utf-8");
 const INDEXNOW_KEY = getEnv("INDEXNOW_KEY");
 
 export function createApp(dependencies: AppDependencies): Express {
-	const { appOrigin, staticBaseUrl, getSessionUserId, countUsers, ...deps } = dependencies;
+	const { appOrigin, staticBaseUrl, generateVisitorId, getSessionUserId, countUsers, ...deps } = dependencies;
 	const app: Express = express();
 
 	app.use(express.urlencoded({ extended: true }));
 	app.use(cookieParser());
+	app.use(createAbMiddleware({ generateVisitorId }));
 
 	// Same-origin client bundles — the Lambda packaging step copies
 	// src/runtime/web/client-dist/ into the bundle, so `__dirname/web/client-dist`
@@ -295,7 +300,8 @@ export function createApp(dependencies: AppDependencies): Express {
 			: ua.includes("Chrome/") ? "chrome"
 			: "other";
 		const userCount = await countUsers().catch(() => 0);
-		sendComponent(res, renderPage(req, HomePage({ userCount, staticBaseUrl, browser })));
+		assert(req.abHomepageVariant, "AB middleware must populate req.abHomepageVariant");
+		sendComponent(res, renderPage(req, HomePage({ userCount, staticBaseUrl, browser, homepageVariant: req.abHomepageVariant })));
 	});
 
 	app.get("/privacy", (req: Request, res: Response) => {
