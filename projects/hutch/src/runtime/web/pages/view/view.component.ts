@@ -7,8 +7,7 @@ import type {
 import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { requireEnv } from "../../../require-env";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
 import { SHARE_ICON_SVG } from "./view.share-icon";
@@ -46,7 +45,7 @@ export interface ViewPageInput {
 	actions: ViewAction[];
 }
 
-export function ViewPage(input: ViewPageInput): Component {
+export function ViewPage(input: ViewPageInput): PageBody {
 	const innerContent = renderArticleBody({
 		title: input.metadata.title,
 		siteName: input.metadata.siteName,
@@ -91,7 +90,7 @@ export function ViewPage(input: ViewPageInput): Component {
 		structuredData.image = input.metadata.imageUrl;
 	}
 
-	return Base({
+	return {
 		seo: {
 			title: `${input.metadata.title} | Reader View`,
 			description,
@@ -107,6 +106,5 @@ export function ViewPage(input: ViewPageInput): Component {
 		bodyClass: "page-view",
 		content,
 		scripts: SHARE_SCRIPT,
-		isAuthenticated: false,
-	});
+	};
 }

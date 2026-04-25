@@ -1,17 +1,16 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { BLOG_STYLES } from "./blog.styles";
 import type { BlogPost } from "./blog.posts";
 
 const BLOG_POST_TEMPLATE = readFileSync(join(__dirname, "blog-post.template.html"), "utf-8");
 
-export function BlogPostPage(params: { post: BlogPost }): Component {
+export function BlogPostPage(params: { post: BlogPost }): PageBody {
 	const { post } = params;
 
-	return Base({
+	return {
 		seo: {
 			title: `${post.title} — Readplace Blog`,
 			description: post.description,
@@ -54,5 +53,5 @@ export function BlogPostPage(params: { post: BlogPost }): Component {
 			author: post.author,
 			htmlContent: post.htmlContent,
 		}),
-	});
+	};
 }

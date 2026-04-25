@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { SAVE_ERROR_STYLES } from "./save-error.styles";
 
@@ -22,8 +21,8 @@ const COUNTDOWN_SCRIPT = `<script>
 })();
 </script>`;
 
-export function SaveErrorPage(input: { redirectUrl: string; linkLabel: string }): Component {
-	return Base({
+export function SaveErrorPage(input: { redirectUrl: string; linkLabel: string }): PageBody {
+	return {
 		seo: {
 			title: "No URL provided — Readplace",
 			description: "The save link is missing a URL parameter.",
@@ -39,5 +38,5 @@ export function SaveErrorPage(input: { redirectUrl: string; linkLabel: string })
 			linkLabel: input.linkLabel,
 		}),
 		scripts: COUNTDOWN_SCRIPT,
-	});
+	};
 }

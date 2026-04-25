@@ -4,8 +4,7 @@ import type {
 } from "../../../domain/article/article.types";
 import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
 import { RECRAWL_STYLES } from "./recrawl.styles";
 
@@ -18,7 +17,6 @@ export interface AdminRecrawlPageInput {
 	readerPollUrl?: string;
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
-	isAuthenticated: boolean;
 }
 
 /**
@@ -27,7 +25,7 @@ export interface AdminRecrawlPageInput {
  * drops the /view clutter — share balloon, CTA actions. Admin pages are
  * noindex/nofollow and served Cache-Control: no-store by the handler.
  */
-export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
+export function AdminRecrawlPage(input: AdminRecrawlPageInput): PageBody {
 	const innerContent = renderArticleBody({
 		title: input.metadata.title,
 		siteName: input.metadata.siteName,
@@ -43,7 +41,7 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
 
 	const content = `<main class="admin-recrawl" data-test-admin-recrawl><article class="admin-recrawl__body">${innerContent}</article></main>`;
 
-	return Base({
+	return {
 		seo: {
 			title: `Admin recrawl: ${input.metadata.title}`,
 			description: "Operator recrawl view. Not for public consumption.",
@@ -53,6 +51,5 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
 		styles: RECRAWL_STYLES,
 		bodyClass: "page-admin-recrawl",
 		content,
-		isAuthenticated: input.isAuthenticated,
-	});
+	};
 }

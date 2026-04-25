@@ -3,8 +3,7 @@ import { join } from "node:path";
 import type { SavedArticle } from "../../../domain/article/article.types";
 import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
 import { READER_STYLES } from "./reader.styles";
@@ -14,14 +13,13 @@ const READER_TEMPLATE = readFileSync(join(__dirname, "reader.template.html"), "u
 export function ReaderPage(
 	article: SavedArticle,
 	options?: {
-		emailVerified?: boolean;
 		summary?: GeneratedSummary;
 		summaryPollUrl?: string;
 		crawl?: ArticleCrawl;
 		readerPollUrl?: string;
 		audioEnabled?: boolean;
 	},
-): Component {
+): PageBody {
 	const innerContent = renderArticleBody({
 		title: article.metadata.title,
 		siteName: article.metadata.siteName,
@@ -38,7 +36,7 @@ export function ReaderPage(
 	});
 	const content = render(READER_TEMPLATE, { innerContent });
 
-	return Base({
+	return {
 		seo: {
 			title: `${article.metadata.title} — Readplace Reader`,
 			description: article.metadata.excerpt,
@@ -48,7 +46,5 @@ export function ReaderPage(
 		styles: READER_STYLES,
 		bodyClass: "page-reader",
 		content,
-		isAuthenticated: true,
-		emailVerified: options?.emailVerified,
-	});
+	};
 }

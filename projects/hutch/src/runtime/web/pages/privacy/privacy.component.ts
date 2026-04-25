@@ -1,14 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { LEGAL_PAGE_STYLES } from "./privacy.styles";
 
 const PRIVACY_TEMPLATE = readFileSync(join(__dirname, "privacy.template.html"), "utf-8");
 
-export function PrivacyPage(): Component {
-	return Base({
+export function PrivacyPage(): PageBody {
+	return {
 		seo: {
 			title: "Privacy Policy — Readplace",
 			description:
@@ -19,5 +18,5 @@ export function PrivacyPage(): Component {
 		styles: LEGAL_PAGE_STYLES,
 		bodyClass: "page-privacy",
 		content: render(PRIVACY_TEMPLATE, {}),
-	});
+	};
 }

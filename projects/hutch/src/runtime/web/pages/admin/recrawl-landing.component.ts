@@ -1,14 +1,11 @@
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { RECRAWL_STYLES } from "./recrawl.styles";
 
 /**
  * Minimal landing for the operator. Submits a URL to /admin/recrawl which
  * redirects to /admin/recrawl/:url and triggers a fresh crawl on every hit.
  */
-export function AdminRecrawlLandingPage(input: {
-	isAuthenticated: boolean;
-}): Component {
+export function AdminRecrawlLandingPage(): PageBody {
 	const content = `
     <main class="admin-recrawl" data-test-admin-recrawl-landing>
       <h1>Admin recrawl</h1>
@@ -26,7 +23,7 @@ export function AdminRecrawlLandingPage(input: {
       </form>
     </main>`;
 
-	return Base({
+	return {
 		seo: {
 			title: "Admin recrawl | Readplace",
 			description: "Operator endpoint. Not for public consumption.",
@@ -36,6 +33,5 @@ export function AdminRecrawlLandingPage(input: {
 		styles: RECRAWL_STYLES,
 		bodyClass: "page-admin-recrawl",
 		content,
-		isAuthenticated: input.isAuthenticated,
-	});
+	};
 }
