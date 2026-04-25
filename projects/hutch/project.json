@@ -12,7 +12,7 @@
       "options": { "cwd": "{projectRoot}" }
     },
     "check": {
-      "command": "pnpm lint && pnpm test-with-coverage",
+      "command": "pnpm lint && pnpm test-with-coverage && ([ \"$CLAUDE_CODE_REMOTE\" = \"true\" ] || pnpm test:e2e)",
       "options": { "cwd": "{projectRoot}" }
     },
     "test": {},
