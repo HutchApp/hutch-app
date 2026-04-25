@@ -46,14 +46,7 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: playwright-${{ runner.os }}-
 
-      # Pre-install Playwright OS deps quietly so test-phase-runner can skip --with-deps
-      - name: Install Playwright OS deps
-        working-directory: projects/hutch
-        run: pnpm exec playwright install-deps chromium >/dev/null
-
       - run: pnpm check
-        env:
-          PLAYWRIGHT_SKIP_DEPS: '1'
 
   # Only detect and deploy on pushes to main (not on PRs)
   detect-projects:

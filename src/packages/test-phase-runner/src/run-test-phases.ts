@@ -129,12 +129,10 @@ function resolveScriptPhase(phase: ScriptPhase): ResolvedScriptPhase {
 
 function resolvePlaywrightPhase(phase: PlaywrightPhase): ResolvedPlaywrightPhase {
 	const browsers = phase.browsers.join(" ");
-	const skipDeps = process.env.PLAYWRIGHT_SKIP_DEPS === "1";
-	const withDepsFlag = skipDeps ? "" : "--with-deps ";
 	return {
 		type: "playwright",
 		name: phase.name,
-		browserInstallCommand: `node_modules/.bin/playwright install ${withDepsFlag}${browsers}`,
+		browserInstallCommand: `node_modules/.bin/playwright install --with-deps ${browsers}`,
 		testCommand: `node_modules/.bin/playwright test --config ${phase.config}`,
 		env: phase.env ?? {},
 	};
