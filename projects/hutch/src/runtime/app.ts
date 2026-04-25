@@ -76,12 +76,13 @@ function initProviders() {
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
 		const pendingHtmlBucketName = requireEnv("PENDING_HTML_BUCKET_NAME");
 		const client = createDynamoDocumentClient();
+		const s3Client = new S3Client({});
 
 		const auth = initDynamoDbAuth({ client, usersTableName: usersTable, sessionsTableName: sessionsTable });
 		const articleStore = initDynamoDbArticleStore({ client, tableName: articlesTable, userArticlesTableName: userArticlesTable });
 		const readArticleContent = initReadArticleContent({
 			storageProviderQueryOrder: [
-				initS3ReadContent({ client: new S3Client({}), bucketName: contentBucketName }),
+				initS3ReadContent({ send: (cmd) => s3Client.send(cmd), bucketName: contentBucketName }),
 				articleStore.readContent, // Legacy fallback for articles saved before S3 migration
 			],
 			logError,

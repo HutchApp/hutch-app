@@ -1,22 +1,33 @@
-/* c8 ignore start -- thin AWS SDK wrapper */
-import type { S3Client } from "@aws-sdk/client-s3";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, NoSuchKey } from "@aws-sdk/client-s3";
 import assert from "node:assert";
 import type { ContentProvider } from "./read-article-content";
 
+// Narrow to just the GetObject response shape we actually consume — broader than
+// GetObjectCommandOutput, so S3Client.send is structurally assignable, and tests
+// can return a plain object literal without faking the full SDK output type.
+export type S3GetObject = (cmd: GetObjectCommand) => Promise<{
+	Body?: { transformToString: (encoding: string) => Promise<string> };
+}>;
+
 export function initS3ReadContent(deps: {
-	client: S3Client;
+	send: S3GetObject;
 	bucketName: string;
 }): ContentProvider {
-	const { client, bucketName } = deps;
+	const { send, bucketName } = deps;
 
 	return async (articleResourceUniqueId) => {
 		const key = articleResourceUniqueId.toS3ContentKey();
-		const result = await client.send(
-			new GetObjectCommand({ Bucket: bucketName, Key: key }),
-		);
-		assert(result.Body, "S3 GetObject response must have a Body");
-		return await result.Body.transformToString("utf-8");
+		try {
+			const result = await send(new GetObjectCommand({ Bucket: bucketName, Key: key }));
+			assert(result.Body, "S3 GetObject response must have a Body");
+			return await result.Body.transformToString("utf-8");
+		} catch (error) {
+			// NoSuchKey is the contract's "not found" signal — return undefined so the
+			// provider chain (read-article-content.ts) advances silently to the next
+			// store. Real failures (throttling, network, IAM) keep throwing and stay
+			// visible in CloudWatch.
+			if (error instanceof NoSuchKey) return undefined;
+			throw error;
+		}
 	};
 }
-/* c8 ignore stop */
