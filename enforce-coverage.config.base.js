@@ -58,6 +58,11 @@ const BASE_EXCLUDE_PATTERNS = [
 
   // Browser-only code — WebExtension APIs, Canvas, DOM; not runnable in Node.js
   '**/*.browser.ts',
+
+  // E2E source — only exercised by e2e tests, which are skipped in
+  // CLAUDE_CODE_REMOTE environments (see test-phase-runner). When skipped,
+  // these files would otherwise tank coverage to 0%.
+  ...(process.env.CLAUDE_CODE_REMOTE === 'true' ? ['src/e2e/**'] : []),
 ]
 
 function validateC8Config(projectRoot) {

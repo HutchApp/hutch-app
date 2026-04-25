@@ -24,6 +24,7 @@ module.exports = {
       config: 'playwright.config.local-dev.ts',
       browsers: ['chromium'],
       env: { HEADLESS: 'true', E2E_PORT: port },
+      e2e: true,
     },
   ],
 };

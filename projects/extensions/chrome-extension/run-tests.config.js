@@ -17,17 +17,20 @@ module.exports = {
       type: 'node-test',
       name: 'Running E2E unit tests',
       glob: 'dist/e2e/**/*.test.js',
+      e2e: true,
     },
     {
       type: 'script',
       name: 'Building extension for E2E tests',
       command: 'node scripts/build-extension.js',
       env: { HUTCH_SERVER_URL: `http://127.0.0.1:${port}` },
+      e2e: true,
     },
     {
       type: 'script',
       name: 'Installing Chrome for Testing',
       command: 'node scripts/install-chrome-for-testing.js',
+      e2e: true,
     },
     {
       type: 'node-test',
@@ -35,6 +38,7 @@ module.exports = {
       files: ['dist/e2e/login-flow/run.e2e-local.main.js'],
       timeout: 90000,
       env: { HEADLESS: 'true', E2E_PORT: port },
+      e2e: true,
     },
   ],
 };

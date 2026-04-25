@@ -17,18 +17,21 @@ module.exports = {
       type: 'node-test',
       name: 'Running E2E unit tests',
       glob: 'dist/e2e/**/*.test.js',
+      e2e: true,
     },
     {
       type: 'script',
       name: 'Building extension for E2E tests',
       command: 'node scripts/build-extension.js',
       env: { HUTCH_SERVER_URL: `http://127.0.0.1:${port}` },
+      e2e: true,
     },
     {
       type: 'node-test',
       name: 'Running E2E tests',
       files: ['dist/e2e/login-flow/run.e2e-local.main.js'],
       env: { HEADLESS: 'true', E2E_PORT: port },
+      e2e: true,
     },
   ],
 };
