@@ -406,7 +406,7 @@ new aws.cloudwatch.Dashboard("readplace-observability", {
 							"| limit 100",
 						].join(" "),
 						x: 0,
-						y: 40 + (1 + SAVE_LINK_HANDLER_LOG_GROUPS.length + i) * 8,
+						y: 8 + (1 + SAVE_LINK_HANDLER_LOG_GROUPS.length + i) * 8,
 						width: 24,
 						height: 8,
 						view: "table",
