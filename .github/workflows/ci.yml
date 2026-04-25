@@ -48,6 +48,7 @@ jobs:
 
       # Pre-install Playwright OS deps quietly so test-phase-runner can skip --with-deps
       - name: Install Playwright OS deps
+        working-directory: projects/hutch
         run: pnpm exec playwright install-deps chromium >/dev/null
 
       - run: pnpm check
