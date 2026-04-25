@@ -98,6 +98,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		publishLinkSaved: jest.fn().mockResolvedValue(undefined),
 		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
+		logParseError: jest.fn(),
 		logger: noopLogger,
 		...overrides,
 	};
@@ -110,6 +111,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		selectMostCompleteContent: deps.selectMostCompleteContent as jest.Mock,
 		markCrawlReady: deps.markCrawlReady as jest.Mock,
 		markCrawlFailed: deps.markCrawlFailed as jest.Mock,
+		logParseError: deps.logParseError as jest.Mock,
 	};
 }
 
@@ -184,6 +186,20 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		});
 		expect(markCrawlReady).not.toHaveBeenCalled();
 		expect(readSourceContent({ url: "https://example.com/bad", tier: "tier-0" })).toBeUndefined();
+	});
+
+	it("reports parse failures via logParseError with the parser's reason so the dashboard parse-errors widget surfaces tier-0 failures", async () => {
+		const failedParse: ParseHtml = () => ({ ok: false, reason: "no-readable-content" });
+		const { handler, logParseError } = createHandler({ parseHtml: failedParse });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/bad", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow();
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/bad",
+			reason: "no-readable-content",
+		});
 	});
 
 	it("logs the extension-captured title alongside the tier-0 save for debuggability", async () => {

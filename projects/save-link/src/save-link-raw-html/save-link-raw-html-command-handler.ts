@@ -4,6 +4,7 @@ import { SaveLinkRawHtmlCommand } from "@packages/hutch-infra-components";
 import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "../save-link/download-media";
+import type { LogParseError } from "../save-link/log-parse-error";
 import type { ProcessContent } from "../save-link/save-link-work";
 import { estimatedReadTimeFromWordCount } from "../save-link/estimated-read-time";
 import type { ReadPendingHtml } from "./read-pending-html";
@@ -30,6 +31,7 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 	publishLinkSaved: PublishLinkSaved;
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
+	logParseError: LogParseError;
 	logger: HutchLogger;
 }): SQSHandler {
 	const {
@@ -44,6 +46,7 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 		publishLinkSaved,
 		markCrawlReady,
 		markCrawlFailed,
+		logParseError,
 		logger,
 	} = deps;
 
@@ -60,6 +63,7 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 				 * failed state at t+0 instead of polling for ~90s until SQS exhausts
 				 * retries and the DLQ handler marks failed. Re-throw preserves the
 				 * SQS retry + DLQ observability path. */
+				logParseError({ url: detail.url, reason: parseResult.reason });
 				await markCrawlFailed({ url: detail.url, reason: parseResult.reason });
 				throw new Error(`save-link-raw-html parse failed for ${detail.url}: ${parseResult.reason}`);
 			}

@@ -1,10 +1,10 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import OpenAI from "openai";
-import { consoleLogger } from "@packages/hutch-logger";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from "@packages/crawl-article";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
-import { LinkSavedEvent } from "@packages/hutch-infra-components";
+import { LinkSavedEvent, type ParseErrorEvent } from "@packages/hutch-infra-components";
 import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { requireEnv } from "../require-env";
@@ -12,6 +12,7 @@ import { initReadabilityParser } from "../article-parser/readability-parser";
 import { theInformationPreParser } from "../article-parser/the-information-pre-parser";
 import { initS3PutImageObject } from "../save-link/s3-put-image-object";
 import { initDownloadMedia } from "../save-link/download-media";
+import { initLogParseError } from "../save-link/log-parse-error";
 import { initProcessContentWithLocalMedia } from "../save-link/process-content-with-local-media";
 import { initReadPendingHtml } from "../save-link-raw-html/read-pending-html";
 import { initPutSourceContent } from "../save-link-raw-html/put-source-content";
@@ -107,6 +108,11 @@ const publishLinkSaved = async (params: { url: string; userId: string }) => {
 	});
 };
 
+const { logParseError } = initLogParseError({
+	logger: HutchLogger.fromJSON<ParseErrorEvent>(),
+	now: () => new Date(),
+});
+
 export const handler = initSaveLinkRawHtmlCommandHandler({
 	readPendingHtml,
 	parseHtml,
@@ -119,5 +125,6 @@ export const handler = initSaveLinkRawHtmlCommandHandler({
 	publishLinkSaved,
 	markCrawlReady,
 	markCrawlFailed,
+	logParseError,
 	logger: consoleLogger,
 });

@@ -94,6 +94,7 @@ function buildSystem(opts: {
 		publishLinkSaved,
 		markCrawlReady,
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
+		logParseError: jest.fn(),
 		logger: noopLogger,
 	});
 	return {
