@@ -79,7 +79,6 @@ export function initPromoteTierToCanonical(deps: {
 			":cl": `s3://${bucketName}/${canonicalKey}`,
 			":cst": params.tier,
 			":cfa": now().toISOString(),
-			":cst": params.tier,
 		};
 		if (params.metadata.imageUrl) {
 			setClauses.push("imageUrl = :img");
