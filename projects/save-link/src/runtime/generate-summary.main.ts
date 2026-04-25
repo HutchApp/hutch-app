@@ -8,6 +8,7 @@ import { initFindArticleContent } from "../save-link/find-article-content";
 import { initLinkSummariser } from "../generate-summary/link-summariser";
 import { initCreateDeepseekMessage } from "../generate-summary/create-deepseek-message";
 import { MAX_SUMMARY_LENGTH } from "../generate-summary/max-summary-length";
+import { GENERATE_SUMMARY_TIMEOUTS } from "../generate-summary/timeouts";
 import { initDynamoDbGeneratedSummary } from "../generate-summary/dynamodb-generated-summary";
 import { stripHtml } from "../generate-summary/strip-html";
 import { initGenerateSummaryHandler } from "../generate-summary/generate-summary-handler";
@@ -18,7 +19,7 @@ const eventBusName = requireEnv("EVENT_BUS_NAME");
 
 const dynamoClient = createDynamoDocumentClient();
 const s3Client = new S3Client({});
-const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com", timeout: 60_000 });
+const deepseekClient = new OpenAI({ apiKey: deepseekApiKey, baseURL: "https://api.deepseek.com", timeout: GENERATE_SUMMARY_TIMEOUTS.deepseekMs });
 
 const createMessage = initCreateDeepseekMessage({
 	createChatCompletion: (params) => deepseekClient.chat.completions.create(params),
