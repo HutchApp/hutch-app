@@ -7,6 +7,7 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
+import type { ProgressTick } from "../../shared/article-body/progress-mapping";
 import {
 	SHARE_BALLOON_SCRIPT,
 	renderShareBalloon,
@@ -16,6 +17,7 @@ import { READER_STYLES } from "./reader.styles";
 const CANONICAL_BASE_URL = "https://readplace.com";
 
 const READER_TEMPLATE = readFileSync(join(__dirname, "reader.template.html"), "utf-8");
+const PROGRESS_BAR_SCRIPT = `<script src="/client-dist/progress-bar.client.js" defer></script>`;
 
 export function ReaderPage(
 	article: SavedArticle,
@@ -23,8 +25,10 @@ export function ReaderPage(
 		emailVerified?: boolean;
 		summary?: GeneratedSummary;
 		summaryPollUrl?: string;
+		summaryProgress?: ProgressTick;
 		crawl?: ArticleCrawl;
 		readerPollUrl?: string;
+		crawlProgress?: ProgressTick;
 		audioEnabled?: boolean;
 	},
 ): Component {
@@ -36,8 +40,10 @@ export function ReaderPage(
 		content: article.content,
 		crawl: options?.crawl,
 		readerPollUrl: options?.readerPollUrl,
+		crawlProgress: options?.crawlProgress,
 		summary: options?.summary,
 		summaryPollUrl: options?.summaryPollUrl,
+		summaryProgress: options?.summaryProgress,
 		summaryOpen: true,
 		audioEnabled: options?.audioEnabled,
 		backLink: { href: "/queue", label: "← Back to queue" },
@@ -59,7 +65,7 @@ export function ReaderPage(
 		styles: READER_STYLES,
 		bodyClass: "page-reader",
 		content,
-		scripts: SHARE_BALLOON_SCRIPT,
+		scripts: SHARE_BALLOON_SCRIPT + PROGRESS_BAR_SCRIPT,
 		isAuthenticated: true,
 		emailVerified: options?.emailVerified,
 	});

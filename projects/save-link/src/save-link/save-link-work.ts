@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle, ThumbnailImage } from "@packages/crawl-article";
-import type { MarkCrawlFailed, MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
+import type {
+	MarkCrawlFailed,
+	MarkCrawlReady,
+	MarkCrawlStage,
+} from "../crawl-article-state/article-crawl.types";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia, DownloadedMedia } from "./download-media";
@@ -23,6 +27,7 @@ export function initSaveLinkWork(deps: {
 	updateFetchTimestamp: UpdateFetchTimestamp;
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
+	markCrawlStage: MarkCrawlStage;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	imagesCdnBaseUrl: string;
@@ -41,6 +46,7 @@ export function initSaveLinkWork(deps: {
 		updateFetchTimestamp,
 		markCrawlReady,
 		markCrawlFailed,
+		markCrawlStage,
 		downloadMedia,
 		processContent,
 		imagesCdnBaseUrl,
@@ -64,6 +70,7 @@ export function initSaveLinkWork(deps: {
 	};
 
 	const saveLinkWork = async (url: string): Promise<void> => {
+		await markCrawlStage({ url, stage: "crawl-fetching" });
 		const crawlResult = await crawlArticle({ url, fetchThumbnail: true });
 		if (crawlResult.status !== "fetched") {
 			const reason = `crawl-${crawlResult.status}`;
@@ -71,6 +78,7 @@ export function initSaveLinkWork(deps: {
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${reason}`);
 		}
+		await markCrawlStage({ url, stage: "crawl-fetched" });
 
 		const parseResult = parseHtml({ url, html: crawlResult.html });
 		if (!parseResult.ok) {
@@ -86,6 +94,7 @@ export function initSaveLinkWork(deps: {
 		}
 
 		const { article } = parseResult;
+		await markCrawlStage({ url, stage: "crawl-parsed" });
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 
 		const media = await downloadMedia({
@@ -107,6 +116,7 @@ export function initSaveLinkWork(deps: {
 					imagesCdnBaseUrl,
 				})
 			: article.imageUrl;
+		await markCrawlStage({ url, stage: "crawl-metadata-written" });
 
 		await putTierSource({
 			url,
@@ -121,6 +131,7 @@ export function initSaveLinkWork(deps: {
 				imageUrl: resolvedImageUrl,
 			},
 		});
+		await markCrawlStage({ url, stage: "crawl-content-uploaded" });
 
 		await updateFetchTimestamp({
 			url,
@@ -130,6 +141,7 @@ export function initSaveLinkWork(deps: {
 		});
 
 		await markCrawlReady({ url });
+		await markCrawlStage({ url, stage: "crawl-ready" });
 
 		const successSnapshot = await readTierSnapshot({ url });
 		logCrawlOutcome({

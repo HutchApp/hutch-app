@@ -7,7 +7,10 @@ import type { GeneratedSummary } from "../../../providers/article-summary/articl
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
+import type { ProgressTick } from "../../shared/article-body/progress-mapping";
 import { RECRAWL_STYLES } from "./recrawl.styles";
+
+const PROGRESS_BAR_SCRIPT = `<script src="/client-dist/progress-bar.client.js" defer></script>`;
 
 export interface AdminRecrawlPageInput {
 	articleUrl: string;
@@ -16,8 +19,10 @@ export interface AdminRecrawlPageInput {
 	content?: string;
 	crawl?: ArticleCrawl;
 	readerPollUrl?: string;
+	crawlProgress?: ProgressTick;
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
+	summaryProgress?: ProgressTick;
 	contentSourceTier?: "tier-0" | "tier-1";
 	isAuthenticated: boolean;
 }
@@ -44,8 +49,10 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
 		content: input.content,
 		crawl: input.crawl,
 		readerPollUrl: input.readerPollUrl,
+		crawlProgress: input.crawlProgress,
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
+		summaryProgress: input.summaryProgress,
 		summaryOpen: true,
 	});
 
@@ -62,6 +69,7 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): Component {
 		styles: RECRAWL_STYLES,
 		bodyClass: "page-admin-recrawl",
 		content,
+		scripts: PROGRESS_BAR_SCRIPT,
 		isAuthenticated: input.isAuthenticated,
 	});
 }

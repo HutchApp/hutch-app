@@ -61,6 +61,7 @@ interface QueueDependencies {
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
 	logParseError: LogParseError;
+	now: () => Date;
 }
 
 import type { SavedArticle } from "../../../domain/article/article.types";
@@ -397,8 +398,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				emailVerified: req.emailVerified,
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
+				summaryProgress: state.summaryProgress,
 				crawl: state.crawl,
 				readerPollUrl: state.readerPollUrl,
+				crawlProgress: state.crawlProgress,
 				audioEnabled,
 			}),
 		);

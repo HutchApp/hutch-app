@@ -1,4 +1,5 @@
 import type { ArticleCrawl } from "../../../../providers/article-crawl/article-crawl.types";
+import type { ProgressTick } from "../progress-mapping";
 import { renderReaderFailed } from "./reader-failed.component";
 import { renderReaderPending } from "./reader-pending.component";
 import { renderReaderReady } from "./reader-ready.component";
@@ -8,6 +9,7 @@ export interface ReaderSlotInput {
 	content?: string;
 	url: string;
 	readerPollUrl?: string;
+	crawlProgress?: ProgressTick;
 }
 
 export function renderReaderSlot(input: ReaderSlotInput): string {
@@ -30,5 +32,8 @@ export function renderReaderSlot(input: ReaderSlotInput): string {
 	// flips the underlying status, the slot stays "pending" forever — picked
 	// up by .github/workflows/stuck-articles-canary.yml whenever the DB row
 	// is `crawlStatus="pending"` or carries no state at all (legacy stub).
-	return renderReaderPending({ pollUrl: input.readerPollUrl });
+	return renderReaderPending({
+		pollUrl: input.readerPollUrl,
+		progress: input.crawlProgress,
+	});
 }

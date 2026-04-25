@@ -82,6 +82,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
 		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
+		markCrawlStage: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
 		downloadMedia: noopDownloadMedia,
 		processContent,
@@ -136,6 +137,23 @@ describe("initSaveLinkCommandHandler", () => {
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
 		expect(calls).toEqual(["putTierSource", "markCrawlReady", "publishEvent"]);
+	});
+
+	it("emits crawl progress stages in declared order on the happy path", async () => {
+		const markCrawlStage = jest.fn().mockResolvedValue(undefined);
+		const handler = createHandler({ markCrawlStage });
+
+		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
+
+		const stages = markCrawlStage.mock.calls.map((call) => call[0].stage);
+		expect(stages).toEqual([
+			"crawl-fetching",
+			"crawl-fetched",
+			"crawl-parsed",
+			"crawl-metadata-written",
+			"crawl-content-uploaded",
+			"crawl-ready",
+		]);
 	});
 
 	it("records contentFetchedAt + etag + lastModified after a successful fetch so future saves can short-circuit on TTL", async () => {

@@ -5,6 +5,7 @@ import type { ArticleCrawl } from "../../../providers/article-crawl/article-craw
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { requireEnv } from "../../../require-env";
 import { render } from "../../render";
+import type { ProgressTick } from "./progress-mapping";
 import { renderReaderSlot } from "./reader-slot/reader-slot.component";
 import { renderSummarySlot } from "./summary-slot/summary-slot.component";
 
@@ -23,8 +24,10 @@ export interface ArticleBodyInput {
 	content?: string;
 	crawl?: ArticleCrawl;
 	readerPollUrl?: string;
+	crawlProgress?: ProgressTick;
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
+	summaryProgress?: ProgressTick;
 	summaryOpen?: boolean;
 	audioEnabled?: boolean;
 	backLink?: { href: string; label: string };
@@ -36,6 +39,7 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		content: input.content,
 		url: input.url,
 		readerPollUrl: input.readerPollUrl,
+		crawlProgress: input.crawlProgress,
 	});
 
 	const summarySlotHtml = renderSummarySlot({
@@ -43,6 +47,7 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: input.summaryOpen,
+		summaryProgress: input.summaryProgress,
 	});
 
 	return render(ARTICLE_BODY_TEMPLATE, {

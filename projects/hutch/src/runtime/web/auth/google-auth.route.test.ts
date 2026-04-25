@@ -172,6 +172,7 @@ describe("Google auth routes", () => {
 					httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
 					logError: (msg) => { errors.push(msg); },
 					logParseError: fixture.shared.logParseError,
+					now: fixture.shared.now,
 				},
 			});
 			const state = signState(freshState());

@@ -194,6 +194,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 			forceMarkCrawlPending: articleCrawl.forceMarkCrawlPending,
 			markCrawlReady: articleCrawl.markCrawlReady,
 			markCrawlFailed: articleCrawl.markCrawlFailed,
+			markCrawlStage: articleCrawl.markCrawlStage,
 		},
 		parser: { parseArticle, crawlArticle },
 		events: {
@@ -225,6 +226,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 			httpErrorMessageMapping,
 			logError: createNoopLogError(),
 			logParseError: () => {},
+			now: () => new Date(),
 		},
 	};
 }
