@@ -350,9 +350,19 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 						"| filter path like /^\\/[^\\/]+\\/read$/",
 						"| stats count_distinct(visitor_hash) as authenticated_unique_readers by bin(1d)",
 					].join(" "),
-					x: 12, y: 24, width: 12, height: 8,
+					x: 0, y: 24, width: 12, height: 8,
 					view: "timeSeries",
 				}),
+			],
+		}),
+	),
+});
+
+new aws.cloudwatch.Dashboard("readplace-observability", {
+	dashboardName: "readplace-observability",
+	dashboardBody: pulumi.output(logGroup.name).apply((hutchLogGroupName) =>
+		JSON.stringify({
+			widgets: [
 				logWidget({
 					title: "Top /view URLs by Unique Visitors",
 					logGroupNames: [hutchLogGroupName],
@@ -365,7 +375,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 						"| sort unique_visitors desc",
 						"| limit 10",
 					].join(" "),
-					x: 0, y: 32, width: 24, height: 8,
+					x: 0, y: 0, width: 24, height: 8,
 					view: "table",
 				}),
 				...[
@@ -381,7 +391,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 							"| sort @timestamp desc",
 							"| limit 100",
 						].join(" "),
-						x: 0, y: 40 + i * 8, width: 24, height: 8,
+						x: 0, y: 8 + i * 8, width: 24, height: 8,
 						view: "table",
 					}),
 				),
