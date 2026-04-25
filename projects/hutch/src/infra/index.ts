@@ -260,6 +260,7 @@ function logWidget(params: {
 const SAVE_LINK_PARSE_ERROR_LOG_GROUPS = [
 	"/aws/lambda/save-link-command-handler",
 	"/aws/lambda/save-anonymous-link-command-handler",
+	"/aws/lambda/save-link-raw-html-command-handler",
 ] as const;
 
 new aws.cloudwatch.Dashboard("readplace-analytics", {
