@@ -21,7 +21,7 @@ const dynamoClient = createDynamoDocumentClient();
 const deepseekClient = new OpenAI({
 	apiKey: deepseekApiKey,
 	baseURL: "https://api.deepseek.com",
-	timeout: 60_000,
+	timeout: 45_000, // below Lambda's 60s timeout to leave headroom for post-selection S3/DynamoDB ops
 });
 
 const { readTierSource } = initReadTierSource({
