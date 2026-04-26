@@ -41,6 +41,7 @@ interface ViewDependencies {
 	markCrawlPending: MarkCrawlPending;
 	saveArticleGlobally: SaveArticleGlobally;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	now: () => Date;
 }
 
 function renderError(req: Request, res: Response) {
@@ -170,8 +171,10 @@ function handleViewArticle(deps: ViewDependencies) {
 				content: state.content,
 				crawl: state.crawl,
 				readerPollUrl: state.readerPollUrl,
+				crawlProgress: state.crawlProgress,
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
+				summaryProgress: state.summaryProgress,
 				actions,
 			}),
 		);

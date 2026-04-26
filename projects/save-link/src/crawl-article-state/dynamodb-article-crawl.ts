@@ -5,7 +5,11 @@ import {
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
 import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
-import type { MarkCrawlFailed, MarkCrawlReady } from "./article-crawl.types";
+import type {
+	MarkCrawlFailed,
+	MarkCrawlReady,
+	MarkCrawlStage,
+} from "./article-crawl.types";
 
 const CrawlStateRow = z.object({
 	url: z.string(),
@@ -28,6 +32,7 @@ export function initDynamoDbArticleCrawl(deps: {
 }): {
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
+	markCrawlStage: MarkCrawlStage;
 } {
 	const table = defineDynamoTable({
 		client: deps.client,
@@ -71,5 +76,18 @@ export function initDynamoDbArticleCrawl(deps: {
 		);
 	};
 
-	return { markCrawlReady, markCrawlFailed };
+	const markCrawlStage: MarkCrawlStage = async ({ url, stage }) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		// Unconditional write: stages are monotonic by code order, the worker is
+		// the only writer, and SQS redelivery only repeats the same sequence. We
+		// accept a brief regression on redelivery rather than the cost of a
+		// conditional write at every milestone.
+		await table.update({
+			Key: { url: articleResourceUniqueId.value },
+			UpdateExpression: "SET crawlStage = :stage",
+			ExpressionAttributeValues: { ":stage": stage },
+		});
+	};
+
+	return { markCrawlReady, markCrawlFailed, markCrawlStage };
 }

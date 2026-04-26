@@ -45,6 +45,8 @@ interface FakeState {
 	markSummaryPendingCalls: number;
 }
 
+const FIXED_NOW = new Date("2026-04-25T12:00:00.000Z");
+
 function initFakeDeps(initial?: Partial<FakeState>): {
 	state: FakeState;
 	deps: {
@@ -53,6 +55,7 @@ function initFakeDeps(initial?: Partial<FakeState>): {
 		findGeneratedSummary: FindGeneratedSummary;
 		markSummaryPending: MarkSummaryPending;
 		readArticleContent: ReadArticleContent;
+		now: () => Date;
 	};
 } {
 	const state: FakeState = {
@@ -74,6 +77,7 @@ function initFakeDeps(initial?: Partial<FakeState>): {
 			if (state.summary === undefined) state.summary = { status: "pending" };
 		},
 		readArticleContent: async () => state.content,
+		now: () => FIXED_NOW,
 	};
 	return { state, deps };
 }
@@ -106,6 +110,96 @@ describe("initArticleReader", () => {
 			expect(result.content).toBeUndefined();
 			expect(result.readerPollUrl).toBe("/test/reader?poll=1");
 			expect(result.summaryPollUrl).toBe("/test/summary?poll=1");
+		});
+
+		it("populates crawlProgress with the recorded stage and its mapped percentage", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "pending", stage: "crawl-parsed" },
+				summary: { status: "pending" },
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.crawlProgress).toEqual({
+				stage: "crawl-parsed",
+				pct: 55,
+				tickAt: FIXED_NOW.toISOString(),
+			});
+		});
+
+		it("defaults crawlProgress to crawl-fetching when no stage has been recorded", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "pending" },
+				summary: { status: "pending" },
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.crawlProgress).toEqual({
+				stage: "crawl-fetching",
+				pct: 15,
+				tickAt: FIXED_NOW.toISOString(),
+			});
+		});
+
+		it("populates summaryProgress with the recorded stage and its mapped percentage", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				summary: { status: "pending", stage: "summary-generating" },
+				content: "<p>body</p>",
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.summaryProgress).toEqual({
+				stage: "summary-generating",
+				pct: 40,
+				tickAt: FIXED_NOW.toISOString(),
+			});
+		});
+
+		it("omits crawlProgress when crawl is ready", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				summary: { status: "ready", summary: "TL;DR" },
+				content: "<p>body</p>",
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.crawlProgress).toBeUndefined();
+			expect(result.summaryProgress).toBeUndefined();
+		});
+
+		it("omits summaryProgress when crawl has failed (slot collapses to skipped)", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "failed", reason: "blocked" },
+				summary: { status: "pending" },
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.summaryProgress).toBeUndefined();
 		});
 
 		it("omits readerPollUrl when the crawl is ready", async () => {
@@ -237,6 +331,28 @@ describe("initArticleReader", () => {
 			expect(slot.getAttribute("hx-get")).toBe("/test/summary?poll=4");
 		});
 
+		it("emits the recorded summary stage and percentage on the polling slot", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				summary: { status: "pending", stage: "summary-content-loaded" },
+			});
+			const reader = initArticleReader(deps);
+
+			const component = await reader.handleSummaryPoll({
+				articleUrl: ARTICLE_URL,
+				pollCount: 1,
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			const slot = parse(toHtml(component)).querySelector("[data-test-reader-summary]");
+			assert(slot, "summary slot must be rendered");
+			expect(slot.getAttribute("data-progress-stage")).toBe("summary-content-loaded");
+			expect(slot.getAttribute("data-progress-pct")).toBe("25");
+			expect(slot.getAttribute("data-progress-tick-at")).toBe(
+				FIXED_NOW.toISOString(),
+			);
+		});
+
 		it("stops polling at MAX_POLLS=40", async () => {
 			const { deps } = initFakeDeps({
 				crawl: { status: "pending" },
@@ -316,6 +432,28 @@ describe("initArticleReader", () => {
 			assert(slot, "reader slot must be rendered");
 			expect(slot.getAttribute("data-reader-status")).toBe("pending");
 			expect(slot.getAttribute("hx-get")).toBe("/test/reader?poll=3");
+		});
+
+		it("emits the recorded crawl stage and percentage on the polling slot", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "pending", stage: "crawl-content-uploaded" },
+				content: undefined,
+			});
+			const reader = initArticleReader(deps);
+
+			const component = await reader.handleReaderPoll({
+				articleUrl: ARTICLE_URL,
+				pollCount: 1,
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			const slot = parse(toHtml(component)).querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-progress-stage")).toBe("crawl-content-uploaded");
+			expect(slot.getAttribute("data-progress-pct")).toBe("90");
+			expect(slot.getAttribute("data-progress-tick-at")).toBe(
+				FIXED_NOW.toISOString(),
+			);
 		});
 
 		it("stops polling at MAX_POLLS=40", async () => {

@@ -76,6 +76,7 @@ describe("Email verification", () => {
 				putPendingHtml: async () => {},
 				httpErrorMessageMapping,
 				logParseError: () => {},
+				now: () => new Date(),
 			});
 
 			const response = await request(app).post("/signup").type("form").send({

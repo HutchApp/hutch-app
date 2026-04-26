@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle, ThumbnailImage } from "@packages/crawl-article";
-import type { MarkCrawlFailed, MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
+import type {
+	MarkCrawlFailed,
+	MarkCrawlReady,
+	MarkCrawlStage,
+} from "../crawl-article-state/article-crawl.types";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia, DownloadedMedia } from "./download-media";
@@ -28,6 +32,7 @@ export function initSaveLinkWork(deps: {
 	updateArticleMetadata: UpdateArticleMetadata;
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
+	markCrawlStage: MarkCrawlStage;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	updateThumbnailUrl: UpdateThumbnailUrl;
@@ -49,6 +54,7 @@ export function initSaveLinkWork(deps: {
 		updateArticleMetadata,
 		markCrawlReady,
 		markCrawlFailed,
+		markCrawlStage,
 		downloadMedia,
 		processContent,
 		updateThumbnailUrl,
@@ -73,6 +79,7 @@ export function initSaveLinkWork(deps: {
 	};
 
 	const saveLinkWork = async (url: string): Promise<void> => {
+		await markCrawlStage({ url, stage: "crawl-fetching" });
 		const crawlResult = await crawlArticle({ url, fetchThumbnail: true });
 		if (crawlResult.status !== "fetched") {
 			const reason = `crawl-${crawlResult.status}`;
@@ -80,6 +87,7 @@ export function initSaveLinkWork(deps: {
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${reason}`);
 		}
+		await markCrawlStage({ url, stage: "crawl-fetched" });
 
 		const parseResult = parseHtml({ url, html: crawlResult.html });
 		if (!parseResult.ok) {
@@ -95,6 +103,7 @@ export function initSaveLinkWork(deps: {
 		}
 
 		const { article } = parseResult;
+		await markCrawlStage({ url, stage: "crawl-parsed" });
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 
 		// Wrap the post-parse pipeline so a thrown step (downloadMedia,
@@ -115,6 +124,7 @@ export function initSaveLinkWork(deps: {
 				estimatedReadTime: estimatedReadTimeFromWordCount(article.wordCount),
 				imageUrl: article.imageUrl,
 			});
+			await markCrawlStage({ url, stage: "crawl-metadata-written" });
 
 			const media = await downloadMedia({
 				html: article.content,
@@ -126,6 +136,7 @@ export function initSaveLinkWork(deps: {
 			const key = articleResourceUniqueId.toS3ContentKey();
 			const contentLocation = await putObject({ key, content: html });
 			await updateContentLocation({ url, contentLocation, tier: "tier-1" });
+			await markCrawlStage({ url, stage: "crawl-content-uploaded" });
 			await updateFetchTimestamp({
 				url,
 				contentFetchedAt: now().toISOString(),
@@ -144,6 +155,7 @@ export function initSaveLinkWork(deps: {
 			}
 
 			await markCrawlReady({ url });
+			await markCrawlStage({ url, stage: "crawl-ready" });
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			logParseError({ url, reason: `post-parse-step-failed: ${message}` });

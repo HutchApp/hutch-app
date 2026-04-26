@@ -4,6 +4,7 @@ import type {
 	CreateAiMessage,
 	FindGeneratedSummary,
 	MarkSummarySkipped,
+	MarkSummaryStage,
 	SaveGeneratedSummary,
 } from "./article-summary.types";
 
@@ -18,6 +19,7 @@ const noCache: FindGeneratedSummary = async () => undefined;
 const pendingCache: FindGeneratedSummary = async () => ({ status: "pending" });
 const noopSave: SaveGeneratedSummary = async () => {};
 const noopMarkSkipped: MarkSummarySkipped = async () => {};
+const noopMarkStage: MarkSummaryStage = async () => {};
 const identity = (text: string) => text;
 
 describe("initLinkSummariser", () => {
@@ -30,6 +32,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: pendingCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => true,
@@ -56,6 +59,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: noCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -89,6 +93,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: pendingCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -118,6 +123,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: cachedSummary,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -141,6 +147,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: skippedCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -167,6 +174,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: failedCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -192,6 +200,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: pendingCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -220,6 +229,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: noCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -233,6 +243,58 @@ describe("initLinkSummariser", () => {
 		expect(result).toBeNull();
 	});
 
+	it("emits summary progress stages in declared order on the happy path", async () => {
+		const createMessage = createStubCreateMessage("A summary.");
+		const markSummaryStage = jest.fn().mockResolvedValue(undefined);
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findGeneratedSummary: noCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		await summarizeArticle({
+			url: "https://example.com/article",
+			textContent: "Long content.",
+		});
+
+		const stages = markSummaryStage.mock.calls.map((call) => call[0].stage);
+		expect(stages).toEqual([
+			"summary-started",
+			"summary-content-loaded",
+			"summary-generating",
+			"summary-complete",
+		]);
+	});
+
+	it("emits only summary-started before terminating when content is too short", async () => {
+		const markSummaryStage = jest.fn().mockResolvedValue(undefined);
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage: jest.fn(),
+			findGeneratedSummary: pendingCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => true,
+		});
+
+		await summarizeArticle({
+			url: "https://example.com/short",
+			textContent: "tiny.",
+		});
+
+		const stages = markSummaryStage.mock.calls.map((call) => call[0].stage);
+		expect(stages).toEqual(["summary-started"]);
+	});
+
 	it("should return null when AI returns 'Summary not available.'", async () => {
 		const createMessage = createStubCreateMessage("Summary not available.");
 
@@ -241,6 +303,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: noCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,

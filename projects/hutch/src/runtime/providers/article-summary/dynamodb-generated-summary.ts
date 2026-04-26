@@ -19,6 +19,14 @@ const ArticleSummaryRow = z.object({
 	summary: dynamoField(z.string()),
 	summaryStatus: dynamoField(z.enum(["pending", "ready", "failed", "skipped"])),
 	summaryFailureReason: dynamoField(z.string()),
+	summaryStage: dynamoField(
+		z.enum([
+			"summary-started",
+			"summary-content-loaded",
+			"summary-generating",
+			"summary-complete",
+		]),
+	),
 });
 
 type ArticleSummaryRowShape = z.infer<typeof ArticleSummaryRow>;
@@ -32,7 +40,11 @@ function rowToGeneratedSummary(
 		return { status: "failed", reason: row.summaryFailureReason };
 	}
 	if (row.summaryStatus === "skipped") return { status: "skipped" };
-	if (row.summaryStatus === "pending") return { status: "pending" };
+	if (row.summaryStatus === "pending") {
+		return row.summaryStage
+			? { status: "pending", stage: row.summaryStage }
+			: { status: "pending" };
+	}
 	// Legacy row (summaryStatus absent). A backfilled `summary` column means the
 	// row pre-dates the state machine but carried a pre-computed summary — expose
 	// as ready. Otherwise return undefined so the caller can re-prime the pipeline

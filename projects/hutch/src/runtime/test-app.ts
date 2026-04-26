@@ -19,6 +19,7 @@ import type {
 import type {
 	InMemoryMarkCrawlFailed,
 	InMemoryMarkCrawlReady,
+	InMemoryMarkCrawlStage,
 } from "./providers/article-crawl/in-memory-article-crawl";
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type {
@@ -108,6 +109,7 @@ export interface ArticleCrawlBundle {
 	forceMarkCrawlPending: ForceMarkCrawlPending;
 	markCrawlReady: InMemoryMarkCrawlReady;
 	markCrawlFailed: InMemoryMarkCrawlFailed;
+	markCrawlStage: InMemoryMarkCrawlStage;
 }
 
 export interface ParserBundle {
@@ -172,6 +174,7 @@ export interface SharedBundle {
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
 	logParseError: LogParseError;
+	now: () => Date;
 }
 
 export interface TestAppFixture {
@@ -255,6 +258,7 @@ function flattenFixtureToAppDependencies(
 		googleAuth: fixture.google,
 		adminEmails: fixture.admin.adminEmails,
 		recrawlServiceToken: fixture.admin.recrawlServiceToken,
+		now: fixture.shared.now,
 	};
 }
 

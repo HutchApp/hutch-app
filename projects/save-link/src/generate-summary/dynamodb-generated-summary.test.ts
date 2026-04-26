@@ -106,6 +106,35 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 		});
 	});
 
+	describe("markSummaryStage", () => {
+		it("issues an unconditional UpdateItem that sets summaryStage", async () => {
+			let received: unknown;
+			const client = createFakeClient((input) => {
+				received = input;
+				return {};
+			});
+			const { markSummaryStage } = initDynamoDbGeneratedSummary({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await markSummaryStage({ url: URL, stage: "summary-generating" });
+
+			const command = received as {
+				input: {
+					UpdateExpression?: string;
+					ConditionExpression?: string;
+					ExpressionAttributeValues?: Record<string, unknown>;
+				};
+			};
+			expect(command.input.UpdateExpression).toBe("SET summaryStage = :stage");
+			expect(command.input.ConditionExpression).toBeUndefined();
+			expect(command.input.ExpressionAttributeValues?.[":stage"]).toBe(
+				"summary-generating",
+			);
+		});
+	});
+
 	describe("mark functions — error handling", () => {
 		it("swallows ConditionalCheckFailedException (ready row preserved)", async () => {
 			const client = createFakeClient(() => {
