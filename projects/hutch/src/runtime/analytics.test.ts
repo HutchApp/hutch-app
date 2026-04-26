@@ -23,6 +23,7 @@ interface MockReqOverrides {
 	ip?: string;
 	query?: Record<string, unknown>;
 	headers?: Record<string, string | undefined>;
+	abHomepageVariant?: "control" | "treatment-founding-cta";
 }
 
 function createReq(overrides: MockReqOverrides = {}): Request {
@@ -36,6 +37,7 @@ function createReq(overrides: MockReqOverrides = {}): Request {
 		ip: overrides.ip ?? "1.2.3.4",
 		query: overrides.query ?? {},
 		headers,
+		abHomepageVariant: overrides.abHomepageVariant,
 		get(name: string): string | undefined { return headers[name.toLowerCase()]; },
 	};
 	return base as unknown as Request;
@@ -124,6 +126,17 @@ describe("createAnalyticsMiddleware", () => {
 		const req = createReq({ query: { utm_source: "" } });
 		const [event] = runMiddleware(req, createRes(200));
 		expect(JSON.stringify(event)).not.toContain("utm_source");
+	});
+
+	it("includes ab_homepage when the AB middleware assigned a variant — required to split conversion pageviews on /signup and /install by the homepage variant the visitor was assigned", () => {
+		const req = createReq({ path: "/signup", abHomepageVariant: "treatment-founding-cta" });
+		const [event] = runMiddleware(req, createRes(200));
+		expect(event).toMatchObject({ ab_homepage: "treatment-founding-cta" });
+	});
+
+	it("omits ab_homepage from the JSON when no variant is assigned (e.g. AB middleware not yet hit) so we don't pay bytes for an empty field", () => {
+		const [event] = runMiddleware(createReq(), createRes(200));
+		expect(JSON.stringify(event)).not.toContain("ab_homepage");
 	});
 });
 

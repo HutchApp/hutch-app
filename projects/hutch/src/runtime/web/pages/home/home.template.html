@@ -1,5 +1,28 @@
-  <main>
-    <section class="home-hero" data-test-section="hero" aria-label="Introduction">
+  <main data-ab-homepage="{{homepageVariant}}">
+    {{#if isTreatmentVariant}}
+    <section class="home-hero home-hero--founding" data-test-section="hero" data-test-variant="treatment-founding-cta" aria-label="Introduction">
+      <div class="home-hero__container">
+        <h1 class="home-hero__title">Free for the first 100.</h1>
+        <p class="home-hero__subtitle">Pocket is gone. Omnivore is gone. Become one of the first 100 founding members and get full access free, forever. $3.99/month for everyone else.</p>
+        <div class="home-hero__actions">
+          <a href="/signup" class="btn btn--brand" data-test-cta="founding-hero">Become a Founding Member</a>
+          {{#switch browserName}}
+          {{#case "firefox"}}
+          <a href="/install?browser=firefox" class="btn btn--secondary" data-test-cta="install-extension">Install Firefox Extension</a>
+          {{/case}}
+          {{#case "chrome"}}
+          <a href="/install?browser=chrome" class="btn btn--secondary" data-test-cta="install-extension">Install Chrome Extension</a>
+          {{/case}}
+          {{#default}}
+          <a href="/install" class="btn btn--secondary" data-test-cta="install-extension">Install Browser Extension</a>
+          {{/default}}
+          {{/switch}}
+        </div>
+        <p class="home-hero__trust"><a href="https://github.com/Readplace/readplace.com" data-test-cta="view-github">View on GitHub</a></p>
+      </div>
+    </section>
+    {{else}}
+    <section class="home-hero" data-test-section="hero" data-test-variant="control" aria-label="Introduction">
       <div class="home-hero__container">
         <h1 class="home-hero__title hero-headline"><span class="sr-only">A home for articles, newsletters, essays, longreads, news, blogs, stories, posts, reports, and interviews.</span><span class="hero-headline__visible" aria-hidden="true">A home for <span class="hero-headline__rotator">articles</span></span></h1>
         <p class="home-hero__subtitle">Pocket is gone. Omnivore is gone. I built Readplace from a personal system I've maintained for 10 years. Save articles with one click, read them when you're ready.</p>
@@ -30,6 +53,7 @@
         {{/switch}}
       </div>
     </section>
+    {{/if}}
 
     <section class="home-demo" data-test-section="demo" aria-label="Product demo">
       <div class="home-demo__container">

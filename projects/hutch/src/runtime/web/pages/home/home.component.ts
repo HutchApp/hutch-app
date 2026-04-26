@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { HomepageVariant } from "../../ab-test/ab.types";
 import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
@@ -79,8 +80,13 @@ const HOME_HEADLINE_SCRIPT = `<script>
 })();
 </script>`;
 
-export function HomePage(params: { userCount: number; staticBaseUrl: string; browser: "firefox" | "chrome" | "other" }): Component {
-	const { userCount, staticBaseUrl, browser } = params;
+export function HomePage(params: {
+	userCount: number;
+	staticBaseUrl: string;
+	browser: "firefox" | "chrome" | "other";
+	homepageVariant: HomepageVariant;
+}): Component {
+	const { userCount, staticBaseUrl, browser, homepageVariant } = params;
 	const foundingProgressHtml = renderFoundingProgress({ userCount });
 	return Base({
 		seo: {
@@ -256,6 +262,8 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 		content: render(HOME_TEMPLATE, {
 			staticBaseUrl,
 			browserName: browser,
+			homepageVariant,
+			isTreatmentVariant: homepageVariant === "treatment-founding-cta",
 			founderAvatarUrl: `${staticBaseUrl}/fayner-brack.jpg`,
 			foundingProgressHtml,
 			featuredFeatures: [

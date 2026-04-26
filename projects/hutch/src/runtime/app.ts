@@ -46,6 +46,7 @@ import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { initLogParseError, type ParseErrorEvent } from "@packages/hutch-infra-components";
 import { createApp } from "./server";
+import { defaultGenerateVisitorId } from "./web/ab-test/visitor-id";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -270,6 +271,7 @@ export function createHutchApp(deps?: {
 	const app = createApp({
 		appOrigin,
 		staticBaseUrl,
+		generateVisitorId: defaultGenerateVisitorId,
 		...auth,
 		...articleStore,
 		...providers,
