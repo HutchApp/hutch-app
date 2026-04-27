@@ -3,42 +3,30 @@ import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle } from "@packages/crawl-article";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import {
-	CrawlArticleCompletedEvent,
 	SaveAnonymousLinkCommand,
+	TierContentExtractedEvent,
 } from "@packages/hutch-infra-components";
 import type { MarkCrawlFailed, MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
-import type { UpdateThumbnailUrl } from "./update-thumbnail-url";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
-import type { UpdateArticleMetadata } from "./update-article-metadata";
 import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-components";
 import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
-import {
-	initSaveLinkWork,
-	type ProcessContent,
-	type PutObject,
-	type UpdateContentLocation,
-} from "./save-link-work";
-
-type PublishAnonymousLinkSaved = (params: { url: string }) => Promise<void>;
+import { initSaveLinkWork, type ProcessContent } from "./save-link-work";
+import type { PutTierSource } from "../select-content/put-tier-source";
 
 export function initSaveAnonymousLinkCommandHandler(deps: {
 	crawlArticle: CrawlArticle;
 	parseHtml: ParseHtml;
-	putObject: PutObject;
+	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
-	updateContentLocation: UpdateContentLocation;
 	updateFetchTimestamp: UpdateFetchTimestamp;
-	updateArticleMetadata: UpdateArticleMetadata;
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
-	publishAnonymousLinkSaved: PublishAnonymousLinkSaved;
 	publishEvent: PublishEvent;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
-	updateThumbnailUrl: UpdateThumbnailUrl;
 	imagesCdnBaseUrl: string;
 	now: () => Date;
 	logger: HutchLogger;
@@ -46,21 +34,18 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	logCrawlOutcome: LogCrawlOutcome;
 	readTierSnapshot: ReadTierSnapshot;
 }): SQSHandler {
-	const { publishAnonymousLinkSaved, publishEvent, logger } = deps;
+	const { publishEvent, logger } = deps;
 
 	const { saveLinkWork } = initSaveLinkWork({
 		crawlArticle: deps.crawlArticle,
 		parseHtml: deps.parseHtml,
-		putObject: deps.putObject,
+		putTierSource: deps.putTierSource,
 		putImageObject: deps.putImageObject,
-		updateContentLocation: deps.updateContentLocation,
 		updateFetchTimestamp: deps.updateFetchTimestamp,
-		updateArticleMetadata: deps.updateArticleMetadata,
 		markCrawlReady: deps.markCrawlReady,
 		markCrawlFailed: deps.markCrawlFailed,
 		downloadMedia: deps.downloadMedia,
 		processContent: deps.processContent,
-		updateThumbnailUrl: deps.updateThumbnailUrl,
 		imagesCdnBaseUrl: deps.imagesCdnBaseUrl,
 		now: deps.now,
 		logger,
@@ -80,13 +65,14 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 			await saveLinkWork(detail.url);
 
 			await publishEvent({
-				source: CrawlArticleCompletedEvent.source,
-				detailType: CrawlArticleCompletedEvent.detailType,
-				detail: JSON.stringify({ url: detail.url }),
+				source: TierContentExtractedEvent.source,
+				detailType: TierContentExtractedEvent.detailType,
+				detail: JSON.stringify({ url: detail.url, tier: "tier-1" }),
 			});
-
-			await publishAnonymousLinkSaved({ url: detail.url });
-			logger.info("[SaveAnonymousLinkCommand] published AnonymousLinkSavedEvent", { url: detail.url });
+			logger.info("[SaveAnonymousLinkCommand] emitted TierContentExtractedEvent", {
+				url: detail.url,
+				tier: "tier-1",
+			});
 		}
 	};
 }

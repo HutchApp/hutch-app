@@ -100,6 +100,7 @@ export interface ArticleStoreBundle {
 		metadata: ArticleMetadata;
 		estimatedReadTime: Minutes;
 	}) => Promise<void>;
+	setContentSourceTier: (params: { url: string; tier: "tier-0" | "tier-1" }) => Promise<void>;
 }
 
 export interface ArticleCrawlBundle {

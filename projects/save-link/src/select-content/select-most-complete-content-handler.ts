@@ -1,0 +1,139 @@
+import assert from "node:assert";
+import type { SQSHandler } from "aws-lambda";
+import type { HutchLogger } from "@packages/hutch-logger";
+import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
+import {
+	TierContentExtractedEvent,
+	LinkSavedEvent,
+	AnonymousLinkSavedEvent,
+	CrawlArticleCompletedEvent,
+} from "@packages/hutch-infra-components";
+import type { ListAvailableTierSources } from "./list-available-tier-sources";
+import type { SelectMostCompleteContent } from "./select-content";
+import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
+import type { FindContentSourceTier } from "./find-content-source-tier";
+import type { TierSource } from "./tier-source.types";
+
+/* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
+export function initSelectMostCompleteContentHandler(deps: {
+	listAvailableTierSources: ListAvailableTierSources;
+	selectMostCompleteContent: SelectMostCompleteContent;
+	promoteTierToCanonical: PromoteTierToCanonical;
+	findContentSourceTier: FindContentSourceTier;
+	publishEvent: PublishEvent;
+	logger: HutchLogger;
+}): SQSHandler {
+	const {
+		listAvailableTierSources,
+		selectMostCompleteContent,
+		promoteTierToCanonical,
+		findContentSourceTier,
+		publishEvent,
+		logger,
+	} = deps;
+
+	return async (event) => {
+		for (const record of event.Records) {
+			const envelope = JSON.parse(record.body);
+			const detail = TierContentExtractedEvent.detailSchema.parse(envelope.detail);
+
+			const sources = await listAvailableTierSources(detail.url);
+			if (sources.length === 0) {
+				/* Race window: the worker emitted the event before its tier source
+				 * + sidecar were both readable. SQS retry on the worker side will
+				 * eventually backfill; this invocation is a no-op. */
+				logger.info("[SelectContent] no tier sources available, skipping", {
+					url: detail.url,
+				});
+				continue;
+			}
+
+			let winnerTier: TierSource["tier"];
+			let reason: string;
+			if (sources.length === 1) {
+				winnerTier = sources[0].tier;
+				reason = "only available tier";
+			} else {
+				const decision = await selectMostCompleteContent({
+					url: detail.url,
+					candidates: sources.map((source) => ({
+						tier: source.tier,
+						title: source.metadata.title,
+						wordCount: source.metadata.wordCount,
+						html: source.html,
+					})),
+				});
+				logger.info("[SelectContent] selector decision", {
+					url: detail.url,
+					winner: decision.winner,
+					reason: decision.reason,
+				});
+				if (decision.winner === "tie") {
+					/* Tie keeps the canonical exactly as-is. We still emit
+					 * CrawlArticleCompleted to signal the pipeline reached a
+					 * decision; LinkSaved/AnonymousLinkSaved are skipped because
+					 * canonical did not change, so the summary pipeline shouldn't
+					 * regenerate. */
+					await publishEvent({
+						source: CrawlArticleCompletedEvent.source,
+						detailType: CrawlArticleCompletedEvent.detailType,
+						detail: JSON.stringify({ url: detail.url }),
+					});
+					continue;
+				}
+				winnerTier = decision.winner;
+				reason = decision.reason;
+			}
+
+			const winnerSource = sources.find((source) => source.tier === winnerTier);
+			/* Invariant: the selector maps its label back to a tier in
+			 * the candidate list (single-source short-circuits to its own
+			 * tier; multi-source maps via labelForIndex). A miss here would
+			 * be a programming error in the selector — assert rather than
+			 * silently skip so the bug surfaces as a DLQ. */
+			assert(winnerSource, `winner tier ${winnerTier} missing from candidate set`);
+
+			const currentTier = await findContentSourceTier(detail.url);
+			const canonicalChanged = currentTier !== winnerTier;
+
+			await promoteTierToCanonical({
+				url: detail.url,
+				tier: winnerTier,
+				metadata: winnerSource.metadata,
+			});
+
+			await publishEvent({
+				source: CrawlArticleCompletedEvent.source,
+				detailType: CrawlArticleCompletedEvent.detailType,
+				detail: JSON.stringify({ url: detail.url }),
+			});
+
+			if (canonicalChanged) {
+				if (detail.userId) {
+					await publishEvent({
+						source: LinkSavedEvent.source,
+						detailType: LinkSavedEvent.detailType,
+						detail: JSON.stringify({ url: detail.url, userId: detail.userId }),
+					});
+				} else {
+					await publishEvent({
+						source: AnonymousLinkSavedEvent.source,
+						detailType: AnonymousLinkSavedEvent.detailType,
+						detail: JSON.stringify({ url: detail.url }),
+					});
+				}
+				logger.info("[SelectContent] promoted tier to canonical", {
+					url: detail.url,
+					tier: winnerTier,
+					reason,
+				});
+			} else {
+				logger.info("[SelectContent] re-selected same tier; canonical unchanged", {
+					url: detail.url,
+					tier: winnerTier,
+					reason,
+				});
+			}
+		}
+	};
+}

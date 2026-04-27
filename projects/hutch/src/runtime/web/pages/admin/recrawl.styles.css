@@ -7,3 +7,21 @@
 .admin-recrawl__body {
   display: block;
 }
+
+.admin-recrawl__tier-badge {
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: #eef3fb;
+  color: #1e6fb8;
+  border: 1px solid #c4d6ee;
+}
+
+.admin-recrawl__tier-badge--legacy {
+  background: #f5f5f5;
+  color: #666;
+  border-color: #ddd;
+}
