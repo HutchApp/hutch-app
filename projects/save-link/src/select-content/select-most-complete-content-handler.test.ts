@@ -179,34 +179,38 @@ describe("initSelectMostCompleteContentHandler", () => {
 	it("tie keeps the canonical unchanged — emits CrawlArticleCompleted only, no LinkSaved/AnonymousLinkSaved", async () => {
 		const tier0 = tierSource("tier-0");
 		const tier1 = tierSource("tier-1");
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
 
 		const { handler, deps } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
 			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "equally complete" }),
 			findContentSourceTier: jest.fn().mockResolvedValue("tier-1"),
+			publishEvent,
 		});
 
 		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-0", userId: "user-1" }), stubContext, () => {});
 
 		expect(deps.promoteTierToCanonical).not.toHaveBeenCalled();
-		const events = (deps.publishEvent as jest.Mock).mock.calls.map((call) => call[0].detailType);
+		const events = publishEvent.mock.calls.map((call: [{ detailType: string }]) => call[0].detailType);
 		expect(events).toEqual(["CrawlArticleCompleted"]);
 	});
 
 	it("re-selecting the same winner does not emit LinkSaved (canonical unchanged) but still emits CrawlArticleCompleted", async () => {
 		const tier0 = tierSource("tier-0");
 		const tier1 = tierSource("tier-1");
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
 
 		const { handler, deps } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
 			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tier-0", reason: "still tier-0" }),
 			findContentSourceTier: jest.fn().mockResolvedValue("tier-0"),
+			publishEvent,
 		});
 
 		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1", userId: "user-1" }), stubContext, () => {});
 
 		expect(deps.promoteTierToCanonical).toHaveBeenCalled(); // metadata may have changed; safe to overwrite
-		const events = (deps.publishEvent as jest.Mock).mock.calls.map((call) => call[0].detailType);
+		const events = publishEvent.mock.calls.map((call: [{ detailType: string }]) => call[0].detailType);
 		expect(events).toEqual(["CrawlArticleCompleted"]);
 	});
 
