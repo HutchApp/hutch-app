@@ -6,7 +6,7 @@ import {
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
-import { type Tier, KNOWN_TIERS } from "./tier.types";
+import { type Tier, TierSchema } from "./tier.types";
 
 const TierRow = z.object({
 	contentSourceTier: dynamoField(z.string()),
@@ -34,7 +34,8 @@ export function initFindContentSourceTier(deps: {
 		);
 		const value = row?.contentSourceTier;
 		if (value === undefined) return undefined;
-		return KNOWN_TIERS.includes(value as Tier) ? (value as Tier) : undefined;
+		const parsed = TierSchema.safeParse(value);
+		return parsed.success ? parsed.data : undefined;
 	};
 
 	return { findContentSourceTier };
