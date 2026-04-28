@@ -144,20 +144,20 @@ export function initSaveLinkWork(deps: {
 			}
 
 			await markCrawlReady({ url });
+
+			const snapshot = await readTierSnapshot({ url });
+			logCrawlOutcome({
+				url,
+				thisTier: "tier-1",
+				thisTierStatus: "success",
+				otherTierStatus: snapshot.tier0Status,
+				pickedTier: snapshot.pickedTier,
+			});
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			logParseError({ url, reason: `post-parse-step-failed: ${message}` });
 			throw error;
 		}
-
-		const snapshot = await readTierSnapshot({ url });
-		logCrawlOutcome({
-			url,
-			thisTier: "tier-1",
-			thisTierStatus: "success",
-			otherTierStatus: snapshot.tier0Status,
-			pickedTier: snapshot.pickedTier,
-		});
 
 		logger.info(`${logPrefix} saved`, { url, hasThumbnail: crawlResult.thumbnailImage ? 1 : 0 });
 	};

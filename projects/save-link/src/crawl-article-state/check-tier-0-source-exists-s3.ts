@@ -17,7 +17,7 @@ export function initCheckTier0SourceExistsS3(deps: {
 			return true;
 		} catch (err) {
 			if (err instanceof NotFound) return false;
-			throw err;
+			throw new Error(`HeadObject failed for s3://${bucketName}/${key}`, { cause: err });
 		}
 	};
 
