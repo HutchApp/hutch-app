@@ -1,5 +1,6 @@
 /* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
 import assert from "node:assert";
+import { SummaryStatusSchema } from "@packages/article-state-types";
 import {
 	ConditionalCheckFailedException,
 	type DynamoDBDocumentClient,
@@ -17,7 +18,7 @@ import type {
 const ArticleSummaryRow = z.object({
 	url: z.string(),
 	summary: dynamoField(z.string()),
-	summaryStatus: dynamoField(z.enum(["pending", "ready", "failed", "skipped"])),
+	summaryStatus: dynamoField(SummaryStatusSchema),
 	summaryFailureReason: dynamoField(z.string()),
 });
 

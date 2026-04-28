@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { SummaryStatusSchema } from "@packages/article-state-types";
 import {
 	ConditionalCheckFailedException,
 	type DynamoDBDocumentClient,
@@ -18,7 +19,7 @@ import type {
 
 const GeneratedSummaryRow = z.object({
 	summary: dynamoField(z.string()),
-	summaryStatus: dynamoField(z.enum(["pending", "ready", "failed", "skipped"])),
+	summaryStatus: dynamoField(SummaryStatusSchema),
 	summaryFailureReason: dynamoField(z.string()),
 });
 

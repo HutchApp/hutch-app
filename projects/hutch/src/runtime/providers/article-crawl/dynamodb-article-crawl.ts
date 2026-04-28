@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { CrawlStatusSchema } from "@packages/article-state-types";
 import {
 	ConditionalCheckFailedException,
 	type DynamoDBDocumentClient,
@@ -16,7 +17,7 @@ import type {
 
 const ArticleCrawlRow = z.object({
 	url: z.string(),
-	crawlStatus: dynamoField(z.enum(["pending", "ready", "failed"])),
+	crawlStatus: dynamoField(CrawlStatusSchema),
 	crawlFailureReason: dynamoField(z.string()),
 });
 

@@ -1,0 +1,9 @@
+{
+  "name": "@packages/article-state-types",
+  "targets": {
+    "check": {
+      "command": "pnpm lint",
+      "options": { "cwd": "{projectRoot}" }
+    }
+  }
+}

@@ -17,6 +17,7 @@ export default {
 		"@packages/hutch-infra-components",
 		"@packages/hutch-storage-client",
 		"@packages/article-resource-unique-id",
+		"@packages/article-state-types",
 		"@packages/crawl-article",
 		// Used only in infra code (Pulumi IaC, compiled separately)
 		"@pulumi/aws",

@@ -65,6 +65,7 @@
     "@node-oauth/express-oauth-server": "4.1.5",
     "@node-oauth/oauth2-server": "5.2.1",
     "@packages/article-resource-unique-id": "workspace:*",
+    "@packages/article-state-types": "workspace:*",
     "@packages/crawl-article": "workspace:*",
     "@packages/hutch-infra-components": "workspace:*",
     "@packages/hutch-logger": "workspace:*",

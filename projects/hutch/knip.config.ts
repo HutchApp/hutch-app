@@ -22,6 +22,7 @@ export default {
 		"@packages/check-unused-css",
 		// knip doesn't resolve workspace subpath for @packages/* imports
 		"@packages/article-resource-unique-id",
+		"@packages/article-state-types",
 		"@packages/crawl-article",
 		"@packages/onboarding-extension-signal",
 	],
