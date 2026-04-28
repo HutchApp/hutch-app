@@ -11,6 +11,7 @@
  * handler, and `copy-static-assets.js` mirrors it into dist/ for test runs.
  */
 const esbuild = require("esbuild");
+const fs = require("node:fs");
 const path = require("node:path");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
@@ -65,6 +66,10 @@ function buildOptions(bundle) {
 
 async function main() {
 	const watch = process.argv.includes("--watch");
+
+	// Drop orphan .js files from renamed/removed *.client.ts entries — c8 would
+	// otherwise pick them up as 0%-coverage sources and silently fail the gate.
+	fs.rmSync(OUT_DIR, { recursive: true, force: true });
 
 	if (watch) {
 		const contexts = await Promise.all(
