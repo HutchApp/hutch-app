@@ -62,13 +62,18 @@ export type DynamoTable<TSchema extends z.ZodObject> = {
 	}>;
 
 	/**
-	 * Scan passthrough. Returns parsed items and the SDK-reported count.
-	 * When `Select: "COUNT"` is used, `items` will be empty and `count`
-	 * holds the matching row count.
+	 * Scan passthrough. Returns parsed items, the SDK-reported count, and
+	 * `LastEvaluatedKey` so callers can drive pagination (pass it back as
+	 * `ExclusiveStartKey`). When `Select: "COUNT"` is used, `items` will be
+	 * empty and `count` holds the matching row count.
 	 */
 	scan: (
 		input?: WithoutTable<ScanCommandInput>,
-	) => Promise<{ items: z.infer<TSchema>[]; count: number }>;
+	) => Promise<{
+		items: z.infer<TSchema>[];
+		count: number;
+		lastEvaluatedKey?: Record<string, unknown>;
+	}>;
 };
 
 /**
@@ -137,7 +142,11 @@ export function defineDynamoTable<TSchema extends z.ZodObject>(config: {
 				new ScanCommand({ TableName: tableName, ...(input ?? {}) }),
 			);
 			const items = (result.Items ?? []).map((item) => schema.parse(item));
-			return { items, count: result.Count ?? 0 };
+			return {
+				items,
+				count: result.Count ?? 0,
+				lastEvaluatedKey: result.LastEvaluatedKey,
+			};
 		},
 	};
 }
