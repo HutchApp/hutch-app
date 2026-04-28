@@ -209,6 +209,11 @@ const saveAnonymousLinkCommandLambda = new HutchLambda("save-anonymous-link-comm
 	},
 	policies: [
 		...saveAnonymousLinkCommandDynamodb.policies,
+		// Read on contentBucket lets readTierSnapshot HeadObject the tier-0 source
+		// key. Without this the role gets 403 (not 404) for missing keys, the throw
+		// escapes saveLinkWork, and AnonymousLinkSavedEvent never publishes — the
+		// article stays summaryStatus=pending forever.
+		...contentBucket.readPolicies("save-anonymous-link-command-s3-read"),
 		...contentBucket.writePolicies("save-anonymous-link-command-s3"),
 	],
 });
