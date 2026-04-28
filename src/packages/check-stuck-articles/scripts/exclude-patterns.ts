@@ -15,6 +15,7 @@ export const EXCLUDE_PATTERNS: readonly RegExp[] = [
 	/:\/\/localhost/,
 	/^about:home$/,
 	/^about:newtab$/,
+	/^chrome:\/\//,
 	/278728209435-wu2vbie3\.ap-southeast-2\.console\.aws\.amazon\.com/,
 	/:\/\/medium\.com\/@fagnerbrack/,
 ];
