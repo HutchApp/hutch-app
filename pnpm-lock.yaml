@@ -507,6 +507,9 @@ importers:
 
   src/packages/crawl-article:
     dependencies:
+      '@packages/article-state-types':
+        specifier: workspace:*
+        version: link:../article-state-types
       linkedom:
         specifier: 0.18.12
         version: 0.18.12

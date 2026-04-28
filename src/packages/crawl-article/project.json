@@ -6,8 +6,9 @@
       "options": { "cwd": "{projectRoot}" }
     },
     "tier-1-plus-pipeline-health": {
-      "command": "node --test --test-reporter=spec scripts/tier-1-plus-pipeline-health.js",
-      "options": { "cwd": "{projectRoot}" }
+      "command": "node --test --test-reporter=spec dist/scripts/tier-1-plus-pipeline-health.js",
+      "options": { "cwd": "{projectRoot}" },
+      "dependsOn": ["compile"]
     }
   }
 }

@@ -2,18 +2,19 @@
   "name": "@packages/crawl-article",
   "version": "1.0.0",
   "description": "Article crawler with browser-like headers for Fastly/Cloudflare edge sniffers; owns its own real-network canary",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "private": true,
   "scripts": {
     "compile": "tsc",
-    "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src\" \"knip\"",
-    "test": "jest --testMatch='**/dist/**/*.test.js'",
+    "lint": "concurrently --kill-others-on-fail \"tsc --project tsconfig.lint.json\" \"biome lint src scripts\" \"knip\"",
+    "test": "jest --testMatch='**/dist/src/**/*.test.js'",
     "test-with-coverage": "c8 pnpm test && node enforce-coverage.config.js",
     "check": "pnpm lint",
     "check-infra": "echo 'No infrastructure — shared library'"
   },
   "dependencies": {
+    "@packages/article-state-types": "workspace:*",
     "linkedom": "0.18.12"
   },
   "devDependencies": {
