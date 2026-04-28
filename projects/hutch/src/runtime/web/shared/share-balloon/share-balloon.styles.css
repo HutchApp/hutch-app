@@ -1,0 +1,157 @@
+.share-balloon__wrap {
+  position: relative;
+  pointer-events: auto;
+}
+
+.share-balloon__close {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.7);
+  transition: opacity 180ms ease, transform 240ms ease, visibility 0s linear 240ms;
+}
+
+.share-balloon__wrap--open .share-balloon__close {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition: opacity 2000ms ease 2200ms, transform 2400ms ease 2200ms, visibility 0s linear 2200ms;
+}
+
+.share-balloon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.5rem;
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: transform 120ms ease, filter 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease, border-radius 300ms ease, padding 300ms ease;
+}
+
+.share-balloon__wrap--open .share-balloon {
+  border-radius: 18px;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+}
+
+.share-balloon:hover {
+  filter: brightness(0.97);
+}
+
+.share-balloon:active {
+  transform: scale(0.98);
+}
+
+.share-balloon__chat {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  overflow: hidden;
+  max-width: 0;
+  max-height: 0;
+  margin-right: 0;
+  transition: max-width 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    max-height 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    margin-right 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.share-balloon__wrap--open .share-balloon__chat {
+  max-width: 320px;
+  max-height: 80px;
+  margin-right: 0.625rem;
+}
+
+.share-balloon__avatar {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.share-balloon__text {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: max-content;
+  line-height: 1.25;
+  font-size: 0.8125rem;
+}
+
+.share-balloon__greeting {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.share-balloon__hint {
+  color: var(--color-text-primary);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.share-balloon__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.share-balloon__copied {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-error);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(6px) saturate(1.4);
+  -webkit-backdrop-filter: blur(6px) saturate(1.4);
+  transition: opacity 300ms ease;
+}
+
+.share-balloon__copied--visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-balloon,
+  .share-balloon__chat,
+  .share-balloon__close {
+    transition: none;
+  }
+  .share-balloon:active {
+    transform: none;
+  }
+}

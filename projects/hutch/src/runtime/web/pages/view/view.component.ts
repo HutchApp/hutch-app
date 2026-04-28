@@ -11,17 +11,18 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
-import { SHARE_ICON_SVG } from "./view.share-icon";
+import {
+	SHARE_BALLOON_SCRIPT,
+	renderShareBalloon,
+} from "../../shared/share-balloon/share-balloon.component";
 import { VIEW_STYLES } from "./view.styles";
 
 const STATIC_BASE_URL = requireEnv("STATIC_BASE_URL");
 
-const SHARE_SCRIPT = `<script src="/client-dist/view.share.client.js" defer></script>`;
 const CANONICAL_BASE_URL = "https://readplace.com";
 const DEFAULT_OG_IMAGE = `${STATIC_BASE_URL}/og-image-1200x630.png`;
 const DEFAULT_TWITTER_IMAGE = `${STATIC_BASE_URL}/twitter-card-1200x600.png`;
 const DEFAULT_OG_ALT = "Readplace — A read-it-later app";
-const FOUNDER_AVATAR_URL = `${STATIC_BASE_URL}/fayner-brack.jpg`;
 
 const VIEW_TEMPLATE = readFileSync(
 	join(__dirname, "view.template.html"),
@@ -62,14 +63,17 @@ export function ViewPage(input: ViewPageInput): Component {
 
 	const canonicalViewUrl = `${CANONICAL_BASE_URL}/view/${encodeURIComponent(input.articleUrl)}`;
 
+	const shareBalloon = renderShareBalloon({
+		shareUrl: canonicalViewUrl,
+		shareTitle: input.metadata.title,
+		shareHint: "Click here to share this view!",
+	});
+
 	const content = render(VIEW_TEMPLATE, {
 		innerContent,
 		articleUrl: input.articleUrl,
 		actions: input.actions,
-		shareUrl: canonicalViewUrl,
-		shareTitle: input.metadata.title,
-		shareIconSvg: SHARE_ICON_SVG,
-		founderAvatarUrl: FOUNDER_AVATAR_URL,
+		shareBalloon,
 	});
 
 	const ogImage = input.metadata.imageUrl ?? DEFAULT_OG_IMAGE;
@@ -106,7 +110,7 @@ export function ViewPage(input: ViewPageInput): Component {
 		styles: VIEW_STYLES,
 		bodyClass: "page-view",
 		content,
-		scripts: SHARE_SCRIPT,
+		scripts: SHARE_BALLOON_SCRIPT,
 		isAuthenticated: false,
 	});
 }

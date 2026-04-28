@@ -399,10 +399,10 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
-			const wrap = doc.querySelector("[data-test-view-share-wrap]");
+			const wrap = doc.querySelector("[data-test-share-balloon-wrap]");
 			assert(wrap, "share balloon wrapper must be rendered");
 			expect(wrap.hasAttribute("hidden")).toBe(true);
-			const btn = doc.querySelector("[data-test-view-share]");
+			const btn = doc.querySelector("[data-test-share-balloon]");
 			assert(btn, "share button must be rendered");
 			expect(btn.getAttribute("aria-label")).toBe("Share this article");
 			expect(btn.getAttribute("data-share-url")).toBe(
@@ -436,7 +436,7 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
-			const closeBtn = doc.querySelector("[data-test-view-share-close]");
+			const closeBtn = doc.querySelector("[data-test-share-balloon-close]");
 			assert(closeBtn, "share balloon close button must be rendered");
 			expect(closeBtn.getAttribute("aria-label")).toBe("Dismiss message");
 		});
@@ -467,7 +467,7 @@ describe("View routes", () => {
 
 			const doc = new JSDOM(response.text).window.document;
 			const script = doc.querySelector(
-				'script[src$="/client-dist/view.share.client.js"]',
+				'script[src$="/client-dist/share-balloon.client.js"]',
 			);
 			assert(script, "share balloon client script must be rendered");
 			expect(script.hasAttribute("defer")).toBe(true);
@@ -498,7 +498,7 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
-			const status = doc.querySelector("[data-view-share-status]");
+			const status = doc.querySelector("[data-share-balloon-status]");
 			assert(status, "share status region must be rendered");
 			expect(status.getAttribute("role")).toBe("status");
 			expect(status.getAttribute("aria-live")).toBe("polite");
@@ -529,7 +529,7 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
-			const label = doc.querySelector("[data-test-view-share-copied]");
+			const label = doc.querySelector("[data-test-share-balloon-copied]");
 			assert(label, "copied feedback label must be rendered");
 			expect(label.textContent?.trim()).toBe("Link copied!");
 		});
@@ -560,7 +560,7 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
-			const btn = doc.querySelector("[data-test-view-share]");
+			const btn = doc.querySelector("[data-test-share-balloon]");
 			assert(btn, "share button must be rendered");
 			expect(btn.getAttribute("data-share-title")).toBe(`Ampersand & "Quotes"`);
 		});
@@ -571,7 +571,7 @@ describe("View routes", () => {
 			const response = await request(app).get("/view");
 
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector("[data-test-view-share]")).toBeNull();
+			expect(doc.querySelector("[data-test-share-balloon]")).toBeNull();
 		});
 
 		it("includes the founder avatar inside the balloon", async () => {
@@ -599,7 +599,7 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			const doc = new JSDOM(response.text).window.document;
-			const avatar = doc.querySelector("[data-test-view-share-avatar]");
+			const avatar = doc.querySelector("[data-test-share-balloon-avatar]");
 			assert(avatar, "share balloon avatar must be rendered");
 			assert.match(avatar.getAttribute("src") ?? "", /\/fayner-brack\.jpg$/);
 		});
@@ -631,9 +631,13 @@ describe("View routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			expect(
 				doc
-					.querySelector("[data-test-view-share-greeting]")
+					.querySelector("[data-test-share-balloon-greeting]")
 					?.textContent?.trim(),
 			).toBe("Hi, I'm Fayner Brack.");
+			const hints = Array.from(
+				doc.querySelectorAll("[data-test-share-balloon-hint]"),
+			).map((el) => el.textContent?.trim());
+			expect(hints).toContain("Click here to share this view!");
 		});
 	});
 

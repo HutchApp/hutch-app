@@ -3,3 +3,13 @@
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
 }
+
+.reader__share-row {
+  position: sticky;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
+  z-index: 11;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  pointer-events: none;
+}

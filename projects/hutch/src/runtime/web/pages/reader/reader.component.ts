@@ -7,7 +7,13 @@ import { Base } from "../../base.component";
 import type { Component } from "../../component.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
+import {
+	SHARE_BALLOON_SCRIPT,
+	renderShareBalloon,
+} from "../../shared/share-balloon/share-balloon.component";
 import { READER_STYLES } from "./reader.styles";
+
+const CANONICAL_BASE_URL = "https://readplace.com";
 
 const READER_TEMPLATE = readFileSync(join(__dirname, "reader.template.html"), "utf-8");
 
@@ -36,7 +42,12 @@ export function ReaderPage(
 		audioEnabled: options?.audioEnabled,
 		backLink: { href: "/queue", label: "← Back to queue" },
 	});
-	const content = render(READER_TEMPLATE, { innerContent });
+	const shareBalloon = renderShareBalloon({
+		shareUrl: `${CANONICAL_BASE_URL}/view/${encodeURIComponent(article.url)}`,
+		shareTitle: article.metadata.title,
+		shareHint: "Click here to share this post!",
+	});
+	const content = render(READER_TEMPLATE, { innerContent, shareBalloon });
 
 	return Base({
 		seo: {
@@ -48,6 +59,7 @@ export function ReaderPage(
 		styles: READER_STYLES,
 		bodyClass: "page-reader",
 		content,
+		scripts: SHARE_BALLOON_SCRIPT,
 		isAuthenticated: true,
 		emailVerified: options?.emailVerified,
 	});

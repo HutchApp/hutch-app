@@ -1711,6 +1711,150 @@ describe("Queue routes", () => {
 			expect(markCrawlPendingCalls).toBe(baseline.crawl + 1);
 			expect(markSummaryPendingCalls).toBe(baseline.summary + 1);
 		});
+
+		describe("Share balloon", () => {
+			it("renders the share balloon pointing at the public /view URL (not /read)", async () => {
+				const articleUrl = "https://example.com/shareable-post";
+				const articleHtml = `
+				<html><head><title>Shareable Post</title></head>
+				<body><article>
+					<h1>Shareable Post</h1>
+					<p>This article has enough body copy to clear the readability threshold.</p>
+					<p>A second paragraph keeps the parser happy with sufficient text.</p>
+				</article></body></html>`;
+
+				const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+				const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+				const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
+				const applyParseResult = createFakeApplyParseResult({
+					articleStore: fixture.articleStore,
+					articleCrawl: fixture.articleCrawl,
+					parseArticle,
+				});
+				const { app, auth } = createTestApp({
+					...fixture,
+					parser: { parseArticle, crawlArticle },
+					events: {
+						publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+						publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+						publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+						publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					},
+				});
+				const agent = await loginAgent(app, auth);
+
+				await agent.post("/queue/save").type("form").send({ url: articleUrl });
+				const queueDoc = new JSDOM((await agent.get("/queue")).text).window.document;
+				const articleId = queueDoc
+					.querySelector("[data-test-article-list] .queue-article")
+					?.getAttribute("data-test-article");
+
+				const response = await agent.get(`/queue/${articleId}/read`);
+
+				expect(response.status).toBe(200);
+				const doc = new JSDOM(response.text).window.document;
+				const wrap = doc.querySelector("[data-test-share-balloon-wrap]");
+				assert(wrap, "share balloon wrapper must be rendered on /read");
+				expect(wrap.hasAttribute("hidden")).toBe(true);
+
+				const btn = doc.querySelector("[data-test-share-balloon]");
+				assert(btn, "share button must be rendered on /read");
+				expect(btn.getAttribute("data-share-url")).toBe(
+					`https://readplace.com/view/${encodeURIComponent(articleUrl)}`,
+				);
+				expect(btn.getAttribute("data-share-title")).toBe("Shareable Post");
+			});
+
+			it("uses the 'share this post' hint copy (not the /view 'share this view' copy)", async () => {
+				const articleHtml = `
+				<html><head><title>Hint Copy</title></head>
+				<body><article>
+					<h1>Hint Copy</h1>
+					<p>Body copy that easily clears the readability threshold check.</p>
+					<p>A second paragraph adds enough words for the parser to succeed.</p>
+				</article></body></html>`;
+
+				const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+				const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+				const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
+				const applyParseResult = createFakeApplyParseResult({
+					articleStore: fixture.articleStore,
+					articleCrawl: fixture.articleCrawl,
+					parseArticle,
+				});
+				const { app, auth } = createTestApp({
+					...fixture,
+					parser: { parseArticle, crawlArticle },
+					events: {
+						publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+						publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+						publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+						publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					},
+				});
+				const agent = await loginAgent(app, auth);
+
+				await agent.post("/queue/save").type("form").send({ url: "https://example.com/hint-copy" });
+				const queueDoc = new JSDOM((await agent.get("/queue")).text).window.document;
+				const articleId = queueDoc
+					.querySelector("[data-test-article-list] .queue-article")
+					?.getAttribute("data-test-article");
+
+				const response = await agent.get(`/queue/${articleId}/read`);
+
+				const doc = new JSDOM(response.text).window.document;
+				const hints = Array.from(
+					doc.querySelectorAll("[data-test-share-balloon-hint]"),
+				).map((el) => el.textContent?.trim());
+				expect(hints).toContain("Click here to share this post!");
+				expect(hints).not.toContain("Click here to share this view!");
+			});
+
+			it("boots the share balloon client via the same bundle as /view", async () => {
+				const articleHtml = `
+				<html><head><title>Bundle Boot</title></head>
+				<body><article>
+					<h1>Bundle Boot</h1>
+					<p>Body copy that easily clears the readability threshold check.</p>
+					<p>A second paragraph adds enough words for the parser to succeed.</p>
+				</article></body></html>`;
+
+				const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+				const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+				const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
+				const applyParseResult = createFakeApplyParseResult({
+					articleStore: fixture.articleStore,
+					articleCrawl: fixture.articleCrawl,
+					parseArticle,
+				});
+				const { app, auth } = createTestApp({
+					...fixture,
+					parser: { parseArticle, crawlArticle },
+					events: {
+						publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+						publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+						publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+						publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					},
+				});
+				const agent = await loginAgent(app, auth);
+
+				await agent.post("/queue/save").type("form").send({ url: "https://example.com/bundle-boot" });
+				const queueDoc = new JSDOM((await agent.get("/queue")).text).window.document;
+				const articleId = queueDoc
+					.querySelector("[data-test-article-list] .queue-article")
+					?.getAttribute("data-test-article");
+
+				const response = await agent.get(`/queue/${articleId}/read`);
+
+				const doc = new JSDOM(response.text).window.document;
+				const script = doc.querySelector(
+					'script[src$="/client-dist/share-balloon.client.js"]',
+				);
+				assert(script, "share balloon client script must be rendered on /read");
+				expect(script.hasAttribute("defer")).toBe(true);
+			});
+		});
 	});
 
 	describe("Parse failure", () => {

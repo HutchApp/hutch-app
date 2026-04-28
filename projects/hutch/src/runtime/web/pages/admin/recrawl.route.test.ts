@@ -192,7 +192,7 @@ describe("Admin recrawl routes", () => {
 			const readerSlot = doc.querySelector("[data-test-reader-slot]");
 			expect(readerSlot?.getAttribute("data-reader-status")).toBe("pending");
 			expect(doc.querySelector("[data-test-admin-recrawl]")).not.toBeNull();
-			expect(doc.querySelector("[data-view-share]")).toBeNull();
+			expect(doc.querySelector("[data-share-balloon]")).toBeNull();
 			expect(doc.querySelector("[data-test-view-cta]")).toBeNull();
 			expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe(
 				"noindex, nofollow",

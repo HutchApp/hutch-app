@@ -17,10 +17,10 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const OUT_DIR = path.join(PROJECT_ROOT, "src", "runtime", "web", "client-dist");
 
 /**
- * 1. `globalName` exposes the module exports on `window.ViewShare` inside the IIFE.
+ * 1. `globalName` exposes the module exports on `window.ShareBalloon` inside the IIFE.
  * 2. `footer.js` runs *after* the IIFE body, calling the exported factory with
  *    the real browser globals. The wiring stays out of the source TS so the
- *    `view.share.client.ts` module remains pure and unit-testable.
+ *    `share-balloon.client.ts` module remains pure and unit-testable.
  * 3. `keepNames: false` — the only reason esbuild's `__name` helper caused the
  *    original bug was an inline `.toString()`; inside a self-contained IIFE the
  *    helper is harmless, but we don't need name preservation for runtime logic.
@@ -29,12 +29,12 @@ const BUNDLES = [
 	{
 		entry: path.join(
 			PROJECT_ROOT,
-			"src/runtime/web/pages/view/view.share.client.ts",
+			"src/runtime/web/shared/share-balloon/share-balloon.client.ts",
 		),
-		outfile: path.join(OUT_DIR, "view.share.client.js"),
-		globalName: "ViewShare",
+		outfile: path.join(OUT_DIR, "share-balloon.client.js"),
+		globalName: "ShareBalloon",
 		footer: [
-			"ViewShare.initShareBalloon({",
+			"ShareBalloon.initShareBalloon({",
 			"  window: window,",
 			"  document: window.document,",
 			"  storage: window.localStorage,",

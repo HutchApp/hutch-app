@@ -41,8 +41,8 @@ export function initShareBalloon(
 	const SCROLL_THRESHOLD_PX = 100;
 	const OPEN_DELAY_MS = 1000;
 	const COPIED_FADE_MS = 3000;
-	const OPEN_CLASS = "view__share-balloon-wrap--open";
-	const COPIED_VISIBLE_CLASS = "view__share-balloon-copied--visible";
+	const OPEN_CLASS = "share-balloon__wrap--open";
+	const COPIED_VISIBLE_CLASS = "share-balloon__copied--visible";
 
 	function ensure<T>(value: T | null | undefined, description: string): T {
 		if (value === null || value === undefined) {
@@ -75,11 +75,11 @@ export function initShareBalloon(
 		}
 	}
 
-	const wrap = pickElement(deps.document, "[data-view-share-wrap]");
-	const btn = pickElement(wrap, "[data-view-share]");
-	const closeBtn = pickElement(wrap, "[data-view-share-close]");
-	const copiedLabel = pickElement(wrap, "[data-view-share-copied]");
-	const status = pickElement(deps.document, "[data-view-share-status]");
+	const wrap = pickElement(deps.document, "[data-share-balloon-wrap]");
+	const btn = pickElement(wrap, "[data-share-balloon]");
+	const closeBtn = pickElement(wrap, "[data-share-balloon-close]");
+	const copiedLabel = pickElement(wrap, "[data-share-balloon-copied]");
+	const status = pickElement(deps.document, "[data-share-balloon-status]");
 
 	const url = pickAttribute(btn, "data-share-url");
 	const title = pickAttribute(btn, "data-share-title");
