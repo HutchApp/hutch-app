@@ -2,11 +2,8 @@ import type { KnipConfig } from "knip";
 
 export default {
 	entry: [
-		// Canary entrypoint invoked by the nx `check-stuck-articles` target and
-		// the stuck-articles-canary workflow. Compiled to
-		// dist/scripts/check-stuck-articles.js and run with `node --test`.
-		// Requires the exclude patterns table (exclude-patterns.ts) as a direct import.
 		"scripts/check-stuck-articles.ts",
+		"scripts/classify-row.ts",
 		"scripts/exclude-patterns.ts",
 	],
 	ignoreDependencies: [
