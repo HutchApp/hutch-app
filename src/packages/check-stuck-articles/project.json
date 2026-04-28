@@ -1,0 +1,14 @@
+{
+  "name": "@packages/check-stuck-articles",
+  "targets": {
+    "check": {
+      "command": "pnpm lint",
+      "options": { "cwd": "{projectRoot}" }
+    },
+    "check-stuck-articles": {
+      "command": "node --test --test-reporter=spec dist/scripts/check-stuck-articles.js",
+      "options": { "cwd": "{projectRoot}" },
+      "dependsOn": ["compile"]
+    }
+  }
+}
