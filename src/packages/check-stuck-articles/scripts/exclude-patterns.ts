@@ -11,7 +11,6 @@
  */
 export const EXCLUDE_PATTERNS: readonly RegExp[] = [
 	/:\/\/hutch-app\.com/,
-	/:\/\/readplace\.com/,
 	/:\/\/localhost/,
 	/^chrome:\/\//,
 	/^about:home$/,
