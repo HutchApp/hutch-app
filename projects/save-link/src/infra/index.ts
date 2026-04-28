@@ -110,11 +110,8 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,
-		// Read on contentBucket lets readTierSnapshot HeadObject the tier-0 source
-		// key. Without this the role gets 403 (not 404) for missing keys, the throw
-		// escapes saveLinkWork, and LinkSavedEvent never publishes — the article
-		// stays summaryStatus=pending forever.
-		...contentBucket.readPolicies("save-link-command-s3-read"),
+		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		...contentBucket.readPolicies("save-link-command-content-read"),
 		...contentBucket.writePolicies("save-link-command-s3"),
 	],
 });
@@ -165,6 +162,8 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 		...pendingHtmlBucket.readPolicies("save-link-raw-html-command-pending-html"),
 		// Worker writes sources/tier-0.html + sidecar; the select-content Lambda
 		// owns canonical reads/writes and the Deepseek selector contest.
+		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		...contentBucket.readPolicies("save-link-raw-html-command-content-read"),
 		...contentBucket.writePolicies("save-link-raw-html-command-s3"),
 	],
 });
@@ -212,11 +211,8 @@ const saveAnonymousLinkCommandLambda = new HutchLambda("save-anonymous-link-comm
 	},
 	policies: [
 		...saveAnonymousLinkCommandDynamodb.policies,
-		// Read on contentBucket lets readTierSnapshot HeadObject the tier-0 source
-		// key. Without this the role gets 403 (not 404) for missing keys, the throw
-		// escapes saveLinkWork, and AnonymousLinkSavedEvent never publishes — the
-		// article stays summaryStatus=pending forever.
-		...contentBucket.readPolicies("save-anonymous-link-command-s3-read"),
+		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		...contentBucket.readPolicies("save-anonymous-link-command-content-read"),
 		...contentBucket.writePolicies("save-anonymous-link-command-s3"),
 	],
 });
