@@ -460,4 +460,27 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 				.toBeLessThan(publishLinkSaved.mock.invocationCallOrder[0]);
 		});
 	});
+
+	it("reports a LinkSavedEvent publish failure via logParseError with SDK metadata so a 403 surfaces in the parse-errors widget instead of only as 'UnknownError' in the raw Lambda log", async () => {
+		const sdkError = Object.assign(new Error("UnknownError"), {
+			$fault: "client" as const,
+			$metadata: { httpStatusCode: 403, requestId: "F172QMTAPW18EQ08", extendedRequestId: "cZFJ81aE2zsou1Q" },
+		});
+		sdkError.name = "Unknown";
+		const publishLinkSaved = jest.fn().mockRejectedValue(sdkError);
+		const { handler, logParseError } = createHandler({ publishLinkSaved });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toBe(sdkError);
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			reason: expect.stringContaining("post-publish-step-failed:"),
+		});
+		const reason = (logParseError.mock.calls[0]?.[0] as { reason: string }).reason;
+		expect(reason).toContain("status=403");
+		expect(reason).toContain("requestId=F172QMTAPW18EQ08");
+		expect(reason).toContain("extendedRequestId=cZFJ81aE2zsou1Q");
+	});
 });

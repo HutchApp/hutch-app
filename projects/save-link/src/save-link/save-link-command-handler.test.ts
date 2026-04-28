@@ -250,6 +250,49 @@ describe("initSaveLinkCommandHandler", () => {
 		});
 	});
 
+	it("reports a CrawlArticleCompletedEvent publish failure via logParseError with SDK metadata so a 403 hides nothing — without this the Lambda logs only 'UnknownError' and the article stays stuck in summaryStatus=pending", async () => {
+		const logParseError = jest.fn();
+		const sdkError = Object.assign(new Error("UnknownError"), {
+			$fault: "client" as const,
+			$metadata: { httpStatusCode: 403, requestId: "F172QMTAPW18EQ08", extendedRequestId: "cZFJ81aE2zsou1Q" },
+		});
+		sdkError.name = "Unknown";
+		const publishEvent = jest.fn().mockRejectedValue(sdkError);
+
+		const handler = createHandler({ publishEvent, logParseError });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toBe(sdkError);
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			reason: expect.stringContaining("post-publish-step-failed:"),
+		});
+		const reason = (logParseError.mock.calls[0]?.[0] as { reason: string }).reason;
+		expect(reason).toContain("status=403");
+		expect(reason).toContain("requestId=F172QMTAPW18EQ08");
+		expect(reason).toContain("extendedRequestId=cZFJ81aE2zsou1Q");
+	});
+
+	it("reports a LinkSavedEvent publish failure via logParseError so a downstream summary stuck at pending has a discoverable trail", async () => {
+		const logParseError = jest.fn();
+		const publishLinkSaved = jest.fn().mockRejectedValue(new Error("EventBridge throttled"));
+
+		const handler = createHandler({ publishLinkSaved, logParseError });
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {}),
+		).rejects.toThrow("EventBridge throttled");
+
+		expect(logParseError).toHaveBeenCalledWith({
+			url: "https://example.com/article",
+			reason: expect.stringContaining("post-publish-step-failed:"),
+		});
+		const reason = (logParseError.mock.calls[0]?.[0] as { reason: string }).reason;
+		expect(reason).toContain("message=EventBridge throttled");
+	});
+
 	it("stringifies non-Error throws from a post-parse step into the parse-errors reason", async () => {
 		const logParseError = jest.fn();
 		const putObject = jest.fn().mockRejectedValue("bare-string-thrown");

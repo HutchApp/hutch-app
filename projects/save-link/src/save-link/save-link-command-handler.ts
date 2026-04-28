@@ -19,6 +19,7 @@ import {
 	type PutObject,
 	type UpdateContentLocation,
 } from "./save-link-work";
+import { describeAwsError } from "./describe-aws-error";
 
 export type { PutObject, UpdateContentLocation } from "./save-link-work";
 
@@ -46,7 +47,7 @@ export function initSaveLinkCommandHandler(deps: {
 	logCrawlOutcome: LogCrawlOutcome;
 	readTierSnapshot: ReadTierSnapshot;
 }): SQSHandler {
-	const { publishLinkSaved, publishEvent, logger } = deps;
+	const { publishLinkSaved, publishEvent, logger, logParseError } = deps;
 
 	const { saveLinkWork } = initSaveLinkWork({
 		crawlArticle: deps.crawlArticle,
@@ -77,13 +78,24 @@ export function initSaveLinkCommandHandler(deps: {
 
 			await saveLinkWork(detail.url);
 
-			await publishEvent({
-				source: CrawlArticleCompletedEvent.source,
-				detailType: CrawlArticleCompletedEvent.detailType,
-				detail: JSON.stringify({ url: detail.url }),
-			});
+			// Wrap the post-save publish steps so EventBridge / SQS faults surface in
+			// parse-errors instead of only as a raw "UnknownError" Lambda log. The
+			// row already has crawlStatus=ready by this point, so a publish failure
+			// here means LinkSavedEvent never fires and downstream summary work is
+			// stuck — exactly the failure mode that left an article stranded in
+			// summaryStatus=pending until investigated by hand.
+			try {
+				await publishEvent({
+					source: CrawlArticleCompletedEvent.source,
+					detailType: CrawlArticleCompletedEvent.detailType,
+					detail: JSON.stringify({ url: detail.url }),
+				});
 
-			await publishLinkSaved({ url: detail.url, userId: detail.userId });
+				await publishLinkSaved({ url: detail.url, userId: detail.userId });
+			} catch (error) {
+				logParseError({ url: detail.url, reason: `post-publish-step-failed: ${describeAwsError(error)}` });
+				throw error;
+			}
 			logger.info("[SaveLinkCommand] published LinkSavedEvent", { url: detail.url });
 		}
 	};

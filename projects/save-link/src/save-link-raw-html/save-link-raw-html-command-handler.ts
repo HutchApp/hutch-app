@@ -13,6 +13,7 @@ import type { ReadCanonicalContent } from "./canonical-content.types";
 import type { PromoteSourceToCanonical } from "./promote-source.types";
 import type { SelectMostCompleteContent } from "./select-content";
 import type { MarkCrawlFailed, MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
+import { describeAwsError } from "../save-link/describe-aws-error";
 
 const TIER = "tier-0";
 
@@ -151,7 +152,17 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 			await markCrawlReady({ url: detail.url });
 
 			if (canonicalChanged) {
-				await publishLinkSaved({ url: detail.url, userId: detail.userId });
+				// Wrap the publish so EventBridge / SQS faults surface in parse-errors
+				// instead of only as a raw "UnknownError" Lambda log. crawlStatus is
+				// already ready by this point, so a publish failure here means
+				// LinkSavedEvent never fires and downstream summary work stalls at
+				// pending — exactly the failure mode that requires manual recovery.
+				try {
+					await publishLinkSaved({ url: detail.url, userId: detail.userId });
+				} catch (error) {
+					logParseError({ url: detail.url, reason: `post-publish-step-failed: ${describeAwsError(error)}` });
+					throw error;
+				}
 			}
 
 			const snapshot = await readTierSnapshot({ url: detail.url });
