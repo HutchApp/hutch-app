@@ -75,6 +75,7 @@ import { wantsSiren } from "./web/content-negotiation";
 import { HomePage } from "./web/pages/home";
 import { PrivacyPage } from "./web/pages/privacy";
 import { TermsPage } from "./web/pages/terms";
+import { E2EFixturePage } from "./web/pages/e2e-fixture";
 import { InstallPage, fetchFirefoxDownloadUrl, fetchChromeDownloadUrl } from "./web/pages/install";
 import { NotFoundPage } from "./web/pages/not-found";
 import { requireEnv, getEnv } from "./require-env";
@@ -302,6 +303,19 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.get("/terms", (_req: Request, res: Response) => {
 		sendComponent(res, TermsPage());
 	});
+
+	// Path-uniqued article fixture for staging e2e tests. The :id segment is
+	// ignored — body is identical for every id — so tests pass a per-run unique
+	// value to ensure each CI run targets a fresh article row instead of
+	// inheriting whatever state the previous run left in DynamoDB. Gated off
+	// when NODE_ENV is "production" so the route does not exist on the prod
+	// Lambda; tests (NODE_ENV=test via Jest) and local dev (NODE_ENV unset)
+	// both expose it.
+	if (getEnv("NODE_ENV") !== "production") {
+		app.get("/e2e/article/:id", (_req: Request, res: Response) => {
+			sendComponent(res, E2EFixturePage());
+		});
+	}
 
 	app.get("/install", async (req: Request, res: Response) => {
 		const browser = req.query.browser === "firefox" ? "firefox" : "chrome";

@@ -1,0 +1,29 @@
+  <main>
+    <article>
+      <h1>Readplace E2E test fixture article</h1>
+      <p>Last updated: 28 April 2026</p>
+
+      <section>
+        <h2>What this page is</h2>
+        <p>This page is a deterministic, path-uniqued article served by Readplace's own staging app. It exists exclusively to be crawled by Readplace's end-to-end tests against the staging environment, where the test runs that exercise the anonymous save → crawl → summary pipeline need an article URL whose state cannot leak from one CI run to the next.</p>
+        <p>Earlier the same flow targeted a hard-coded production page (the Readplace privacy policy). When the save chain regressed for any reason — a missing IAM permission, a mis-shaped event, an upstream provider hiccup — the global article row was left stranded with crawlStatus=ready but summaryStatus=pending. Every subsequent run hit the same cached row, observed the stuck state, and timed out waiting for the summary to advance, even though the underlying bug had already been patched. One broken run was enough to brick the next dozen.</p>
+      </section>
+
+      <section>
+        <h2>How the path id makes runs independent</h2>
+        <p>The route is mounted at /e2e/article/:id, and the :id segment is unused by the handler — every request returns the same body. Tests pass a per-run timestamp (and, where multiple distinct articles are needed in a single run, a slot suffix) into :id so that each run's article URL is unique. The article id derived from the URL therefore does not collide with anything Readplace has saved before, and the save → crawl → summary pipeline runs end-to-end against a fresh row instead of finding a poisoned one.</p>
+        <p>Reusing a single shared article path across runs was attractive because it kept the test config terse, but it tied the health of every future run to the cleanest possible behaviour of the save chain on every preceding run. That is exactly the dependency direction the test suite needs to avoid: a transient outage upstream should fail one run, not trap every run that comes after it until someone manually deletes a DynamoDB item.</p>
+      </section>
+
+      <section>
+        <h2>Why the body is this long</h2>
+        <p>The summariser short-circuits when the cleaned, whitespace-stripped article body is at most three times the maximum summary length. With the maximum summary length set at 750 characters that threshold sits a little over 2,200 characters. The fixture body is intentionally written well above that mark so the summariser exercises its real path — calling Deepseek, persisting the result, advancing the row from pending to ready — instead of skipping straight to the short-circuit branch. Skipped is a valid terminal status for the assertion, but exercising the full happy path on every run gives stronger coverage of the same plumbing the production save flow depends on.</p>
+        <p>Mozilla's Readability extractor, which Readplace uses inside the article-parser, prefers the densest piece of text-bearing markup as the article body. Wrapping the prose in a top-level article element with a clear h1 and a series of section nodes mirrors the same shape the production privacy and terms pages use, and is enough for Readability to lock onto this content rather than the surrounding header or footer.</p>
+      </section>
+
+      <section>
+        <h2>What this page is not</h2>
+        <p>This page is not part of the Readplace product, is not linked from any user-facing surface, is excluded from search indexing via the noindex robots directive, and does not depend on user state or request shape. Treat it as machine-only. Hand-editing it to make assertions pass is almost always a sign that the underlying pipeline has regressed and the fix belongs in the worker, not here.</p>
+      </section>
+    </article>
+  </main>

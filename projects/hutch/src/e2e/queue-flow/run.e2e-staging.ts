@@ -1,5 +1,6 @@
 /* c8 ignore start -- staging E2E test, only run in CI */
 import assert from 'node:assert'
+import { randomUUID } from 'node:crypto'
 import { test } from '@playwright/test'
 import type { PageAction } from '../hateoas/navigation-handler.types'
 import {
@@ -39,6 +40,19 @@ function skipFactory<K extends string>(
 test.describe('Queue management flow (staging)', () => {
   test('signup, logout, login, add articles, pagination, sort, read, delete, verify tabs', async ({ page, baseURL }) => {
     assert(baseURL, "baseURL must be defined — set STAGING_URL env var")
+
+    // Each CI run gets its own runId so every article URL the test feeds into
+    // /save and /view is unique. Reusing a shared URL across runs (e.g.
+    // ${baseURL}/privacy?view=1, which API Gateway strips back to
+    // ${baseURL}/privacy) would let one broken run strand the row at
+    // summaryStatus=pending and brick every subsequent run on the cached state.
+    // The /e2e/article/:id route on hutch returns the same fixture body for
+    // every :id, so unique paths produce unique articles without needing a
+    // separate static page per slot. randomUUID over Date.now() so two runs
+    // scheduled in the same millisecond cannot collide.
+    const runId = randomUUID()
+    const fixtureUrl = (slug: string): string => `${baseURL}/e2e/article/${runId}-${slug}`
+    const FIXTURE_TITLE = 'Readplace E2E test fixture article'
 
     const cleanupProgress: CleanupProgress = {
       previousArticlesDeleted: false,
@@ -81,13 +95,13 @@ test.describe('Queue management flow (staging)', () => {
 
     const stagingArticles: TestArticleData = {
       urls: [
-        `${baseURL}/privacy?v=9`,
-        `${baseURL}/privacy?v=10`,
-        `${baseURL}/privacy?v=11`,
-        `${baseURL}/privacy?v=12`,
+        fixtureUrl('queue-1'),
+        fixtureUrl('queue-2'),
+        fixtureUrl('queue-3'),
+        fixtureUrl('queue-4'),
       ],
-      titles: ['Privacy Policy — Readplace', 'Privacy Policy — Readplace', 'Privacy Policy — Readplace', 'Privacy Policy — Readplace'],
-      paginationUrls: Array.from({ length: 17 }, (_, i) => `${baseURL}/privacy?p=${i + 1}`),
+      titles: [FIXTURE_TITLE, FIXTURE_TITLE, FIXTURE_TITLE, FIXTURE_TITLE],
+      paginationUrls: Array.from({ length: 17 }, (_, i) => fixtureUrl(`pagi-${i + 1}`)),
     }
 
     await runQueueFlow(page, {
@@ -100,7 +114,7 @@ test.describe('Queue management flow (staging)', () => {
       passwordResetProgress,
       preQueueActionFactories: {
         anonymousView: createAnonymousViewPageActions(
-          { baseUrl: baseURL, testUrl: `${baseURL}/privacy?view=1` },
+          { baseUrl: baseURL, testUrl: fixtureUrl('anon-view') },
           viewPageProgress,
         ),
         onboarding: skipFactory(ONBOARDING_ACTION_KEYS),
@@ -108,7 +122,7 @@ test.describe('Queue management flow (staging)', () => {
         cleanup: createCleanupActions(cleanupProgress),
         passwordReset: skipFactory(PASSWORD_RESET_ACTION_KEYS),
         savePermalink: createSavePermalinkActions(
-          { baseUrl: baseURL, testUrl: `${baseURL}/privacy?permalink=1` },
+          { baseUrl: baseURL, testUrl: fixtureUrl('permalink') },
           cleanupProgress,
           savePermalinkProgress,
         ),

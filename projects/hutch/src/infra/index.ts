@@ -127,7 +127,7 @@ const lambda = new HutchLambda("hutch", {
 	memorySize: 512,
 	timeout: 30,
 	environment: {
-		NODE_ENV: "production",
+		NODE_ENV: stage === "production" ? "production" : "development",
 		PERSISTENCE: "prod",
 		APP_ORIGIN: appOrigin,
 		DYNAMODB_ARTICLES_TABLE: storage.articlesTable.name,
