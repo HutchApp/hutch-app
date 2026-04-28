@@ -15,9 +15,8 @@
  *   - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (the SDK reads these directly)
  *   - DYNAMODB_ARTICLES_TABLE
  *
- * Optional env:
- *   - READPLACE_ORIGIN (defaults to https://readplace.com — used to build
- *     admin recrawl URLs in the failing-test message for each stuck row)
+ *   - READPLACE_ORIGIN (used to build admin recrawl URLs in the
+ *     failing-test message for each stuck row)
  *
  * Run via: pnpm nx run @packages/check-stuck-articles:check-stuck-articles
  */
@@ -45,7 +44,7 @@ function requireEnv(name: string): string {
 
 const REGION = requireEnv("AWS_REGION");
 const TABLE = requireEnv("DYNAMODB_ARTICLES_TABLE");
-const ORIGIN = process.env.READPLACE_ORIGIN ?? "https://readplace.com";
+const ORIGIN = requireEnv("READPLACE_ORIGIN");
 
 /**
  * Loose row schema for the canary's projection. Every attribute except `url`

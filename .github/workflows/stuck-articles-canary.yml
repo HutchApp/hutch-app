@@ -28,6 +28,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ap-southeast-2
       DYNAMODB_ARTICLES_TABLE: hutch-articles-cda0a08
+      READPLACE_ORIGIN: https://readplace.com
     steps:
       - uses: actions/checkout@v6
 
