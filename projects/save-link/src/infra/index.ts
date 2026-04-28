@@ -109,6 +109,11 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,
+		// Read on contentBucket lets readTierSnapshot HeadObject the tier-0 source
+		// key. Without this the role gets 403 (not 404) for missing keys, the throw
+		// escapes saveLinkWork, and LinkSavedEvent never publishes — the article
+		// stays summaryStatus=pending forever.
+		...contentBucket.readPolicies("save-link-command-s3-read"),
 		...contentBucket.writePolicies("save-link-command-s3"),
 	],
 });
