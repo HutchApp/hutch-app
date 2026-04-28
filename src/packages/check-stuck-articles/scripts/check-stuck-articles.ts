@@ -21,6 +21,7 @@
  * Run via: pnpm nx run @packages/check-stuck-articles:check-stuck-articles
  */
 import assert from "node:assert/strict";
+import { writeFile } from "node:fs/promises";
 import { test } from "node:test";
 import {
 	CrawlStatusSchema,
@@ -75,6 +76,14 @@ interface StuckRow {
 	recrawlUrl: string;
 }
 
+/**
+ * Hard cap on DDB scan pages. The articles table is small enough that a real
+ * scan completes in well under 10 pages. Crossing 50 means the FilterExpression
+ * stopped narrowing the scan (or the table grew an order of magnitude) — fail
+ * loud here instead of burning the runner's 10-minute budget.
+ */
+const MAX_PAGES = 50;
+
 async function collectStuckRows(): Promise<StuckRow[]> {
 	const client = createDynamoDocumentClient({ region: REGION });
 	const table = defineDynamoTable({
@@ -85,8 +94,14 @@ async function collectStuckRows(): Promise<StuckRow[]> {
 	const stuck: StuckRow[] = [];
 	let skippedNoOriginal = 0;
 	let excludedDomain = 0;
+	let pageCount = 0;
 	let lastEvaluatedKey: Record<string, unknown> | undefined;
 	do {
+		pageCount += 1;
+		assert(
+			pageCount <= MAX_PAGES,
+			`pagination cap reached (${MAX_PAGES} pages) — refine FilterExpression or raise the cap if the table is legitimately growing`,
+		);
 		const page = await table.scan({
 			FilterExpression:
 				"summaryStatus IN (:pending, :failed) " +
@@ -128,8 +143,21 @@ async function collectStuckRows(): Promise<StuckRow[]> {
 	return stuck;
 }
 
+/**
+ * When STUCK_ARTICLES_REPORT_PATH is set (CI), drop a JSON report so the
+ * on-failure workflow step can format the @claude issue body without
+ * re-scanning DDB or scraping node:test output. Local runs leave the env
+ * unset and skip the write.
+ */
+async function writeReportIfRequested(stuck: StuckRow[]): Promise<void> {
+	const reportPath = process.env.STUCK_ARTICLES_REPORT_PATH;
+	if (reportPath === undefined) return;
+	await writeFile(reportPath, `${JSON.stringify({ stuck }, null, 2)}\n`, "utf8");
+}
+
 test("Stuck articles canary", async (t) => {
 	const stuck = await collectStuckRows();
+	await writeReportIfRequested(stuck);
 	for (const row of stuck) {
 		const label = `[${row.reasons.join(",")}] ${row.originalUrl}`;
 		await t.test(label, () => {

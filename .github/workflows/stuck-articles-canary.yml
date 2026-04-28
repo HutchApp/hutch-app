@@ -15,6 +15,12 @@ on:
 
 permissions:
   contents: read
+  # `issues: write` is needed so the on-failure step can open or comment on
+  # the @claude tracking issue when the scheduled run goes red. The actual
+  # API call uses `secrets.PAT_TOKEN` (so the comment author_association is
+  # OWNER and the listener's gate clears), but GitHub still requires the
+  # workflow-level scope to be declared.
+  issues: write
 
 jobs:
   stuck-articles-canary:
@@ -30,6 +36,10 @@ jobs:
       AWS_REGION: ap-southeast-2
       DYNAMODB_ARTICLES_TABLE: hutch-articles-cda0a08
       READPLACE_ORIGIN: https://readplace.com
+      # Read by check-stuck-articles.ts: when set, the canary writes a JSON
+      # report of the stuck rows to this path before the failing sub-tests
+      # run. The on-failure step below reads it to format the issue body.
+      STUCK_ARTICLES_REPORT_PATH: ${{ github.workspace }}/.stuck-articles-report.json
     steps:
       - uses: actions/checkout@v6
 
@@ -46,3 +56,85 @@ jobs:
 
       - name: Run stuck articles canary
         run: pnpm nx run @packages/check-stuck-articles:check-stuck-articles
+
+      # ┌──────────────────────────────────────────────────────────────────┐
+      # │ ON SCHEDULED FAILURE: open or update an @claude tracking issue   │
+      # │ Workflow_dispatch failures are deliberately silent — manual runs │
+      # │ already give the operator the failure context they asked for.    │
+      # └──────────────────────────────────────────────────────────────────┘
+      - name: Open or update @claude issue on schedule failure
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v8
+        with:
+          # PAT_TOKEN ensures the comment/issue author_association is OWNER,
+          # which is the gate claude-listener.yml checks before running.
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const reportPath = process.env.STUCK_ARTICLES_REPORT_PATH;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const today = new Date().toISOString().slice(0, 10);
+            const titlePrefix = `[Stuck articles canary ${today}]`;
+            const marker = '<!-- CLAUDE_STUCK_ARTICLES_FIX -->';
+
+            // The canary writes the report inside the failing test, so it
+            // exists for "real" failures (≥1 stuck row). If it's missing,
+            // the canary blew up earlier (e.g., MAX_PAGES assert, AWS auth)
+            // — surface a generic body that points the listener at the run.
+            let stuckList = '_(no report file produced — see workflow logs)_';
+            let stuckCount = 0;
+            if (fs.existsSync(reportPath)) {
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              stuckCount = report.stuck.length;
+              if (stuckCount > 0) {
+                stuckList = report.stuck
+                  .map((row) => `- [${row.reasons.join(',')}] ${row.originalUrl} — fetched: ${row.contentFetchedAt ?? '-'}; failure: ${row.failureReason ?? '-'}; recrawl: ${row.recrawlUrl}`)
+                  .join('\n');
+              }
+            }
+
+            const body = [
+              marker,
+              '',
+              '@claude The stuck-articles canary failed on its scheduled run. Use your Read tool to read `.github/workflows/stuck-articles-canary.md` for instructions.',
+              '',
+              '## Context',
+              `- **Run**: ${runUrl}`,
+              `- **Date (UTC)**: ${today}`,
+              `- **Stuck rows**: ${stuckCount}`,
+              '',
+              '## Stuck rows',
+              stuckList,
+            ].join('\n');
+
+            // Date-prefixed dedup: if today's issue already exists, append
+            // a comment instead of opening a duplicate. With one cron a day
+            // this is mostly defensive — but it covers retries (someone
+            // adds a second cron line, GitHub fires the schedule twice) and
+            // keeps each day's failures consolidated on a single tracking
+            // issue.
+            const search = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "${titlePrefix}"`,
+            });
+
+            if (search.data.total_count > 0) {
+              const issueNumber = search.data.items[0].number;
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+              console.log(`Appended comment to existing issue #${issueNumber}`);
+              return;
+            }
+
+            const title = `${titlePrefix} ${stuckCount} stuck article(s)`;
+            const created = await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+            });
+            console.log(`Created issue #${created.data.number}: ${title}`);
