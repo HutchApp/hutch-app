@@ -4,12 +4,13 @@ name: Stuck articles canary
 # one node:test sub-test per article whose state machines never reached a
 # terminal-good state. A green run means there are no stuck articles.
 #
-# Manually triggered only — Phase 4 of the schema-bound canaries plan adds
-# the daily cron schedule. Triggering this from the Actions UI lets the shape
-# be validated against current prod (currently 0 stuck rows) before automation
-# turns it on.
+# Runs daily at 06:30 AEST (30 minutes after the tier-1 crawl-pipeline canary
+# so the two prod-scan canaries don't contend) and on demand from the Actions
+# UI.
 
 on:
+  schedule:
+    - cron: '30 19 * * *'   # 06:30 AEST daily
   workflow_dispatch:
 
 permissions:
