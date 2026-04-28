@@ -58,12 +58,15 @@ jobs:
         run: pnpm nx run @packages/check-stuck-articles:check-stuck-articles
 
       # ┌──────────────────────────────────────────────────────────────────┐
-      # │ ON SCHEDULED FAILURE: open or update an @claude tracking issue   │
-      # │ Workflow_dispatch failures are deliberately silent — manual runs │
-      # │ already give the operator the failure context they asked for.    │
+      # │ ON FAILURE: open or update an @claude tracking issue             │
+      # │ Fires on any canary failure regardless of event source — the    │
+      # │ workflow only triggers on `schedule` and `workflow_dispatch`     │
+      # │ anyway, and the operator should be able to exercise the full    │
+      # │ Claude-handoff flow on demand (validate the wiring without      │
+      # │ waiting 24h, replay a fix after an inconclusive cron, etc.).    │
       # └──────────────────────────────────────────────────────────────────┘
-      - name: Open or update @claude issue on schedule failure
-        if: failure() && github.event_name == 'schedule'
+      - name: Open or update @claude issue on canary failure
+        if: failure()
         uses: actions/github-script@v8
         with:
           # PAT_TOKEN ensures the comment/issue author_association is OWNER,
