@@ -28,7 +28,6 @@ import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "../save/save-error.component";
 import { ViewLandingPage } from "./view-landing.component";
 import { ViewPage, type ViewAction } from "./view.component";
-import { initViewArticleRateLimit } from "./view.rate-limit";
 
 const ViewUrlSchema = z.url();
 
@@ -219,12 +218,10 @@ function handleViewReader(deps: ViewDependencies) {
 export function initViewRoutes(deps: ViewDependencies): Router {
 	const router = express.Router();
 
-	const rateLimit = initViewArticleRateLimit({ windowMs: 10_000, limit: 20 });
-
 	router.get("/", handleViewLanding);
-	router.get("/summary", rateLimit, handleViewSummary(deps));
-	router.get("/reader", rateLimit, handleViewReader(deps));
-	router.get<string, Record<string, string>>("/*", rateLimit, handleViewArticle(deps));
+	router.get("/summary", handleViewSummary(deps));
+	router.get("/reader", handleViewReader(deps));
+	router.get<string, Record<string, string>>("/*", handleViewArticle(deps));
 
 	return router;
 }
