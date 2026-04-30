@@ -217,9 +217,13 @@ export function initDeleteArticleUnderstanding(): Map<string, ActionHandler> {
 	const handlers = new Map<string, ActionHandler>();
 	handlers.set("delete", (sirenAction, context) => {
 		return async () => {
+			/** Opt into the 303-redirect-then-collection flow. Without this the server falls back to a 204 No Content response for backwards compatibility with chrome-extension v1.0.66, whose delete handler can only observe 204s (it sets `redirect: "manual"`, which masks 303 status codes as opaqueredirect/0). */
 			const response = await context.doFetch(
 				`${context.serverUrl}${sirenAction.href}`,
-				{ method: sirenAction.method },
+				{
+					method: sirenAction.method,
+					headers: { Prefer: "return=representation" },
+				},
 			);
 			assert(response.ok, `Delete failed: ${response.status}`);
 			const body = SirenCollectionResponseSchema.parse(await response.json());
@@ -342,7 +346,7 @@ export function initExtension(
 			const headers: Record<string, string> = {
 				Authorization: `Bearer ${token}`,
 				Accept: SIREN_MEDIA_TYPE,
-				...(init?.headers ?? {}),
+				...init?.headers,
 			};
 			const response = await deps.fetchFn(url, { ...init, headers });
 			if (response.status === 401) {

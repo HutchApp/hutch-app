@@ -767,6 +767,35 @@ describe("initExtension", () => {
 				collection.items[0].actions.delete(),
 			).rejects.toThrow("Delete failed: 404");
 		});
+
+		/** Without this header the server falls back to a 204 No Content response to keep chrome-extension v1.0.66 (still in the web store) working — that build can only observe 204s because it sets `redirect: "manual"`, which masks 303 status codes as opaqueredirect/0. */
+		it("sends Prefer: return=representation so the server returns the refreshed Siren collection (and not the v1.0.66 backwards-compat 204)", async () => {
+			let observedPrefer: string | null = null;
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: collectionResponse([
+							articleEntity({
+								id: "article-1",
+								url: "https://example.com/a",
+								title: "A",
+								savedAt: "2026-01-15T10:00:00.000Z",
+							}),
+						]),
+					},
+					"POST http://localhost:3000/queue/article-1/delete": (init) => {
+						const headers = (init?.headers ?? {}) as Record<string, string>;
+						observedPrefer = headers.Prefer ?? null;
+						return { status: 200, body: collectionResponse() };
+					},
+				}),
+			);
+			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
+			const collection = await start();
+			await collection.items[0].actions.delete();
+			expect(observedPrefer).toBe("return=representation");
+		});
 	});
 
 	describe("search action", () => {

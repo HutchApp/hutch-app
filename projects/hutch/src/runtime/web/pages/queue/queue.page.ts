@@ -491,6 +491,13 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			await deps.deleteArticle(parsedId.data, userId);
 		}
 
+		/** Chrome extension v1.0.66 (in the web store) sends this request with `redirect: "manual"` and only treats `status === 204` as success — a 303 surfaces to JS as an opaqueredirect with status 0, leaving the deleted row on screen until the popup is reopened. Newer extensions opt into the redirect-and-follow flow with `Prefer: return=representation` (RFC 7240) so they receive the refreshed Siren collection. Drop the 204 branch once v1.0.66 ages out of the wild. */
+		const prefersRepresentation = req.get("Prefer") === "return=representation";
+		if (wantsSiren(req) && !prefersRepresentation) {
+			res.status(204).send();
+			return;
+		}
+
 		res.redirect(303, buildQueueUrl(parseQueueUrl(req.query)));
 	});
 

@@ -363,7 +363,7 @@ describe("POST /queue (Siren re-save read article)", () => {
 });
 
 describe("POST /queue/:id/delete (Siren)", () => {
-	it("redirects to collection via 303 after deleting", async () => {
+	it("redirects to collection via 303 after deleting when client opts in via Prefer header", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
@@ -379,6 +379,7 @@ describe("POST /queue/:id/delete (Siren)", () => {
 		const deleteResponse = await request(testApp.app)
 			.post(`/queue/${articleId}/delete`)
 			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Prefer", "return=representation")
 			.set("Authorization", `Bearer ${accessToken}`)
 			.redirects(0);
 
@@ -402,6 +403,7 @@ describe("POST /queue/:id/delete (Siren)", () => {
 		const deleteResponse = await request(testApp.app)
 			.post(`/queue/${articleId}/delete`)
 			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Prefer", "return=representation")
 			.set("Authorization", `Bearer ${accessToken}`)
 			.redirects(0);
 
@@ -414,6 +416,30 @@ describe("POST /queue/:id/delete (Siren)", () => {
 		expect(collectionResponse.status).toBe(200);
 		expect(collectionResponse.body.class).toContain("collection");
 		expect(collectionResponse.body.properties.total).toBe(0);
+	});
+
+	/** Chrome extension v1.0.66 (still in the web store) sets `redirect: "manual"` on its delete fetch and only treats `status === 204` as success — a 303 surfaces to JS as an opaqueredirect with status 0, leaving the deleted row visible in the popup until reopened. The server keeps returning 204 for Siren clients that don't opt into the new representation flow until v1.0.66 ages out of the wild. */
+	it("returns 204 No Content for legacy Siren clients without Prefer header (chrome-extension v1.0.66 backwards compat)", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const accessToken = await createAccessToken(testApp);
+
+		const saveResponse = await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ url: "https://example.com/article" });
+
+		const articleId = saveResponse.body.properties.id;
+
+		const deleteResponse = await request(testApp.app)
+			.post(`/queue/${articleId}/delete`)
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.redirects(0);
+
+		expect(deleteResponse.status).toBe(204);
+		expect(deleteResponse.text).toBe("");
 	});
 });
 
