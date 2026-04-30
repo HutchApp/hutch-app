@@ -362,6 +362,24 @@ describe("initArticleReader", () => {
 
 			expect(result.readerPollUrl).toBeUndefined();
 		});
+
+		it("emits readerPollUrl when crawl is ready but content is undefined (promotion race)", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				summary: { status: "ready", summary: "TL;DR" },
+				content: undefined,
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.crawl).toEqual({ status: "ready" });
+			expect(result.content).toBeUndefined();
+			expect(result.readerPollUrl).toBe("/test/reader?poll=1");
+		});
 	});
 
 	describe("handleSummaryPoll", () => {
@@ -561,6 +579,43 @@ describe("initArticleReader", () => {
 			assert(slot, "reader slot must be rendered");
 			expect(slot.getAttribute("data-reader-status")).toBe("pending");
 			expect(slot.getAttribute("hx-get")).toBe("/test/reader?poll=6");
+		});
+
+		it("emits the next poll URL when crawl is ready but content is undefined (promotion race)", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				content: undefined,
+			});
+			const reader = initArticleReader(deps);
+
+			const component = await reader.handleReaderPoll({
+				articleUrl: ARTICLE_URL,
+				pollCount: 5,
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			const slot = parse(toHtml(component)).querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-reader-status")).toBe("pending");
+			expect(slot.getAttribute("hx-get")).toBe("/test/reader?poll=6");
+		});
+
+		it("stops at MAX_POLLS=40 even when stuck in the promotion race", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				content: undefined,
+			});
+			const reader = initArticleReader(deps);
+
+			const component = await reader.handleReaderPoll({
+				articleUrl: ARTICLE_URL,
+				pollCount: 40,
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			const slot = parse(toHtml(component)).querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.hasAttribute("hx-get")).toBe(false);
 		});
 
 		it("renders the reader as failed when the crawl has failed", async () => {
