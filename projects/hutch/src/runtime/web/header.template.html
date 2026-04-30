@@ -8,7 +8,7 @@
           <span class="nav__toggle-bar"></span>
         </button>
         <div id="nav-menu" class="nav__menu">
-          <ul class="nav__list">
+          <ul class="nav__list" data-test-nav-variant="{{#if isAuthenticated}}authenticated{{else}}guest{{/if}}">
             {{#if isAuthenticated}}
             <li><a href="/queue" class="nav__link" data-test-nav-item="queue">Queue</a></li>
             <li><a href="/export" class="nav__link" data-test-nav-item="export">Export</a></li>

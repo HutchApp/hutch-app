@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import { Base, type PageContent } from "./base.component";
+import { Base } from "./base.component";
+import type { BannerState } from "./banner-state";
 import type { SupportedMediaType } from "./component.types";
+import type { PageBody } from "./page-body.types";
 
-function createTestPageContent(overrides: Partial<PageContent> = {}): PageContent {
+function createTestPageBody(overrides: Partial<PageBody> = {}): PageBody {
 	return {
 		seo: {
 			title: "Test Page",
@@ -16,10 +18,12 @@ function createTestPageContent(overrides: Partial<PageContent> = {}): PageConten
 	};
 }
 
+const GUEST_STATE: BannerState = { isAuthenticated: false, emailVerified: undefined };
+
 describe("Base component", () => {
 	it("should render a complete HTML page with the provided title", () => {
-		const page = createTestPageContent({ seo: { title: "My Title", description: "Desc", canonicalUrl: "https://readplace.com" } });
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody({ seo: { title: "My Title", description: "Desc", canonicalUrl: "https://readplace.com" } });
+		const result = Base(page, GUEST_STATE).to("text/html");
 
 		expect(result.statusCode).toBe(200);
 		const doc = new JSDOM(result.body).window.document;
@@ -27,8 +31,8 @@ describe("Base component", () => {
 	});
 
 	it("should render the Readplace brand name in the header", () => {
-		const page = createTestPageContent();
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody();
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const brand = doc.querySelector(".header__brand") as HTMLAnchorElement;
@@ -37,8 +41,8 @@ describe("Base component", () => {
 	});
 
 	it("should include page content in the body", () => {
-		const page = createTestPageContent({ content: "<main><h1>Hello World</h1></main>" });
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody({ content: "<main><h1>Hello World</h1></main>" });
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const heading = doc.querySelector("main h1");
@@ -46,25 +50,45 @@ describe("Base component", () => {
 	});
 
 	it("should apply bodyClass when provided", () => {
-		const page = createTestPageContent({ bodyClass: "page-home" });
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody({ bodyClass: "page-home" });
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		expect(doc.body.classList.contains("page-home")).toBe(true);
 	});
 
 	it("should include navigation links", () => {
-		const page = createTestPageContent();
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody();
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const navLinks = doc.querySelectorAll(".nav__link");
 		expect(navLinks.length).toBeGreaterThan(0);
 	});
 
+	it("should render guest navigation when state is unauthenticated", () => {
+		const page = createTestPageBody();
+		const result = Base(page, GUEST_STATE).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		const nav = doc.querySelector("[data-test-nav-variant]");
+		assert(nav, "nav container must be rendered");
+		expect(nav.getAttribute("data-test-nav-variant")).toBe("guest");
+	});
+
+	it("should render authenticated navigation when state is authenticated", () => {
+		const page = createTestPageBody();
+		const result = Base(page, { isAuthenticated: true, emailVerified: true }).to("text/html");
+		const doc = new JSDOM(result.body).window.document;
+
+		const nav = doc.querySelector("[data-test-nav-variant]");
+		assert(nav, "nav container must be rendered");
+		expect(nav.getAttribute("data-test-nav-variant")).toBe("authenticated");
+	});
+
 	it("should include the footer with copyright", () => {
-		const page = createTestPageContent();
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody();
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const footer = doc.querySelector(".footer__copyright");
@@ -72,8 +96,8 @@ describe("Base component", () => {
 	});
 
 	it("should include the offline banner", () => {
-		const page = createTestPageContent();
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody();
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector(".offline-banner");
@@ -81,8 +105,8 @@ describe("Base component", () => {
 	});
 
 	it("should set meta description from seo", () => {
-		const page = createTestPageContent({ seo: { title: "T", description: "My desc", canonicalUrl: "https://readplace.com" } });
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody({ seo: { title: "T", description: "My desc", canonicalUrl: "https://readplace.com" } });
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const meta = doc.querySelector('meta[name="description"]');
@@ -90,15 +114,15 @@ describe("Base component", () => {
 	});
 
 	it("should return 415 for unsupported media type", () => {
-		const page = createTestPageContent();
-		const result = Base(page).to("application/vnd.siren+json" as SupportedMediaType);
+		const page = createTestPageBody();
+		const result = Base(page, GUEST_STATE).to("application/vnd.siren+json" as SupportedMediaType);
 
 		expect(result.statusCode).toBe(415);
 		expect(result.body).toBe("");
 	});
 
 	it("should render structured data when provided", () => {
-		const page = createTestPageContent({
+		const page = createTestPageBody({
 			seo: {
 				title: "T",
 				description: "D",
@@ -106,7 +130,7 @@ describe("Base component", () => {
 				structuredData: [{ "@context": "https://schema.org", "@type": "WebSite", name: "Readplace" }],
 			},
 		});
-		const result = Base(page).to("text/html");
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const ldJson = doc.querySelector('script[type="application/ld+json"]');
@@ -115,8 +139,8 @@ describe("Base component", () => {
 	});
 
 	it("should show verification banner when authenticated and email not verified", () => {
-		const page = createTestPageContent({ isAuthenticated: true, emailVerified: false });
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody();
+		const result = Base(page, { isAuthenticated: true, emailVerified: false }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -126,8 +150,8 @@ describe("Base component", () => {
 	});
 
 	it("should hide verification banner when email is verified", () => {
-		const page = createTestPageContent({ isAuthenticated: true, emailVerified: true });
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody();
+		const result = Base(page, { isAuthenticated: true, emailVerified: true }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -136,8 +160,8 @@ describe("Base component", () => {
 	});
 
 	it("should hide verification banner when not authenticated", () => {
-		const page = createTestPageContent({ isAuthenticated: false, emailVerified: false });
-		const result = Base(page).to("text/html");
+		const page = createTestPageBody();
+		const result = Base(page, { isAuthenticated: false, emailVerified: false }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -145,9 +169,9 @@ describe("Base component", () => {
 		expect(banner.classList.contains("verify-banner--hidden")).toBe(true);
 	});
 
-	it("should hide verification banner when emailVerified is not provided", () => {
-		const page = createTestPageContent({ isAuthenticated: true });
-		const result = Base(page).to("text/html");
+	it("should hide verification banner when emailVerified is undefined", () => {
+		const page = createTestPageBody();
+		const result = Base(page, { isAuthenticated: true, emailVerified: undefined }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -156,10 +180,10 @@ describe("Base component", () => {
 	});
 
 	it("should rewrite relative canonical URLs to absolute readplace.com URLs", () => {
-		const page = createTestPageContent({
+		const page = createTestPageBody({
 			seo: { title: "T", description: "D", canonicalUrl: "/login" },
 		});
-		const result = Base(page).to("text/html");
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		expect(
@@ -173,14 +197,14 @@ describe("Base component", () => {
 	});
 
 	it("should leave absolute readplace.com canonical URLs unchanged", () => {
-		const page = createTestPageContent({
+		const page = createTestPageBody({
 			seo: {
 				title: "T",
 				description: "D",
 				canonicalUrl: "https://readplace.com/blog/my-post",
 			},
 		});
-		const result = Base(page).to("text/html");
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		expect(
@@ -189,14 +213,14 @@ describe("Base component", () => {
 	});
 
 	it("should rewrite non-readplace hosts to readplace.com in canonical URLs", () => {
-		const page = createTestPageContent({
+		const page = createTestPageBody({
 			seo: {
 				title: "T",
 				description: "D",
 				canonicalUrl: "https://hutch-app.com/queue",
 			},
 		});
-		const result = Base(page).to("text/html");
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		expect(
@@ -205,14 +229,14 @@ describe("Base component", () => {
 	});
 
 	it("should preserve query string when normalizing canonical URLs", () => {
-		const page = createTestPageContent({
+		const page = createTestPageBody({
 			seo: {
 				title: "T",
 				description: "D",
 				canonicalUrl: "/install?browser=firefox",
 			},
 		});
-		const result = Base(page).to("text/html");
+		const result = Base(page, GUEST_STATE).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		expect(

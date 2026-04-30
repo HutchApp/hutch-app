@@ -4,6 +4,7 @@ import express from "express";
 import type { FindArticlesByUser } from "../../../providers/article-store/article-store.types";
 import type { SavedArticle } from "../../../domain/article/article.types";
 import type { UserId } from "../../../domain/user/user.types";
+import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { ExportPage } from "./export.component";
 
@@ -52,7 +53,7 @@ export function initExportRoutes(deps: ExportDependencies): Router {
 	const router = express.Router();
 
 	router.get("/", (req: Request, res: Response) => {
-		sendComponent(res, ExportPage({ emailVerified: req.emailVerified }));
+		sendComponent(res, renderPage(req, ExportPage()));
 	});
 
 	router.get("/download", async (req: Request, res: Response) => {

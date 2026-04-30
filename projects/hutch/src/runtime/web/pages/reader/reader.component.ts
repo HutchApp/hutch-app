@@ -4,8 +4,7 @@ import type { SavedArticle } from "../../../domain/article/article.types";
 import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
 import { pickExcerpt, truncateForSeo } from "../../../providers/article-summary/article-summary.helpers";
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
-import { Base } from "../../base.component";
-import type { Component } from "../../component.types";
+import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
 import {
@@ -21,14 +20,13 @@ const READER_TEMPLATE = readFileSync(join(__dirname, "reader.template.html"), "u
 export function ReaderPage(
 	article: SavedArticle,
 	options?: {
-		emailVerified?: boolean;
 		summary?: GeneratedSummary;
 		summaryPollUrl?: string;
 		crawl?: ArticleCrawl;
 		readerPollUrl?: string;
 		audioEnabled?: boolean;
 	},
-): Component {
+): PageBody {
 	const innerContent = renderArticleBody({
 		title: article.metadata.title,
 		siteName: article.metadata.siteName,
@@ -50,7 +48,7 @@ export function ReaderPage(
 	});
 	const content = render(READER_TEMPLATE, { innerContent, shareBalloon });
 
-	return Base({
+	return {
 		seo: {
 			title: `${article.metadata.title} — Readplace Reader`,
 			description: truncateForSeo(pickExcerpt(options?.summary, article.metadata.excerpt)),
@@ -61,7 +59,5 @@ export function ReaderPage(
 		bodyClass: "page-reader",
 		content,
 		scripts: SHARE_BALLOON_SCRIPT,
-		isAuthenticated: true,
-		emailVerified: options?.emailVerified,
-	});
+	};
 }

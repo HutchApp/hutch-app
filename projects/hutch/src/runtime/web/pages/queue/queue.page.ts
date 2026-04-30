@@ -31,6 +31,7 @@ import type { PublishLinkSaved } from "../../../providers/events/publish-link-sa
 import type { PublishSaveLinkRawHtmlCommand } from "../../../providers/events/publish-save-link-raw-html-command.types";
 import type { PutPendingHtml } from "../../../providers/pending-html/pending-html.types";
 import type { UserId } from "../../../domain/user/user.types";
+import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { wantsSiren } from "../../content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
@@ -208,7 +209,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const browser = ua.includes("Firefox/") ? "firefox" as const : ua.includes("Chrome/") ? "chrome" as const : "other" as const;
 		sendComponent(
 			res,
-			QueuePage(vm, { emailVerified: req.emailVerified, saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed }),
+			renderPage(req, QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed })),
 		);
 	});
 
@@ -356,7 +357,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				unreadCount,
 				summaryByUrl,
 			});
-			sendComponent(res, QueuePage(vm, { emailVerified: req.emailVerified, statusCode: 422 }));
+			sendComponent(res, renderPage(req, QueuePage(vm, { statusCode: 422 })));
 			return;
 		}
 
@@ -408,14 +409,13 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 		sendComponent(
 			res,
-			ReaderPage({ ...article, content: state.content }, {
-				emailVerified: req.emailVerified,
+			renderPage(req, ReaderPage({ ...article, content: state.content }, {
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
 				crawl: state.crawl,
 				readerPollUrl: state.readerPollUrl,
 				audioEnabled,
-			}),
+			})),
 		);
 	});
 
