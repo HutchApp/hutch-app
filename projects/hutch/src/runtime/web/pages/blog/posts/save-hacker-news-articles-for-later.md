@@ -4,7 +4,7 @@ description: "You open 15 tabs from the HN front page and read 3. The rest haunt
 slug: "save-hacker-news-articles-for-later"
 date: "2026-04-07"
 author: "Fayner Brack"
-keywords: "hacker news, save articles, read it later, hn reader, hutch"
+keywords: "hacker news, save articles, read it later, hn reader, readplace"
 ---
 
 <details class="blog-tldr">
