@@ -133,12 +133,18 @@ jobs:
           echo "Final deploy list: $PROJECTS"
           echo "Non-platform: $NON_PLATFORM"
 
+          # Extension publish gates only fire when the compile target is affected,
+          # so test-only changes in dependencies (e.g. hutch *.test.ts) don't bump
+          # the Web Store / AMO version. compile inputs use `^production`, which
+          # excludes test files via the namedInputs in nx.json.
+          COMPILE_AFFECTED=$(pnpm nx show projects --affected --target=compile --json)
+
           # Set outputs for downstream jobs to use in their `if:` conditions
           echo "platform-affected=$(echo "$PROJECTS" | jq -e 'index("platform")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "non-platform-projects=$NON_PLATFORM" >> "$GITHUB_OUTPUT"
           echo "has-non-platform=$(echo "$NON_PLATFORM" | jq -e 'length > 0' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "ff-affected=$(echo "$PROJECTS" | jq -e 'index("firefox-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "chrome-affected=$(echo "$PROJECTS" | jq -e 'index("chrome-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "ff-affected=$(echo "$COMPILE_AFFECTED" | jq -e 'index("firefox-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "chrome-affected=$(echo "$COMPILE_AFFECTED" | jq -e 'index("chrome-extension")' > /dev/null 2>&1 && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   # Platform (EventBridge bus, shared infra) must deploy before any other project
   # because other projects depend on platform resources (e.g. event bus ARN)
