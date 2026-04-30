@@ -13,12 +13,33 @@ describe("renderReaderFailed", () => {
 
 		const slot = doc.querySelector("[data-test-reader-slot]");
 		assert(slot, "reader slot must be rendered");
-		expect(slot.getAttribute("data-reader-status")).toBe("failed");
-		expect(
+		assert.equal(slot.getAttribute("data-reader-status"), "failed");
+		assert.equal(
 			doc.querySelector(".article-body__reader-failed-title")?.textContent,
-		).toBe("We couldn't fetch this article");
+			"We couldn't grab this article",
+		);
 		const link = doc.querySelector(".article-body__reader-failed-link");
-		expect(link?.getAttribute("href")).toBe("https://example.com/post");
-		expect(link?.getAttribute("rel")).toBe("noopener");
+		assert.equal(link?.getAttribute("href"), "https://example.com/post");
+		assert.equal(link?.getAttribute("rel"), "noopener");
+	});
+
+	it("renders an install CTA when extensionInstallUrl is provided", () => {
+		const doc = parse(
+			renderReaderFailed({
+				url: "https://example.com/post",
+				extensionInstallUrl: "/install?browser=chrome",
+			}),
+		);
+
+		const installCta = doc.querySelector("[data-test-reader-failed-install]");
+		assert(installCta, "install CTA must be rendered when the extension is missing");
+		assert.equal(installCta.getAttribute("href"), "/install?browser=chrome");
+	});
+
+	it("omits the install CTA when extensionInstallUrl is not provided (extension already installed)", () => {
+		const doc = parse(renderReaderFailed({ url: "https://example.com/post" }));
+
+		const installCta = doc.querySelector("[data-test-reader-failed-install]");
+		assert.equal(installCta, null);
 	});
 });

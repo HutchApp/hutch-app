@@ -28,6 +28,7 @@ export interface ArticleBodyInput {
 	summaryOpen?: boolean;
 	audioEnabled?: boolean;
 	backLink?: { href: string; label: string };
+	extensionInstallUrl?: string;
 }
 
 export function renderArticleBody(input: ArticleBodyInput): string {
@@ -36,6 +37,7 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		content: input.content,
 		url: input.url,
 		readerPollUrl: input.readerPollUrl,
+		extensionInstallUrl: input.extensionInstallUrl,
 	});
 
 	const summarySlotHtml = renderSummarySlot({

@@ -45,6 +45,7 @@ export interface ViewPageInput {
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
 	actions: ViewAction[];
+	extensionInstallUrl?: string;
 }
 
 export function ViewPage(input: ViewPageInput): PageBody {
@@ -59,6 +60,7 @@ export function ViewPage(input: ViewPageInput): PageBody {
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: true,
+		extensionInstallUrl: input.extensionInstallUrl,
 	});
 
 	const canonicalViewUrl = `${CANONICAL_BASE_URL}/view/${encodeURIComponent(input.articleUrl)}`;

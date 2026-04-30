@@ -313,3 +313,19 @@
 .article-body__reader-failed-link:hover {
   text-decoration: underline;
 }
+
+.article-body__reader-failed-install {
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0.6rem 1.2rem;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.article-body__reader-failed-install + .article-body__reader-failed-link {
+  display: block;
+  margin-top: 0.5rem;
+}

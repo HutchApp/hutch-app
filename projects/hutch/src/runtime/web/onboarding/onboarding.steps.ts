@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { buildExtensionInstallUrl } from "./extension-install";
 import type { OnboardingStep } from "./onboarding.types";
 
 const BROWSER_LABELS: Record<string, string> = {
@@ -18,16 +19,10 @@ export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
 		description:
 			"Add Readplace to your browser so you can save any page with one click.",
 		isComplete: (ctx) => ctx.extensionInstalled,
-		actions: (ctx) => {
-			const INSTALL_URLS: Record<string, string> = {
-				firefox: "/install?browser=firefox",
-				chrome: "/install?browser=chrome",
-			};
-			return [{
-				label: BROWSER_LABELS[ctx.browser] ? "Install" : "Choose browser",
-				url: INSTALL_URLS[ctx.browser] ?? "/install",
-			}];
-		},
+		actions: (ctx) => [{
+			label: BROWSER_LABELS[ctx.browser] ? "Install" : "Choose browser",
+			url: buildExtensionInstallUrl(ctx.browser),
+		}],
 	},
 	{
 		id: "save-first-article",

@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { COOKIE_NAME, COOKIE_VALUE, DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
+import { DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
 import type { LogParseError } from "@packages/hutch-infra-components";
@@ -43,6 +43,11 @@ import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
 import { ReaderPage } from "../reader/reader.component";
 import { ONBOARDING_VERSION } from "../../onboarding/onboarding.steps";
+import {
+	detectBrowser,
+	extensionInstallUrlIfMissing,
+	isExtensionInstalled,
+} from "../../onboarding/extension-install";
 
 interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
@@ -203,10 +208,9 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const saveError = deps.httpErrorMessageMapping(req.query);
 		const summaryByUrl = await loadSummaries(deps.findGeneratedSummary, result.articles);
 		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError, summaryByUrl });
-		const extensionInstalled = req.cookies?.[COOKIE_NAME] === COOKIE_VALUE;
+		const extensionInstalled = isExtensionInstalled(req);
 		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
-		const ua = req.headers["user-agent"] ?? "";
-		const browser = ua.includes("Firefox/") ? "firefox" as const : ua.includes("Chrome/") ? "chrome" as const : "other" as const;
+		const browser = detectBrowser(req);
 		sendComponent(
 			res,
 			renderPage(req, QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed })),
@@ -415,6 +419,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				crawl: state.crawl,
 				readerPollUrl: state.readerPollUrl,
 				audioEnabled,
+				extensionInstallUrl: extensionInstallUrlIfMissing(req),
 			})),
 		);
 	});
@@ -459,6 +464,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			articleUrl: article.url,
 			pollCount,
 			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
+			extensionInstallUrl: extensionInstallUrlIfMissing(req),
 		});
 		sendComponent(res, component);
 	});
