@@ -108,8 +108,9 @@ function handleViewArticle(deps: ViewDependencies) {
 		// instead of sitting on "Generating summary…" forever on every view.
 		const isLegacyStub =
 			cached !== null && existingCrawl === undefined && existingSummary === undefined;
+		const isCrawlFailed = existingCrawl?.status === "failed";
 
-		if (!cached || isLegacyStub) {
+		if (!cached || isLegacyStub || isCrawlFailed) {
 			if (!cached) {
 				// First visit for this URL — save a hostname-only stub so the reader
 				// and summary slots can render metadata while the worker populates
