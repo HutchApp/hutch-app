@@ -279,6 +279,27 @@ const SAVE_LINK_HANDLER_LOG_GROUPS = [
 	{ logGroup: "/aws/lambda/save-link-raw-html-command-handler", tier: "tier-0" },
 ] as const;
 
+/**
+ * Public View Entry Point widgets (appended to readplace-analytics below)
+ *
+ * Tracks the funnel into the public reader view (`/view`) for non-authenticated
+ * users arriving from the homepage and the public landing.
+ *
+ * 1. Homepage paste-link click — utm_content=homepage-link-input
+ *    (form on `/` redirects to /view/<url>, logged as path=/view, status=302)
+ * 2. /view landing "Open in reader view" click — utm_content=open-in-reader-view
+ *    (form on /view redirects to /view/<url>, logged as path=/view, status=302)
+ * 3. /view article "Paste another link" click — utm_content=paste-another-link
+ *    (link on /view/<url> goes back to /view, logged as path=/view, status=200)
+ */
+const PUBLIC_VIEW_ENTRY_POINTS = [
+	{ id: "homepage-link-input", title: "Homepage \"Open in reader view\" click" },
+	{ id: "open-in-reader-view", title: "/view landing \"Open in reader view\" click" },
+	{ id: "paste-another-link", title: "/view \"Paste another link\" click" },
+] as const;
+
+const entryPointFilter = `| filter utm_content in [${PUBLIC_VIEW_ENTRY_POINTS.map((e) => `"${e.id}"`).join(", ")}]`;
+
 new aws.cloudwatch.Dashboard("readplace-analytics", {
 	dashboardName: "readplace-analytics",
 	dashboardBody: pulumi.output(logGroup.name).apply((hutchLogGroupName) =>
@@ -370,6 +391,67 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					x: 0, y: 24, width: 12, height: 8,
 					view: "timeSeries",
 				}),
+				logWidget({
+					title: "Public View Entry Point — clicks per day",
+					logGroupNames: [hutchLogGroupName],
+					query: [
+						"fields @timestamp, utm_content",
+						"| filter stream = \"analytics\" and event = \"pageview\"",
+						"| filter path = \"/view\"",
+						...excludeVisitorHashesClause(),
+						entryPointFilter,
+						"| stats count(*) as clicks by bin(1d), utm_content",
+					].join(" "),
+					x: 0, y: 32, width: 24, height: 8,
+					view: "timeSeries",
+				}),
+				logWidget({
+					title: "Public View Entry Point — totals by source",
+					logGroupNames: [hutchLogGroupName],
+					query: [
+						"fields @timestamp, utm_content",
+						"| filter stream = \"analytics\" and event = \"pageview\"",
+						"| filter path = \"/view\"",
+						...excludeVisitorHashesClause(),
+						entryPointFilter,
+						"| stats count(*) as clicks by utm_content",
+						"| sort clicks desc",
+					].join(" "),
+					x: 0, y: 40, width: 12, height: 8,
+					view: "pie",
+				}),
+				logWidget({
+					title: "Public View Entry Point — unique visitors per day",
+					logGroupNames: [hutchLogGroupName],
+					query: [
+						"fields @timestamp, utm_content, visitor_hash",
+						"| filter stream = \"analytics\" and event = \"pageview\"",
+						"| filter path = \"/view\"",
+						"| filter ispresent(visitor_hash)",
+						...excludeVisitorHashesClause(),
+						entryPointFilter,
+						"| stats count_distinct(visitor_hash) as unique_visitors by bin(1d), utm_content",
+					].join(" "),
+					x: 12, y: 40, width: 12, height: 8,
+					view: "timeSeries",
+				}),
+				...PUBLIC_VIEW_ENTRY_POINTS.map((entry, i) =>
+					logWidget({
+						title: `Recent — ${entry.title}`,
+						logGroupNames: [hutchLogGroupName],
+						query: [
+							"fields @timestamp, path, utm_source, utm_medium, utm_content, referrer_host, visitor_hash, is_authenticated",
+							"| filter stream = \"analytics\" and event = \"pageview\"",
+							"| filter path = \"/view\"",
+							...excludeVisitorHashesClause(),
+							`| filter utm_content = "${entry.id}"`,
+							"| sort @timestamp desc",
+							"| limit 50",
+						].join(" "),
+						x: 0, y: 48 + i * 8, width: 24, height: 8,
+						view: "table",
+					}),
+				),
 			],
 		}),
 	),

@@ -111,6 +111,41 @@ describe("GET /", () => {
 		expect(bottomCta?.getAttribute("href")).toBe("/install?browser=firefox");
 	});
 
+	it("should render the public reader-view paste-link form with UTM hidden inputs", async () => {
+		const response = await request(app).get("/");
+		const doc = new JSDOM(response.text).window.document;
+
+		const form = doc.querySelector("[data-test-home-try-form]");
+		assert(form, "home try form must be rendered");
+		expect(form.getAttribute("method")?.toLowerCase()).toBe("get");
+		expect(form.getAttribute("action")).toBe("/view");
+
+		const input = form.querySelector("input[name='url'][data-test-home-try-input]");
+		assert(input, "url input must be rendered");
+		expect(input.getAttribute("type")).toBe("url");
+		expect(input.hasAttribute("required")).toBe(true);
+
+		const utmSource = form.querySelector("input[name='utm_source']");
+		expect(utmSource?.getAttribute("value")).toBe("homepage");
+		const utmMedium = form.querySelector("input[name='utm_medium']");
+		expect(utmMedium?.getAttribute("value")).toBe("internal");
+		const utmContent = form.querySelector("input[name='utm_content']");
+		expect(utmContent?.getAttribute("value")).toBe("homepage-link-input");
+
+		const submit = form.querySelector("[data-test-home-try-submit]");
+		expect(submit?.textContent).toBe("Open in reader view");
+	});
+
+	it("should redirect homepage paste-link submissions to /view/<encoded-url> preserving UTM on the logged pageview", async () => {
+		const response = await request(app).get(
+			"/view?url=https%3A%2F%2Fexample.com%2Farticle&utm_source=homepage&utm_medium=internal&utm_content=homepage-link-input",
+		);
+		expect(response.status).toBe(302);
+		expect(response.headers.location).toBe(
+			`/view/${encodeURIComponent("https://example.com/article")}`,
+		);
+	});
+
 	it("should render the secondary CTA linking to GitHub", async () => {
 		const response = await request(app).get("/");
 		const doc = new JSDOM(response.text).window.document;

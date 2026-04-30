@@ -155,7 +155,7 @@ function handleViewArticle(deps: ViewDependencies) {
 			},
 			{
 				name: "Paste another link",
-				href: "/view",
+				href: "/view?utm_source=view-article&utm_medium=internal&utm_content=paste-another-link",
 				variant: "secondary",
 			},
 		];
