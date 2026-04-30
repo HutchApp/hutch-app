@@ -37,12 +37,28 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 			expect(await findGeneratedSummary(URL)).toEqual({ status: "pending" });
 		});
 
-		it("returns ready when status=ready with summary", async () => {
+		it("returns ready with summary only when summaryExcerpt is absent", async () => {
 			const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
 				client: clientForGet({ summaryStatus: "ready", summary: "done" }) as DynamoDBDocumentClient,
 				tableName: TABLE,
 			});
 			expect(await findGeneratedSummary(URL)).toEqual({ status: "ready", summary: "done" });
+		});
+
+		it("returns ready with both summary and excerpt when summaryExcerpt is present", async () => {
+			const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+				client: clientForGet({
+					summaryStatus: "ready",
+					summary: "done",
+					summaryExcerpt: "blurb",
+				}) as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+			expect(await findGeneratedSummary(URL)).toEqual({
+				status: "ready",
+				summary: "done",
+				excerpt: "blurb",
+			});
 		});
 
 		it("returns failed with reason when status=failed", async () => {
@@ -100,7 +116,7 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 				tableName: TABLE,
 			});
 
-			await saveGeneratedSummary({ url: URL, summary: "done", inputTokens: 1, outputTokens: 2 });
+			await saveGeneratedSummary({ url: URL, summary: "done", excerpt: "blurb", inputTokens: 1, outputTokens: 2 });
 
 			expect(received).toBeDefined();
 		});

@@ -9,12 +9,30 @@ import type {
 	SaveGeneratedSummary,
 	SummarizeArticle,
 } from "./article-summary.types";
-import { MAX_SUMMARY_LENGTH } from "./max-summary-length";
+import { MAX_EXCERPT_LENGTH, MAX_SUMMARY_LENGTH } from "./max-summary-length";
 
 const SUMMARIZE_PROMPT = readFileSync(
 	join(__dirname, "summarize-prompt.md"),
 	"utf-8",
-).replace("{{MAX_SUMMARY_LENGTH}}", String(MAX_SUMMARY_LENGTH));
+)
+	.replace("{{MAX_SUMMARY_LENGTH}}", String(MAX_SUMMARY_LENGTH))
+	.replace("{{MAX_EXCERPT_LENGTH}}", String(MAX_EXCERPT_LENGTH));
+
+const SummaryPayload = z.object({
+	summary: z.string(),
+	excerpt: z.string(),
+});
+
+// Safety net: if DeepSeek overshoots MAX_EXCERPT_LENGTH despite the prompt
+// instruction, clip on a word boundary so we never persist a row that violates
+// the contract downstream consumers rely on.
+function clipExcerpt(text: string): string {
+	if (text.length <= MAX_EXCERPT_LENGTH) return text;
+	const slice = text.slice(0, MAX_EXCERPT_LENGTH - 1);
+	const lastSpace = slice.lastIndexOf(" ");
+	const cut = lastSpace > 0 ? slice.slice(0, lastSpace) : slice;
+	return `${cut.trimEnd()}…`;
+}
 
 export function initLinkSummariser(deps: {
 	createMessage: CreateAiMessage;
@@ -65,8 +83,12 @@ export function initLinkSummariser(deps: {
 								type: "string",
 								description: `Plain text summary, max ${MAX_SUMMARY_LENGTH} characters`,
 							},
+							excerpt: {
+								type: "string",
+								description: `One or two short sentences, max ${MAX_EXCERPT_LENGTH} characters`,
+							},
 						},
-						required: ["summary"],
+						required: ["summary", "excerpt"],
 						additionalProperties: false,
 					},
 				},
@@ -81,21 +103,24 @@ export function initLinkSummariser(deps: {
 			return null;
 		}
 
-		const parsed = z.object({ summary: z.string() }).parse(JSON.parse(textBlock.text));
+		const parsed = SummaryPayload.parse(JSON.parse(textBlock.text));
 		const summary = parsed.summary.trim();
 		if (summary === "Summary not available.") {
 			deps.logger.info("[summarize] AI returned unavailable", { url: params.url });
 			return null;
 		}
+		const excerpt = clipExcerpt(parsed.excerpt.trim());
 
 		await deps.saveGeneratedSummary({
 			url: params.url,
 			summary,
+			excerpt,
 			inputTokens: response.usage.input_tokens,
 			outputTokens: response.usage.output_tokens,
 		});
 		return {
 			summary,
+			excerpt,
 			inputTokens: response.usage.input_tokens,
 			outputTokens: response.usage.output_tokens,
 		};

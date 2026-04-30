@@ -1,19 +1,25 @@
 export type GeneratedSummary =
 	| { status: "pending" }
-	| { status: "ready"; summary: string }
+	| { status: "ready"; summary: string; excerpt?: string }
 	| { status: "failed"; reason: string }
 	| { status: "skipped" };
 
 export type SummarizeArticle = (params: {
 	url: string;
 	textContent: string;
-}) => Promise<{ summary: string; inputTokens: number; outputTokens: number } | null>;
+}) => Promise<{
+	summary: string;
+	excerpt: string;
+	inputTokens: number;
+	outputTokens: number;
+} | null>;
 
 export type FindGeneratedSummary = (url: string) => Promise<GeneratedSummary | undefined>;
 
 export type SaveGeneratedSummary = (params: {
 	url: string;
 	summary: string;
+	excerpt: string;
 	inputTokens: number;
 	outputTokens: number;
 }) => Promise<void>;

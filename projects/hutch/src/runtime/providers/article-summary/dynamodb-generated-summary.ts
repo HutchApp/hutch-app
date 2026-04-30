@@ -18,6 +18,7 @@ import type {
 const ArticleSummaryRow = z.object({
 	url: z.string(),
 	summary: dynamoField(z.string()),
+	summaryExcerpt: dynamoField(z.string()),
 	summaryStatus: dynamoField(SummaryStatusSchema),
 	summaryFailureReason: dynamoField(z.string()),
 });
@@ -38,7 +39,13 @@ function rowToGeneratedSummary(
 	// row pre-dates the state machine but carried a pre-computed summary — expose
 	// as ready. Otherwise return undefined so the caller can re-prime the pipeline
 	// rather than rendering a stuck pending row that polls forever.
-	return row.summary ? { status: "ready", summary: row.summary } : undefined;
+	if (!row.summary) return undefined;
+	const ready: { status: "ready"; summary: string; excerpt?: string } = {
+		status: "ready",
+		summary: row.summary,
+	};
+	if (row.summaryExcerpt) ready.excerpt = row.summaryExcerpt;
+	return ready;
 }
 
 export function initDynamoDbGeneratedSummary(deps: {

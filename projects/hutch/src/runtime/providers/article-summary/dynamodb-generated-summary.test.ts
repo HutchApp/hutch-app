@@ -51,7 +51,7 @@ describe("initDynamoDbGeneratedSummary", () => {
 		expect(result).toEqual({ status: "ready", summary: "Legacy summary" });
 	});
 
-	it("returns ready when status=ready and summary is present", async () => {
+	it("returns ready with summary only when summaryExcerpt is absent", async () => {
 		const client = createFakeClient({
 			url: "https://example.com/article",
 			summary: "Fresh summary",
@@ -65,6 +65,27 @@ describe("initDynamoDbGeneratedSummary", () => {
 		const result = await findGeneratedSummary("https://example.com/article");
 
 		expect(result).toEqual({ status: "ready", summary: "Fresh summary" });
+	});
+
+	it("returns ready with both summary and excerpt when summaryExcerpt is present", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summary: "Fresh summary",
+			summaryExcerpt: "Decision-helper blurb",
+			summaryStatus: "ready",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({
+			status: "ready",
+			summary: "Fresh summary",
+			excerpt: "Decision-helper blurb",
+		});
 	});
 
 	it("returns pending when status=pending", async () => {

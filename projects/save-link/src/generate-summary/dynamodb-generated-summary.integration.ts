@@ -32,15 +32,15 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		assert.equal(result, undefined);
 	});
 
-	it("saves and retrieves a cached summary with ready status", async () => {
+	it("saves and retrieves a cached summary and excerpt with ready status", async () => {
 		const client = createDynamoDocumentClient();
 		const { findGeneratedSummary, saveGeneratedSummary } = initDynamoDbGeneratedSummary({ client, tableName });
 
 		const url = `https://example.com/${randomUUID()}`;
-		await saveGeneratedSummary({ url, summary: "A test summary", inputTokens: 100, outputTokens: 50 });
+		await saveGeneratedSummary({ url, summary: "A test summary", excerpt: "A test blurb", inputTokens: 100, outputTokens: 50 });
 
 		const result = await findGeneratedSummary(url);
-		assert.deepEqual(result, { status: "ready", summary: "A test summary" });
+		assert.deepEqual(result, { status: "ready", summary: "A test summary", excerpt: "A test blurb" });
 	});
 
 	it("treats a legacy row (summary present, no summaryStatus) as ready", async () => {
@@ -89,11 +89,11 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 			initDynamoDbGeneratedSummary({ client, tableName });
 
 		const url = `https://example.com/${randomUUID()}`;
-		await saveGeneratedSummary({ url, summary: "Ready summary", inputTokens: 10, outputTokens: 5 });
+		await saveGeneratedSummary({ url, summary: "Ready summary", excerpt: "Ready blurb", inputTokens: 10, outputTokens: 5 });
 		await markSummaryPending({ url });
 
 		const result = await findGeneratedSummary(url);
-		assert.deepEqual(result, { status: "ready", summary: "Ready summary" });
+		assert.deepEqual(result, { status: "ready", summary: "Ready summary", excerpt: "Ready blurb" });
 	});
 
 	it("markSummaryFailed flips pending to failed with reason", async () => {
@@ -115,11 +115,11 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 			initDynamoDbGeneratedSummary({ client, tableName });
 
 		const url = `https://example.com/${randomUUID()}`;
-		await saveGeneratedSummary({ url, summary: "Ready summary", inputTokens: 10, outputTokens: 5 });
+		await saveGeneratedSummary({ url, summary: "Ready summary", excerpt: "Ready blurb", inputTokens: 10, outputTokens: 5 });
 		await markSummaryFailed({ url, reason: "late failure" });
 
 		const result = await findGeneratedSummary(url);
-		assert.deepEqual(result, { status: "ready", summary: "Ready summary" });
+		assert.deepEqual(result, { status: "ready", summary: "Ready summary", excerpt: "Ready blurb" });
 	});
 
 	it("markSummarySkipped flips pending to skipped", async () => {
@@ -143,10 +143,10 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		const url = `https://example.com/${randomUUID()}`;
 		await markSummaryPending({ url });
 		await markSummaryFailed({ url, reason: "transient" });
-		await saveGeneratedSummary({ url, summary: "Recovered", inputTokens: 10, outputTokens: 5 });
+		await saveGeneratedSummary({ url, summary: "Recovered", excerpt: "Recovered blurb", inputTokens: 10, outputTokens: 5 });
 
 		const result = await findGeneratedSummary(url);
-		assert.deepEqual(result, { status: "ready", summary: "Recovered" });
+		assert.deepEqual(result, { status: "ready", summary: "Recovered", excerpt: "Recovered blurb" });
 	});
 
 	it("dedupes tracking-param variants to the same cached summary row", async () => {
@@ -157,19 +157,22 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		const friendsLink = `${canonical}?source=friends_link&sk=af337097bd3ecac5750a7fb1dcd0b91d`;
 		const utmVariant = `${canonical}?utm_source=twitter&utm_medium=social`;
 
-		await saveGeneratedSummary({ url: friendsLink, summary: "Deduped summary", inputTokens: 10, outputTokens: 5 });
+		await saveGeneratedSummary({ url: friendsLink, summary: "Deduped summary", excerpt: "Deduped blurb", inputTokens: 10, outputTokens: 5 });
 
 		assert.deepEqual(await findGeneratedSummary(canonical), {
 			status: "ready",
 			summary: "Deduped summary",
+			excerpt: "Deduped blurb",
 		});
 		assert.deepEqual(await findGeneratedSummary(friendsLink), {
 			status: "ready",
 			summary: "Deduped summary",
+			excerpt: "Deduped blurb",
 		});
 		assert.deepEqual(await findGeneratedSummary(utmVariant), {
 			status: "ready",
 			summary: "Deduped summary",
+			excerpt: "Deduped blurb",
 		});
 	});
 });

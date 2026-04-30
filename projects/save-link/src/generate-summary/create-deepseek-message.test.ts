@@ -1,9 +1,13 @@
 import { initCreateDeepseekMessage } from "./create-deepseek-message";
 
 describe("initCreateDeepseekMessage", () => {
-	it("should prepend system message and map response to CreateAiMessage format", async () => {
+	it("should prepend system message and pass JSON content through unchanged", async () => {
+		const jsonPayload = JSON.stringify({
+			summary: "Article explains quantum computing basics",
+			excerpt: "Quick primer on qubits.",
+		});
 		const createChatCompletion = jest.fn().mockResolvedValue({
-			choices: [{ message: { content: "Article explains quantum computing basics" } }],
+			choices: [{ message: { content: jsonPayload } }],
 			usage: { prompt_tokens: 50, completion_tokens: 20 },
 		});
 
@@ -18,20 +22,22 @@ describe("initCreateDeepseekMessage", () => {
 		expect(createChatCompletion).toHaveBeenCalledWith({
 			model: "deepseek-chat",
 			max_tokens: 1024,
+			response_format: { type: "json_object" },
 			messages: [
 				{ role: "system", content: "You are a summarizer." },
 				{ role: "user", content: "Summarize this article" },
 			],
 		});
 		expect(result).toEqual({
-			content: [{ type: "text", text: JSON.stringify({ summary: "Article explains quantum computing basics" }) }],
+			content: [{ type: "text", text: jsonPayload }],
 			usage: { input_tokens: 50, output_tokens: 20 },
 		});
 	});
 
 	it("should trim whitespace from response content", async () => {
+		const jsonPayload = JSON.stringify({ summary: "trimmed", excerpt: "blurb" });
 		const createChatCompletion = jest.fn().mockResolvedValue({
-			choices: [{ message: { content: "  trimmed text  \n" } }],
+			choices: [{ message: { content: `  ${jsonPayload}  \n` } }],
 			usage: { prompt_tokens: 5, completion_tokens: 3 },
 		});
 
@@ -43,7 +49,7 @@ describe("initCreateDeepseekMessage", () => {
 			messages: [{ role: "user", content: "hello" }],
 		});
 
-		expect(result.content[0].text).toBe(JSON.stringify({ summary: "trimmed text" }));
+		expect(result.content[0].text).toBe(jsonPayload);
 	});
 
 	it("should throw when response has no message content", async () => {
@@ -64,7 +70,7 @@ describe("initCreateDeepseekMessage", () => {
 
 	it("should extract text from document content blocks", async () => {
 		const createChatCompletion = jest.fn().mockResolvedValue({
-			choices: [{ message: { content: "Summary of the article" } }],
+			choices: [{ message: { content: '{"summary":"s","excerpt":"e"}' } }],
 			usage: { prompt_tokens: 60, completion_tokens: 15 },
 		});
 
@@ -96,7 +102,7 @@ describe("initCreateDeepseekMessage", () => {
 
 	it("should join multiple document blocks with newline", async () => {
 		const createChatCompletion = jest.fn().mockResolvedValue({
-			choices: [{ message: { content: "Combined summary" } }],
+			choices: [{ message: { content: '{"summary":"s","excerpt":"e"}' } }],
 			usage: { prompt_tokens: 80, completion_tokens: 10 },
 		});
 
@@ -136,7 +142,7 @@ describe("initCreateDeepseekMessage", () => {
 
 	it("should cap max_tokens to 8192", async () => {
 		const createChatCompletion = jest.fn().mockResolvedValue({
-			choices: [{ message: { content: "summary" } }],
+			choices: [{ message: { content: '{"summary":"s","excerpt":"e"}' } }],
 			usage: { prompt_tokens: 10, completion_tokens: 5 },
 		});
 
@@ -155,7 +161,7 @@ describe("initCreateDeepseekMessage", () => {
 
 	it("should throw when response has no usage data", async () => {
 		const createChatCompletion = jest.fn().mockResolvedValue({
-			choices: [{ message: { content: "some text" } }],
+			choices: [{ message: { content: '{"summary":"s","excerpt":"e"}' } }],
 			usage: null,
 		});
 
