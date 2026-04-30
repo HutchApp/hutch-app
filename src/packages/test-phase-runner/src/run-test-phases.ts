@@ -112,6 +112,11 @@ function resolveJestPhase(phase: JestPhase): ResolvedJestPhase {
 		`--testMatch="${phase.testMatch}"`,
 		`--testTimeout=${phase.timeout}`,
 		"--runInBand",
+		// Without --forceExit, jest occasionally hangs after every test passes
+		// because supertest's per-request HTTP servers leave handles open. The
+		// hang causes c8 to flush partial coverage data, dropping branch
+		// coverage below 97% and failing the threshold gate.
+		"--forceExit",
 	];
 	if (phase.testPathIgnorePatterns) {
 		parts.push(`--testPathIgnorePatterns="${phase.testPathIgnorePatterns}"`);
