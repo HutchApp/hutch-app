@@ -135,14 +135,4 @@ export const HEALTH_SOURCES: readonly HealthSource[] = [
 		expectedContent: "his stake in SpaceX last year by purchasing $1.4 billion of stock",
 		expectsThumbnail: true,
 	},
-	{
-		// CANARY-FLOW TEST — to be reverted (validates @claude failure
-		// handoff). The .invalid TLD is reserved by RFC 2606; the URL is
-		// not in the articles DB so admin/recrawl returns non-200 and the
-		// canary fails fast on the forceRecrawl assertion.
-		label: "Canary flow test",
-		url: "https://canary-flow-test.invalid/intentional-failure",
-		expectedContent: "n/a",
-		expectsThumbnail: false,
-	},
 ];
