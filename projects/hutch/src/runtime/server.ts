@@ -416,6 +416,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		markSummaryPending: deps.markSummaryPending,
 		findArticleCrawlStatus: deps.findArticleCrawlStatus,
 		markCrawlPending: deps.markCrawlPending,
+		refreshArticleIfStale: deps.refreshArticleIfStale,
 		saveArticleGlobally: deps.saveArticleGlobally,
 		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
 	});

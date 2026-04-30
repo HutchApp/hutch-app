@@ -3,6 +3,7 @@ import type {
 	ParseArticleResult,
 	ParseHtml,
 } from "../article-parser/article-parser.types";
+import type { FindArticleCrawlStatus } from "../article-crawl/article-crawl.types";
 import type { FindArticleFreshness } from "../article-store/article-store.types";
 import type { PublishRefreshArticleContent } from "../events/publish-refresh-article-content.types";
 import type { PublishUpdateFetchTimestamp } from "../events/publish-update-fetch-timestamp.types";
@@ -10,6 +11,7 @@ import { calculateReadTime } from "../../domain/article/estimated-read-time";
 
 export type ContentFreshnessResult =
 	| { action: "new" }
+	| { action: "reprime" }
 	| { action: "skip" }
 	| { action: "unchanged" }
 	| { action: "refreshed"; article: ParseArticleResult & { ok: true } };
@@ -20,6 +22,7 @@ export type RefreshArticleIfStale = (params: {
 
 export function initRefreshArticleIfStale(deps: {
 	findArticleFreshness: FindArticleFreshness;
+	findArticleCrawlStatus: FindArticleCrawlStatus;
 	crawlArticle: CrawlArticle;
 	parseHtml: ParseHtml;
 	publishRefreshArticleContent: PublishRefreshArticleContent;
@@ -32,6 +35,11 @@ export function initRefreshArticleIfStale(deps: {
 
 		if (!freshness) {
 			return { action: "new" };
+		}
+
+		const crawl = await deps.findArticleCrawlStatus(params.url);
+		if (!crawl || crawl.status === "failed") {
+			return { action: "reprime" };
 		}
 
 		if (freshness.contentFetchedAt) {

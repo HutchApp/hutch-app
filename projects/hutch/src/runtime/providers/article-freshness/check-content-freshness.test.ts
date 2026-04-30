@@ -3,6 +3,7 @@ import { initRefreshArticleIfStale } from "./check-content-freshness";
 function createDeps(overrides?: Record<string, unknown>) {
 	return {
 		findArticleFreshness: async (_url: string) => null,
+		findArticleCrawlStatus: async (_url: string) => undefined,
 		crawlArticle: async () => ({ status: "failed" as const }),
 		parseHtml: () => ({
 			ok: true as const,
@@ -32,12 +33,41 @@ describe("refreshArticleIfStale", () => {
 		expect(result.action).toBe("new");
 	});
 
+	it("returns action 'reprime' when crawl status is failed", async () => {
+		const deps = createDeps({
+			findArticleFreshness: async () => ({
+				contentFetchedAt: "2026-03-20T09:00:00Z",
+			}),
+			findArticleCrawlStatus: async () => ({ status: "failed" as const, reason: "blocked" }),
+		});
+		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
+
+		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
+
+		expect(result.action).toBe("reprime");
+	});
+
+	it("returns action 'reprime' when crawl status is undefined (legacy stub)", async () => {
+		const deps = createDeps({
+			findArticleFreshness: async () => ({
+				contentFetchedAt: "2026-03-20T09:00:00Z",
+			}),
+			findArticleCrawlStatus: async () => undefined,
+		});
+		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
+
+		const result = await refreshArticleIfStale({ url: "https://example.com/article" });
+
+		expect(result.action).toBe("reprime");
+	});
+
 	it("returns action 'skip' when contentFetchedAt is within TTL", async () => {
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-20T09:00:00Z",
 			}),
+			findArticleCrawlStatus: async () => ({ status: "ready" as const }),
 		});
 		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
 
@@ -53,6 +83,7 @@ describe("refreshArticleIfStale", () => {
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
+			findArticleCrawlStatus: async () => ({ status: "ready" as const }),
 			crawlArticle: async () => ({ status: "not-modified" as const }),
 			publishUpdateFetchTimestamp: async () => { publishCalled.push("timestamp"); },
 		});
@@ -72,6 +103,7 @@ describe("refreshArticleIfStale", () => {
 				lastModified: "Wed, 19 Mar 2026 00:00:00 GMT",
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
+			findArticleCrawlStatus: async () => ({ status: "ready" as const }),
 			crawlArticle: async (params: { url: string; etag?: string; lastModified?: string }) => {
 				capturedParams.push(params);
 				return { status: "not-modified" as const };
@@ -95,6 +127,7 @@ describe("refreshArticleIfStale", () => {
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
+			findArticleCrawlStatus: async () => ({ status: "ready" as const }),
 			crawlArticle: async () => ({
 				status: "fetched" as const,
 				html: "<html>New content</html>",
@@ -116,6 +149,7 @@ describe("refreshArticleIfStale", () => {
 			findArticleFreshness: async () => ({
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
+			findArticleCrawlStatus: async () => ({ status: "ready" as const }),
 			crawlArticle: async () => ({
 				status: "fetched" as const,
 				html: "<html>Fresh</html>",
@@ -129,11 +163,12 @@ describe("refreshArticleIfStale", () => {
 		expect(result.action).toBe("refreshed");
 	});
 
-	it("returns action 'skip' when crawlArticle returns failed", async () => {
+	it("returns action 'skip' when crawlArticle returns failed on re-crawl", async () => {
 		const deps = createDeps({
 			findArticleFreshness: async () => ({
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
+			findArticleCrawlStatus: async () => ({ status: "ready" as const }),
 			crawlArticle: async () => ({ status: "failed" as const }),
 		});
 		const { refreshArticleIfStale } = initRefreshArticleIfStale(deps);
@@ -149,6 +184,7 @@ describe("refreshArticleIfStale", () => {
 				etag: '"abc"',
 				contentFetchedAt: "2026-03-19T00:00:00Z",
 			}),
+			findArticleCrawlStatus: async () => ({ status: "ready" as const }),
 			crawlArticle: async () => ({
 				status: "fetched" as const,
 				html: "<html>Bad content</html>",

@@ -1257,6 +1257,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
 			});
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
@@ -1315,6 +1316,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
@@ -1441,6 +1443,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
@@ -1464,12 +1467,10 @@ describe("View routes", () => {
 		});
 
 		it("re-primes the pipeline for a legacy stub (cached row with no crawl and no summary state)", async () => {
-			// A stub row written before the crawl+summary state machines existed
-			// carries metadata but neither crawlStatus nor summaryStatus. Without
-			// a re-prime the row sits undefined/undefined forever and the UI
-			// polls "Generating summary…" indefinitely. The view handler must
-			// detect this and re-publish SaveAnonymousLinkCommand so the worker
-			// populates the state-machine rows.
+			// refreshArticleIfStale returns "reprime" for legacy stubs (freshness
+			// exists but crawl status is undefined). The view handler then
+			// re-publishes SaveAnonymousLinkCommand so the worker populates the
+			// state-machine rows.
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const publishSaveAnonymousLink = jest.fn(async () => {});
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
@@ -1490,6 +1491,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
 			await articleStore.saveArticleGlobally({
 				url: ARTICLE_URL,
@@ -1528,6 +1530,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
 			await articleStore.saveArticleGlobally({
 				url: ARTICLE_URL,
