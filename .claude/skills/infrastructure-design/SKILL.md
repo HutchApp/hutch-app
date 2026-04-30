@@ -18,11 +18,56 @@ Infrastructure code must not branch on environment names (e.g., `if (stage === "
 | `config.require` / `config.requireBoolean` | The value must be set in every environment |
 | `config.getObject` / `config.get` | The value is optional and absence is meaningful (e.g., empty list = feature disabled) |
 
-## Events vs Commands
+## Every Lambda Must Be Backed by a Queue with DLQ
 
-An **event** is a fact — something that already happened. Events are named in past tense (`LinkSavedEvent`, `SummaryGeneratedEvent`). Use events when multiple independent consumers may react to the same fact (fan-out).
+Every Lambda must be invoked through an SQS queue redriving to a DLQ. Use the reusable components from `@packages/hutch-infra-components/infra` — discover them with `grep -l "export class Hutch" src/packages/hutch-infra-components/src/infra/`.
 
-A **command** is an action request — it can be validated, prevented, or retried. Commands are named in imperative (`GenerateSummaryCommand`). Use commands when exactly one handler must process the action.
+| Use case | Component |
+|---|---|
+| Async worker (Command or Event handler) | `HutchSQSBackedLambda` — pairs a `HutchLambda` with a `HutchSQS` (queue + DLQ + SNS alarm + email subscription) |
+| Failure-state transition driven by DLQ exhaustion | `HutchDLQEventHandler` — Lambda fed by an existing `HutchSQS.dlqArn` |
+
+**Why:** Naked Lambdas drop messages on transient failure and leave no observable trail. The reusable components wire the redrive policy + CloudWatch alarm + SNS email subscription as a single unit, so DLQ arrivals always page the operator.
+
+**How to apply:** Never instantiate `aws.lambda.Function` directly outside the `hutch-infra-components` package — `grep` for it before writing new infra code. Always pair a new `HutchLambda` with `HutchSQSBackedLambda`. When the work source is EventBridge, follow with `eventBus.subscribe(EventOrCommand, lambdaWithSQS)`.
+
+**Allowed exception:** a synchronous request/response Lambda fronted by API Gateway. API Gateway is the queue analogue and 5xx surfaces the failure to the client. Document any new exception inline with a `Why:` comment in the infra file that creates it.
+
+## Command → System → Event(s) Pattern
+
+Every non-trivial process must be modelled as **Command → System → Event(s)**, with events flowing over EventBridge. Commands and events are defined as global, shared types in the `@packages/hutch-infra-components` package via `defineEvent` / `defineCommand`. Discover the current catalogue with `grep -E "defineEvent|defineCommand" src/packages/hutch-infra-components/src/`.
+
+| Concept | Naming | Dispatch |
+|---|---|---|
+| **Command** — preventable request to do work | imperative (`SaveLinkCommand`, `GenerateSummaryCommand`) | `eventBus.subscribe(Command, lambdaWithSQS)` for EventBridge-routed commands, or `initSqsCommandDispatcher(...)` for direct-SQS commands |
+| **Event** — irreversible fact already in the past | past tense (`LinkSavedEvent`, `SummaryGeneratedEvent`, `CrawlArticleFailedEvent`) | `eventBus.subscribe(Event, lambdaWithSQS)` |
+
+**Allowed transitions** (sender → receiver, across Lambda boundaries):
+
+| From | To | Allowed? |
+|---|---|---|
+| Command | Event(s) | ✅ Required — every command handler must end by publishing at least one fact (`...Succeeded`, `...Failed`, `...Executed`, …). The event carries post-processed data the consumer cannot refuse. |
+| Event | Command | ✅ Allowed — event handlers may dispatch follow-up commands. |
+| Event | Event | ✅ Allowed — an event handler may publish a new event without dispatching a command in between. |
+| Command | Command | ❌ Forbidden across Lambda boundaries. Inline in-process function calls within a single handler are fine. |
+
+A single handler may publish **multiple events** in one invocation. One command, many facts is fine. One command directly dispatching another command across a Lambda boundary is not.
+
+**Why:** Commands carry intent and may be rejected, retried, or short-circuited; events carry irreversible facts. Conflating the two erases the boundary that lets you reason about whether work *can* still fail. Routing facts through EventBridge gives independent consumers a single broadcast point and keeps wire formats grep-able from one package.
+
+**How to apply:** Before touching code for a new async behaviour, write the chain in `Command → System → Event(s)` notation. If you cannot name the event(s) the command produces, the system is not yet decomposed correctly.
+
+## Command/Event Changes Require an Architecture Snapshot
+
+Any change that adds, removes, renames, or re-wires a `defineEvent` / `defineCommand` declaration, or alters how a Lambda subscribes to one, must land with a new snapshot under `.architecture/<commit-hash>/`. Read `.architecture/index.md` end-to-end and follow the snapshot-generation prompt at the bottom. The snapshot must:
+
+1. Show the **complete current state** of every flow that touches the changed command(s) or event(s) — not just the diff.
+2. **Visually highlight the new change** so a reader can see what shifted from the previous snapshot. Use a distinct `classDef` (e.g. `classDef new fill:#ffd24c,stroke:#a0660b,stroke-width:3px;`) and apply `:::new` to the changed nodes/edges. Mention the highlight convention in the snapshot's Legend block.
+3. Append a row to `.architecture/index.md` with the commit hash, date, branch, subject, and a flow-level (path-free) description.
+
+**Why:** Wire-format changes are deployment contracts that propagate across producer and consumer stacks. The pinned snapshot becomes the historical record of how the system *used to* look so reviewers can reason about migration steps. Skipping the snapshot makes the next "why does this event exist?" archaeology session orders of magnitude more expensive.
+
+**How to apply:** Treat the snapshot as part of the same PR as the wiring change — they belong together so the snapshot pins to the commit that introduced the change.
 
 ## Runtime Environment Must Match Infrastructure
 
