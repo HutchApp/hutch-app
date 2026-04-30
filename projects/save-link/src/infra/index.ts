@@ -23,7 +23,6 @@ import {
 } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 import { GENERATE_SUMMARY_TIMEOUTS } from "../generate-summary/timeouts";
-import { SELECT_CONTENT_TIMEOUTS } from "../save-link-raw-html/timeouts";
 
 const config = new pulumi.Config();
 const alertEmail = config.require("alertEmail");
@@ -76,7 +75,7 @@ const saveAnonymousLinkCommandQueue = new HutchSQS("save-anonymous-link-command"
 });
 
 const saveLinkRawHtmlCommandQueue = new HutchSQS("save-link-raw-html-command", {
-	visibilityTimeoutSeconds: SELECT_CONTENT_TIMEOUTS.sqsVisibilitySeconds,
+	visibilityTimeoutSeconds: 60,
 });
 
 const anonymousLinkSavedQueue = new HutchSQS("anonymous-link-saved", {
@@ -151,7 +150,7 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 	outputDir: ".lib/save-link-raw-html-command",
 	assetDir: "./src",
 	memorySize: 256,
-	timeout: SELECT_CONTENT_TIMEOUTS.lambdaSeconds,
+	timeout: 30,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
