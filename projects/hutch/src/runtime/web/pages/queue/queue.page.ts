@@ -3,7 +3,7 @@ import { DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
 import type { LogParseError } from "@packages/hutch-infra-components";
-import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_REQUEST_BYTES, RAW_HTML_FIELD } from "../../../domain/article/article.schema";
+import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_REQUEST_BYTES, RAW_HTML_FIELD, SAVEABLE_URL_SCHEMES } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
@@ -276,7 +276,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 							href: "/queue",
 							method: "POST",
 							type: "application/json",
-							fields: [{ name: "url", type: "url" }],
+							fields: [{ name: "url", type: "url", schemes: SAVEABLE_URL_SCHEMES }],
 						},
 					],
 				}),

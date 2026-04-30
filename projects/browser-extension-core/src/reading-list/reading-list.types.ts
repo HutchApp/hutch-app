@@ -26,3 +26,5 @@ export type FindByUrl = (
 ) => Promise<ReadingListItem | null>;
 
 export type GetAllItems = () => Promise<ReadingListItem[]>;
+
+export type GetSaveableSchemes = () => Promise<readonly string[]>;

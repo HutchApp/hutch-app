@@ -38,13 +38,14 @@ export type {
 	ArticleItem,
 	BoundAction,
 } from "./reading-list/siren-reading-list";
-export type { SaveUrl, RemoveUrl, FindByUrl, GetAllItems } from "./reading-list/reading-list.types";
+export type { SaveUrl, RemoveUrl, FindByUrl, GetAllItems, GetSaveableSchemes } from "./reading-list/reading-list.types";
 export type { PopupMessage } from "./popup-message.types";
 export { filterByUrl } from "./popup/filter-by-url";
 export { paginateItems } from "./popup/paginate-items";
 export { avatarColor } from "./popup/avatar-color";
 export { relativeTime } from "./popup/relative-time";
 export { isAppUrl } from "./popup/is-app-url";
+export { isSaveableScheme } from "./popup/is-saveable-scheme";
 export {
 	MENU_ITEM_SAVE_PAGE,
 	MENU_ITEM_SAVE_LINK,

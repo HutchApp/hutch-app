@@ -2160,6 +2160,97 @@ describe("initSirenReadingList", () => {
 		});
 	});
 
+	describe("getSaveableSchemes", () => {
+		it("returns the schemes published on save-article's url field", async () => {
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: JSON.stringify({
+							class: ["collection", "articles"],
+							entities: [],
+							links: [{ rel: ["self"], href: "/queue" }],
+							actions: [
+								{
+									name: "save-article",
+									href: "/queue",
+									method: "POST",
+									type: "application/json",
+									fields: [
+										{ name: "url", type: "url", schemes: ["http", "https"] },
+									],
+								},
+							],
+						}),
+					},
+				}),
+			);
+			const list = initSirenReadingList(createAdapterDeps(fetchFn));
+			expect(await list.getSaveableSchemes()).toEqual(["http", "https"]);
+		});
+
+		it("falls back to the default scheme list when the server omits schemes", async () => {
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: collectionResponse(),
+					},
+				}),
+			);
+			const list = initSirenReadingList(createAdapterDeps(fetchFn));
+			expect(await list.getSaveableSchemes()).toEqual(["http", "https"]);
+		});
+
+		it("falls back to the default scheme list when save-article is absent", async () => {
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: JSON.stringify({
+							entities: [],
+							actions: [],
+							links: [{ rel: ["self"], href: "/queue" }],
+						}),
+					},
+				}),
+			);
+			const list = initSirenReadingList(createAdapterDeps(fetchFn));
+			expect(await list.getSaveableSchemes()).toEqual(["http", "https"]);
+		});
+
+		it("propagates an extended scheme set from the server", async () => {
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: JSON.stringify({
+							entities: [],
+							links: [{ rel: ["self"], href: "/queue" }],
+							actions: [
+								{
+									name: "save-article",
+									href: "/queue",
+									method: "POST",
+									type: "application/json",
+									fields: [
+										{ name: "url", type: "url", schemes: ["http", "https", "ftp"] },
+									],
+								},
+							],
+						}),
+					},
+				}),
+			);
+			const list = initSirenReadingList(createAdapterDeps(fetchFn));
+			expect(await list.getSaveableSchemes()).toEqual([
+				"http",
+				"https",
+				"ftp",
+			]);
+		});
+	});
+
 	describe("authHeaders error handling", () => {
 		it("throws when access token is null", async () => {
 			const { fetchFn } = createRoutingFetch({

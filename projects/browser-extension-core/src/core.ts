@@ -1,6 +1,6 @@
 import type { ReadingListItem, ReadingListItemId } from "./domain/reading-list-item.types";
 import type { Auth, GuardedResult } from "./auth/auth.types";
-import type { SaveUrlResult, RemoveUrlResult, SaveUrl, RemoveUrl, FindByUrl, GetAllItems } from "./reading-list/reading-list.types";
+import type { SaveUrlResult, RemoveUrlResult, SaveUrl, RemoveUrl, FindByUrl, GetAllItems, GetSaveableSchemes } from "./reading-list/reading-list.types";
 import type { BrowserShell } from "./shell.types";
 import type { HutchLogger } from "@packages/hutch-logger";
 import { createEventBus } from "./event-bus";
@@ -15,6 +15,7 @@ export interface ReadingList {
 	removeUrl: RemoveUrl;
 	findByUrl: FindByUrl;
 	getAllItems: GetAllItems;
+	getSaveableSchemes: GetSaveableSchemes;
 }
 
 export type ResultCallbacks<T> = {
@@ -33,7 +34,7 @@ export interface Core {
 	logout(): void;
 	save(resource: "current-tab", data: { url: string; title: string; rawHtml?: string }): void;
 	remove(resource: "item", data: { id: ReadingListItemId }): void;
-	fetch(resource: "reading-list"): void;
+	fetch(resource: "reading-list" | "saveable-schemes"): void;
 	check(resource: "url", data: { url: string }): void;
 
 	on(event: "pre-init", handler: () => void): void;
@@ -43,12 +44,14 @@ export interface Core {
 	on(event: "saved-current-tab", handler: ResultCallbacks<SaveUrlResult>): void;
 	on(event: "removed-item", handler: ResultCallbacks<RemoveUrlResult>): void;
 	on(event: "fetched-reading-list", handler: ResultCallbacks<ReadingListItem[]>): void;
+	on(event: "fetched-saveable-schemes", handler: ResultCallbacks<readonly string[]>): void;
 	on(event: "checked-url", handler: ResultCallbacks<ReadingListItem | null>): void;
 
 	once(event: "logged-in", handler: ResultCallbacks<void>): void;
 	once(event: "saved-current-tab", handler: ResultCallbacks<SaveUrlResult>): void;
 	once(event: "removed-item", handler: ResultCallbacks<RemoveUrlResult>): void;
 	once(event: "fetched-reading-list", handler: ResultCallbacks<ReadingListItem[]>): void;
+	once(event: "fetched-saveable-schemes", handler: ResultCallbacks<readonly string[]>): void;
 	once(event: "checked-url", handler: ResultCallbacks<ReadingListItem | null>): void;
 }
 
@@ -207,7 +210,12 @@ export function BrowserExtensionCore(shell: BrowserShell, deps: { auth: Auth; lo
 			}
 		},
 
-		fetch(_resource) {
+		fetch(resource) {
+			if (resource === "saveable-schemes") {
+				const guarded = auth.whenLoggedIn(() => readingList.getSaveableSchemes());
+				emitResult("fetched-saveable-schemes", guarded);
+				return;
+			}
 			const guarded = auth.whenLoggedIn(() => readingList.getAllItems());
 			emitResult("fetched-reading-list", guarded);
 		},

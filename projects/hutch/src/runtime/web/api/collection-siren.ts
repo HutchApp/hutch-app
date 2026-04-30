@@ -3,6 +3,7 @@ import type {
 	SortOrder,
 } from "../../providers/article-store/article-store.types";
 import type { ArticleStatus } from "../../domain/article/article.types";
+import { SAVEABLE_URL_SCHEMES } from "../../domain/article/article.schema";
 import type { SirenEntity, SirenLink } from "./siren";
 import { toArticleSubEntity } from "./article-siren";
 
@@ -66,7 +67,7 @@ export function toArticleCollectionEntity(
 				href: "/queue",
 				method: "POST",
 				type: "application/json",
-				fields: [{ name: "url", type: "url" }],
+				fields: [{ name: "url", type: "url", schemes: SAVEABLE_URL_SCHEMES }],
 			},
 			{
 				name: "save-html",
@@ -74,7 +75,7 @@ export function toArticleCollectionEntity(
 				method: "POST",
 				type: "application/json",
 				fields: [
-					{ name: "url", type: "url" },
+					{ name: "url", type: "url", schemes: SAVEABLE_URL_SCHEMES },
 					{ name: "rawHtml", type: "text" },
 					{ name: "title", type: "text" },
 				],

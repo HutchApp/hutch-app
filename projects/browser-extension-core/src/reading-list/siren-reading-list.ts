@@ -8,9 +8,12 @@ import { UnauthorizedError } from "../auth/unauthorized-error";
 import type {
 	FindByUrl,
 	GetAllItems,
+	GetSaveableSchemes,
 	RemoveUrl,
 	SaveUrl,
 } from "./reading-list.types";
+
+const DEFAULT_SAVEABLE_SCHEMES: readonly string[] = ["http", "https"];
 
 const SIREN_MEDIA_TYPE = "application/vnd.siren+json";
 
@@ -38,7 +41,13 @@ const SirenActionSchema = z.object({
 	method: z.string(),
 	type: z.string().optional(),
 	fields: z
-		.array(z.object({ name: z.string(), type: z.string() }))
+		.array(
+			z.object({
+				name: z.string(),
+				type: z.string(),
+				schemes: z.array(z.string()).optional(),
+			}),
+		)
 		.optional(),
 });
 
@@ -95,6 +104,13 @@ export type BoundAction = (
 export type NavigationResult = {
 	items: ArticleItem[];
 	actions: Record<string, BoundAction>;
+};
+
+/** Returned by the walker's entry-point fetch. Carries raw field descriptors for
+ * each collection action so callers can inspect declared metadata (e.g. saveable
+ * URL schemes) without re-fetching the entry point. */
+type EntryPointResult = NavigationResult & {
+	actionFields: Record<string, SirenAction["fields"]>;
 };
 
 export type ArticleItem = ReadingListItem & {
@@ -328,7 +344,7 @@ const ENTRY_POINT = "/";
 export function initExtension(
 	handlers: Map<string, ActionHandler>,
 	deps: ExtensionDeps,
-): () => Promise<NavigationResult> {
+): () => Promise<EntryPointResult> {
 	let resolvedUrl: string | null = null;
 	const navigationCache = new Map<
 		string,
@@ -396,10 +412,14 @@ export function initExtension(
 	function parseResponse(
 		body: SirenCollectionResponse,
 		doFetch: DoFetch,
-	): NavigationResult {
+	): EntryPointResult {
 		const items = (body.entities ?? []).map((e) => resolveItem(e, doFetch));
 		const actions = bindCollectionActions(body.actions ?? [], doFetch);
-		return { items, actions };
+		const actionFields: Record<string, SirenAction["fields"]> = {};
+		for (const sirenAction of body.actions ?? []) {
+			actionFields[sirenAction.name] = sirenAction.fields;
+		}
+		return { items, actions, actionFields };
 	}
 
 	return async () => {
@@ -440,6 +460,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 	removeUrl: RemoveUrl;
 	findByUrl: FindByUrl;
 	getAllItems: GetAllItems;
+	getSaveableSchemes: GetSaveableSchemes;
 } {
 	const understandings = groupOf(
 		initSaveArticleUnderstanding(),
@@ -519,5 +540,13 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		return collection.items;
 	};
 
-	return { saveUrl, removeUrl, findByUrl, getAllItems };
+	const getSaveableSchemes: GetSaveableSchemes = async () => {
+		const collection = await start();
+		const urlField = collection.actionFields["save-article"]?.find(
+			(f) => f.name === "url",
+		);
+		return urlField?.schemes ?? DEFAULT_SAVEABLE_SCHEMES;
+	};
+
+	return { saveUrl, removeUrl, findByUrl, getAllItems, getSaveableSchemes };
 }

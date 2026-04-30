@@ -7,7 +7,7 @@ import type {
 	SaveUrlResult,
 	RemoveUrlResult,
 } from "browser-extension-core";
-import { filterByUrl, paginateItems, avatarColor, relativeTime, isAppUrl } from "browser-extension-core";
+import { filterByUrl, paginateItems, avatarColor, relativeTime, isAppUrl, isSaveableScheme } from "browser-extension-core";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 
 declare const __APP_DOMAINS__: string[];
@@ -248,6 +248,26 @@ async function saveAndShowList() {
 	if (!activeTab) throw new Error("No active tab or URL parameters");
 
 	if (isAppUrl({ tabUrl: activeTab.url, appDomains: __APP_DOMAINS__ })) {
+		await showListView();
+		return;
+	}
+
+	const schemesResult = (await send({
+		type: "get-saveable-schemes",
+	})) as GuardedResult<readonly string[]>;
+
+	if (isNotLoggedIn(schemesResult)) {
+		await performLogout();
+		return;
+	}
+
+	if (
+		schemesResult.ok &&
+		!isSaveableScheme({
+			tabUrl: activeTab.url,
+			allowedSchemes: schemesResult.value,
+		})
+	) {
 		await showListView();
 		return;
 	}

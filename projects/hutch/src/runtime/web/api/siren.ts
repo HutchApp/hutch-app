@@ -2,6 +2,10 @@ interface SirenField {
 	name: string;
 	type: string;
 	value?: string | number;
+	/** Allowed URL schemes for fields whose `type` is "url". Lets clients gate
+	 * non-saveable tabs without a server round trip. Not part of the Siren spec —
+	 * this is the readplace API's published vocabulary. */
+	schemes?: readonly string[];
 }
 
 export interface SirenAction {

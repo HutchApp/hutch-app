@@ -202,6 +202,25 @@ describe("toArticleCollectionEntity", () => {
 		expect(saveAction?.fields?.some((f) => f.name === "url")).toBe(true);
 	});
 
+	it("publishes saveable url schemes on save-article and save-html", () => {
+		const result: FindArticlesResult = {
+			articles: [],
+			total: 0,
+			page: 1,
+			pageSize: 20,
+		};
+
+		const entity = toArticleCollectionEntity(result, {});
+
+		const saveArticle = entity.actions?.find((a) => a.name === "save-article");
+		const saveHtml = entity.actions?.find((a) => a.name === "save-html");
+		const saveArticleUrl = saveArticle?.fields?.find((f) => f.name === "url");
+		const saveHtmlUrl = saveHtml?.fields?.find((f) => f.name === "url");
+
+		expect(saveArticleUrl?.schemes).toEqual(["http", "https"]);
+		expect(saveHtmlUrl?.schemes).toEqual(["http", "https"]);
+	});
+
 	it("includes search action with filter fields", () => {
 		const result: FindArticlesResult = {
 			articles: [],

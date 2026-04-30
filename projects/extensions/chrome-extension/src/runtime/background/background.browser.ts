@@ -303,6 +303,18 @@ browser.runtime.onMessage.addListener((raw, _sender, sendResponse) => {
 					pending.then(sendResponse);
 					break;
 				}
+				case "get-saveable-schemes": {
+					const pending = new Promise<unknown>((resolve) => {
+						core.once("fetched-saveable-schemes", {
+							success: (value: readonly string[]) =>
+								resolve({ ok: true, value }),
+							failure: (err) => resolve({ ok: false, ...err }),
+						});
+					});
+					core.fetch("saveable-schemes");
+					pending.then(sendResponse);
+					break;
+				}
 			}
 		});
 

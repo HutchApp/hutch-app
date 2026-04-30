@@ -237,6 +237,21 @@ describe("POST /queue (Siren save article)", () => {
 		expect(response.body.properties.code).toBe("invalid-url");
 	});
 
+	it("returns 422 for a non-saveable scheme", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const accessToken = await createAccessToken(testApp);
+
+		const response = await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ url: "chrome://newtab/" });
+
+		expect(response.status).toBe(422);
+		expect(response.body.properties.code).toBe("invalid-url");
+	});
+
 	it("returns 401 without token", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
