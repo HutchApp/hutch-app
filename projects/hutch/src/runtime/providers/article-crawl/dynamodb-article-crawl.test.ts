@@ -62,6 +62,21 @@ describe("initDynamoDbArticleCrawl", () => {
 			expect(result).toEqual({ status: "pending" });
 		});
 
+		it("returns pending with stage when crawlStage is recorded", async () => {
+			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
+				client: clientReturning({
+					url: URL,
+					crawlStatus: "pending",
+					crawlStage: "crawl-parsed",
+				}),
+				tableName: TABLE,
+			});
+
+			const result = await findArticleCrawlStatus(URL);
+
+			expect(result).toEqual({ status: "pending", stage: "crawl-parsed" });
+		});
+
 		it("returns ready when crawlStatus=ready", async () => {
 			const { findArticleCrawlStatus } = initDynamoDbArticleCrawl({
 				client: clientReturning({ url: URL, crawlStatus: "ready" }),

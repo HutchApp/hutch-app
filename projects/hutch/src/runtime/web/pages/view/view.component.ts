@@ -11,6 +11,7 @@ import { requireEnv } from "../../../require-env";
 import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
+import type { ProgressTick } from "../../shared/article-body/progress-mapping";
 import {
 	SHARE_BALLOON_SCRIPT,
 	renderShareBalloon,
@@ -18,6 +19,7 @@ import {
 import { VIEW_STYLES } from "./view.styles";
 
 const STATIC_BASE_URL = requireEnv("STATIC_BASE_URL");
+const PROGRESS_BAR_SCRIPT = `<script src="/client-dist/progress-bar.client.js" defer></script>`;
 
 const CANONICAL_BASE_URL = "https://readplace.com";
 const DEFAULT_OG_IMAGE = `${STATIC_BASE_URL}/og-image-1200x630.png`;
@@ -44,6 +46,7 @@ export interface ViewPageInput {
 	readerPollUrl?: string;
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
+	progress?: ProgressTick;
 	actions: ViewAction[];
 	extensionInstallUrl?: string;
 }
@@ -60,6 +63,7 @@ export function ViewPage(input: ViewPageInput): PageBody {
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: true,
+		progress: input.progress,
 		extensionInstallUrl: input.extensionInstallUrl,
 	});
 
@@ -114,6 +118,6 @@ export function ViewPage(input: ViewPageInput): PageBody {
 		styles: VIEW_STYLES,
 		bodyClass: "page-view",
 		content,
-		scripts: SHARE_BALLOON_SCRIPT,
+		scripts: SHARE_BALLOON_SCRIPT + PROGRESS_BAR_SCRIPT,
 	};
 }

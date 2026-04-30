@@ -1,5 +1,17 @@
+import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
+import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import type { Component } from "../../component.types";
 import { HtmlPage } from "../../html-page";
+import { renderProgressBarOob } from "../article-body/progress-bar.component";
+import {
+	CRAWL_STAGE_TO_PCT,
+	type CrawlStage,
+	DEFAULT_CRAWL_STAGE,
+	DEFAULT_SUMMARY_STAGE,
+	type ProgressTick,
+	SUMMARY_STAGE_TO_PCT,
+	type SummaryStage,
+} from "../article-body/progress-mapping";
 import { renderReaderSlot } from "../article-body/reader-slot/reader-slot.component";
 import { renderSummarySlot } from "../article-body/summary-slot/summary-slot.component";
 import type {
@@ -10,6 +22,45 @@ import type {
 } from "./article-reader.types";
 
 const MAX_POLLS = 40;
+
+/**
+ * Single-bar progress: pick the further-along pipeline. While the crawl is
+ * pending, drive the bar from the crawl stage on the lower half of the
+ * unified scale. Once the crawl is ready (or undefined-with-content, the
+ * legacy-row path) the summary takes over on the upper half.
+ *
+ * Returns undefined when there is nothing left to animate — both pipelines
+ * terminal, or the crawl has failed and the summary slot has collapsed
+ * (rendering a half-full bar there would just stall forever).
+ */
+function buildUnifiedProgress(
+	crawl: ArticleCrawl | undefined,
+	summary: GeneratedSummary | undefined,
+	now: Date,
+): ProgressTick | undefined {
+	if (crawl?.status === "failed") return undefined;
+
+	if (crawl?.status === "pending") {
+		const stage: CrawlStage = crawl.stage ?? DEFAULT_CRAWL_STAGE;
+		return {
+			stage,
+			pct: CRAWL_STAGE_TO_PCT[stage],
+			tickAt: now.toISOString(),
+		};
+	}
+
+	const summaryStatus = summary?.status ?? "pending";
+	if (summaryStatus !== "pending") return undefined;
+
+	const recordedStage =
+		summary?.status === "pending" ? summary.stage : undefined;
+	const stage: SummaryStage = recordedStage ?? DEFAULT_SUMMARY_STAGE;
+	return {
+		stage,
+		pct: SUMMARY_STAGE_TO_PCT[stage],
+		tickAt: now.toISOString(),
+	};
+}
 
 export function initArticleReader(deps: ArticleReaderDeps): {
 	resolveReaderState: (params: ResolveReaderStateParams) => Promise<ReaderState>;
@@ -49,7 +100,14 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 			crawl?.status === "pending" || (crawl === undefined && content === undefined);
 		const readerPollUrl = shouldPollReader ? pollUrlBuilder.reader(1) : undefined;
 
-		return { content, crawl, summary, readerPollUrl, summaryPollUrl };
+		return {
+			content,
+			crawl,
+			summary,
+			readerPollUrl,
+			summaryPollUrl,
+			progress: buildUnifiedProgress(crawl, summary, deps.now()),
+		};
 	}
 
 	async function handleSummaryPoll(params: HandlePollParams): Promise<Component> {
@@ -61,19 +119,39 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 		const summaryPollUrl = !crawlFailed && status === "pending" && pollCount < MAX_POLLS
 			? pollUrlBuilder.summary(pollCount + 1)
 			: undefined;
-		return HtmlPage(renderSummarySlot({ crawl, summary, summaryPollUrl, summaryOpen: true }));
+		const slot = renderSummarySlot({
+			crawl,
+			summary,
+			summaryPollUrl,
+			summaryOpen: true,
+		});
+		const oobBar = renderProgressBarOob({
+			progress: buildUnifiedProgress(crawl, summary, deps.now()),
+		});
+		return HtmlPage(slot + oobBar);
 	}
 
 	async function handleReaderPoll(params: HandlePollParams): Promise<Component> {
 		const { articleUrl, pollCount, pollUrlBuilder, extensionInstallUrl } = params;
 		const crawl = await deps.findArticleCrawlStatus(articleUrl);
+		const summary = await deps.findGeneratedSummary(articleUrl);
 		const content = await deps.readArticleContent(articleUrl);
 		const shouldPollReader =
 			crawl?.status === "pending" || (crawl === undefined && content === undefined);
 		const readerPollUrl = shouldPollReader && pollCount < MAX_POLLS
 			? pollUrlBuilder.reader(pollCount + 1)
 			: undefined;
-		return HtmlPage(renderReaderSlot({ crawl, content, url: articleUrl, readerPollUrl, extensionInstallUrl }));
+		const slot = renderReaderSlot({
+			crawl,
+			content,
+			url: articleUrl,
+			readerPollUrl,
+			extensionInstallUrl,
+		});
+		const oobBar = renderProgressBarOob({
+			progress: buildUnifiedProgress(crawl, summary, deps.now()),
+		});
+		return HtmlPage(slot + oobBar);
 	}
 
 	return { resolveReaderState, handleSummaryPoll, handleReaderPoll };

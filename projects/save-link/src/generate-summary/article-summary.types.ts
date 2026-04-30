@@ -28,6 +28,20 @@ export type MarkSummaryPending = (params: { url: string }) => Promise<void>;
 export type MarkSummaryFailed = (params: { url: string; reason: string }) => Promise<void>;
 export type MarkSummarySkipped = (params: { url: string }) => Promise<void>;
 
+/**
+ * Worker-side stage strings for the unified article-body progress bar.
+ * Mirrors the hutch progress-mapping SummaryStage union — kept as a literal
+ * type to keep the save-link package free of cross-project relative imports.
+ * Terminal stages are omitted because by the time the worker would write
+ * them the row's status attribute has already flipped to a terminal value.
+ */
+export type SummaryStage = "summary-started" | "summary-generating";
+
+export type MarkSummaryStage = (params: {
+	url: string;
+	stage: SummaryStage;
+}) => Promise<void>;
+
 export type DocumentBlock = {
 	type: "document";
 	source: { type: "text"; media_type: "text/plain"; data: string };

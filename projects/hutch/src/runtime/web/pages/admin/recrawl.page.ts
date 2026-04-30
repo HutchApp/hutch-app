@@ -40,6 +40,7 @@ export interface AdminRecrawlDependencies {
 	findUserByEmail: FindUserByEmail;
 	adminEmails: readonly string[];
 	serviceToken: string;
+	now: () => Date;
 }
 
 function pollUrlBuilderFor(articleUrl: string): PollUrlBuilder {
@@ -134,6 +135,7 @@ function handleRecrawlArticle(
 			readerPollUrl: state.readerPollUrl,
 			summary: state.summary,
 			summaryPollUrl: state.summaryPollUrl,
+			progress: state.progress,
 			contentSourceTier: existing.contentSourceTier,
 			extensionInstallUrl: extensionInstallUrlIfMissing(req),
 		})).to("text/html");
@@ -203,6 +205,7 @@ export function initAdminRecrawlRoutes(deps: AdminRecrawlDependencies): Router {
 		findGeneratedSummary: deps.findGeneratedSummary,
 		markSummaryPending: deps.markSummaryPending,
 		readArticleContent: deps.readArticleContent,
+		now: deps.now,
 	});
 
 	router.use(noStore);
