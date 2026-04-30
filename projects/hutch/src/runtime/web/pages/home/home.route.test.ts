@@ -161,7 +161,7 @@ describe("GET /", () => {
 
 		const coreSection = doc.querySelector('[data-test-section="core-features"]');
 		const features = coreSection?.querySelectorAll("[data-test-feature]");
-		expect(features?.length).toBe(8);
+		expect(features?.length).toBe(10);
 	});
 
 	it("should render three demo videos: Desktop, Firefox Extension, and Chrome Extension", async () => {
@@ -220,7 +220,7 @@ describe("GET /", () => {
 
 		const table = doc.querySelector("[data-test-comparison-table]");
 		const rows = table?.querySelectorAll("tbody tr");
-		expect(rows?.length).toBe(6);
+		expect(rows?.length).toBe(7);
 	});
 
 	it("should render the trust section with two trust items", async () => {
@@ -319,7 +319,7 @@ describe("GET /", () => {
 		expect(colHeaders.length).toBe(7);
 
 		const rowHeaders = doc.querySelectorAll('[data-test-comparison-table] tbody th[scope="row"]');
-		expect(rowHeaders.length).toBe(6);
+		expect(rowHeaders.length).toBe(7);
 	});
 });
 

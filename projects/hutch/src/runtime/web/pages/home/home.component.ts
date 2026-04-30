@@ -287,7 +287,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				{
 					name: "Browser Extensions",
 					description:
-						"Save any page with one click, Ctrl/Cmd+D, or right-click. Available for both Firefox and Chrome.",
+						"Save any page with one click, Ctrl/Cmd+D, or right-click. The extension captures the full rendered page — picking the most complete version of the content over what a URL-only crawl would see. Available for Firefox and Chrome.",
 				},
 				{
 					name: "TL;DR Summaries",
@@ -296,6 +296,16 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 				},
 			],
 			compactFeatures: [
+				{
+					name: "Public Reader View",
+					description:
+						"Paste any link to read or share it — no account, no signup.",
+				},
+				{
+					name: "Mobile Web",
+					description:
+						"Works in any mobile browser. No app store, no native install.",
+				},
 				{
 					name: "Web App",
 					description:
@@ -324,14 +334,19 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 			],
 			plannedFeatures: [
 				{
-					name: "Personalised Summaries",
+					name: "Links Import",
 					description:
-						"Summaries tailored to what you prefer to learn.",
+						"Upload any text file — notes, an email, a dump of bookmarks — and Readplace pulls every URL out of it and queues them all as unread.",
 				},
 				{
 					name: "Preference Learning",
 					description:
 						"\"More like this\" and \"less like this\" buttons that update a personal preference model, re-ranking your reading list and surfacing articles that match what's interesting to you. You can review your preferences.",
+				},
+				{
+					name: "Personalised Summaries",
+					description:
+						"Summaries tailored to what you prefer to learn.",
 				},
 				{
 					name: "Gmail Integration",
