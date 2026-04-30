@@ -6,7 +6,10 @@ import type { ArticleCrawl } from "../../../providers/article-crawl/article-craw
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import type { PageBody } from "../../page-body.types";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
+import type { ProgressTick } from "../../shared/article-body/progress-mapping";
 import { RECRAWL_STYLES } from "./recrawl.styles";
+
+const PROGRESS_BAR_SCRIPT = `<script src="/client-dist/progress-bar.client.js" defer></script>`;
 
 export interface AdminRecrawlPageInput {
 	articleUrl: string;
@@ -17,6 +20,7 @@ export interface AdminRecrawlPageInput {
 	readerPollUrl?: string;
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
+	progress?: ProgressTick;
 	contentSourceTier?: "tier-0" | "tier-1";
 	extensionInstallUrl?: string;
 }
@@ -46,6 +50,7 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): PageBody {
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: true,
+		progress: input.progress,
 		extensionInstallUrl: input.extensionInstallUrl,
 	});
 
@@ -62,6 +67,7 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): PageBody {
 		styles: RECRAWL_STYLES,
 		bodyClass: "page-admin-recrawl",
 		content,
+		scripts: PROGRESS_BAR_SCRIPT,
 	};
 }
 

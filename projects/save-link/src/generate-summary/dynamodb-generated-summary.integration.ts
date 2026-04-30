@@ -135,6 +135,19 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		assert.deepEqual(result, { status: "skipped" });
 	});
 
+	it("markSummaryStage writes a stage attribute without regressing pending status", async () => {
+		const client = createDynamoDocumentClient();
+		const { findGeneratedSummary, markSummaryPending, markSummaryStage } =
+			initDynamoDbGeneratedSummary({ client, tableName });
+
+		const url = `https://example.com/${randomUUID()}`;
+		await markSummaryPending({ url });
+		await markSummaryStage({ url, stage: "summary-generating" });
+
+		const result = await findGeneratedSummary(url);
+		assert.deepEqual(result, { status: "pending" });
+	});
+
 	it("saveGeneratedSummary clears a prior failure reason when the retry succeeds", async () => {
 		const client = createDynamoDocumentClient();
 		const { findGeneratedSummary, markSummaryPending, markSummaryFailed, saveGeneratedSummary } =

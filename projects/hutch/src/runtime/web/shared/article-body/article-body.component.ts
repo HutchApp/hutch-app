@@ -5,6 +5,8 @@ import type { ArticleCrawl } from "../../../providers/article-crawl/article-craw
 import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import { requireEnv } from "../../../require-env";
 import { render } from "../../render";
+import { renderProgressBar } from "./progress-bar.component";
+import type { ProgressTick } from "./progress-mapping";
 import { renderReaderSlot } from "./reader-slot/reader-slot.component";
 import { renderSummarySlot } from "./summary-slot/summary-slot.component";
 
@@ -29,6 +31,13 @@ export interface ArticleBodyInput {
 	audioEnabled?: boolean;
 	backLink?: { href: string; label: string };
 	extensionInstallUrl?: string;
+	/**
+	 * Single unified progress tick. When omitted (everything terminal, or
+	 * crawl-failed) the bar still renders but in its hidden state so OOB
+	 * progress-bar swaps from poll responses remain valid even when the
+	 * initial SSR bar was hidden.
+	 */
+	progress?: ProgressTick;
 }
 
 export function renderArticleBody(input: ArticleBodyInput): string {
@@ -47,6 +56,8 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		summaryOpen: input.summaryOpen,
 	});
 
+	const progressBarHtml = renderProgressBar({ progress: input.progress });
+
 	return render(ARTICLE_BODY_TEMPLATE, {
 		title: input.title,
 		siteName: input.siteName,
@@ -54,6 +65,7 @@ export function renderArticleBody(input: ArticleBodyInput): string {
 		url: input.url,
 		readerSlotHtml,
 		summarySlotHtml,
+		progressBarHtml,
 		audioEnabled: input.audioEnabled,
 		backLink: input.backLink,
 		staticBaseUrl: STATIC_BASE_URL,

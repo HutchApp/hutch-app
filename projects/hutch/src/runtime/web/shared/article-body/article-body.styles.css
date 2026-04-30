@@ -266,6 +266,36 @@
   text-align: center;
 }
 
+.article-body__progress {
+  width: 100%;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.article-body__progress--hidden {
+  display: none;
+}
+
+.article-body__progress--visible {
+  display: block;
+}
+
+.article-body__progress-fill {
+  height: 100%;
+  background: var(--color-brand);
+  /**
+   * 1. SSR sets width inline. Each HTMX swap drops in a fresh inline width;
+   *    150ms linear smooths the per-poll jump. Between polls the
+   *    progress-bar.client.ts loop overwrites the inline width via rAF for
+   *    sub-second updates, and we want that to look continuous rather than
+   *    chasing a 150ms ease-in-out.
+   */
+  transition: width 150ms linear; /* 1 */
+}
+
 .article-body__reader-slot--pending {
   display: block;
   padding: 2rem 1.5rem;
