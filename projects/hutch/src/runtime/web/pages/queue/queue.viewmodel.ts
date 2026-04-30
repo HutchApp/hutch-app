@@ -1,5 +1,7 @@
 import type { SavedArticle } from "../../../domain/article/article.types";
 import type { FindArticlesResult } from "../../../providers/article-store/article-store.types";
+import { pickExcerpt } from "../../../providers/article-summary/article-summary.helpers";
+import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
 import type { QueueUrlState } from "./queue.url";
 import { buildQueueUrl } from "./queue.url";
 
@@ -117,6 +119,7 @@ function toArticleViewModel(
 	article: SavedArticle,
 	now: Date,
 	returnQuery: string,
+	summary: GeneratedSummary | undefined,
 ): QueueArticleViewModel {
 	const readTime = article.estimatedReadTime;
 	const id = article.id.value;
@@ -124,7 +127,7 @@ function toArticleViewModel(
 		id,
 		title: article.metadata.title,
 		siteName: article.metadata.siteName,
-		excerpt: article.metadata.excerpt,
+		excerpt: pickExcerpt(summary, article.metadata.excerpt),
 		url: article.url,
 		readTimeLabel: `${readTime} min read`,
 		status: article.status,
@@ -139,7 +142,13 @@ function toArticleViewModel(
 export function toQueueViewModel(
 	result: FindArticlesResult,
 	filters: QueueUrlState,
-	options?: { now?: Date; saveError?: string; unreadCount?: number; totalArticles?: number },
+	options?: {
+		now?: Date;
+		saveError?: string;
+		unreadCount?: number;
+		totalArticles?: number;
+		summaryByUrl?: ReadonlyMap<string, GeneratedSummary | undefined>;
+	},
 ): QueueViewModel {
 	const now = options?.now ?? new Date();
 	const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
@@ -149,7 +158,9 @@ export function toQueueViewModel(
 	const returnQuery = queryIndex !== -1 ? queueUrl.slice(queryIndex) : "";
 
 	return {
-		articles: result.articles.map((a) => toArticleViewModel(a, now, returnQuery)),
+		articles: result.articles.map((a) =>
+			toArticleViewModel(a, now, returnQuery, options?.summaryByUrl?.get(a.url)),
+		),
 		filters,
 		isEmpty: result.total === 0,
 		totalPages,

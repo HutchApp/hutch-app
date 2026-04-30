@@ -22,6 +22,7 @@ import type {
 } from "../../../providers/article-crawl/article-crawl.types";
 import type {
 	FindGeneratedSummary,
+	GeneratedSummary,
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
@@ -64,6 +65,17 @@ interface QueueDependencies {
 }
 
 import type { SavedArticle } from "../../../domain/article/article.types";
+
+async function loadSummaries(
+	findGeneratedSummary: FindGeneratedSummary,
+	articles: readonly SavedArticle[],
+): Promise<Map<string, GeneratedSummary | undefined>> {
+	const results = await Promise.allSettled(articles.map((a) => findGeneratedSummary(a.url)));
+	return new Map(articles.map((a, i) => {
+		const r = results[i];
+		return [a.url, r.status === "fulfilled" ? r.value : undefined] as const;
+	}));
+}
 
 async function markUnreadIfRead(deps: Pick<QueueDependencies, "updateArticleStatus">, saved: SavedArticle): Promise<SavedArticle> {
 	if (saved.status === "read") {
@@ -188,7 +200,8 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			: (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 		const totalArticles = (await deps.findArticlesByUser({ userId, page: 1, pageSize: 1 })).total;
 		const saveError = deps.httpErrorMessageMapping(req.query);
-		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError });
+		const summaryByUrl = await loadSummaries(deps.findGeneratedSummary, result.articles);
+		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError, summaryByUrl });
 		const extensionInstalled = req.cookies?.[COOKIE_NAME] === COOKIE_VALUE;
 		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
 		const ua = req.headers["user-agent"] ?? "";
@@ -337,9 +350,11 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			const urlState = parseQueueUrl({});
 			const result = await deps.findArticlesByUser({ userId });
 			const unreadCount = (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
+			const summaryByUrl = await loadSummaries(deps.findGeneratedSummary, result.articles);
 			const vm = toQueueViewModel(result, urlState, {
 				saveError: "Please enter a valid URL",
 				unreadCount,
+				summaryByUrl,
 			});
 			sendComponent(res, QueuePage(vm, { emailVerified: req.emailVerified, statusCode: 422 }));
 			return;
