@@ -20,6 +20,8 @@ import {
 	RefreshArticleContentCommand,
 	UpdateFetchTimestampCommand,
 	TierContentExtractedEvent,
+	RecrawlLinkInitiatedEvent,
+	RecrawlContentExtractedEvent,
 } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
 import { GENERATE_SUMMARY_TIMEOUTS } from "../generate-summary/timeouts";
@@ -89,6 +91,14 @@ const summaryGeneratedQueue = new HutchSQS("summary-generated", {
 
 const summaryGenerationFailedQueue = new HutchSQS("summary-generation-failed", {
 	visibilityTimeoutSeconds: 60,
+});
+
+const recrawlLinkInitiatedQueue = new HutchSQS("recrawl-link-initiated", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const recrawlContentExtractedQueue = new HutchSQS("recrawl-content-extracted", {
+	visibilityTimeoutSeconds: SELECT_CONTENT_TIMEOUTS.sqsVisibilitySeconds,
 });
 
 // --- SaveLinkCommand handler ---
@@ -407,6 +417,99 @@ const anonymousLinkSavedLambdaWithSQS = new HutchSQSBackedLambda("anonymous-link
 
 eventBus.subscribe(AnonymousLinkSavedEvent, anonymousLinkSavedLambdaWithSQS);
 
+// --- RecrawlLinkInitiated handler ---
+
+const recrawlLinkInitiatedDynamodb = new HutchDynamoDBAccess("recrawl-link-initiated-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+});
+
+const recrawlLinkInitiatedLambda = new HutchLambda("recrawl-link-initiated", {
+	entryPoint: "./src/runtime/recrawl-link-initiated.main.ts",
+	outputDir: ".lib/recrawl-link-initiated",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: 30,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+		CONTENT_BUCKET_NAME: contentBucketName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
+		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
+	},
+	policies: [
+		...recrawlLinkInitiatedDynamodb.policies,
+		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		...contentBucket.readPolicies("recrawl-link-initiated-content-read"),
+		...contentBucket.writePolicies("recrawl-link-initiated-s3"),
+	],
+});
+
+eventBus.grantPublish(recrawlLinkInitiatedLambda);
+
+const recrawlLinkInitiatedLambdaWithSQS = new HutchSQSBackedLambda("recrawl-link-initiated", {
+	lambda: recrawlLinkInitiatedLambda,
+	queue: recrawlLinkInitiatedQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(RecrawlLinkInitiatedEvent, recrawlLinkInitiatedLambdaWithSQS);
+
+// --- RecrawlLinkInitiated DLQ consumer ---
+new HutchDLQEventHandler("recrawl-link-initiated-dlq", {
+	sourceQueue: recrawlLinkInitiatedQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+});
+
+// --- RecrawlContentExtracted handler ---
+// Always dispatches GenerateSummaryCommand regardless of canonical change —
+// recrawl is the operator opting out of the user-save dedup gate.
+
+const recrawlContentExtractedDynamodb = new HutchDynamoDBAccess("recrawl-content-extracted-dynamodb", {
+	tables: [{ arn: articlesTableArn, includeIndexes: false }],
+	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+});
+
+const recrawlContentExtractedLambda = new HutchLambda("recrawl-content-extracted", {
+	entryPoint: "./src/runtime/recrawl-content-extracted.main.ts",
+	outputDir: ".lib/recrawl-content-extracted",
+	assetDir: "./src",
+	memorySize: 256,
+	timeout: SELECT_CONTENT_TIMEOUTS.lambdaSeconds,
+	environment: {
+		DYNAMODB_ARTICLES_TABLE: articlesTableName,
+		CONTENT_BUCKET_NAME: contentBucketName,
+		EVENT_BUS_NAME: eventBus.eventBusName,
+		DEEPSEEK_API_KEY: deepseekApiKey,
+		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+	},
+	policies: [
+		...recrawlContentExtractedDynamodb.policies,
+		...contentBucket.readPolicies("recrawl-content-extracted-content-read"),
+		...contentBucket.writePolicies("recrawl-content-extracted-content-write"),
+		...generateSummaryQueue.policies.map((p) => ({ ...p, name: `recrawl-${p.name}` })),
+	],
+});
+
+eventBus.grantPublish(recrawlContentExtractedLambda);
+
+const recrawlContentExtractedLambdaWithSQS = new HutchSQSBackedLambda("recrawl-content-extracted", {
+	lambda: recrawlContentExtractedLambda,
+	queue: recrawlContentExtractedQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(RecrawlContentExtractedEvent, recrawlContentExtractedLambdaWithSQS);
+
+// --- RecrawlContentExtracted DLQ consumer ---
+new HutchDLQEventHandler("recrawl-content-extracted-dlq", {
+	sourceQueue: recrawlContentExtractedQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+});
+
 // --- SummaryGenerated handler ---
 
 const summaryGeneratedLambda = new HutchLambda("summary-generated", {
@@ -537,5 +640,9 @@ export const updateFetchTimestampQueueUrl = updateFetchTimestampQueue.queueUrl;
 export const updateFetchTimestampDlqUrl = updateFetchTimestampQueue.dlqUrl;
 export const selectMostCompleteContentQueueUrl = selectMostCompleteContentQueue.queueUrl;
 export const selectMostCompleteContentDlqUrl = selectMostCompleteContentQueue.dlqUrl;
+export const recrawlLinkInitiatedQueueUrl = recrawlLinkInitiatedQueue.queueUrl;
+export const recrawlLinkInitiatedDlqUrl = recrawlLinkInitiatedQueue.dlqUrl;
+export const recrawlContentExtractedQueueUrl = recrawlContentExtractedQueue.queueUrl;
+export const recrawlContentExtractedDlqUrl = recrawlContentExtractedQueue.dlqUrl;
 export const contentBucketOutputName = contentBucket.bucket;
 export const contentBucketOutputArn = contentBucket.arn;

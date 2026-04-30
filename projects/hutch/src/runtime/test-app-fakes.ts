@@ -27,9 +27,11 @@ import type {
 	MarkSummaryPending,
 } from "./providers/article-summary/article-summary.types";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
+import { initInMemoryRecrawlLinkInitiated } from "./providers/events/in-memory-recrawl-link-initiated";
 import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
+import type { PublishRecrawlLinkInitiated } from "./providers/events/publish-recrawl-link-initiated.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import type { TestAppFixture } from "./test-app";
@@ -155,6 +157,16 @@ export function createFakePublishSaveAnonymousLink(
 	};
 }
 
+export function createFakePublishRecrawlLinkInitiated(
+	applyParseResult: (url: string) => Promise<void>,
+): PublishRecrawlLinkInitiated {
+	const { publishRecrawlLinkInitiated: log } = initInMemoryRecrawlLinkInitiated({ logger: noopLogger });
+	return async (params) => {
+		await log(params);
+		await applyParseResult(params.url);
+	};
+}
+
 export const TEST_APP_ORIGIN = "http://localhost:3000";
 
 export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
@@ -211,6 +223,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 		parser: { parseArticle, crawlArticle },
 		events: {
 			publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+			publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
 			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),

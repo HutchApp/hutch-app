@@ -1,0 +1,167 @@
+import { noopLogger } from "@packages/hutch-logger";
+import { initRecrawlContentExtractedHandler } from "./recrawl-content-extracted-handler";
+import type { ListAvailableTierSources } from "./list-available-tier-sources";
+import type { SelectMostCompleteContent } from "./select-content";
+import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
+import type { TierSource, TierSourceMetadata } from "./tier-source.types";
+import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
+
+const stubAttributes: SQSRecordAttributes = {
+	ApproximateReceiveCount: "1",
+	SentTimestamp: "1620000000000",
+	SenderId: "TESTID",
+	ApproximateFirstReceiveTimestamp: "1620000000001",
+};
+
+const stubContext: Context = {
+	callbackWaitsForEmptyEventLoop: true,
+	functionName: "test",
+	functionVersion: "1",
+	invokedFunctionArn: "arn:aws:lambda:ap-southeast-2:123456789:function:test",
+	memoryLimitInMB: "128",
+	awsRequestId: "test-request-id",
+	logGroupName: "/aws/lambda/test",
+	logStreamName: "test-stream",
+	getRemainingTimeInMillis: () => 30000,
+	done: () => {},
+	fail: () => {},
+	succeed: () => {},
+};
+
+const stubMetadata = (overrides: Partial<TierSourceMetadata> = {}): TierSourceMetadata => ({
+	title: "Title",
+	siteName: "example.com",
+	excerpt: "excerpt",
+	wordCount: 100,
+	estimatedReadTime: 1,
+	...overrides,
+});
+
+function tierSource(tier: TierSource["tier"], overrides: Partial<TierSource> = {}): TierSource {
+	return {
+		tier,
+		html: `<p>${tier} html</p>`,
+		metadata: stubMetadata(overrides.metadata),
+		...overrides,
+	};
+}
+
+function createSqsEvent(detail: { url: string }): SQSEvent {
+	return {
+		Records: [{
+			messageId: "msg-1",
+			receiptHandle: "receipt-1",
+			body: JSON.stringify({ detail }),
+			attributes: stubAttributes,
+			messageAttributes: {},
+			md5OfBody: "",
+			eventSource: "aws:sqs",
+			eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:recrawl-content-extracted",
+			awsRegion: "ap-southeast-2",
+		}],
+	};
+}
+
+type HandlerDeps = Parameters<typeof initRecrawlContentExtractedHandler>[0];
+
+function createHandler(overrides: Partial<HandlerDeps> = {}) {
+	const deps: HandlerDeps = {
+		listAvailableTierSources: jest.fn<ReturnType<ListAvailableTierSources>, Parameters<ListAvailableTierSources>>().mockResolvedValue([]),
+		selectMostCompleteContent: jest.fn<ReturnType<SelectMostCompleteContent>, Parameters<SelectMostCompleteContent>>().mockResolvedValue({ winner: "tie", reason: "" }),
+		promoteTierToCanonical: jest.fn<ReturnType<PromoteTierToCanonical>, Parameters<PromoteTierToCanonical>>().mockResolvedValue(undefined),
+		dispatchGenerateSummary: jest.fn().mockResolvedValue(undefined),
+		publishEvent: jest.fn().mockResolvedValue(undefined),
+		logger: noopLogger,
+		...overrides,
+	};
+	return { handler: initRecrawlContentExtractedHandler(deps), deps };
+}
+
+describe("initRecrawlContentExtractedHandler", () => {
+	it("throws when no tier sources are available so SQS retries after visibility timeout", async () => {
+		const { handler, deps } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([]),
+		});
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/a" }), stubContext, () => {}),
+		).rejects.toThrow(/no tier sources available/);
+
+		expect(deps.promoteTierToCanonical).not.toHaveBeenCalled();
+		expect(deps.dispatchGenerateSummary).not.toHaveBeenCalled();
+		expect(deps.publishEvent).not.toHaveBeenCalled();
+	});
+
+	it("with one tier source, promotes it and dispatches GenerateSummaryCommand", async () => {
+		const tier1 = tierSource("tier-1");
+		const promoteTierToCanonical = jest.fn().mockResolvedValue(undefined);
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { handler } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier1]),
+			promoteTierToCanonical,
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await handler(createSqsEvent({ url: "https://example.com/a" }), stubContext, () => {});
+
+		expect(promoteTierToCanonical).toHaveBeenCalledWith({
+			url: "https://example.com/a",
+			tier: "tier-1",
+			metadata: tier1.metadata,
+		});
+		expect(dispatchGenerateSummary).toHaveBeenCalledWith({ url: "https://example.com/a" });
+		expect(publishEvent).toHaveBeenCalledWith(
+			expect.objectContaining({ detailType: "RecrawlCompleted" }),
+		);
+	});
+
+	it("on a tie, keeps canonical unchanged but still dispatches GenerateSummaryCommand (the recrawl bug fix)", async () => {
+		const tier0 = tierSource("tier-0");
+		const tier1 = tierSource("tier-1");
+		const promoteTierToCanonical = jest.fn().mockResolvedValue(undefined);
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { handler } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
+			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "equally complete" }),
+			promoteTierToCanonical,
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await handler(createSqsEvent({ url: "https://example.com/a" }), stubContext, () => {});
+
+		expect(promoteTierToCanonical).not.toHaveBeenCalled();
+		expect(dispatchGenerateSummary).toHaveBeenCalledWith({ url: "https://example.com/a" });
+		expect(publishEvent).toHaveBeenCalledWith(
+			expect.objectContaining({ detailType: "RecrawlCompleted" }),
+		);
+	});
+
+	it("with multiple sources and a definite winner, promotes the winner and dispatches summary", async () => {
+		const tier0 = tierSource("tier-0");
+		const tier1 = tierSource("tier-1");
+		const promoteTierToCanonical = jest.fn().mockResolvedValue(undefined);
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+
+		const { handler } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
+			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tier-1", reason: "more complete" }),
+			promoteTierToCanonical,
+			dispatchGenerateSummary,
+		});
+
+		await handler(createSqsEvent({ url: "https://example.com/a" }), stubContext, () => {});
+
+		expect(promoteTierToCanonical).toHaveBeenCalledWith({
+			url: "https://example.com/a",
+			tier: "tier-1",
+			metadata: tier1.metadata,
+		});
+		expect(dispatchGenerateSummary).toHaveBeenCalledWith({ url: "https://example.com/a" });
+	});
+});

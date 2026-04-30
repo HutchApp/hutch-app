@@ -31,11 +31,13 @@ import { initS3ReadContent } from "./providers/article-store/s3-read-content";
 import { initReadArticleContent } from "./providers/article-store/read-article-content";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
+import { initEventBridgeRecrawlLinkInitiated } from "./providers/events/eventbridge-recrawl-link-initiated";
 import { initEventBridgeSaveAnonymousLink } from "./providers/events/eventbridge-save-anonymous-link";
 import { initEventBridgeSaveLinkRawHtmlCommand } from "./providers/events/eventbridge-save-link-raw-html-command";
 import { initEventBridgeRefreshArticleContent } from "./providers/events/eventbridge-refresh-article-content";
 import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbridge-update-fetch-timestamp";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
+import { initInMemoryRecrawlLinkInitiated } from "./providers/events/in-memory-recrawl-link-initiated";
 import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
 import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
 import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-refresh-article-content";
@@ -96,6 +98,7 @@ function initProviders() {
 			eventBusName,
 		});
 		const { publishLinkSaved } = initEventBridgeLinkSaved({ publishEvent });
+		const { publishRecrawlLinkInitiated } = initEventBridgeRecrawlLinkInitiated({ publishEvent });
 		const { publishSaveAnonymousLink } = initEventBridgeSaveAnonymousLink({ publishEvent });
 		const { publishSaveLinkRawHtmlCommand } = initEventBridgeSaveLinkRawHtmlCommand({ publishEvent });
 		const { publishRefreshArticleContent } = initEventBridgeRefreshArticleContent({ publishEvent });
@@ -134,6 +137,7 @@ function initProviders() {
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
 			publishLinkSaved,
+			publishRecrawlLinkInitiated,
 			publishSaveAnonymousLink,
 			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp,
@@ -202,6 +206,22 @@ function initProviders() {
 		await articleStore.writeContent({ url: params.url, content: result.article.content });
 		await crawlStore.markCrawlReady({ url: params.url });
 	};
+	const { publishRecrawlLinkInitiated: logOnlyPublishRecrawlLinkInitiated } = initInMemoryRecrawlLinkInitiated({ logger: consoleLogger });
+	const publishRecrawlLinkInitiated: typeof logOnlyPublishRecrawlLinkInitiated = async (params) => {
+		await logOnlyPublishRecrawlLinkInitiated(params);
+		const crawlResult = await crawlArticle({ url: params.url });
+		if (crawlResult.status !== "fetched") {
+			await crawlStore.markCrawlFailed({ url: params.url, reason: `crawl-${crawlResult.status}` });
+			return;
+		}
+		const result = parseHtml({ url: params.url, html: crawlResult.html });
+		if (!result.ok) {
+			await crawlStore.markCrawlFailed({ url: params.url, reason: result.reason });
+			return;
+		}
+		await articleStore.writeContent({ url: params.url, content: result.article.content });
+		await crawlStore.markCrawlReady({ url: params.url });
+	};
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
 	const { publishSaveLinkRawHtmlCommand } = initInMemorySaveLinkRawHtmlCommand({ logger: consoleLogger });
@@ -235,6 +255,7 @@ function initProviders() {
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
 		publishLinkSaved,
+		publishRecrawlLinkInitiated,
 		publishSaveAnonymousLink,
 		publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp,

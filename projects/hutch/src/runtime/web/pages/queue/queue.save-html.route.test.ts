@@ -54,6 +54,7 @@ describe("POST /queue/save-html", () => {
 					publishedLinkSaved.push(params);
 					await fakePublishLinkSaved(params);
 				},
+				publishRecrawlLinkInitiated: fixture.events.publishRecrawlLinkInitiated,
 				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 				publishSaveLinkRawHtmlCommand: publishSaveLinkRawHtmlCommand,
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
@@ -132,6 +133,7 @@ describe("POST /queue/save-html", () => {
 			...fixture,
 			events: {
 				publishLinkSaved: fixture.events.publishLinkSaved,
+				publishRecrawlLinkInitiated: fixture.events.publishRecrawlLinkInitiated,
 				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 				publishSaveLinkRawHtmlCommand: async () => {},
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
@@ -309,6 +311,7 @@ describe("Collection-Siren advertises both save actions", () => {
 			...fixture,
 			events: {
 				publishLinkSaved: fixture.events.publishLinkSaved,
+				publishRecrawlLinkInitiated: fixture.events.publishRecrawlLinkInitiated,
 				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 				publishSaveLinkRawHtmlCommand: async () => {},
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,

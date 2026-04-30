@@ -150,6 +150,42 @@ export type CrawlArticleFailedDetail = z.infer<
 	typeof CrawlArticleFailedEvent.detailSchema
 >;
 
+export const RecrawlLinkInitiatedEvent = defineEvent({
+	name: "recrawl-link-initiated",
+	source: "hutch.api",
+	detailType: "RecrawlLinkInitiated",
+	detailSchema: z.object({
+		url: z.string(),
+	}),
+});
+export type RecrawlLinkInitiatedDetail = z.infer<
+	typeof RecrawlLinkInitiatedEvent.detailSchema
+>;
+
+export const RecrawlContentExtractedEvent = defineEvent({
+	name: "recrawl-content-extracted",
+	source: "hutch.save-link",
+	detailType: "RecrawlContentExtracted",
+	detailSchema: z.object({
+		url: z.string(),
+	}),
+});
+export type RecrawlContentExtractedDetail = z.infer<
+	typeof RecrawlContentExtractedEvent.detailSchema
+>;
+
+export const RecrawlCompletedEvent = defineEvent({
+	name: "recrawl-completed",
+	source: "hutch.save-link",
+	detailType: "RecrawlCompleted",
+	detailSchema: z.object({
+		url: z.string(),
+	}),
+});
+export type RecrawlCompletedDetail = z.infer<
+	typeof RecrawlCompletedEvent.detailSchema
+>;
+
 export const GenerateSummaryCommand = defineCommand({
 	detailSchema: z.object({
 		url: z.string(),

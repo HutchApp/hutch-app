@@ -5,6 +5,7 @@ import {
   createDefaultTestAppFixture,
   createFakeApplyParseResult,
   createFakePublishLinkSaved,
+  createFakePublishRecrawlLinkInitiated,
   createFakePublishSaveAnonymousLink,
   createFakeSummaryProvider,
   initReadabilityParser,
@@ -60,6 +61,7 @@ const { app: hutchApp, email } = createTestApp({
   parser: { parseArticle, crawlArticle },
   events: {
     publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+    publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
     publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
     publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
     publishUpdateFetchTimestamp,

@@ -64,6 +64,7 @@ describe("Email verification", () => {
 				oauthModel,
 				validateAccessToken: createValidateAccessToken(oauthModel),
 				publishLinkSaved: async () => {},
+				publishRecrawlLinkInitiated: async () => {},
 				publishSaveAnonymousLink: async () => {},
 				publishSaveLinkRawHtmlCommand: async () => {},
 				findGeneratedSummary: async () => undefined,
