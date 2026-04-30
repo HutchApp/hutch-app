@@ -237,6 +237,49 @@ describe("POST /queue (Siren save article)", () => {
 		expect(response.body.properties.code).toBe("invalid-url");
 	});
 
+	it("returns the article collection for a non-saveable scheme when client opts in via Prefer", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const accessToken = await createAccessToken(testApp);
+
+		await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ url: "https://example.com/already-saved" });
+
+		const response = await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.set("Prefer", "return=representation")
+			.send({ url: "chrome://newtab/" });
+
+		expect(response.status).toBe(422);
+		expect(response.body.class).toEqual(["collection", "articles"]);
+		expect(response.body.entities).toHaveLength(1);
+		expect(response.body.entities[0].properties.url).toBe(
+			"https://example.com/already-saved",
+		);
+	});
+
+	it("preserves the legacy stub-save behaviour for a non-saveable scheme without Prefer", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const accessToken = await createAccessToken(testApp);
+
+		const response = await request(testApp.app)
+			.post("/queue")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`)
+			.set("Content-Type", "application/json")
+			.send({ url: "chrome://newtab/" });
+
+		expect(response.status).toBe(201);
+		expect(response.body.class).toContain("article");
+		expect(response.body.properties.url).toBe("chrome://newtab/");
+	});
+
 	it("returns 401 without token", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 

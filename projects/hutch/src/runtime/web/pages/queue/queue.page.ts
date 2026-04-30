@@ -3,7 +3,7 @@ import { DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
 import type { LogParseError } from "@packages/hutch-infra-components";
-import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_REQUEST_BYTES, RAW_HTML_FIELD } from "../../../domain/article/article.schema";
+import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_REQUEST_BYTES, RAW_HTML_FIELD, isSaveableUrl } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
 import { calculateReadTime } from "../../../domain/article/estimated-read-time";
 import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
@@ -236,6 +236,24 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		if (!parsed.success) {
 			res.status(422).type(SIREN_MEDIA_TYPE).json(
 				sirenError({ code: "invalid-url", message: "Please enter a valid URL" }),
+			);
+			return;
+		}
+
+		const prefersRepresentation = req.get("Prefer") === "return=representation";
+		if (prefersRepresentation && !isSaveableUrl(parsed.data.url)) {
+			/** Non-saveable scheme (chrome://, about:, file:, ...). The crawler can't
+			 * reach these, so a save would only persist a broken stub. Hand the
+			 * client the current collection and let it drop the user back into the
+			 * list view silently. Gated on Prefer: return=representation so old
+			 * extensions (which can't interpret a collection on POST) keep the
+			 * pre-existing stub-save behaviour and don't lock up on 422. */
+			const collection = await deps.findArticlesByUser({ userId });
+			res.status(422).type(SIREN_MEDIA_TYPE).json(
+				toArticleCollectionEntity(collection, {
+					page: collection.page,
+					pageSize: collection.pageSize,
+				}),
 			);
 			return;
 		}
