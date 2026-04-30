@@ -1,8 +1,6 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { AB_VISITOR_COOKIE_NAME } from "../../ab-test/ab-cookie";
-import { deriveVisitorIdForVariant } from "../../ab-test/derive-visitor-id.test-utils";
 import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
@@ -11,13 +9,8 @@ import {
 
 import { getAllSlugs } from "../blog/blog.posts";
 
-const TREATMENT_COOKIE = `${AB_VISITOR_COOKIE_NAME}=${deriveVisitorIdForVariant("treatment-founding-cta")}`;
-
-function findSetCookie(headers: request.Response["headers"], name: string): string | undefined {
-	const setCookie = headers["set-cookie"];
-	const list = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
-	return list.find((c) => c?.startsWith(`${name}=`));
-}
+const CONTROL_COOKIE = "hutch_ab_homepage=control";
+const TREATMENT_COOKIE = "hutch_ab_homepage=treatment";
 
 describe("GET /", () => {
 	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
@@ -29,7 +22,7 @@ describe("GET /", () => {
 	});
 
 	it("should render the hero headline with the full word list for screen readers", async () => {
-		const response = await request(app).get("/");
+		const response = await request(app).get("/").set("Cookie", CONTROL_COOKIE);
 		const doc = new JSDOM(response.text).window.document;
 
 		const srOnly = doc.querySelector(".home-hero__title .sr-only");
@@ -37,7 +30,7 @@ describe("GET /", () => {
 	});
 
 	it("should render the visible headline portion aria-hidden with the initial rotator word", async () => {
-		const response = await request(app).get("/");
+		const response = await request(app).get("/").set("Cookie", CONTROL_COOKIE);
 		const doc = new JSDOM(response.text).window.document;
 
 		const visible = doc.querySelector(".home-hero__title .hero-headline__visible");
@@ -67,6 +60,7 @@ describe("GET /", () => {
 	it("should render Firefox install CTA when User-Agent is Firefox", async () => {
 		const response = await request(app)
 			.get("/")
+			.set("Cookie", CONTROL_COOKIE)
 			.set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0");
 		const doc = new JSDOM(response.text).window.document;
 
@@ -81,6 +75,7 @@ describe("GET /", () => {
 	it("should render Chrome install CTA when User-Agent is Chrome", async () => {
 		const response = await request(app)
 			.get("/")
+			.set("Cookie", CONTROL_COOKIE)
 			.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36");
 		const doc = new JSDOM(response.text).window.document;
 
@@ -103,7 +98,7 @@ describe("GET /", () => {
 	});
 
 	it("should render generic trust line when browser is unrecognized", async () => {
-		const response = await request(app).get("/");
+		const response = await request(app).get("/").set("Cookie", CONTROL_COOKIE);
 		const doc = new JSDOM(response.text).window.document;
 
 		const trust = doc.querySelector(".home-hero__trust");
@@ -332,44 +327,38 @@ describe("GET /", () => {
 		expect(rowHeaders.length).toBe(7);
 	});
 
-	it("renders the control variant when the test fixture's deterministic visitor id maps to control — keeps existing rotator/CTA assertions stable across runs", async () => {
+	it("sets the hutch_ab_homepage cookie on first visit", async () => {
 		const response = await request(app).get("/");
-		const doc = new JSDOM(response.text).window.document;
+		const setCookies = response.headers["set-cookie"];
+		const list = Array.isArray(setCookies) ? setCookies : setCookies ? [setCookies] : [];
+		const abCookie = list.find((c) => c?.startsWith("hutch_ab_homepage="));
+		assert(abCookie, "AB cookie must be set on first visit");
+		expect(abCookie).toContain("HttpOnly");
+		expect(abCookie).toContain("SameSite=Lax");
+	});
 
-		const main = doc.querySelector("main");
-		expect(main?.getAttribute("data-ab-homepage")).toBe("control");
+	it("does not overwrite an existing hutch_ab_homepage cookie", async () => {
+		const response = await request(app).get("/").set("Cookie", TREATMENT_COOKIE);
+		const setCookies = response.headers["set-cookie"];
+		const list = Array.isArray(setCookies) ? setCookies : setCookies ? [setCookies] : [];
+		const abCookie = list.find((c) => c?.startsWith("hutch_ab_homepage="));
+		expect(abCookie).toBeUndefined();
+	});
+
+	it("renders the control hero when cookie is control", async () => {
+		const response = await request(app).get("/").set("Cookie", CONTROL_COOKIE);
+		const doc = new JSDOM(response.text).window.document;
 
 		const hero = doc.querySelector('[data-test-section="hero"]');
 		expect(hero?.getAttribute("data-test-variant")).toBe("control");
 	});
 
-	it("sets the AB visitor cookie on first visit so subsequent requests stick to the same variant — the experiment is meaningless without a stable per-visitor assignment", async () => {
-		const response = await request(app).get("/");
-		const visitorCookie = findSetCookie(response.headers, AB_VISITOR_COOKIE_NAME);
-		assert(visitorCookie, "AB visitor cookie must be set on first visit");
-		expect(visitorCookie).toContain("HttpOnly");
-		expect(visitorCookie).toContain("SameSite=Lax");
-		expect(visitorCookie).toContain("Path=/");
-	});
-
-	it("does not overwrite an existing AB visitor cookie — re-issuing the cookie on every request would reset Max-Age and isn't necessary since the value is unchanged", async () => {
-		const response = await request(app)
-			.get("/")
-			.set("Cookie", TREATMENT_COOKIE);
-		expect(findSetCookie(response.headers, AB_VISITOR_COOKIE_NAME)).toBeUndefined();
-	});
-
-	it("renders the founding-member treatment hero when the visitor cookie hashes to that variant", async () => {
-		const response = await request(app)
-			.get("/")
-			.set("Cookie", TREATMENT_COOKIE);
+	it("renders the treatment hero with founding member CTA when cookie is treatment", async () => {
+		const response = await request(app).get("/").set("Cookie", TREATMENT_COOKIE);
 		const doc = new JSDOM(response.text).window.document;
 
-		const main = doc.querySelector("main");
-		expect(main?.getAttribute("data-ab-homepage")).toBe("treatment-founding-cta");
-
 		const hero = doc.querySelector('[data-test-section="hero"]');
-		expect(hero?.getAttribute("data-test-variant")).toBe("treatment-founding-cta");
+		expect(hero?.getAttribute("data-test-variant")).toBe("treatment");
 		expect(hero?.querySelector(".home-hero__title")?.textContent).toBe("Free for the first 100.");
 
 		const founding = doc.querySelector('[data-test-cta="founding-hero"]');
@@ -377,25 +366,13 @@ describe("GET /", () => {
 		expect(founding?.textContent).toBe("Become a Founding Member");
 	});
 
-	it("keeps the install-extension CTA in the treatment variant as a secondary action so visitors who don't want to sign up can still install", async () => {
-		const response = await request(app)
-			.get("/")
-			.set("Cookie", TREATMENT_COOKIE);
+	it("keeps the install-extension CTA in the treatment variant as a secondary action", async () => {
+		const response = await request(app).get("/").set("Cookie", TREATMENT_COOKIE);
 		const doc = new JSDOM(response.text).window.document;
 
 		const install = doc.querySelector('[data-test-cta="install-extension"]');
 		expect(install?.getAttribute("href")).toBe("/install");
 		expect(install?.classList.contains("btn--secondary")).toBe(true);
-	});
-
-	it("pins bots to the control variant and sets no AB cookie — keeps Googlebot's view stable across crawls", async () => {
-		const response = await request(app)
-			.get("/")
-			.set("User-Agent", "Googlebot/2.1 (+http://www.google.com/bot.html)");
-		const doc = new JSDOM(response.text).window.document;
-
-		expect(doc.querySelector("main")?.getAttribute("data-ab-homepage")).toBe("control");
-		expect(findSetCookie(response.headers, AB_VISITOR_COOKIE_NAME)).toBeUndefined();
 	});
 });
 

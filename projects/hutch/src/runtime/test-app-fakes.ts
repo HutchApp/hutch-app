@@ -30,12 +30,8 @@ import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
-import { deriveVisitorIdForVariant } from "./web/ab-test/derive-visitor-id.test-utils";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import type { TestAppFixture } from "./test-app";
-
-/** Pinning the test visitor id to a control-mapping value keeps every existing route test deterministic — without this each request would randomise the variant and tests asserting on hero copy would flake. */
-const TEST_CONTROL_VISITOR_ID = deriveVisitorIdForVariant("control");
 
 export { initReadabilityParser };
 
@@ -229,7 +225,6 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 			httpErrorMessageMapping,
 			logError: createNoopLogError(),
 			logParseError: () => {},
-			generateVisitorId: () => TEST_CONTROL_VISITOR_ID,
 		},
 	};
 }

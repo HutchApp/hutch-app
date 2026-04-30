@@ -1,8 +1,7 @@
 import { createHash } from "node:crypto";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
+import { isbot } from "isbot";
 import type { HutchLogger } from "@packages/hutch-logger";
-import { isCrawler } from "./is-crawler";
-import type { HomepageVariant } from "./web/ab-test/ab.types";
 
 export interface AnalyticsPageview {
 	stream: "analytics";
@@ -16,7 +15,6 @@ export interface AnalyticsPageview {
 	referrer_host?: string;
 	visitor_hash: string | null;
 	is_authenticated: 0 | 1;
-	ab_homepage?: HomepageVariant;
 }
 
 const SKIP_PATHS = new Set([
@@ -30,7 +28,7 @@ function shouldLog(req: Request, statusCode: number): boolean {
 	if (req.method !== "GET") return false;
 	if (SKIP_PATHS.has(req.path)) return false;
 	if (statusCode >= 400) return false;
-	if (isCrawler(req)) return false;
+	if (isbot(req.get("user-agent"))) return false;
 	if (req.get("hx-request") === "true") return false;
 	return true;
 }
@@ -83,8 +81,6 @@ export function createAnalyticsMiddleware(deps: {
 				referrer_host: extractReferrerHost(req),
 				visitor_hash: hashIp({ ip: req.ip, salt: deps.salt }),
 				is_authenticated: req.userId ? 1 : 0,
-				/** Logged on every path so /signup or /install pageviews can be split by the homepage variant the visitor was assigned — that's the only way to attribute conversions back to the experiment. */
-				ab_homepage: req.abHomepageVariant,
 			});
 		});
 		next();

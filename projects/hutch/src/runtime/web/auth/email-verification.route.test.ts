@@ -15,7 +15,6 @@ import { initInMemoryPasswordReset } from "../../providers/password-reset/in-mem
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
-import { defaultGenerateVisitorId } from "../ab-test/visitor-id";
 import { httpErrorMessageMapping } from "../pages/queue/queue.error";
 
 describe("Email verification", () => {
@@ -54,7 +53,6 @@ describe("Email verification", () => {
 				recrawlServiceToken: "test-service-token-abcdefghij",
 				appOrigin: "http://localhost:3000",
 				staticBaseUrl: "",
-				generateVisitorId: defaultGenerateVisitorId,
 				...auth,
 				...articleStore,
 				readArticleContent: (url: string) => articleStore.readContent(ArticleResourceUniqueId.parse(url)),
@@ -178,9 +176,8 @@ describe("Email verification", () => {
 			});
 
 			const cookies = signupResponse.headers["set-cookie"];
-			const cookieList = Array.isArray(cookies) ? cookies : cookies ? [cookies] : [];
-			const sessionCookie = cookieList.find((c) => c.startsWith("hutch_sid="));
-			const sessionMatch = sessionCookie?.match(/hutch_sid=([^;]+)/);
+			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
+			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
 			assert(sessionMatch, "Expected session cookie");
 			const sessionId = sessionMatch[1];
 			const session = await auth.getSessionUserId(sessionId);
@@ -210,9 +207,8 @@ describe("Email verification", () => {
 			});
 
 			const cookies = signupResponse.headers["set-cookie"];
-			const cookieList = Array.isArray(cookies) ? cookies : cookies ? [cookies] : [];
-			const sessionCookie = cookieList.find((c) => c.startsWith("hutch_sid="));
-			const sessionMatch = sessionCookie?.match(/hutch_sid=([^;]+)/);
+			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
+			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
 			assert(sessionMatch, "Expected session cookie");
 			const sessionId = sessionMatch[1];
 

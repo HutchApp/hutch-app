@@ -65,7 +65,6 @@ import type {
 import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import type { ValidateAccessToken } from "./web/dual-auth.middleware";
-import type { GenerateVisitorId } from "./web/ab-test/visitor-id";
 import { createApp } from "./server";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 
@@ -174,7 +173,6 @@ export interface SharedBundle {
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logError: (message: string, error?: Error) => void;
 	logParseError: LogParseError;
-	generateVisitorId: GenerateVisitorId;
 }
 
 export interface TestAppFixture {
@@ -213,7 +211,6 @@ function flattenFixtureToAppDependencies(
 	return {
 		appOrigin: fixture.shared.appOrigin,
 		staticBaseUrl: "",
-		generateVisitorId: fixture.shared.generateVisitorId,
 		baseUrl: fixture.shared.appOrigin,
 		logError: fixture.shared.logError,
 		logParseError: fixture.shared.logParseError,
