@@ -103,6 +103,7 @@ function initProviders() {
 		const { putPendingHtml } = initPutPendingHtml({ client: new S3Client({}), bucketName: pendingHtmlBucketName });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
+			findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,
 			crawlArticle,
 			parseHtml,
 			publishRefreshArticleContent,
@@ -208,6 +209,7 @@ function initProviders() {
 	const stubMarkSummaryPending = async (_params: { url: string }) => {};
 	const { refreshArticleIfStale } = initRefreshArticleIfStale({
 		findArticleFreshness: articleStore.findArticleFreshness,
+		findArticleCrawlStatus: crawlStore.findArticleCrawlStatus,
 		crawlArticle,
 		parseHtml,
 		publishRefreshArticleContent,

@@ -1285,6 +1285,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
 			});
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
@@ -1317,7 +1318,7 @@ describe("View routes", () => {
 			).toBe("<p>Cached body.</p>");
 		});
 
-		it("renders cached metadata with the unavailable reader fallback when only metadata is cached (no content available)", async () => {
+		it("re-crawls a previously failed article on view, rendering the failed state when the retry also fails", async () => {
 			const parseSpy = jest.fn(
 				async (_url: string): Promise<ParseArticleResult> => ({
 					ok: false,
@@ -1343,6 +1344,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
 			await articleStore.saveArticle({
 				userId: UserIdSchema.parse("seed-user"),
@@ -1360,8 +1362,7 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 
 			expect(response.status).toBe(200);
-			// Terminal crawl state short-circuits re-priming: parser is not invoked.
-			expect(parseSpy).not.toHaveBeenCalled();
+			expect(parseSpy).toHaveBeenCalled();
 			const doc = new JSDOM(response.text).window.document;
 			const slot = doc.querySelector("[data-test-reader-slot]");
 			assert(slot, "reader slot must be rendered");
@@ -1470,6 +1471,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
@@ -1493,12 +1495,10 @@ describe("View routes", () => {
 		});
 
 		it("re-primes the pipeline for a legacy stub (cached row with no crawl and no summary state)", async () => {
-			// A stub row written before the crawl+summary state machines existed
-			// carries metadata but neither crawlStatus nor summaryStatus. Without
-			// a re-prime the row sits undefined/undefined forever and the UI
-			// polls "Generating summary…" indefinitely. The view handler must
-			// detect this and re-publish SaveAnonymousLinkCommand so the worker
-			// populates the state-machine rows.
+			// refreshArticleIfStale returns "reprime" for legacy stubs (freshness
+			// exists but crawl status is undefined). The view handler then
+			// re-publishes SaveAnonymousLinkCommand so the worker populates the
+			// state-machine rows.
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const publishSaveAnonymousLink = jest.fn(async () => {});
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
@@ -1519,6 +1519,7 @@ describe("View routes", () => {
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
 			await articleStore.saveArticleGlobally({
 				url: ARTICLE_URL,
@@ -1530,6 +1531,46 @@ describe("View routes", () => {
 				},
 				estimatedReadTime: MinutesSchema.parse(0),
 			});
+
+			await request(app).get(`/view/${ENCODED}`);
+
+			expect(publishSaveAnonymousLink).toHaveBeenCalledWith({ url: ARTICLE_URL });
+		});
+
+		it("re-primes the pipeline for a cached article with a failed crawl status", async () => {
+			const parseArticle: ParseArticle = async () => buildParseResult();
+			const publishSaveAnonymousLink = jest.fn(async () => {});
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
+				parseArticle,
+			});
+			const { app, articleStore, articleCrawl } = createTestApp({
+				...fixture,
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishSaveAnonymousLink: publishSaveAnonymousLink,
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
+			});
+			await articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Previously Failed",
+					siteName: "example.com",
+					excerpt: "An article that failed to crawl.",
+					wordCount: 0,
+				},
+				estimatedReadTime: MinutesSchema.parse(0),
+			});
+			await articleCrawl.markCrawlFailed({ url: ARTICLE_URL, reason: "exceeded SQS maxReceiveCount" });
 
 			await request(app).get(`/view/${ENCODED}`);
 

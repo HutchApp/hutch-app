@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
+import { MinutesSchema } from "../../../domain/article/article.schema";
 import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
@@ -117,6 +118,37 @@ describe("Queue routes", () => {
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector("[data-test-save-error]")?.textContent).toBe("Could not save article. Please try again.");
+		});
+
+		it("re-primes pipeline when refreshArticleIfStale returns reprime", async () => {
+			const publishedLinkSaved: { url: string; userId: string }[] = [];
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app, auth, articleStore, articleCrawl } = createTestApp({
+				...fixture,
+				events: {
+					publishLinkSaved: async (params) => { publishedLinkSaved.push(params); },
+					publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
+			});
+			const agent = await loginAgent(app, auth);
+			await articleStore.saveArticleGlobally({
+				url: "https://example.com/article",
+				metadata: { title: "Failed", siteName: "example.com", excerpt: "", wordCount: 0 },
+				estimatedReadTime: MinutesSchema.parse(0),
+			});
+			await articleCrawl.markCrawlFailed({ url: "https://example.com/article", reason: "blocked" });
+
+			const response = await agent
+				.post("/queue/save")
+				.type("form")
+				.send({ url: "https://example.com/article" });
+
+			expect(response.status).toBe(303);
+			expect(publishedLinkSaved).toHaveLength(1);
+			expect(publishedLinkSaved[0].url).toBe("https://example.com/article");
 		});
 
 		it("should bump a re-saved article to the top so #latest-saved points to it", async () => {
