@@ -22,6 +22,8 @@ import {
 	TierContentExtractedEvent,
 } from "@packages/hutch-infra-components";
 import { requireEnv } from "../require-env";
+import { GENERATE_SUMMARY_TIMEOUTS } from "../generate-summary/timeouts";
+import { SELECT_CONTENT_TIMEOUTS } from "../select-content/timeouts";
 
 const config = new pulumi.Config();
 const alertEmail = config.require("alertEmail");
@@ -58,7 +60,7 @@ const eventBus = HutchEventBus.fromPlatformStack(config);
 // --- Queues ---
 
 const generateSummaryQueue = new HutchSQS("generate-summary", {
-	visibilityTimeoutSeconds: 300,
+	visibilityTimeoutSeconds: GENERATE_SUMMARY_TIMEOUTS.sqsVisibilitySeconds,
 });
 
 const linkSavedQueue = new HutchSQS("link-saved", {
@@ -245,7 +247,7 @@ new HutchDLQEventHandler("save-anonymous-link-dlq", {
 // CrawlArticleCompletedEvent (every successful selection).
 
 const selectMostCompleteContentQueue = new HutchSQS("select-most-complete-content", {
-	visibilityTimeoutSeconds: 90,
+	visibilityTimeoutSeconds: SELECT_CONTENT_TIMEOUTS.sqsVisibilitySeconds,
 });
 
 const selectMostCompleteContentDynamodb = new HutchDynamoDBAccess("select-most-complete-content-dynamodb", {
@@ -258,7 +260,7 @@ const selectMostCompleteContentLambda = new HutchLambda("select-most-complete-co
 	outputDir: ".lib/select-most-complete-content",
 	assetDir: "./src",
 	memorySize: 256,
-	timeout: 60,
+	timeout: SELECT_CONTENT_TIMEOUTS.lambdaSeconds,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
@@ -305,7 +307,7 @@ const generateSummaryLambda = new HutchLambda("generate-summary", {
 	outputDir: ".lib/generate-summary",
 	assetDir: "./src",
 	memorySize: 512,
-	timeout: 45,
+	timeout: GENERATE_SUMMARY_TIMEOUTS.lambdaSeconds,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		DEEPSEEK_API_KEY: deepseekApiKey,

@@ -7,6 +7,7 @@ import { requireEnv } from "../require-env";
 import { initReadTierSource } from "../select-content/read-tier-source";
 import { initListAvailableTierSources } from "../select-content/list-available-tier-sources";
 import { initSelectMostCompleteContent } from "../select-content/select-content";
+import { SELECT_CONTENT_TIMEOUTS } from "../select-content/timeouts";
 import { initPromoteTierToCanonical } from "../select-content/promote-tier-to-canonical";
 import { initFindContentSourceTier } from "../select-content/find-content-source-tier";
 import { initSelectMostCompleteContentHandler } from "../select-content/select-most-complete-content-handler";
@@ -21,7 +22,7 @@ const dynamoClient = createDynamoDocumentClient();
 const deepseekClient = new OpenAI({
 	apiKey: deepseekApiKey,
 	baseURL: "https://api.deepseek.com",
-	timeout: 45_000, // below Lambda's 60s timeout to leave headroom for post-selection S3/DynamoDB ops
+	timeout: SELECT_CONTENT_TIMEOUTS.deepseekMs,
 });
 
 const { readTierSource } = initReadTierSource({
