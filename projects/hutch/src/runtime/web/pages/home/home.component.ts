@@ -79,6 +79,27 @@ const HOME_HEADLINE_SCRIPT = `<script>
 })();
 </script>`;
 
+const HOME_SCROLL_HINT_SCRIPT = `<script>
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var hint = document.querySelector('.home-try__scroll-hint');
+  var header = document.querySelector('.header');
+  hint.addEventListener('click', function (e) {
+    e.preventDefault();
+    var target = document.getElementById(hint.getAttribute('href').slice(1));
+    var navOffset = header.getBoundingClientRect().height + parseFloat(getComputedStyle(header).top);
+    var startY = window.pageYOffset;
+    var endY = target.getBoundingClientRect().top + startY - navOffset;
+    var startTime = performance.now();
+    requestAnimationFrame(function step(now) {
+      var t = Math.min((now - startTime) / 350, 1);
+      window.scrollTo(0, startY + (endY - startY) * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) requestAnimationFrame(step);
+    });
+  });
+})();
+</script>`;
+
 export function HomePage(params: { userCount: number; staticBaseUrl: string; browser: "firefox" | "chrome" | "other" }): Component {
 	const { userCount, staticBaseUrl, browser } = params;
 	const foundingProgressHtml = renderFoundingProgress({ userCount });
@@ -250,8 +271,7 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 			],
 		},
 		styles: HOME_PAGE_STYLES,
-		scripts: HOME_HEADLINE_SCRIPT,
-		headerVariant: "transparent",
+		scripts: HOME_HEADLINE_SCRIPT + HOME_SCROLL_HINT_SCRIPT,
 		bodyClass: "page-home",
 		content: render(HOME_TEMPLATE, {
 			staticBaseUrl,

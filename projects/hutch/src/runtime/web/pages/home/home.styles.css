@@ -204,9 +204,18 @@
   color: var(--primary-foreground);
 }
 
-/* Try Section — public reader view entry point */
+/**
+ * Try Section — primary above-the-fold action.
+ *
+ * 1. Sized to keep the form visible above a 667px mobile viewport once the
+ *    site header (~56–64px) is accounted for. Padding stays compact on small
+ *    screens so the input + submit land in the first paint without scrolling.
+ * 2. The form wins the eye over the heading by sitting on a brand-tinted card
+ *    with a glow ring, so the "paste a link" affordance reads as the page's
+ *    primary call-to-action ahead of the install button below the fold.
+ */
 .home-try {
-  padding: 56px 20px;
+  padding: 40px 20px 32px; /* 1 */
   background: var(--card);
   border-bottom: 1px solid var(--border);
 }
@@ -219,9 +228,10 @@
 
 .home-try__title {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.75rem;
+  font-size: 1.875rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   color: #2B3A55;
   margin: 0 0 12px;
 }
@@ -236,7 +246,8 @@
   font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--muted-foreground);
-  margin: 0 0 28px;
+  margin: 0 auto 24px;
+  max-width: 560px;
 }
 
 .home-try__form {
@@ -245,6 +256,10 @@
   gap: 12px;
   max-width: 560px;
   margin: 0 auto;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  box-shadow: 0 0 0 1px var(--primary), 0 8px 24px -12px rgba(43, 58, 85, 0.25); /* 2 */
 }
 
 .home-try__input {
@@ -278,13 +293,69 @@
   filter: brightness(1.05);
 }
 
+.home-try__reassurance {
+  margin: 14px 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+/**
+ * Soft secondary affordance — signals that a story sits below without
+ * competing with the primary form. Bouncing arrow attracts the eye but
+ * collapses for users who prefer reduced motion.
+ */
+.home-try__scroll-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+}
+
+.home-try__scroll-hint:hover,
+.home-try__scroll-hint:focus-visible {
+  color: var(--foreground);
+  border-bottom-color: var(--muted-foreground);
+}
+
+.home-try__scroll-hint-arrow {
+  display: inline-block;
+  font-size: 1rem;
+  animation: home-try-bounce 2s ease-in-out infinite;
+}
+
+@keyframes home-try-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-try__scroll-hint-arrow {
+    animation: none;
+  }
+}
+
 @media (min-width: 640px) {
   .home-try__form {
     flex-direction: row;
+    align-items: stretch;
   }
 
   .home-try__input {
     flex: 1;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-try {
+    padding: 64px 20px 56px;
+  }
+
+  .home-try__title {
+    font-size: 2.5rem;
   }
 }
 

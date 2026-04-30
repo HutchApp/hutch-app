@@ -1,7 +1,34 @@
   <main>
-    <section class="home-hero" data-test-section="hero" aria-label="Introduction">
+    <section class="home-try" data-test-section="try" aria-label="Try the reader view">
+      <div class="home-try__container">
+        <h1 class="home-try__title">Paste any article link. See it instantly.</h1>
+        <p class="home-try__lede">A clean reader view with a TL;DR summary &mdash; in seconds. No signup. No download. Try it with that one article you've been meaning to read.</p>
+        <form class="home-try__form" method="GET" action="/view" data-test-home-try-form>
+          <label class="home-try__label sr-only" for="home-try-url">Article URL</label>
+          <input
+            class="home-try__input"
+            id="home-try-url"
+            type="url"
+            name="url"
+            required
+            placeholder="https://example.com/article"
+            data-test-home-try-input>
+          <input type="hidden" name="utm_source" value="homepage">
+          <input type="hidden" name="utm_medium" value="internal">
+          <input type="hidden" name="utm_content" value="homepage-link-input">
+          <button type="submit" class="home-try__submit" data-test-home-try-submit>Open in reader view</button>
+        </form>
+        <p class="home-try__reassurance">Free. No account. Works with any article.</p>
+        <a class="home-try__scroll-hint" href="#about" aria-label="Scroll to read why I built Readplace">
+          <span class="home-try__scroll-hint-text">Or keep scrolling &mdash; the story is below</span>
+          <span class="home-try__scroll-hint-arrow" aria-hidden="true">&darr;</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="about" class="home-hero" data-test-section="hero" aria-label="Introduction">
       <div class="home-hero__container">
-        <h1 class="home-hero__title hero-headline"><span class="sr-only">A home for articles, newsletters, essays, longreads, news, blogs, stories, posts, reports, and interviews.</span><span class="hero-headline__visible" aria-hidden="true">A home for <span class="hero-headline__rotator">articles</span></span></h1>
+        <h2 class="home-hero__title hero-headline"><span class="sr-only">A home for articles, newsletters, essays, longreads, news, blogs, stories, posts, reports, and interviews.</span><span class="hero-headline__visible" aria-hidden="true">A home for <span class="hero-headline__rotator">articles</span></span></h2>
         <p class="home-hero__subtitle">Pocket is gone. Omnivore is gone. I built Readplace from a personal system I've maintained for 10 years. Save articles with one click, read them when you're ready.</p>
         <div class="home-hero__actions">
           {{#switch browserName}}
@@ -28,28 +55,6 @@
         <p class="home-hero__trust">Firefox &amp; Chrome</p>
         {{/default}}
         {{/switch}}
-      </div>
-    </section>
-
-    <section class="home-try" data-test-section="try" aria-label="Try the reader view">
-      <div class="home-try__container">
-        <h2 class="home-try__title">Try it now &mdash; paste any article link</h2>
-        <p class="home-try__lede">See any article in a clean reader view with a TL;DR summary. No signup. Just paste a link and read.</p>
-        <form class="home-try__form" method="GET" action="/view" data-test-home-try-form>
-          <label class="home-try__label sr-only" for="home-try-url">Article URL</label>
-          <input
-            class="home-try__input"
-            id="home-try-url"
-            type="url"
-            name="url"
-            required
-            placeholder="https://example.com/article"
-            data-test-home-try-input>
-          <input type="hidden" name="utm_source" value="homepage">
-          <input type="hidden" name="utm_medium" value="internal">
-          <input type="hidden" name="utm_content" value="homepage-link-input">
-          <button type="submit" class="home-try__submit" data-test-home-try-submit>Open in reader view</button>
-        </form>
       </div>
     </section>
 
