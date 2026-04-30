@@ -6,4 +6,4 @@ export {
 	GenerateSummaryCommand,
 	type GenerateSummaryDetail,
 } from "@packages/hutch-infra-components";
-export { MAX_SUMMARY_LENGTH } from "./max-summary-length";
+export { MAX_EXCERPT_LENGTH, MAX_SUMMARY_LENGTH } from "./max-summary-length";

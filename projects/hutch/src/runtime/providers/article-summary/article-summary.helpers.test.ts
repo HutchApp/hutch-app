@@ -1,7 +1,20 @@
 import { pickExcerpt, truncateForSeo } from "./article-summary.helpers";
 
 describe("pickExcerpt", () => {
-	it("returns the summary text when status is ready", () => {
+	it("returns the AI excerpt when status is ready and excerpt is present", () => {
+		expect(
+			pickExcerpt(
+				{
+					status: "ready",
+					summary: "Long AI summary covering many points.",
+					excerpt: "Short decision-helper blurb.",
+				},
+				"Parsed excerpt.",
+			),
+		).toBe("Short decision-helper blurb.");
+	});
+
+	it("falls back to the summary text when status is ready but excerpt is absent", () => {
 		expect(
 			pickExcerpt(
 				{ status: "ready", summary: "AI-generated summary." },

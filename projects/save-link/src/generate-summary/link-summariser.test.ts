@@ -7,9 +7,9 @@ import type {
 	SaveGeneratedSummary,
 } from "./article-summary.types";
 
-function createStubCreateMessage(summary: string): CreateAiMessage {
+function createStubCreateMessage(payload: { summary: string; excerpt: string }): CreateAiMessage {
 	return async () => ({
-		content: [{ type: "text", text: JSON.stringify({ summary }) }],
+		content: [{ type: "text", text: JSON.stringify(payload) }],
 		usage: { input_tokens: 50, output_tokens: 10 },
 	});
 }
@@ -47,7 +47,7 @@ describe("initLinkSummariser", () => {
 
 	it("should pass article content as a document block to createMessage", async () => {
 		const createMessage = jest.fn().mockResolvedValue({
-			content: [{ type: "text", text: JSON.stringify({ summary: "A summary." }) }],
+			content: [{ type: "text", text: JSON.stringify({ summary: "A summary.", excerpt: "Blurb." }) }],
 			usage: { input_tokens: 50, output_tokens: 10 },
 		});
 
@@ -81,13 +81,17 @@ describe("initLinkSummariser", () => {
 		);
 	});
 
-	it("should call createMessage when isTooShortToSummarize returns false", async () => {
-		const createMessage = createStubCreateMessage("A good summary.");
+	it("should call createMessage and persist both summary and excerpt", async () => {
+		const createMessage = createStubCreateMessage({
+			summary: "A good summary.",
+			excerpt: "Quick blurb.",
+		});
+		const saveGeneratedSummary = jest.fn().mockResolvedValue(undefined);
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
 			findGeneratedSummary: pendingCache,
-			saveGeneratedSummary: noopSave,
+			saveGeneratedSummary,
 			markSummarySkipped: noopMarkSkipped,
 			logger: noopLogger,
 			cleanContent: identity,
@@ -101,9 +105,72 @@ describe("initLinkSummariser", () => {
 
 		expect(result).toEqual({
 			summary: "A good summary.",
+			excerpt: "Quick blurb.",
 			inputTokens: 50,
 			outputTokens: 10,
 		});
+		expect(saveGeneratedSummary).toHaveBeenCalledWith({
+			url: "https://example.com/long",
+			summary: "A good summary.",
+			excerpt: "Quick blurb.",
+			inputTokens: 50,
+			outputTokens: 10,
+		});
+	});
+
+	it("should clip an over-length excerpt at the last word boundary", async () => {
+		const overLong = `${"word ".repeat(60)}tail`;
+		const createMessage = createStubCreateMessage({
+			summary: "Body.",
+			excerpt: overLong,
+		});
+		const saveGeneratedSummary = jest.fn().mockResolvedValue(undefined);
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findGeneratedSummary: noCache,
+			saveGeneratedSummary,
+			markSummarySkipped: noopMarkSkipped,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		const result = await summarizeArticle({
+			url: "https://example.com/long",
+			textContent: "x",
+		});
+
+		expect(result?.excerpt.length).toBeLessThanOrEqual(160);
+		expect(result?.excerpt.endsWith("…")).toBe(true);
+		expect(saveGeneratedSummary).toHaveBeenCalledWith(
+			expect.objectContaining({ excerpt: result?.excerpt }),
+		);
+	});
+
+	it("should hard-cut an over-length excerpt that has no whitespace", async () => {
+		const noSpaces = "x".repeat(200);
+		const createMessage = createStubCreateMessage({
+			summary: "Body.",
+			excerpt: noSpaces,
+		});
+
+		const { summarizeArticle } = initLinkSummariser({
+			createMessage,
+			findGeneratedSummary: noCache,
+			saveGeneratedSummary: noopSave,
+			markSummarySkipped: noopMarkSkipped,
+			logger: noopLogger,
+			cleanContent: identity,
+			isTooShortToSummarize: () => false,
+		});
+
+		const result = await summarizeArticle({
+			url: "https://example.com/no-spaces",
+			textContent: "x",
+		});
+
+		expect(result?.excerpt).toBe(`${"x".repeat(159)}…`);
 	});
 
 	it("should return null on ready cache hit without calling createMessage", async () => {
@@ -111,6 +178,7 @@ describe("initLinkSummariser", () => {
 		const cachedSummary: FindGeneratedSummary = async () => ({
 			status: "ready",
 			summary: "cached summary",
+			excerpt: "cached excerpt",
 		});
 
 		const { summarizeArticle } = initLinkSummariser({
@@ -156,7 +224,10 @@ describe("initLinkSummariser", () => {
 	});
 
 	it("should retry on failed status (redrive scenario: give the new attempt a chance)", async () => {
-		const createMessage = createStubCreateMessage("Recovered summary.");
+		const createMessage = createStubCreateMessage({
+			summary: "Recovered summary.",
+			excerpt: "Recovered blurb.",
+		});
 		const failedCache: FindGeneratedSummary = async () => ({
 			status: "failed",
 			reason: "timeout",
@@ -179,13 +250,17 @@ describe("initLinkSummariser", () => {
 
 		expect(result).toEqual({
 			summary: "Recovered summary.",
+			excerpt: "Recovered blurb.",
 			inputTokens: 50,
 			outputTokens: 10,
 		});
 	});
 
 	it("should proceed when cache status is pending", async () => {
-		const createMessage = createStubCreateMessage("Fresh summary.");
+		const createMessage = createStubCreateMessage({
+			summary: "Fresh summary.",
+			excerpt: "Fresh blurb.",
+		});
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
@@ -204,6 +279,7 @@ describe("initLinkSummariser", () => {
 
 		expect(result).toEqual({
 			summary: "Fresh summary.",
+			excerpt: "Fresh blurb.",
 			inputTokens: 50,
 			outputTokens: 10,
 		});
@@ -234,7 +310,10 @@ describe("initLinkSummariser", () => {
 	});
 
 	it("should return null when AI returns 'Summary not available.'", async () => {
-		const createMessage = createStubCreateMessage("Summary not available.");
+		const createMessage = createStubCreateMessage({
+			summary: "Summary not available.",
+			excerpt: "Summary not available.",
+		});
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,

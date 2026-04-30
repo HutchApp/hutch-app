@@ -4,7 +4,8 @@ export function pickExcerpt(
 	summary: GeneratedSummary | undefined,
 	fallback: string,
 ): string {
-	return summary?.status === "ready" ? summary.summary : fallback;
+	if (summary?.status !== "ready") return fallback;
+	return summary.excerpt ?? summary.summary;
 }
 
 const SEO_DESCRIPTION_MAX_CHARS = 160;

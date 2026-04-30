@@ -350,7 +350,27 @@ describe("toQueueViewModel", () => {
 		expect(vm.totalArticles).toBe(5);
 	});
 
-	it("should replace metadata excerpt with the AI summary when status is ready", () => {
+	it("should prefer the AI-generated excerpt over the summary when status is ready", () => {
+		const article = makeArticle();
+		const summaryByUrl = new Map<string, GeneratedSummary | undefined>([
+			[
+				ARTICLE_URL,
+				{
+					status: "ready",
+					summary: "AI-generated summary.",
+					excerpt: "Decision-helper blurb.",
+				},
+			],
+		]);
+		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
+			now: NOW,
+			summaryByUrl,
+		});
+
+		expect(vm.articles[0].excerpt).toBe("Decision-helper blurb.");
+	});
+
+	it("should fall back to the AI summary when the excerpt is absent (legacy ready row)", () => {
 		const article = makeArticle();
 		const summaryByUrl = new Map<string, GeneratedSummary | undefined>([
 			[ARTICLE_URL, { status: "ready", summary: "AI-generated summary." }],

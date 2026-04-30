@@ -19,6 +19,7 @@ import type {
 
 const GeneratedSummaryRow = z.object({
 	summary: dynamoField(z.string()),
+	summaryExcerpt: dynamoField(z.string()),
 	summaryStatus: dynamoField(SummaryStatusSchema),
 	summaryFailureReason: dynamoField(z.string()),
 });
@@ -39,7 +40,13 @@ function rowToGeneratedSummary(
 	// row pre-dates the state machine but carried a pre-computed summary — expose
 	// as ready. Otherwise return undefined so the caller can re-prime the pipeline
 	// instead of treating the row as actively pending.
-	return row.summary ? { status: "ready", summary: row.summary } : undefined;
+	if (!row.summary) return undefined;
+	const ready: { status: "ready"; summary: string; excerpt?: string } = {
+		status: "ready",
+		summary: row.summary,
+	};
+	if (row.summaryExcerpt) ready.excerpt = row.summaryExcerpt;
+	return ready;
 }
 
 async function swallowConditionalCheckFailure(action: () => Promise<void>): Promise<void> {
@@ -71,7 +78,7 @@ export function initDynamoDbGeneratedSummary(deps: {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 		const row = await table.get(
 			{ url: articleResourceUniqueId.value },
-			{ projection: ["summary", "summaryStatus", "summaryFailureReason"] },
+			{ projection: ["summary", "summaryExcerpt", "summaryStatus", "summaryFailureReason"] },
 		);
 		return rowToGeneratedSummary(row);
 	};
@@ -81,9 +88,10 @@ export function initDynamoDbGeneratedSummary(deps: {
 		await table.update({
 			Key: { url: articleResourceUniqueId.value },
 			UpdateExpression:
-				"SET summary = :summary, summaryInputTokens = :inputTokens, summaryOutputTokens = :outputTokens, summaryStatus = :ready REMOVE summaryFailureReason",
+				"SET summary = :summary, summaryExcerpt = :excerpt, summaryInputTokens = :inputTokens, summaryOutputTokens = :outputTokens, summaryStatus = :ready REMOVE summaryFailureReason",
 			ExpressionAttributeValues: {
 				":summary": params.summary,
+				":excerpt": params.excerpt,
 				":inputTokens": params.inputTokens,
 				":outputTokens": params.outputTokens,
 				":ready": "ready",

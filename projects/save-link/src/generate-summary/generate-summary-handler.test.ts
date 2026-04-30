@@ -47,6 +47,7 @@ describe("initGenerateSummaryHandler", () => {
 	it("should summarize article and publish GlobalSummaryGenerated event", async () => {
 		const summarizeArticle: SummarizeArticle = async () => ({
 			summary: "A summary.",
+			excerpt: "A blurb.",
 			inputTokens: 100,
 			outputTokens: 20,
 		});

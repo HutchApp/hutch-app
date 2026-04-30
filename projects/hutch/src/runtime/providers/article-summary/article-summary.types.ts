@@ -1,6 +1,6 @@
 export type GeneratedSummary =
 	| { status: "pending" }
-	| { status: "ready"; summary: string }
+	| { status: "ready"; summary: string; excerpt?: string }
 	| { status: "failed"; reason: string }
 	| { status: "skipped" };
 
