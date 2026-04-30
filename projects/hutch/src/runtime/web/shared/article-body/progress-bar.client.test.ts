@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import {
 	type BarTick,
@@ -62,7 +63,7 @@ describe("readProgressAttrs", () => {
 	it("parses pct and tickAtMs from the bar attributes", () => {
 		const doc = makeDoc(barAt(25, "2026-04-25T12:00:00.000Z"));
 		const bar = doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 
 		const attrs = readProgressAttrs(bar);
 
@@ -75,7 +76,7 @@ describe("readProgressAttrs", () => {
 	it("returns tickAtMs: undefined when the SSR fallback emitted an empty tick-at", () => {
 		const doc = makeDoc(barAt(5, ""));
 		const bar = doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 
 		const attrs = readProgressAttrs(bar);
 
@@ -87,7 +88,7 @@ describe("readProgressAttrs", () => {
 			`<div data-progress-bar data-progress-tick-at=""><div data-progress-fill></div></div>`,
 		);
 		const bar = doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 
 		expect(readProgressAttrs(bar)).toBeUndefined();
 	});
@@ -97,7 +98,7 @@ describe("readProgressAttrs", () => {
 			`<div data-progress-bar data-progress-pct="abc" data-progress-tick-at=""><div data-progress-fill></div></div>`,
 		);
 		const bar = doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 
 		expect(readProgressAttrs(bar)).toBeUndefined();
 	});
@@ -107,7 +108,7 @@ describe("readProgressAttrs", () => {
 			`<div data-progress-bar data-progress-pct="25" data-progress-tick-at="not-a-date"><div data-progress-fill></div></div>`,
 		);
 		const bar = doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 
 		expect(readProgressAttrs(bar)).toEqual({ pct: 25, tickAtMs: undefined });
 	});
@@ -158,7 +159,7 @@ describe("initProgressBars", () => {
 		// against the first, then land a fresh server tick at +3s.
 		env.advance(3000);
 		const bar = env.doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 		bar.setAttribute("data-progress-pct", "55");
 		bar.setAttribute(
 			"data-progress-tick-at",
@@ -172,7 +173,7 @@ describe("initProgressBars", () => {
 		env.runFrame();
 
 		const width = env.fillWidth();
-		if (!width) throw new Error("fill width must be set");
+		assert(width, "fill width must be set");
 		const pct = Number.parseFloat(width);
 		expect(pct).toBeGreaterThan(55);
 		expect(pct).toBeLessThanOrEqual(99);
@@ -183,7 +184,7 @@ describe("initProgressBars", () => {
 	it("stops projecting once the bar is removed from the DOM", () => {
 		const env = setup(barAt(25, "2026-04-25T12:00:00.000Z"));
 		const bar = env.doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 
 		bar.remove();
 		env.advance(1000);
@@ -208,7 +209,7 @@ describe("initProgressBars", () => {
 		const env = setup(barAt(15, ""));
 
 		const bar = env.doc.querySelector("[data-progress-bar]");
-		if (!bar) throw new Error("bar must be present");
+		assert(bar, "bar must be present");
 
 		// Land a real tick after a 3s wait — the rate is computed from the
 		// gap between the deps.now() anchor and this real tick.

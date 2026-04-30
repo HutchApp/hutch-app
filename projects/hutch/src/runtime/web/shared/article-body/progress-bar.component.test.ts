@@ -52,7 +52,9 @@ describe("renderProgressBar", () => {
 			}),
 		);
 
-		expect(doc.querySelector("#article-body-progress")).not.toBeNull();
+		const bar = doc.querySelector("#article-body-progress");
+		assert(bar, "bar must carry a stable id for HTMX OOB swaps");
+		expect(bar.getAttribute("id")).toBe("article-body-progress");
 	});
 });
 
