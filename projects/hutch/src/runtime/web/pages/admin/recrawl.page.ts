@@ -130,6 +130,7 @@ function handleRecrawlArticle(
 			readerPollUrl: state.readerPollUrl,
 			summary: state.summary,
 			summaryPollUrl: state.summaryPollUrl,
+			contentSourceTier: existing.contentSourceTier,
 			isAuthenticated: Boolean(req.userId),
 		}).to("text/html");
 		assert(

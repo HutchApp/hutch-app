@@ -32,6 +32,7 @@ interface GlobalArticle {
 	etag?: string;
 	lastModified?: string;
 	contentFetchedAt?: string;
+	contentSourceTier?: "tier-0" | "tier-1";
 }
 
 interface UserArticle {
@@ -69,6 +70,7 @@ export function initInMemoryArticleStore(): {
 	readContent: ContentProvider;
 	writeContent: (params: { url: string; content: string }) => Promise<void>;
 	writeMetadata: (params: { url: string; metadata: ArticleMetadata; estimatedReadTime: Minutes }) => Promise<void>;
+	setContentSourceTier: (params: { url: string; tier: "tier-0" | "tier-1" }) => Promise<void>;
 } {
 	const articles = new Map<string, GlobalArticle>();
 	const userArticles = new Map<string, UserArticle>();
@@ -145,8 +147,9 @@ export function initInMemoryArticleStore(): {
 			url: article.originalUrl,
 			metadata: article.metadata,
 			content: article.content,
-	
+
 			estimatedReadTime: article.estimatedReadTime,
+			contentSourceTier: article.contentSourceTier,
 		};
 	};
 
@@ -244,6 +247,13 @@ export function initInMemoryArticleStore(): {
 		article.estimatedReadTime = params.estimatedReadTime;
 	};
 
+	const setContentSourceTier = async (params: { url: string; tier: "tier-0" | "tier-1" }) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
+		const article = articles.get(articleResourceUniqueId.value);
+		assert(article, `Article not found for URL: ${articleResourceUniqueId.value}`);
+		article.contentSourceTier = params.tier;
+	};
+
 	return {
 		saveArticle,
 		saveArticleGlobally,
@@ -256,5 +266,6 @@ export function initInMemoryArticleStore(): {
 		readContent,
 		writeContent,
 		writeMetadata,
+		setContentSourceTier,
 	};
 }
