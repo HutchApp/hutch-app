@@ -8,12 +8,16 @@ export interface ReaderSlotInput {
 	content?: string;
 	url: string;
 	readerPollUrl?: string;
+	extensionInstallUrl?: string;
 }
 
 export function renderReaderSlot(input: ReaderSlotInput): string {
 	// Valid terminal states first.
 	if (input.crawl?.status === "failed") {
-		return renderReaderFailed({ url: input.url });
+		return renderReaderFailed({
+			url: input.url,
+			extensionInstallUrl: input.extensionInstallUrl,
+		});
 	}
 	// `crawl === undefined` is the legacy-row contract from
 	// dynamodb-article-crawl.ts:rowToArticleCrawl: rows that pre-date the

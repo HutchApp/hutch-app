@@ -25,6 +25,7 @@ export function ReaderPage(
 		crawl?: ArticleCrawl;
 		readerPollUrl?: string;
 		audioEnabled?: boolean;
+		extensionInstallUrl?: string;
 	},
 ): PageBody {
 	const innerContent = renderArticleBody({
@@ -40,6 +41,7 @@ export function ReaderPage(
 		summaryOpen: true,
 		audioEnabled: options?.audioEnabled,
 		backLink: { href: "/queue", label: "← Back to queue" },
+		extensionInstallUrl: options?.extensionInstallUrl,
 	});
 	const shareBalloon = renderShareBalloon({
 		shareUrl: `${CANONICAL_BASE_URL}/view/${encodeURIComponent(article.url)}`,

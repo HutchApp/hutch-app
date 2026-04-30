@@ -16,6 +16,7 @@ import type {
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
 import type { FindUserByEmail } from "../../../providers/auth/auth.types";
 import { renderPage } from "../../render-page";
+import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
 import { SaveErrorPage } from "../save/save-error.component";
@@ -130,6 +131,7 @@ function handleRecrawlArticle(
 			summary: state.summary,
 			summaryPollUrl: state.summaryPollUrl,
 			contentSourceTier: existing.contentSourceTier,
+			extensionInstallUrl: extensionInstallUrlIfMissing(req),
 		})).to("text/html");
 		assert(
 			state.crawl?.status === "pending",
@@ -171,6 +173,7 @@ function handleReaderPoll(reader: ReturnType<typeof initArticleReader>) {
 			articleUrl,
 			pollCount,
 			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
+			extensionInstallUrl: extensionInstallUrlIfMissing(req),
 		});
 		const html = component.to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);

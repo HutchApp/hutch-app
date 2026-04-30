@@ -65,7 +65,7 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 	}
 
 	async function handleReaderPoll(params: HandlePollParams): Promise<Component> {
-		const { articleUrl, pollCount, pollUrlBuilder } = params;
+		const { articleUrl, pollCount, pollUrlBuilder, extensionInstallUrl } = params;
 		const crawl = await deps.findArticleCrawlStatus(articleUrl);
 		const content = await deps.readArticleContent(articleUrl);
 		const shouldPollReader =
@@ -73,7 +73,7 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 		const readerPollUrl = shouldPollReader && pollCount < MAX_POLLS
 			? pollUrlBuilder.reader(pollCount + 1)
 			: undefined;
-		return HtmlPage(renderReaderSlot({ crawl, content, url: articleUrl, readerPollUrl }));
+		return HtmlPage(renderReaderSlot({ crawl, content, url: articleUrl, readerPollUrl, extensionInstallUrl }));
 	}
 
 	return { resolveReaderState, handleSummaryPoll, handleReaderPoll };

@@ -9,8 +9,13 @@ const TEMPLATE = readFileSync(
 
 export interface ReaderFailedInput {
 	url: string;
+	/** Install URL for the browser extension; omit when the user already has it installed. */
+	extensionInstallUrl?: string;
 }
 
 export function renderReaderFailed(input: ReaderFailedInput): string {
-	return render(TEMPLATE, { url: input.url });
+	return render(TEMPLATE, {
+		url: input.url,
+		extensionInstallUrl: input.extensionInstallUrl,
+	});
 }

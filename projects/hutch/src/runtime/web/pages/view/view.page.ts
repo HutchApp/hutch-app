@@ -24,6 +24,7 @@ import type {
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
 import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
+import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
 import { collectUtmParams } from "../../shared/utm";
@@ -161,6 +162,7 @@ function handleViewArticle(deps: ViewDependencies) {
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
 				actions,
+				extensionInstallUrl: extensionInstallUrlIfMissing(req),
 			})),
 		);
 	};
@@ -199,6 +201,7 @@ function handleViewReader(deps: ViewDependencies) {
 			articleUrl,
 			pollCount,
 			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
+			extensionInstallUrl: extensionInstallUrlIfMissing(req),
 		});
 		sendComponent(res, component);
 	};

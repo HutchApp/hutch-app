@@ -18,6 +18,7 @@ export interface AdminRecrawlPageInput {
 	summary?: GeneratedSummary;
 	summaryPollUrl?: string;
 	contentSourceTier?: "tier-0" | "tier-1";
+	extensionInstallUrl?: string;
 }
 
 /**
@@ -45,6 +46,7 @@ export function AdminRecrawlPage(input: AdminRecrawlPageInput): PageBody {
 		summary: input.summary,
 		summaryPollUrl: input.summaryPollUrl,
 		summaryOpen: true,
+		extensionInstallUrl: input.extensionInstallUrl,
 	});
 
 	const tierBadge = renderTierBadge(input.contentSourceTier);

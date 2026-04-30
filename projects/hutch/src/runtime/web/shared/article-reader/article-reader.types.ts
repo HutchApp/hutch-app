@@ -50,4 +50,5 @@ export interface HandlePollParams {
 	articleUrl: string;
 	pollCount: number;
 	pollUrlBuilder: PollUrlBuilder;
+	extensionInstallUrl?: string;
 }
