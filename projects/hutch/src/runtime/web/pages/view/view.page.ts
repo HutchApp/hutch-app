@@ -44,6 +44,7 @@ interface ViewDependencies {
 	refreshArticleIfStale: RefreshArticleIfStale;
 	saveArticleGlobally: SaveArticleGlobally;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	now: () => Date;
 }
 
 function renderError(req: Request, res: Response) {
@@ -161,6 +162,7 @@ function handleViewArticle(deps: ViewDependencies) {
 				readerPollUrl: state.readerPollUrl,
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
+				progress: state.progress,
 				actions,
 				extensionInstallUrl: extensionInstallUrlIfMissing(req),
 			})),

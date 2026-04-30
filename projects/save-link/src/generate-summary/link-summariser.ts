@@ -6,6 +6,7 @@ import type {
 	CreateAiMessage,
 	FindGeneratedSummary,
 	MarkSummarySkipped,
+	MarkSummaryStage,
 	SaveGeneratedSummary,
 	SummarizeArticle,
 } from "./article-summary.types";
@@ -39,11 +40,13 @@ export function initLinkSummariser(deps: {
 	findGeneratedSummary: FindGeneratedSummary;
 	saveGeneratedSummary: SaveGeneratedSummary;
 	markSummarySkipped: MarkSummarySkipped;
+	markSummaryStage: MarkSummaryStage;
 	logger: HutchLogger;
 	cleanContent: (html: string) => string;
 	isTooShortToSummarize: (cleanedText: string) => boolean;
 }): { summarizeArticle: SummarizeArticle } {
 	const summarizeArticle: SummarizeArticle = async (params) => {
+		await deps.markSummaryStage({ url: params.url, stage: "summary-started" });
 		const cached = await deps.findGeneratedSummary(params.url);
 		// "failed" is retryable on redrive; "ready" and "skipped" are terminal — short-circuit those.
 		if (cached?.status === "ready" || cached?.status === "skipped") {
@@ -60,6 +63,7 @@ export function initLinkSummariser(deps: {
 			return null;
 		}
 
+		await deps.markSummaryStage({ url: params.url, stage: "summary-generating" });
 		const response = await deps.createMessage({
 			model: "deepseek-chat",
 			max_tokens: 10240,

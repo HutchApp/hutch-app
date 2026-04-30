@@ -142,6 +142,7 @@ describe("POST /queue/save-html", () => {
 				httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
 				logError: (_msg, err) => { if (err) errors.push(err); },
 				logParseError: fixture.shared.logParseError,
+				now: fixture.shared.now,
 			},
 		});
 		const accessToken = await createAccessToken(testApp);
@@ -236,6 +237,7 @@ describe("POST /queue/save-html", () => {
 				httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
 				logError: () => {},
 				logParseError: (params) => { parseErrorCalls.push(params); },
+				now: fixture.shared.now,
 			},
 		});
 		const accessToken = await createAccessToken(testApp);

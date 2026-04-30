@@ -103,6 +103,22 @@ describe("initDynamoDbGeneratedSummary", () => {
 		expect(result).toEqual({ status: "pending" });
 	});
 
+	it("returns pending with stage when summaryStage is recorded", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summaryStatus: "pending",
+			summaryStage: "summary-generating",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "pending", stage: "summary-generating" });
+	});
+
 	it("returns failed with reason when status=failed", async () => {
 		const client = createFakeClient({
 			url: "https://example.com/article",

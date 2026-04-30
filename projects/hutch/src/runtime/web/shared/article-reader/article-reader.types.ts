@@ -13,6 +13,7 @@ import type {
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
+import type { ProgressTick } from "../article-body/progress-mapping";
 
 export interface ArticleReaderDeps {
 	findArticleCrawlStatus: FindArticleCrawlStatus;
@@ -20,6 +21,7 @@ export interface ArticleReaderDeps {
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
 	readArticleContent: ReadArticleContent;
+	now: () => Date;
 }
 
 export interface ArticleSnapshot {
@@ -39,6 +41,14 @@ export interface ReaderState {
 	summary: GeneratedSummary | undefined;
 	readerPollUrl: string | undefined;
 	summaryPollUrl: string | undefined;
+	/**
+	 * Single unified progress tick driving the article-body progress bar.
+	 * Computed from whichever pipeline (crawl → summary) is currently in flight,
+	 * mapped onto a 0–100 scale. `undefined` once both pipelines are terminal
+	 * (or the crawl has failed — we hide the bar instead of stalling at a
+	 * percentage that will never advance).
+	 */
+	progress: ProgressTick | undefined;
 }
 
 export interface ResolveReaderStateParams {
