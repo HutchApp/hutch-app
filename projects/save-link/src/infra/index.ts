@@ -59,7 +59,7 @@ const eventBus = HutchEventBus.fromPlatformStack(config);
 // --- Queues ---
 
 const generateSummaryQueue = new HutchSQS("generate-summary", {
-	visibilityTimeoutSeconds: 300,
+	visibilityTimeoutSeconds: GENERATE_SUMMARY_TIMEOUTS.sqsVisibilitySeconds,
 });
 
 const linkSavedQueue = new HutchSQS("link-saved", {
