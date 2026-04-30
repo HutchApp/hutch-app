@@ -454,6 +454,8 @@ const PUBLIC_VIEW_ENTRY_POINTS = [
 	{ id: "paste-another-link", title: "/view \"Paste another link\" click" },
 ] as const;
 
+const entryPointFilter = `| filter utm_content in [${PUBLIC_VIEW_ENTRY_POINTS.map((e) => `"${e.id}"`).join(", ")}]`;
+
 new aws.cloudwatch.Dashboard("readplace-public-view-entry-point", {
 	dashboardName: "readplace-public-view-entry-point",
 	dashboardBody: pulumi.output(logGroup.name).apply((hutchLogGroupName) =>
@@ -467,7 +469,7 @@ new aws.cloudwatch.Dashboard("readplace-public-view-entry-point", {
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter path = \"/view\"",
 						...excludeVisitorHashesClause(),
-						`| filter utm_content in ["homepage-link-input", "open-in-reader-view", "paste-another-link"]`,
+						entryPointFilter,
 						"| stats count(*) as clicks by bin(1d), utm_content",
 					].join(" "),
 					x: 0, y: 0, width: 24, height: 8,
@@ -481,7 +483,7 @@ new aws.cloudwatch.Dashboard("readplace-public-view-entry-point", {
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter path = \"/view\"",
 						...excludeVisitorHashesClause(),
-						`| filter utm_content in ["homepage-link-input", "open-in-reader-view", "paste-another-link"]`,
+						entryPointFilter,
 						"| stats count(*) as clicks by utm_content",
 						"| sort clicks desc",
 					].join(" "),
@@ -497,7 +499,7 @@ new aws.cloudwatch.Dashboard("readplace-public-view-entry-point", {
 						"| filter path = \"/view\"",
 						"| filter ispresent(visitor_hash)",
 						...excludeVisitorHashesClause(),
-						`| filter utm_content in ["homepage-link-input", "open-in-reader-view", "paste-another-link"]`,
+						entryPointFilter,
 						"| stats count_distinct(visitor_hash) as unique_visitors by bin(1d), utm_content",
 					].join(" "),
 					x: 12, y: 8, width: 12, height: 8,
