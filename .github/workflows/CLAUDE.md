@@ -27,6 +27,7 @@ Inspect the `.yml` files in this directory for implementation details. Summary:
 | `claude-PR-code-reviewer.yml` | Automated code review | CI succeeds on PR |
 | `claude-PR-code-review-auto-apply.yml` | Fix HIGH/MEDIUM priority issues | Claude review comment |
 | `claude-PR-conflict-fixer.yml` | Resolve merge conflicts | CI succeeds + conflicts detected |
+| `tier-1-plus-crawl-pipeline-health.yml` | Tier 1+ crawl pipeline canary; opens `@claude` issue on failure | Schedule (06:00 AEST daily) / manual |
 | `submit-ff-extension-for-signing.yml` | Submit Firefox extension to AMO for signing | Called by `ci.yml` |
 | `sync-signed-extension.yml` | Sync signed Firefox extension from AMO to S3 | Schedule (every 12h) / manual |
 
@@ -40,6 +41,7 @@ Each workflow has a corresponding `.md` file containing detailed instructions fo
 | `claude-PR-code-reviewer.yml` | `claude-PR-code-reviewer.md` |
 | `claude-PR-code-review-auto-apply.yml` | `claude-PR-code-review-auto-apply.md` |
 | `claude-PR-conflict-fixer.yml` | `claude-PR-conflict-fixer.md` |
+| `tier-1-plus-crawl-pipeline-health.yml` | `tier-1-plus-crawl-pipeline-health.md` |
 
 ## Labels and Markers
 
@@ -54,3 +56,4 @@ Each workflow has a corresponding `.md` file containing detailed instructions fo
 | `<!-- CLAUDE_REVIEW_START/END -->` | Review content boundaries |
 | `<!-- HIGH/MEDIUM_PRIORITY_COUNT: N -->` | Issue counts |
 | `<!-- CLAUDE_CONFLICT_FIX -->` | Conflict fix request |
+| `<!-- CLAUDE_TIER_1_PLUS_FIX -->` | Tier 1+ canary failure tracking issue |

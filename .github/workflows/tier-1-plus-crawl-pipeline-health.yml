@@ -13,6 +13,12 @@ on:
 
 permissions:
   contents: read
+  # `issues: write` is needed so the on-failure step can open or comment on
+  # the @claude tracking issue when the scheduled run goes red. The actual
+  # API call uses `secrets.PAT_TOKEN` (so the comment author_association is
+  # OWNER and the listener's gate clears), but GitHub still requires the
+  # workflow-level scope to be declared.
+  issues: write
 
 jobs:
   tier-1-plus-crawl-pipeline-health:
@@ -42,3 +48,67 @@ jobs:
 
       - name: Run Tier 1+ crawl pipeline health
         run: pnpm nx run @packages/crawl-article:tier-1-plus-pipeline-health
+
+      # ┌──────────────────────────────────────────────────────────────────┐
+      # │ ON FAILURE: open or update an @claude tracking issue             │
+      # │ Mirrors stuck-articles-canary.yml. The workflow only triggers on │
+      # │ `schedule` and `workflow_dispatch`, so firing on any failure()   │
+      # │ is safe — operators can replay the full Claude handoff on demand │
+      # │ (validate the wiring without waiting 24h, replay a fix after an  │
+      # │ inconclusive cron, etc.).                                        │
+      # └──────────────────────────────────────────────────────────────────┘
+      - name: Open or update @claude issue on canary failure
+        if: failure()
+        uses: actions/github-script@v8
+        with:
+          # PAT_TOKEN ensures the issue/comment author_association is OWNER,
+          # which is the gate claude-listener.yml checks before running.
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const today = new Date().toISOString().slice(0, 10);
+            const titlePrefix = `[Tier 1+ pipeline canary ${today}]`;
+            const marker = '<!-- CLAUDE_TIER_1_PLUS_FIX -->';
+
+            const body = [
+              marker,
+              '',
+              '@claude The Tier 1+ crawl pipeline canary failed on its scheduled run. Use your Read tool to read `.github/workflows/tier-1-plus-crawl-pipeline-health.md` for instructions.',
+              '',
+              '## Context',
+              `- **Run**: ${runUrl}`,
+              `- **Date (UTC)**: ${today}`,
+              '',
+              'Inspect `gh run view <RUN_ID> --log-failed` for the failing source label, URL, and failure mode (poll timeout, terminal `failed`/`unavailable`, or `expectedContent` mismatch).',
+            ].join('\n');
+
+            // Date-prefixed dedup: if today's issue already exists, append
+            // a comment instead of opening a duplicate. With one cron a day
+            // this is mostly defensive — but it covers retries via
+            // workflow_dispatch and any duplicate cron firings, and keeps
+            // each day's failures consolidated on a single tracking issue.
+            const search = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "${titlePrefix}"`,
+            });
+
+            if (search.data.total_count > 0) {
+              const issueNumber = search.data.items[0].number;
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              });
+              console.log(`Appended comment to existing issue #${issueNumber}`);
+              return;
+            }
+
+            const title = `${titlePrefix} crawl pipeline failure`;
+            const created = await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+            });
+            console.log(`Created issue #${created.data.number}: ${title}`);
