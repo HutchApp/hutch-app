@@ -149,6 +149,19 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		assert.deepEqual(result, { status: "ready", summary: "Recovered" });
 	});
 
+	it("markSummaryStage writes the stage attribute", async () => {
+		const client = createDynamoDocumentClient();
+		const { markSummaryStage, markSummaryPending, findGeneratedSummary } =
+			initDynamoDbGeneratedSummary({ client, tableName });
+
+		const url = `https://example.com/${randomUUID()}`;
+		await markSummaryPending({ url });
+		await markSummaryStage({ url, stage: "summary-generating" });
+
+		const result = await findGeneratedSummary(url);
+		assert.deepEqual(result, { status: "pending" });
+	});
+
 	it("dedupes tracking-param variants to the same cached summary row", async () => {
 		const client = createDynamoDocumentClient();
 		const { findGeneratedSummary, saveGeneratedSummary } = initDynamoDbGeneratedSummary({ client, tableName });
