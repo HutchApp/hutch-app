@@ -1,6 +1,6 @@
 # Tier-Content Selector Flow — Event Storming
 
-**Commit:** `f6d799c` &nbsp;•&nbsp; **Commit date:** 2026-04-25 &nbsp;•&nbsp; **Generated:** 2026-04-25 &nbsp;•&nbsp; **Branch:** `feat/tier-content-selector`
+**Commit:** `a6949fd` &nbsp;•&nbsp; **Commit date:** 2026-04-28 &nbsp;•&nbsp; **Generated:** 2026-04-30 &nbsp;•&nbsp; **Branch:** `feat/tier-content-selector`
 **Subject:** `feat: extract content selector into its own Lambda; tier sources are first-class`
 
 A point-in-time map of the **post-refactor save-link pipeline**. The previous design (snapshots [`bfd85c7`](../bfd85c7/save-link-raw-flow.md) and [`d5f38258`](../d5f38258/article-crawl-pipeline.md)) had three asymmetries: (1) Tier 1 workers wrote canonical directly with no contest; (2) the Tier 0 worker ran an inline Deepseek selector against canonical, which only competed when canonical already existed; (3) admin recrawl re-ran only the Tier 1 path, so a paywalled origin would silently overwrite a strictly-better Tier 0 source. This snapshot replaces all three.
@@ -381,5 +381,5 @@ This is the diff from the earlier `bfd85c7` (Tier 0 raw-html flow) and `d5f38258
 | Pulumi wiring | `projects/save-link/src/infra/index.ts` (new selector Lambda + queue + DLQ + DLQ handler) |
 | `contentSourceTier` Dynamo codec | `projects/hutch/src/runtime/providers/article-store/dynamodb-article-store.ts` |
 | `GlobalArticleData` type | `projects/hutch/src/runtime/providers/article-store/article-store.types.ts` |
-| Admin recrawl UI | `projects/hutch/src/runtime/web/pages/admin/recrawl.component.ts`, `recrawl.styles.css`, `recrawl.page.ts` |
+| Admin recrawl UI | `projects/hutch/src/runtime/web/pages/admin/recrawl.component.ts`, `recrawl.styles.ts`, `recrawl.page.ts` |
 | Recrawl badge route test | `projects/hutch/src/runtime/web/pages/admin/recrawl.route.test.ts` |
