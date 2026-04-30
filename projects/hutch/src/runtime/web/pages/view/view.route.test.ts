@@ -369,7 +369,13 @@ describe("View routes", () => {
 			const second = actions[1];
 			assert(second, "second cta action must be rendered");
 			expect(second.textContent).toBe("Paste another link");
-			expect(second.getAttribute("href")).toBe("/view");
+			const href = second.getAttribute("href");
+			assert(href, "paste-another-link href must be set");
+			const parsed = new URL(href, "http://localhost");
+			expect(parsed.pathname).toBe("/view");
+			expect(parsed.searchParams.get("utm_source")).toBe("view-article");
+			expect(parsed.searchParams.get("utm_medium")).toBe("internal");
+			expect(parsed.searchParams.get("utm_content")).toBe("paste-another-link");
 		});
 	});
 
@@ -1172,6 +1178,28 @@ describe("View routes", () => {
 			assert(input, "url input must be rendered");
 			expect(input.getAttribute("type")).toBe("url");
 			expect(input.hasAttribute("required")).toBe(true);
+		});
+
+		it("renders the landing form with UTM hidden inputs identifying the 'Open in reader view' click", async () => {
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).get("/view");
+
+			const doc = new JSDOM(response.text).window.document;
+			const form = doc.querySelector("[data-test-view-landing-form]");
+			assert(form, "landing form must be rendered");
+			expect(
+				form.querySelector("input[name='utm_source']")?.getAttribute("value"),
+			).toBe("view-landing");
+			expect(
+				form.querySelector("input[name='utm_medium']")?.getAttribute("value"),
+			).toBe("internal");
+			expect(
+				form.querySelector("input[name='utm_content']")?.getAttribute("value"),
+			).toBe("open-in-reader-view");
+			expect(
+				form.querySelector("[data-test-view-landing-submit]")?.textContent,
+			).toBe("Open in reader view");
 		});
 
 		it("redirects GET /view?url=<valid> to /view/<encoded-url>", async () => {
