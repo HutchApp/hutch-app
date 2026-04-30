@@ -1385,9 +1385,13 @@ describe("Queue routes", () => {
 
 			const readerResponse = await agent.get(`/queue/${articleId}/read`);
 			const doc = new JSDOM(readerResponse.text).window.document;
-			const fallback = doc.querySelector("[data-test-no-content]");
-			assert(fallback, "no-content fallback must be rendered");
-			expect(fallback.textContent).toContain("not yet available");
+			const slot = doc.querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			// crawl=ready + empty content is the worker-bug catch-all: the slot
+			// renders pending so the article never claims a healthy terminal
+			// state in the UI. (DB still says crawlStatus=ready, so the
+			// stuck-articles canary won't flag it — that's a separate gap.)
+			expect(slot.getAttribute("data-reader-status")).toBe("pending");
 		});
 
 		it("should render audio player when feature=audio query param is present", async () => {

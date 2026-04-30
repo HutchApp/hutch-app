@@ -114,21 +114,18 @@ describe("renderArticleBody", () => {
 		);
 	});
 
-	it("renders the unavailable fallback when content is undefined and no crawl status is provided", () => {
+	it("renders the reader-pending slot when content is undefined and no crawl status is provided (read-after-write race)", () => {
 		const html = renderArticleBody({
 			...baseInput,
 			content: undefined,
+			readerPollUrl: "/queue/abc/reader?poll=1",
 		});
 		const doc = parse(html);
 
 		const slot = doc.querySelector("[data-test-reader-slot]");
 		assert(slot, "reader slot must be rendered");
-		expect(slot.getAttribute("data-reader-status")).toBe("unavailable");
-		const fallback = doc.querySelector("[data-test-no-content]");
-		assert(fallback, "no-content fallback must be rendered inside the unavailable slot");
-		expect(fallback.querySelector("a")?.getAttribute("href")).toBe(
-			"https://example.com/post",
-		);
+		expect(slot.getAttribute("data-reader-status")).toBe("pending");
+		expect(slot.getAttribute("hx-get")).toBe("/queue/abc/reader?poll=1");
 	});
 
 	it("renders the reader-pending slot with poll attributes when crawl is pending", () => {

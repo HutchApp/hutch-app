@@ -66,19 +66,18 @@ describe("renderReaderSlot", () => {
 		expect(slot.innerHTML.trim()).toBe("<p>Body copy</p>");
 	});
 
-	it("falls back to the unavailable slot when crawl status is missing and no content is available", () => {
+	it("renders pending when crawl status is missing and no content is available (read-after-write race)", () => {
 		const doc = parse(
 			renderReaderSlot({
 				url: URL,
+				readerPollUrl: "/queue/abc/reader?poll=1",
 			}),
 		);
 
 		const slot = doc.querySelector("[data-test-reader-slot]");
 		assert(slot, "reader slot must be rendered");
-		expect(slot.getAttribute("data-reader-status")).toBe("unavailable");
-		const fallback = slot.querySelector("[data-test-no-content]");
-		assert(fallback, "unavailable slot must render the no-content fallback");
-		expect(fallback.querySelector("a")?.getAttribute("href")).toBe(URL);
+		expect(slot.getAttribute("data-reader-status")).toBe("pending");
+		expect(slot.getAttribute("hx-get")).toBe("/queue/abc/reader?poll=1");
 	});
 
 	it("treats a legacy row (no crawl status) with content as ready", () => {
@@ -94,7 +93,7 @@ describe("renderReaderSlot", () => {
 		expect(slot.getAttribute("data-reader-status")).toBe("ready");
 	});
 
-	it("falls back to unavailable when crawl is ready but content is missing (transient legacy state)", () => {
+	it("renders pending when crawl is ready but content is missing (worker-bug catch-all → stays pending until a system flips the state)", () => {
 		const doc = parse(
 			renderReaderSlot({
 				crawl: { status: "ready" },
@@ -104,6 +103,6 @@ describe("renderReaderSlot", () => {
 
 		const slot = doc.querySelector("[data-test-reader-slot]");
 		assert(slot, "reader slot must be rendered");
-		expect(slot.getAttribute("data-reader-status")).toBe("unavailable");
+		expect(slot.getAttribute("data-reader-status")).toBe("pending");
 	});
 });

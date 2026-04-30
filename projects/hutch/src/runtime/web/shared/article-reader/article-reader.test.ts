@@ -215,6 +215,40 @@ describe("initArticleReader", () => {
 			expect(state.markCrawlPendingCalls).toBe(0);
 			expect(state.markSummaryPendingCalls).toBe(0);
 		});
+
+		it("emits readerPollUrl when crawl is undefined with no content (read-after-write race)", async () => {
+			const { deps } = initFakeDeps({
+				crawl: undefined,
+				summary: { status: "ready", summary: "TL;DR" },
+				content: undefined,
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.crawl).toBeUndefined();
+			expect(result.content).toBeUndefined();
+			expect(result.readerPollUrl).toBe("/test/reader?poll=1");
+		});
+
+		it("omits readerPollUrl when crawl is undefined but content is present (legacy row)", async () => {
+			const { deps } = initFakeDeps({
+				crawl: undefined,
+				summary: { status: "ready", summary: "TL;DR" },
+				content: "<p>body</p>",
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.readerPollUrl).toBeUndefined();
+		});
 	});
 
 	describe("handleSummaryPoll", () => {
@@ -353,6 +387,25 @@ describe("initArticleReader", () => {
 			assert(slot, "reader slot must be rendered");
 			expect(slot.getAttribute("data-reader-status")).toBe("ready");
 			expect(slot.hasAttribute("hx-get")).toBe(false);
+		});
+
+		it("emits the next poll URL when crawl is undefined with no content (read-after-write race)", async () => {
+			const { deps } = initFakeDeps({
+				crawl: undefined,
+				content: undefined,
+			});
+			const reader = initArticleReader(deps);
+
+			const component = await reader.handleReaderPoll({
+				articleUrl: ARTICLE_URL,
+				pollCount: 5,
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			const slot = parse(toHtml(component)).querySelector("[data-test-reader-slot]");
+			assert(slot, "reader slot must be rendered");
+			expect(slot.getAttribute("data-reader-status")).toBe("pending");
+			expect(slot.getAttribute("hx-get")).toBe("/test/reader?poll=6");
 		});
 
 		it("renders the reader as failed when the crawl has failed", async () => {

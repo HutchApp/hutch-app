@@ -225,11 +225,12 @@ describe("ViewPage", () => {
 		expect(details.hasAttribute("open")).toBe(true);
 	});
 
-	it("renders the no-content fallback while still showing the CTA action when content is undefined", () => {
+	it("renders the pending reader slot while still showing the CTA action when content is undefined", () => {
 		const doc = render({ ...baseInput, content: undefined });
 
-		const fallback = doc.querySelector("[data-test-no-content]");
-		assert(fallback, "no-content fallback must be rendered");
+		const slot = doc.querySelector("[data-test-reader-slot]");
+		assert(slot, "reader slot must be rendered");
+		expect(slot.getAttribute("data-reader-status")).toBe("pending");
 		const link = doc.querySelector("[data-test-view-cta-action]");
 		assert(link, "cta action must still be rendered without content");
 	});

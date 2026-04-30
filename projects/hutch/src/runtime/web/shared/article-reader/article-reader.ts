@@ -41,9 +41,13 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 		const summaryPollUrl = summaryStatus === "pending"
 			? pollUrlBuilder.summary(1)
 			: undefined;
-		const readerPollUrl = crawl?.status === "pending"
-			? pollUrlBuilder.reader(1)
-			: undefined;
+		// Poll while the crawl is pending, and also when crawl is undefined with
+		// no content yet — that combination is usually a read-after-write race
+		// where markCrawlPending hasn't propagated, so polling lets the slot
+		// recover once the next read sees the durable state.
+		const shouldPollReader =
+			crawl?.status === "pending" || (crawl === undefined && content === undefined);
+		const readerPollUrl = shouldPollReader ? pollUrlBuilder.reader(1) : undefined;
 
 		return { content, crawl, summary, readerPollUrl, summaryPollUrl };
 	}
@@ -64,7 +68,9 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 		const { articleUrl, pollCount, pollUrlBuilder } = params;
 		const crawl = await deps.findArticleCrawlStatus(articleUrl);
 		const content = await deps.readArticleContent(articleUrl);
-		const readerPollUrl = crawl?.status === "pending" && pollCount < MAX_POLLS
+		const shouldPollReader =
+			crawl?.status === "pending" || (crawl === undefined && content === undefined);
+		const readerPollUrl = shouldPollReader && pollCount < MAX_POLLS
 			? pollUrlBuilder.reader(pollCount + 1)
 			: undefined;
 		return HtmlPage(renderReaderSlot({ crawl, content, url: articleUrl, readerPollUrl }));
