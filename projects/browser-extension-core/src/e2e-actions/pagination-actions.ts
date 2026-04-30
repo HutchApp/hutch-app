@@ -12,8 +12,8 @@ export interface PaginationProgress {
 	verifiedBackOnPage1: boolean;
 }
 
-/** Total items = 1 auto-saved popup URL + 1 save-link action + PAGINATION_LINK_COUNT = 12, exceeding the 10-per-page threshold. */
-const PAGINATION_LINK_COUNT = 10;
+/** Total items = 1 save-link action + PAGINATION_LINK_COUNT = 12, exceeding the 10-per-page threshold. */
+const PAGINATION_LINK_COUNT = 11;
 const ACTIVE_PAGE_SELECTOR = `#${ELEMENT_IDS.pagination} .pagination__page--active`;
 const NEXT_PAGE_SELECTOR = `#${ELEMENT_IDS.pagination} button[aria-label="Next page"]`;
 const PREV_PAGE_SELECTOR = `#${ELEMENT_IDS.pagination} button[aria-label="Previous page"]`;
