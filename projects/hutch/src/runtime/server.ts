@@ -228,6 +228,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			"readplace-vs-instapaper": "0.8",
 			"how-ai-tldr-actually-works": "0.8",
 			"free-read-it-later-apps-2026": "0.8",
+			"readplace-vs-karakeep-hosted-vs-self-hosted-read-it-later": "0.8",
 		};
 
 		const pages: { loc: string; priority: string; changefreq: string; lastmod: string }[] = [

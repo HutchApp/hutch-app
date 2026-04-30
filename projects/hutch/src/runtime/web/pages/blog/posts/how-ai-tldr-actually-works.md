@@ -4,7 +4,7 @@ description: "Readplace uses AI to generate short article summaries for triage, 
 slug: "how-ai-tldr-actually-works"
 date: "2026-04-06"
 author: "Fayner Brack"
-keywords: "ai summary, read it later, article tl;dr, deepseek, ai slop, hutch app"
+keywords: "ai summary, read it later, article tl;dr, deepseek, ai slop, readplace app"
 ---
 
 <details class="blog-tldr">
