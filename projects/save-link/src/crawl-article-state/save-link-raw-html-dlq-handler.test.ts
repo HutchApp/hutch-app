@@ -1,6 +1,7 @@
 import { noopLogger } from "@packages/hutch-logger";
 import { initSaveLinkRawHtmlDlqHandler } from "./save-link-raw-html-dlq-handler";
 import type { MarkCrawlFailed } from "./article-crawl.types";
+import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
@@ -48,12 +49,14 @@ function createSqsEvent(
 }
 
 describe("initSaveLinkRawHtmlDlqHandler", () => {
-	it("marks the crawl as failed and publishes CrawlArticleFailedEvent when a message lands in DLQ", async () => {
+	it("marks the crawl and summary as failed and publishes CrawlArticleFailedEvent when a message lands in DLQ", async () => {
 		const markCrawlFailed: MarkCrawlFailed = jest.fn().mockResolvedValue(undefined);
+		const markSummaryFailed: MarkSummaryFailed = jest.fn().mockResolvedValue(undefined);
 		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
 
 		const handler = initSaveLinkRawHtmlDlqHandler({
 			markCrawlFailed,
+			markSummaryFailed,
 			publishEvent,
 			logger: noopLogger,
 		});
@@ -68,6 +71,10 @@ describe("initSaveLinkRawHtmlDlqHandler", () => {
 			url: "https://example.com/failed",
 			reason: "exceeded SQS maxReceiveCount",
 		});
+		expect(markSummaryFailed).toHaveBeenCalledWith({
+			url: "https://example.com/failed",
+			reason: "crawl failed",
+		});
 		expect(publishEvent).toHaveBeenCalledWith({
 			source: "hutch.save-link",
 			detailType: "CrawlArticleFailed",
@@ -81,10 +88,12 @@ describe("initSaveLinkRawHtmlDlqHandler", () => {
 
 	it("throws on an invalid command envelope", async () => {
 		const markCrawlFailed: MarkCrawlFailed = jest.fn();
+		const markSummaryFailed: MarkSummaryFailed = jest.fn();
 		const publishEvent: PublishEvent = jest.fn();
 
 		const handler = initSaveLinkRawHtmlDlqHandler({
 			markCrawlFailed,
+			markSummaryFailed,
 			publishEvent,
 			logger: noopLogger,
 		});
@@ -105,6 +114,7 @@ describe("initSaveLinkRawHtmlDlqHandler", () => {
 
 		await expect(handler(invalidEvent, stubContext, () => {})).rejects.toThrow();
 		expect(markCrawlFailed).not.toHaveBeenCalled();
+		expect(markSummaryFailed).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
 });

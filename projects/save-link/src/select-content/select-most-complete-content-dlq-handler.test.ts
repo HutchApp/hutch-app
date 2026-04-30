@@ -1,6 +1,7 @@
 import { noopLogger } from "@packages/hutch-logger";
 import { initSelectMostCompleteContentDlqHandler } from "./select-most-complete-content-dlq-handler";
 import type { MarkCrawlFailed } from "../crawl-article-state/article-crawl.types";
+import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
@@ -48,12 +49,14 @@ function createSqsEvent(
 }
 
 describe("initSelectMostCompleteContentDlqHandler", () => {
-	it("marks crawl failed and publishes CrawlArticleFailedEvent when a TierContentExtractedEvent message exhausts retries", async () => {
+	it("marks crawl and summary failed and publishes CrawlArticleFailedEvent when a TierContentExtractedEvent message exhausts retries", async () => {
 		const markCrawlFailed: MarkCrawlFailed = jest.fn().mockResolvedValue(undefined);
+		const markSummaryFailed: MarkSummaryFailed = jest.fn().mockResolvedValue(undefined);
 		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
 
 		const handler = initSelectMostCompleteContentDlqHandler({
 			markCrawlFailed,
+			markSummaryFailed,
 			publishEvent,
 			logger: noopLogger,
 		});
@@ -68,6 +71,10 @@ describe("initSelectMostCompleteContentDlqHandler", () => {
 			url: "https://example.com/failed",
 			reason: "exceeded SQS maxReceiveCount",
 		});
+		expect(markSummaryFailed).toHaveBeenCalledWith({
+			url: "https://example.com/failed",
+			reason: "crawl failed",
+		});
 		expect(publishEvent).toHaveBeenCalledWith({
 			source: "hutch.save-link",
 			detailType: "CrawlArticleFailed",
@@ -81,10 +88,12 @@ describe("initSelectMostCompleteContentDlqHandler", () => {
 
 	it("works without userId (anonymous source)", async () => {
 		const markCrawlFailed: MarkCrawlFailed = jest.fn().mockResolvedValue(undefined);
+		const markSummaryFailed: MarkSummaryFailed = jest.fn().mockResolvedValue(undefined);
 		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
 
 		const handler = initSelectMostCompleteContentDlqHandler({
 			markCrawlFailed,
+			markSummaryFailed,
 			publishEvent,
 			logger: noopLogger,
 		});
@@ -102,6 +111,7 @@ describe("initSelectMostCompleteContentDlqHandler", () => {
 	it("throws on invalid envelope detail", async () => {
 		const handler = initSelectMostCompleteContentDlqHandler({
 			markCrawlFailed: jest.fn(),
+			markSummaryFailed: jest.fn(),
 			publishEvent: jest.fn(),
 			logger: noopLogger,
 		});

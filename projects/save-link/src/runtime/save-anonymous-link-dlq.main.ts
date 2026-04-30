@@ -3,6 +3,7 @@ import { consoleLogger } from "@packages/hutch-logger";
 import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import { requireEnv } from "../require-env";
 import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
+import { initDynamoDbGeneratedSummary } from "../generate-summary/dynamodb-generated-summary";
 import { initSaveAnonymousLinkDlqHandler } from "../crawl-article-state/save-anonymous-link-dlq-handler";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
@@ -15,6 +16,11 @@ const crawlStore = initDynamoDbArticleCrawl({
 	tableName: articlesTable,
 });
 
+const summaryStore = initDynamoDbGeneratedSummary({
+	client: dynamoClient,
+	tableName: articlesTable,
+});
+
 const { publishEvent } = initEventBridgePublisher({
 	client: new EventBridgeClient({}),
 	eventBusName,
@@ -22,6 +28,7 @@ const { publishEvent } = initEventBridgePublisher({
 
 export const handler = initSaveAnonymousLinkDlqHandler({
 	markCrawlFailed: crawlStore.markCrawlFailed,
+	markSummaryFailed: summaryStore.markSummaryFailed,
 	publishEvent,
 	logger: consoleLogger,
 });

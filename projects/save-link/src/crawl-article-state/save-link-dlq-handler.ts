@@ -6,16 +6,18 @@ import {
 	SaveLinkCommand,
 } from "@packages/hutch-infra-components";
 import type { MarkCrawlFailed } from "./article-crawl.types";
+import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
 
 interface SaveLinkDlqHandlerDeps {
 	markCrawlFailed: MarkCrawlFailed;
+	markSummaryFailed: MarkSummaryFailed;
 	publishEvent: PublishEvent;
 	logger: HutchLogger;
 }
 
 /* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
 export function initSaveLinkDlqHandler(deps: SaveLinkDlqHandlerDeps): SQSHandler {
-	const { markCrawlFailed, publishEvent, logger } = deps;
+	const { markCrawlFailed, markSummaryFailed, publishEvent, logger } = deps;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -30,6 +32,7 @@ export function initSaveLinkDlqHandler(deps: SaveLinkDlqHandlerDeps): SQSHandler
 			});
 
 			await markCrawlFailed({ url: command.url, reason });
+			await markSummaryFailed({ url: command.url, reason: "crawl failed" });
 
 			await publishEvent({
 				source: CrawlArticleFailedEvent.source,
