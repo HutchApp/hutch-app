@@ -39,13 +39,19 @@ export function initSelectMostCompleteContentHandler(deps: {
 
 			const sources = await listAvailableTierSources(detail.url);
 			if (sources.length === 0) {
-				/* Race window: the worker emitted the event before its tier source
-				 * + sidecar were both readable. SQS retry on the worker side will
-				 * eventually backfill; this invocation is a no-op. */
-				logger.info("[SelectContent] no tier sources available, skipping", {
+				/* Throw so SQS redelivers after the visibility timeout. The
+				 * common cause is a transient race between the worker writing
+				 * `<tier>.html` + sidecar to S3 and EventBridge → SQS delivery
+				 * arriving here; a later retry from the same message converges
+				 * once both objects are listable. After maxReceiveCount the
+				 * message lands in the DLQ, where the DLQ handler flips
+				 * crawlStatus to "failed" and emits CrawlArticleFailedEvent. */
+				logger.warn("[SelectContent] no tier sources available, retrying", {
 					url: detail.url,
 				});
-				continue;
+				throw new Error(
+					`no tier sources available for ${detail.url}; will retry`,
+				);
 			}
 
 			let winnerTier: TierSource["tier"];

@@ -79,12 +79,14 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 }
 
 describe("initSelectMostCompleteContentHandler", () => {
-	it("no sources available — does nothing (race window with worker that emitted before sidecar landed)", async () => {
+	it("no sources available — throws so SQS retries after the visibility timeout (covers worker→S3→EventBridge→SQS races)", async () => {
 		const { handler, deps } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([]),
 		});
 
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1" }), stubContext, () => {});
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1" }), stubContext, () => {}),
+		).rejects.toThrow(/no tier sources available/);
 
 		expect(deps.promoteTierToCanonical).not.toHaveBeenCalled();
 		expect(deps.publishEvent).not.toHaveBeenCalled();
