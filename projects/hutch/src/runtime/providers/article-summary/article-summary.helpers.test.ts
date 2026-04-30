@@ -49,7 +49,7 @@ describe("truncateForSeo", () => {
 
 		expect(result.length).toBeLessThanOrEqual(160);
 		expect(result.endsWith("…")).toBe(true);
-		expect(result).not.toMatch(/ …$/);
+		expect(result).toMatch(/\S…$/);
 	});
 
 	it("hard-cuts when the slice has no whitespace", () => {
