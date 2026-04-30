@@ -18,8 +18,6 @@ import type { PageBody, SeoMetadata } from "./page-body.types";
 import { render } from "./render";
 import { getEnv, requireEnv } from "../require-env";
 
-export type { SeoMetadata } from "./page-body.types";
-
 const HEADER_TEMPLATE = readFileSync(join(__dirname, "header.template.html"), "utf-8");
 const FOOTER_TEMPLATE = readFileSync(join(__dirname, "footer.template.html"), "utf-8");
 const BASE_TEMPLATE = readFileSync(join(__dirname, "base.template.html"), "utf-8");
