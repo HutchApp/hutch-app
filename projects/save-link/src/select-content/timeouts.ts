@@ -4,5 +4,5 @@
 export const SELECT_CONTENT_TIMEOUTS = {
 	lambdaSeconds: 300,
 	sqsVisibilitySeconds: 300,
-	deepseekMs: 240_000,
+	deepseekMs: 240_000, // 60s headroom for post-selection S3/DynamoDB ops
 } as const;
