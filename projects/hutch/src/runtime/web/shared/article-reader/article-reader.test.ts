@@ -45,6 +45,8 @@ interface FakeState {
 	markSummaryPendingCalls: number;
 }
 
+const FIXED_NOW = new Date("2026-04-25T12:00:00.000Z");
+
 function initFakeDeps(initial?: Partial<FakeState>): {
 	state: FakeState;
 	deps: {
@@ -53,6 +55,7 @@ function initFakeDeps(initial?: Partial<FakeState>): {
 		findGeneratedSummary: FindGeneratedSummary;
 		markSummaryPending: MarkSummaryPending;
 		readArticleContent: ReadArticleContent;
+		now: () => Date;
 	};
 } {
 	const state: FakeState = {
@@ -74,6 +77,7 @@ function initFakeDeps(initial?: Partial<FakeState>): {
 			if (state.summary === undefined) state.summary = { status: "pending" };
 		},
 		readArticleContent: async () => state.content,
+		now: () => FIXED_NOW,
 	};
 	return { state, deps };
 }
@@ -106,6 +110,95 @@ describe("initArticleReader", () => {
 			expect(result.content).toBeUndefined();
 			expect(result.readerPollUrl).toBe("/test/reader?poll=1");
 			expect(result.summaryPollUrl).toBe("/test/summary?poll=1");
+		});
+
+		it("emits a unified progress tick driven by the crawl stage while crawl is pending", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "pending", stage: "crawl-parsed" },
+				summary: { status: "pending" },
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.progress).toEqual({
+				stage: "crawl-parsed",
+				pct: 25,
+				tickAt: FIXED_NOW.toISOString(),
+			});
+		});
+
+		it("falls back to crawl-fetching at the bottom of the bar when no crawl stage has been recorded yet", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "pending" },
+				summary: { status: "pending" },
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.progress).toEqual({
+				stage: "crawl-fetching",
+				pct: 5,
+				tickAt: FIXED_NOW.toISOString(),
+			});
+		});
+
+		it("hands the unified bar over to the summary stage once the crawl has gone ready", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				summary: { status: "pending", stage: "summary-generating" },
+				content: "<p>body</p>",
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.progress).toEqual({
+				stage: "summary-generating",
+				pct: 90,
+				tickAt: FIXED_NOW.toISOString(),
+			});
+		});
+
+		it("hides the bar once both pipelines are terminal", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				summary: { status: "ready", summary: "TL;DR" },
+				content: "<p>body</p>",
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.progress).toBeUndefined();
+		});
+
+		it("hides the bar when the crawl has failed (summary slot collapses; the bar would just stall)", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "failed", reason: "blocked" },
+				summary: { status: "pending" },
+			});
+			const reader = initArticleReader(deps);
+
+			const result = await reader.resolveReaderState({
+				article: makeSnapshot(),
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			expect(result.progress).toBeUndefined();
 		});
 
 		it("omits readerPollUrl when the crawl is ready", async () => {
@@ -271,6 +364,27 @@ describe("initArticleReader", () => {
 			expect(slot.getAttribute("hx-get")).toBe("/test/summary?poll=4");
 		});
 
+		it("includes the unified progress bar as an hx-swap-oob fragment so the bar updates without a separate poll", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "ready" },
+				summary: { status: "pending", stage: "summary-generating" },
+			});
+			const reader = initArticleReader(deps);
+
+			const component = await reader.handleSummaryPoll({
+				articleUrl: ARTICLE_URL,
+				pollCount: 1,
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			const doc = parse(toHtml(component));
+			const bar = doc.querySelector("#article-body-progress");
+			assert(bar, "progress bar OOB element must accompany the slot fragment");
+			expect(bar.getAttribute("hx-swap-oob")).toBe("outerHTML");
+			expect(bar.getAttribute("data-progress-stage")).toBe("summary-generating");
+			expect(bar.getAttribute("data-progress-pct")).toBe("90");
+		});
+
 		it("stops polling at MAX_POLLS=40", async () => {
 			const { deps } = initFakeDeps({
 				crawl: { status: "pending" },
@@ -350,6 +464,27 @@ describe("initArticleReader", () => {
 			assert(slot, "reader slot must be rendered");
 			expect(slot.getAttribute("data-reader-status")).toBe("pending");
 			expect(slot.getAttribute("hx-get")).toBe("/test/reader?poll=3");
+		});
+
+		it("includes the unified progress bar as an hx-swap-oob fragment driven by the recorded crawl stage", async () => {
+			const { deps } = initFakeDeps({
+				crawl: { status: "pending", stage: "crawl-content-uploaded" },
+				content: undefined,
+			});
+			const reader = initArticleReader(deps);
+
+			const component = await reader.handleReaderPoll({
+				articleUrl: ARTICLE_URL,
+				pollCount: 1,
+				pollUrlBuilder: makePollUrlBuilder(),
+			});
+
+			const doc = parse(toHtml(component));
+			const bar = doc.querySelector("#article-body-progress");
+			assert(bar, "progress bar OOB element must accompany the slot fragment");
+			expect(bar.getAttribute("hx-swap-oob")).toBe("outerHTML");
+			expect(bar.getAttribute("data-progress-stage")).toBe("crawl-content-uploaded");
+			expect(bar.getAttribute("data-progress-pct")).toBe("45");
 		});
 
 		it("stops polling at MAX_POLLS=40", async () => {

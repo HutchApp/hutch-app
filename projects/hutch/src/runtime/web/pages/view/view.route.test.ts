@@ -957,6 +957,7 @@ describe("View routes", () => {
  	forceMarkCrawlPending: fixture.articleCrawl.forceMarkCrawlPending,
  	markCrawlReady: fixture.articleCrawl.markCrawlReady,
  	markCrawlFailed: fixture.articleCrawl.markCrawlFailed,
+ 	markCrawlStage: fixture.articleCrawl.markCrawlStage,
  },
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,

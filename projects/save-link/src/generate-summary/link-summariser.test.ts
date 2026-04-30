@@ -4,6 +4,7 @@ import type {
 	CreateAiMessage,
 	FindGeneratedSummary,
 	MarkSummarySkipped,
+	MarkSummaryStage,
 	SaveGeneratedSummary,
 } from "./article-summary.types";
 
@@ -18,6 +19,7 @@ const noCache: FindGeneratedSummary = async () => undefined;
 const pendingCache: FindGeneratedSummary = async () => ({ status: "pending" });
 const noopSave: SaveGeneratedSummary = async () => {};
 const noopMarkSkipped: MarkSummarySkipped = async () => {};
+const noopMarkStage: MarkSummaryStage = async () => {};
 const identity = (text: string) => text;
 
 describe("initLinkSummariser", () => {
@@ -30,6 +32,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: pendingCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => true,
@@ -56,6 +59,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: noCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -93,6 +97,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: pendingCache,
 			saveGeneratedSummary,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -186,6 +191,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: cachedSummary,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -209,6 +215,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: skippedCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -238,6 +245,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: failedCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -267,6 +275,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: pendingCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -296,6 +305,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: noCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
@@ -320,6 +330,7 @@ describe("initLinkSummariser", () => {
 			findGeneratedSummary: noCache,
 			saveGeneratedSummary: noopSave,
 			markSummarySkipped: noopMarkSkipped,
+			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
 			isTooShortToSummarize: () => false,
