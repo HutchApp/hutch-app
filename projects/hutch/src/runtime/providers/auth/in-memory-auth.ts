@@ -8,6 +8,7 @@ import type {
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	FindEmailByUserId,
 	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
@@ -45,6 +46,7 @@ export function initInMemoryAuth(): {
 	markSessionEmailVerified: MarkSessionEmailVerified;
 	userExistsByEmail: UserExistsByEmail;
 	updatePassword: UpdatePassword;
+	findEmailByUserId: FindEmailByUserId;
 } {
 	const users = new Map<string, StoredUser>();
 	const sessions = new Map<string, StoredSession>();
@@ -152,6 +154,13 @@ export function initInMemoryAuth(): {
 		return users.has(normalizedEmail);
 	};
 
+	const findEmailByUserId: FindEmailByUserId = async (userId) => {
+		for (const user of users.values()) {
+			if (user.id === userId) return user.email;
+		}
+		return null;
+	};
+
 	const updatePassword: UpdatePassword = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
 		const user = users.get(normalizedEmail);
@@ -172,5 +181,6 @@ export function initInMemoryAuth(): {
 		markSessionEmailVerified,
 		userExistsByEmail,
 		updatePassword,
+		findEmailByUserId,
 	};
 }

@@ -68,6 +68,7 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
 			publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 			publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+			publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 		},
 		summary,
 		admin:{

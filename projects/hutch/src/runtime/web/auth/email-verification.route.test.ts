@@ -67,6 +67,7 @@ describe("Email verification", () => {
 				publishRecrawlLinkInitiated: async () => {},
 				publishSaveAnonymousLink: async () => {},
 				publishSaveLinkRawHtmlCommand: async () => {},
+				publishExportUserDataCommand: async () => {},
 				findGeneratedSummary: async () => undefined,
 				markSummaryPending: async () => {},
 				forceMarkSummaryPending: async () => {},

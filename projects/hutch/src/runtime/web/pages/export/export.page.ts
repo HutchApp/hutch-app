@@ -1,85 +1,44 @@
 import assert from "node:assert";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import type { FindArticlesByUser } from "../../../providers/article-store/article-store.types";
-import type { SavedArticle } from "../../../domain/article/article.types";
-import type { UserId } from "../../../domain/user/user.types";
+import type { FindEmailByUserId } from "../../../providers/auth/auth.types";
+import type { PublishExportUserDataCommand } from "../../../providers/events/publish-export-user-data-command.types";
 import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { ExportPage } from "./export.component";
 
 interface ExportDependencies {
-	findArticlesByUser: FindArticlesByUser;
-}
-
-function toExportArticle(article: SavedArticle) {
-	return {
-		url: article.url,
-		title: article.metadata.title,
-		siteName: article.metadata.siteName,
-		excerpt: article.metadata.excerpt,
-		wordCount: article.metadata.wordCount,
-		estimatedReadTimeMinutes: article.estimatedReadTime,
-		status: article.status,
-		savedAt: article.savedAt.toISOString(),
-		readAt: article.readAt?.toISOString() ?? null,
-	};
-}
-
-export async function fetchAllArticles(
-	findArticlesByUser: FindArticlesByUser,
-	userId: UserId,
-	pageSize = 100,
-): Promise<SavedArticle[]> {
-	const allArticles: SavedArticle[] = [];
-	let page = 1;
-
-	while (true) {
-		const result = await findArticlesByUser({
-			userId,
-			page,
-			pageSize,
-			order: "asc",
-		});
-		allArticles.push(...result.articles);
-		if (allArticles.length >= result.total) break;
-		page++;
-	}
-
-	return allArticles;
+	publishExportUserDataCommand: PublishExportUserDataCommand;
+	findEmailByUserId: FindEmailByUserId;
+	logError: (message: string, error?: Error) => void;
+	now: () => Date;
 }
 
 export function initExportRoutes(deps: ExportDependencies): Router {
 	const router = express.Router();
 
 	router.get("/", (req: Request, res: Response) => {
-		sendComponent(res, renderPage(req, ExportPage()));
+		const status = req.query.status === "preparing" ? "preparing" : "idle";
+		sendComponent(res, renderPage(req, ExportPage({ status })));
 	});
 
-	router.get("/download", async (req: Request, res: Response) => {
+	router.post("/start", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
-		const articles = await fetchAllArticles(
-			deps.findArticlesByUser,
+		const email = await deps.findEmailByUserId(userId);
+		if (!email) {
+			deps.logError(`[Export] No email found for userId ${userId}`);
+			res.redirect(303, "/export");
+			return;
+		}
+
+		await deps.publishExportUserDataCommand({
 			userId,
-		);
+			email,
+			requestedAt: deps.now().toISOString(),
+		});
 
-		const exportData = {
-			exportedAt: new Date().toISOString(),
-			articleCount: articles.length,
-			articles: articles.map(toExportArticle),
-		};
-
-		const json = JSON.stringify(exportData, null, 2);
-		const timestamp = new Date().toISOString().slice(0, 10);
-
-		res
-			.set(
-				"Content-Disposition",
-				`attachment; filename="readplace-export-${timestamp}.json"`,
-			)
-			.type("application/json")
-			.send(json);
+		res.redirect(303, "/export?status=preparing");
 	});
 
 	return router;

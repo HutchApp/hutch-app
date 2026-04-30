@@ -11,6 +11,7 @@ import type {
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	FindEmailByUserId,
 	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
@@ -46,6 +47,7 @@ import type { PublishLinkSaved } from "./providers/events/publish-link-saved.typ
 import type { PublishRecrawlLinkInitiated } from "./providers/events/publish-recrawl-link-initiated.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { PublishSaveLinkRawHtmlCommand } from "./providers/events/publish-save-link-raw-html-command.types";
+import type { PublishExportUserDataCommand } from "./providers/events/publish-export-user-data-command.types";
 import type { PutPendingHtml } from "./providers/pending-html/pending-html.types";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
@@ -126,6 +128,8 @@ interface AppDependencies {
 	publishRecrawlLinkInitiated: PublishRecrawlLinkInitiated;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
+	publishExportUserDataCommand: PublishExportUserDataCommand;
+	findEmailByUserId: FindEmailByUserId;
 	putPendingHtml: PutPendingHtml;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
@@ -449,7 +453,10 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/admin/recrawl", adminRecrawlRouter);
 
 	const exportRouter = initExportRoutes({
-		findArticlesByUser: deps.findArticlesByUser,
+		publishExportUserDataCommand: deps.publishExportUserDataCommand,
+		findEmailByUserId: deps.findEmailByUserId,
+		logError: deps.logError,
+		now: () => new Date(),
 	});
 	app.use("/export", requireAuth, exportRouter);
 

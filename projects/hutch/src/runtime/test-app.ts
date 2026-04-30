@@ -30,6 +30,7 @@ import type {
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	FindEmailByUserId,
 	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
@@ -38,6 +39,7 @@ import type {
 	UserExistsByEmail,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
+import type { PublishExportUserDataCommand } from "./providers/events/publish-export-user-data-command.types";
 import type {
 	ArticleMetadata,
 	Minutes,
@@ -84,6 +86,7 @@ export interface AuthBundle {
 	markSessionEmailVerified: MarkSessionEmailVerified;
 	userExistsByEmail: UserExistsByEmail;
 	updatePassword: UpdatePassword;
+	findEmailByUserId: FindEmailByUserId;
 }
 
 export interface ArticleStoreBundle {
@@ -126,6 +129,7 @@ export interface EventsBundle {
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
+	publishExportUserDataCommand: PublishExportUserDataCommand;
 }
 
 export interface PendingHtmlBundle {
@@ -234,6 +238,7 @@ function flattenFixtureToAppDependencies(
 		markSessionEmailVerified: fixture.auth.markSessionEmailVerified,
 		userExistsByEmail: fixture.auth.userExistsByEmail,
 		updatePassword: fixture.auth.updatePassword,
+		findEmailByUserId: fixture.auth.findEmailByUserId,
 		findArticleById: fixture.articleStore.findArticleById,
 		findArticleByUrl: fixture.articleStore.findArticleByUrl,
 		findArticlesByUser: fixture.articleStore.findArticlesByUser,
@@ -250,6 +255,7 @@ function flattenFixtureToAppDependencies(
 		publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 		publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+		publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 		putPendingHtml: fixture.pendingHtml.putPendingHtml,
 		findGeneratedSummary: fixture.summary.findGeneratedSummary,
 		markSummaryPending: fixture.summary.markSummaryPending,

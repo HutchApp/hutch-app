@@ -14,6 +14,7 @@ import { initInMemoryEmailVerification } from "./providers/email-verification/in
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
 import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
+import { initInMemoryExportUserDataCommand } from "./providers/events/in-memory-export-user-data-command";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -193,6 +194,9 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 	const { publishSaveLinkRawHtmlCommand } = initInMemorySaveLinkRawHtmlCommand({
 		logger: noopLogger,
 	});
+	const { publishExportUserDataCommand } = initInMemoryExportUserDataCommand({
+		logger: noopLogger,
+	});
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin });
 
 	return {
@@ -228,6 +232,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			publishExportUserDataCommand,
 		},
 		pendingHtml: {
 			putPendingHtml: pendingHtml.putPendingHtml,

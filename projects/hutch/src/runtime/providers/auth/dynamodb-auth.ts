@@ -14,6 +14,7 @@ import type {
 	CreateSession,
 	CreateUser,
 	DestroySession,
+	FindEmailByUserId,
 	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
@@ -58,6 +59,7 @@ export function initDynamoDbAuth(deps: {
 	markSessionEmailVerified: MarkSessionEmailVerified;
 	userExistsByEmail: UserExistsByEmail;
 	updatePassword: UpdatePassword;
+	findEmailByUserId: FindEmailByUserId;
 } {
 	const users = defineDynamoTable({
 		client: deps.client,
@@ -196,6 +198,17 @@ export function initDynamoDbAuth(deps: {
 		return row !== undefined;
 	};
 
+	const findEmailByUserId: FindEmailByUserId = async (userId) => {
+		const { items } = await users.query({
+			IndexName: "userId-index",
+			KeyConditionExpression: "userId = :userId",
+			ExpressionAttributeValues: { ":userId": userId },
+			Limit: 1,
+		});
+		const row = items[0];
+		return row ? row.email : null;
+	};
+
 	const updatePassword: UpdatePassword = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
 		const passwordHash = await hashPassword(password);
@@ -220,6 +233,7 @@ export function initDynamoDbAuth(deps: {
 		markSessionEmailVerified,
 		userExistsByEmail,
 		updatePassword,
+		findEmailByUserId,
 	};
 }
 /* c8 ignore stop */

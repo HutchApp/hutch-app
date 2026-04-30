@@ -36,6 +36,8 @@ import { initEventBridgeSaveAnonymousLink } from "./providers/events/eventbridge
 import { initEventBridgeSaveLinkRawHtmlCommand } from "./providers/events/eventbridge-save-link-raw-html-command";
 import { initEventBridgeRefreshArticleContent } from "./providers/events/eventbridge-refresh-article-content";
 import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbridge-update-fetch-timestamp";
+import { initEventBridgeExportUserDataCommand } from "./providers/events/eventbridge-export-user-data-command";
+import { initInMemoryExportUserDataCommand } from "./providers/events/in-memory-export-user-data-command";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { initInMemoryRecrawlLinkInitiated } from "./providers/events/in-memory-recrawl-link-initiated";
 import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
@@ -103,6 +105,7 @@ function initProviders() {
 		const { publishSaveLinkRawHtmlCommand } = initEventBridgeSaveLinkRawHtmlCommand({ publishEvent });
 		const { publishRefreshArticleContent } = initEventBridgeRefreshArticleContent({ publishEvent });
 		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
+		const { publishExportUserDataCommand } = initEventBridgeExportUserDataCommand({ publishEvent });
 		const { putPendingHtml } = initPutPendingHtml({ client: new S3Client({}), bucketName: pendingHtmlBucketName });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
@@ -141,6 +144,7 @@ function initProviders() {
 			publishSaveAnonymousLink,
 			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp,
+			publishExportUserDataCommand,
 			putPendingHtml,
 			findGeneratedSummary: summaryStore.findGeneratedSummary,
 			markSummaryPending: summaryStore.markSummaryPending,
@@ -225,6 +229,7 @@ function initProviders() {
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
 	const { publishSaveLinkRawHtmlCommand } = initInMemorySaveLinkRawHtmlCommand({ logger: consoleLogger });
+	const { publishExportUserDataCommand } = initInMemoryExportUserDataCommand({ logger: consoleLogger });
 	const { putPendingHtml } = initInMemoryPendingHtml();
 	const stubFindGeneratedSummary = async (_url: string) => undefined;
 	const stubMarkSummaryPending = async (_params: { url: string }) => {};
@@ -259,6 +264,7 @@ function initProviders() {
 		publishSaveAnonymousLink,
 		publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp,
+		publishExportUserDataCommand,
 		putPendingHtml,
 		findGeneratedSummary: stubFindGeneratedSummary,
 		markSummaryPending: stubMarkSummaryPending,

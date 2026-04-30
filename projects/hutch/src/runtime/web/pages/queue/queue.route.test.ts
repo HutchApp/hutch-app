@@ -132,6 +132,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
@@ -439,6 +440,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -538,6 +540,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -581,6 +584,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -634,6 +638,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -674,6 +679,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -717,6 +723,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -764,6 +771,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -815,6 +823,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -884,6 +893,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -928,6 +938,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -986,6 +997,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1041,6 +1053,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -1098,6 +1111,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -1152,6 +1166,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1197,6 +1212,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1250,6 +1266,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -1301,6 +1318,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1342,6 +1360,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1393,6 +1412,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1445,6 +1465,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1497,6 +1518,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1544,6 +1566,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -1594,6 +1617,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -1641,6 +1665,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				articleCrawl:{
  	findArticleCrawlStatus: findArticleCrawlStatus,
@@ -1693,6 +1718,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				articleCrawl:{
  	findArticleCrawlStatus: findArticleCrawlStatus,
@@ -1813,6 +1839,7 @@ describe("Queue routes", () => {
 						publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 						publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 						publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+						publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 					},
 				});
 				const agent = await loginAgent(app, auth);
@@ -1865,6 +1892,7 @@ describe("Queue routes", () => {
 						publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 						publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 						publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+						publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 					},
 				});
 				const agent = await loginAgent(app, auth);
@@ -1911,6 +1939,7 @@ describe("Queue routes", () => {
 						publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 						publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 						publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+						publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 					},
 				});
 				const agent = await loginAgent(app, auth);
@@ -1952,6 +1981,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -1983,6 +2013,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -2015,6 +2046,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -2055,6 +2087,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			const agent = await loginAgent(app, auth);
@@ -2270,6 +2303,7 @@ describe("Queue routes", () => {
 					publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				freshness: { refreshArticleIfStale: refreshedFreshness },
 			});
