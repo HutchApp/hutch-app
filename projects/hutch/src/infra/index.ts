@@ -252,6 +252,17 @@ function logWidget(params: {
 	};
 }
 
+const excludedVisitorHashes = config.requireObject<string[]>("excludedVisitorHashes");
+for (const hash of excludedVisitorHashes) {
+	assert(/^[a-f0-9]+$/.test(hash), `excludedVisitorHashes entries must be lowercase hex (got: ${hash})`);
+}
+
+function excludeVisitorHashesClause(): string[] {
+	if (excludedVisitorHashes.length === 0) return [];
+	const list = excludedVisitorHashes.map((h) => `"${h}"`).join(", ");
+	return [`| filter (not ispresent(visitor_hash)) or (visitor_hash not in [${list}])`];
+}
+
 /**
  * HutchLambda names it a Lambda `{name}-handler`, which makes the CloudWatch
  * log group `/aws/lambda/{name}-handler`. Names below mirror the HutchLambda
@@ -279,6 +290,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, utm_source",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
+						...excludeVisitorHashesClause(),
 						"| filter ispresent(utm_source) and utm_source != \"\"",
 						"| stats count(*) as visits by utm_source",
 						"| sort visits desc",
@@ -293,6 +305,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, referrer_host",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
+						...excludeVisitorHashesClause(),
 						"| filter ispresent(referrer_host) and referrer_host != \"\"",
 						"| stats count(*) as visits by referrer_host",
 						"| sort visits desc",
@@ -307,6 +320,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, path, utm_source, utm_medium, utm_campaign, utm_content, referrer_host, visitor_hash, is_authenticated",
 						"| filter stream = \"analytics\"",
+						...excludeVisitorHashesClause(),
 						"| sort @timestamp desc",
 						"| limit 50",
 					].join(" "),
@@ -319,6 +333,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					query: [
 						"fields @timestamp, utm_content",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
+						...excludeVisitorHashesClause(),
 						"| filter ispresent(utm_content) and utm_content != \"\"",
 						"| stats count(*) as visits by utm_content",
 						"| sort visits desc",
@@ -334,6 +349,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 						"fields @timestamp, visitor_hash",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter ispresent(visitor_hash)",
+						...excludeVisitorHashesClause(),
 						"| stats count_distinct(visitor_hash) as visitors by bin(1d)",
 					].join(" "),
 					x: 12, y: 16, width: 12, height: 8,
@@ -346,6 +362,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 						"fields @timestamp, visitor_hash, path, is_authenticated",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter ispresent(visitor_hash)",
+						...excludeVisitorHashesClause(),
 						"| filter is_authenticated",
 						"| filter path like /^\\/[^\\/]+\\/read$/",
 						"| stats count_distinct(visitor_hash) as authenticated_unique_readers by bin(1d)",
@@ -370,6 +387,7 @@ new aws.cloudwatch.Dashboard("readplace-observability", {
 						"fields @timestamp, path, visitor_hash",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter ispresent(visitor_hash)",
+						...excludeVisitorHashesClause(),
 						"| filter path like /^\\/https?:\\//",
 						"| stats count_distinct(visitor_hash) as unique_visitors, count(*) as total_hits by path",
 						"| sort unique_visitors desc",

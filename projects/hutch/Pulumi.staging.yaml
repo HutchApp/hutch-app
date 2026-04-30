@@ -17,4 +17,5 @@ config:
   hutch:dynamodbPasswordResetTokensTable: hutch-password-reset-tokens
   hutch:contentBucketName: hutch-article-content-staging
   hutch:pendingHtmlBucketName: hutch-pending-html-staging
+  hutch:excludedVisitorHashes: []
 encryptionsalt: v1:fILgDgnVVEY=:v1:sFKytKYEpZU4Qs+9:o/Q+JSj6rS/qo7p6WyjaekWrgFAk5A==
