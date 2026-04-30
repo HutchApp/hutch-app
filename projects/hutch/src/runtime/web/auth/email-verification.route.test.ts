@@ -68,6 +68,7 @@ describe("Email verification", () => {
 				publishSaveLinkRawHtmlCommand: async () => {},
 				findGeneratedSummary: async () => undefined,
 				markSummaryPending: async () => {},
+				forceMarkSummaryPending: async () => {},
 				findArticleCrawlStatus: async () => undefined,
 				markCrawlPending: async () => {},
 				forceMarkCrawlPending: async () => {},

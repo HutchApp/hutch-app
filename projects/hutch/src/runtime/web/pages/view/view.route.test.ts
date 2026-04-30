@@ -675,6 +675,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -717,6 +718,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -759,6 +761,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -798,6 +801,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -836,6 +840,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -864,6 +869,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -887,6 +893,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -909,6 +916,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -953,6 +961,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 
@@ -1475,6 +1484,7 @@ describe("View routes", () => {
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
  	markSummaryPending: fixture.summary.markSummaryPending,
+ 	forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
  },
 			});
 			await articleStore.saveArticleGlobally({

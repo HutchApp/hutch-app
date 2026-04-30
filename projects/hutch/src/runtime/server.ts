@@ -39,6 +39,7 @@ import type {
 } from "./providers/article-crawl/article-crawl.types";
 import type {
 	FindGeneratedSummary,
+	ForceMarkSummaryPending,
 	MarkSummaryPending,
 } from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
@@ -126,6 +127,7 @@ interface AppDependencies {
 	putPendingHtml: PutPendingHtml;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
+	forceMarkSummaryPending: ForceMarkSummaryPending;
 	findArticleCrawlStatus: FindArticleCrawlStatus;
 	markCrawlPending: MarkCrawlPending;
 	forceMarkCrawlPending: ForceMarkCrawlPending;
@@ -429,6 +431,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		readArticleContent: deps.readArticleContent,
 		findGeneratedSummary: deps.findGeneratedSummary,
 		markSummaryPending: deps.markSummaryPending,
+		forceMarkSummaryPending: deps.forceMarkSummaryPending,
 		findArticleCrawlStatus: deps.findArticleCrawlStatus,
 		markCrawlPending: deps.markCrawlPending,
 		forceMarkCrawlPending: deps.forceMarkCrawlPending,

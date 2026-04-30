@@ -9,6 +9,7 @@ import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-upd
 import type { PutPendingHtml } from "./providers/pending-html/pending-html.types";
 import type {
 	FindGeneratedSummary,
+	ForceMarkSummaryPending,
 	MarkSummaryPending,
 } from "./providers/article-summary/article-summary.types";
 import type {
@@ -131,6 +132,7 @@ export interface PendingHtmlBundle {
 export interface SummaryBundle {
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
+	forceMarkSummaryPending: ForceMarkSummaryPending;
 }
 
 export interface FreshnessBundle {
@@ -245,6 +247,7 @@ function flattenFixtureToAppDependencies(
 		putPendingHtml: fixture.pendingHtml.putPendingHtml,
 		findGeneratedSummary: fixture.summary.findGeneratedSummary,
 		markSummaryPending: fixture.summary.markSummaryPending,
+		forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
 		refreshArticleIfStale: fixture.freshness.refreshArticleIfStale,
 		oauthModel: fixture.oauth.oauthModel,
 		validateAccessToken: fixture.oauth.validateAccessToken,

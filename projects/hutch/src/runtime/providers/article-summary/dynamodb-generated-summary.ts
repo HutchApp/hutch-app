@@ -12,6 +12,7 @@ import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type {
 	GeneratedSummary,
 	FindGeneratedSummary,
+	ForceMarkSummaryPending,
 	MarkSummaryPending,
 } from "./article-summary.types";
 
@@ -54,6 +55,7 @@ export function initDynamoDbGeneratedSummary(deps: {
 }): {
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
+	forceMarkSummaryPending: ForceMarkSummaryPending;
 } {
 	const table = defineDynamoTable({
 		client: deps.client,
@@ -85,6 +87,18 @@ export function initDynamoDbGeneratedSummary(deps: {
 		}
 	};
 
-	return { findGeneratedSummary, markSummaryPending };
+	const forceMarkSummaryPending: ForceMarkSummaryPending = async ({ url }) => {
+		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
+		await table.update({
+			Key: { url: articleResourceUniqueId.value },
+			UpdateExpression:
+				"SET summaryStatus = :pending REMOVE summaryFailureReason",
+			ExpressionAttributeValues: {
+				":pending": "pending",
+			},
+		});
+	};
+
+	return { findGeneratedSummary, markSummaryPending, forceMarkSummaryPending };
 }
 /* c8 ignore stop */

@@ -22,6 +22,7 @@ import { createValidateAccessToken } from "./providers/oauth/validate-access-tok
 import type { RefreshArticleIfStale } from "./providers/article-freshness/check-content-freshness";
 import type {
 	FindGeneratedSummary,
+	ForceMarkSummaryPending,
 	GeneratedSummary,
 	MarkSummaryPending,
 } from "./providers/article-summary/article-summary.types";
@@ -59,6 +60,8 @@ export const createNoopLogError = (): ((msg: string, err?: Error) => void) =>
 export function createFakeSummaryProvider(opts?: { readyAfterReads?: number }): {
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
+	forceMarkSummaryPending: ForceMarkSummaryPending;
+	markSummaryReady: (params: { url: string; summary: string; excerpt: string }) => void;
 } {
 	// Test-only fake for the Deepseek-backed summary generation. Local E2E
 	// doesn't call a real LLM, so we simulate the pending → ready transition
@@ -86,7 +89,17 @@ export function createFakeSummaryProvider(opts?: { readyAfterReads?: number }): 
 		state.set(id, { status: "pending" });
 		reads.set(id, 0);
 	};
-	return { findGeneratedSummary, markSummaryPending };
+	const forceMarkSummaryPending: ForceMarkSummaryPending = async ({ url }) => {
+		const id = ArticleResourceUniqueId.parse(url).value;
+		state.set(id, { status: "pending" });
+		reads.set(id, 0);
+	};
+	const markSummaryReady = ({ url, summary, excerpt }: { url: string; summary: string; excerpt: string }) => {
+		const id = ArticleResourceUniqueId.parse(url).value;
+		state.set(id, { status: "ready", summary, excerpt });
+		reads.set(id, 0);
+	};
+	return { findGeneratedSummary, markSummaryPending, forceMarkSummaryPending, markSummaryReady };
 }
 
 export function createFakeApplyParseResult(deps: {

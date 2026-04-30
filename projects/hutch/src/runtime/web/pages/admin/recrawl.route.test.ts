@@ -6,6 +6,7 @@ import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
+	createFakeSummaryProvider,
 } from "../../../test-app-fakes";
 
 const ADMIN_EMAIL = "ops@readplace.com";
@@ -34,12 +35,16 @@ interface RecrawlHarness {
 	auth: TestAppResult["auth"];
 	articleStore: TestAppResult["articleStore"];
 	articleCrawl: TestAppResult["articleCrawl"];
+	summary: ReturnType<typeof createFakeSummaryProvider>;
 	anonymousPublishedCalls: { url: string }[];
 }
 
 function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarness {
 	const parseArticle: ParseArticle = async () => buildParseResult();
 	const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+	// Locally-constructed summary so the harness carries the test-only
+	// `markSummaryReady` helper alongside the production-shaped bundle.
+	const summary = createFakeSummaryProvider();
 
 	// The admin route is supposed to force `crawlStatus = pending` and then
 	// publish. We want to assert the page renders in pending state, so the
@@ -63,13 +68,14 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
 			publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 		},
+		summary,
 		admin:{
  	adminEmails: options.adminEmails,
  	recrawlServiceToken: fixture.admin.recrawlServiceToken,
  },
 	});
 
-	return { app, auth, articleStore, articleCrawl, anonymousPublishedCalls };
+	return { app, auth, articleStore, articleCrawl, summary, anonymousPublishedCalls };
 }
 
 async function loginAs(
@@ -259,6 +265,37 @@ describe("Admin recrawl routes", () => {
 			expect(doc.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe(
 				"noindex, nofollow",
 			);
+		});
+
+		it("force-flips a previously ready summary back to pending so the worker regenerates the AI excerpt", async () => {
+			const harness = buildHarness({ adminEmails: [ADMIN_EMAIL] });
+			await harness.auth.createUser({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+			await harness.articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Stale Title",
+					siteName: "example.com",
+					excerpt: "Stale excerpt",
+					wordCount: 10,
+				},
+				estimatedReadTime: MinutesSchema.parse(1),
+			});
+			// Summary was generated on a prior crawl. Without the force-pending
+			// path, the save-link summarizer's cache short-circuits on `ready`
+			// and the AI excerpt is never regenerated.
+			harness.summary.markSummaryReady({
+				url: ARTICLE_URL,
+				summary: "Stale summary",
+				excerpt: "Stale excerpt blurb",
+			});
+
+			const agent = await loginAs(harness.app, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+			const response = await agent.get(`/admin/recrawl/${ENCODED}`);
+
+			expect(response.status).toBe(200);
+			const summaryAfter = await harness.summary.findGeneratedSummary(ARTICLE_URL);
+			expect(summaryAfter).toEqual({ status: "pending" });
 		});
 	});
 

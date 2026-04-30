@@ -11,6 +11,7 @@ import type { FindArticleByUrl } from "../../../providers/article-store/article-
 import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
 import type {
 	FindGeneratedSummary,
+	ForceMarkSummaryPending,
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
 import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
@@ -31,6 +32,7 @@ export interface AdminRecrawlDependencies {
 	readArticleContent: ReadArticleContent;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
+	forceMarkSummaryPending: ForceMarkSummaryPending;
 	findArticleCrawlStatus: FindArticleCrawlStatus;
 	markCrawlPending: MarkCrawlPending;
 	forceMarkCrawlPending: ForceMarkCrawlPending;
@@ -105,11 +107,13 @@ function handleRecrawlArticle(
 			return;
 		}
 
-		// Always recrawl. No cache, no TTL. Force the crawl state back to
-		// pending (even if currently `ready`) so the reader slot shows the
-		// "recrawl in progress" skeleton, then publish the command.
+		// Always recrawl. No cache, no TTL. Force both crawl and summary state
+		// back to pending (even if currently `ready`) so the reader slot shows
+		// the "recrawl in progress" skeleton AND the summary worker regenerates
+		// the AI excerpt instead of short-circuiting on its cached "ready" row,
+		// then publish the command.
 		await deps.forceMarkCrawlPending({ url: articleUrl });
-		await deps.markSummaryPending({ url: articleUrl });
+		await deps.forceMarkSummaryPending({ url: articleUrl });
 		await deps.publishSaveAnonymousLink({ url: articleUrl });
 
 		const state = await reader.resolveReaderState({
