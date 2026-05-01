@@ -28,7 +28,7 @@ import { initFetchUserCount } from "./fetch-user-count";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 
-const EMAIL_FROM = "Fayner Brack <hutch@hutch-app.com>";
+const EMAIL_FROM = "Fayner Brack <readplace@readplace.com>";
 
 interface AuthDependencies {
 	createUser: CreateUser;
@@ -172,7 +172,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 				return deps.sendEmail({
 					from: EMAIL_FROM,
 					to: email,
-					bcc: "hutch+account_verifications@hutch-app.com",
+					bcc: "readplace+account_verifications@readplace.com",
 					subject: "Verify your email — Readplace",
 					html,
 				});

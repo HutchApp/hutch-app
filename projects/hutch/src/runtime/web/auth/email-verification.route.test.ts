@@ -31,7 +31,7 @@ describe("Email verification", () => {
 			const sent = email.getSentEmails();
 			expect(sent).toHaveLength(1);
 			expect(sent[0].to).toBe("new@example.com");
-			expect(sent[0].from).toContain("hutch@hutch-app.com");
+			expect(sent[0].from).toContain("readplace@readplace.com");
 			expect(sent[0].subject).toContain("Verify");
 			expect(sent[0].html).toContain("verify-email?token=");
 		});
