@@ -87,7 +87,7 @@ flowchart TD
     Recrawl -.publish.-> SALC2
 
     %% Event bus -> SQS queues
-    Bus{{EventBridge bus<br/>readplace default-bus}}:::system
+    Bus{{EventBridge bus<br/>hutch default-bus}}:::system
     SLC --> Bus
     SLRHC --> Bus
     SALC1 --> Bus
@@ -269,7 +269,7 @@ flowchart TD
     %% DLQ path for non-terminal crash (e.g. infra error, timeout)
     DLQ[(save-link-command-dlq<br/>save-anonymous-link-dlq<br/>save-link-raw-html-command-dlq)]:::dlq
     Retry -->|exhausted| DLQ
-    DLQHandler[ReadplaceDLQEventHandler<br/>SaveLink/SaveAnonymousLink<br/>DLQ consumer]:::policy
+    DLQHandler[HutchDLQEventHandler<br/>SaveLink/SaveAnonymousLink<br/>DLQ consumer]:::policy
     DLQ --> DLQHandler
     MCF3[markCrawlFailed<br/>reason = exceeded SQS<br/>maxReceiveCount<br/>receiveCount=N]:::system
     Articles3[(DynamoDB articles<br/>crawlStatus=failed)]:::store
@@ -296,12 +296,12 @@ flowchart TD
 | Command | Published from | Bus subscriber (SQS queue) | DLQ | Emits on success | Emits on failure | Triggers next command |
 |---|---|---|---|---|---|---|
 | `SaveLinkCommand` (url, userId) | `POST /queue` (authenticated) after `markCrawlPending` / `refreshArticleIfStale` | `save-link-command` (vis 60s) → `save-link-command` Lambda → `saveLinkWork` | `save-link-command-dlq` | `LinkSavedEvent` (url, userId), `CrawlArticleCompletedEvent` (url) | Terminal parse: `markCrawlFailed` inline. DLQ: `CrawlArticleFailedEvent` (url, reason, receiveCount) | `GenerateSummaryCommand` (via `link-saved` handler) |
-| `SaveLinkRawHtmlCommand` (url, userId, title?) | `POST /queue/save-html` (authenticated browser extension) after `putPendingHtml` | `save-link-raw-html-command` (vis 60s) → `save-link-raw-html-command` Lambda — reads S3 pending-html, skips HTTP fetch | auto-pair via `ReadplaceSQSBackedLambda` | `LinkSavedEvent` | Terminal parse: `markCrawlFailed` inline. DLQ: `CrawlArticleFailedEvent` | `GenerateSummaryCommand` (via `link-saved` handler) |
+| `SaveLinkRawHtmlCommand` (url, userId, title?) | `POST /queue/save-html` (authenticated browser extension) after `putPendingHtml` | `save-link-raw-html-command` (vis 60s) → `save-link-raw-html-command` Lambda — reads S3 pending-html, skips HTTP fetch | auto-pair via `HutchSQSBackedLambda` | `LinkSavedEvent` | Terminal parse: `markCrawlFailed` inline. DLQ: `CrawlArticleFailedEvent` | `GenerateSummaryCommand` (via `link-saved` handler) |
 | `SaveAnonymousLinkCommand` (url) | `GET /view/<url>` (anonymous), or `GET /admin/recrawl/<url>` (admin, preceded by `forceMarkCrawlPending`) | `save-anonymous-link-command` (vis 60s) → `save-anonymous-link-command` Lambda → `saveLinkWork` anonymous | `save-anonymous-link-dlq` | `AnonymousLinkSavedEvent` (url), `CrawlArticleCompletedEvent` (url) | Terminal parse: `markCrawlFailed` inline. DLQ: `CrawlArticleFailedEvent` | `GenerateSummaryCommand` (via `anonymous-link-saved` handler) |
 | `LinkSavedEvent` | emitted by `saveLinkWork` after `markCrawlReady` | `link-saved` (vis 60s) → `link-saved` Lambda | auto-pair | (dispatches) | (dispatches) | `GenerateSummaryCommand` onto `generate-summary` queue (out-of-scope, [`../2026-04-20-52017f3/`](../2026-04-20-52017f3/)) |
 | `AnonymousLinkSavedEvent` | emitted by anonymous `saveLinkWork` after `markCrawlReady` | `anonymous-link-saved` (vis 60s) → `anonymous-link-saved` Lambda | auto-pair | (dispatches) | (dispatches) | `GenerateSummaryCommand` onto `generate-summary` queue |
 | `CrawlArticleCompletedEvent` | emitted alongside `LinkSavedEvent` / `AnonymousLinkSavedEvent` | — (observed only) | — | — | — | — (signals Tier 1+ health canary + dashboards that crawl reached ready) |
-| `CrawlArticleFailedEvent` | emitted by `ReadplaceDLQEventHandler` after DLQ arrival **or** inline on terminal parse (via the same publish path in the DLQ handler scope) | parse-errors log consumers, admin alertEmail via CloudWatch alarm on DLQ | — | — | — | — (terminal; user must retry via admin recrawl) |
+| `CrawlArticleFailedEvent` | emitted by `HutchDLQEventHandler` after DLQ arrival **or** inline on terminal parse (via the same publish path in the DLQ handler scope) | parse-errors log consumers, admin alertEmail via CloudWatch alarm on DLQ | — | — | — | — (terminal; user must retry via admin recrawl) |
 | `RefreshArticleContentCommand` (url, metadata, etag?, lastModified?, contentFetchedAt) | emitted by `refreshArticleIfStale` when re-saving a URL whose content window has expired | `refresh-article-content` (vis 60s) → `refresh-article-content` Lambda | auto-pair | (updates DynamoDB metadata) | — | — (side flow from web UI resave) |
 | `UpdateFetchTimestampCommand` (url, contentFetchedAt) | emitted at the end of `saveLinkWork` (on happy path) | `update-fetch-timestamp` (vis 60s) → `update-fetch-timestamp` Lambda | auto-pair | (updates DynamoDB fetch timestamps) | — | — |
 
@@ -311,9 +311,9 @@ flowchart TD
 
 **1. Entry & stub write.** The web layer creates or updates a hostname-only "stub" row in DynamoDB (`crawlStatus=pending`, minimal metadata). The stub exists so the reader UI (`/view`, `/read`) can render *something* immediately while the async pipeline catches up. The admin endpoint uses `forceMarkCrawlPending` — unlike regular `markCrawlPending`, it allows a `ready → pending` regression so an operator can force a re-crawl after fixing a pre-parser or canary.
 
-**2. Command publish.** Each entry publishes exactly one of three commands to the EventBridge default bus (defined in `@packages/readplace-infra-components/src/events.ts`). The bus routes by `source` + `detailType`.
+**2. Command publish.** Each entry publishes exactly one of three commands to the EventBridge default bus (defined in `@packages/hutch-infra-components/src/events.ts`). The bus routes by `source` + `detailType`.
 
-**3. SQS queue + Lambda worker.** `ReadplaceSQSBackedLambda` wires each command's queue to a Lambda, with a DLQ attached and a CloudWatch alarm on DLQ arrival pointing at `alertEmail`. Visibility timeouts are 60s for every save-link queue (300s for `generate-summary`, which is the downstream summary pipeline).
+**3. SQS queue + Lambda worker.** `HutchSQSBackedLambda` wires each command's queue to a Lambda, with a DLQ attached and a CloudWatch alarm on DLQ arrival pointing at `alertEmail`. Visibility timeouts are 60s for every save-link queue (300s for `generate-summary`, which is the downstream summary pipeline).
 
 **4. Content acquisition.** Tier 0 (`SaveLinkRawHtmlCommand`) fetches the extension-captured DOM from the `pending-html` S3 bucket — no HTTP fetch required, so Cloudflare/Fastly edge sniffing is bypassed entirely. Tier 1+ (`SaveLinkCommand`, `SaveAnonymousLinkCommand`) calls `crawlArticle`, which:
 - Special-cases x.com/twitter.com via Twitter's oembed API (the JS app shell has no crawlable content).
@@ -337,7 +337,7 @@ flowchart TD
 ## Data stores
 
 - **DynamoDB `articles`** — global table, PK = `url`. Crawl state attributes: `crawlStatus ∈ {pending, ready, failed}`, `crawlFailureReason`, `crawlFailedAt`, `contentFetchedAt`, `etag`, `lastModified`, `contentLocation` (S3 pointer). Content metadata: `title`, `siteName`, `excerpt`, `wordCount`, `estimatedReadTime`, `imageUrl`. Summary state attributes (managed by the summary pipeline) also live here: `summaryStatus`, `summary*`.
-- **S3 `content-bucket`** — canonical parsed HTML and downloaded media. Keys: `articles/<articleResourceUniqueId>/content.html`, `articles/<articleResourceUniqueId>/images/<hash>.<ext>`. Served via the `content-media` CloudFront CDN (`ReadplaceS3ContentMediaCDN`).
+- **S3 `content-bucket`** — canonical parsed HTML and downloaded media. Keys: `articles/<articleResourceUniqueId>/content.html`, `articles/<articleResourceUniqueId>/images/<hash>.<ext>`. Served via the `content-media` CloudFront CDN (`HutchS3ContentMediaCDN`).
 - **S3 `pending-html-bucket`** — staging for extension-captured raw DOM. Lifecycle-rule-eligible (can expire aggressively because it's not canonical). Read by the `save-link-raw-html-command` Lambda only.
 
 ## Queues (all under the `save-link` Pulumi stack)
@@ -370,18 +370,18 @@ flowchart TD
 
 | Concern | Path |
 |---|---|
-| Event / command schemas | `src/packages/readplace-infra-components/src/events.ts` |
+| Event / command schemas | `src/packages/hutch-infra-components/src/events.ts` |
 | Pulumi wiring (queues, Lambdas, DLQs, bus subs) | `projects/save-link/src/infra/index.ts` |
 | Core worker | `projects/save-link/src/save-link/save-link-work.ts` |
 | Parser + pre-parser plugin system + Readability try/catch | `projects/save-link/src/article-parser/readability-parser.ts` |
-| The Information pre-parser (example plugin) | `projects/readplace/src/runtime/providers/article-parser/the-information-pre-parser.ts` |
+| The Information pre-parser (example plugin) | `projects/hutch/src/runtime/providers/article-parser/the-information-pre-parser.ts` |
 | Tier 1+ HTTP waterfall | `src/packages/crawl-article/src/crawl-article.ts` |
 | H2 fallback wrapper | `src/packages/crawl-article/src/h2-fetch.ts` |
 | AIA chasing wrapper | `src/packages/crawl-article/src/aia-fetch.ts` |
 | DynamoDB state transitions | `projects/save-link/src/crawl-article-state/dynamodb-article-crawl.ts` |
 | SaveLink DLQ handler | `projects/save-link/src/crawl-article-state/save-link-dlq-handler.ts` |
 | SaveAnonymousLink DLQ handler | `projects/save-link/src/crawl-article-state/save-anonymous-link-dlq-handler.ts` |
-| Web entry: authenticated save | `projects/readplace/src/runtime/web/pages/queue/queue.page.ts` (`POST /queue`, `POST /queue/save-html`) |
-| Web entry: anonymous view | `projects/readplace/src/runtime/web/pages/view/view.page.ts` |
-| Web entry: admin recrawl | `projects/readplace/src/runtime/web/pages/admin/recrawl.page.ts` |
+| Web entry: authenticated save | `projects/hutch/src/runtime/web/pages/queue/queue.page.ts` (`POST /queue`, `POST /queue/save-html`) |
+| Web entry: anonymous view | `projects/hutch/src/runtime/web/pages/view/view.page.ts` |
+| Web entry: admin recrawl | `projects/hutch/src/runtime/web/pages/admin/recrawl.page.ts` |
 | Crawler health canary | `src/packages/crawl-article/scripts/health-sources.js` |

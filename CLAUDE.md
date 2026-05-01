@@ -10,7 +10,7 @@
 
 ### Imports are manual via email
 
-There is no in-app import. Users email Fayner their export file and he runs the import manually (24–48h turnaround — see [pocket-migration.md](./projects/readplace/src/runtime/web/pages/blog/posts/pocket-migration.md) for the user-facing copy). The absence is intentional: do not build a self-serve import flow, do not describe import as a shipped feature without qualifying it's a manual email process, and do not restore the removed "Import Your Data" landing page card.
+There is no in-app import. Users email Fayner their export file and he runs the import manually (24–48h turnaround — see [pocket-migration.md](./projects/hutch/src/runtime/web/pages/blog/posts/pocket-migration.md) for the user-facing copy). The absence is intentional: do not build a self-serve import flow, do not describe import as a shipped feature without qualifying it's a manual email process, and do not restore the removed "Import Your Data" landing page card.
 
 ### Crawler Health Canary Is Load-Bearing
 
@@ -42,11 +42,11 @@ Never import from another project using relative filesystem paths (e.g., `../../
 
 ```typescript
 // BAD - Invisible sideways dependency
-const mod = path.resolve(__dirname, "../../../../readplace/dist/runtime/test-app");
+const mod = path.resolve(__dirname, "../../../../hutch/dist/runtime/test-app");
 const { createTestApp } = await import(mod);
 
 // GOOD - Declared workspace dependency
-const { createTestApp } = await import("readplace-test-app");
+const { createTestApp } = await import("hutch-test-app");
 ```
 
 ### Filter and Query Testing Strategy
@@ -65,7 +65,7 @@ E2E tests have ~11s startup overhead per test (browser, server, navigation). Int
 
 ### Environment Variable Access
 
-Use `requireEnv` and `getEnv` from [projects/readplace/src/require-env.ts](projects/readplace/src/require-env.ts). Never use `process.env` directly.
+Use `requireEnv` and `getEnv` from [projects/hutch/src/require-env.ts](projects/hutch/src/require-env.ts). Never use `process.env` directly.
 
 ```typescript
 // BAD - Direct process.env access
@@ -189,17 +189,17 @@ Never default a logger dependency to `noopLogger` in production code. A missing 
 
 ```typescript
 // BAD - Silent failure in production
-function createWidget(deps?: { logger?: ReadplaceLogger }) {
+function createWidget(deps?: { logger?: HutchLogger }) {
 	const logger = deps?.logger ?? noopLogger;
 }
 
 // GOOD - Logger is required
-function createWidget(deps: { logger: ReadplaceLogger }) {
+function createWidget(deps: { logger: HutchLogger }) {
 	const logger = deps.logger;
 }
 
 // GOOD - noopLogger in tests
-const widget = createWidget({ logger: ReadplaceLogger.from(noopLogger) });
+const widget = createWidget({ logger: HutchLogger.from(noopLogger) });
 ```
 
 ### Use `assert` for Runtime Invariants
@@ -388,7 +388,7 @@ See the [git-commit skill](./.claude/skills/git-commit/SKILL.md) for pre-commit 
 
 ### Project Structure
 
-Monorepo at the repository root. Main application lives in `projects/readplace/src/` with two top-level directories:
+Monorepo at the repository root. Main application lives in `projects/hutch/src/` with two top-level directories:
 
 - `src/runtime/` — Application code (Express SSR app and Lambda entry points)
 - `src/infra/` — Infrastructure as Code (Pulumi)

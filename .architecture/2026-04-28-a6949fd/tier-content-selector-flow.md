@@ -275,7 +275,7 @@ flowchart TD
     QSAL -. exceed .-> DLQ3
     QSel -. exceed .-> DLQ4
 
-    %% DLQ handlers (same ReadplaceDLQEventHandler shape; entry point ./src/runtime/<name>.main.ts)
+    %% DLQ handlers (same HutchDLQEventHandler shape; entry point ./src/runtime/<name>.main.ts)
     DH1[save-link-dlq Lambda]:::system
     DH2[save-link-raw-html-dlq Lambda]:::system
     DH3[save-anonymous-link-dlq Lambda]:::system
@@ -356,7 +356,7 @@ This is the diff from the earlier `bfd85c7` (Tier 0 raw-html flow) and `d5f38258
 | New S3 sidecar | — | **`articles/<id>/sources/<tier>.metadata.json`.** Carries title, siteName, excerpt, wordCount, estimatedReadTime, imageUrl. |
 | Recrawl semantics | Tier 1-only — overwrote canonical even when a strictly-better Tier 0 source existed | **Tier 0 sources are reconsidered automatically.** `forceMarkCrawlPending` + the existing `SaveAnonymousLinkCommand` path now dispatches the selector, which sees both tiers and picks. |
 | Admin UI | No tier indication | **`AdminRecrawlPage` renders a tier badge** (`Showing Tier 0 (extension capture)` / `Tier 1 (HTTP crawl)` / `Tier 1 (legacy)`). |
-| Failure topology | 3 worker DLQs | **4 DLQs (3 worker + 1 selector), all `ReadplaceDLQEventHandler`-shaped.** All four emit `CrawlArticleFailedEvent`. |
+| Failure topology | 3 worker DLQs | **4 DLQs (3 worker + 1 selector), all `HutchDLQEventHandler`-shaped.** All four emit `CrawlArticleFailedEvent`. |
 
 ---
 
@@ -364,7 +364,7 @@ This is the diff from the earlier `bfd85c7` (Tier 0 raw-html flow) and `d5f38258
 
 | Concern | Path |
 |---|---|
-| New event definition | `src/packages/readplace-infra-components/src/events.ts` (`TierContentExtractedEvent`) |
+| New event definition | `src/packages/hutch-infra-components/src/events.ts` (`TierContentExtractedEvent`) |
 | Tier S3 key helper | `src/packages/article-resource-unique-id/src/index.ts` (`toS3SourceMetadataKey`) |
 | Tier source storage providers | `projects/save-link/src/select-content/{put,read,list-available-}tier-source*.ts`, `tier{,-source}.types.ts` |
 | Selector core | `projects/save-link/src/select-content/select-content.ts`, `select-content-prompt.ts` (variadic candidates) |
@@ -379,7 +379,7 @@ This is the diff from the earlier `bfd85c7` (Tier 0 raw-html flow) and `d5f38258
 | Tier 0 worker | `projects/save-link/src/save-link-raw-html/save-link-raw-html-command-handler.ts` |
 | Shared Tier 1 work | `projects/save-link/src/save-link/save-link-work.ts` (writes tier-1 source via `putTierSource`) |
 | Pulumi wiring | `projects/save-link/src/infra/index.ts` (new selector Lambda + queue + DLQ + DLQ handler) |
-| `contentSourceTier` Dynamo codec | `projects/readplace/src/runtime/providers/article-store/dynamodb-article-store.ts` |
-| `GlobalArticleData` type | `projects/readplace/src/runtime/providers/article-store/article-store.types.ts` |
-| Admin recrawl UI | `projects/readplace/src/runtime/web/pages/admin/recrawl.component.ts`, `recrawl.styles.ts`, `recrawl.page.ts` |
-| Recrawl badge route test | `projects/readplace/src/runtime/web/pages/admin/recrawl.route.test.ts` |
+| `contentSourceTier` Dynamo codec | `projects/hutch/src/runtime/providers/article-store/dynamodb-article-store.ts` |
+| `GlobalArticleData` type | `projects/hutch/src/runtime/providers/article-store/article-store.types.ts` |
+| Admin recrawl UI | `projects/hutch/src/runtime/web/pages/admin/recrawl.component.ts`, `recrawl.styles.ts`, `recrawl.page.ts` |
+| Recrawl badge route test | `projects/hutch/src/runtime/web/pages/admin/recrawl.route.test.ts` |

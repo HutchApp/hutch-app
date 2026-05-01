@@ -218,7 +218,7 @@ flowchart TD
 
 ## Failure paths — retry, DLQ, crawl-failed
 
-Readability parse throws and S3/Dynamo/Deepseek transient errors all propagate as thrown exceptions out of the worker. SQS retries the message up to `maxReceiveCount` (3 by default for `ReadplaceSQSBackedLambda`); after that the message lands in the DLQ. The DLQ handler is a thin reaction that marks the article failed and publishes a `CrawlArticleFailed` event, mirroring the same shape the Tier 1 (`save-link-dlq`) handler uses — the UI layer consumes the event regardless of which tier produced the failure.
+Readability parse throws and S3/Dynamo/Deepseek transient errors all propagate as thrown exceptions out of the worker. SQS retries the message up to `maxReceiveCount` (3 by default for `HutchSQSBackedLambda`); after that the message lands in the DLQ. The DLQ handler is a thin reaction that marks the article failed and publishes a `CrawlArticleFailed` event, mirroring the same shape the Tier 1 (`save-link-dlq`) handler uses — the UI layer consumes the event regardless of which tier produced the failure.
 
 ![Failure paths](diagrams/failure-paths.svg)
 

@@ -20,22 +20,22 @@ Infrastructure code must not branch on environment names (e.g., `if (stage === "
 
 ## Every Lambda Must Be Backed by a Queue with DLQ
 
-Every Lambda must be invoked through an SQS queue redriving to a DLQ. Use the reusable components from `@packages/readplace-infra-components/infra` — discover them with `grep -l "export class Readplace" src/packages/readplace-infra-components/src/infra/`.
+Every Lambda must be invoked through an SQS queue redriving to a DLQ. Use the reusable components from `@packages/hutch-infra-components/infra` — discover them with `grep -l "export class Hutch" src/packages/hutch-infra-components/src/infra/`.
 
 | Use case | Component |
 |---|---|
-| Async worker (Command or Event handler) | `ReadplaceSQSBackedLambda` — pairs a `ReadplaceLambda` with a `ReadplaceSQS` (queue + DLQ + SNS alarm + email subscription) |
-| Failure-state transition driven by DLQ exhaustion | `ReadplaceDLQEventHandler` — Lambda fed by an existing `ReadplaceSQS.dlqArn` |
+| Async worker (Command or Event handler) | `HutchSQSBackedLambda` — pairs a `HutchLambda` with a `HutchSQS` (queue + DLQ + SNS alarm + email subscription) |
+| Failure-state transition driven by DLQ exhaustion | `HutchDLQEventHandler` — Lambda fed by an existing `HutchSQS.dlqArn` |
 
 **Why:** Naked Lambdas drop messages on transient failure and leave no observable trail. The reusable components wire the redrive policy + CloudWatch alarm + SNS email subscription as a single unit, so DLQ arrivals always page the operator.
 
-**How to apply:** Never instantiate `aws.lambda.Function` directly outside the `readplace-infra-components` package — `grep` for it before writing new infra code. Always pair a new `ReadplaceLambda` with `ReadplaceSQSBackedLambda`. When the work source is EventBridge, follow with `eventBus.subscribe(EventOrCommand, lambdaWithSQS)`.
+**How to apply:** Never instantiate `aws.lambda.Function` directly outside the `hutch-infra-components` package — `grep` for it before writing new infra code. Always pair a new `HutchLambda` with `HutchSQSBackedLambda`. When the work source is EventBridge, follow with `eventBus.subscribe(EventOrCommand, lambdaWithSQS)`.
 
 **Allowed exception:** a synchronous request/response Lambda fronted by API Gateway. API Gateway is the queue analogue and 5xx surfaces the failure to the client. Document any new exception inline with a `Why:` comment in the infra file that creates it.
 
 ## Command → System → Event(s) Pattern
 
-Every non-trivial process must be modelled as **Command → System → Event(s)**, with events flowing over EventBridge. Commands and events are defined as global, shared types in the `@packages/readplace-infra-components` package via `defineEvent` / `defineCommand`. Discover the current catalogue with `grep -E "defineEvent|defineCommand" src/packages/readplace-infra-components/src/`.
+Every non-trivial process must be modelled as **Command → System → Event(s)**, with events flowing over EventBridge. Commands and events are defined as global, shared types in the `@packages/hutch-infra-components` package via `defineEvent` / `defineCommand`. Discover the current catalogue with `grep -E "defineEvent|defineCommand" src/packages/hutch-infra-components/src/`.
 
 | Concept | Naming | Dispatch |
 |---|---|---|

@@ -33,15 +33,15 @@ The icon is a serif **"&"** (ampersand) in white, centred on a navy (`#2B3A55`) 
 
 ### Assets
 
-Icon assets live in `/projects/readplace/static-assets/` and `/projects/firefox-extension/src/icons/`.
+Icon assets live in `/projects/hutch/static-assets/` and `/projects/firefox-extension/src/icons/`.
 
 | Asset | Sizes available | Location |
 |---|---|---|
-| **Favicon** | 16, 32, 48, 96px + `.ico` | `projects/readplace/static-assets/favicon-*.png` |
-| **Apple Touch Icon** | 57–180px (multiple sizes) | `projects/readplace/static-assets/apple-touch-icon-*.png` |
-| **Android Chrome** | 48–512px + maskable variants | `projects/readplace/static-assets/android-chrome-*.png` |
-| **Windows Tile** | 70, 150, 310×150, 310px | `projects/readplace/static-assets/mstile-*.png` |
-| **Social cards** | 1200×630 (OG), 1200×600 (Twitter) | `projects/readplace/static-assets/og-image-*.png`, `twitter-card-*.png` |
+| **Favicon** | 16, 32, 48, 96px + `.ico` | `projects/hutch/static-assets/favicon-*.png` |
+| **Apple Touch Icon** | 57–180px (multiple sizes) | `projects/hutch/static-assets/apple-touch-icon-*.png` |
+| **Android Chrome** | 48–512px + maskable variants | `projects/hutch/static-assets/android-chrome-*.png` |
+| **Windows Tile** | 70, 150, 310×150, 310px | `projects/hutch/static-assets/mstile-*.png` |
+| **Social cards** | 1200×630 (OG), 1200×600 (Twitter) | `projects/hutch/static-assets/og-image-*.png`, `twitter-card-*.png` |
 | **Extension icon** | 16–128px | `projects/firefox-extension/src/icons/icon-*.png` |
 
 ### Usage Rules
@@ -57,7 +57,7 @@ Icon assets live in `/projects/readplace/static-assets/` and `/projects/firefox-
 
 ## Colour Palette
 
-> **Source of truth:** `projects/readplace/src/runtime/web/base.styles.ts`
+> **Source of truth:** `projects/hutch/src/runtime/web/base.styles.ts`
 
 ### Primary Colours
 
@@ -126,7 +126,7 @@ The Firefox extension uses a slightly different palette tuned for small popup co
 
 ## Typography
 
-> **Source of truth:** `projects/readplace/src/runtime/web/base.styles.ts` (body font), `projects/readplace/src/runtime/web/base.template.html` (font loading)
+> **Source of truth:** `projects/hutch/src/runtime/web/base.styles.ts` (body font), `projects/hutch/src/runtime/web/base.template.html` (font loading)
 
 ### Typefaces in Use
 

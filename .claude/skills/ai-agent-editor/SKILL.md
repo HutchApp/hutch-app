@@ -18,7 +18,7 @@ AI agents can inspect the codebase. Guide the agent to discover information rath
 type PageComponent = { head: HeadComponent; ... }
 
 <!-- ✅ GOOD - References source -->
-See [projects/readplace/src/web/component.types.ts](projects/readplace/src/web/component.types.ts)
+See [projects/hutch/src/web/component.types.ts](projects/hutch/src/web/component.types.ts)
 ```
 
 ### Reference Commands, Don't Explain Them
@@ -39,7 +39,7 @@ The booking ID uses a 31-character set and weighted sum algorithm...
 
 <!-- ✅ GOOD -->
 The booking ID excludes 0, O, 1, I, L to avoid confusion when read over the phone.
-See `projects/readplace/src/domain/booking-id.ts` for implementation.
+See `projects/hutch/src/domain/booking-id.ts` for implementation.
 ```
 
 ## When to Include Code Examples

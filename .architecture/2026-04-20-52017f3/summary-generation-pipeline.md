@@ -16,7 +16,7 @@ Entry points traced:
 - Generator: `projects/save-link/src/generate-summary/generate-summary-handler.ts`.
 - DLQ consumer: `projects/save-link/src/generate-summary/generate-summary-dlq-handler.ts`.
 - Terminal failure handler: `projects/save-link/src/generate-summary/summary-generation-failed-handler.ts`.
-- Reader UI polling routes: `GET /view/summary` and `GET /queue/:id/summary` in `projects/readplace/src/runtime/web/pages/`.
+- Reader UI polling routes: `GET /view/summary` and `GET /queue/:id/summary` in `projects/hutch/src/runtime/web/pages/`.
 
 ---
 
@@ -58,8 +58,8 @@ flowchart LR
 ```mermaid
 flowchart TD
     subgraph Upstream
-        linkSavedEvent([LinkSavedEvent<br/>source: readplace.save-link<br/>detailType: LinkSaved]):::event
-        anonSavedEvent([AnonymousLinkSavedEvent<br/>source: readplace.save-link<br/>detailType: AnonymousLinkSaved]):::event
+        linkSavedEvent([LinkSavedEvent<br/>source: hutch.save-link<br/>detailType: LinkSaved]):::event
+        anonSavedEvent([AnonymousLinkSavedEvent<br/>source: hutch.save-link<br/>detailType: AnonymousLinkSaved]):::event
         linkSavedQ[[link-saved SQS<br/>vis: 60s · maxReceive: 3]]:::queue
         anonSavedQ[[anonymous-link-saved SQS<br/>vis: 60s · maxReceive: 3]]:::queue
         linkSavedLambda[link-saved Lambda<br/>dispatchGenerateSummary]:::system
@@ -92,7 +92,7 @@ flowchart TD
     skipDecision -- no · proceed --> saveReady[saveGeneratedSummary<br/>sets summary + status=ready<br/>REMOVE summaryFailureReason]:::system
     saveReady --> articlesTable
 
-    summaryGeneratedEvt([SummaryGeneratedEvent<br/>source: readplace.save-link<br/>detailType: GlobalSummaryGenerated<br/>detail: url, inputTokens, outputTokens]):::event
+    summaryGeneratedEvt([SummaryGeneratedEvent<br/>source: hutch.save-link<br/>detailType: GlobalSummaryGenerated<br/>detail: url, inputTokens, outputTokens]):::event
     saveReady -- publishEvent --> summaryGeneratedEvt
 
     summaryGeneratedQ[[summary-generated SQS<br/>vis: 60s]]:::queue
@@ -137,12 +137,12 @@ flowchart TD
     generateQ --> generateLambda
     throw -- receiveCount = 3 --> generateDlq
 
-    dlqLambda[generate-summary-dlq Lambda<br/>ReadplaceDLQEventHandler<br/>batchSize: 1]:::system
+    dlqLambda[generate-summary-dlq Lambda<br/>HutchDLQEventHandler<br/>batchSize: 1]:::system
     articlesTable[(DynamoDB: articles)]:::store
     generateDlq -- EventSourceMapping --> dlqLambda
     dlqLambda -- markSummaryFailed<br/>reason: exceeded SQS maxReceiveCount --> articlesTable
 
-    summaryFailedEvt([SummaryGenerationFailedEvent<br/>source: readplace.save-link<br/>detailType: SummaryGenerationFailed<br/>detail: url, reason, receiveCount]):::event
+    summaryFailedEvt([SummaryGenerationFailedEvent<br/>source: hutch.save-link<br/>detailType: SummaryGenerationFailed<br/>detail: url, reason, receiveCount]):::event
     dlqLambda -- publishEvent --> summaryFailedEvt
 
     summaryFailedQ[[summary-generation-failed SQS<br/>vis: 60s]]:::queue
@@ -165,8 +165,8 @@ flowchart TD
 
 ### Notes
 
-- **Retry budget = 3.** `ReadplaceSqsQueue` defaults `dlqMaxReceiveCount = 3`. `generate-summary` does not override it, so a message exits to the DLQ on the third failed receive.
-- **DLQ handler's two jobs.** (1) Flip the DynamoDB row from `pending` to `failed` with a recorded reason. (2) Emit a domain event so other subscribers can react. The Lambda is provisioned by the reusable `ReadplaceDLQEventHandler` component, which wires a one-at-a-time `EventSourceMapping`, grants `dynamodb:UpdateItem` and `events:PutEvents`, and requires no runtime knobs.
+- **Retry budget = 3.** `HutchSqsQueue` defaults `dlqMaxReceiveCount = 3`. `generate-summary` does not override it, so a message exits to the DLQ on the third failed receive.
+- **DLQ handler's two jobs.** (1) Flip the DynamoDB row from `pending` to `failed` with a recorded reason. (2) Emit a domain event so other subscribers can react. The Lambda is provisioned by the reusable `HutchDLQEventHandler` component, which wires a one-at-a-time `EventSourceMapping`, grants `dynamodb:UpdateItem` and `events:PutEvents`, and requires no runtime knobs.
 - **Terminal handler observability.** Writes a structured record to the shared `parse-errors` CloudWatch stream with `source: generate-summary`. A dashboard widget aggregates parse-errors across producers, so summary failures show up alongside content-parse failures without a dedicated metric.
 - **`markSummaryFailed` guard.** The write uses `ConditionExpression: status IN (undefined, pending, failed)`. It will not clobber a `ready` or `skipped` row — important if a stale DLQ message arrives after a later successful retry (e.g. redrive via the console).
 
@@ -180,7 +180,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    readerRoutes[Readplace reader routes<br/>GET /queue/:id/read<br/>GET /view/:encodedUrl]:::system
+    readerRoutes[Hutch reader routes<br/>GET /queue/:id/read<br/>GET /view/:encodedUrl]:::system
     markPending[markSummaryPending<br/>status: undefined or pending only]:::system
     articlesTable[(DynamoDB: articles)]:::store
     readerPage[ReaderPage / ViewPage<br/>renderSummarySlot]:::system
@@ -240,7 +240,7 @@ flowchart TD
 | `AnonymousLinkSavedEvent` | `anonymous-link-saved` Lambda | — | `GenerateSummaryCommand` (via SQS SendMessage) |
 | `GenerateSummaryCommand` | `generate-summary` Lambda (via link-summariser + DeepSeek) | `SummaryGeneratedEvent` on success; none on skip (DB-only); none on throw (SQS retries) | — |
 | `SummaryGeneratedEvent` | `summary-generated` Lambda | — | — (sink / hook point) |
-| SQS retry exhaustion (3 receives) | `generate-summary-dlq` Lambda (`ReadplaceDLQEventHandler`) | `SummaryGenerationFailedEvent` | — |
+| SQS retry exhaustion (3 receives) | `generate-summary-dlq` Lambda (`HutchDLQEventHandler`) | `SummaryGenerationFailedEvent` | — |
 | `SummaryGenerationFailedEvent` | `summary-generation-failed` Lambda | — (writes `parse-errors` log) | — |
 | `GET /view/:encodedUrl` · `GET /queue/:id/read` | `view.page.ts` · `queue.page.ts` | — | Side effect on page render: `markSummaryPending` |
 | `GET /view/summary?url=&poll=` · `GET /queue/:id/summary?poll=` | same | — | — (read-only; returns slot fragment; optionally re-arms hx-get for next poll) |
@@ -251,10 +251,10 @@ flowchart TD
 
 | Event | `source` | `detailType` | Detail schema |
 |---|---|---|---|
-| `LinkSavedEvent` | `readplace.save-link` | `LinkSaved` | `{ url: string, userId: string }` |
-| `AnonymousLinkSavedEvent` | `readplace.save-link` | `AnonymousLinkSaved` | `{ url: string }` |
-| `SummaryGeneratedEvent` | `readplace.save-link` | `GlobalSummaryGenerated` | `{ url: string, inputTokens: number, outputTokens: number }` |
-| `SummaryGenerationFailedEvent` | `readplace.save-link` | `SummaryGenerationFailed` | `{ url: string, reason: string, receiveCount: number }` |
+| `LinkSavedEvent` | `hutch.save-link` | `LinkSaved` | `{ url: string, userId: string }` |
+| `AnonymousLinkSavedEvent` | `hutch.save-link` | `AnonymousLinkSaved` | `{ url: string }` |
+| `SummaryGeneratedEvent` | `hutch.save-link` | `GlobalSummaryGenerated` | `{ url: string, inputTokens: number, outputTokens: number }` |
+| `SummaryGenerationFailedEvent` | `hutch.save-link` | `SummaryGenerationFailed` | `{ url: string, reason: string, receiveCount: number }` |
 | `GenerateSummaryCommand` | — (command, no source/detailType — sent via SQS SendMessage) | — | `{ url: string }` |
 
 > Wire names are deployment contracts. Renaming `source` or `detailType` requires coordinated redeploy of every publisher and subscriber.
@@ -279,4 +279,4 @@ Conditional writes (producer side, `projects/save-link/src/generate-summary/dyna
 - `markSummarySkipped`: only if status is absent or `pending`.
 - `saveGeneratedSummary`: unconditional write + REMOVE `summaryFailureReason`.
 
-The reader side (readplace, `projects/readplace/src/runtime/providers/article-summary/dynamodb-generated-summary.ts`) exposes `findGeneratedSummary` (returns the discriminated-union `GeneratedSummary`) and `markSummaryPending` (same guard as producer) — it never transitions the row into a terminal state.
+The reader side (hutch, `projects/hutch/src/runtime/providers/article-summary/dynamodb-generated-summary.ts`) exposes `findGeneratedSummary` (returns the discriminated-union `GeneratedSummary`) and `markSummaryPending` (same guard as producer) — it never transitions the row into a terminal state.
