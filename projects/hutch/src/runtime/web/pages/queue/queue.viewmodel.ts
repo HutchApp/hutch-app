@@ -52,6 +52,7 @@ export interface QueueViewModel {
 		next?: string;
 	};
 	saveError?: string;
+	importFlash?: string;
 }
 
 function formatRelativeDate(date: Date, now: Date): string {
@@ -141,6 +142,7 @@ export function toQueueViewModel(
 	options?: {
 		now?: Date;
 		saveError?: string;
+		importFlash?: string;
 		unreadCount?: number;
 		totalArticles?: number;
 		summaryByUrl?: ReadonlyMap<string, GeneratedSummary | undefined>;
@@ -179,5 +181,6 @@ export function toQueueViewModel(
 					: undefined,
 		},
 		saveError: options?.saveError,
+		importFlash: options?.importFlash,
 	};
 }

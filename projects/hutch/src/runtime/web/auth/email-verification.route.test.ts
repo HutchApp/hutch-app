@@ -16,6 +16,7 @@ import { initInMemoryStripeCheckout } from "../../providers/stripe-checkout/in-m
 import { initInMemoryPendingSignup } from "../../providers/pending-signup/in-memory-pending-signup";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
+import { initInMemoryImportSession } from "../../providers/import-session/in-memory-import-session";
 import { createApp } from "../../server";
 import { httpErrorMessageMapping } from "../pages/queue/queue.error";
 import { completeStripeSignup } from "./test-helpers/complete-stripe-signup";
@@ -89,6 +90,7 @@ describe("Email verification", () => {
 				putPendingHtml: async () => {},
 				httpErrorMessageMapping,
 				logParseError: () => {},
+				importSessionStore: initInMemoryImportSession({ now: () => new Date() }),
 				now: () => new Date(),
 			});
 

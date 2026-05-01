@@ -81,6 +81,28 @@
   margin-bottom: 16px;
 }
 
+.queue__import-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 0.875rem;
+}
+
+.queue__import-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.queue__import-flash {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: -8px;
+  margin-bottom: 16px;
+}
+
 .queue__filters {
   display: flex;
   gap: 4px;

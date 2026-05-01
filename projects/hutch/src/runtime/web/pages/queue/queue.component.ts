@@ -43,6 +43,7 @@ interface QueueDisplayModel {
 	total: number;
 	pluralSuffix: string;
 	saveError?: string;
+	importFlash?: string;
 	isEmpty: boolean;
 	hasArticles: boolean;
 	onboardingHtml: string;
@@ -90,6 +91,7 @@ function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: 
 		total: vm.total,
 		pluralSuffix: vm.total !== 1 ? "s" : "",
 		saveError: vm.saveError,
+		importFlash: vm.importFlash,
 		isEmpty: vm.isEmpty,
 		hasArticles: !vm.isEmpty,
 		onboardingHtml,

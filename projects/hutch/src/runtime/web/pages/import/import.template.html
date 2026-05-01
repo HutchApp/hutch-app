@@ -1,0 +1,31 @@
+    <main class="import">
+      <h1 class="import__title">Review imported links</h1>
+      <p class="import__summary" data-test-import-summary>{{totalSelected}} of {{totalUrls}} selected</p>
+      {{#if truncated}}
+      <p class="import__truncated-banner" data-test-import-truncated>Your file contained more than {{totalUrls}} links. We&rsquo;ve imported the first {{totalUrls}}.</p>
+      {{/if}}
+      <form class="import__commit-form" method="POST" action="{{commitUrl}}" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-form="import-commit">
+        <button class="import__commit-btn" type="submit" data-test-action="import-commit">Import {{totalSelected}} selected</button>
+      </form>
+      <ul class="import__list" data-test-import-list>
+        {{#each rows}}
+        <li class="import__row" data-test-import-row="{{index}}">
+          <form method="POST" action="{{../toggleUrl}}" class="import__row-form" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none">
+            <input type="hidden" name="index" value="{{index}}">
+            <input type="hidden" name="checked" value="{{#if checked}}false{{else}}true{{/if}}">
+            <label class="import__row-label">
+              <input type="checkbox" name="confirm" {{#if checked}}checked{{/if}} onclick="this.form.requestSubmit()" data-test-import-checkbox="{{index}}">
+              <span class="import__row-url" data-test-import-url>{{url}}</span>
+            </label>
+          </form>
+        </li>
+        {{/each}}
+      </ul>
+      {{#if showPagination}}
+      <nav class="import__pagination" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-import-pagination>
+        {{#if hasPrev}}<a class="import__pagination-link" href="{{prevUrl}}" data-test-import-pagination-prev>← Previous</a>{{/if}}
+        <span class="import__pagination-info">Page {{currentPage}} of {{totalPages}}</span>
+        {{#if hasNext}}<a class="import__pagination-link" href="{{nextUrl}}" data-test-import-pagination-next>Next →</a>{{/if}}
+      </nav>
+      {{/if}}
+    </main>

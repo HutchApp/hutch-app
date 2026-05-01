@@ -80,6 +80,7 @@ import type {
 import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
 import type { ValidateAccessToken } from "./web/dual-auth.middleware";
+import type { ImportSessionStore } from "./domain/import-session/import-session.types";
 import { createApp } from "./server";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 
@@ -209,6 +210,10 @@ export interface SharedBundle {
 	now: () => Date;
 }
 
+export interface ImportSessionBundle {
+	importSessionStore: ImportSessionStore;
+}
+
 export interface TestAppFixture {
 	auth: AuthBundle;
 	articleStore: ArticleStoreBundle;
@@ -224,6 +229,7 @@ export interface TestAppFixture {
 	passwordReset: PasswordResetBundle;
 	google: GoogleAuthBundle | undefined;
 	admin: AdminBundle;
+	importSession: ImportSessionBundle;
 	shared: SharedBundle;
 	stripe: StripeCheckoutBundle;
 	pendingSignup: PendingSignupBundle;
@@ -299,6 +305,7 @@ function flattenFixtureToAppDependencies(
 		googleAuth: fixture.google,
 		adminEmails: fixture.admin.adminEmails,
 		recrawlServiceToken: fixture.admin.recrawlServiceToken,
+		importSessionStore: fixture.importSession.importSessionStore,
 		now: fixture.shared.now,
 		createCheckoutSession: fixture.stripe.createCheckoutSession,
 		retrieveCheckoutSession: fixture.stripe.retrieveCheckoutSession,

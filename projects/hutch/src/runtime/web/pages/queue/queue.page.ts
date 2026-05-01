@@ -42,6 +42,7 @@ import { toArticleEntity } from "../../api/article-siren";
 import { parseQueueUrl, buildQueueUrl } from "./queue.url";
 import { tabQuery } from "./queue.tabs";
 import type { HttpErrorMessageMapping } from "./queue.error";
+import { importFlashMapping } from "./queue.error";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
 import { ReaderPage } from "../reader/reader.component";
@@ -213,8 +214,9 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			: (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 		const totalArticles = (await deps.findArticlesByUser({ userId, page: 1, pageSize: 1 })).total;
 		const saveError = deps.httpErrorMessageMapping(req.query);
+		const importFlash = importFlashMapping(req.query);
 		const summaryByUrl = await loadSummaries(deps.findGeneratedSummary, result.articles);
-		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError, summaryByUrl });
+		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError, importFlash, summaryByUrl });
 		const extensionInstalled = isExtensionInstalled(req);
 		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
 		const browser = detectBrowser(req);

@@ -15,6 +15,7 @@ import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-
 import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import { initInMemoryPendingSignup } from "./providers/pending-signup/in-memory-pending-signup";
 import { initInMemoryStripeCheckout } from "./providers/stripe-checkout/in-memory-stripe-checkout";
+import { initInMemoryImportSession } from "./providers/import-session/in-memory-import-session";
 import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
 import { initInMemoryExportUserDataCommand } from "./providers/events/in-memory-export-user-data-command";
 import {
@@ -255,6 +256,9 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 		admin: {
 			adminEmails: [],
 			recrawlServiceToken: "test-service-token-abcdefghij",
+		},
+		importSession: {
+			importSessionStore: initInMemoryImportSession({ now: () => new Date() }),
 		},
 		shared: {
 			appOrigin,
