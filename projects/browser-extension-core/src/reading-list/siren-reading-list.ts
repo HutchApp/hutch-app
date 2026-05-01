@@ -260,6 +260,31 @@ export function initDeleteArticleUnderstanding(): Map<string, ActionHandler> {
 	return handlers;
 }
 
+export function initMarkExtensionInstalledUnderstanding(): Map<string, ActionHandler> {
+	const handlers = new Map<string, ActionHandler>();
+	handlers.set("mark-extension-installed", (sirenAction, context) => {
+		return async () => {
+			const response = await context.doFetch(
+				`${context.serverUrl}${sirenAction.href}`,
+				{
+					method: sirenAction.method,
+					/** Send credentials so the server's Set-Cookie response lands on
+					 * the app origin's cookie jar; without it the cross-origin fetch
+					 * from a moz-extension://chrome-extension:// origin discards the
+					 * Set-Cookie header. */
+					credentials: "include",
+				},
+			);
+			assert(
+				response.ok,
+				`mark-extension-installed failed: ${response.status}`,
+			);
+			return { items: [], actions: {} };
+		};
+	});
+	return handlers;
+}
+
 export function initListArticlesUnderstanding(): Map<string, ActionHandler> {
 	const handlers = new Map<string, ActionHandler>();
 	handlers.set("search", (sirenAction, context) => {
@@ -476,6 +501,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		initSaveArticleUnderstanding(),
 		initSaveHtmlUnderstanding(),
 		initDeleteArticleUnderstanding(),
+		initMarkExtensionInstalledUnderstanding(),
 		httpCacheable(initListArticlesUnderstanding()),
 	);
 	const start = initExtension(understandings, deps);
@@ -488,8 +514,31 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		}
 	}
 
-	const saveUrl: SaveUrl = async ({ url, title, rawHtml }) => {
+	/** Idempotency guard: only fire the mark-extension-installed action once
+	 * per popup/background instance. The server route is itself idempotent,
+	 * so this is purely a request-budget optimisation. Reset on failure so a
+	 * transient error retries on the next collection fetch. */
+	let extensionMarkedInstalled = false;
+	function markExtensionInstalledIfPossible(
+		actions: Record<string, BoundAction>,
+	): void {
+		if (extensionMarkedInstalled) return;
+		const action = actions["mark-extension-installed"];
+		if (!action) return;
+		extensionMarkedInstalled = true;
+		action().catch(() => {
+			extensionMarkedInstalled = false;
+		});
+	}
+
+	async function startAndMark(): Promise<NavigationResult> {
 		const collection = await start();
+		markExtensionInstalledIfPossible(collection.actions);
+		return collection;
+	}
+
+	const saveUrl: SaveUrl = async ({ url, title, rawHtml }) => {
+		const collection = await startAndMark();
 		trackItems(collection.items);
 		const saveHtmlAction = collection.actions["save-html"];
 		if (rawHtml && saveHtmlAction) {
@@ -519,7 +568,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 	const removeUrl: RemoveUrl = async (id) => {
 		let item = knownItems.get(id);
 		if (!item) {
-			const collection = await start();
+			const collection = await startAndMark();
 			trackItems(collection.items);
 			item = knownItems.get(id);
 		}
@@ -538,7 +587,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 	};
 
 	const findByUrl: FindByUrl = async (url) => {
-		const collection = await start();
+		const collection = await startAndMark();
 		trackItems(collection.items);
 		const filterAction = collection.actions.search;
 		assert(
@@ -552,7 +601,7 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 	};
 
 	const getAllItems: GetAllItems = async () => {
-		const collection = await start();
+		const collection = await startAndMark();
 		trackItems(collection.items);
 		return collection.items;
 	};

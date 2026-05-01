@@ -1,5 +1,9 @@
 import assert from "node:assert";
-import { DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
+import {
+	COOKIE_NAME as EXTENSION_INSTALLED_COOKIE_NAME,
+	COOKIE_VALUE as EXTENSION_INSTALLED_COOKIE_VALUE,
+	DISMISS_COOKIE_NAME,
+} from "@packages/onboarding-extension-signal";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
 import type { LogParseError } from "@packages/hutch-infra-components";
@@ -221,6 +225,20 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 	router.post("/dismiss-onboarding", (_req: Request, res: Response) => {
 		res.cookie(DISMISS_COOKIE_NAME, ONBOARDING_VERSION, { path: "/", maxAge: 365 * 24 * 60 * 60 * 1000, sameSite: "lax", httpOnly: true });
 		res.redirect(303, "/queue");
+	});
+
+	/** Hypermedia entry point for the extension to mark itself installed.
+	 * Mirrors the SameSite=Lax / Max-Age cookie attributes set by the
+	 * content script in @packages/onboarding-extension-signal so server-set
+	 * and client-set cookies are interchangeable. */
+	router.post("/extension-installed", (req: Request, res: Response) => {
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		res.cookie(EXTENSION_INSTALLED_COOKIE_NAME, EXTENSION_INSTALLED_COOKIE_VALUE, {
+			path: "/",
+			maxAge: 365 * 24 * 60 * 60 * 1000,
+			sameSite: "lax",
+		});
+		res.status(204).send();
 	});
 
 	router.post("/", express.json(), async (req: Request, res: Response) => {

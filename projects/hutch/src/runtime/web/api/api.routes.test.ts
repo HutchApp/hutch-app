@@ -488,6 +488,38 @@ describe("POST /queue/:id/delete (Siren)", () => {
 	});
 });
 
+describe("POST /queue/extension-installed (Siren mark-extension-installed)", () => {
+	it("sets the extension-installed cookie and returns 204", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const accessToken = await createAccessToken(testApp);
+
+		const response = await request(testApp.app)
+			.post("/queue/extension-installed")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.set("Authorization", `Bearer ${accessToken}`);
+
+		expect(response.status).toBe(204);
+		const setCookie = response.headers["set-cookie"];
+		assert(Array.isArray(setCookie), "expected Set-Cookie header");
+		const cookie = setCookie.find((c: string) => c.startsWith("hutch_ext_installed="));
+		assert(cookie, "expected hutch_ext_installed cookie");
+		expect(cookie).toContain("hutch_ext_installed=1");
+		expect(cookie).toContain("Path=/");
+		expect(cookie).toContain("SameSite=Lax");
+		expect(cookie).toContain("Max-Age=");
+	});
+
+	it("returns 401 without token", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+		const response = await request(testApp.app)
+			.post("/queue/extension-installed")
+			.set("Accept", SIREN_MEDIA_TYPE);
+
+		expect(response.status).toBe(401);
+	});
+});
+
 describe("GET / (Siren entry point)", () => {
 	it("redirects Siren clients to /queue", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));

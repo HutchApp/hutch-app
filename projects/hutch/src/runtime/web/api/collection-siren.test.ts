@@ -224,4 +224,22 @@ describe("toArticleCollectionEntity", () => {
 			"url",
 		]);
 	});
+
+	it("includes mark-extension-installed action", () => {
+		const result: FindArticlesResult = {
+			articles: [],
+			total: 0,
+			page: 1,
+			pageSize: 20,
+		};
+
+		const entity = toArticleCollectionEntity(result, {});
+
+		const action = entity.actions?.find(
+			(a) => a.name === "mark-extension-installed",
+		);
+		expect(action?.method).toBe("POST");
+		expect(action?.href).toBe("/queue/extension-installed");
+		expect(action?.fields).toBeUndefined();
+	});
 });

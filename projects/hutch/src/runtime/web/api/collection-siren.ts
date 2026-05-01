@@ -91,6 +91,11 @@ export function toArticleCollectionEntity(
 					{ name: "url", type: "url" },
 				],
 			},
+			{
+				name: "mark-extension-installed",
+				href: "/queue/extension-installed",
+				method: "POST",
+			},
 		],
 	};
 }
