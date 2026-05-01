@@ -18,6 +18,19 @@ describe("initInMemoryStripeCheckout", () => {
 		expect(stripe.getCheckoutUrl(session.id)).toBe(session.url);
 	});
 
+	it("uses custom checkoutBaseUrl when provided", async () => {
+		const stripe = initInMemoryStripeCheckout({ checkoutBaseUrl: "http://localhost:9999/e2e/stripe-checkout" });
+
+		const session = await stripe.createCheckoutSession({
+			customerEmail: "test@example.com",
+			successUrl: "http://localhost:9999/auth/checkout/success?session_id={CHECKOUT_SESSION_ID}",
+			cancelUrl: "http://localhost:9999/signup",
+		});
+
+		expect(session.url).toContain("http://localhost:9999/e2e/stripe-checkout/");
+		expect(session.url).not.toContain("checkout.stripe.test");
+	});
+
 	it("returns unpaid status until markPaid is called", async () => {
 		const stripe = initInMemoryStripeCheckout();
 		const session = await stripe.createCheckoutSession({

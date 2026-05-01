@@ -11,7 +11,7 @@ interface StoredSession {
 	paid: boolean;
 }
 
-export function initInMemoryStripeCheckout(): {
+export function initInMemoryStripeCheckout(opts?: { checkoutBaseUrl?: string }): {
 	createCheckoutSession: CreateCheckoutSession;
 	retrieveCheckoutSession: RetrieveCheckoutSession;
 	markPaid: (id: CheckoutSessionId) => void;
@@ -19,11 +19,12 @@ export function initInMemoryStripeCheckout(): {
 } {
 	const sessions = new Map<CheckoutSessionId, StoredSession>();
 	const urls = new Map<CheckoutSessionId, string>();
+	const baseUrl = opts?.checkoutBaseUrl ?? "https://checkout.stripe.test";
 
 	const createCheckoutSession: CreateCheckoutSession = async ({ customerEmail, successUrl }) => {
 		const id = CheckoutSessionIdSchema.parse(`cs_test_${randomBytes(12).toString("hex")}`);
 		sessions.set(id, { customerEmail, paid: false });
-		const url = `https://checkout.stripe.test/${id}?next=${encodeURIComponent(successUrl)}`;
+		const url = `${baseUrl}/${id}?next=${encodeURIComponent(successUrl)}`;
 		urls.set(id, url);
 		return { id, url };
 	};

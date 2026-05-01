@@ -1,3 +1,4 @@
+import assert from 'node:assert'
 import express from 'express'
 import { HutchLogger, consoleLogger, noopLogger } from '@packages/hutch-logger'
 import { createTestApp } from '../runtime/test-app'
@@ -16,6 +17,8 @@ import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from '@packages/crawl-article
 import { theInformationPreParser } from '../runtime/providers/article-parser/the-information-pre-parser'
 import { initInMemoryRefreshArticleContent } from '../runtime/providers/events/in-memory-refresh-article-content'
 import { initInMemoryUpdateFetchTimestamp } from '../runtime/providers/events/in-memory-update-fetch-timestamp'
+import { initInMemoryStripeCheckout } from '../runtime/providers/stripe-checkout/in-memory-stripe-checkout'
+import { CheckoutSessionIdSchema } from '../runtime/providers/stripe-checkout/stripe-checkout.schema'
 
 const PORT = Number(requireEnv('E2E_PORT'))
 const origin = `http://localhost:${PORT}`
@@ -56,8 +59,14 @@ const applyParseResult = createFakeApplyParseResult({
   parseArticle,
 })
 
+// E2E-specific Stripe checkout: generates local URLs so the browser can follow
+// the redirect chain (POST /signup → local checkout → /auth/checkout/success)
+// instead of hitting the unreachable https://checkout.stripe.test domain.
+const e2eStripe = initInMemoryStripeCheckout({ checkoutBaseUrl: `${origin}/e2e/stripe-checkout` })
+
 const { app: hutchApp, email } = createTestApp({
   ...fixture,
+  stripe: e2eStripe,
   parser: { parseArticle, crawlArticle },
   events: {
     publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
@@ -82,6 +91,17 @@ const server = express()
 // Expose sent emails for E2E tests (password reset flow needs the reset token from email)
 server.get('/e2e/sent-emails', (_req, res) => {
   res.json(email.getSentEmails())
+})
+
+// Simulated Stripe Checkout: marks the session as paid and redirects to the
+// success URL (replacing {CHECKOUT_SESSION_ID} the same way real Stripe does).
+server.get('/e2e/stripe-checkout/:id', (req, res) => {
+  const sessionId = CheckoutSessionIdSchema.parse(req.params.id)
+  e2eStripe.markPaid(sessionId)
+  const next = req.query.next
+  assert(typeof next === 'string', 'next query param required')
+  const successUrl = next.replace('{CHECKOUT_SESSION_ID}', sessionId)
+  res.redirect(303, successUrl)
 })
 
 // Deterministic crawl-failure fixture: any GET returns 500 so tests can exercise
