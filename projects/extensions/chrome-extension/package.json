@@ -1,6 +1,6 @@
 {
   "name": "chrome-extension",
-  "version": "1.0.105",
+  "version": "1.0.106",
   "description": "Readplace — Where reading still matters",
   "main": "src/infra/index.ts",
   "private": true,
