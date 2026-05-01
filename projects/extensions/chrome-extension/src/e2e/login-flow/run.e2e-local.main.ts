@@ -147,7 +147,7 @@ async function runTest() {
 
 		const popupWindowHandle = await driver.getWindowHandle();
 
-		const saveLinkProgress: SaveLinkProgress = { linkSaved: false, listVerified: false };
+		const saveLinkProgress: SaveLinkProgress = { linkSaved: false, listVerified: false, extraLinkSaved: false };
 		const paginationProgress: PaginationProgress = {
 			paginationLinksAdded: false,
 			verifiedPage1: false,

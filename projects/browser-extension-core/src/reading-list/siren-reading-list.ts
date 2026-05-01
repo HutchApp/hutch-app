@@ -20,6 +20,15 @@ function assert(value: unknown, message: string): asserts value {
 	if (!value) throw new Error(message);
 }
 
+/** Thrown when the server rejects a save by returning the current collection
+ * (e.g. for non-saveable URL schemes). Carries the items so the caller can
+ * drop the user back into the list view without a re-fetch. */
+class NotSaveableError extends Error {
+	constructor(public readonly items: ReadingListItem[]) {
+		super("URL not saveable");
+	}
+}
+
 const SirenPropertiesSchema = z.object({
 	id: z.string(),
 	url: z.string(),
@@ -132,11 +141,29 @@ export function initSaveArticleUnderstanding(): Map<string, ActionHandler> {
 					method: sirenAction.method,
 					headers: {
 						"Content-Type": sirenAction.type ?? "application/json",
+						/** Opt into the collection-on-rejection flow for non-saveable
+						 * URL schemes (RFC 7240, mirroring the delete route). Without
+						 * this the server falls back to a stub-save for backward
+						 * compatibility with extensions that can't interpret a
+						 * collection body on POST. */
+						Prefer: "return=representation",
 					},
 					body: JSON.stringify({ url: fields.url }),
 				},
 			);
-			assert(response.ok, `Save failed: ${response.status}`);
+			if (!response.ok) {
+				/** Server may reject a save by returning the current collection
+				 * (e.g. non-saveable URL scheme). Surface those items via
+				 * NotSaveableError so saveUrl can drop the user back into the list. */
+				const body = await response.json().catch(() => null);
+				const collection = SirenCollectionResponseSchema.safeParse(body);
+				if (collection.success && collection.data.class?.includes("collection")) {
+					throw new NotSaveableError(
+						context.parseCollection(collection.data).items,
+					);
+				}
+				throw new Error(`Save failed: ${response.status}`);
+			}
 			const body = SirenSubEntitySchema.parse(await response.json());
 			const item = context.resolveItem(body);
 			return { items: [item], actions: {} };
@@ -476,10 +503,17 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 			saveAction,
 			'Expected Siren action "save-article" not found in response',
 		);
-		const result = await saveAction({ url });
-		const item = result.items[0];
-		trackItems(result.items);
-		return { ok: true, item };
+		try {
+			const result = await saveAction({ url });
+			const item = result.items[0];
+			trackItems(result.items);
+			return { ok: true, item };
+		} catch (err) {
+			if (err instanceof NotSaveableError) {
+				return { ok: false, reason: "not-saveable", items: err.items };
+			}
+			throw err;
+		}
 	};
 
 	const removeUrl: RemoveUrl = async (id) => {

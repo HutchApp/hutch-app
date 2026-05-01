@@ -5,7 +5,8 @@ import type {
 
 export type SaveUrlResult =
 	| { ok: true; item: ReadingListItem }
-	| { ok: false; reason: "already-saved" };
+	| { ok: false; reason: "already-saved" }
+	| { ok: false; reason: "not-saveable"; items: ReadingListItem[] };
 
 export type RemoveUrlResult =
 	| { ok: true; items: ReadingListItem[] }

@@ -610,6 +610,39 @@ describe("initExtension", () => {
 			).rejects.toThrow("Save failed: 422");
 		});
 
+		it("sends Prefer: return=representation to opt into the collection-on-rejection flow", async () => {
+			let capturedPrefer: string | null = null;
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: collectionResponse(),
+					},
+					"POST http://localhost:3000/queue": (init) => {
+						capturedPrefer = new Headers(init?.headers).get("Prefer");
+						return {
+							status: 201,
+							body: JSON.stringify({
+								class: ["article"],
+								properties: {
+									id: "article-1",
+									url: "https://example.com/article",
+									title: "Article",
+									savedAt: "2026-01-15T10:00:00.000Z",
+								},
+							}),
+						};
+					},
+				}),
+			);
+			const start = initExtension(createUnderstandings(), createDeps(fetchFn));
+			const collection = await start();
+			await collection.actions["save-article"]({
+				url: "https://example.com/article",
+			});
+			assert.equal(capturedPrefer, "return=representation");
+		});
+
 		it("should assert when url field is missing", async () => {
 			const { fetchFn } = createRoutingFetch(
 				withEntryPoint({
@@ -1692,6 +1725,42 @@ describe("initSirenReadingList", () => {
 			await expect(
 				list.saveUrl({ url: "bad-url", title: "Test" }),
 			).rejects.toThrow("Save failed: 422");
+		});
+
+		it("returns a not-saveable result with collection items when server rejects with a collection body", async () => {
+			const existing = articleEntity({
+				id: "article-existing",
+				url: "https://example.com/existing",
+				title: "Existing",
+				savedAt: "2026-01-15T10:00:00.000Z",
+			});
+			const { fetchFn } = createRoutingFetch(
+				withEntryPoint({
+					"GET http://localhost:3000/queue": {
+						status: 200,
+						body: collectionResponse(),
+					},
+					"POST http://localhost:3000/queue": {
+						status: 422,
+						body: collectionResponse([existing]),
+					},
+				}),
+			);
+			const list = initSirenReadingList(createAdapterDeps(fetchFn));
+			const result = await list.saveUrl({
+				url: "chrome://newtab/",
+				title: "New Tab",
+			});
+			assert.equal(result.ok, false);
+			assert.equal(
+				(result as Extract<typeof result, { ok: false }>).reason,
+				"not-saveable",
+			);
+			const items = (
+				result as Extract<typeof result, { reason: "not-saveable" }>
+			).items;
+			expect(items).toHaveLength(1);
+			expect(items[0].url).toBe("https://example.com/existing");
 		});
 
 		it("should throw when collection fetch fails during action discovery", async () => {

@@ -280,7 +280,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			}
 		},
 		methods: ["GET", "POST", "PUT", "DELETE"],
-		allowedHeaders: ["Authorization", "Content-Type", "Accept"],
+		allowedHeaders: ["Authorization", "Content-Type", "Accept", "Prefer"],
 		maxAge: 86400,
 	});
 

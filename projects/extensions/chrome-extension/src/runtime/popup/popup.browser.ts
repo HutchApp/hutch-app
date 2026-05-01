@@ -284,6 +284,13 @@ async function saveAndShowList() {
 
 	if (saveResult.ok && saveResult.value.ok) {
 		showView("saved-view");
+		return;
+	}
+
+	if (saveResult.ok && !saveResult.value.ok && saveResult.value.reason === "not-saveable") {
+		allItems = saveResult.value.items;
+		showView("list-view");
+		renderLinks(filterItems());
 	}
 }
 
