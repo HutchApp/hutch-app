@@ -74,6 +74,7 @@ const { app: hutchApp, email } = createTestApp({
     publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
     publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
     publishUpdateFetchTimestamp,
+    publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
   },
   freshness: { refreshArticleIfStale },
   summary,

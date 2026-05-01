@@ -50,6 +50,8 @@ export type FindUserByEmailResult =
 
 export type FindUserByEmail = (email: string) => Promise<FindUserByEmailResult>;
 
+export type FindEmailByUserId = (userId: UserId) => Promise<string | null>;
+
 export type CreateGoogleUser = (user: {
 	email: string;
 	userId: UserId;
