@@ -1,4 +1,5 @@
 import type { Handler, SQSEvent } from "aws-lambda";
+import { z } from "zod";
 import type { HutchLogger } from "@packages/hutch-logger";
 import {
 	ExportUserDataCommand,
@@ -7,7 +8,7 @@ import {
 } from "@packages/hutch-infra-components";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import type { FindArticlesByUser } from "../providers/article-store/article-store.types";
-import type { UserId } from "../domain/user/user.types";
+import { UserIdSchema } from "../domain/user/user.schema";
 import type { SendEmail } from "../providers/email/email.types";
 import type { UploadUserDataExport } from "../providers/user-data-export/user-data-export.types";
 import {
@@ -32,7 +33,7 @@ export interface ExportUserDataDependencies {
 export function initExportUserDataHandler(deps: ExportUserDataDependencies): Handler<SQSEvent> {
 	return async (event) => {
 		for (const record of event.Records) {
-			const envelope = JSON.parse(record.body) as { detail: unknown };
+			const envelope = z.object({ detail: z.unknown() }).parse(JSON.parse(record.body));
 			const detail = ExportUserDataCommand.detailSchema.parse(envelope.detail);
 			await processCommand(detail, deps);
 		}
@@ -43,7 +44,7 @@ async function processCommand(
 	detail: ExportUserDataDetail,
 	deps: ExportUserDataDependencies,
 ): Promise<void> {
-	const userId = detail.userId as UserId;
+	const userId = UserIdSchema.parse(detail.userId);
 
 	const articles: ExportEnvelope["articles"] = [];
 	let page = 1;
