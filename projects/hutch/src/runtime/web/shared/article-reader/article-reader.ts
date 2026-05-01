@@ -24,6 +24,24 @@ import type {
 const MAX_POLLS = 40;
 
 /**
+ * 1. Pending: the normal in-flight case.
+ * 2. Read-after-write race: markCrawlPending hasn't propagated yet.
+ * 3. Promotion race: save-link-work flipped crawlStatus="ready" but
+ *    select-most-complete-content-handler hasn't copied the canonical S3
+ *    object yet, so readArticleContent still returns undefined. MAX_POLLS
+ *    bounds the wait if the canonical write genuinely never lands.
+ */
+function shouldKeepPollingReader(
+	crawl: ArticleCrawl | undefined,
+	content: string | undefined,
+): boolean {
+	if (crawl?.status === "pending") return true; /* 1 */
+	if (crawl === undefined && content === undefined) return true; /* 2 */
+	if (crawl?.status === "ready" && content === undefined) return true; /* 3 */
+	return false;
+}
+
+/**
  * Single-bar progress: pick the further-along pipeline. While the crawl is
  * pending, drive the bar from the crawl stage on the lower half of the
  * unified scale. Once the crawl is ready (or undefined-with-content, the
@@ -92,13 +110,9 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 		const summaryPollUrl = summaryStatus === "pending"
 			? pollUrlBuilder.summary(1)
 			: undefined;
-		// Poll while the crawl is pending, and also when crawl is undefined with
-		// no content yet — that combination is usually a read-after-write race
-		// where markCrawlPending hasn't propagated, so polling lets the slot
-		// recover once the next read sees the durable state.
-		const shouldPollReader =
-			crawl?.status === "pending" || (crawl === undefined && content === undefined);
-		const readerPollUrl = shouldPollReader ? pollUrlBuilder.reader(1) : undefined;
+		const readerPollUrl = shouldKeepPollingReader(crawl, content)
+			? pollUrlBuilder.reader(1)
+			: undefined;
 
 		return {
 			content,
@@ -136,9 +150,7 @@ export function initArticleReader(deps: ArticleReaderDeps): {
 		const crawl = await deps.findArticleCrawlStatus(articleUrl);
 		const summary = await deps.findGeneratedSummary(articleUrl);
 		const content = await deps.readArticleContent(articleUrl);
-		const shouldPollReader =
-			crawl?.status === "pending" || (crawl === undefined && content === undefined);
-		const readerPollUrl = shouldPollReader && pollCount < MAX_POLLS
+		const readerPollUrl = shouldKeepPollingReader(crawl, content) && pollCount < MAX_POLLS
 			? pollUrlBuilder.reader(pollCount + 1)
 			: undefined;
 		const slot = renderReaderSlot({
