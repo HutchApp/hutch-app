@@ -24,6 +24,8 @@ jobs:
       GOOGLE_LOGIN_CLIENT_SECRET: ${{ secrets.GOOGLE_LOGIN_CLIENT_SECRET }}
       ANALYTICS_SALT: ${{ secrets.ANALYTICS_SALT }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
       RECRAWL_SERVICE_TOKEN: ${{ secrets.RECRAWL_SERVICE_TOKEN }}
     steps:
       - uses: actions/checkout@v6
@@ -70,6 +72,8 @@ jobs:
       GOOGLE_LOGIN_CLIENT_SECRET: ${{ secrets.GOOGLE_LOGIN_CLIENT_SECRET }}
       ANALYTICS_SALT: ${{ secrets.ANALYTICS_SALT }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
       RECRAWL_SERVICE_TOKEN: ${{ secrets.RECRAWL_SERVICE_TOKEN }}
     steps:
       - uses: actions/checkout@v6
