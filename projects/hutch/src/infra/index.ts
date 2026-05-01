@@ -271,9 +271,7 @@ const exportUserDataLambda = new HutchLambda("export-user-data", {
 		DYNAMODB_USER_ARTICLES_TABLE: storage.userArticlesTable.name,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		USER_EXPORT_BUCKET_NAME: userExportBucket.bucket,
-		RESEND_API_KEY: pulumi.runtime.isDryRun()
-			? (getEnv("RESEND_API_KEY") ?? "")
-			: requireEnv("RESEND_API_KEY"),
+		RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
 	},
 	policies: [
 		...exportUserDataDynamodb.policies,
