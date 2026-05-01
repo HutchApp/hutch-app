@@ -10,10 +10,10 @@ Conventions for building the web adapter layer that connects the application dom
 ## Component Pattern
 
 Pages and components follow a composable `Component` type. See:
-- [projects/hutch/src/web/component.types.ts](projects/hutch/src/web/component.types.ts) - Type definitions
-- [projects/hutch/src/web/base.component.ts](projects/hutch/src/web/base.component.ts) - Base component implementation
+- [projects/readplace/src/web/component.types.ts](projects/readplace/src/web/component.types.ts) - Type definitions
+- [projects/readplace/src/web/base.component.ts](projects/readplace/src/web/base.component.ts) - Base component implementation
 
-For page examples, see `projects/hutch/src/web/pages/*/`.
+For page examples, see `projects/readplace/src/web/pages/*/`.
 
 ## Server-Side Rendering with Progressive Enhancement
 
@@ -24,14 +24,14 @@ This project uses an SSR-first approach. Core principles:
 The URL query string represents the complete page state. All user interactions that modify state should be expressible as URL changes via HTML `<form>`.
 
 For examples, see:
-- URL builder files in `projects/hutch/src/web/pages/*/`
+- URL builder files in `projects/readplace/src/web/pages/*/`
 
 ### View Model Pattern
 
 Transform query string parameters into a structured view model before rendering. Templates should be "dumb" - they render what the view model provides without business logic.
 
 For examples, see:
-- View model files in `projects/hutch/src/web/pages/*/`
+- View model files in `projects/readplace/src/web/pages/*/`
 
 ### Progressive Enhancement
 
@@ -179,11 +179,11 @@ const content = document.querySelector('meta[property="og:image"]')?.getAttribut
 
 - Use `.html` files for view templates with Handlebars placeholder substitution
 - No view rendering frameworks (React, Vue, Angular) - vanilla HTML/CSS/JS only
-- Keep templates close to their page objects (see file organization in `projects/hutch/src/web/pages/`)
+- Keep templates close to their page objects (see file organization in `projects/readplace/src/web/pages/`)
 
 ## DOM Testing
 
-Use JSDOM to parse HTML responses in tests. See `parseHTML()` usage in test files within `projects/hutch/src/web/pages/`.
+Use JSDOM to parse HTML responses in tests. See `parseHTML()` usage in test files within `projects/readplace/src/web/pages/`.
 
 ## Pre-Commit Checklist
 

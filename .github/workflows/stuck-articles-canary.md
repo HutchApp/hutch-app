@@ -7,8 +7,8 @@ You have been triggered because the `Stuck articles canary` workflow failed on i
 1. **Read the issue body and any follow-up comments.** Each stuck row is listed as `[<reasons>] <url> — fetched: <ts>; failure: <reason>; recrawl: <admin-url>`. The reasons (`summary-pending`, `summary-failed`, `crawl-pending`, `crawl-failed`, `legacy-stub`) tell you which state machine got stuck.
 2. **Find the change that introduced the state.** Run `git log --since='14 days ago' --format='%h %s'` and inspect commits touching:
    - `projects/save-link/src/generate-summary/**` (summary state machine)
-   - `projects/save-link/src/article-crawl/**` and `projects/hutch/src/runtime/providers/article-crawl/**` (crawl state machine)
-   - `projects/hutch/src/runtime/providers/article-summary/**`
+   - `projects/save-link/src/article-crawl/**` and `projects/readplace/src/runtime/providers/article-crawl/**` (crawl state machine)
+   - `projects/readplace/src/runtime/providers/article-summary/**`
    - `src/packages/article-state-types/**` (the shared schema)
    - `src/packages/check-stuck-articles/scripts/classify-row.ts` (the classifier itself)
 

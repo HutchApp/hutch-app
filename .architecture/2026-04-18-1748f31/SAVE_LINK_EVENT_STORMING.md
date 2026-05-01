@@ -43,8 +43,8 @@ flowchart TD
 
     UI -->|"POST /queue (Siren)<br/>POST /queue/save (form)"| C0[SaveArticle]:::cmd
 
-    %% ============= SYSTEM 1: HUTCH WEB LAMBDA (sync) =============
-    C0 --> S1{{"Hutch Express App<br/>(Lambda + API Gateway)<br/>queue.page.ts"}}:::sys
+    %% ============= SYSTEM 1: READPLACE WEB LAMBDA (sync) =============
+    C0 --> S1{{"Readplace Express App<br/>(Lambda + API Gateway)<br/>queue.page.ts"}}:::sys
 
     S1 -->|"refreshArticleIfStale()"| FRESH{{"Freshness Check<br/>check-content-freshness.ts"}}:::sys
     FRESH --> R0[("DynamoDB<br/>articles table<br/>GetItem etag/lastModified")]:::read
@@ -70,13 +70,13 @@ flowchart TD
     S1WRITE -->|"HTTP 201 Siren / 303 redirect"| UI
 
     %% ============= EVENTBRIDGE BUS =============
-    C1 --> EB{{"EventBridge<br/>hutch event bus"}}:::sys
+    C1 --> EB{{"EventBridge<br/>readplace event bus"}}:::sys
     C_REFRESH --> EB
     C_TS1 --> EB
     C_TS2 --> EB
 
     %% ============= SYSTEM 2: SAVE-LINK-COMMAND LAMBDA =============
-    EB -->|"rule: source=hutch.api<br/>detail-type=SaveLinkCommand"| Q1[/"SQS save-link-command<br/>visibility 60s"/]:::queue
+    EB -->|"rule: source=readplace.api<br/>detail-type=SaveLinkCommand"| Q1[/"SQS save-link-command<br/>visibility 60s"/]:::queue
     Q1 -. on failure .-> DLQ1[/"DLQ → SNS → email"/]:::dlq
     Q1 -->|"EventSourceMapping<br/>batchSize=1"| S2{{"Lambda: save-link-command<br/>save-link-command-handler.ts"}}:::sys
 
@@ -89,7 +89,7 @@ flowchart TD
     S2 -->|"updateContentLocation"| R2D[("DynamoDB<br/>UpdateItem (contentLocation)")]:::read
     S2 -->|"updateThumbnailUrl"| R2T[("DynamoDB<br/>UpdateItem (thumbnailUrl)")]:::read
 
-    S2 --> E1[LinkSavedEvent<br/>source=hutch.save-link]:::evt
+    S2 --> E1[LinkSavedEvent<br/>source=readplace.save-link]:::evt
     E1 -->|"publishEvent"| EB
 
     %% ============= SYSTEM 3: LINK-SAVED LAMBDA =============
@@ -158,7 +158,7 @@ Reuses the same backend summary path; differs only in the entry command and the 
 flowchart TD
     UI2[/"Anonymous user views shared link<br/>view.page.ts"/]:::ui
 
-    UI2 -->|"GET /view/:id"| S0{{"Hutch Express App<br/>(Lambda)"}}:::sys
+    UI2 -->|"GET /view/:id"| S0{{"Readplace Express App<br/>(Lambda)"}}:::sys
     S0 -->|"saveArticleGlobally + publishSaveAnonymousLink"| C0[SaveAnonymousLinkCommand]:::cmd
 
     C0 --> EB{{"EventBridge"}}:::sys
@@ -193,7 +193,7 @@ flowchart TD
 
 | # | Command | System (handler) | Event(s) emitted | Triggers next command(s) |
 |---|---|---|---|---|
-| 1 | `SaveArticle` (HTTP `POST /queue`, `POST /queue/save`) | Hutch Express App on Lambda — `queue.page.ts:182` & `:211` | `ArticleMetadataSaved` (in-process; HTTP 201/303 returned) | `SaveLinkCommand`, `UpdateFetchTimestampCommand`, optionally `RefreshArticleContentCommand` |
+| 1 | `SaveArticle` (HTTP `POST /queue`, `POST /queue/save`) | Readplace Express App on Lambda — `queue.page.ts:182` & `:211` | `ArticleMetadataSaved` (in-process; HTTP 201/303 returned) | `SaveLinkCommand`, `UpdateFetchTimestampCommand`, optionally `RefreshArticleContentCommand` |
 | 2 | `RefreshArticleContentCommand` (EventBridge → SQS `refresh-article-content`) | `refresh-article-content.main.ts` Lambda | — (terminal; DynamoDB UpdateItem) | none |
 | 3 | `UpdateFetchTimestampCommand` (EventBridge → SQS `update-fetch-timestamp`) | `update-fetch-timestamp.main.ts` Lambda | — (terminal; DynamoDB UpdateItem) | none |
 | 4 | `SaveLinkCommand` (EventBridge → SQS `save-link-command`) | `save-link-command.main.ts` Lambda — `save-link-command-handler.ts` | `LinkSavedEvent` (after S3 + DynamoDB writes) | (via reaction) `GenerateSummaryCommand` |
@@ -207,9 +207,9 @@ flowchart TD
 
 ## Topology notes
 
-- **Command vs. Event naming.** `SaveLinkCommand` and `SaveAnonymousLinkCommand` are intent (imperative). `LinkSavedEvent`, `AnonymousLinkSavedEvent`, `SummaryGeneratedEvent` are facts (past tense). Definitions live in `src/packages/hutch-infra-components/src/events.ts`.
-- **Two transport patterns.** Most cross-Lambda hops go through **EventBridge → SQS** via `HutchEventBus.subscribe(...)` (`event-bus.ts:60`). The single exception is `GenerateSummaryCommand`, which both `link-saved` and `anonymous-link-saved` Lambdas dispatch **directly to the SQS queue** via `initSqsCommandDispatcher` — this is a one-to-one command dispatch, not a fan-out event.
-- **Every SQS-backed Lambda has a DLQ + SNS email alarm** (`hutch-sqs-backed-lambda.ts:44-68`) — the alert email is shared (`alertEmail` config) and pages on any DLQ message visible for 5 min.
+- **Command vs. Event naming.** `SaveLinkCommand` and `SaveAnonymousLinkCommand` are intent (imperative). `LinkSavedEvent`, `AnonymousLinkSavedEvent`, `SummaryGeneratedEvent` are facts (past tense). Definitions live in `src/packages/readplace-infra-components/src/events.ts`.
+- **Two transport patterns.** Most cross-Lambda hops go through **EventBridge → SQS** via `ReadplaceEventBus.subscribe(...)` (`event-bus.ts:60`). The single exception is `GenerateSummaryCommand`, which both `link-saved` and `anonymous-link-saved` Lambdas dispatch **directly to the SQS queue** via `initSqsCommandDispatcher` — this is a one-to-one command dispatch, not a fan-out event.
+- **Every SQS-backed Lambda has a DLQ + SNS email alarm** (`readplace-sqs-backed-lambda.ts:44-68`) — the alert email is shared (`alertEmail` config) and pages on any DLQ message visible for 5 min.
 - **Visibility timeouts:** all SQS queues use `60s`, except `generate-summary` (`300s`) — the Deepseek call is the long pole and the Lambda timeout is `45s`, leaving headroom for SQS redelivery.
-- **Synchronous side of the request.** Before the HTTP response returns, the Hutch Lambda already writes article metadata to DynamoDB (so the user sees the article in their queue immediately). The crawl, S3 upload, and summary all happen async on the worker chain.
+- **Synchronous side of the request.** Before the HTTP response returns, the Readplace Lambda already writes article metadata to DynamoDB (so the user sees the article in their queue immediately). The crawl, S3 upload, and summary all happen async on the worker chain.
 - **Idempotency.** `saveLinkWork` (shared by authenticated + anonymous handlers) is idempotent on the URL — re-processing a `SaveLinkCommand` overwrites the same S3 key (derived from `ArticleResourceUniqueId`) and re-writes the same DynamoDB attributes. Summary generation short-circuits via the `DynamoDbSummaryCache`.

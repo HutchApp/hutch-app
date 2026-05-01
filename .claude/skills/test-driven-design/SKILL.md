@@ -21,7 +21,7 @@ jest.mock('./services/email-service');
 export function createApp(deps: AppDependencies) { ... }
 ```
 
-For real examples, see `projects/hutch/src/server.ts` which composes all dependencies at startup.
+For real examples, see `projects/readplace/src/server.ts` which composes all dependencies at startup.
 
 ### Partial Application for Domain Functions
 
@@ -35,7 +35,7 @@ export function createPaymentPlan(input: Input, deps: Deps) { ... }
 export function initCreatePaymentPlan(deps: Deps): (input: Input) => PaymentPlan { ... }
 ```
 
-For real examples, see `init*` functions in `projects/hutch/src/domain/` and `projects/hutch/src/providers/`.
+For real examples, see `init*` functions in `projects/readplace/src/domain/` and `projects/readplace/src/providers/`.
 
 ### Do Not Export Internal Functions for Testing
 
@@ -154,7 +154,7 @@ Every code path must be exercised by tests. Do not add `|| ''` or `?? defaultVal
 - Use `data-test-*` attributes for test metadata
 - Avoid coupling to labels/view text
 
-For example patterns, see tests in `projects/hutch/src/web/pages/`.
+For example patterns, see tests in `projects/readplace/src/web/pages/`.
 
 ### Test Behavior, Not Element Existence
 
@@ -217,7 +217,7 @@ Keep test data inline within each test case rather than extracting to shared fix
 
 When testing external APIs (e.g., Amadeus flight search), use the `Retriable` class from `test-utils` to implement retry logic. Do NOT switch to static/mock providers to mask real API behavior.
 
-For usage examples, see `projects/hutch/src/test-utils.ts`.
+For usage examples, see `projects/readplace/src/test-utils.ts`.
 
 ### Never Test Code That Is Only Used in Tests
 

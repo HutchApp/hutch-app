@@ -92,6 +92,6 @@ wc -c logs/check/6_Run\ pnpm\ check.txt
 grep "Failed tasks:" logs/check/6_Run\ pnpm\ check.txt -A 5
 ```
 
-**Root cause in this repo:** The dev-mode AI summary stub in `projects/hutch/src/runtime/app.ts` logged the full `params` JSON via `JSON.stringify(params)`. Each call included the entire article text content as the `messages[0].content` field. For Wikipedia articles used in E2E tests, this produced ~100KB per log line. The runner's secret-masking scan on these lines caused the step to exit with code 1 before later NX tasks could report their results. The fix was to log only the model name and content length instead of the full params.
+**Root cause in this repo:** The dev-mode AI summary stub in `projects/readplace/src/runtime/app.ts` logged the full `params` JSON via `JSON.stringify(params)`. Each call included the entire article text content as the `messages[0].content` field. For Wikipedia articles used in E2E tests, this produced ~100KB per log line. The runner's secret-masking scan on these lines caused the step to exit with code 1 before later NX tasks could report their results. The fix was to log only the model name and content length instead of the full params.
 
 **General rule:** If a CI step fails with exit code 1 and the logs are dominated by a single task's massive output, suspect that the output itself is causing the failure. Reduce the verbosity and re-run before investigating other causes.

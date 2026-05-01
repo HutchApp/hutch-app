@@ -1,11 +1,11 @@
 ---
 name: extension-api-design
-description: Hypermedia contract between browser-extension-core (client) and hutch (server). Use when adding, renaming, or removing API capabilities that the extension consumes, when the server emits or parses Siren responses, or when the extension's navigation/action flow changes.
+description: Hypermedia contract between browser-extension-core (client) and readplace (server). Use when adding, renaming, or removing API capabilities that the extension consumes, when the server emits or parses Siren responses, or when the extension's navigation/action flow changes.
 ---
 
-# Extension ↔ Hutch API Design
+# Extension ↔ Readplace API Design
 
-The extension talks to hutch over a Siren (`application/vnd.siren+json`) hypermedia API. The same URLs serve browsers (`text/html`) via content negotiation. The contract is **the message format plus a stable vocabulary of action names** — not a catalogue of URLs, methods, or request shapes.
+The extension talks to readplace over a Siren (`application/vnd.siren+json`) hypermedia API. The same URLs serve browsers (`text/html`) via content negotiation. The contract is **the message format plus a stable vocabulary of action names** — not a catalogue of URLs, methods, or request shapes.
 
 ## Core Principle: The Server Owns the Protocol
 
@@ -17,11 +17,11 @@ The client knows exactly one URL: the entry point (`/`). From there, the server 
 The client's job is to interpret the Siren format and follow what the server says — not to construct URLs or hard-code HTTP methods.
 
 ### References
-- Server schemas: [projects/hutch/src/runtime/web/api/siren.ts](../../../projects/hutch/src/runtime/web/api/siren.ts)
-- Collection emission: [projects/hutch/src/runtime/web/api/collection-siren.ts](../../../projects/hutch/src/runtime/web/api/collection-siren.ts)
-- Entity emission: [projects/hutch/src/runtime/web/api/article-siren.ts](../../../projects/hutch/src/runtime/web/api/article-siren.ts)
+- Server schemas: [projects/readplace/src/runtime/web/api/siren.ts](../../../projects/readplace/src/runtime/web/api/siren.ts)
+- Collection emission: [projects/readplace/src/runtime/web/api/collection-siren.ts](../../../projects/readplace/src/runtime/web/api/collection-siren.ts)
+- Entity emission: [projects/readplace/src/runtime/web/api/article-siren.ts](../../../projects/readplace/src/runtime/web/api/article-siren.ts)
 - Client walker: [projects/browser-extension-core/src/reading-list/siren-reading-list.ts](../../../projects/browser-extension-core/src/reading-list/siren-reading-list.ts)
-- Content negotiation: [projects/hutch/src/runtime/web/content-negotiation.ts](../../../projects/hutch/src/runtime/web/content-negotiation.ts)
+- Content negotiation: [projects/readplace/src/runtime/web/content-negotiation.ts](../../../projects/readplace/src/runtime/web/content-negotiation.ts)
 
 ## Content Negotiation, Not Parallel APIs
 
