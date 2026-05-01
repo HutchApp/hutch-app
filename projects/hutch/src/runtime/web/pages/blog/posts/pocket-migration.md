@@ -11,7 +11,7 @@ keywords: "Pocket migration, Pocket export, Pocket alternative, move from Pocket
 <summary class="blog-tldr__toggle">Summary (TL;DR)</summary>
 <div class="blog-tldr__body">
 
-Pocket shut down July 8, 2025. If you missed the export window, check your email for Pocket confirmation messages, browser history for getpocket.com URLs, the Wayback Machine, and linked services like IFTTT. If you have the HTML export file, email it to readplace+migrate@readplace.com and your articles are imported into Readplace within 24-48 hours.
+Pocket shut down July 8, 2025. If you missed the export window, check your email for Pocket confirmation messages, browser history for getpocket.com URLs, the Wayback Machine, and linked services like IFTTT. If you have the HTML export file, email it to hutch+migrate@readplace.com and your articles are imported into Readplace within 24-48 hours.
 
 </div>
 </details>
@@ -44,7 +44,7 @@ The Pocket servers are offline, but copies of your saved articles likely still e
 
 ## How to import into Readplace
 
-If you have a Pocket export file (the HTML file from before the shutdown), send it to [readplace+migrate@readplace.com](mailto:readplace+migrate@readplace.com). I import the file by hand and load your articles into your Readplace account.
+If you have a Pocket export file (the HTML file from before the shutdown), send it to [hutch+migrate@readplace.com](mailto:hutch+migrate@readplace.com). I import the file by hand and load your articles into your Readplace account.
 
 What gets imported: every URL and its original title from the export file. What does not get imported: tags, highlights, and read/unread status. Pocket's export format only included URLs and titles.
 
@@ -89,7 +89,7 @@ If you downloaded the HTML export file before the shutdown, you can still use it
 
 **How do I import Pocket articles into another app?**
 
-Most read-it-later apps accept the HTML export file that Pocket provided. Readwise Reader, Instapaper, and Raindrop.io all support it. Readplace accepts it too. Send the file to readplace+migrate@readplace.com and the import is handled for you.
+Most read-it-later apps accept the HTML export file that Pocket provided. Readwise Reader, Instapaper, and Raindrop.io all support it. Readplace accepts it too. Send the file to hutch+migrate@readplace.com and the import is handled for you.
 
 **I lost my Omnivore reading list too. Can Readplace help?**
 
