@@ -52,7 +52,7 @@ export function LoginPage(data: AuthFormData, options?: { statusCode?: number })
 		passwordField: toFieldViewModel(errors, "password"),
 		foundingProgressHtml: renderFoundingProgress({
 			userCount: data.userCount,
-			caption: "First 100 accounts are free, forever.",
+			caption: "Founding members: $3.99/mo, locked forever.",
 		}),
 	});
 
@@ -99,7 +99,7 @@ export function SignupPage(data: AuthFormData, options?: { statusCode?: number }
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),
 		foundingProgressHtml: renderFoundingProgress({
 			userCount: data.userCount,
-			caption: "First 100 accounts are free, forever.",
+			caption: "Founding members: $3.99/mo, locked forever.",
 		}),
 	});
 

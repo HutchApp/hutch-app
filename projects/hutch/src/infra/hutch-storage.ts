@@ -9,6 +9,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 	public readonly oauthTable: aws.dynamodb.Table;
 	public readonly verificationTokensTable: aws.dynamodb.Table;
 	public readonly passwordResetTokensTable: aws.dynamodb.Table;
+	public readonly pendingSignupsTable: aws.dynamodb.Table;
 
 	constructor(name: string, args: { deletionProtection: boolean; tableNames: {
 		articles: string;
@@ -18,6 +19,7 @@ export class HutchStorage extends pulumi.ComponentResource {
 		oauth: string;
 		verificationTokens: string;
 		passwordResetTokens: string;
+		pendingSignups: string;
 	} }, opts?: pulumi.ComponentResourceOptions) {
 		super("hutch:infra:HutchStorage", name, {}, opts);
 
@@ -129,6 +131,17 @@ export class HutchStorage extends pulumi.ComponentResource {
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "token",
 			attributes: [{ name: "token", type: "S" }],
+			ttl: {
+				attributeName: "expiresAt",
+				enabled: true,
+			},
+		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
+
+		this.pendingSignupsTable = new aws.dynamodb.Table(`hutch-pending-signups`, {
+			name: args.tableNames.pendingSignups,
+			billingMode: "PAY_PER_REQUEST",
+			hashKey: "checkoutSessionId",
+			attributes: [{ name: "checkoutSessionId", type: "S" }],
 			ttl: {
 				attributeName: "expiresAt",
 				enabled: true,

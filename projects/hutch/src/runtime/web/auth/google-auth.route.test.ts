@@ -10,6 +10,7 @@ import {
 
 import { GoogleIdSchema } from "../../providers/google-auth/google-auth.schema";
 import type { ExchangeGoogleCode } from "../../providers/google-auth/google-token.types";
+import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
 
 const TEST_CLIENT_ID = "test-google-client-id";
 const TEST_CLIENT_SECRET = "test-google-client-secret";
@@ -204,7 +205,7 @@ describe("Google auth routes", () => {
 			expect(doc.querySelector("[data-test-global-error]")?.textContent).toContain("not verified");
 		});
 
-		it("should create a new user and redirect to /queue by default", async () => {
+		it("should redirect a brand-new user to a Stripe checkout URL", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 			const { app, auth } = createTestApp({
 				...fixture,
@@ -221,16 +222,48 @@ describe("Google auth routes", () => {
 				.set("Cookie", `hutch_gstate=${encodeURIComponent(state)}`);
 
 			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/queue");
-			expect(cookiesFrom(response).join(";")).toContain("hutch_sid=");
+			expect(response.headers.location).toMatch(/^https:\/\/checkout\.stripe\.test\//);
+
+			const lookup = await auth.findUserByEmail("brand-new@example.com");
+			expect(lookup).toBeNull();
+		});
+
+		it("should create the Google user only after successful Stripe checkout", async () => {
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app, auth, stripe } = createTestApp({
+				...fixture,
+				google: {
+					exchangeGoogleCode: stubExchange({ email: "brand-new@example.com" }),
+					clientId: "test-google-client-id",
+					clientSecret: "test-google-client-secret",
+				},
+			});
+			const state = signState(freshState());
+			const agent = request.agent(app);
+			const callbackResponse = await agent
+				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(state)}`)
+				.set("Cookie", `hutch_gstate=${encodeURIComponent(state)}`);
+			const stripeUrl = callbackResponse.headers.location;
+			const checkoutSessionId = CheckoutSessionIdSchema.parse(
+				new URL(stripeUrl).pathname.replace(/^\//, ""),
+			);
+			stripe.markPaid(checkoutSessionId);
+
+			const successResponse = await agent.get(
+				`/auth/checkout/success?session_id=${encodeURIComponent(checkoutSessionId)}`,
+			);
+
+			expect(successResponse.status).toBe(303);
+			expect(successResponse.headers.location).toBe("/queue");
+			expect(cookiesFrom(successResponse).join(";")).toContain("hutch_sid=");
 
 			const lookup = await auth.findUserByEmail("brand-new@example.com");
 			expect(lookup?.emailVerified).toBe(true);
 		});
 
-		it("should redirect to return URL from state payload", async () => {
+		it("should preserve the return URL through the Stripe checkout boundary", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { app } = createTestApp({
+			const { app, stripe } = createTestApp({
 				...fixture,
 				google: {
 					exchangeGoogleCode: stubExchange({ email: "return@example.com" }),
@@ -239,13 +272,21 @@ describe("Google auth routes", () => {
 				},
 			});
 			const state = signState(freshState({ returnUrl: "/save?url=https%3A%2F%2Fexample.com" }));
-
-			const response = await request(app)
+			const agent = request.agent(app);
+			const callbackResponse = await agent
 				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(state)}`)
 				.set("Cookie", `hutch_gstate=${encodeURIComponent(state)}`);
+			const checkoutSessionId = CheckoutSessionIdSchema.parse(
+				new URL(callbackResponse.headers.location).pathname.replace(/^\//, ""),
+			);
+			stripe.markPaid(checkoutSessionId);
 
-			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/save?url=https%3A%2F%2Fexample.com");
+			const successResponse = await agent.get(
+				`/auth/checkout/success?session_id=${encodeURIComponent(checkoutSessionId)}`,
+			);
+
+			expect(successResponse.status).toBe(303);
+			expect(successResponse.headers.location).toBe("/save?url=https%3A%2F%2Fexample.com");
 		});
 
 		it("should reuse an existing verified email/password account and keep the password working", async () => {

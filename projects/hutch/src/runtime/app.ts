@@ -45,6 +45,10 @@ import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-u
 import { initPutPendingHtml } from "./providers/pending-html/put-pending-html";
 import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
+import { initInMemoryStripeCheckout } from "./providers/stripe-checkout/in-memory-stripe-checkout";
+import { initStripeCheckout } from "./providers/stripe-checkout/stripe-checkout";
+import { initInMemoryPendingSignup } from "./providers/pending-signup/in-memory-pending-signup";
+import { initDynamoDbPendingSignup } from "./providers/pending-signup/dynamodb-pending-signup";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { initLogParseError, type ParseErrorEvent } from "@packages/hutch-infra-components";
 import { createApp } from "./server";
@@ -71,10 +75,13 @@ function initProviders() {
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
 		const passwordResetTokensTable = requireEnv("DYNAMODB_PASSWORD_RESET_TOKENS_TABLE");
+		const pendingSignupsTable = requireEnv("DYNAMODB_PENDING_SIGNUPS_TABLE");
 		const googleClientId = requireEnv("GOOGLE_LOGIN_CLIENT_ID");
 		const googleClientSecret = requireEnv("GOOGLE_LOGIN_CLIENT_SECRET");
 		const appOriginForRedirect = requireEnv("APP_ORIGIN");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
+		const stripeApiKey = requireEnv("STRIPE_SECRET_KEY");
+		const stripePriceId = requireEnv("STRIPE_PRICE_ID");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
 		const pendingHtmlBucketName = requireEnv("PENDING_HTML_BUCKET_NAME");
@@ -125,6 +132,13 @@ function initProviders() {
 			clientSecret: googleClientSecret,
 		};
 
+		const stripe = initStripeCheckout({
+			apiKey: stripeApiKey,
+			priceId: stripePriceId,
+			fetch: globalThis.fetch,
+		});
+		const pendingSignup = initDynamoDbPendingSignup({ client, tableName: pendingSignupsTable });
+
 		return {
 			auth,
 			articleStore,
@@ -133,6 +147,8 @@ function initProviders() {
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			...initDynamoDbPasswordReset({ client, tableName: passwordResetTokensTable }),
+			...stripe,
+			...pendingSignup,
 			googleAuth,
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
@@ -155,6 +171,8 @@ function initProviders() {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const devStripe = initInMemoryStripeCheckout();
+	const devPendingSignup = initInMemoryPendingSignup();
 	const devGoogleClientId = getEnv("GOOGLE_LOGIN_CLIENT_ID");
 	const devGoogleClientSecret = getEnv("GOOGLE_LOGIN_CLIENT_SECRET");
 	assert(
@@ -251,6 +269,10 @@ function initProviders() {
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
 		...initInMemoryPasswordReset(),
+		createCheckoutSession: devStripe.createCheckoutSession,
+		retrieveCheckoutSession: devStripe.retrieveCheckoutSession,
+		storePendingSignup: devPendingSignup.storePendingSignup,
+		consumePendingSignup: devPendingSignup.consumePendingSignup,
 		googleAuth,
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),

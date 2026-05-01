@@ -1,0 +1,50 @@
+import { randomBytes } from "node:crypto";
+import { CheckoutSessionIdSchema } from "./stripe-checkout.schema";
+import type {
+	CheckoutSessionId,
+	CreateCheckoutSession,
+	RetrieveCheckoutSession,
+} from "./stripe-checkout.types";
+
+interface StoredSession {
+	customerEmail: string;
+	paid: boolean;
+}
+
+export function initInMemoryStripeCheckout(): {
+	createCheckoutSession: CreateCheckoutSession;
+	retrieveCheckoutSession: RetrieveCheckoutSession;
+	markPaid: (id: CheckoutSessionId) => void;
+	getCheckoutUrl: (id: CheckoutSessionId) => string;
+} {
+	const sessions = new Map<CheckoutSessionId, StoredSession>();
+	const urls = new Map<CheckoutSessionId, string>();
+
+	const createCheckoutSession: CreateCheckoutSession = async ({ customerEmail, successUrl }) => {
+		const id = CheckoutSessionIdSchema.parse(`cs_test_${randomBytes(12).toString("hex")}`);
+		sessions.set(id, { customerEmail, paid: false });
+		const url = `https://checkout.stripe.test/${id}?next=${encodeURIComponent(successUrl)}`;
+		urls.set(id, url);
+		return { id, url };
+	};
+
+	const retrieveCheckoutSession: RetrieveCheckoutSession = async (id) => {
+		const session = sessions.get(id);
+		if (!session) return { ok: false, reason: "not-found" };
+		return { ok: true, paid: session.paid, customerEmail: session.customerEmail };
+	};
+
+	const markPaid = (id: CheckoutSessionId) => {
+		const session = sessions.get(id);
+		if (!session) throw new Error(`No checkout session: ${id}`);
+		session.paid = true;
+	};
+
+	const getCheckoutUrl = (id: CheckoutSessionId): string => {
+		const url = urls.get(id);
+		if (!url) throw new Error(`No checkout URL: ${id}`);
+		return url;
+	};
+
+	return { createCheckoutSession, retrieveCheckoutSession, markPaid, getCheckoutUrl };
+}

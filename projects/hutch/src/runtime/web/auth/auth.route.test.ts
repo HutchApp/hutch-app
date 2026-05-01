@@ -7,6 +7,7 @@ import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
 } from "../../test-app-fakes";
+import { completeStripeSignup } from "./test-helpers/complete-stripe-signup";
 
 describe("Auth routes", () => {
 	describe("GET /login", () => {
@@ -213,7 +214,7 @@ describe("Auth routes", () => {
 	});
 
 	describe("POST /signup", () => {
-		it("should create user and redirect to /queue", async () => {
+		it("should redirect new visitors to a Stripe checkout URL", async () => {
 			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(app).post("/signup").type("form").send({
@@ -223,56 +224,67 @@ describe("Auth routes", () => {
 			});
 
 			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/queue");
-			expect(response.headers["set-cookie"].length).toBeGreaterThan(0);
+			expect(response.headers.location).toMatch(/^https:\/\/checkout\.stripe\.test\//);
 		});
 
-		it("should redirect to return URL after successful signup", async () => {
-			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		it("should create the account on successful Stripe checkout and redirect to /queue", async () => {
+			const { app, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			const response = await request(app)
-				.post("/signup?return=%2Foauth%2Fauthorize%3Fclient_id%3Dtest")
-				.type("form")
-				.send({
-					email: "new@example.com",
-					password: "password123",
-					confirmPassword: "password123",
-				});
+			const { successResponse } = await completeStripeSignup({
+				app,
+				stripe,
+				email: "new@example.com",
+				password: "password123",
+			});
 
-			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/oauth/authorize?client_id=test");
+			expect(successResponse.status).toBe(303);
+			expect(successResponse.headers.location).toBe("/queue");
+			expect(successResponse.headers["set-cookie"].length).toBeGreaterThan(0);
+		});
+
+		it("should redirect to return URL after successful Stripe checkout", async () => {
+			const { app, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const { successResponse } = await completeStripeSignup({
+				app,
+				stripe,
+				email: "new@example.com",
+				password: "password123",
+				returnUrl: "/oauth/authorize?client_id=test",
+			});
+
+			expect(successResponse.status).toBe(303);
+			expect(successResponse.headers.location).toBe("/oauth/authorize?client_id=test");
 		});
 
 		it("should ignore protocol-relative return URLs on signup", async () => {
-			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			const response = await request(app)
-				.post("/signup?return=%2F%2Fevil.com")
-				.type("form")
-				.send({
-					email: "new@example.com",
-					password: "password123",
-					confirmPassword: "password123",
-				});
+			const { successResponse } = await completeStripeSignup({
+				app,
+				stripe,
+				email: "new@example.com",
+				password: "password123",
+				returnUrl: "//evil.com",
+			});
 
-			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/queue");
+			expect(successResponse.status).toBe(303);
+			expect(successResponse.headers.location).toBe("/queue");
 		});
 
 		it("should ignore non-relative return URLs on signup", async () => {
-			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			const response = await request(app)
-				.post("/signup?return=https%3A%2F%2Fevil.com")
-				.type("form")
-				.send({
-					email: "new@example.com",
-					password: "password123",
-					confirmPassword: "password123",
-				});
+			const { successResponse } = await completeStripeSignup({
+				app,
+				stripe,
+				email: "new@example.com",
+				password: "password123",
+				returnUrl: "https://evil.com",
+			});
 
-			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/queue");
+			expect(successResponse.status).toBe(303);
+			expect(successResponse.headers.location).toBe("/queue");
 		});
 
 		it("should show error for duplicate email", async () => {
@@ -524,7 +536,7 @@ describe("Auth routes", () => {
 
 			const caption = doc.querySelector("[data-test-founding-caption]");
 			assert(caption, "founding caption must be rendered");
-			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
+			expect(caption.textContent).toBe("Founding members: $3.99/mo, locked forever.");
 		});
 
 		it("should render an explanatory caption on /signup for visitors who skipped the homepage", async () => {
@@ -533,7 +545,7 @@ describe("Auth routes", () => {
 
 			const caption = doc.querySelector("[data-test-founding-caption]");
 			assert(caption, "founding caption must be rendered");
-			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
+			expect(caption.textContent).toBe("Founding members: $3.99/mo, locked forever.");
 		});
 
 		it("should keep the progress bar on POST /login 422 responses", async () => {
