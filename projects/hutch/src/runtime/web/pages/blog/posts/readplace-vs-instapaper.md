@@ -2,7 +2,7 @@
 title: "Readplace vs Instapaper: Two Different Approaches to Read-It-Later"
 description: "A fair comparison of two read-it-later apps that took different paths after Pocket shut down. One is familiar and stable. The other bets on AI and active development."
 slug: "readplace-vs-instapaper"
-date: "2026-04-07"
+date: "2026-05-01"
 author: "Fayner Brack"
 keywords: "instapaper alternative, read it later, readplace vs instapaper, pocket replacement, AI summaries"
 ---
@@ -56,7 +56,7 @@ Readplace is browser-first. It's a web app with a browser extension, not a nativ
 
 Readplace is hosted in Australia. Your reading data stays on Australian infrastructure under Australian privacy law. That matters if you care about where your data lives.
 
-On pricing: Readplace costs $3.99 per month. The first 100 founding members get that rate locked forever. There's no free tier the way Instapaper offers one. Readplace is a paid product from the start.
+On pricing: the first 100 Readplace members got a free founding-member tier. After that, the price is $3.99 per month. There's no ongoing free tier the way Instapaper offers one. Readplace is a paid product from the start.
 
 The other side of that trade-off: Readplace ships new features every week. It's a product you can watch evolve in real time. That momentum is real, but so is the risk that comes with any newer product.
 
@@ -68,7 +68,7 @@ The other side of that trade-off: Readplace ships new features every week. It's 
 | **AI summaries** | No | Yes |
 | **Mobile apps** | iOS and Android | Browser-based (no native apps) |
 | **Browser extension** | Yes | Yes (Firefox, Chrome) |
-| **Free tier** | Yes | No |
+| **Free tier** | Yes | Founding members only (first 100) |
 | **Paid price** | $5.99/mo or $59.99/yr | $3.99/mo |
 | **E-reader integration** | Kobo (built-in) | No |
 | **Pocket import** | Yes | Yes |

@@ -2,7 +2,7 @@
 title: "Omnivore Shut Down. Here's a Read-It-Later App That Won't."
 description: "Omnivore shut down with two weeks notice. Readplace is a privacy-first read-it-later app built by a developer and no VC funding."
 slug: "omnivore-alternative"
-date: "2026-04-04"
+date: "2026-05-01"
 author: "Fayner Brack"
 keywords: "Omnivore alternative, Omnivore replacement, Omnivore shut down, read it later app, ElevenLabs Omnivore, Readwise Reader alternative, Pocket alternative"
 ---
@@ -87,7 +87,7 @@ $3.99/month. TL;DR summaries are included.
 
 Readwise Reader is a great choice for power users at $12.99/month. Readplace is simpler and cheaper. A focused read-it-later tool, not a full research platform.
 
-The first 100 founding members get $3.99/mo locked at that rate forever. [Sign up here](https://readplace.com/signup).
+The first 100 founding members get full access free, forever. [Sign up here](https://readplace.com/signup).
 
 ## Common questions from Omnivore users
 
@@ -97,9 +97,9 @@ ElevenLabs acquired Omnivore on November 1, 2024, and shut it down on November 1
 
 The team moved to ElevenLabs to work on text-to-speech, not reading tools. Omnivore is not coming back.
 
-**Is there an affordable Omnivore alternative?**
+**Is there a free Omnivore alternative?**
 
-Readplace costs $3.99/month. The first 100 founding members get that rate locked forever. Self-hosted alternatives like Karakeep and Wallabag are free but require you to run your own server. Readwise Reader is the most feature-complete option at $12.99/month.
+Readplace is free for the first 100 founding members. Full access, forever. After that, it costs $3.99/month. Self-hosted alternatives like Karakeep and Wallabag are free but require you to run your own server. Readwise Reader is the most feature-complete option at $12.99/month.
 
 **Can I import my Omnivore data into Readplace?**
 

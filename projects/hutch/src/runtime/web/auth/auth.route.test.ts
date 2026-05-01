@@ -536,7 +536,7 @@ describe("Auth routes", () => {
 
 			const caption = doc.querySelector("[data-test-founding-caption]");
 			assert(caption, "founding caption must be rendered");
-			expect(caption.textContent).toBe("Founding members: $3.99/mo, locked forever.");
+			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
 		});
 
 		it("should render an explanatory caption on /signup for visitors who skipped the homepage", async () => {
@@ -545,7 +545,7 @@ describe("Auth routes", () => {
 
 			const caption = doc.querySelector("[data-test-founding-caption]");
 			assert(caption, "founding caption must be rendered");
-			expect(caption.textContent).toBe("Founding members: $3.99/mo, locked forever.");
+			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
 		});
 
 		it("should keep the progress bar on POST /login 422 responses", async () => {
@@ -583,7 +583,7 @@ describe("Auth routes", () => {
 			const loginDoc = new JSDOM((await request(app).get("/login")).text).window.document;
 			const loginExhausted = loginDoc.querySelector("[data-test-founding-exhausted]");
 			assert(loginExhausted, "exhausted message must be rendered on /login");
-			expect(loginExhausted.textContent).toContain("All 100 founding member spots have been claimed");
+			expect(loginExhausted.textContent).toContain("The free allocation has been exhausted");
 			expect(loginExhausted.classList.contains("founding-progress__exhausted--visible")).toBe(true);
 			expect(
 				loginDoc.querySelector("[data-test-founding-progress] .founding-progress__fill")?.getAttribute("style"),
@@ -595,7 +595,7 @@ describe("Auth routes", () => {
 			const signupDoc = new JSDOM((await request(app).get("/signup")).text).window.document;
 			const signupExhausted = signupDoc.querySelector("[data-test-founding-exhausted]");
 			assert(signupExhausted, "exhausted message must be rendered on /signup");
-			expect(signupExhausted.textContent).toContain("All 100 founding member spots have been claimed");
+			expect(signupExhausted.textContent).toContain("The free allocation has been exhausted");
 			expect(signupExhausted.classList.contains("founding-progress__exhausted--visible")).toBe(true);
 		}, 30000);
 	});

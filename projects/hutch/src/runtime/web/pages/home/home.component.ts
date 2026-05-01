@@ -135,14 +135,14 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 					softwareVersion: "1.0",
 					datePublished: "2026-03-01",
 					inLanguage: "en",
-					isAccessibleForFree: false,
+					isAccessibleForFree: true,
 					offers: [
 						{
 							"@type": "Offer",
 							name: "Founding Member",
-							price: "3.99",
+							price: "0",
 							priceCurrency: "USD",
-							description: "$3.99/mo locked forever for the first 100 founding members",
+							description: "Free forever for the first 100 founding members",
 							eligibleQuantity: {
 								"@type": "QuantitativeValue",
 								value: 100,
@@ -235,10 +235,10 @@ export function HomePage(params: { userCount: number; staticBaseUrl: string; bro
 						},
 						{
 							"@type": "Question",
-							name: "How much does Readplace cost?",
+							name: "Is Readplace free?",
 							acceptedAnswer: {
 								"@type": "Answer",
-								text: "Readplace costs $3.99/month. The first 100 founding members get that rate locked forever. TL;DR summaries are included.",
+								text: "The first 100 founding members get full access free, forever. After that, $3.99/month — includes TL;DR summaries.",
 							},
 						},
 						{
