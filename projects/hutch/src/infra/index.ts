@@ -8,7 +8,7 @@ import { DomainRegistration } from "./domain-registration";
 import { DomainRedirect } from "./domain-redirect";
 import { HutchStorage } from "./hutch-storage";
 import { HutchStaticAssets } from "./hutch-static-assets";
-import { getEnv, requireEnv } from "../runtime/require-env";
+import { requireEnv } from "../runtime/require-env";
 
 const config = new pulumi.Config();
 const stage = config.require("stage");
@@ -139,9 +139,7 @@ const lambda = new HutchLambda("hutch", {
 		DYNAMODB_PASSWORD_RESET_TOKENS_TABLE: storage.passwordResetTokensTable.name,
 		GOOGLE_LOGIN_CLIENT_ID: requireEnv("GOOGLE_LOGIN_CLIENT_ID"),
 		GOOGLE_LOGIN_CLIENT_SECRET: requireEnv("GOOGLE_LOGIN_CLIENT_SECRET"),
-		RESEND_API_KEY: pulumi.runtime.isDryRun()
-			? (getEnv("RESEND_API_KEY") ?? "")
-			: requireEnv("RESEND_API_KEY"),
+		RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
 		STATIC_BASE_URL: staticAssets.baseUrl,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		CONTENT_BUCKET_NAME: contentBucketName,
