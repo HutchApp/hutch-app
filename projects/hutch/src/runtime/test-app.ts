@@ -29,6 +29,7 @@ import type {
 	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
+	CreateUserWithPasswordHash,
 	DestroySession,
 	FindUserByEmail,
 	GetSessionUserId,
@@ -38,6 +39,15 @@ import type {
 	UserExistsByEmail,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
+import type {
+	CheckoutSessionId,
+	CreateCheckoutSession,
+	RetrieveCheckoutSession,
+} from "./providers/stripe-checkout/stripe-checkout.types";
+import type {
+	ConsumePendingSignup,
+	StorePendingSignup,
+} from "./providers/pending-signup/pending-signup.types";
 import type {
 	ArticleMetadata,
 	Minutes,
@@ -73,6 +83,7 @@ import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 
 export interface AuthBundle {
 	createUser: CreateUser;
+	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
@@ -84,6 +95,18 @@ export interface AuthBundle {
 	markSessionEmailVerified: MarkSessionEmailVerified;
 	userExistsByEmail: UserExistsByEmail;
 	updatePassword: UpdatePassword;
+}
+
+export interface StripeCheckoutBundle {
+	createCheckoutSession: CreateCheckoutSession;
+	retrieveCheckoutSession: RetrieveCheckoutSession;
+	markPaid: (id: CheckoutSessionId) => void;
+	getCheckoutUrl: (id: CheckoutSessionId) => string;
+}
+
+export interface PendingSignupBundle {
+	storePendingSignup: StorePendingSignup;
+	consumePendingSignup: ConsumePendingSignup;
 }
 
 export interface ArticleStoreBundle {
@@ -198,6 +221,8 @@ export interface TestAppFixture {
 	google: GoogleAuthBundle | undefined;
 	admin: AdminBundle;
 	shared: SharedBundle;
+	stripe: StripeCheckoutBundle;
+	pendingSignup: PendingSignupBundle;
 }
 
 export interface TestAppResult {
@@ -210,6 +235,8 @@ export interface TestAppResult {
 	email: EmailBundle;
 	emailVerification: EmailVerificationBundle;
 	passwordReset: PasswordResetBundle;
+	stripe: StripeCheckoutBundle;
+	pendingSignup: PendingSignupBundle;
 }
 
 function flattenFixtureToAppDependencies(
@@ -223,6 +250,7 @@ function flattenFixtureToAppDependencies(
 		logParseError: fixture.shared.logParseError,
 		httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
 		createUser: fixture.auth.createUser,
+		createUserWithPasswordHash: fixture.auth.createUserWithPasswordHash,
 		createGoogleUser: fixture.auth.createGoogleUser,
 		findUserByEmail: fixture.auth.findUserByEmail,
 		verifyCredentials: fixture.auth.verifyCredentials,
@@ -266,6 +294,10 @@ function flattenFixtureToAppDependencies(
 		adminEmails: fixture.admin.adminEmails,
 		recrawlServiceToken: fixture.admin.recrawlServiceToken,
 		now: fixture.shared.now,
+		createCheckoutSession: fixture.stripe.createCheckoutSession,
+		retrieveCheckoutSession: fixture.stripe.retrieveCheckoutSession,
+		storePendingSignup: fixture.pendingSignup.storePendingSignup,
+		consumePendingSignup: fixture.pendingSignup.consumePendingSignup,
 	};
 }
 
@@ -281,5 +313,7 @@ export function createTestApp(fixture: TestAppFixture): TestAppResult {
 		email: fixture.email,
 		emailVerification: fixture.emailVerification,
 		passwordReset: fixture.passwordReset,
+		stripe: fixture.stripe,
+		pendingSignup: fixture.pendingSignup,
 	};
 }

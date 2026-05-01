@@ -49,11 +49,7 @@ export function LoginPage(data: AuthFormData, options?: { statusCode?: number })
 		globalError: data.globalError,
 		returnUrl: data.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
 		emailField: toFieldViewModel(errors, "email"),
-		passwordField: toFieldViewModel(errors, "password"),
-		foundingProgressHtml: renderFoundingProgress({
-			userCount: data.userCount,
-			caption: "First 100 accounts are free, forever.",
-		}),
+		passwordField: toFieldViewModel(errors, "password")
 	});
 
 	return {
@@ -99,7 +95,6 @@ export function SignupPage(data: AuthFormData, options?: { statusCode?: number }
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),
 		foundingProgressHtml: renderFoundingProgress({
 			userCount: data.userCount,
-			caption: "First 100 accounts are free, forever.",
 		}),
 	});
 
@@ -107,7 +102,7 @@ export function SignupPage(data: AuthFormData, options?: { statusCode?: number }
 		seo: {
 			title: "Sign up — Readplace",
 			description:
-				"Create a free Readplace account and start saving articles to read later.",
+				"Create a Readplace account and start saving articles to read later.",
 			canonicalUrl: "/signup",
 		},
 		styles: AUTH_STYLES,

@@ -7,6 +7,7 @@ import type {
 	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
+	CreateUserWithPasswordHash,
 	DestroySession,
 	FindUserByEmail,
 	GetSessionUserId,
@@ -34,6 +35,7 @@ interface StoredSession {
 
 export function initInMemoryAuth(): {
 	createUser: CreateUser;
+	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
@@ -58,6 +60,26 @@ export function initInMemoryAuth(): {
 
 		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 		const passwordHash = await hashPassword(password);
+
+		users.set(normalizedEmail, {
+			id: userId,
+			email: normalizedEmail,
+			passwordHash,
+			emailVerified: false,
+			registeredAt: new Date().toISOString(),
+		});
+
+		return { ok: true, userId };
+	};
+
+	const createUserWithPasswordHash: CreateUserWithPasswordHash = async ({ email, passwordHash }) => {
+		const normalizedEmail = normalizeEmail(email);
+
+		if (users.has(normalizedEmail)) {
+			return { ok: false, reason: "email-already-exists" };
+		}
+
+		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 
 		users.set(normalizedEmail, {
 			id: userId,
@@ -161,6 +183,7 @@ export function initInMemoryAuth(): {
 
 	return {
 		createUser,
+		createUserWithPasswordHash,
 		createGoogleUser,
 		findUserByEmail,
 		verifyCredentials,

@@ -27,6 +27,7 @@ const tableNames = {
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
 	passwordResetTokens: config.require("dynamodbPasswordResetTokensTable"),
+	pendingSignups: config.require("dynamodbPendingSignupsTable"),
 };
 
 const storage = new HutchStorage("hutch", {
@@ -93,6 +94,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 		{ arn: storage.oauthTable.arn, includeIndexes: true },
 		{ arn: storage.verificationTokensTable.arn, includeIndexes: false },
 		{ arn: storage.passwordResetTokensTable.arn, includeIndexes: false },
+		{ arn: storage.pendingSignupsTable.arn, includeIndexes: false },
 	],
 	actions: [
 		"dynamodb:GetItem",
@@ -137,9 +139,12 @@ const lambda = new HutchLambda("hutch", {
 		DYNAMODB_OAUTH_TABLE: storage.oauthTable.name,
 		DYNAMODB_VERIFICATION_TOKENS_TABLE: storage.verificationTokensTable.name,
 		DYNAMODB_PASSWORD_RESET_TOKENS_TABLE: storage.passwordResetTokensTable.name,
+		DYNAMODB_PENDING_SIGNUPS_TABLE: storage.pendingSignupsTable.name,
 		GOOGLE_LOGIN_CLIENT_ID: requireEnv("GOOGLE_LOGIN_CLIENT_ID"),
 		GOOGLE_LOGIN_CLIENT_SECRET: requireEnv("GOOGLE_LOGIN_CLIENT_SECRET"),
 		RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
+		STRIPE_SECRET_KEY: requireEnv("STRIPE_SECRET_KEY"),
+		STRIPE_PRICE_ID: requireEnv("STRIPE_PRICE_ID"),
 		STATIC_BASE_URL: staticAssets.baseUrl,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		CONTENT_BUCKET_NAME: contentBucketName,

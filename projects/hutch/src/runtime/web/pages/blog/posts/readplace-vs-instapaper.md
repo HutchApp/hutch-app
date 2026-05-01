@@ -2,7 +2,7 @@
 title: "Readplace vs Instapaper: Two Different Approaches to Read-It-Later"
 description: "A fair comparison of two read-it-later apps that took different paths after Pocket shut down. One is familiar and stable. The other bets on AI and active development."
 slug: "readplace-vs-instapaper"
-date: "2026-04-07"
+date: "2026-05-01"
 author: "Fayner Brack"
 keywords: "instapaper alternative, read it later, readplace vs instapaper, pocket replacement, AI summaries"
 ---

@@ -10,6 +10,7 @@ import type {
 	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
+	CreateUserWithPasswordHash,
 	DestroySession,
 	FindUserByEmail,
 	GetSessionUserId,
@@ -19,6 +20,14 @@ import type {
 	UserExistsByEmail,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
+import type {
+	CreateCheckoutSession,
+	RetrieveCheckoutSession,
+} from "./providers/stripe-checkout/stripe-checkout.types";
+import type {
+	ConsumePendingSignup,
+	StorePendingSignup,
+} from "./providers/pending-signup/pending-signup.types";
 import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import type {
 	DeleteArticle,
@@ -90,6 +99,7 @@ interface AppDependencies {
 	appOrigin: string;
 	staticBaseUrl: string;
 	createUser: CreateUser;
+	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
@@ -141,6 +151,10 @@ interface AppDependencies {
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logParseError: LogParseError;
 	now: () => Date;
+	createCheckoutSession: CreateCheckoutSession;
+	retrieveCheckoutSession: RetrieveCheckoutSession;
+	storePendingSignup: StorePendingSignup;
+	consumePendingSignup: ConsumePendingSignup;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -345,7 +359,9 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/embed", initEmbedRoutes({ appOrigin }));
 
 	const authRouter = initAuthRoutes({
-		createUser: deps.createUser,
+		createUserWithPasswordHash: deps.createUserWithPasswordHash,
+		createGoogleUser: deps.createGoogleUser,
+		findUserByEmail: deps.findUserByEmail,
 		verifyCredentials: deps.verifyCredentials,
 		createSession: deps.createSession,
 		destroySession: deps.destroySession,
@@ -355,6 +371,11 @@ export function createApp(dependencies: AppDependencies): Express {
 		sendEmail: deps.sendEmail,
 		createVerificationToken: deps.createVerificationToken,
 		verifyEmailToken: deps.verifyEmailToken,
+		createCheckoutSession: deps.createCheckoutSession,
+		retrieveCheckoutSession: deps.retrieveCheckoutSession,
+		storePendingSignup: deps.storePendingSignup,
+		consumePendingSignup: deps.consumePendingSignup,
+		appOrigin,
 		baseUrl: deps.baseUrl,
 		logError: deps.logError,
 	});
@@ -366,11 +387,12 @@ export function createApp(dependencies: AppDependencies): Express {
 			googleClientSecret: deps.googleAuth.clientSecret,
 			appOrigin,
 			createSession: deps.createSession,
-			createGoogleUser: deps.createGoogleUser,
 			findUserByEmail: deps.findUserByEmail,
 			countUsers,
 			markEmailVerified: deps.markEmailVerified,
 			exchangeGoogleCode: deps.googleAuth.exchangeGoogleCode,
+			createCheckoutSession: deps.createCheckoutSession,
+			storePendingSignup: deps.storePendingSignup,
 			logError: deps.logError,
 		});
 		app.use(googleAuthRouter);

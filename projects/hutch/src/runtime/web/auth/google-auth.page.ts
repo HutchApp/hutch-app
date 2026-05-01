@@ -1,18 +1,17 @@
-import assert from "node:assert";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Request, Response, Router } from "express";
 import express from "express";
 import { z } from "zod";
 import { UserIdSchema } from "../../domain/user/user.schema";
-import type { UserId } from "../../domain/user/user.types";
 import type {
 	CountUsers,
-	CreateGoogleUser,
 	CreateSession,
 	FindUserByEmail,
 	MarkEmailVerified,
 } from "../../providers/auth/auth.types";
 import type { ExchangeGoogleCode } from "../../providers/google-auth/google-token.types";
+import type { StorePendingSignup } from "../../providers/pending-signup/pending-signup.types";
+import type { CreateCheckoutSession } from "../../providers/stripe-checkout/stripe-checkout.types";
 import { renderPage } from "../render-page";
 import { sendComponent } from "../send-component";
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
@@ -39,11 +38,12 @@ interface GoogleAuthDependencies {
 	googleClientSecret: string;
 	appOrigin: string;
 	createSession: CreateSession;
-	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
 	countUsers: CountUsers;
 	markEmailVerified: MarkEmailVerified;
 	exchangeGoogleCode: ExchangeGoogleCode;
+	createCheckoutSession: CreateCheckoutSession;
+	storePendingSignup: StorePendingSignup;
 	logError: (message: string, error?: Error) => void;
 }
 
@@ -138,31 +138,42 @@ export const initGoogleAuthRoutes = (deps: GoogleAuthDependencies): Router => {
 			return;
 		}
 
-		const getOrCreateUserId = async (): Promise<UserId> => {
-			const existing = await deps.findUserByEmail(tokenResult.email);
-			if (existing) {
-				if (!existing.emailVerified) {
-					await deps.markEmailVerified(tokenResult.email);
-				}
-				return existing.userId;
-			}
-
-			const newUserId = UserIdSchema.parse(randomBytes(16).toString("hex"));
-			const created = await deps.createGoogleUser({ email: tokenResult.email, userId: newUserId });
-			if (created.ok) return newUserId;
-
-			const raced = await deps.findUserByEmail(tokenResult.email);
-			assert(raced, "createGoogleUser said email-already-exists but findUserByEmail missed");
-			if (!raced.emailVerified) {
+		const existing = await deps.findUserByEmail(tokenResult.email);
+		if (existing) {
+			if (!existing.emailVerified) {
 				await deps.markEmailVerified(tokenResult.email);
 			}
-			return raced.userId;
-		};
+			const sessionId = await deps.createSession({ userId: existing.userId, emailVerified: true });
+			res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
+			res.redirect(303, parseReturnUrl({ return: stateData.returnUrl }));
+			return;
+		}
 
-		const userId = await getOrCreateUserId();
-		const sessionId = await deps.createSession({ userId, emailVerified: true });
-		res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
-		res.redirect(303, parseReturnUrl({ return: stateData.returnUrl }));
+		const newUserId = UserIdSchema.parse(randomBytes(16).toString("hex"));
+		const safeReturnUrl = extractReturnUrl({ return: stateData.returnUrl });
+		const returnSuffix = safeReturnUrl
+			? `&return=${encodeURIComponent(safeReturnUrl)}`
+			: "";
+		const successUrl = `${deps.appOrigin}/auth/checkout/success?session_id={CHECKOUT_SESSION_ID}${returnSuffix}`;
+		const cancelUrl = `${deps.appOrigin}/login`;
+
+		const checkout = await deps.createCheckoutSession({
+			customerEmail: tokenResult.email,
+			successUrl,
+			cancelUrl,
+		});
+
+		await deps.storePendingSignup({
+			checkoutSessionId: checkout.id,
+			signup: {
+				method: "google",
+				email: tokenResult.email,
+				userId: newUserId,
+				...(safeReturnUrl ? { returnUrl: safeReturnUrl } : {}),
+			},
+		});
+
+		res.redirect(303, checkout.url);
 	});
 
 	return router;

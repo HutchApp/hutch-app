@@ -13,6 +13,7 @@ import type {
 	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
+	CreateUserWithPasswordHash,
 	DestroySession,
 	FindUserByEmail,
 	GetSessionUserId,
@@ -47,6 +48,7 @@ export function initDynamoDbAuth(deps: {
 	sessionsTableName: string;
 }): {
 	createUser: CreateUser;
+	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
@@ -74,6 +76,30 @@ export function initDynamoDbAuth(deps: {
 		const normalizedEmail = normalizeEmail(email);
 		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 		const passwordHash = await hashPassword(password);
+
+		try {
+			await users.put({
+				Item: {
+					email: normalizedEmail,
+					userId,
+					passwordHash,
+					emailVerified: false,
+					registeredAt: new Date().toISOString(),
+				},
+				ConditionExpression: "attribute_not_exists(email)",
+			});
+			return { ok: true, userId };
+		} catch (error) {
+			if (error instanceof ConditionalCheckFailedException) {
+				return { ok: false, reason: "email-already-exists" };
+			}
+			throw error;
+		}
+	};
+
+	const createUserWithPasswordHash: CreateUserWithPasswordHash = async ({ email, passwordHash }) => {
+		const normalizedEmail = normalizeEmail(email);
+		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 
 		try {
 			await users.put({
@@ -209,6 +235,7 @@ export function initDynamoDbAuth(deps: {
 
 	return {
 		createUser,
+		createUserWithPasswordHash,
 		createGoogleUser,
 		findUserByEmail,
 		verifyCredentials,

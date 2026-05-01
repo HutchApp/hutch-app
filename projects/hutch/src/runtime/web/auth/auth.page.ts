@@ -1,21 +1,34 @@
 import type { Request, Response, Router } from "express";
 import express from "express";
+import { z } from "zod";
 import type {
 	CountUsers,
+	CreateGoogleUser,
 	CreateSession,
-	CreateUser,
+	CreateUserWithPasswordHash,
 	DestroySession,
+	FindUserByEmail,
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
 	VerifyCredentials,
 } from "../../providers/auth/auth.types";
+import { hashPassword } from "../../providers/auth/password";
+import type { UserId } from "../../domain/user/user.types";
 import type { SendEmail } from "../../providers/email/email.types";
 import type {
 	CreateVerificationToken,
 	VerifyEmailToken,
 } from "../../providers/email-verification/email-verification.types";
 import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
-import { z } from "zod";
+import type {
+	ConsumePendingSignup,
+	StorePendingSignup,
+} from "../../providers/pending-signup/pending-signup.types";
+import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
+import type {
+	CreateCheckoutSession,
+	RetrieveCheckoutSession,
+} from "../../providers/stripe-checkout/stripe-checkout.types";
 import { renderPage } from "../render-page";
 import { sendComponent } from "../send-component";
 import { LoginSchema, SignupSchema } from "./auth.schema";
@@ -27,11 +40,14 @@ import { flattenZodErrors } from "./flatten-zod-errors";
 import { initFetchUserCount } from "./fetch-user-count";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
+const CheckoutSuccessQuerySchema = z.object({ session_id: z.string().min(1) }).passthrough();
 
 const EMAIL_FROM = "Fayner Brack <readplace@readplace.com>";
 
 interface AuthDependencies {
-	createUser: CreateUser;
+	createUserWithPasswordHash: CreateUserWithPasswordHash;
+	createGoogleUser: CreateGoogleUser;
+	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
 	createSession: CreateSession;
 	destroySession: DestroySession;
@@ -41,6 +57,11 @@ interface AuthDependencies {
 	sendEmail: SendEmail;
 	createVerificationToken: CreateVerificationToken;
 	verifyEmailToken: VerifyEmailToken;
+	createCheckoutSession: CreateCheckoutSession;
+	retrieveCheckoutSession: RetrieveCheckoutSession;
+	storePendingSignup: StorePendingSignup;
+	consumePendingSignup: ConsumePendingSignup;
+	appOrigin: string;
 	baseUrl: string;
 	logError: (message: string, error?: Error) => void;
 }
@@ -53,6 +74,36 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		logError: deps.logError,
 		logPrefix: "[Auth]",
 	});
+
+	const buildSuccessUrl = (returnUrl: string | undefined): string => {
+		/** Stripe substitutes {CHECKOUT_SESSION_ID} server-side, so the URL must
+		 * contain the literal placeholder — we cannot URL-encode the braces. */
+		const returnSuffix = returnUrl ? `&return=${encodeURIComponent(returnUrl)}` : "";
+		return `${deps.appOrigin}/auth/checkout/success?session_id={CHECKOUT_SESSION_ID}${returnSuffix}`;
+	};
+
+	const buildCancelUrl = (path: "/signup", returnUrl: string | undefined): string => {
+		const suffix = returnUrl ? `?return=${encodeURIComponent(returnUrl)}` : "";
+		return `${deps.appOrigin}${path}${suffix}`;
+	};
+
+	const sendVerificationEmail = (userId: UserId, email: string): void => {
+		deps.createVerificationToken({ userId, email })
+			.then((token) => {
+				const verifyUrl = `${deps.baseUrl}/verify-email?token=${token}`;
+				const html = buildVerificationEmailHtml(verifyUrl);
+				return deps.sendEmail({
+					from: EMAIL_FROM,
+					to: email,
+					bcc: "readplace+account_verifications@readplace.com",
+					subject: "Verify your email — Readplace",
+					html,
+				});
+			})
+			.catch((err) => {
+				deps.logError("[Email] Verification email failed", err instanceof Error ? err : new Error(String(err)));
+			});
+	};
 
 	router.get("/login", async (req: Request, res: Response) => {
 		if (req.userId) {
@@ -142,9 +193,9 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 
 		const { email, password } = parsed.data;
-		const createResult = await deps.createUser({ email, password });
 
-		if (!createResult.ok) {
+		const existing = await deps.findUserByEmail(email);
+		if (existing) {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				res,
@@ -161,25 +212,112 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 
-		const sessionId = await deps.createSession({ userId: createResult.userId, emailVerified: false });
-		res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
-		res.redirect(303, parseReturnUrl(req.query));
+		const passwordHash = await hashPassword(password);
 
-		deps.createVerificationToken({ userId: createResult.userId, email })
-			.then((token) => {
-				const verifyUrl = `${deps.baseUrl}/verify-email?token=${token}`;
-				const html = buildVerificationEmailHtml(verifyUrl);
-				return deps.sendEmail({
-					from: EMAIL_FROM,
-					to: email,
-					bcc: "readplace+account_verifications@readplace.com",
-					subject: "Verify your email — Readplace",
-					html,
-				});
-			})
-			.catch((err) => {
-				deps.logError("[Email] Verification email failed", err instanceof Error ? err : new Error(String(err)));
+		const checkout = await deps.createCheckoutSession({
+			customerEmail: email,
+			successUrl: buildSuccessUrl(returnUrl),
+			cancelUrl: buildCancelUrl("/signup", returnUrl),
+		});
+
+		await deps.storePendingSignup({
+			checkoutSessionId: checkout.id,
+			signup: {
+				method: "email",
+				email,
+				passwordHash,
+				...(returnUrl ? { returnUrl } : {}),
+			},
+		});
+
+		res.redirect(303, checkout.url);
+	});
+
+	router.get("/auth/checkout/success", async (req: Request, res: Response) => {
+		const parsedQuery = CheckoutSuccessQuerySchema.safeParse(req.query);
+		if (!parsedQuery.success) {
+			const userCount = await fetchUserCount();
+			sendComponent(
+				res,
+				renderPage(req, SignupPage(
+					{
+						userCount,
+						globalError: "Missing checkout session — please start again.",
+					},
+					{ statusCode: 400 },
+				)),
+			);
+			return;
+		}
+
+		const checkoutSessionId = CheckoutSessionIdSchema.parse(parsedQuery.data.session_id);
+		const session = await deps.retrieveCheckoutSession(checkoutSessionId);
+
+		const renderFailure = async (statusCode: number, globalError: string) => {
+			const userCount = await fetchUserCount();
+			sendComponent(
+				res,
+				renderPage(req, SignupPage({ userCount, globalError }, { statusCode })),
+			);
+		};
+
+		if (!session.ok) {
+			await renderFailure(404, "Checkout session not found — please start again.");
+			return;
+		}
+
+		if (!session.paid) {
+			await renderFailure(402, "Payment was not completed. Please try again.");
+			return;
+		}
+
+		const pending = await deps.consumePendingSignup(checkoutSessionId);
+		if (!pending) {
+			await renderFailure(409, "This checkout link has already been used.");
+			return;
+		}
+
+		const returnPath = parseReturnUrl({ return: pending.returnUrl });
+
+		if (pending.method === "email") {
+			const created = await deps.createUserWithPasswordHash({
+				email: pending.email,
+				passwordHash: pending.passwordHash,
 			});
+			if (!created.ok) {
+				await renderFailure(409, "An account with this email already exists. Please sign in.");
+				return;
+			}
+
+			const sessionId = await deps.createSession({ userId: created.userId, emailVerified: false });
+			res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
+			sendVerificationEmail(created.userId, pending.email);
+			res.redirect(303, returnPath);
+			return;
+		}
+
+		const created = await deps.createGoogleUser({
+			email: pending.email,
+			userId: pending.userId,
+		});
+		if (!created.ok) {
+			const lookup = await deps.findUserByEmail(pending.email);
+			if (!lookup) {
+				await renderFailure(500, "Account creation failed. Please contact support.");
+				return;
+			}
+			if (!lookup.emailVerified) {
+				await deps.markEmailVerified(pending.email);
+			}
+			const sessionId = await deps.createSession({ userId: lookup.userId, emailVerified: true });
+			res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
+			res.redirect(303, returnPath);
+			return;
+		}
+
+		const sessionId = await deps.createSession({ userId: created.userId, emailVerified: true });
+		res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
+		res.redirect(303, returnPath);
 	});
 
 	router.get("/verify-email", async (req: Request, res: Response) => {

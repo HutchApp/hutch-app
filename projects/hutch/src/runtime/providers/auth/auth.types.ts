@@ -13,6 +13,11 @@ export type CreateUser = (credentials: {
 	password: string;
 }) => Promise<CreateUserResult>;
 
+export type CreateUserWithPasswordHash = (credentials: {
+	email: string;
+	passwordHash: string;
+}) => Promise<CreateUserResult>;
+
 export type VerifyCredentials = (credentials: {
 	email: string;
 	password: string;

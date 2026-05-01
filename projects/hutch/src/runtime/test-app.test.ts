@@ -60,6 +60,8 @@ describe("createTestApp + createDefaultTestAppFixture", () => {
 			},
 			admin: fixture.admin,
 			shared: fixture.shared,
+			stripe: fixture.stripe,
+			pendingSignup: fixture.pendingSignup,
 		});
 
 		expect(typeof result.app).toBe("function");
