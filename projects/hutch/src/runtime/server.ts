@@ -43,6 +43,7 @@ import type {
 	MarkSummaryPending,
 } from "./providers/article-summary/article-summary.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
+import type { PublishRecrawlLinkInitiated } from "./providers/events/publish-recrawl-link-initiated.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { PublishSaveLinkRawHtmlCommand } from "./providers/events/publish-save-link-raw-html-command.types";
 import type { PutPendingHtml } from "./providers/pending-html/pending-html.types";
@@ -122,6 +123,7 @@ interface AppDependencies {
 	oauthModel: OAuthModel;
 	validateAccessToken: ValidateAccessToken;
 	publishLinkSaved: PublishLinkSaved;
+	publishRecrawlLinkInitiated: PublishRecrawlLinkInitiated;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
 	putPendingHtml: PutPendingHtml;
@@ -438,7 +440,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticleCrawlStatus: deps.findArticleCrawlStatus,
 		markCrawlPending: deps.markCrawlPending,
 		forceMarkCrawlPending: deps.forceMarkCrawlPending,
-		publishSaveAnonymousLink: deps.publishSaveAnonymousLink,
+		publishRecrawlLinkInitiated: deps.publishRecrawlLinkInitiated,
 		findUserByEmail: deps.findUserByEmail,
 		adminEmails: deps.adminEmails,
 		serviceToken: deps.recrawlServiceToken,

@@ -36,7 +36,7 @@ interface RecrawlHarness {
 	articleStore: TestAppResult["articleStore"];
 	articleCrawl: TestAppResult["articleCrawl"];
 	summary: ReturnType<typeof createFakeSummaryProvider>;
-	anonymousPublishedCalls: { url: string }[];
+	recrawlPublishedCalls: { url: string }[];
 }
 
 function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarness {
@@ -51,9 +51,9 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
 	// publisher here is a pure recorder — it does NOT synchronously run
 	// applyParseResult. The eventual worker run is out of scope for these
 	// route tests (it's covered by save-link's own tests).
-	const anonymousPublishedCalls: { url: string }[] = [];
-	const publishSaveAnonymousLink = async (params: { url: string }) => {
-		anonymousPublishedCalls.push(params);
+	const recrawlPublishedCalls: { url: string }[] = [];
+	const publishRecrawlLinkInitiated = async (params: { url: string }) => {
+		recrawlPublishedCalls.push(params);
 	};
 
 	const { app, auth, articleStore, articleCrawl } = createTestApp({
@@ -64,7 +64,8 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
  },
 		events: {
 			publishLinkSaved: fixture.events.publishLinkSaved,
-			publishSaveAnonymousLink: publishSaveAnonymousLink,
+			publishRecrawlLinkInitiated: publishRecrawlLinkInitiated,
+			publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 			publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
 		},
@@ -75,7 +76,7 @@ function buildHarness(options: { adminEmails: readonly string[] }): RecrawlHarne
  },
 	});
 
-	return { app, auth, articleStore, articleCrawl, summary, anonymousPublishedCalls };
+	return { app, auth, articleStore, articleCrawl, summary, recrawlPublishedCalls };
 }
 
 async function loginAs(
@@ -255,7 +256,7 @@ describe("Admin recrawl routes", () => {
 
 			expect(response.status).toBe(200);
 			expect(response.headers["cache-control"]).toBe("no-store");
-			expect(harness.anonymousPublishedCalls).toEqual([{ url: ARTICLE_URL }]);
+			expect(harness.recrawlPublishedCalls).toEqual([{ url: ARTICLE_URL }]);
 			const doc = new JSDOM(response.text).window.document;
 			const readerSlot = doc.querySelector("[data-test-reader-slot]");
 			expect(readerSlot?.getAttribute("data-reader-status")).toBe("pending");

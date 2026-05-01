@@ -14,7 +14,7 @@ import type {
 	ForceMarkSummaryPending,
 	MarkSummaryPending,
 } from "../../../providers/article-summary/article-summary.types";
-import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
+import type { PublishRecrawlLinkInitiated } from "../../../providers/events/publish-recrawl-link-initiated.types";
 import type { FindUserByEmail } from "../../../providers/auth/auth.types";
 import { renderPage } from "../../render-page";
 import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";
@@ -36,7 +36,7 @@ export interface AdminRecrawlDependencies {
 	findArticleCrawlStatus: FindArticleCrawlStatus;
 	markCrawlPending: MarkCrawlPending;
 	forceMarkCrawlPending: ForceMarkCrawlPending;
-	publishSaveAnonymousLink: PublishSaveAnonymousLink;
+	publishRecrawlLinkInitiated: PublishRecrawlLinkInitiated;
 	findUserByEmail: FindUserByEmail;
 	adminEmails: readonly string[];
 	serviceToken: string;
@@ -115,7 +115,7 @@ function handleRecrawlArticle(
 		// then publish the command.
 		await deps.forceMarkCrawlPending({ url: articleUrl });
 		await deps.forceMarkSummaryPending({ url: articleUrl });
-		await deps.publishSaveAnonymousLink({ url: articleUrl });
+		await deps.publishRecrawlLinkInitiated({ url: articleUrl });
 
 		const state = await reader.resolveReaderState({
 			article: {

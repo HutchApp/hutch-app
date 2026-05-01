@@ -7,6 +7,7 @@ import {
 	createDefaultTestAppFixture,
 	createFakeApplyParseResult,
 	createFakePublishLinkSaved,
+	createFakePublishRecrawlLinkInitiated,
 	createFakePublishSaveAnonymousLink,
 	createNoopLogError,
 	initReadabilityParser,
@@ -323,6 +324,7 @@ describe("POST /queue (Siren save article)", () => {
 			parser: { parseArticle, crawlArticle },
 			events: {
 				publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+				publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
 				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 				publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,

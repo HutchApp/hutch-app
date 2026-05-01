@@ -3,6 +3,7 @@ import type { CrawlArticle } from "@packages/crawl-article";
 import type { LogParseError } from "@packages/hutch-infra-components";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
+import type { PublishRecrawlLinkInitiated } from "./providers/events/publish-recrawl-link-initiated.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { PublishSaveLinkRawHtmlCommand } from "./providers/events/publish-save-link-raw-html-command.types";
 import type { PublishUpdateFetchTimestamp } from "./providers/events/publish-update-fetch-timestamp.types";
@@ -121,6 +122,7 @@ export interface ParserBundle {
 
 export interface EventsBundle {
 	publishLinkSaved: PublishLinkSaved;
+	publishRecrawlLinkInitiated: PublishRecrawlLinkInitiated;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
@@ -244,6 +246,7 @@ function flattenFixtureToAppDependencies(
 		markCrawlPending: fixture.articleCrawl.markCrawlPending,
 		forceMarkCrawlPending: fixture.articleCrawl.forceMarkCrawlPending,
 		publishLinkSaved: fixture.events.publishLinkSaved,
+		publishRecrawlLinkInitiated: fixture.events.publishRecrawlLinkInitiated,
 		publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 		publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
