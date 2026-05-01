@@ -107,7 +107,7 @@ export function SignupPage(data: AuthFormData, options?: { statusCode?: number }
 		seo: {
 			title: "Sign up — Readplace",
 			description:
-				"Create a free Readplace account and start saving articles to read later.",
+				"Create a Readplace account and start saving articles to read later.",
 			canonicalUrl: "/signup",
 		},
 		styles: AUTH_STYLES,

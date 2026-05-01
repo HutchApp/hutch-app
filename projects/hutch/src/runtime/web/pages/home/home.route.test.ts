@@ -190,7 +190,7 @@ describe("GET /", () => {
 		const plans = pricingSection?.querySelectorAll(".pricing-card");
 		expect(plans?.length).toBe(1);
 		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__name')?.textContent).toBe("Founding Member");
-		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("$0");
+		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("$3.99");
 	});
 
 	it("should render the founding members progress bar with zero users", async () => {
@@ -336,7 +336,7 @@ describe("GET / with exhausted founding allocation", () => {
 
 		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
 		assert(exhausted, "exhausted message must be rendered");
-		expect(exhausted.textContent).toBe("The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.");
+		expect(exhausted.textContent).toBe("All 100 founding member spots have been claimed. New accounts are $3.99/mo.");
 		expect(exhausted.classList.contains("founding-progress__exhausted--visible")).toBe(true);
 
 		const fill = doc.querySelector(".founding-progress__fill");
