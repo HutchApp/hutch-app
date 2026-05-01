@@ -6,9 +6,11 @@ import {
 	TierContentExtractedEvent,
 } from "@packages/hutch-infra-components";
 import type { MarkCrawlFailed } from "../crawl-article-state/article-crawl.types";
+import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
 
 interface SelectMostCompleteContentDlqHandlerDeps {
 	markCrawlFailed: MarkCrawlFailed;
+	markSummaryFailed: MarkSummaryFailed;
 	publishEvent: PublishEvent;
 	logger: HutchLogger;
 }
@@ -17,7 +19,7 @@ interface SelectMostCompleteContentDlqHandlerDeps {
 export function initSelectMostCompleteContentDlqHandler(
 	deps: SelectMostCompleteContentDlqHandlerDeps,
 ): SQSHandler {
-	const { markCrawlFailed, publishEvent, logger } = deps;
+	const { markCrawlFailed, markSummaryFailed, publishEvent, logger } = deps;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -33,6 +35,7 @@ export function initSelectMostCompleteContentDlqHandler(
 			});
 
 			await markCrawlFailed({ url: detail.url, reason });
+			await markSummaryFailed({ url: detail.url, reason: "crawl failed" });
 
 			await publishEvent({
 				source: CrawlArticleFailedEvent.source,
