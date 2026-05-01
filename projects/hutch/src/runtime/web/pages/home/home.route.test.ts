@@ -336,7 +336,7 @@ describe("GET / with exhausted founding allocation", () => {
 
 		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
 		assert(exhausted, "exhausted message must be rendered");
-		expect(exhausted.textContent).toBe("The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment if you registered after the first 100 founding members.");
+		expect(exhausted.textContent).toBe("The free allocation has been exhausted. Join now for only $3.99/month.");
 		expect(exhausted.classList.contains("founding-progress__exhausted--visible")).toBe(true);
 
 		const fill = doc.querySelector(".founding-progress__fill");

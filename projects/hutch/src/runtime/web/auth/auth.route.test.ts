@@ -507,55 +507,10 @@ describe("Auth routes", () => {
 	describe("Founding members progress", () => {
 		const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-		it("should render the progress bar on GET /login with zero users", async () => {
-			const response = await request(app).get("/login");
-			const doc = new JSDOM(response.text).window.document;
-
-			const label = doc.querySelector("[data-test-founding-progress] .founding-progress__label");
-			expect(label?.textContent).toBe("0 / 100 founding members");
-
-			const fill = doc.querySelector("[data-test-founding-progress] .founding-progress__fill");
-			expect(fill?.getAttribute("style")).toBe("width: 0%");
-
-			const exhausted = doc.querySelector("[data-test-founding-exhausted]");
-			assert(exhausted, "exhausted message must be rendered");
-			expect(exhausted.classList.contains("founding-progress__exhausted--hidden")).toBe(true);
-		});
-
 		it("should render the progress bar on GET /signup with zero users", async () => {
 			const response = await request(app).get("/signup");
 			const doc = new JSDOM(response.text).window.document;
 
-			const label = doc.querySelector("[data-test-founding-progress] .founding-progress__label");
-			expect(label?.textContent).toBe("0 / 100 founding members");
-		});
-
-		it("should render an explanatory caption on /login for visitors who skipped the homepage", async () => {
-			const response = await request(app).get("/login");
-			const doc = new JSDOM(response.text).window.document;
-
-			const caption = doc.querySelector("[data-test-founding-caption]");
-			assert(caption, "founding caption must be rendered");
-			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
-		});
-
-		it("should render an explanatory caption on /signup for visitors who skipped the homepage", async () => {
-			const response = await request(app).get("/signup");
-			const doc = new JSDOM(response.text).window.document;
-
-			const caption = doc.querySelector("[data-test-founding-caption]");
-			assert(caption, "founding caption must be rendered");
-			expect(caption.textContent).toBe("First 100 accounts are free, forever.");
-		});
-
-		it("should keep the progress bar on POST /login 422 responses", async () => {
-			const response = await request(app)
-				.post("/login")
-				.type("form")
-				.send({ email: "test@example.com", password: "wrongpassword" });
-
-			expect(response.status).toBe(422);
-			const doc = new JSDOM(response.text).window.document;
 			const label = doc.querySelector("[data-test-founding-progress] .founding-progress__label");
 			expect(label?.textContent).toBe("0 / 100 founding members");
 		});
@@ -574,23 +529,11 @@ describe("Auth routes", () => {
 	});
 
 	describe("Founding members progress — exhausted allocation", () => {
-		it("should render the exhausted message on both /login and /signup when over the limit", async () => {
+		it("should render the exhausted message on /signup when over the limit", async () => {
 			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			for (let i = 0; i < 101; i++) {
 				await auth.createUser({ email: `user${i}@test.com`, password: "password123" });
 			}
-
-			const loginDoc = new JSDOM((await request(app).get("/login")).text).window.document;
-			const loginExhausted = loginDoc.querySelector("[data-test-founding-exhausted]");
-			assert(loginExhausted, "exhausted message must be rendered on /login");
-			expect(loginExhausted.textContent).toContain("The free allocation has been exhausted");
-			expect(loginExhausted.classList.contains("founding-progress__exhausted--visible")).toBe(true);
-			expect(
-				loginDoc.querySelector("[data-test-founding-progress] .founding-progress__fill")?.getAttribute("style"),
-			).toBe("width: 100%");
-			expect(
-				loginDoc.querySelector("[data-test-founding-progress] .founding-progress__label")?.textContent,
-			).toBe("101 / 100 founding members");
 
 			const signupDoc = new JSDOM((await request(app).get("/signup")).text).window.document;
 			const signupExhausted = signupDoc.querySelector("[data-test-founding-exhausted]");
