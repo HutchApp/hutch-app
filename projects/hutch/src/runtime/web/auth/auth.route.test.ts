@@ -17,7 +17,7 @@ describe("Auth routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector('[data-test-form="login"]')?.getAttribute("action")).toBe("/login");
+			expect(doc.querySelector('[data-test-form="login"]')?.getAttribute("action")).toBe("/login?utm_source=auth-page&utm_medium=internal&utm_content=login-btn");
 			expect(doc.querySelector('input[name="email"]')?.getAttribute("type")).toBe("email");
 			expect(doc.querySelector('input[name="password"]')?.getAttribute("type")).toBe("password");
 		});
@@ -42,7 +42,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
 			const action = doc.querySelector('[data-test-form="login"]')?.getAttribute("action");
-			expect(action).toContain("/login?return=");
+			expect(action).toContain("/login");
+			expect(action).toContain("return=");
 		});
 
 		it("should pass return URL to signup link", async () => {
@@ -52,7 +53,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
 			const signupLink = doc.querySelector(".auth-card__footer:not(.auth-card__footer--forgot) a")?.getAttribute("href");
-			expect(signupLink).toContain("/signup?return=");
+			expect(signupLink).toContain("/signup");
+			expect(signupLink).toContain("return=");
 		});
 	});
 
@@ -150,7 +152,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			const action = doc.querySelector('[data-test-form="login"]')?.getAttribute("action");
-			expect(action).toContain("/login?return=");
+			expect(action).toContain("/login");
+			expect(action).toContain("return=");
 		});
 
 		it("should preserve return URL in form action after validation error", async () => {
@@ -164,7 +167,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			const action = doc.querySelector('[data-test-form="login"]')?.getAttribute("action");
-			expect(action).toContain("/login?return=");
+			expect(action).toContain("/login");
+			expect(action).toContain("return=");
 		});
 	});
 
@@ -199,7 +203,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
 			const action = doc.querySelector('[data-test-form="signup"]')?.getAttribute("action");
-			expect(action).toContain("/signup?return=");
+			expect(action).toContain("/signup");
+			expect(action).toContain("return=");
 		});
 
 		it("should pass return URL to login link", async () => {
@@ -209,7 +214,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
 			const loginLink = doc.querySelector(".auth-card__footer a")?.getAttribute("href");
-			expect(loginLink).toContain("/login?return=");
+			expect(loginLink).toContain("/login");
+			expect(loginLink).toContain("return=");
 		});
 	});
 
@@ -335,7 +341,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			const action = doc.querySelector('[data-test-form="signup"]')?.getAttribute("action");
-			expect(action).toContain("/signup?return=");
+			expect(action).toContain("/signup");
+			expect(action).toContain("return=");
 		});
 
 		it("should preserve return URL in form action after duplicate email", async () => {
@@ -354,7 +361,8 @@ describe("Auth routes", () => {
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			const action = doc.querySelector('[data-test-form="signup"]')?.getAttribute("action");
-			expect(action).toContain("/signup?return=");
+			expect(action).toContain("/signup");
+			expect(action).toContain("return=");
 		});
 
 		it("should show error for short password", async () => {

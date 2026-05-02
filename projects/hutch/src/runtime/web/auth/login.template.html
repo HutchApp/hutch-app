@@ -4,7 +4,7 @@
         <p class="auth-card__subtitle">Sign in to your Readplace account</p>
         {{{foundingProgressHtml}}}
         {{#if globalError}}<div class="auth-form__global-error" data-test-global-error>{{globalError}}</div>{{/if}}
-        <form class="auth-form" method="POST" action="/login{{#if returnUrl}}?return={{returnUrl}}{{/if}}" data-test-form="login">
+        <form class="auth-form" method="POST" action="/login?utm_source=auth-page&utm_medium=internal&utm_content=login-btn{{#if returnUrl}}&return={{returnUrl}}{{/if}}" data-test-form="login">
           <div class="auth-form__field">
             <label class="auth-form__label" for="email">Email</label>
             <input class="auth-form__input{{emailField.errorClass}}" type="email" id="email" name="email" value="{{email}}" required autocomplete="email">
@@ -28,7 +28,7 @@
           <a href="/forgot-password">Forgot your password?</a>
         </p>
         <p class="auth-card__footer">
-          Don't have an account? <a href="/signup{{#if returnUrl}}?return={{returnUrl}}{{/if}}">Create one</a>
+          Don't have an account? <a href="/signup?utm_source=auth-page&utm_medium=internal&utm_content=create-acc-btn{{#if returnUrl}}&return={{returnUrl}}{{/if}}">Create one</a>
         </p>
       </div>
     </main>
