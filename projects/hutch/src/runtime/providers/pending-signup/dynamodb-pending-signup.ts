@@ -13,10 +13,6 @@ import type {
 	StorePendingSignup,
 } from "./pending-signup.types";
 
-/** Pending signups expire after 1 hour — Stripe checkout sessions live for 24h but
- * we don't want to keep abandoned hashed passwords any longer than necessary. */
-const TTL_SECONDS = 60 * 60;
-
 const PendingSignupRow = z.object({
 	checkoutSessionId: CheckoutSessionIdSchema,
 	method: z.enum(["email", "google"]),
@@ -41,7 +37,6 @@ export function initDynamoDbPendingSignup(deps: {
 	});
 
 	const storePendingSignup: StorePendingSignup = async ({ checkoutSessionId, signup }) => {
-		const expiresAt = Math.floor(Date.now() / 1000) + TTL_SECONDS;
 		await table.put({
 			Item: {
 				checkoutSessionId,
@@ -49,8 +44,7 @@ export function initDynamoDbPendingSignup(deps: {
 				email: signup.email,
 				...(signup.method === "email" ? { passwordHash: signup.passwordHash } : {}),
 				...(signup.method === "google" ? { userId: signup.userId } : {}),
-				...(signup.returnUrl ? { returnUrl: signup.returnUrl } : {}),
-				expiresAt,
+				...(signup.returnUrl ? { returnUrl: signup.returnUrl } : {})
 			},
 		});
 	};

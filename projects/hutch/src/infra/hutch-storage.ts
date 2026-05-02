@@ -130,22 +130,14 @@ export class HutchStorage extends pulumi.ComponentResource {
 			name: args.tableNames.passwordResetTokens,
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "token",
-			attributes: [{ name: "token", type: "S" }],
-			ttl: {
-				attributeName: "expiresAt",
-				enabled: true,
-			},
+			attributes: [{ name: "token", type: "S" }]
 		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.pendingSignupsTable = new aws.dynamodb.Table(`hutch-pending-signups`, {
 			name: args.tableNames.pendingSignups,
 			billingMode: "PAY_PER_REQUEST",
 			hashKey: "checkoutSessionId",
-			attributes: [{ name: "checkoutSessionId", type: "S" }],
-			ttl: {
-				attributeName: "expiresAt",
-				enabled: true,
-			},
+			attributes: [{ name: "checkoutSessionId", type: "S" }]
 		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		this.registerOutputs();
