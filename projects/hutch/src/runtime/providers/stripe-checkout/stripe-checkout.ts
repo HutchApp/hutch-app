@@ -46,6 +46,7 @@ export function initStripeCheckout(deps: {
 			mode: "subscription",
 			"line_items[0][price]": deps.priceId,
 			"line_items[0][quantity]": "1",
+			"subscription_data[trial_period_days]": "14",
 			customer_email: customerEmail,
 			success_url: successUrl,
 			cancel_url: cancelUrl,
