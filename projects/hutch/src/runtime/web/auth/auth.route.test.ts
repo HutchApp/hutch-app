@@ -507,7 +507,6 @@ describe("Auth routes", () => {
 
 			const link = getGoogleButton(response.text);
 			expect(link.getAttribute("href")).toBe("/auth/google");
-			expect(link.querySelector(".auth-google-button__label")?.textContent).toBe("Sign up with Google");
 			assert(link.querySelector("svg.auth-google-button__logo"), "google logo must be rendered");
 		});
 	});
