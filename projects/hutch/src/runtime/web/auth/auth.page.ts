@@ -43,6 +43,7 @@ import { initFetchUserCount } from "./fetch-user-count";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
 const CheckoutSuccessQuerySchema = z.object({ session_id: z.string().min(1) }).passthrough();
+const SignupQuerySchema = z.object({ email: z.string().email() }).passthrough();
 
 const EMAIL_FROM = "Fayner Brack <readplace@readplace.com>";
 const WELCOME_EMAIL_FROM = "Fayner from Readplace <fayner@readplace.com>";
@@ -246,11 +247,13 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
+		const parsed = SignupQuerySchema.safeParse(req.query);
+		const email = parsed.success ? parsed.data.email : undefined;
 		sendComponent(
 			res,
 			renderPage(
 				req,
-				SignupPage({ returnUrl, userCount, loadedAt: deps.now().getTime() }),
+				SignupPage({ returnUrl, userCount, loadedAt: deps.now().getTime(), email }),
 			),
 		);
 	});
