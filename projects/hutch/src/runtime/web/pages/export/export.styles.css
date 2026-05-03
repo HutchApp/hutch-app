@@ -58,7 +58,9 @@
   font-size: 1rem;
   font-weight: 600;
   text-decoration: none;
+  border: none;
   border-radius: var(--radius);
+  cursor: pointer;
   transition: opacity 0.15s ease;
 }
 
