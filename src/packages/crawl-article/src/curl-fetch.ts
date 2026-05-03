@@ -1,47 +1,72 @@
-import { execFile } from "node:child_process";
+import { execFile as nodeExecFile } from "node:child_process";
 
 const MAX_REDIRECTS = 5;
 const DEFAULT_TIMEOUT_MS = 10000;
+const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 
 type CurlFetchInit = {
 	headers?: Record<string, string>;
 	signal?: AbortSignal;
 };
 
+type CurlChild = {
+	kill: () => boolean;
+	on: (event: string, listener: () => void) => void;
+};
+
+type ExecFileFn = (
+	file: string,
+	args: readonly string[],
+	options: { encoding: "buffer"; maxBuffer: number; timeout: number | undefined },
+	callback: (error: Error | null, stdout: Buffer) => void,
+) => CurlChild;
+
+type FetchCurl = (url: string, init?: CurlFetchInit) => Promise<Response>;
+
 /**
- * Fetch via curl subprocess. curl's TLS fingerprint (OpenSSL-based) differs
- * from Node.js's (BoringSSL/undici), so Cloudflare's JA3/JA4 heuristics
- * treat it as a trusted client. Used as a last-resort fallback when both
- * Node's fetch and the HTTP/2 module are blocked by TLS fingerprinting.
+ * Creates a fetchCurl function with an injected execFile dependency.
+ * curl's TLS fingerprint (OpenSSL-based) differs from Node.js's
+ * (BoringSSL/undici), so Cloudflare's JA3/JA4 heuristics treat it as a
+ * trusted client. Used as a last-resort fallback when both Node's fetch
+ * and the HTTP/2 module are blocked by TLS fingerprinting.
  */
-export function fetchCurl(url: string, init?: CurlFetchInit): Promise<Response> {
-	return new Promise((resolve, reject) => {
-		const args = buildCurlArgs({ url, headers: init?.headers });
-		const timeout = init?.signal ? undefined : DEFAULT_TIMEOUT_MS;
-		const child = execFile("curl", args, { encoding: "buffer", maxBuffer: 50 * 1024 * 1024, timeout }, (error, stdout) => {
-			if (error) {
-				reject(new Error(`fetchCurl failed for ${url}: ${error.message}`));
-				return;
+export function initFetchCurl(deps: { execFile: ExecFileFn }): FetchCurl {
+	return (url, init) => {
+		return new Promise((resolve, reject) => {
+			const args = buildCurlArgs({ url, headers: init?.headers });
+			const timeout = init?.signal ? undefined : DEFAULT_TIMEOUT_MS;
+			const child = deps.execFile("curl", args, { encoding: "buffer", maxBuffer: 50 * 1024 * 1024, timeout }, (error, stdout) => {
+				if (error) {
+					reject(new Error(`fetchCurl failed for ${url}: ${error.message}`));
+					return;
+				}
+				const { status, headers, body } = parseCurlOutput(stdout);
+				const responseBody = NULL_BODY_STATUSES.has(status) ? null : body;
+				resolve(new Response(responseBody, { status, headers }));
+			});
+			const signal = init?.signal;
+			if (signal) {
+				if (signal.aborted) {
+					child.kill();
+					reject(signal.reason);
+					return;
+				}
+				const onAbort = () => {
+					child.kill();
+					reject(signal.reason);
+				};
+				signal.addEventListener("abort", onAbort, { once: true });
+				child.on("close", () => signal.removeEventListener("abort", onAbort));
 			}
-			const { status, headers, body } = parseCurlOutput(stdout);
-			resolve(new Response(body, { status, headers }));
 		});
-		const signal = init?.signal;
-		if (signal) {
-			if (signal.aborted) {
-				child.kill();
-				reject(signal.reason);
-				return;
-			}
-			const onAbort = () => {
-				child.kill();
-				reject(signal.reason);
-			};
-			signal.addEventListener("abort", onAbort, { once: true });
-			child.on("close", () => signal.removeEventListener("abort", onAbort));
-		}
-	});
+	};
 }
+
+const defaultExecFile: ExecFileFn = (file, args, options, callback) => {
+	return nodeExecFile(file, [...args], options, (error, stdout) => callback(error, stdout));
+};
+
+export const fetchCurl: FetchCurl = initFetchCurl({ execFile: defaultExecFile });
 
 function buildCurlArgs(params: { url: string; headers?: Record<string, string> }): string[] {
 	const args = [
@@ -82,7 +107,7 @@ type ParsedCurlOutput = {
  * With --location, intermediate redirect headers appear before the final ones.
  * We parse the LAST header block (after the last HTTP status line).
  */
-export function parseCurlOutput(raw: Buffer): ParsedCurlOutput {
+function parseCurlOutput(raw: Buffer): ParsedCurlOutput {
 	const crlfIndex = findLastHeaderBlock(raw);
 	const headerSection = raw.subarray(0, crlfIndex).toString("utf-8");
 	const body = raw.subarray(crlfIndex + 4);
