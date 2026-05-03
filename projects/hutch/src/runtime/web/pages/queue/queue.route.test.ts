@@ -492,11 +492,11 @@ describe("Queue routes", () => {
 			const actionForms = doc.querySelectorAll(".queue-article__action-form");
 
 			expect(actionForms.length).toBe(2);
-			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Read");
+			expect(doc.querySelector("[data-test-action='mark-read']")?.textContent).toBe("Mark as read");
 			expect(doc.querySelector("[data-test-action='delete']")?.textContent).toBe("×");
 		});
 
-		it("should disable htmx boost on the read action form", async () => {
+		it("should enable htmx boost on the mark-read action form", async () => {
 			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
@@ -509,10 +509,10 @@ describe("Queue routes", () => {
 			const doc = new JSDOM(response.text).window.document;
 			const readForm = doc.querySelector("[data-test-action='mark-read']")?.closest("form");
 
-			expect(readForm?.getAttribute("hx-boost")).toBe("false");
-			expect(readForm?.hasAttribute("hx-target")).toBe(false);
-			expect(readForm?.hasAttribute("hx-select")).toBe(false);
-			expect(readForm?.hasAttribute("hx-swap")).toBe(false);
+			expect(readForm?.getAttribute("hx-boost")).toBe("true");
+			expect(readForm?.getAttribute("hx-target")).toBe("main");
+			expect(readForm?.getAttribute("hx-select")).toBe("main");
+			expect(readForm?.getAttribute("hx-swap")).toBe("outerHTML show:none");
 		});
 	});
 

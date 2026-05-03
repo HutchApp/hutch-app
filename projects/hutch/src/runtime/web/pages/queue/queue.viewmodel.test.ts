@@ -293,14 +293,23 @@ describe("toQueueViewModel", () => {
 		expect(markUnreadAction?.fields).toEqual([{ name: "status", value: "unread" }]);
 	});
 
-	it("should use GET method and reader view URL for mark-read action", () => {
+	it("should use POST method and /status URL for mark-read action", () => {
 		const article = makeArticle({ status: "unread" });
 		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
 
 		const markReadAction = vm.articles[0].actions.find(a => a.testAction === "mark-read");
-		expect(markReadAction?.method).toBe("GET");
-		expect(markReadAction?.url).toBe(`/queue/${ARTICLE_ID}/read`);
-		expect(markReadAction?.fields).toEqual([]);
+		expect(markReadAction?.method).toBe("POST");
+		expect(markReadAction?.url).toBe(`/queue/${ARTICLE_ID}/status`);
+		expect(markReadAction?.fields).toEqual([{ name: "status", value: "read" }]);
+	});
+
+	it("should include return query in mark-read URL for non-default view", () => {
+		const article = makeArticle({ status: "unread" });
+		const filters = { order: "asc" as const, page: 1, status: "unread" as const };
+		const vm = toQueueViewModel(makeResult([article]), filters, { now: NOW });
+
+		const markReadAction = vm.articles[0].actions.find(a => a.testAction === "mark-read");
+		expect(markReadAction?.url).toBe(`/queue/${ARTICLE_ID}/status?order=asc`);
 	});
 
 	it("should have no hidden fields in delete action", () => {
@@ -311,12 +320,12 @@ describe("toQueueViewModel", () => {
 		expect(deleteAction?.fields).toEqual([]);
 	});
 
-	it("should use GET for mark-read and POST for other actions", () => {
+	it("should use POST for all actions", () => {
 		const article = makeArticle({ status: "unread" });
 		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, { now: NOW });
 
 		const methods = vm.articles[0].actions.map(a => a.method);
-		expect(methods).toEqual(["GET", "POST"]);
+		expect(methods).toEqual(["POST", "POST"]);
 	});
 
 	it("should include unreadCount from options", () => {
