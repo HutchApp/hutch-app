@@ -150,7 +150,7 @@ describe("initDynamoDbGeneratedSummary", () => {
 		);
 	});
 
-	it("returns skipped when status=skipped", async () => {
+	it("returns skipped without reason when status=skipped and no reason persisted", async () => {
 		const client = createFakeClient({
 			url: "https://example.com/article",
 			summaryStatus: "skipped",
@@ -163,5 +163,21 @@ describe("initDynamoDbGeneratedSummary", () => {
 		const result = await findGeneratedSummary("https://example.com/article");
 
 		expect(result).toEqual({ status: "skipped" });
+	});
+
+	it("returns skipped with reason when summarySkippedReason is present", async () => {
+		const client = createFakeClient({
+			url: "https://example.com/article",
+			summaryStatus: "skipped",
+			summarySkippedReason: "content-too-short",
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+			client: client as typeof client & DynamoDBDocumentClient,
+			tableName: "test-table",
+		});
+
+		const result = await findGeneratedSummary("https://example.com/article");
+
+		expect(result).toEqual({ status: "skipped", reason: "content-too-short" });
 	});
 });

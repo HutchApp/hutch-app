@@ -122,17 +122,20 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		assert.deepEqual(result, { status: "ready", summary: "Ready summary", excerpt: "Ready blurb" });
 	});
 
-	it("markSummarySkipped flips pending to skipped", async () => {
+	it("markSummarySkipped flips pending to skipped and persists the reason", async () => {
 		const client = createDynamoDocumentClient();
 		const { findGeneratedSummary, markSummaryPending, markSummarySkipped } =
 			initDynamoDbGeneratedSummary({ client, tableName });
 
 		const url = `https://example.com/${randomUUID()}`;
 		await markSummaryPending({ url });
-		await markSummarySkipped({ url });
+		await markSummarySkipped({ url, reason: "content-too-short" });
 
 		const result = await findGeneratedSummary(url);
-		assert.deepEqual(result, { status: "skipped" });
+		assert.deepEqual(result, {
+			status: "skipped",
+			reason: "content-too-short",
+		});
 	});
 
 	it("markSummaryStage writes a stage attribute without regressing pending status", async () => {
@@ -160,6 +163,48 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 
 		const result = await findGeneratedSummary(url);
 		assert.deepEqual(result, { status: "ready", summary: "Recovered", excerpt: "Recovered blurb" });
+	});
+
+	it("saveGeneratedSummary clears a prior skip reason when a forced retry succeeds", async () => {
+		const client = createDynamoDocumentClient();
+		const seedTable = defineDynamoTable({
+			client,
+			tableName,
+			schema: z.object({
+				url: z.string(),
+				summaryStatus: dynamoField(z.string()),
+				summarySkippedReason: dynamoField(z.string()),
+			}),
+		});
+		const { findGeneratedSummary, saveGeneratedSummary } =
+			initDynamoDbGeneratedSummary({ client, tableName });
+
+		const url = `https://example.com/${randomUUID()}`;
+		// Simulate an existing skipped row with a stale reason. The conditional
+		// on markSummarySkipped blocks pending → skipped re-entry, so we seed
+		// directly to model the operator-recrawl flow.
+		await seedTable.put({
+			Item: {
+				url: ArticleResourceUniqueId.parse(url).value,
+				summaryStatus: "skipped",
+				summarySkippedReason: "content-too-short",
+			},
+		});
+
+		await saveGeneratedSummary({
+			url,
+			summary: "Recovered",
+			excerpt: "Recovered blurb",
+			inputTokens: 10,
+			outputTokens: 5,
+		});
+
+		const result = await findGeneratedSummary(url);
+		assert.deepEqual(result, {
+			status: "ready",
+			summary: "Recovered",
+			excerpt: "Recovered blurb",
+		});
 	});
 
 	it("dedupes tracking-param variants to the same cached summary row", async () => {

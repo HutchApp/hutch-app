@@ -201,8 +201,22 @@ describe("ViewPage", () => {
 		const skipped = render();
 		const slotSkipped = skipped.querySelector("[data-test-reader-summary]");
 		assert(slotSkipped, "summary slot must be rendered");
+		// Skipped is a deliberate decision now, so the reader sees a visible info
+		// card explaining why no summary was produced.
 		expect(
-			slotSkipped.classList.contains("article-body__summary-slot--hidden"),
+			slotSkipped.classList.contains("article-body__summary-slot--visible"),
+		).toBe(true);
+
+		const crawlFailed = render({
+			...baseInput,
+			crawl: { status: "failed", reason: "blocked" },
+		});
+		const slotCrawlFailed = crawlFailed.querySelector(
+			"[data-test-reader-summary]",
+		);
+		assert(slotCrawlFailed, "summary slot must be rendered");
+		expect(
+			slotCrawlFailed.classList.contains("article-body__summary-slot--hidden"),
 		).toBe(true);
 
 		const ready = render({

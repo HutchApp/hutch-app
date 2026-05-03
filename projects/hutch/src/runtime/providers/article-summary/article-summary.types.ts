@@ -4,7 +4,7 @@ export type GeneratedSummary =
 	| { status: "pending"; stage?: SummaryStage }
 	| { status: "ready"; summary: string; excerpt?: string }
 	| { status: "failed"; reason: string }
-	| { status: "skipped" };
+	| { status: "skipped"; reason?: string };
 
 export type FindGeneratedSummary = (url: string) => Promise<GeneratedSummary | undefined>;
 

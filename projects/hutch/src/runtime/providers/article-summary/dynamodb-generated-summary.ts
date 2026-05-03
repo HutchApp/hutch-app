@@ -22,6 +22,9 @@ const ArticleSummaryRow = z.object({
 	summaryExcerpt: dynamoField(z.string()),
 	summaryStatus: dynamoField(SummaryStatusSchema),
 	summaryFailureReason: dynamoField(z.string()),
+	// Plain string on read for forward-compat with future codes; UI mapper
+	// surfaces a fallback message for any value not in SummarySkipReasonSchema.
+	summarySkippedReason: dynamoField(z.string()),
 	summaryStage: dynamoField(
 		z.enum(["summary-started", "summary-generating"]),
 	),
@@ -37,7 +40,11 @@ function rowToGeneratedSummary(
 		assert(row.summaryFailureReason, "summaryStatus=failed row must carry a summaryFailureReason");
 		return { status: "failed", reason: row.summaryFailureReason };
 	}
-	if (row.summaryStatus === "skipped") return { status: "skipped" };
+	if (row.summaryStatus === "skipped") {
+		return row.summarySkippedReason
+			? { status: "skipped", reason: row.summarySkippedReason }
+			: { status: "skipped" };
+	}
 	if (row.summaryStatus === "pending") {
 		return row.summaryStage
 			? { status: "pending", stage: row.summaryStage }

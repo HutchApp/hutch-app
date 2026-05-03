@@ -45,7 +45,10 @@ describe("initLinkSummariser", () => {
 
 		expect(result).toBeNull();
 		expect(createMessage).not.toHaveBeenCalled();
-		expect(markSummarySkipped).toHaveBeenCalledWith({ url: "https://example.com/short" });
+		expect(markSummarySkipped).toHaveBeenCalledWith({
+			url: "https://example.com/short",
+			reason: "content-too-short",
+		});
 	});
 
 	it("should pass article content as a document block to createMessage", async () => {
@@ -321,17 +324,18 @@ describe("initLinkSummariser", () => {
 		expect(result).toBeNull();
 	});
 
-	it("should return null when AI returns 'Summary not available.'", async () => {
+	it("should mark the row skipped with reason ai-unavailable when AI returns 'Summary not available.'", async () => {
 		const createMessage = createStubCreateMessage({
 			summary: "Summary not available.",
 			excerpt: "Summary not available.",
 		});
+		const markSummarySkipped = jest.fn().mockResolvedValue(undefined);
 
 		const { summarizeArticle } = initLinkSummariser({
 			createMessage,
 			findGeneratedSummary: noCache,
 			saveGeneratedSummary: noopSave,
-			markSummarySkipped: noopMarkSkipped,
+			markSummarySkipped,
 			markSummaryStage: noopMarkStage,
 			logger: noopLogger,
 			cleanContent: identity,
@@ -344,5 +348,9 @@ describe("initLinkSummariser", () => {
 		});
 
 		expect(result).toBeNull();
+		expect(markSummarySkipped).toHaveBeenCalledWith({
+			url: "https://example.com/unavailable",
+			reason: "ai-unavailable",
+		});
 	});
 });

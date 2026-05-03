@@ -8,8 +8,8 @@ function parse(html: string) {
 }
 
 describe("renderSummaryFailed", () => {
-	it("renders a visible slot with status=failed and the error copy", () => {
-		const doc = parse(renderSummaryFailed());
+	it("renders a visible slot with status=failed, the lead copy, and the reason detail", () => {
+		const doc = parse(renderSummaryFailed({ reason: "deepseek timeout" }));
 
 		const slot = doc.querySelector("[data-test-reader-summary]");
 		assert(slot, "summary slot must be rendered");
@@ -20,5 +20,10 @@ describe("renderSummaryFailed", () => {
 		expect(
 			doc.querySelector(".article-body__summary-error")?.textContent,
 		).toContain("couldn't generate a summary");
+		const detail = doc.querySelector(
+			"[data-test-reader-summary-failure-reason]",
+		);
+		assert(detail, "failure reason detail must be rendered");
+		expect(detail.textContent).toBe("deepseek timeout");
 	});
 });
