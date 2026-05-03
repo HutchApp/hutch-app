@@ -45,6 +45,7 @@ async function processCommand(
 	deps: ExportUserDataDependencies,
 ): Promise<void> {
 	const userId = UserIdSchema.parse(detail.userId);
+	deps.logger.info("[ExportUserData] starting export", { userId: detail.userId });
 
 	const articles: ExportEnvelope["articles"] = [];
 	let page = 1;
@@ -56,6 +57,13 @@ async function processCommand(
 			order: "asc",
 		});
 		for (const article of result.articles) articles.push(toExportArticle(article));
+		deps.logger.info("[ExportUserData] fetched articles page", {
+			userId: detail.userId,
+			page,
+			pageSize: PAGE_SIZE,
+			fetched: articles.length,
+			total: result.total,
+		});
 		if (articles.length >= result.total) break;
 		page++;
 	}
@@ -72,6 +80,11 @@ async function processCommand(
 		userId: detail.userId,
 		body,
 	});
+	deps.logger.info("[ExportUserData] uploaded export to S3", {
+		userId: detail.userId,
+		s3Key,
+		bodyBytes: body.length,
+	});
 
 	await deps.sendEmail({
 		from: EMAIL_FROM,
@@ -82,6 +95,10 @@ async function processCommand(
 			articleCount: articles.length,
 			ttlDays: EXPORT_DOWNLOAD_TTL_DAYS,
 		}),
+	});
+	deps.logger.info("[ExportUserData] sent email", {
+		userId: detail.userId,
+		to: detail.email,
 	});
 
 	await deps.publishEvent({
