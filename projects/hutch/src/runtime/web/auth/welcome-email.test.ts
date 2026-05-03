@@ -12,7 +12,7 @@ describe("buildWelcomeEmailHtml", () => {
 			installUrl: 'https://example.com/install?a=1&b=2"<>',
 		});
 
-		expect(html).toContain('href="https://example.com/install?a=1&amp;b=2&quot;&lt;&gt;"');
+		expect(html).toContain('href="https://example.com/install?a&#x3D;1&amp;b&#x3D;2&quot;&lt;&gt;"');
 	});
 
 	it("renders the welcome heading", () => {

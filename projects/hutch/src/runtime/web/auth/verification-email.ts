@@ -1,14 +1,8 @@
-const EMAIL_COLORS = {
-	background: "#F7F8FA",
-	surface: "#FFFFFF",
-	heading: "#1A202C",
-	body: "#5A6170",
-	muted: "#8C919D",
-	brand: "#C8702A",
-	brandText: "#FFFFFF",
-} as const;
+import Handlebars from "handlebars";
+import { EMAIL_COLORS } from "../email-colors";
 
 export function buildVerificationEmailHtml(verifyUrl: string): string {
+	const safeVerifyUrl = Handlebars.Utils.escapeExpression(verifyUrl);
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +18,7 @@ export function buildVerificationEmailHtml(verifyUrl: string): string {
 <h1 style="margin:0 0 16px;font-size:24px;color:${EMAIL_COLORS.heading};">Verify your email</h1>
 <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${EMAIL_COLORS.body};">Click the button below to verify your email address and activate your Readplace account.</p>
 <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:6px;background-color:${EMAIL_COLORS.brand};">
-<a href="${escapeHtml(verifyUrl)}" style="display:inline-block;padding:12px 24px;font-size:16px;color:${EMAIL_COLORS.brandText};text-decoration:none;border-radius:6px;">Verify email</a>
+<a href="${safeVerifyUrl}" style="display:inline-block;padding:12px 24px;font-size:16px;color:${EMAIL_COLORS.brandText};text-decoration:none;border-radius:6px;">Verify email</a>
 </td></tr></table>
 <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:${EMAIL_COLORS.muted};">If you didn't create a Readplace account, you can ignore this email.</p>
 </td></tr>
@@ -33,12 +27,4 @@ export function buildVerificationEmailHtml(verifyUrl: string): string {
 </table>
 </body>
 </html>`;
-}
-
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/"/g, "&quot;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;");
 }

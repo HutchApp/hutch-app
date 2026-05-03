@@ -1,14 +1,8 @@
-const EMAIL_COLORS = {
-	background: "#F7F8FA",
-	surface: "#FFFFFF",
-	heading: "#1A202C",
-	body: "#5A6170",
-	muted: "#8C919D",
-	brand: "#C8702A",
-	brandText: "#FFFFFF",
-} as const;
+import Handlebars from "handlebars";
+import { EMAIL_COLORS } from "../email-colors";
 
 export function buildPasswordResetEmailHtml(resetUrl: string): string {
+	const safeResetUrl = Handlebars.Utils.escapeExpression(resetUrl);
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,7 +18,7 @@ export function buildPasswordResetEmailHtml(resetUrl: string): string {
 <h1 style="margin:0 0 16px;font-size:24px;color:${EMAIL_COLORS.heading};">Reset your password</h1>
 <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${EMAIL_COLORS.body};">Click the button below to set a new password for your Readplace account. This link expires in one hour.</p>
 <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:6px;background-color:${EMAIL_COLORS.brand};">
-<a href="${escapeHtml(resetUrl)}" style="display:inline-block;padding:12px 24px;font-size:16px;color:${EMAIL_COLORS.brandText};text-decoration:none;border-radius:6px;">Reset password</a>
+<a href="${safeResetUrl}" style="display:inline-block;padding:12px 24px;font-size:16px;color:${EMAIL_COLORS.brandText};text-decoration:none;border-radius:6px;">Reset password</a>
 </td></tr></table>
 <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:${EMAIL_COLORS.muted};">If you didn't request a password reset, you can ignore this email.</p>
 </td></tr>
@@ -33,13 +27,4 @@ export function buildPasswordResetEmailHtml(resetUrl: string): string {
 </table>
 </body>
 </html>`;
-}
-
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#39;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;");
 }

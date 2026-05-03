@@ -69,7 +69,7 @@ export function createPasswordResetActions(
         const response = await page.request.get(`${data.baseUrl}/e2e/sent-emails`)
         const emails = await response.json()
         const resetEmail = emails.find((e: { subject: string }) => e.subject.includes('Reset your password'))
-        const tokenMatch = resetEmail.html.match(/token=([a-f0-9]+)/)
+        const tokenMatch = resetEmail.html.match(/token&#x3D;([a-f0-9]+)/)
         const token = tokenMatch[1]
 
         await page.goto(`${data.baseUrl}/reset-password?token=${token}`)

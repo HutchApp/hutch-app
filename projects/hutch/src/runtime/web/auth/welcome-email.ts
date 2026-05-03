@@ -1,14 +1,8 @@
-const EMAIL_COLORS = {
-	background: "#F7F8FA",
-	surface: "#FFFFFF",
-	heading: "#1A202C",
-	body: "#5A6170",
-	muted: "#8C919D",
-	brand: "#C8702A",
-	brandText: "#FFFFFF",
-} as const;
+import Handlebars from "handlebars";
+import { EMAIL_COLORS } from "../email-colors";
 
 export function buildWelcomeEmailHtml({ installUrl }: { installUrl: string }): string {
+	const safeInstallUrl = Handlebars.Utils.escapeExpression(installUrl);
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,7 +20,7 @@ export function buildWelcomeEmailHtml({ installUrl }: { installUrl: string }): s
 <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:${EMAIL_COLORS.body};">I built Readplace because I wanted a quiet place to keep the things I want to read later, without the noise of a feed or the rot of bookmarks. It's still just me working on it, so every signup matters.</p>
 <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:${EMAIL_COLORS.body};">The fastest way to start saving is to install the browser extension:</p>
 <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:6px;background-color:${EMAIL_COLORS.brand};">
-<a href="${escapeHtml(installUrl)}" style="display:inline-block;padding:12px 24px;font-size:16px;color:${EMAIL_COLORS.brandText};text-decoration:none;border-radius:6px;">Get the extension</a>
+<a href="${safeInstallUrl}" style="display:inline-block;padding:12px 24px;font-size:16px;color:${EMAIL_COLORS.brandText};text-decoration:none;border-radius:6px;">Get the extension</a>
 </td></tr></table>
 <p style="margin:24px 0 0;font-size:16px;line-height:1.6;color:${EMAIL_COLORS.body};">If anything breaks or feels off, just reply to this email — it comes straight to me, and I read everything.</p>
 <p style="margin:16px 0 0;font-size:16px;line-height:1.6;color:${EMAIL_COLORS.body};">— Fayner</p>
@@ -37,12 +31,4 @@ export function buildWelcomeEmailHtml({ installUrl }: { installUrl: string }): s
 </table>
 </body>
 </html>`;
-}
-
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/"/g, "&quot;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;");
 }

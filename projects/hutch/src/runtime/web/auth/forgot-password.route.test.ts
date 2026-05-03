@@ -63,7 +63,7 @@ describe("Forgot password", () => {
 			expect(sent[0].to).toBe("user@example.com");
 			expect(sent[0].from).toContain("Readplace Password Reset <readplace@readplace.com>");
 			expect(sent[0].subject).toContain("Reset your password");
-			expect(sent[0].html).toContain("reset-password?token=");
+			expect(sent[0].html).toContain("reset-password?token&#x3D;");
 		});
 
 		it("should not send email for non-existing user", async () => {
@@ -124,7 +124,7 @@ describe("Forgot password", () => {
 				.send({ email: "user@example.com" });
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in password reset email");
 			const token = tokenMatch[1];
 
@@ -167,7 +167,7 @@ describe("Forgot password", () => {
 				.send({ email: "user@example.com" });
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in password reset email");
 			const token = tokenMatch[1];
 
@@ -235,7 +235,7 @@ describe("Forgot password", () => {
 				.send({ email: "user@example.com" });
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in password reset email");
 			const token = tokenMatch[1];
 

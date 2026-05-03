@@ -37,7 +37,7 @@ describe("Email verification", () => {
 			expect(sent[0].to).toBe("new@example.com");
 			expect(sent[0].from).toContain("readplace@readplace.com");
 			expect(sent[0].subject).toContain("Verify");
-			expect(sent[0].html).toContain("verify-email?token=");
+			expect(sent[0].html).toContain("verify-email?token&#x3D;");
 		});
 
 		it("should complete signup even when email sending fails", async () => {
@@ -129,7 +129,7 @@ describe("Email verification", () => {
 			});
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in verification email");
 			const token = tokenMatch[1];
 
@@ -171,7 +171,7 @@ describe("Email verification", () => {
 			});
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in verification email");
 			const token = tokenMatch[1];
 
@@ -204,7 +204,7 @@ describe("Email verification", () => {
 			expect(session.emailVerified).toBe(false);
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in verification email");
 			const token = tokenMatch[1];
 
@@ -250,7 +250,7 @@ describe("Email verification", () => {
 
 			const sentBeforeVerify = email.getSentEmails();
 			expect(sentBeforeVerify).toHaveLength(1);
-			const tokenMatch = sentBeforeVerify[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sentBeforeVerify[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in verification email");
 			const token = tokenMatch[1];
 
