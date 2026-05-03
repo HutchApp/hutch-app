@@ -182,10 +182,9 @@ describe("initExportUserDataHandler", () => {
 		expect(harness.emailCalls[0].html).toContain("0 articles");
 	});
 
-	it("stops paginating once a page returns no rows even if total claims more (orphaned user_articles)", async () => {
-		// Regression: a user_articles row whose global article was deleted causes
-		// findArticlesByUser to report total > sum(articles). Without this break
-		// the loop runs until the Lambda hits its 900s timeout.
+	it("stops on the first empty page when total claims more rows (orphaned user_articles)", async () => {
+		// findArticlesByUser drops orphans, so total can exceed the rows the
+		// handler will ever see; termination must come from an empty page.
 		const userId = "user-orphan" as UserId;
 		const findArticlesByUser = jest
 			.fn()
