@@ -138,6 +138,30 @@ describe("dynamoDbGeneratedSummary (integration)", () => {
 		});
 	});
 
+	it("returns skipped without reason for a legacy row that has summaryStatus=skipped but no summarySkippedReason", async () => {
+		const client = createDynamoDocumentClient();
+		const seedTable = defineDynamoTable({
+			client,
+			tableName,
+			schema: z.object({
+				url: z.string(),
+				summaryStatus: dynamoField(z.string()),
+			}),
+		});
+		const { findGeneratedSummary } = initDynamoDbGeneratedSummary({ client, tableName });
+
+		const url = `https://example.com/${randomUUID()}`;
+		await seedTable.put({
+			Item: {
+				url: ArticleResourceUniqueId.parse(url).value,
+				summaryStatus: "skipped",
+			},
+		});
+
+		const result = await findGeneratedSummary(url);
+		assert.deepEqual(result, { status: "skipped" });
+	});
+
 	it("markSummaryStage writes a stage attribute without regressing pending status", async () => {
 		const client = createDynamoDocumentClient();
 		const { findGeneratedSummary, markSummaryPending, markSummaryStage } =
