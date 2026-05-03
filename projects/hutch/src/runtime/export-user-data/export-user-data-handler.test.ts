@@ -181,4 +181,67 @@ describe("initExportUserDataHandler", () => {
 		expect(body.articles).toEqual([]);
 		expect(harness.emailCalls[0].html).toContain("0 articles");
 	});
+
+	it("stops paginating once a page returns no rows even if total claims more (orphaned user_articles)", async () => {
+		// Regression: a user_articles row whose global article was deleted causes
+		// findArticlesByUser to report total > sum(articles). Without this break
+		// the loop runs until the Lambda hits its 900s timeout.
+		const userId = "user-orphan" as UserId;
+		const findArticlesByUser = jest
+			.fn()
+			.mockResolvedValueOnce({
+				articles: [
+					{
+						id: { value: "a1" },
+						userId,
+						url: "https://example.com/a-1",
+						metadata: { title: "A1", siteName: "example.com", excerpt: "x", wordCount: 1 },
+						estimatedReadTime: 1 as Minutes,
+						status: "unread" as const,
+						savedAt: new Date("2026-04-29T00:00:00.000Z"),
+					},
+				],
+				total: 2,
+				page: 1,
+				pageSize: 500,
+			})
+			.mockResolvedValueOnce({ articles: [], total: 2, page: 2, pageSize: 500 });
+
+		const uploadCalls: Array<{ parsedBody: unknown }> = [];
+		const emailCalls: Array<{ to: string }> = [];
+		const publishedEvents: Array<{ detail: unknown }> = [];
+
+		const handler = initExportUserDataHandler({
+			findArticlesByUser,
+			uploadUserDataExport: async ({ userId: uid, body }) => {
+				uploadCalls.push({ parsedBody: JSON.parse(body) });
+				return { s3Key: `exports/${uid}/x.json`, downloadUrl: "https://example.com/d" };
+			},
+			sendEmail: async (msg) => {
+				emailCalls.push({ to: msg.to });
+			},
+			publishEvent: async (params) => {
+				publishedEvents.push({ detail: JSON.parse(params.detail) });
+			},
+			logger: HutchLogger.from(noopLogger),
+			now: fixedNow,
+		});
+
+		const result = handler(
+			createSqsEvent({
+				userId,
+				email: "user@example.com",
+				requestedAt: "2026-04-30T11:59:00.000Z",
+			}),
+			{} as never,
+			() => {},
+		);
+		if (result instanceof Promise) await result;
+
+		expect(findArticlesByUser).toHaveBeenCalledTimes(2);
+		const body = uploadCalls[0].parsedBody as { articleCount: number };
+		expect(body.articleCount).toBe(1);
+		expect(emailCalls).toHaveLength(1);
+		expect(publishedEvents[0].detail).toMatchObject({ articleCount: 1 });
+	});
 });

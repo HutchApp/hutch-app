@@ -65,6 +65,10 @@ async function processCommand(
 			fetched: articles.length,
 			total: result.total,
 		});
+		// Stop once a page returns no rows. `total` counts user_articles entries,
+		// but a row is dropped if its global article is missing — so the cumulative
+		// fetched count can never reach `total` for users with orphaned references.
+		if (result.articles.length === 0) break;
 		if (articles.length >= result.total) break;
 		page++;
 	}
