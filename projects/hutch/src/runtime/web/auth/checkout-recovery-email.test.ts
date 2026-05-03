@@ -4,13 +4,15 @@ describe("buildCheckoutRecoveryEmail", () => {
 	const baseParams = {
 		founderAvatarUrl: "https://readplace.com/fayner-brack.jpg",
 		resumeUrl: "https://readplace.com/signup?email=jane%40example.com&utm_source=recovery",
+		monthlyPrice: "$3.99",
+		yearlyDiscount: "20%",
 	};
 
 	it("includes the resume URL on the CTA anchor", () => {
 		const { html } = buildCheckoutRecoveryEmail(baseParams);
 
 		expect(html).toContain(
-			'href="https://readplace.com/signup?email=jane%40example.com&amp;utm_source=recovery"',
+			'href="https://readplace.com/signup?email&#x3D;jane%40example.com&amp;utm_source&#x3D;recovery"',
 		);
 		expect(html).toContain(">Resume your trial</a>");
 	});
@@ -25,13 +27,14 @@ describe("buildCheckoutRecoveryEmail", () => {
 
 	it("escapes HTML entities in the avatar and resume URLs", () => {
 		const { html } = buildCheckoutRecoveryEmail({
-			founderAvatarUrl: 'https://readplace.com/avatar.jpg?"<>&',
-			resumeUrl: 'https://readplace.com/signup?email=a&b="<>',
+			...baseParams,
+			founderAvatarUrl: "https://readplace.com/avatar.jpg?\"'<>&",
+			resumeUrl: "https://readplace.com/signup?email=a&b=\"'<>",
 		});
 
-		expect(html).toContain('src="https://readplace.com/avatar.jpg?&quot;&lt;&gt;&amp;"');
+		expect(html).toContain("src=\"https://readplace.com/avatar.jpg?&quot;&#x27;&lt;&gt;&amp;\"");
 		expect(html).toContain(
-			'href="https://readplace.com/signup?email=a&amp;b=&quot;&lt;&gt;"',
+			"href=\"https://readplace.com/signup?email&#x3D;a&amp;b&#x3D;&quot;&#x27;&lt;&gt;\"",
 		);
 	});
 
@@ -43,6 +46,15 @@ describe("buildCheckoutRecoveryEmail", () => {
 		expect(html).toContain("Did something stop you?");
 	});
 
+	it("renders pricing from params in both HTML and text", () => {
+		const { html, text } = buildCheckoutRecoveryEmail(baseParams);
+
+		expect(html).toContain("$3.99 a month");
+		expect(html).toContain("20% off");
+		expect(text).toContain("$3.99 a month");
+		expect(text).toContain("20% off");
+	});
+
 	it("returns a plain-text body containing the resume URL on its own line", () => {
 		const { text } = buildCheckoutRecoveryEmail(baseParams);
 
@@ -51,7 +63,7 @@ describe("buildCheckoutRecoveryEmail", () => {
 			"https://readplace.com/signup?email=jane%40example.com&utm_source=recovery",
 		);
 		expect(text).toContain("Hi there,");
-		expect(text).toContain("— Fayner");
+		expect(text).toContain("\u2014 Fayner");
 		expect(text).toContain("readplace.com");
 		expect(text).toContain("If you'd rather not hear from me, just reply STOP.");
 	});

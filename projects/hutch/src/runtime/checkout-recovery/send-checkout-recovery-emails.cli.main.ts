@@ -53,7 +53,12 @@ async function main(): Promise<void> {
 
 	for (const recipient of recipients) {
 		const resumeUrl = `${origin}/signup?email=${encodeURIComponent(recipient.email)}&utm_source=recovery`;
-		const { html, text } = buildCheckoutRecoveryEmail({ founderAvatarUrl, resumeUrl });
+		const { html, text } = buildCheckoutRecoveryEmail({
+			founderAvatarUrl,
+			resumeUrl,
+			monthlyPrice: "$3.99",
+			yearlyDiscount: "20%",
+		});
 		const message = {
 			from,
 			to: recipient.email,
