@@ -17,7 +17,7 @@ async function main(): Promise<void> {
 	const from = requireEnv("RECOVERY_EMAIL_FROM");
 	const replyTo = requireEnv("RECOVERY_EMAIL_REPLY_TO");
 	const bcc = requireEnv("RECOVERY_EMAIL_BCC");
-	const dryRun = getEnv("RECOVERY_EMAIL_DRY_RUN") === "true";
+	const dryRun = requireEnv<"true" | "false">("RECOVERY_EMAIL_DRY_RUN") === "true";
 	const reportPath = getEnv("RECOVERY_REPORT_PATH");
 
 	const dynamoClient = createDynamoDocumentClient();
