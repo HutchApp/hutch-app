@@ -15,6 +15,47 @@ export function BlogIndexPage(params: { posts: BlogPost[] }): PageBody {
 				"Articles about reading, building software, and the tools behind Readplace.",
 			canonicalUrl: "https://readplace.com/blog",
 			ogType: "website",
+			structuredData: [
+				{
+					"@context": "https://schema.org",
+					"@type": "Blog",
+					name: "Readplace Blog",
+					url: "https://readplace.com/blog",
+					description:
+						"Articles about reading, building software, and the tools behind Readplace.",
+					publisher: {
+						"@type": "Organization",
+						name: "Readplace",
+						url: "https://readplace.com",
+					},
+					blogPost: params.posts.map((post) => ({
+						"@type": "BlogPosting",
+						headline: post.title,
+						description: post.description,
+						datePublished: post.date,
+						url: `https://readplace.com/blog/${post.slug}`,
+						author: { "@type": "Person", name: post.author },
+					})),
+				},
+				{
+					"@context": "https://schema.org",
+					"@type": "BreadcrumbList",
+					itemListElement: [
+						{
+							"@type": "ListItem",
+							position: 1,
+							name: "Home",
+							item: "https://readplace.com/",
+						},
+						{
+							"@type": "ListItem",
+							position: 2,
+							name: "Blog",
+							item: "https://readplace.com/blog",
+						},
+					],
+				},
+			],
 		},
 		styles: BLOG_STYLES,
 		bodyClass: "page-blog",

@@ -126,6 +126,43 @@ describe("GET /install", () => {
 		expect(description?.getAttribute("content")).toContain("extension");
 	});
 
+	it("should have SoftwareApplication and BreadcrumbList structured data", async () => {
+		const response = await request(app).get("/install");
+		const doc = new JSDOM(response.text).window.document;
+
+		const scripts = doc.querySelectorAll(
+			'script[type="application/ld+json"]',
+		);
+		const schemas = Array.from(scripts).map((s) =>
+			JSON.parse(s.textContent ?? "{}"),
+		);
+		const software = schemas.find(
+			(s: { "@type": string }) => s["@type"] === "SoftwareApplication",
+		);
+		expect(software).toBeDefined();
+		expect(software.applicationCategory).toBe("BrowserApplication");
+		expect(software.offers.price).toBe("0");
+
+		const breadcrumb = schemas.find(
+			(s: { "@type": string }) => s["@type"] === "BreadcrumbList",
+		);
+		expect(breadcrumb).toBeDefined();
+		expect(breadcrumb.itemListElement).toEqual([
+			{
+				"@type": "ListItem",
+				position: 1,
+				name: "Home",
+				item: "https://readplace.com/",
+			},
+			{
+				"@type": "ListItem",
+				position: 2,
+				name: "Install",
+				item: "https://readplace.com/install",
+			},
+		]);
+	});
+
 	it("should show Firefox unavailable message when Firefox latest.txt returns 404", async () => {
 		jest.restoreAllMocks();
 		jest.spyOn(globalThis, "fetch").mockImplementation(async () => {

@@ -35,6 +35,47 @@ export function InstallPage(params: { firefox: string | null; chrome: string | n
 			description:
 				"Where reading still matters. Download the Readplace browser extension for Firefox or Chrome and save articles with one click.",
 			canonicalUrl: "https://readplace.com/install",
+			structuredData: [
+				{
+					"@context": "https://schema.org",
+					"@type": "SoftwareApplication",
+					name: "Readplace Browser Extension",
+					description:
+						"Save any article to your Readplace reading list with one click from Firefox or Chrome.",
+					applicationCategory: "BrowserApplication",
+					operatingSystem: "Windows, macOS, Linux, ChromeOS",
+					url: "https://readplace.com/install",
+					downloadUrl: "https://readplace.com/install",
+					offers: {
+						"@type": "Offer",
+						price: "0",
+						priceCurrency: "AUD",
+					},
+					publisher: {
+						"@type": "Organization",
+						name: "Readplace",
+						url: "https://readplace.com",
+					},
+				},
+				{
+					"@context": "https://schema.org",
+					"@type": "BreadcrumbList",
+					itemListElement: [
+						{
+							"@type": "ListItem",
+							position: 1,
+							name: "Home",
+							item: "https://readplace.com/",
+						},
+						{
+							"@type": "ListItem",
+							position: 2,
+							name: "Install",
+							item: "https://readplace.com/install",
+						},
+					],
+				},
+			],
 		},
 		styles: INSTALL_PAGE_STYLES,
 		bodyClass: "page-install",
