@@ -42,6 +42,30 @@ export function BlogPostPage(params: { post: BlogPost }): PageBody {
 						url: "https://readplace.com",
 					},
 				},
+				{
+					"@context": "https://schema.org",
+					"@type": "BreadcrumbList",
+					itemListElement: [
+						{
+							"@type": "ListItem",
+							position: 1,
+							name: "Home",
+							item: "https://readplace.com/",
+						},
+						{
+							"@type": "ListItem",
+							position: 2,
+							name: "Blog",
+							item: "https://readplace.com/blog",
+						},
+						{
+							"@type": "ListItem",
+							position: 3,
+							name: post.title,
+							item: `https://readplace.com/blog/${post.slug}`,
+						},
+					],
+				},
 			],
 		},
 		styles: BLOG_STYLES,
