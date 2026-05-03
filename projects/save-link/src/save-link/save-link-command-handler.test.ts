@@ -80,7 +80,6 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		putTierSource: jest.fn().mockResolvedValue(undefined),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
 		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
-		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		markCrawlStage: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
@@ -126,17 +125,16 @@ describe("initSaveLinkCommandHandler", () => {
 		});
 	});
 
-	it("marks crawl ready before publishing the extracted event so the reader UI un-sticks immediately", async () => {
+	it("writes the tier-1 source before publishing TierContentExtractedEvent (selector relies on the source being listable)", async () => {
 		const calls: string[] = [];
-		const markCrawlReady = jest.fn(async () => { calls.push("markCrawlReady"); });
 		const publishEvent = jest.fn(async () => { calls.push("publishEvent"); });
 		const putTierSource: PutTierSource = jest.fn(async () => { calls.push("putTierSource"); });
 
-		const handler = createHandler({ markCrawlReady, publishEvent, putTierSource });
+		const handler = createHandler({ publishEvent, putTierSource });
 
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(calls).toEqual(["putTierSource", "markCrawlReady", "publishEvent"]);
+		expect(calls).toEqual(["putTierSource", "publishEvent"]);
 	});
 
 	it("records contentFetchedAt + etag + lastModified after a successful fetch so future saves can short-circuit on TTL", async () => {
@@ -164,9 +162,8 @@ describe("initSaveLinkCommandHandler", () => {
 		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
 		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
-		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
 
-		const handler = createHandler({ crawlArticle: failedCrawl, putTierSource, publishEvent, markCrawlReady });
+		const handler = createHandler({ crawlArticle: failedCrawl, putTierSource, publishEvent });
 
 		await expect(
 			handler(createSqsEvent({ url: "https://example.com/unreachable", userId: "user-1" }), stubContext, () => {}),
@@ -174,7 +171,6 @@ describe("initSaveLinkCommandHandler", () => {
 
 		expect(putTierSource).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();
-		expect(markCrawlReady).not.toHaveBeenCalled();
 	});
 
 	it("reports crawl failures via logParseError with the crawl status as reason and rethrows for SQS retry", async () => {

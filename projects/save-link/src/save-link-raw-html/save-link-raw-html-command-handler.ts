@@ -14,7 +14,7 @@ import type { ProcessContent } from "../save-link/save-link-work";
 import { estimatedReadTimeFromWordCount } from "../save-link/estimated-read-time";
 import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import type { ReadPendingHtml } from "./read-pending-html";
-import type { MarkCrawlFailed, MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
+import type { MarkCrawlFailed } from "../crawl-article-state/article-crawl.types";
 import type { PutTierSource } from "../select-content/put-tier-source";
 
 const TIER = "tier-0";
@@ -27,7 +27,6 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 	processContent: ProcessContent;
 	putTierSource: PutTierSource;
 	publishEvent: PublishEvent;
-	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
 	logger: HutchLogger;
 	logParseError: LogParseError;
@@ -41,7 +40,6 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 		processContent,
 		putTierSource,
 		publishEvent,
-		markCrawlReady,
 		markCrawlFailed,
 		logger,
 		logParseError,
@@ -103,11 +101,6 @@ export function initSaveLinkRawHtmlCommandHandler(deps: {
 				// for correlating a save with what the user actually had open.
 				capturedTitle: detail.title,
 			});
-
-			/* Mark ready before the selector runs so the reader UI un-sticks
-			 * immediately. The selector promotes the winning tier asynchronously;
-			 * canonical may briefly point at the previous winner until then. */
-			await markCrawlReady({ url: detail.url });
 
 			const snapshot = await readTierSnapshot({ url: detail.url });
 			logCrawlOutcome({

@@ -52,7 +52,7 @@ const { updateFetchTimestamp } = initUpdateFetchTimestamp({
 	tableName: articlesTable,
 });
 
-const { markCrawlReady, markCrawlFailed, markCrawlStage } = initDynamoDbArticleCrawl({
+const { markCrawlFailed, markCrawlStage } = initDynamoDbArticleCrawl({
 	client,
 	tableName: articlesTable,
 });
@@ -108,7 +108,6 @@ export const handler = initRecrawlLinkInitiatedHandler({
 	putTierSource,
 	putImageObject,
 	updateFetchTimestamp,
-	markCrawlReady,
 	markCrawlFailed,
 	markCrawlStage,
 	publishEvent,

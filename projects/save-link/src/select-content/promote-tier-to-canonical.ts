@@ -69,6 +69,12 @@ export function initPromoteTierToCanonical(deps: {
 			"contentSourceTier = :cst",
 			"contentFetchedAt = :cfa",
 			"canonicalSourceTier = :cst",
+			// crawlStatus flips to "ready" atomically with the canonical write so
+			// "ready" exclusively means "canonical content is available to read".
+			// Per-tier workers no longer pre-mark ready; that previously left rows
+			// reading ready while title/excerpt/wordCount were still hostname stubs
+			// when the selector returned a tie and never promoted a canonical.
+			"crawlStatus = :ready",
 		];
 		const values: Record<string, unknown> = {
 			":t": params.metadata.title,
@@ -79,6 +85,7 @@ export function initPromoteTierToCanonical(deps: {
 			":cl": `s3://${bucketName}/${canonicalKey}`,
 			":cst": params.tier,
 			":cfa": now().toISOString(),
+			":ready": "ready",
 		};
 		if (params.metadata.imageUrl) {
 			setClauses.push("imageUrl = :img");
@@ -87,7 +94,7 @@ export function initPromoteTierToCanonical(deps: {
 
 		await articleTable.update({
 			Key: { url: id.value },
-			UpdateExpression: `SET ${setClauses.join(", ")}`,
+			UpdateExpression: `SET ${setClauses.join(", ")} REMOVE crawlFailureReason, crawlFailedAt`,
 			ExpressionAttributeValues: values,
 		});
 	};

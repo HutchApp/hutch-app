@@ -3,7 +3,6 @@ import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle, ThumbnailImage } from "@packages/crawl-article";
 import type {
 	MarkCrawlFailed,
-	MarkCrawlReady,
 	MarkCrawlStage,
 } from "../crawl-article-state/article-crawl.types";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
@@ -25,7 +24,6 @@ export function initSaveLinkWork(deps: {
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
 	updateFetchTimestamp: UpdateFetchTimestamp;
-	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
 	markCrawlStage: MarkCrawlStage;
 	downloadMedia: DownloadMedia;
@@ -44,7 +42,6 @@ export function initSaveLinkWork(deps: {
 		putTierSource,
 		putImageObject,
 		updateFetchTimestamp,
-		markCrawlReady,
 		markCrawlFailed,
 		markCrawlStage,
 		downloadMedia,
@@ -139,8 +136,6 @@ export function initSaveLinkWork(deps: {
 			etag: crawlResult.etag,
 			lastModified: crawlResult.lastModified,
 		});
-
-		await markCrawlReady({ url });
 
 		const successSnapshot = await readTierSnapshot({ url });
 		logCrawlOutcome({

@@ -122,7 +122,7 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,
-		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		// readTierSnapshot HEAD-checks tier-0 source when logging the crawl outcome.
 		...contentBucket.readPolicies("save-link-command-content-read"),
 		...contentBucket.writePolicies("save-link-command-s3"),
 	],
@@ -174,7 +174,7 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 		...pendingHtmlBucket.readPolicies("save-link-raw-html-command-pending-html"),
 		// Worker writes sources/tier-0.html + sidecar; the select-content Lambda
 		// owns canonical reads/writes and the Deepseek selector contest.
-		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		// readTierSnapshot HEAD-checks tier-0 source when logging the crawl outcome.
 		...contentBucket.readPolicies("save-link-raw-html-command-content-read"),
 		...contentBucket.writePolicies("save-link-raw-html-command-s3"),
 	],
@@ -223,7 +223,7 @@ const saveAnonymousLinkCommandLambda = new HutchLambda("save-anonymous-link-comm
 	},
 	policies: [
 		...saveAnonymousLinkCommandDynamodb.policies,
-		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		// readTierSnapshot HEAD-checks tier-0 source when logging the crawl outcome.
 		...contentBucket.readPolicies("save-anonymous-link-command-content-read"),
 		...contentBucket.writePolicies("save-anonymous-link-command-s3"),
 	],
@@ -438,7 +438,7 @@ const recrawlLinkInitiatedLambda = new HutchLambda("recrawl-link-initiated", {
 	},
 	policies: [
 		...recrawlLinkInitiatedDynamodb.policies,
-		// readTierSnapshot HEAD-checks tier-0 source after markCrawlReady.
+		// readTierSnapshot HEAD-checks tier-0 source when logging the crawl outcome.
 		...contentBucket.readPolicies("recrawl-link-initiated-content-read"),
 		...contentBucket.writePolicies("recrawl-link-initiated-s3"),
 	],

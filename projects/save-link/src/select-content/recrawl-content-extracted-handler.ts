@@ -10,12 +10,14 @@ import {
 import type { ListAvailableTierSources } from "./list-available-tier-sources";
 import type { SelectMostCompleteContent } from "./select-content";
 import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
+import type { FindContentSourceTier } from "./find-content-source-tier";
 import type { TierSource } from "./tier-source.types";
 
 export function initRecrawlContentExtractedHandler(deps: {
 	listAvailableTierSources: ListAvailableTierSources;
 	selectMostCompleteContent: SelectMostCompleteContent;
 	promoteTierToCanonical: PromoteTierToCanonical;
+	findContentSourceTier: FindContentSourceTier;
 	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
 	publishEvent: PublishEvent;
 	logger: HutchLogger;
@@ -24,6 +26,7 @@ export function initRecrawlContentExtractedHandler(deps: {
 		listAvailableTierSources,
 		selectMostCompleteContent,
 		promoteTierToCanonical,
+		findContentSourceTier,
 		dispatchGenerateSummary,
 		publishEvent,
 		logger,
@@ -68,8 +71,27 @@ export function initRecrawlContentExtractedHandler(deps: {
 					reason: decision.reason,
 				});
 				if (decision.winner === "tie") {
-					winnerTier = undefined;
-					reason = decision.reason;
+					const existingTier = await findContentSourceTier(detail.url);
+					if (existingTier) {
+						/* Recrawl tie + canonical already set: keep canonical
+						 * exactly as-is; the operator still gets a fresh summary
+						 * via the unconditional dispatchGenerateSummary below. */
+						winnerTier = undefined;
+						reason = decision.reason;
+					} else {
+						/* Tie with no canonical yet — i.e. recovering a row that
+						 * the user-save flow left stuck because of the same tie
+						 * pathology. Default to tier-1 (Readability) when present,
+						 * else tier-0; both candidates carry identical content by
+						 * definition of "tie", so this is a deterministic
+						 * tiebreaker rather than a quality call. */
+						const fallback =
+							sources.find((source) => source.tier === "tier-1") ??
+							sources.find((source) => source.tier === "tier-0");
+						assert(fallback, "tie with no candidate tiers should be unreachable");
+						winnerTier = fallback.tier;
+						reason = `tie on recrawl recovery; defaulted to ${fallback.tier}`;
+					}
 				} else {
 					winnerTier = decision.winner;
 					reason = decision.reason;

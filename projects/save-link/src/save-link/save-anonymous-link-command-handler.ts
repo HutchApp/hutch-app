@@ -8,7 +8,6 @@ import {
 } from "@packages/hutch-infra-components";
 import type {
 	MarkCrawlFailed,
-	MarkCrawlReady,
 	MarkCrawlStage,
 } from "../crawl-article-state/article-crawl.types";
 import type { ParseHtml } from "../article-parser/article-parser.types";
@@ -26,7 +25,6 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
 	updateFetchTimestamp: UpdateFetchTimestamp;
-	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
 	markCrawlStage: MarkCrawlStage;
 	publishEvent: PublishEvent;
@@ -47,7 +45,6 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 		putTierSource: deps.putTierSource,
 		putImageObject: deps.putImageObject,
 		updateFetchTimestamp: deps.updateFetchTimestamp,
-		markCrawlReady: deps.markCrawlReady,
 		markCrawlFailed: deps.markCrawlFailed,
 		markCrawlStage: deps.markCrawlStage,
 		downloadMedia: deps.downloadMedia,

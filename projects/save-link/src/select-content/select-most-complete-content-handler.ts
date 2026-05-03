@@ -75,20 +75,36 @@ export function initSelectMostCompleteContentHandler(deps: {
 					reason: decision.reason,
 				});
 				if (decision.winner === "tie") {
-					/* Tie keeps the canonical exactly as-is. We still emit
-					 * CrawlArticleCompleted to signal the pipeline reached a
-					 * decision; LinkSaved/AnonymousLinkSaved are skipped because
-					 * canonical did not change, so the summary pipeline shouldn't
-					 * regenerate. */
-					await publishEvent({
-						source: CrawlArticleCompletedEvent.source,
-						detailType: CrawlArticleCompletedEvent.detailType,
-						detail: JSON.stringify({ url: detail.url }),
-					});
-					continue;
+					const existingTier = await findContentSourceTier(detail.url);
+					if (existingTier) {
+						/* Recrawl tie: a canonical already exists. Promoting the
+						 * same content again would be a no-op write but a real
+						 * summary regeneration — wasted Deepseek tokens. Emit
+						 * CrawlArticleCompleted to settle the pipeline and skip. */
+						await publishEvent({
+							source: CrawlArticleCompletedEvent.source,
+							detailType: CrawlArticleCompletedEvent.detailType,
+							detail: JSON.stringify({ url: detail.url }),
+						});
+						continue;
+					}
+					/* First save: tie with no canonical yet. By definition of
+					 * "tie" both tiers carry equivalent content, so picking
+					 * one is a deterministic tiebreaker rather than a quality
+					 * call. Prefer tier-1 (Readability-parsed) when present,
+					 * else tier-0 (raw HTML). Without this default the row
+					 * sits at crawlStatus=pending forever — promoteTierToCanonical
+					 * is the only writer of crawlStatus="ready". */
+					const fallback =
+						sources.find((source) => source.tier === "tier-1") ??
+						sources.find((source) => source.tier === "tier-0");
+					assert(fallback, "tie with no candidate tiers should be unreachable");
+					winnerTier = fallback.tier;
+					reason = `tie on first save; defaulted to ${fallback.tier}`;
+				} else {
+					winnerTier = decision.winner;
+					reason = decision.reason;
 				}
-				winnerTier = decision.winner;
-				reason = decision.reason;
 			}
 
 			const winnerSource = sources.find((source) => source.tier === winnerTier);
