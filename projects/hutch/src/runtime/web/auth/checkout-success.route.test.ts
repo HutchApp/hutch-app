@@ -150,6 +150,39 @@ describe("GET /auth/checkout/success", () => {
 		expect(lookup.userId).toBe("u-google-checkout-1");
 	});
 
+	it("sends a welcome email after a new Google user completes Stripe checkout", async () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+		const { app, email, stripe, pendingSignup } = createTestApp(fixture);
+		const { UserIdSchema } = await import("../../domain/user/user.schema");
+
+		const checkout = await stripe.createCheckoutSession({
+			customerEmail: "google-welcome@example.com",
+			successUrl: "http://localhost:3000/auth/checkout/success?session_id={CHECKOUT_SESSION_ID}",
+			cancelUrl: "http://localhost:3000/login",
+		});
+		await pendingSignup.storePendingSignup({
+			checkoutSessionId: checkout.id,
+			signup: {
+				method: "google",
+				email: "google-welcome@example.com",
+				userId: UserIdSchema.parse("u-google-welcome-1"),
+			},
+		});
+		stripe.markPaid(checkout.id);
+
+		await request(app).get(
+			`/auth/checkout/success?session_id=${encodeURIComponent(checkout.id)}`,
+		);
+
+		const sent = email.getSentEmails();
+		expect(sent).toHaveLength(1);
+		expect(sent[0].to).toBe("google-welcome@example.com");
+		expect(sent[0].from).toContain("fayner@readplace.com");
+		expect(sent[0].bcc).toBe("readplace+welcome@readplace.com");
+		expect(sent[0].subject).toBe("Welcome to Readplace");
+		expect(sent[0].html).toContain("/install");
+	});
+
 	it("logs the existing user in when a Google sign-up arrives for an email that already exists", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const { app, auth, stripe, pendingSignup } = createTestApp(fixture);
@@ -186,5 +219,38 @@ describe("GET /auth/checkout/success", () => {
 		assert(lookup, "user should still exist");
 		expect(lookup.userId).toBe(existing.userId);
 		expect(lookup.emailVerified).toBe(true);
+	});
+
+	it("does not send a welcome email when a Google sign-up falls back to an existing email/password account", async () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+		const { app, auth, email, stripe, pendingSignup } = createTestApp(fixture);
+		const { UserIdSchema } = await import("../../domain/user/user.schema");
+
+		const existing = await auth.createUser({
+			email: "existing-welcome@example.com",
+			password: "password123",
+		});
+		assert(existing.ok, "setup");
+
+		const checkout = await stripe.createCheckoutSession({
+			customerEmail: "existing-welcome@example.com",
+			successUrl: "http://localhost:3000/auth/checkout/success?session_id={CHECKOUT_SESSION_ID}",
+			cancelUrl: "http://localhost:3000/login",
+		});
+		await pendingSignup.storePendingSignup({
+			checkoutSessionId: checkout.id,
+			signup: {
+				method: "google",
+				email: "existing-welcome@example.com",
+				userId: UserIdSchema.parse("u-google-existing-welcome"),
+			},
+		});
+		stripe.markPaid(checkout.id);
+
+		await request(app).get(
+			`/auth/checkout/success?session_id=${encodeURIComponent(checkout.id)}`,
+		);
+
+		expect(email.getSentEmails()).toHaveLength(0);
 	});
 });
