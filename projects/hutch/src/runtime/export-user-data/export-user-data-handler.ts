@@ -55,6 +55,7 @@ async function processCommand(
 			page,
 			pageSize: PAGE_SIZE,
 			order: "asc",
+			excludeContent: true,
 		});
 		for (const article of result.articles) articles.push(toExportArticle(article));
 		deps.logger.info("[ExportUserData] fetched articles page", {

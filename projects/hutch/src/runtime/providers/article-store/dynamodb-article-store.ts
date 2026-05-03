@@ -266,11 +266,24 @@ export function initDynamoDbArticleStore(deps: {
 		}
 
 		const urls = userArts.map((ua) => ({ url: ua.url }));
+		const metadataFields = [
+			"url",
+			"routeId",
+			"originalUrl",
+			"title",
+			"siteName",
+			"excerpt",
+			"wordCount",
+			"imageUrl",
+			"estimatedReadTime",
+			"contentSourceTier",
+		] as const;
 		const batchedArticles = await batchGetFromTable({
 			client,
 			tableName,
 			schema: ArticleRow,
 			keys: urls,
+			projection: query.excludeContent ? metadataFields : undefined,
 		});
 
 		const articlesByUrl = new Map<string, z.infer<typeof ArticleRow>>();

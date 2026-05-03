@@ -13,6 +13,7 @@ interface BatchGetCommandLike {
 			{
 				Keys?: Array<Record<string, unknown>>;
 				ProjectionExpression?: string;
+				ExpressionAttributeNames?: Record<string, string>;
 			}
 		>;
 	};
@@ -22,6 +23,7 @@ interface CapturedRequest {
 	tableName: string;
 	keys: Array<{ url: string }>;
 	projection: string | undefined;
+	expressionAttributeNames: Record<string, string> | undefined;
 }
 
 function createFakeClient(
@@ -46,6 +48,7 @@ function createFakeClient(
 				tableName,
 				keys,
 				projection: tableEntry?.ProjectionExpression,
+				expressionAttributeNames: tableEntry?.ExpressionAttributeNames,
 			});
 			const { responses = [], unprocessedKeys = [] } = respond(keys, callIndex);
 			return {
@@ -193,7 +196,9 @@ describe("batchGetFromTable", () => {
 		expect(calls).toHaveLength(6);
 	});
 
-	it("forwards the projection expression on every chunk", async () => {
+	it("aliases projection attributes to dodge DynamoDB reserved words and forwards them on every chunk", async () => {
+		// `url`, `name`, `status` are reserved words in DynamoDB. Without aliasing,
+		// a ProjectionExpression like "url, payload" would fail at the API.
 		const keys = makeKeys(150);
 		const { client, calls } = createFakeClient((received) => ({
 			responses: received.map(({ url }) => ({ url, payload: `p-${url}` })),
@@ -208,6 +213,10 @@ describe("batchGetFromTable", () => {
 		});
 
 		expect(calls).toHaveLength(2);
-		expect(calls.map((c) => c.projection)).toEqual(["url, payload", "url, payload"]);
+		expect(calls.map((c) => c.projection)).toEqual(["#url, #payload", "#url, #payload"]);
+		expect(calls.map((c) => c.expressionAttributeNames)).toEqual([
+			{ "#url": "url", "#payload": "payload" },
+			{ "#url": "url", "#payload": "payload" },
+		]);
 	});
 });

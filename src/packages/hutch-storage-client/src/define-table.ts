@@ -180,11 +180,22 @@ export async function batchGetFromTable<TSchema extends z.ZodObject>(config: {
 		chunks.push(keys.slice(i, i + BATCH_GET_MAX_KEYS));
 	}
 
+	// Alias every projected attribute with `#` so reserved keywords (e.g.
+	// `url`, `name`, `status`) don't trip the ProjectionExpression parser.
+	const projectionOptions = projection
+		? {
+				ProjectionExpression: projection.map((f) => `#${String(f)}`).join(", "),
+				ExpressionAttributeNames: Object.fromEntries(
+					projection.map((f) => [`#${String(f)}`, String(f)]),
+				),
+			}
+		: {};
+
 	const buildRequest = (batchKeys: readonly Key[]): BatchGetCommandInput => ({
 		RequestItems: {
 			[tableName]: {
 				Keys: batchKeys as Key[],
-				...(projection ? { ProjectionExpression: projection.join(", ") } : {}),
+				...projectionOptions,
 			},
 		},
 	});

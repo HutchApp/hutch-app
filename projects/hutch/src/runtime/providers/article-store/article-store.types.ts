@@ -22,6 +22,8 @@ export interface FindArticlesQuery {
 	order?: SortOrder;
 	page?: number;
 	pageSize?: number;
+	/** Skip the article body when reading rows. Use for list/export views that only need metadata. */
+	excludeContent?: boolean;
 }
 
 export interface FindArticlesResult {
