@@ -50,7 +50,7 @@
   text-align: center;
 }
 
-.export__download-btn {
+.export__action-btn {
   display: inline-block;
   padding: 12px 32px;
   background: var(--primary);
@@ -62,6 +62,6 @@
   transition: opacity 0.15s ease;
 }
 
-.export__download-btn:hover {
+.export__action-btn:hover {
   opacity: 0.9;
 }
