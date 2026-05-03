@@ -1,6 +1,7 @@
 import { noopLogger } from "@packages/hutch-logger";
 import { initRecrawlContentExtractedDlqHandler } from "./recrawl-content-extracted-dlq-handler";
 import type { MarkCrawlFailed } from "../crawl-article-state/article-crawl.types";
+import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
@@ -50,10 +51,12 @@ function createSqsEvent(
 describe("initRecrawlContentExtractedDlqHandler", () => {
 	it("marks the crawl as failed and publishes CrawlArticleFailedEvent when a message lands in DLQ", async () => {
 		const markCrawlFailed: MarkCrawlFailed = jest.fn().mockResolvedValue(undefined);
+		const markSummaryFailed: MarkSummaryFailed = jest.fn().mockResolvedValue(undefined);
 		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
 
 		const handler = initRecrawlContentExtractedDlqHandler({
 			markCrawlFailed,
+			markSummaryFailed,
 			publishEvent,
 			logger: noopLogger,
 		});
@@ -68,6 +71,10 @@ describe("initRecrawlContentExtractedDlqHandler", () => {
 			url: "https://example.com/failed",
 			reason: "exceeded SQS maxReceiveCount",
 		});
+		expect(markSummaryFailed).toHaveBeenCalledWith({
+			url: "https://example.com/failed",
+			reason: "crawl failed",
+		});
 		expect(publishEvent).toHaveBeenCalledWith({
 			source: "hutch.save-link",
 			detailType: "CrawlArticleFailed",
@@ -81,10 +88,12 @@ describe("initRecrawlContentExtractedDlqHandler", () => {
 
 	it("throws on an invalid event envelope", async () => {
 		const markCrawlFailed: MarkCrawlFailed = jest.fn();
+		const markSummaryFailed: MarkSummaryFailed = jest.fn();
 		const publishEvent: PublishEvent = jest.fn();
 
 		const handler = initRecrawlContentExtractedDlqHandler({
 			markCrawlFailed,
+			markSummaryFailed,
 			publishEvent,
 			logger: noopLogger,
 		});
@@ -105,6 +114,7 @@ describe("initRecrawlContentExtractedDlqHandler", () => {
 
 		await expect(handler(invalidEvent, stubContext, () => {})).rejects.toThrow();
 		expect(markCrawlFailed).not.toHaveBeenCalled();
+		expect(markSummaryFailed).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
 });
