@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import http2 from "node:http2";
+import { fetchCurl } from "./curl-fetch";
 
 const MAX_REDIRECTS = 5;
 const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
@@ -110,20 +111,32 @@ function toFetchHeaders(incoming: http2.IncomingHttpHeaders): Headers {
  * challenge`) and plain "Attention Required!" interstitials (no cf-mitigated
  * header), since both are TLS-fingerprint blocks that real browsers bypass
  * via h2. Non-Cloudflare 403s and non-403 responses pass through unchanged.
+ *
+ * If the h2 fallback itself fails (e.g. Cloudflare refuses to negotiate h2
+ * via ALPN downgrade), a curl subprocess fallback kicks in. curl's OpenSSL-
+ * based TLS fingerprint differs from Node.js's and passes Cloudflare's
+ * JA3/JA4 heuristics.
  */
 export function withH2Fallback(
 	baseFetch: typeof fetch,
 	h2FetchImpl: typeof fetchH2 = fetchH2,
+	curlFetchImpl: typeof fetchCurl = fetchCurl,
 ): typeof fetch {
 	return async (input, init) => {
 		const response = await baseFetch(input, init);
 		if (response.status !== 403) return response;
 		if (response.headers.get("server")?.toLowerCase() !== "cloudflare") return response;
 		await response.text();
-		return h2FetchImpl(urlFromInput(input), {
+		const url = urlFromInput(input);
+		const fallbackInit = {
 			headers: toPlainHeaders(init?.headers),
 			signal: init?.signal ?? undefined,
-		});
+		};
+		try {
+			return await h2FetchImpl(url, fallbackInit);
+		} catch {
+			return curlFetchImpl(url, fallbackInit);
+		}
 	};
 }
 

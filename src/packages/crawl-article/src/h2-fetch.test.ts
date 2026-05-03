@@ -271,4 +271,45 @@ describe("withH2Fallback", () => {
 		const wrapped = withH2Fallback(baseFetch);
 		expect(typeof wrapped).toBe("function");
 	});
+
+	it("falls back to curl when h2 throws a protocol error", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
+		const h2Impl = jest.fn(async () => {
+			throw new Error("ERR_HTTP2_ERROR: Protocol error");
+		});
+		const curlImpl = jest.fn(async () =>
+			new Response("<html>curl worked</html>", { status: 200, headers: { "content-type": "text/html" } }),
+		);
+		const wrapped = withH2Fallback(baseFetch, h2Impl as unknown as typeof fetchH2, curlImpl);
+
+		const response = await wrapped("https://example.com", {
+			headers: { "user-agent": "Test/1.0" },
+			signal: AbortSignal.timeout(5000),
+		});
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toBe("<html>curl worked</html>");
+		expect(h2Impl).toHaveBeenCalledTimes(1);
+		expect(curlImpl).toHaveBeenCalledWith("https://example.com", {
+			headers: { "user-agent": "Test/1.0" },
+			signal: expect.any(AbortSignal),
+		});
+	});
+
+	it("does not invoke curl when h2 succeeds", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
+		const h2Impl = jest.fn(async () =>
+			new Response("<html>h2 ok</html>", { status: 200, headers: { "content-type": "text/html" } }),
+		);
+		const curlImpl = jest.fn();
+		const wrapped = withH2Fallback(baseFetch, h2Impl as unknown as typeof fetchH2, curlImpl);
+
+		const response = await wrapped("https://example.com");
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toBe("<html>h2 ok</html>");
+		expect(curlImpl).not.toHaveBeenCalled();
+	});
 });
