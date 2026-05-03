@@ -270,7 +270,7 @@ export function initMarkExtensionInstalledUnderstanding(): Map<string, ActionHan
 					method: sirenAction.method,
 					/** Send credentials so the server's Set-Cookie response lands on
 					 * the app origin's cookie jar; without it the cross-origin fetch
-					 * from a moz-extension://chrome-extension:// origin discards the
+					 * from an extension origin (moz-extension://, chrome-extension://) discards the
 					 * Set-Cookie header. */
 					credentials: "include",
 				},
@@ -526,7 +526,8 @@ export function initSirenReadingList(deps: SirenReadingListDeps): {
 		const action = actions["mark-extension-installed"];
 		if (!action) return;
 		extensionMarkedInstalled = true;
-		action().catch(() => {
+		action().catch((error) => {
+			console.warn("mark-extension-installed failed, will retry", error);
 			extensionMarkedInstalled = false;
 		});
 	}
