@@ -49,7 +49,7 @@ export function InstallPage(params: { firefox: string | null; chrome: string | n
 					offers: {
 						"@type": "Offer",
 						price: "0",
-						priceCurrency: "AUD",
+						priceCurrency: "USD",
 					},
 					publisher: {
 						"@type": "Organization",
