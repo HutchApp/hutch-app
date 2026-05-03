@@ -50,6 +50,8 @@ const ArticleRow = z.object({
 	estimatedReadTime: MinutesSchema,
 	contentSourceTier: dynamoField(z.enum(["tier-0", "tier-1"])),
 });
+/** Every ArticleRow attribute except `content`, derived so the list stays in sync with the schema. */
+const ArticleMetadataFields = ArticleRow.omit({ content: true }).keyof().options;
 
 const UserArticleRow = z.object({
 	userId: UserIdSchema,
@@ -266,24 +268,12 @@ export function initDynamoDbArticleStore(deps: {
 		}
 
 		const urls = userArts.map((ua) => ({ url: ua.url }));
-		const metadataFields = [
-			"url",
-			"routeId",
-			"originalUrl",
-			"title",
-			"siteName",
-			"excerpt",
-			"wordCount",
-			"imageUrl",
-			"estimatedReadTime",
-			"contentSourceTier",
-		] as const;
 		const batchedArticles = await batchGetFromTable({
 			client,
 			tableName,
 			schema: ArticleRow,
 			keys: urls,
-			projection: query.excludeContent ? metadataFields : undefined,
+			projection: query.excludeContent ? ArticleMetadataFields : undefined,
 		});
 
 		const articlesByUrl = new Map<string, z.infer<typeof ArticleRow>>();
