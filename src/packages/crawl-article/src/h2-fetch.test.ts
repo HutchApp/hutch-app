@@ -108,6 +108,16 @@ describe("fetchH2 — against a local HTTP/2 server", () => {
 			await server.close();
 		}
 	});
+
+	it("lets non-TLS-chain errors propagate without retrying", async () => {
+		const server = await startH2Server((_stream) => {
+			// Never respond — triggers a connection-refused style error.
+		});
+		const { origin } = server;
+		await server.close();
+
+		await expect(fetchH2(origin)).rejects.toThrow();
+	});
 });
 
 describe("withH2Fallback", () => {
@@ -264,6 +274,20 @@ describe("withH2Fallback", () => {
 			headers: undefined,
 			signal: undefined,
 		});
+	});
+
+	it("propagates TLS chain errors from h2FetchImpl to the caller", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
+		const cause = Object.assign(new Error("unable to verify the first certificate"), {
+			code: "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+		});
+		const h2Error = Object.assign(new Error("stream canceled"), { cause });
+		const h2Impl = jest.fn(async () => { throw h2Error; });
+		const wrapped = withH2Fallback(baseFetch, h2Impl as unknown as typeof fetchH2);
+
+		await expect(wrapped("https://example.com")).rejects.toThrow("stream canceled");
+		expect(h2Impl).toHaveBeenCalledTimes(1);
 	});
 
 	it("defaults to the real fetchH2 implementation when no override is given", () => {

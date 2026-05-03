@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import http2 from "node:http2";
+import { isTlsChainError } from "./aia-fetch";
 
 const MAX_REDIRECTS = 5;
 const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
@@ -23,9 +24,10 @@ type H2RequestResult = {
  */
 export async function fetchH2(url: string, init?: FetchH2Init): Promise<Response> {
 	let currentUrl = url;
+	let connectOptions: http2.SecureClientSessionOptions | undefined;
 	for (let i = 0; i <= MAX_REDIRECTS; i++) {
 		const parsed = new URL(currentUrl);
-		const client = http2.connect(parsed.origin);
+		const client = http2.connect(parsed.origin, connectOptions);
 		try {
 			const result = await h2Request(client, parsed, init);
 			if (REDIRECT_STATUS_CODES.has(result.status)) {
@@ -38,6 +40,10 @@ export async function fetchH2(url: string, init?: FetchH2Init): Promise<Response
 				status: result.status,
 				headers: toFetchHeaders(result.headers),
 			});
+		} catch (error) {
+			if (connectOptions || !isTlsChainError(error)) throw error;
+			connectOptions = { rejectUnauthorized: false };
+			continue;
 		} finally {
 			client.close();
 		}
