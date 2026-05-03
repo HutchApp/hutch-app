@@ -6,9 +6,11 @@ import {
 	RecrawlLinkInitiatedEvent,
 } from "@packages/hutch-infra-components";
 import type { MarkCrawlFailed } from "./article-crawl.types";
+import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
 
 interface RecrawlLinkInitiatedDlqHandlerDeps {
 	markCrawlFailed: MarkCrawlFailed;
+	markSummaryFailed: MarkSummaryFailed;
 	publishEvent: PublishEvent;
 	logger: HutchLogger;
 }
@@ -17,7 +19,7 @@ interface RecrawlLinkInitiatedDlqHandlerDeps {
 export function initRecrawlLinkInitiatedDlqHandler(
 	deps: RecrawlLinkInitiatedDlqHandlerDeps,
 ): SQSHandler {
-	const { markCrawlFailed, publishEvent, logger } = deps;
+	const { markCrawlFailed, markSummaryFailed, publishEvent, logger } = deps;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -32,6 +34,7 @@ export function initRecrawlLinkInitiatedDlqHandler(
 			});
 
 			await markCrawlFailed({ url: detail.url, reason });
+			await markSummaryFailed({ url: detail.url, reason: "crawl failed" });
 
 			await publishEvent({
 				source: CrawlArticleFailedEvent.source,
