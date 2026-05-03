@@ -75,12 +75,26 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 			});
 		});
 
-		it("returns skipped when status=skipped", async () => {
+		it("returns skipped without reason when status=skipped and no skip reason persisted", async () => {
 			const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
 				client: clientForGet({ summaryStatus: "skipped" }) as DynamoDBDocumentClient,
 				tableName: TABLE,
 			});
 			expect(await findGeneratedSummary(URL)).toEqual({ status: "skipped" });
+		});
+
+		it("returns skipped with reason when summarySkippedReason is present", async () => {
+			const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+				client: clientForGet({
+					summaryStatus: "skipped",
+					summarySkippedReason: "content-too-short",
+				}) as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+			expect(await findGeneratedSummary(URL)).toEqual({
+				status: "skipped",
+				reason: "content-too-short",
+			});
 		});
 
 		it("returns ready for a legacy row (summary present, no status)", async () => {
@@ -167,7 +181,9 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 
 			await expect(markSummaryPending({ url: URL })).resolves.toBeUndefined();
 			await expect(markSummaryFailed({ url: URL, reason: "r" })).resolves.toBeUndefined();
-			await expect(markSummarySkipped({ url: URL })).resolves.toBeUndefined();
+			await expect(
+				markSummarySkipped({ url: URL, reason: "content-too-short" }),
+			).resolves.toBeUndefined();
 		});
 
 		it("rethrows non-ConditionalCheck errors", async () => {
@@ -182,7 +198,9 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 
 			await expect(markSummaryPending({ url: URL })).rejects.toThrow("throttled");
 			await expect(markSummaryFailed({ url: URL, reason: "r" })).rejects.toThrow("throttled");
-			await expect(markSummarySkipped({ url: URL })).rejects.toThrow("throttled");
+			await expect(
+				markSummarySkipped({ url: URL, reason: "content-too-short" }),
+			).rejects.toThrow("throttled");
 		});
 	});
 });

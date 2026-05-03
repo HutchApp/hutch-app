@@ -1083,9 +1083,13 @@ describe("Queue routes", () => {
 			expect(
 				doc.querySelector(".article-body__summary-error")?.textContent,
 			).toContain("couldn't generate a summary");
+			expect(
+				doc.querySelector("[data-test-reader-summary-failure-reason]")
+					?.textContent,
+			).toBe("deepseek timeout");
 		});
 
-		it("should hide the summary slot when status=skipped", async () => {
+		it("should render a visible info card with the reason copy when status=skipped", async () => {
 			const articleHtml = `
 			<html><head><title>No Summary Post</title></head>
 			<body><article>
@@ -1094,7 +1098,10 @@ describe("Queue routes", () => {
 			</article></body></html>`;
 
 			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
-			const findGeneratedSummary = async () => ({ status: "skipped" as const });
+			const findGeneratedSummary = async () => ({
+				status: "skipped" as const,
+				reason: "content-too-short",
+			});
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
 			const applyParseResult = createFakeApplyParseResult({
@@ -1138,8 +1145,16 @@ describe("Queue routes", () => {
 			assert(summarySlot, "summary slot must be rendered");
 			expect(summarySlot.getAttribute("data-summary-status")).toBe("skipped");
 			expect(
-				summarySlot.classList.contains("article-body__summary-slot--hidden"),
+				summarySlot.classList.contains("article-body__summary-slot--visible"),
 			).toBe(true);
+			const info = doc.querySelector(".article-body__summary-info");
+			assert(info, "info card must be rendered");
+			expect(info.getAttribute("data-test-reader-summary-skip-reason")).toBe(
+				"content-too-short",
+			);
+			expect(info.textContent).toBe(
+				"This article is too short to summarise.",
+			);
 		});
 
 		it("should hide the summary slot on the reader page when the crawl has failed", async () => {

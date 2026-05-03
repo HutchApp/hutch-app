@@ -7,6 +7,10 @@ const TEMPLATE = readFileSync(
 	"utf-8",
 );
 
-export function renderSummaryFailed(): string {
-	return render(TEMPLATE, {});
+export interface SummaryFailedInput {
+	reason: string;
+}
+
+export function renderSummaryFailed(input: SummaryFailedInput): string {
+	return render(TEMPLATE, { reason: input.reason });
 }
