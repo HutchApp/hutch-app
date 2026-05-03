@@ -24,6 +24,7 @@ You have been triggered because the `Stuck articles canary` workflow failed on i
 ## Important Guidelines
 
 - Follow ALL CLAUDE.md guidelines.
+- **The issue body only lists rows whose URL still resolves on the public network.** `src/packages/check-stuck-articles/scripts/check-reachable.ts` runs a HEAD probe per stuck row and drops rows whose `fetch()` throws (DNS failure, TCP refused, TLS error, timeout). Do not propose "the URL is dead, exclude it" as a fix — that path is already handled and the row would not have reached you. A row that *does* reach you got an HTTP response from its origin; the bug is somewhere between that response and the row's terminal state.
 - **Never edit `src/packages/check-stuck-articles/scripts/exclude-patterns.ts` to make the canary green.** Every entry is a class of URL that is genuinely never a real article (own-domain pages, browser-internal URLs, the AWS console). Adding a real article URL there silently hides the regression and tomorrow's cron passes for the wrong reason.
 - **Never lower the pagination cap or remove the `assert` in `collectStuckRows`.** The cap exists to fail loud on a runaway scan.
 - Do not change `EXPRESSION_ATTRIBUTE_VALUES`, `FilterExpression`, or `classifyRow` unless the prod state machines actually changed. The canary is the contract — drift it only when production schema drifts.

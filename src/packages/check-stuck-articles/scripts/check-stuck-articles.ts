@@ -33,6 +33,7 @@ import {
 	dynamoField,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
+import { filterReachable } from "./check-reachable";
 import { type StuckReason, classifyRow } from "./classify-row";
 import { EXCLUDE_PATTERNS } from "./exclude-patterns";
 
@@ -83,6 +84,21 @@ interface StuckRow {
  * loud here instead of burning the runner's 10-minute budget.
  */
 const MAX_PAGES = 50;
+
+/**
+ * Reachability ping budget per stuck row. Matches the production crawler's
+ * FETCH_TIMEOUT_MS in src/packages/crawl-article/src/crawl-article.ts so the
+ * canary's idea of "reachable" tracks the crawler's idea of "had a chance".
+ */
+const REACHABILITY_TIMEOUT_MS = 10_000;
+
+/**
+ * Bounded parallelism for the reachability pings. The DDB scan caps at
+ * MAX_PAGES so the worst-case row count is small, but bounding parallelism
+ * keeps the runner from opening a pathological number of sockets when a
+ * regression in classification widens the candidate set.
+ */
+const REACHABILITY_CONCURRENCY = 8;
 
 async function collectStuckRows(): Promise<StuckRow[]> {
 	const client = createDynamoDocumentClient({ region: REGION });
@@ -157,8 +173,14 @@ async function writeReportIfRequested(stuck: StuckRow[]): Promise<void> {
 
 test("Stuck articles canary", async (t) => {
 	const stuck = await collectStuckRows();
-	await writeReportIfRequested(stuck);
-	for (const row of stuck) {
+	const reachable = await filterReachable(stuck, {
+		fetch: globalThis.fetch,
+		timeoutMs: REACHABILITY_TIMEOUT_MS,
+		concurrency: REACHABILITY_CONCURRENCY,
+		log: (msg) => process.stderr.write(`${msg}\n`),
+	});
+	await writeReportIfRequested(reachable);
+	for (const row of reachable) {
 		const label = `[${row.reasons.join(",")}] ${row.originalUrl}`;
 		await t.test(label, () => {
 			assert.fail(
