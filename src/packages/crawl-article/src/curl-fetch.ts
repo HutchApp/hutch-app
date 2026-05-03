@@ -48,8 +48,8 @@ const defaultExecCurl: ExecCurl = (args, options, callback) => {
  * (argument construction, header title-casing, abort handling, error mapping,
  * response parsing) without spawning a real curl process.
  */
-export function createCurlFetch(deps: { execCurl?: ExecCurl } = {}): CurlFetch {
-	const execCurl = deps.execCurl ?? defaultExecCurl;
+export function createCurlFetch(deps: { execCurl: ExecCurl }): CurlFetch {
+	const { execCurl } = deps;
 	return function fetchCurl(url, init) {
 		return new Promise((resolve, reject) => {
 			const args = buildCurlArgs({ url, headers: init?.headers });
@@ -80,7 +80,7 @@ export function createCurlFetch(deps: { execCurl?: ExecCurl } = {}): CurlFetch {
 	};
 }
 
-export const fetchCurl: CurlFetch = createCurlFetch();
+export const fetchCurl: CurlFetch = createCurlFetch({ execCurl: defaultExecCurl });
 
 function buildCurlArgs(params: { url: string; headers?: Record<string, string> }): string[] {
 	const args = [

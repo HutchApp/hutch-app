@@ -201,8 +201,9 @@ describe("fetchCurl abort signal handling", () => {
 });
 
 describe("createCurlFetch defaults", () => {
-	it("returns a callable function when no execCurl override is provided", () => {
-		const fetchCurl = createCurlFetch();
+	it("returns a callable function with an explicit execCurl", () => {
+		const fake = makeFakeExec();
+		const fetchCurl = createCurlFetch({ execCurl: fake.execCurl });
 		expect(typeof fetchCurl).toBe("function");
 	});
 });
