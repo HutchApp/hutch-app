@@ -112,10 +112,12 @@ function toFetchHeaders(incoming: http2.IncomingHttpHeaders): Headers {
  * header), since both are TLS-fingerprint blocks that real browsers bypass
  * via h2. Non-Cloudflare 403s and non-403 responses pass through unchanged.
  *
- * If the h2 fallback itself fails (e.g. Cloudflare refuses to negotiate h2
- * via ALPN downgrade), a curl subprocess fallback kicks in. curl's OpenSSL-
- * based TLS fingerprint differs from Node.js's and passes Cloudflare's
- * JA3/JA4 heuristics.
+ * If the h2 fallback itself fails with a TLS- or protocol-level error (e.g.
+ * Cloudflare refuses to negotiate h2 via ALPN downgrade), a curl subprocess
+ * fallback kicks in. curl's OpenSSL-based TLS fingerprint differs from
+ * Node.js's and passes Cloudflare's JA3/JA4 heuristics. Clear network
+ * failures (DNS, connection refused) and aborts skip curl since they would
+ * fail the same way and only add latency.
  */
 export function withH2Fallback(
 	baseFetch: typeof fetch,
@@ -134,10 +136,27 @@ export function withH2Fallback(
 		};
 		try {
 			return await h2FetchImpl(url, fallbackInit);
-		} catch {
+		} catch (error) {
+			if (!shouldFallbackToCurl(error, fallbackInit.signal)) throw error;
 			return curlFetchImpl(url, fallbackInit);
 		}
 	};
+}
+
+const NETWORK_ERROR_CODES = new Set([
+	"ENOTFOUND",
+	"ECONNREFUSED",
+	"EHOSTUNREACH",
+	"ENETUNREACH",
+]);
+
+function shouldFallbackToCurl(error: unknown, signal: AbortSignal | undefined): boolean {
+	if (signal?.aborted) return false;
+	if (!(error instanceof Error)) return true;
+	if ("code" in error && typeof error.code === "string" && NETWORK_ERROR_CODES.has(error.code)) {
+		return false;
+	}
+	return true;
 }
 
 type FetchInput = Parameters<typeof fetch>[0];
