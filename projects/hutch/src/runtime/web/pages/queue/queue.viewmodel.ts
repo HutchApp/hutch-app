@@ -80,13 +80,13 @@ function toArticleActions(
 
 	if (article.status !== "read") {
 		actions.push({
-			method: "GET",
-			url: `/queue/${article.id}/read`,
-			text: "Read",
+			method: "POST",
+			url: `/queue/${article.id}/status${returnQuery}`,
+			text: "Mark as read",
 			title: "Mark as read",
 			testAction: "mark-read",
-			pageReload: true,
-			fields: [],
+			pageReload: false,
+			fields: [{ name: "status", value: "read" }],
 		});
 	}
 
