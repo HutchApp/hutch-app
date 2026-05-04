@@ -463,6 +463,53 @@ describe("Auth routes", () => {
 			expect(botDefense.events[0]).toMatchObject({ reason: "missing_timestamp" });
 		});
 
+		it("logs 'missing_timestamp' when loadedAt is an empty string", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: "",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).toMatchObject({ reason: "missing_timestamp" });
+		});
+
+		it("omits email_domain from the event when the honeypot payload has no email", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
+				website: "https://spam.example",
+			});
+
+			expect(response.status).toBe(303);
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).not.toHaveProperty("email_domain");
+		});
+
+		it("omits email_domain when email has no @ sign", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "no-at-sign",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
+				website: "https://spam.example",
+			});
+
+			expect(response.status).toBe(303);
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).not.toHaveProperty("email_domain");
+		});
+
 		it("logs 'invalid_timestamp' and fakes success when loadedAt is not a parseable integer", async () => {
 			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
@@ -471,6 +518,22 @@ describe("Auth routes", () => {
 				password: "password123",
 				confirmPassword: "password123",
 				loadedAt: "not-a-number",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).toMatchObject({ reason: "invalid_timestamp" });
+		});
+
+		it("logs 'invalid_timestamp' when loadedAt is a float string", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: "123.45",
 			});
 
 			expect(response.status).toBe(303);
