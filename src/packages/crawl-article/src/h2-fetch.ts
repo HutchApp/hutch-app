@@ -112,12 +112,14 @@ function toFetchHeaders(incoming: http2.IncomingHttpHeaders): Headers {
  * header), since both are TLS-fingerprint blocks that real browsers bypass
  * via h2. Non-Cloudflare 403s and non-403 responses pass through unchanged.
  *
- * If the h2 fallback itself fails with a TLS- or protocol-level error (e.g.
- * Cloudflare refuses to negotiate h2 via ALPN downgrade), a curl subprocess
- * fallback kicks in. curl's OpenSSL-based TLS fingerprint differs from
- * Node.js's and passes Cloudflare's JA3/JA4 heuristics. Clear network
- * failures (DNS, connection refused) and aborts skip curl since they would
- * fail the same way and only add latency.
+ * If the primary fetch or the h2 fallback fails with a transient TLS- or
+ * connection-level error (timeout, ECONNRESET, "fetch failed", protocol
+ * error from h2's ALPN downgrade), a curl subprocess fallback kicks in.
+ * curl's OpenSSL-based TLS fingerprint differs from Node.js's and passes
+ * Cloudflare's JA3/JA4 heuristics; its fresh TCP connection also bypasses
+ * upstream nginx/edge sniffers that drop specific Lambda outbound IPs.
+ * Clear network failures (DNS, connection refused) and explicit user-aborts
+ * skip curl since they would fail the same way and only add latency.
  */
 export function withH2Fallback(
 	baseFetch: typeof fetch,
@@ -129,8 +131,7 @@ export function withH2Fallback(
 		try {
 			response = await baseFetch(input, init);
 		} catch (error) {
-			const signal = init?.signal ?? undefined;
-			if (!signal?.aborted || !isTimeoutError(signal.reason)) throw error;
+			if (!shouldFallbackToCurl(error, init?.signal ?? undefined)) throw error;
 			const url = urlFromInput(input);
 			return curlFetchImpl(url, { headers: toPlainHeaders(init?.headers) });
 		}
