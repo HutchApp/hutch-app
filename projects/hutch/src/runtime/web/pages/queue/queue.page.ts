@@ -177,11 +177,12 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const tab = tabQuery(urlState.tab);
 		const filterUrl = typeof req.query.url === "string" ? req.query.url : undefined;
 
+		const order = urlState.order ?? tab.defaultOrder;
 		const result = await deps.findArticlesByUser({
 			userId,
 			status: tab.status,
 			sort: tab.sort,
-			order: urlState.order,
+			order,
 			page: urlState.page,
 		});
 

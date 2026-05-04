@@ -4,7 +4,7 @@ import type { TabId } from "./queue.tabs";
 
 export interface QueueUrlState {
 	tab: TabId;
-	order: SortOrder;
+	order?: SortOrder;
 	page: number;
 }
 
@@ -20,7 +20,7 @@ export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 	const tab = parsed.tab ?? (parsed.status === "read" ? "done" : "queue");
 	return {
 		tab,
-		order: parsed.order ?? "desc",
+		order: parsed.order,
 		page: parsed.page ?? 1,
 	};
 }

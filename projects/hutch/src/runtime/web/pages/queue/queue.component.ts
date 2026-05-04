@@ -7,6 +7,7 @@ import { render } from "../../render";
 import { QUEUE_STYLES } from "./queue.styles";
 import type { ArticleAction, QueueArticleViewModel, QueueViewModel } from "./queue.viewmodel";
 import { buildQueueUrl } from "./queue.url";
+import { tabQuery } from "./queue.tabs";
 
 const QUEUE_TEMPLATE = readFileSync(join(__dirname, "queue.template.html"), "utf-8");
 
@@ -72,8 +73,9 @@ export function formatUnreadLabel(count: number): string {
 
 function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: boolean; browser: BrowserName; onboardingDismissed: boolean }): QueueDisplayModel {
 	const activeTab = vm.filters.tab;
-	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
-	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
+	const effectiveOrder = vm.filters.order ?? tabQuery(activeTab).defaultOrder;
+	const nextOrder = effectiveOrder === "desc" ? "asc" : "desc";
+	const sortLabel = effectiveOrder === "desc" ? "Newest first ↓" : "Oldest first ↑";
 	const sortUrl = buildQueueUrl({ tab: activeTab, order: nextOrder });
 
 	const onboardingHtml = options.onboardingDismissed

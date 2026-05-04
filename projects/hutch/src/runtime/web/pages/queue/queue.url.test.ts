@@ -3,7 +3,7 @@ import { buildQueueUrl, parseQueueUrl } from "./queue.url";
 describe("parseQueueUrl", () => {
 	it("should default to queue tab for empty query", () => {
 		const state = parseQueueUrl({});
-		expect(state).toEqual({ tab: "queue", order: "desc", page: 1 });
+		expect(state).toEqual({ tab: "queue", order: undefined, page: 1 });
 	});
 
 	it("should parse tab parameter", () => {
@@ -36,8 +36,8 @@ describe("parseQueueUrl", () => {
 		expect(parseQueueUrl({ order: "desc" }).order).toBe("desc");
 	});
 
-	it("should default to desc for invalid order", () => {
-		expect(parseQueueUrl({ order: "invalid" }).order).toBe("desc");
+	it("should return undefined for invalid order", () => {
+		expect(parseQueueUrl({ order: "invalid" }).order).toBeUndefined();
 	});
 
 	it("should parse page number", () => {
