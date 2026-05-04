@@ -1084,6 +1084,14 @@ describe("View routes", () => {
 			expect(
 				doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
 			).toBe(`https://readplace.com/view/${ENCODED}`);
+			expect(
+				doc
+					.querySelector('meta[name="twitter:description"]')
+					?.getAttribute("content"),
+			).toBe("A lovely article.");
+			expect(
+				doc.querySelector('meta[name="twitter:image"]')?.getAttribute("content"),
+			).toBe("https://cdn.example.com/hero.jpg");
 		});
 
 		it("falls back to the Readplace default images when article has no imageUrl", async () => {
@@ -1575,6 +1583,7 @@ describe("View routes", () => {
 					siteName: "example.com",
 					excerpt: "Cached excerpt.",
 					wordCount: 200,
+					imageUrl: "https://cdn.example.com/cached.jpg",
 				},
 				estimatedReadTime: MinutesSchema.parse(2),
 			});

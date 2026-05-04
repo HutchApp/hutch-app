@@ -136,6 +136,7 @@ function handleViewArticle(deps: ViewDependencies) {
 			article: { url: articleUrl, metadata, estimatedReadTime },
 			pollUrlBuilder,
 		});
+
 		const utmParams = collectUtmParams(req.query);
 
 		const actions: ViewAction[] = [
