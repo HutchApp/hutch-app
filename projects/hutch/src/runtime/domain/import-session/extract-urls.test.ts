@@ -92,7 +92,7 @@ describe("extractUrls", () => {
 		]);
 	});
 
-	it("caps the result at MAX_URLS_PER_IMPORT and reports truncation", () => {
+	it("caps the result at MAX_URLS_PER_IMPORT and reports truncation with the total found", () => {
 		const urls = Array.from(
 			{ length: MAX_URLS_PER_IMPORT + 5 },
 			(_v, i) => `https://example.com/post-${i}`,
@@ -102,6 +102,7 @@ describe("extractUrls", () => {
 
 		expect(result.urls).toHaveLength(MAX_URLS_PER_IMPORT);
 		expect(result.truncated).toBe(true);
+		expect(result.totalFoundInFile).toBe(MAX_URLS_PER_IMPORT + 5);
 	});
 
 	it("returns an empty list when the buffer contains no URLs", () => {
@@ -109,6 +110,7 @@ describe("extractUrls", () => {
 
 		expect(result.urls).toEqual([]);
 		expect(result.truncated).toBe(false);
+		expect(result.totalFoundInFile).toBe(0);
 	});
 
 	it("rejects non-saveable schemes and bare strings", () => {

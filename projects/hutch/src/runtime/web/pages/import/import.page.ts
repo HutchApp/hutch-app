@@ -28,8 +28,7 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 	const { rawBodyParser, parseRequest } = initMultipartUpload({ maxBytes: MAX_IMPORT_FILE_BYTES });
 
 	const sizeLimitHandler: ErrorRequestHandler = (err, _req, res, next) => {
-		const bodyErr = err as { type?: string; limit?: number } | null;
-		if (bodyErr?.type === "entity.too.large") {
+		if (err && typeof err === "object" && "type" in err && err.type === "entity.too.large") {
 			res.redirect(303, "/queue?error_code=import_too_large");
 			return;
 		}
@@ -44,7 +43,7 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 			return;
 		}
 
-		const { urls, truncated } = extractUrls(parsed.file.content);
+		const { urls, truncated, totalFoundInFile } = extractUrls(parsed.file.content);
 		if (urls.length === 0) {
 			res.redirect(303, "/queue?error_code=import_no_urls");
 			return;
@@ -54,6 +53,7 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 			userId: req.userId,
 			urls,
 			truncated,
+			totalFoundInFile,
 		});
 		res.redirect(303, `/import/${session.id}`);
 	});

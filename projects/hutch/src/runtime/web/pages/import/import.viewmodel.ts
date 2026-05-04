@@ -11,6 +11,7 @@ export interface ImportViewModel {
 	readonly sessionId: string;
 	readonly rows: readonly ImportRowViewModel[];
 	readonly totalUrls: number;
+	readonly totalFoundInFile: number;
 	readonly totalSelected: number;
 	readonly truncated: boolean;
 	readonly currentPage: number;
@@ -40,6 +41,7 @@ export function toImportViewModel(
 			};
 		}),
 		totalUrls: session.totalUrls,
+		totalFoundInFile: session.totalFoundInFile,
 		totalSelected,
 		truncated: session.truncated,
 		currentPage: page,

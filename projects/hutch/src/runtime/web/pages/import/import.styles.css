@@ -10,3 +10,4 @@
 .import__row-url { word-break: break-all; }
 .import__pagination { display: flex; gap: 1rem; align-items: center; margin: 1rem 0; }
 .import__pagination-info { color: var(--text-muted); }
+.import__row-toggle-btn { font-size: 0.85rem; padding: 0.2rem 0.5rem; cursor: pointer; }

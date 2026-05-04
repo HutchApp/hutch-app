@@ -7,6 +7,7 @@ export interface ImportSession {
 	readonly createdAt: string;
 	readonly expiresAt: number;
 	readonly totalUrls: number;
+	readonly totalFoundInFile: number;
 	readonly truncated: boolean;
 	readonly deselected: ReadonlySet<number>;
 }
@@ -22,6 +23,7 @@ export type CreateImportSession = (params: {
 	userId: UserId;
 	urls: readonly string[];
 	truncated: boolean;
+	totalFoundInFile: number;
 }) => Promise<ImportSession>;
 
 export type FindImportSession = (params: {

@@ -10,6 +10,7 @@ function makeSession(overrides: Partial<ImportSession> = {}): ImportSession {
 		createdAt: "2026-05-01T00:00:00.000Z",
 		expiresAt: 1_780_000_000,
 		totalUrls: 0,
+		totalFoundInFile: 0,
 		truncated: false,
 		deselected: new Set<number>(),
 		...overrides,
@@ -83,8 +84,8 @@ describe("toImportViewModel", () => {
 		expect(vm.rows.map((r) => r.index)).toEqual([50, 51]);
 	});
 
-	it("propagates the truncated flag from the session header", () => {
-		const session = makeSession({ totalUrls: 2_000, truncated: true });
+	it("propagates the truncated flag and totalFoundInFile from the session header", () => {
+		const session = makeSession({ totalUrls: 2_000, totalFoundInFile: 2_345, truncated: true });
 
 		const vm = toImportViewModel(
 			{ session, pageUrls: ["https://example.com/x"], page: 1, pageSize: 50 },
@@ -92,5 +93,6 @@ describe("toImportViewModel", () => {
 		);
 
 		expect(vm.truncated).toBe(true);
+		expect(vm.totalFoundInFile).toBe(2_345);
 	});
 });

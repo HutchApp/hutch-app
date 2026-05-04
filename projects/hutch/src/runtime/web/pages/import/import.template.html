@@ -2,7 +2,7 @@
       <h1 class="import__title">Review imported links</h1>
       <p class="import__summary" data-test-import-summary>{{totalSelected}} of {{totalUrls}} selected</p>
       {{#if truncated}}
-      <p class="import__truncated-banner" data-test-import-truncated>Your file contained more than {{totalUrls}} links. We&rsquo;ve imported the first {{totalUrls}}.</p>
+      <p class="import__truncated-banner" data-test-import-truncated>Your file contained {{totalFoundInFile}} links. We&rsquo;ve imported the first {{totalUrls}}.</p>
       {{/if}}
       <form class="import__commit-form" method="POST" action="{{commitUrl}}" hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none" data-test-form="import-commit">
         <button class="import__commit-btn" type="submit" data-test-action="import-commit">Import {{totalSelected}} selected</button>
@@ -17,6 +17,7 @@
               <input type="checkbox" name="confirm" {{#if checked}}checked{{/if}} onclick="this.form.requestSubmit()" data-test-import-checkbox="{{index}}">
               <span class="import__row-url" data-test-import-url>{{url}}</span>
             </label>
+            <noscript><button type="submit" class="import__row-toggle-btn">Toggle</button></noscript>
           </form>
         </li>
         {{/each}}

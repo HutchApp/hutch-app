@@ -4,11 +4,12 @@ import { MAX_URLS_PER_IMPORT } from "./import-session.schema";
 export interface ExtractUrlsResult {
 	readonly urls: readonly string[];
 	readonly truncated: boolean;
+	readonly totalFoundInFile: number;
 }
 
 const URL_REGEX = /\bhttps?:\/\/[^\s<>"'()[\]{}|\\^`]+/gi;
 const TRAILING_PUNCTUATION = /[.,;:!?>'"\])]+$/;
-const EMPTY: ExtractUrlsResult = { urls: [], truncated: false };
+const EMPTY: ExtractUrlsResult = { urls: [], truncated: false, totalFoundInFile: 0 };
 
 function decodeBuffer(buffer: Buffer): string {
 	const utf8 = buffer.toString("utf8");
@@ -53,10 +54,10 @@ export function extractUrls(buffer: Buffer): ExtractUrlsResult {
 
 		if (urls.length >= MAX_URLS_PER_IMPORT) {
 			truncated = true;
-			break;
+			continue;
 		}
 		urls.push(parsed.data.url);
 	}
 
-	return { urls, truncated };
+	return { urls, truncated, totalFoundInFile: seen.size };
 }

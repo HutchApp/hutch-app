@@ -22,6 +22,7 @@ const SessionRow = z.object({
 	createdAt: z.string(),
 	expiresAt: z.number(),
 	totalUrls: z.number().int().min(0),
+	totalFoundInFile: z.number().int().min(0),
 	truncated: z.boolean(),
 	urls: z.array(z.string()),
 	deselected: dynamoField(z.array(z.number().int())),
@@ -34,6 +35,7 @@ function toSession(row: z.infer<typeof SessionRow>): ImportSession {
 		createdAt: row.createdAt,
 		expiresAt: row.expiresAt,
 		totalUrls: row.totalUrls,
+		totalFoundInFile: row.totalFoundInFile,
 		truncated: row.truncated,
 		deselected: new Set(row.deselected ?? []),
 	};
@@ -59,7 +61,7 @@ export function initDynamoDbImportSession(deps: {
 	}
 
 	return {
-		createImportSession: async ({ userId, urls, truncated }) => {
+		createImportSession: async ({ userId, urls, truncated, totalFoundInFile }) => {
 			const id = ImportSessionIdSchema.parse(randomBytes(16).toString("hex"));
 			const createdAt = deps.now().toISOString();
 			const expiresAt = Math.floor(deps.now().getTime() / 1000) + IMPORT_SESSION_TTL_SECONDS;
@@ -70,6 +72,7 @@ export function initDynamoDbImportSession(deps: {
 					createdAt,
 					expiresAt,
 					totalUrls: urls.length,
+					totalFoundInFile,
 					truncated,
 					urls: [...urls],
 					deselected: [],
@@ -81,6 +84,7 @@ export function initDynamoDbImportSession(deps: {
 				createdAt,
 				expiresAt,
 				totalUrls: urls.length,
+				totalFoundInFile,
 				truncated,
 				deselected: new Set<number>(),
 			};
