@@ -306,7 +306,7 @@ describe("initSaveLinkCommandHandler", () => {
 		});
 	});
 
-	it("does NOT mark crawl 'failed' on a transient fetch failure (those stay on the SQS retry / DLQ path)", async () => {
+	it("marks crawl 'failed' inline on a transient fetch failure so readers see failure at t+0; SQS retry can still flip it back to ready via the success path", async () => {
 		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
 		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
 
@@ -316,7 +316,10 @@ describe("initSaveLinkCommandHandler", () => {
 			handler(createSqsEvent({ url: "https://example.com/unreachable", userId: "user-1" }), stubContext, () => {}),
 		).rejects.toThrow();
 
-		expect(markCrawlFailed).not.toHaveBeenCalled();
+		expect(markCrawlFailed).toHaveBeenCalledWith({
+			url: "https://example.com/unreachable",
+			reason: "crawl-failed",
+		});
 	});
 
 	it("uploads the crawled thumbnail to S3 and threads the resolved CDN URL into the tier-source metadata", async () => {

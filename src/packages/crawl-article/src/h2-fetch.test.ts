@@ -482,15 +482,41 @@ describe("withH2Fallback", () => {
 		},
 	);
 
-	it("propagates baseFetch error when there is no signal (no timeout to detect)", async () => {
+	it("falls back to curl on a connection-mid-request error (e.g. socket hangup) even with no signal", async () => {
 		const socketError = new Error("socket hang up");
 		const baseFetch: typeof fetch = async () => {
 			throw socketError;
 		};
-		const curlImpl = jest.fn<ReturnType<typeof fetchCurl>, Parameters<typeof fetchCurl>>();
+		const curlImpl = jest.fn<ReturnType<typeof fetchCurl>, Parameters<typeof fetchCurl>>(async () =>
+			new Response("<html>curl recovered</html>", { status: 200, headers: { "content-type": "text/html" } }),
+		);
 		const wrapped = withH2Fallback(baseFetch, jest.fn(), curlImpl);
 
-		await expect(wrapped("https://example.com")).rejects.toBe(socketError);
-		expect(curlImpl).not.toHaveBeenCalled();
+		const response = await wrapped("https://example.com");
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toBe("<html>curl recovered</html>");
+		expect(curlImpl).toHaveBeenCalledWith("https://example.com", { headers: undefined });
+	});
+
+	it("falls back to curl when the primary fetch throws a generic 'fetch failed' (origin closed the connection mid-request)", async () => {
+		const fetchFailed = new TypeError("fetch failed");
+		const baseFetch: typeof fetch = async () => {
+			throw fetchFailed;
+		};
+		const curlImpl = jest.fn<ReturnType<typeof fetchCurl>, Parameters<typeof fetchCurl>>(async () =>
+			new Response("ok", { status: 200, headers: { "content-type": "text/html" } }),
+		);
+		const wrapped = withH2Fallback(baseFetch, jest.fn(), curlImpl);
+
+		const response = await wrapped("https://hex.ooo/library/last_question.html", {
+			signal: AbortSignal.timeout(5000),
+			headers: { "user-agent": "Test/1.0" },
+		});
+
+		expect(response.status).toBe(200);
+		expect(curlImpl).toHaveBeenCalledWith("https://hex.ooo/library/last_question.html", {
+			headers: { "user-agent": "Test/1.0" },
+		});
 	});
 });
