@@ -391,7 +391,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 		JSON.stringify({
 			widgets: [
 				logWidget({
-					title: "UTM Source (%)",
+					title: "Pageviews by utm_source (%)",
 					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, utm_source",
@@ -434,14 +434,14 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					view: "table",
 				}),
 				logWidget({
-					title: "UTM Content (%)",
+					title: "Pageviews by Source / Medium / Content (%)",
 					logGroupNames: [hutchLogGroupName],
 					query: [
-						"fields @timestamp, utm_content",
+						"fields @timestamp, utm_source, utm_medium, utm_content, concat(utm_source, \" / \", coalesce(utm_medium, \"-\"), \" / \", coalesce(utm_content, \"-\")) as utm_path",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						...excludeVisitorHashesClause(),
-						"| filter ispresent(utm_content) and utm_content != \"\"",
-						"| stats count(*) as visits by utm_content",
+						"| filter ispresent(utm_source) and utm_source != \"\"",
+						"| stats count(*) as visits by utm_path",
 						"| sort visits desc",
 						"| limit 10",
 					].join(" "),
@@ -491,15 +491,15 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					view: "timeSeries",
 				}),
 				logWidget({
-					title: "Public View Entry Point — totals by source",
+					title: "Public View Entry Point — by Source / Medium / Content (%)",
 					logGroupNames: [hutchLogGroupName],
 					query: [
-						"fields @timestamp, utm_content",
+						"fields @timestamp, utm_source, utm_medium, utm_content, concat(utm_source, \" / \", coalesce(utm_medium, \"-\"), \" / \", utm_content) as utm_path",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter path = \"/view\"",
 						...excludeVisitorHashesClause(),
 						entryPointFilter,
-						"| stats count(*) as clicks by utm_content",
+						"| stats count(*) as clicks by utm_path",
 						"| sort clicks desc",
 					].join(" "),
 					x: 0, y: 40, width: 12, height: 8,
