@@ -61,7 +61,7 @@ describe("Forgot password", () => {
 			const sent = email.getSentEmails();
 			expect(sent).toHaveLength(1);
 			expect(sent[0].to).toBe("user@example.com");
-			expect(sent[0].from).toContain("hutch@hutch-app.com");
+			expect(sent[0].from).toContain("Readplace Password Reset <readplace@readplace.com>");
 			expect(sent[0].subject).toContain("Reset your password");
 			expect(sent[0].html).toContain("reset-password?token=");
 		});

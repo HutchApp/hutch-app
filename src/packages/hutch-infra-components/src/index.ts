@@ -31,6 +31,12 @@ export {
 	type RefreshArticleContentDetail,
 	UpdateFetchTimestampCommand,
 	type UpdateFetchTimestampDetail,
+	ExportUserDataCommand,
+	type ExportUserDataDetail,
+	UserDataExportedEvent,
+	type UserDataExportedDetail,
+	UserDataExportFailedEvent,
+	type UserDataExportFailedDetail,
 	type HutchEvent,
 	type HutchCommand,
 } from "./events";

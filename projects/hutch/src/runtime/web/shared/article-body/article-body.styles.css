@@ -144,6 +144,22 @@
   color: var(--color-error);
 }
 
+.article-body__summary-error-detail {
+  display: block;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.article-body__summary-info {
+  margin: 0 0 2rem;
+  padding: 1rem 1.5rem;
+  background: var(--color-surface);
+  border-left: 3px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
 .article-body__audio-slot--visible {
   display: block;
 }

@@ -69,6 +69,44 @@ describe("GET /blog", () => {
 
 		expect(doc.body.classList.contains("page-blog")).toBe(true);
 	});
+
+	it("should have Blog and BreadcrumbList structured data", async () => {
+		const response = await request(app).get("/blog");
+		const doc = new JSDOM(response.text).window.document;
+
+		const scripts = doc.querySelectorAll(
+			'script[type="application/ld+json"]',
+		);
+		const schemas = Array.from(scripts).map((s) =>
+			JSON.parse(s.textContent ?? "{}"),
+		);
+		const blog = schemas.find(
+			(s: { "@type": string }) => s["@type"] === "Blog",
+		);
+		expect(blog).toBeDefined();
+		expect(blog.url).toBe("https://readplace.com/blog");
+		expect(Array.isArray(blog.blogPost)).toBe(true);
+		expect(blog.blogPost.length).toBeGreaterThan(0);
+
+		const breadcrumb = schemas.find(
+			(s: { "@type": string }) => s["@type"] === "BreadcrumbList",
+		);
+		expect(breadcrumb).toBeDefined();
+		expect(breadcrumb.itemListElement).toEqual([
+			{
+				"@type": "ListItem",
+				position: 1,
+				name: "Home",
+				item: "https://readplace.com/",
+			},
+			{
+				"@type": "ListItem",
+				position: 2,
+				name: "Blog",
+				item: "https://readplace.com/blog",
+			},
+		]);
+	});
 });
 
 describe("GET /blog/:slug", () => {
@@ -138,6 +176,44 @@ describe("GET /blog/:slug", () => {
 		const data = JSON.parse(ldJson?.textContent ?? "{}");
 		expect(data["@type"]).toBe("BlogPosting");
 		expect(data.headline).toBe(firstPost.title);
+	});
+
+	it("should have BreadcrumbList structured data", async () => {
+		const response = await request(app).get(
+			`/blog/${firstPost.slug}`,
+		);
+		const doc = new JSDOM(response.text).window.document;
+
+		const scripts = doc.querySelectorAll(
+			'script[type="application/ld+json"]',
+		);
+		const schemas = Array.from(scripts).map((s) =>
+			JSON.parse(s.textContent ?? "{}"),
+		);
+		const breadcrumb = schemas.find(
+			(s: { "@type": string }) => s["@type"] === "BreadcrumbList",
+		);
+		expect(breadcrumb).toBeDefined();
+		expect(breadcrumb.itemListElement).toEqual([
+			{
+				"@type": "ListItem",
+				position: 1,
+				name: "Home",
+				item: "https://readplace.com/",
+			},
+			{
+				"@type": "ListItem",
+				position: 2,
+				name: "Blog",
+				item: "https://readplace.com/blog",
+			},
+			{
+				"@type": "ListItem",
+				position: 3,
+				name: firstPost.title,
+				item: `https://readplace.com/blog/${firstPost.slug}`,
+			},
+		]);
 	});
 
 	it("should have correct canonical URL", async () => {

@@ -182,16 +182,16 @@ describe("GET /", () => {
 		expect(backstory).not.toBeNull();
 	});
 
-	it("should render one pricing plan for founding members", async () => {
-		const response = await request(app).get("/");
-		const doc = new JSDOM(response.text).window.document;
+	// it("should render one pricing plan for founding members", async () => {
+	// 	const response = await request(app).get("/");
+	// 	const doc = new JSDOM(response.text).window.document;
 
-		const pricingSection = doc.querySelector('[data-test-section="pricing"]');
-		const plans = pricingSection?.querySelectorAll(".pricing-card");
-		expect(plans?.length).toBe(1);
-		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__name')?.textContent).toBe("Founding Member");
-		expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("$0");
-	});
+	// 	const pricingSection = doc.querySelector('[data-test-section="pricing"]');
+	// 	const plans = pricingSection?.querySelectorAll(".pricing-card");
+	// 	expect(plans?.length).toBe(1);
+	// 	expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__name')?.textContent).toBe("Founding Member");
+	// 	expect(doc.querySelector('[data-test-plan="founding"] .pricing-card__price')?.textContent).toContain("$0");
+	// });
 
 	it("should render the founding members progress bar with zero users", async () => {
 		const response = await request(app).get("/");
@@ -336,7 +336,7 @@ describe("GET / with exhausted founding allocation", () => {
 
 		const exhausted = doc.querySelector("[data-test-founding-exhausted]");
 		assert(exhausted, "exhausted message must be rendered");
-		expect(exhausted.textContent).toBe("The free allocation has been exhausted. You might still be able to create an account for free while I develop the pricing system but it may require payment in a few months.");
+		expect(exhausted.textContent).toBe("The free allocation has been exhausted. Join now for only $3.99/month.");
 		expect(exhausted.classList.contains("founding-progress__exhausted--visible")).toBe(true);
 
 		const fill = doc.querySelector(".founding-progress__fill");

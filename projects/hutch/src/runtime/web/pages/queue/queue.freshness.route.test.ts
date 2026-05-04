@@ -61,6 +61,7 @@ describe("Queue freshness integration", () => {
 				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 				publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 				publishUpdateFetchTimestamp: async (p) => { timestampPublished.push(p); },
+				publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 			},
 			freshness: { refreshArticleIfStale },
 		});

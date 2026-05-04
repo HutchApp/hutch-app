@@ -31,6 +31,9 @@
       <section class="install-page__panel" data-test-section="chrome">
         {{#if chromeDownloadUrl}}
         <a href="{{chromeDownloadUrl}}" class="install-page__download" data-test-cta="download-chrome">Install Readplace for Chrome</a>
+        <p>
+          Note: Google Chrome team is taking weeks to release the last version of Readplace. You might still see it as "Hutch" and the checkbox from the onboarding message won't be ticked until they release the new version.
+        </p>
         {{else}}
         <p class="install-page__unavailable" data-test-section="chrome-unavailable">The Chrome extension is not available for download yet. Please check back soon.</p>
         {{/if}}

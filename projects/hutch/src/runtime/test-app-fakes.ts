@@ -13,7 +13,10 @@ import { initInMemoryEmail } from "./providers/email/in-memory-email";
 import { initInMemoryEmailVerification } from "./providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "./providers/password-reset/in-memory-password-reset";
 import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
+import { initInMemoryPendingSignup } from "./providers/pending-signup/in-memory-pending-signup";
+import { initInMemoryStripeCheckout } from "./providers/stripe-checkout/in-memory-stripe-checkout";
 import { initInMemorySaveLinkRawHtmlCommand } from "./providers/events/in-memory-save-link-raw-html-command";
+import { initInMemoryExportUserDataCommand } from "./providers/events/in-memory-export-user-data-command";
 import {
 	createOAuthModel,
 	initInMemoryOAuthModel,
@@ -193,7 +196,12 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 	const { publishSaveLinkRawHtmlCommand } = initInMemorySaveLinkRawHtmlCommand({
 		logger: noopLogger,
 	});
+	const { publishExportUserDataCommand } = initInMemoryExportUserDataCommand({
+		logger: noopLogger,
+	});
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel(), { appOrigin });
+	const stripe = initInMemoryStripeCheckout();
+	const pendingSignup = initInMemoryPendingSignup();
 
 	return {
 		auth,
@@ -228,6 +236,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 			publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp: createInMemoryPublishUpdateFetchTimestamp(),
+			publishExportUserDataCommand,
 		},
 		pendingHtml: {
 			putPendingHtml: pendingHtml.putPendingHtml,
@@ -254,5 +263,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 			logParseError: () => {},
 			now: () => new Date(),
 		},
+		stripe,
+		pendingSignup,
 	};
 }

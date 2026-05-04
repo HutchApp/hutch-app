@@ -36,6 +36,8 @@ import { initEventBridgeSaveAnonymousLink } from "./providers/events/eventbridge
 import { initEventBridgeSaveLinkRawHtmlCommand } from "./providers/events/eventbridge-save-link-raw-html-command";
 import { initEventBridgeRefreshArticleContent } from "./providers/events/eventbridge-refresh-article-content";
 import { initEventBridgeUpdateFetchTimestamp } from "./providers/events/eventbridge-update-fetch-timestamp";
+import { initEventBridgeExportUserDataCommand } from "./providers/events/eventbridge-export-user-data-command";
+import { initInMemoryExportUserDataCommand } from "./providers/events/in-memory-export-user-data-command";
 import { initInMemoryLinkSaved } from "./providers/events/in-memory-link-saved";
 import { initInMemoryRecrawlLinkInitiated } from "./providers/events/in-memory-recrawl-link-initiated";
 import { initInMemorySaveAnonymousLink } from "./providers/events/in-memory-save-anonymous-link";
@@ -45,6 +47,10 @@ import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-u
 import { initPutPendingHtml } from "./providers/pending-html/put-pending-html";
 import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
+import { initInMemoryStripeCheckout } from "./providers/stripe-checkout/in-memory-stripe-checkout";
+import { initStripeCheckout } from "./providers/stripe-checkout/stripe-checkout";
+import { initInMemoryPendingSignup } from "./providers/pending-signup/in-memory-pending-signup";
+import { initDynamoDbPendingSignup } from "./providers/pending-signup/dynamodb-pending-signup";
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { initLogParseError, type ParseErrorEvent } from "@packages/hutch-infra-components";
 import { createApp } from "./server";
@@ -71,10 +77,13 @@ function initProviders() {
 		const oauthTable = requireEnv("DYNAMODB_OAUTH_TABLE");
 		const verificationTokensTable = requireEnv("DYNAMODB_VERIFICATION_TOKENS_TABLE");
 		const passwordResetTokensTable = requireEnv("DYNAMODB_PASSWORD_RESET_TOKENS_TABLE");
+		const pendingSignupsTable = requireEnv("DYNAMODB_PENDING_SIGNUPS_TABLE");
 		const googleClientId = requireEnv("GOOGLE_LOGIN_CLIENT_ID");
 		const googleClientSecret = requireEnv("GOOGLE_LOGIN_CLIENT_SECRET");
 		const appOriginForRedirect = requireEnv("APP_ORIGIN");
 		const resendApiKey = requireEnv("RESEND_API_KEY");
+		const stripeApiKey = requireEnv("STRIPE_SECRET_KEY");
+		const stripePriceId = requireEnv("STRIPE_PRICE_ID");
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
 		const pendingHtmlBucketName = requireEnv("PENDING_HTML_BUCKET_NAME");
@@ -103,6 +112,7 @@ function initProviders() {
 		const { publishSaveLinkRawHtmlCommand } = initEventBridgeSaveLinkRawHtmlCommand({ publishEvent });
 		const { publishRefreshArticleContent } = initEventBridgeRefreshArticleContent({ publishEvent });
 		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
+		const { publishExportUserDataCommand } = initEventBridgeExportUserDataCommand({ publishEvent });
 		const { putPendingHtml } = initPutPendingHtml({ client: new S3Client({}), bucketName: pendingHtmlBucketName });
 		const { refreshArticleIfStale } = initRefreshArticleIfStale({
 			findArticleFreshness: articleStore.findArticleFreshness,
@@ -125,6 +135,13 @@ function initProviders() {
 			clientSecret: googleClientSecret,
 		};
 
+		const stripe = initStripeCheckout({
+			apiKey: stripeApiKey,
+			priceId: stripePriceId,
+			fetch: globalThis.fetch,
+		});
+		const pendingSignup = initDynamoDbPendingSignup({ client, tableName: pendingSignupsTable });
+
 		return {
 			auth,
 			articleStore,
@@ -133,6 +150,8 @@ function initProviders() {
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
 			...initDynamoDbPasswordReset({ client, tableName: passwordResetTokensTable }),
+			...stripe,
+			...pendingSignup,
 			googleAuth,
 			oauthModel,
 			validateAccessToken: createValidateAccessToken(oauthModel),
@@ -141,6 +160,7 @@ function initProviders() {
 			publishSaveAnonymousLink,
 			publishSaveLinkRawHtmlCommand,
 			publishUpdateFetchTimestamp,
+			publishExportUserDataCommand,
 			putPendingHtml,
 			findGeneratedSummary: summaryStore.findGeneratedSummary,
 			markSummaryPending: summaryStore.markSummaryPending,
@@ -155,6 +175,8 @@ function initProviders() {
 	const auth = initInMemoryAuth();
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
+	const devStripe = initInMemoryStripeCheckout();
+	const devPendingSignup = initInMemoryPendingSignup();
 	const devGoogleClientId = getEnv("GOOGLE_LOGIN_CLIENT_ID");
 	const devGoogleClientSecret = getEnv("GOOGLE_LOGIN_CLIENT_SECRET");
 	assert(
@@ -225,6 +247,7 @@ function initProviders() {
 	const { publishRefreshArticleContent } = initInMemoryRefreshArticleContent({ logger: consoleLogger });
 	const { publishUpdateFetchTimestamp } = initInMemoryUpdateFetchTimestamp({ logger: consoleLogger });
 	const { publishSaveLinkRawHtmlCommand } = initInMemorySaveLinkRawHtmlCommand({ logger: consoleLogger });
+	const { publishExportUserDataCommand } = initInMemoryExportUserDataCommand({ logger: consoleLogger });
 	const { putPendingHtml } = initInMemoryPendingHtml();
 	const stubFindGeneratedSummary = async (_url: string) => undefined;
 	const stubMarkSummaryPending = async (_params: { url: string }) => {};
@@ -251,6 +274,10 @@ function initProviders() {
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
 		...initInMemoryPasswordReset(),
+		createCheckoutSession: devStripe.createCheckoutSession,
+		retrieveCheckoutSession: devStripe.retrieveCheckoutSession,
+		storePendingSignup: devPendingSignup.storePendingSignup,
+		consumePendingSignup: devPendingSignup.consumePendingSignup,
 		googleAuth,
 		oauthModel,
 		validateAccessToken: createValidateAccessToken(oauthModel),
@@ -259,6 +286,7 @@ function initProviders() {
 		publishSaveAnonymousLink,
 		publishSaveLinkRawHtmlCommand,
 		publishUpdateFetchTimestamp,
+		publishExportUserDataCommand,
 		putPendingHtml,
 		findGeneratedSummary: stubFindGeneratedSummary,
 		markSummaryPending: stubMarkSummaryPending,

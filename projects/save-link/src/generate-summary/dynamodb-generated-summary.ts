@@ -23,6 +23,9 @@ const GeneratedSummaryRow = z.object({
 	summaryExcerpt: dynamoField(z.string()),
 	summaryStatus: dynamoField(SummaryStatusSchema),
 	summaryFailureReason: dynamoField(z.string()),
+	// Plain string on read for forward-compat with future codes; UI mapper
+	// surfaces a fallback message for any value not in SummarySkipReasonSchema.
+	summarySkippedReason: dynamoField(z.string()),
 });
 
 type GeneratedSummaryRowShape = z.infer<typeof GeneratedSummaryRow>;
@@ -35,7 +38,11 @@ function rowToGeneratedSummary(
 		assert(row.summaryFailureReason, "summaryStatus=failed row must carry a summaryFailureReason");
 		return { status: "failed", reason: row.summaryFailureReason };
 	}
-	if (row.summaryStatus === "skipped") return { status: "skipped" };
+	if (row.summaryStatus === "skipped") {
+		return row.summarySkippedReason
+			? { status: "skipped", reason: row.summarySkippedReason }
+			: { status: "skipped" };
+	}
 	if (row.summaryStatus === "pending") return { status: "pending" };
 	// Legacy row (summaryStatus absent). A backfilled `summary` column means the
 	// row pre-dates the state machine but carried a pre-computed summary — expose
@@ -80,7 +87,15 @@ export function initDynamoDbGeneratedSummary(deps: {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 		const row = await table.get(
 			{ url: articleResourceUniqueId.value },
-			{ projection: ["summary", "summaryExcerpt", "summaryStatus", "summaryFailureReason"] },
+			{
+				projection: [
+					"summary",
+					"summaryExcerpt",
+					"summaryStatus",
+					"summaryFailureReason",
+					"summarySkippedReason",
+				],
+			},
 		);
 		return rowToGeneratedSummary(row);
 	};
@@ -89,8 +104,10 @@ export function initDynamoDbGeneratedSummary(deps: {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(params.url);
 		await table.update({
 			Key: { url: articleResourceUniqueId.value },
+			// REMOVE both reason attributes so a redrive that succeeds clears any
+			// stale failure or skip marker from a prior attempt.
 			UpdateExpression:
-				"SET summary = :summary, summaryExcerpt = :excerpt, summaryInputTokens = :inputTokens, summaryOutputTokens = :outputTokens, summaryStatus = :ready REMOVE summaryFailureReason",
+				"SET summary = :summary, summaryExcerpt = :excerpt, summaryInputTokens = :inputTokens, summaryOutputTokens = :outputTokens, summaryStatus = :ready REMOVE summaryFailureReason, summarySkippedReason",
 			ExpressionAttributeValues: {
 				":summary": params.summary,
 				":excerpt": params.excerpt,
@@ -138,17 +155,19 @@ export function initDynamoDbGeneratedSummary(deps: {
 		);
 	};
 
-	const markSummarySkipped: MarkSummarySkipped = async ({ url }) => {
+	const markSummarySkipped: MarkSummarySkipped = async ({ url, reason }) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 		await swallowConditionalCheckFailure(() =>
 			table.update({
 				Key: { url: articleResourceUniqueId.value },
-				UpdateExpression: "SET summaryStatus = :skipped",
+				UpdateExpression:
+					"SET summaryStatus = :skipped, summarySkippedReason = :reason",
 				ConditionExpression:
 					"attribute_not_exists(summaryStatus) OR summaryStatus = :pending",
 				ExpressionAttributeValues: {
 					":skipped": "skipped",
 					":pending": "pending",
+					":reason": reason,
 				},
 			}),
 		);

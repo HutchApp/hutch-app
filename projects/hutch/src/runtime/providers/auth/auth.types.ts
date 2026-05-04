@@ -13,6 +13,11 @@ export type CreateUser = (credentials: {
 	password: string;
 }) => Promise<CreateUserResult>;
 
+export type CreateUserWithPasswordHash = (credentials: {
+	email: string;
+	passwordHash: string;
+}) => Promise<CreateUserResult>;
+
 export type VerifyCredentials = (credentials: {
 	email: string;
 	password: string;
@@ -44,6 +49,8 @@ export type FindUserByEmailResult =
 	| null;
 
 export type FindUserByEmail = (email: string) => Promise<FindUserByEmailResult>;
+
+export type FindEmailByUserId = (userId: UserId) => Promise<string | null>;
 
 export type CreateGoogleUser = (user: {
 	email: string;

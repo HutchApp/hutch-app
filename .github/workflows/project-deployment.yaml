@@ -12,20 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ap-southeast-2
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-572337278115-ap-southeast-2
       PULUMI_STACK: staging
       PULUMI_CONFIG_PASSPHRASE: ''
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-      GOOGLE_LOGIN_CLIENT_ID: ${{ secrets.GOOGLE_LOGIN_CLIENT_ID }}
-      GOOGLE_LOGIN_CLIENT_SECRET: ${{ secrets.GOOGLE_LOGIN_CLIENT_SECRET }}
-      ANALYTICS_SALT: ${{ secrets.ANALYTICS_SALT }}
-      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
-      RECRAWL_SERVICE_TOKEN: ${{ secrets.RECRAWL_SERVICE_TOKEN }}
     steps:
+      - name: Export all repository and environment secrets as env vars
+        env:
+          SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          DELIM="EOF_$(openssl rand -hex 16)"
+          printf '%s' "$SECRETS_JSON" | jq -r --arg d "$DELIM" '
+            to_entries[]
+            | select(.key != "github_token")
+            | "\(.key)<<\($d)\n\(.value)\n\($d)"
+          ' >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4
@@ -58,20 +60,22 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ap-southeast-2
       PULUMI_BACKEND_URL: s3://hutch-pulumi-state-278728209435-ap-southeast-2
       PULUMI_STACK: prod
       PULUMI_CONFIG_PASSPHRASE: ''
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-      GOOGLE_LOGIN_CLIENT_ID: ${{ secrets.GOOGLE_LOGIN_CLIENT_ID }}
-      GOOGLE_LOGIN_CLIENT_SECRET: ${{ secrets.GOOGLE_LOGIN_CLIENT_SECRET }}
-      ANALYTICS_SALT: ${{ secrets.ANALYTICS_SALT }}
-      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
-      RECRAWL_SERVICE_TOKEN: ${{ secrets.RECRAWL_SERVICE_TOKEN }}
     steps:
+      - name: Export all repository and environment secrets as env vars
+        env:
+          SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          DELIM="EOF_$(openssl rand -hex 16)"
+          printf '%s' "$SECRETS_JSON" | jq -r --arg d "$DELIM" '
+            to_entries[]
+            | select(.key != "github_token")
+            | "\(.key)<<\($d)\n\(.value)\n\($d)"
+          ' >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4

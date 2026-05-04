@@ -13,7 +13,9 @@ import type {
 	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
+	CreateUserWithPasswordHash,
 	DestroySession,
+	FindEmailByUserId,
 	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
@@ -47,6 +49,7 @@ export function initDynamoDbAuth(deps: {
 	sessionsTableName: string;
 }): {
 	createUser: CreateUser;
+	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
@@ -58,6 +61,7 @@ export function initDynamoDbAuth(deps: {
 	markSessionEmailVerified: MarkSessionEmailVerified;
 	userExistsByEmail: UserExistsByEmail;
 	updatePassword: UpdatePassword;
+	findEmailByUserId: FindEmailByUserId;
 } {
 	const users = defineDynamoTable({
 		client: deps.client,
@@ -74,6 +78,30 @@ export function initDynamoDbAuth(deps: {
 		const normalizedEmail = normalizeEmail(email);
 		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 		const passwordHash = await hashPassword(password);
+
+		try {
+			await users.put({
+				Item: {
+					email: normalizedEmail,
+					userId,
+					passwordHash,
+					emailVerified: false,
+					registeredAt: new Date().toISOString(),
+				},
+				ConditionExpression: "attribute_not_exists(email)",
+			});
+			return { ok: true, userId };
+		} catch (error) {
+			if (error instanceof ConditionalCheckFailedException) {
+				return { ok: false, reason: "email-already-exists" };
+			}
+			throw error;
+		}
+	};
+
+	const createUserWithPasswordHash: CreateUserWithPasswordHash = async ({ email, passwordHash }) => {
+		const normalizedEmail = normalizeEmail(email);
+		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
 
 		try {
 			await users.put({
@@ -196,6 +224,17 @@ export function initDynamoDbAuth(deps: {
 		return row !== undefined;
 	};
 
+	const findEmailByUserId: FindEmailByUserId = async (userId) => {
+		const { items } = await users.query({
+			IndexName: "userId-index",
+			KeyConditionExpression: "userId = :userId",
+			ExpressionAttributeValues: { ":userId": userId },
+			Limit: 1,
+		});
+		const row = items[0];
+		return row ? row.email : null;
+	};
+
 	const updatePassword: UpdatePassword = async ({ email, password }) => {
 		const normalizedEmail = normalizeEmail(email);
 		const passwordHash = await hashPassword(password);
@@ -209,6 +248,7 @@ export function initDynamoDbAuth(deps: {
 
 	return {
 		createUser,
+		createUserWithPasswordHash,
 		createGoogleUser,
 		findUserByEmail,
 		verifyCredentials,
@@ -220,6 +260,7 @@ export function initDynamoDbAuth(deps: {
 		markSessionEmailVerified,
 		userExistsByEmail,
 		updatePassword,
+		findEmailByUserId,
 	};
 }
 /* c8 ignore stop */

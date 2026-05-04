@@ -10,7 +10,9 @@ import type {
 	CreateGoogleUser,
 	CreateSession,
 	CreateUser,
+	CreateUserWithPasswordHash,
 	DestroySession,
+	FindEmailByUserId,
 	FindUserByEmail,
 	GetSessionUserId,
 	MarkEmailVerified,
@@ -19,6 +21,14 @@ import type {
 	UserExistsByEmail,
 	VerifyCredentials,
 } from "./providers/auth/auth.types";
+import type {
+	CreateCheckoutSession,
+	RetrieveCheckoutSession,
+} from "./providers/stripe-checkout/stripe-checkout.types";
+import type {
+	ConsumePendingSignup,
+	StorePendingSignup,
+} from "./providers/pending-signup/pending-signup.types";
 import type { ExchangeGoogleCode } from "./providers/google-auth/google-token.types";
 import type {
 	DeleteArticle,
@@ -46,6 +56,7 @@ import type { PublishLinkSaved } from "./providers/events/publish-link-saved.typ
 import type { PublishRecrawlLinkInitiated } from "./providers/events/publish-recrawl-link-initiated.types";
 import type { PublishSaveAnonymousLink } from "./providers/events/publish-save-anonymous-link.types";
 import type { PublishSaveLinkRawHtmlCommand } from "./providers/events/publish-save-link-raw-html-command.types";
+import type { PublishExportUserDataCommand } from "./providers/events/publish-export-user-data-command.types";
 import type { PutPendingHtml } from "./providers/pending-html/pending-html.types";
 import type { SendEmail } from "./providers/email/email.types";
 import type {
@@ -90,6 +101,7 @@ interface AppDependencies {
 	appOrigin: string;
 	staticBaseUrl: string;
 	createUser: CreateUser;
+	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
 	verifyCredentials: VerifyCredentials;
@@ -126,6 +138,8 @@ interface AppDependencies {
 	publishRecrawlLinkInitiated: PublishRecrawlLinkInitiated;
 	publishSaveAnonymousLink: PublishSaveAnonymousLink;
 	publishSaveLinkRawHtmlCommand: PublishSaveLinkRawHtmlCommand;
+	publishExportUserDataCommand: PublishExportUserDataCommand;
+	findEmailByUserId: FindEmailByUserId;
 	putPendingHtml: PutPendingHtml;
 	findGeneratedSummary: FindGeneratedSummary;
 	markSummaryPending: MarkSummaryPending;
@@ -141,6 +155,10 @@ interface AppDependencies {
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logParseError: LogParseError;
 	now: () => Date;
+	createCheckoutSession: CreateCheckoutSession;
+	retrieveCheckoutSession: RetrieveCheckoutSession;
+	storePendingSignup: StorePendingSignup;
+	consumePendingSignup: ConsumePendingSignup;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -345,7 +363,9 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/embed", initEmbedRoutes({ appOrigin }));
 
 	const authRouter = initAuthRoutes({
-		createUser: deps.createUser,
+		createUserWithPasswordHash: deps.createUserWithPasswordHash,
+		createGoogleUser: deps.createGoogleUser,
+		findUserByEmail: deps.findUserByEmail,
 		verifyCredentials: deps.verifyCredentials,
 		createSession: deps.createSession,
 		destroySession: deps.destroySession,
@@ -355,6 +375,11 @@ export function createApp(dependencies: AppDependencies): Express {
 		sendEmail: deps.sendEmail,
 		createVerificationToken: deps.createVerificationToken,
 		verifyEmailToken: deps.verifyEmailToken,
+		createCheckoutSession: deps.createCheckoutSession,
+		retrieveCheckoutSession: deps.retrieveCheckoutSession,
+		storePendingSignup: deps.storePendingSignup,
+		consumePendingSignup: deps.consumePendingSignup,
+		appOrigin,
 		baseUrl: deps.baseUrl,
 		logError: deps.logError,
 	});
@@ -366,11 +391,12 @@ export function createApp(dependencies: AppDependencies): Express {
 			googleClientSecret: deps.googleAuth.clientSecret,
 			appOrigin,
 			createSession: deps.createSession,
-			createGoogleUser: deps.createGoogleUser,
 			findUserByEmail: deps.findUserByEmail,
 			countUsers,
 			markEmailVerified: deps.markEmailVerified,
 			exchangeGoogleCode: deps.googleAuth.exchangeGoogleCode,
+			createCheckoutSession: deps.createCheckoutSession,
+			storePendingSignup: deps.storePendingSignup,
 			logError: deps.logError,
 		});
 		app.use(googleAuthRouter);
@@ -449,7 +475,10 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/admin/recrawl", adminRecrawlRouter);
 
 	const exportRouter = initExportRoutes({
-		findArticlesByUser: deps.findArticlesByUser,
+		publishExportUserDataCommand: deps.publishExportUserDataCommand,
+		findEmailByUserId: deps.findEmailByUserId,
+		logError: deps.logError,
+		now: () => new Date(),
 	});
 	app.use("/export", requireAuth, exportRouter);
 

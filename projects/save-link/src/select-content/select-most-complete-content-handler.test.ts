@@ -178,7 +178,7 @@ describe("initSelectMostCompleteContentHandler", () => {
 		);
 	});
 
-	it("tie keeps the canonical unchanged — emits CrawlArticleCompleted only, no LinkSaved/AnonymousLinkSaved", async () => {
+	it("tie with an existing canonical keeps it unchanged — emits CrawlArticleCompleted only, no LinkSaved/AnonymousLinkSaved", async () => {
 		const tier0 = tierSource("tier-0");
 		const tier1 = tierSource("tier-1");
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
@@ -195,6 +195,46 @@ describe("initSelectMostCompleteContentHandler", () => {
 		expect(deps.promoteTierToCanonical).not.toHaveBeenCalled();
 		const events = publishEvent.mock.calls.map((call: [{ detailType: string }]) => call[0].detailType);
 		expect(events).toEqual(["CrawlArticleCompleted"]);
+	});
+
+	it("tie with no canonical yet (first save) defaults to tier-1 and emits LinkSaved so the row never sits stuck", async () => {
+		const tier0 = tierSource("tier-0");
+		const tier1 = tierSource("tier-1");
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { handler, deps } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
+			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "identical content" }),
+			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
+			publishEvent,
+		});
+
+		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1", userId: "user-1" }), stubContext, () => {});
+
+		expect(deps.promoteTierToCanonical).toHaveBeenCalledWith({
+			url: "https://example.com/a",
+			tier: "tier-1",
+			metadata: tier1.metadata,
+		});
+		const events = publishEvent.mock.calls.map((call: [{ detailType: string }]) => call[0].detailType);
+		expect(events).toEqual(["CrawlArticleCompleted", "LinkSaved"]);
+	});
+
+	it("tie with no canonical and only tier-0 available (no tier-1) defaults to tier-0", async () => {
+		const tier0 = tierSource("tier-0");
+		const tier0Alt = tierSource("tier-0", { metadata: stubMetadata({ title: "Alt" }) });
+
+		const { handler, deps } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier0Alt]),
+			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "tied tier-0 candidates" }),
+			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
+		});
+
+		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-0", userId: "user-1" }), stubContext, () => {});
+
+		expect(deps.promoteTierToCanonical).toHaveBeenCalledWith(
+			expect.objectContaining({ url: "https://example.com/a", tier: "tier-0" }),
+		);
 	});
 
 	it("re-selecting the same winner does not emit LinkSaved (canonical unchanged) but still emits CrawlArticleCompleted", async () => {

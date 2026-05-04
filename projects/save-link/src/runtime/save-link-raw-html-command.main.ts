@@ -66,7 +66,7 @@ const { putTierSource } = initPutTierSource({
 	bucketName: contentBucketName,
 });
 
-const { markCrawlReady, markCrawlFailed } = initDynamoDbArticleCrawl({
+const { markCrawlFailed } = initDynamoDbArticleCrawl({
 	client: dynamoClient,
 	tableName: articlesTable,
 });
@@ -109,7 +109,6 @@ export const handler = initSaveLinkRawHtmlCommandHandler({
 	processContent,
 	putTierSource,
 	publishEvent,
-	markCrawlReady,
 	markCrawlFailed,
 	logger: consoleLogger,
 	logParseError,

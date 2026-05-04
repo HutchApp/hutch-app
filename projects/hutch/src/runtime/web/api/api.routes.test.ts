@@ -328,6 +328,7 @@ describe("POST /queue (Siren save article)", () => {
 				publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 				publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 			},
 		});
 		const client = await testApp.oauthModel.getClient("hutch-firefox-extension", "");

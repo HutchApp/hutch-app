@@ -50,7 +50,7 @@
   text-align: center;
 }
 
-.export__download-btn {
+.export__action-btn {
   display: inline-block;
   padding: 12px 32px;
   background: var(--primary);
@@ -58,10 +58,12 @@
   font-size: 1rem;
   font-weight: 600;
   text-decoration: none;
+  border: none;
   border-radius: var(--radius);
+  cursor: pointer;
   transition: opacity 0.15s ease;
 }
 
-.export__download-btn:hover {
+.export__action-btn:hover {
   opacity: 0.9;
 }

@@ -12,26 +12,30 @@ import { initInMemoryArticleStore } from "../../providers/article-store/in-memor
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
 import { initInMemoryPasswordReset } from "../../providers/password-reset/in-memory-password-reset";
+import { initInMemoryStripeCheckout } from "../../providers/stripe-checkout/in-memory-stripe-checkout";
+import { initInMemoryPendingSignup } from "../../providers/pending-signup/in-memory-pending-signup";
 import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
 import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
 import { createApp } from "../../server";
 import { httpErrorMessageMapping } from "../pages/queue/queue.error";
+import { completeStripeSignup } from "./test-helpers/complete-stripe-signup";
 
 describe("Email verification", () => {
-	describe("POST /signup", () => {
-		it("should send a verification email on successful signup", async () => {
-			const { app, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+	describe("POST /signup → Stripe → success", () => {
+		it("should send a verification email after successful Stripe checkout", async () => {
+			const { app, email, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			await request(app).post("/signup").type("form").send({
+			await completeStripeSignup({
+				app,
+				stripe,
 				email: "new@example.com",
 				password: "password123",
-				confirmPassword: "password123",
 			});
 
 			const sent = email.getSentEmails();
 			expect(sent).toHaveLength(1);
 			expect(sent[0].to).toBe("new@example.com");
-			expect(sent[0].from).toContain("hutch@hutch-app.com");
+			expect(sent[0].from).toContain("readplace@readplace.com");
 			expect(sent[0].subject).toContain("Verify");
 			expect(sent[0].html).toContain("verify-email?token=");
 		});
@@ -42,6 +46,8 @@ describe("Email verification", () => {
 			const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 			const emailVerification = initInMemoryEmailVerification();
 			const passwordReset = initInMemoryPasswordReset();
+			const stripe = initInMemoryStripeCheckout();
+			const pendingSignup = initInMemoryPendingSignup();
 
 			let resolveErrorLogged: () => void;
 			const errorLogged = new Promise<void>((resolve) => {
@@ -58,6 +64,10 @@ describe("Email verification", () => {
 				readArticleContent: (url: string) => articleStore.readContent(ArticleResourceUniqueId.parse(url)),
 				...emailVerification,
 				...passwordReset,
+				createCheckoutSession: stripe.createCheckoutSession,
+				retrieveCheckoutSession: stripe.retrieveCheckoutSession,
+				storePendingSignup: pendingSignup.storePendingSignup,
+				consumePendingSignup: pendingSignup.consumePendingSignup,
 				sendEmail: async () => { throw new Error("Email service down"); },
 				baseUrl: "http://localhost:3000",
 				logError: () => { resolveErrorLogged(); },
@@ -67,6 +77,7 @@ describe("Email verification", () => {
 				publishRecrawlLinkInitiated: async () => {},
 				publishSaveAnonymousLink: async () => {},
 				publishSaveLinkRawHtmlCommand: async () => {},
+				publishExportUserDataCommand: async () => {},
 				findGeneratedSummary: async () => undefined,
 				markSummaryPending: async () => {},
 				forceMarkSummaryPending: async () => {},
@@ -81,17 +92,18 @@ describe("Email verification", () => {
 				now: () => new Date(),
 			});
 
-			const response = await request(app).post("/signup").type("form").send({
+			const { successResponse } = await completeStripeSignup({
+				app,
+				stripe,
 				email: "fail-email@example.com",
 				password: "password123",
-				confirmPassword: "password123",
 			});
 
-			expect(response.status).toBe(303);
+			expect(successResponse.status).toBe(303);
 			await errorLogged;
 		});
 
-		it("should not send a verification email when signup fails", async () => {
+		it("should not send a verification email when signup fails (duplicate email)", async () => {
 			const { app, auth, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "existing@example.com", password: "password123" });
 
@@ -107,12 +119,13 @@ describe("Email verification", () => {
 
 	describe("GET /verify-email", () => {
 		it("should verify email with a valid token", async () => {
-			const { app, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, email, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			await request(app).post("/signup").type("form").send({
+			await completeStripeSignup({
+				app,
+				stripe,
 				email: "verify@example.com",
 				password: "password123",
-				confirmPassword: "password123",
 			});
 
 			const sent = email.getSentEmails();
@@ -148,12 +161,13 @@ describe("Email verification", () => {
 		});
 
 		it("should reject a token that has already been used", async () => {
-			const { app, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, email, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			await request(app).post("/signup").type("form").send({
+			await completeStripeSignup({
+				app,
+				stripe,
 				email: "once@example.com",
 				password: "password123",
-				confirmPassword: "password123",
 			});
 
 			const sent = email.getSentEmails();
@@ -170,15 +184,16 @@ describe("Email verification", () => {
 		});
 
 		it("should mark email as verified after successful verification", async () => {
-			const { app, auth, email } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth, email, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			const signupResponse = await request(app).post("/signup").type("form").send({
+			const { successResponse } = await completeStripeSignup({
+				app,
+				stripe,
 				email: "flag@example.com",
 				password: "password123",
-				confirmPassword: "password123",
 			});
 
-			const cookies = signupResponse.headers["set-cookie"];
+			const cookies = successResponse.headers["set-cookie"];
 			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
 			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
 			assert(sessionMatch, "Expected session cookie");
@@ -201,15 +216,16 @@ describe("Email verification", () => {
 		});
 
 		it("should not mark email as verified when token is invalid", async () => {
-			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { app, auth, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
-			const signupResponse = await request(app).post("/signup").type("form").send({
+			const { successResponse } = await completeStripeSignup({
+				app,
+				stripe,
 				email: "noverify@example.com",
 				password: "password123",
-				confirmPassword: "password123",
 			});
 
-			const cookies = signupResponse.headers["set-cookie"];
+			const cookies = successResponse.headers["set-cookie"];
 			const cookieString = Array.isArray(cookies) ? cookies[0] : cookies;
 			const sessionMatch = cookieString.match(/hutch_sid=([^;]+)/);
 			assert(sessionMatch, "Expected session cookie");

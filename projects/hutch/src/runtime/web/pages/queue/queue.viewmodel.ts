@@ -16,7 +16,6 @@ export interface ArticleAction {
 	text: string;
 	title: string;
 	testAction: string;
-	pageReload: boolean;
 	fields: ArticleActionField[];
 }
 
@@ -80,13 +79,12 @@ function toArticleActions(
 
 	if (article.status !== "read") {
 		actions.push({
-			method: "GET",
-			url: `/queue/${article.id}/read`,
-			text: "Read",
+			method: "POST",
+			url: `/queue/${article.id}/status${returnQuery}`,
+			text: "Mark as read",
 			title: "Mark as read",
 			testAction: "mark-read",
-			pageReload: true,
-			fields: [],
+			fields: [{ name: "status", value: "read" }],
 		});
 	}
 
@@ -97,7 +95,6 @@ function toArticleActions(
 			text: "Unread",
 			title: "Mark as unread",
 			testAction: "mark-unread",
-			pageReload: false,
 			fields: [{ name: "status", value: "unread" }],
 		});
 	}
@@ -108,7 +105,6 @@ function toArticleActions(
 		text: "×",
 		title: "Delete",
 		testAction: "delete",
-		pageReload: false,
 		fields: [],
 	});
 

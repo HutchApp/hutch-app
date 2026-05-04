@@ -1,8 +1,10 @@
+import type { SummarySkipReason } from "@packages/article-state-types";
+
 export type GeneratedSummary =
 	| { status: "pending" }
 	| { status: "ready"; summary: string; excerpt?: string }
 	| { status: "failed"; reason: string }
-	| { status: "skipped" };
+	| { status: "skipped"; reason?: string };
 
 export type SummarizeArticle = (params: {
 	url: string;
@@ -26,7 +28,10 @@ export type SaveGeneratedSummary = (params: {
 
 export type MarkSummaryPending = (params: { url: string }) => Promise<void>;
 export type MarkSummaryFailed = (params: { url: string; reason: string }) => Promise<void>;
-export type MarkSummarySkipped = (params: { url: string }) => Promise<void>;
+export type MarkSummarySkipped = (params: {
+	url: string;
+	reason: SummarySkipReason;
+}) => Promise<void>;
 
 /**
  * Worker-side stage strings for the unified article-body progress bar.

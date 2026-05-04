@@ -6,7 +6,7 @@ import {
 	RecrawlLinkInitiatedEvent,
 	RecrawlContentExtractedEvent,
 } from "@packages/hutch-infra-components";
-import type { MarkCrawlFailed, MarkCrawlReady, MarkCrawlStage } from "../crawl-article-state/article-crawl.types";
+import type { MarkCrawlFailed, MarkCrawlStage } from "../crawl-article-state/article-crawl.types";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
@@ -22,7 +22,6 @@ export function initRecrawlLinkInitiatedHandler(deps: {
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
 	updateFetchTimestamp: UpdateFetchTimestamp;
-	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
 	markCrawlStage: MarkCrawlStage;
 	publishEvent: PublishEvent;
@@ -43,7 +42,6 @@ export function initRecrawlLinkInitiatedHandler(deps: {
 		putTierSource: deps.putTierSource,
 		putImageObject: deps.putImageObject,
 		updateFetchTimestamp: deps.updateFetchTimestamp,
-		markCrawlReady: deps.markCrawlReady,
 		markCrawlFailed: deps.markCrawlFailed,
 		markCrawlStage: deps.markCrawlStage,
 		downloadMedia: deps.downloadMedia,

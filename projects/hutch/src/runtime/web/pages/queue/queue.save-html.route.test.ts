@@ -58,6 +58,7 @@ describe("POST /queue/save-html", () => {
 				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 				publishSaveLinkRawHtmlCommand: publishSaveLinkRawHtmlCommand,
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 			},
 		});
 		return { testApp, pendingHtml: testApp.pendingHtml, publishedSaveHtml, publishedLinkSaved };
@@ -137,6 +138,7 @@ describe("POST /queue/save-html", () => {
 				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 				publishSaveLinkRawHtmlCommand: async () => {},
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 			},
 			freshness: { refreshArticleIfStale: async () => { throw new Error("boom"); } },
 			shared: {
@@ -317,6 +319,7 @@ describe("Collection-Siren advertises both save actions", () => {
 				publishSaveAnonymousLink: fixture.events.publishSaveAnonymousLink,
 				publishSaveLinkRawHtmlCommand: async () => {},
 				publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+				publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 			},
 		});
 		const accessToken = await createAccessToken(testApp);

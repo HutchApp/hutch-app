@@ -59,7 +59,7 @@ export function initLinkSummariser(deps: {
 
 		if (deps.isTooShortToSummarize(cleanedContent)) {
 			deps.logger.info("[summarize] content too short, skipping", { url: params.url, visibleLength });
-			await deps.markSummarySkipped({ url: params.url });
+			await deps.markSummarySkipped({ url: params.url, reason: "content-too-short" });
 			return null;
 		}
 
@@ -111,6 +111,7 @@ export function initLinkSummariser(deps: {
 		const summary = parsed.summary.trim();
 		if (summary === "Summary not available.") {
 			deps.logger.info("[summarize] AI returned unavailable", { url: params.url });
+			await deps.markSummarySkipped({ url: params.url, reason: "ai-unavailable" });
 			return null;
 		}
 		const excerpt = clipExcerpt(parsed.excerpt.trim());

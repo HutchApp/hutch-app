@@ -2,7 +2,7 @@
 title: "Free Read-It-Later Apps in 2026: What You Actually Get"
 description: "An honest look at what free really means for read-it-later apps, from hosted tiers to self-hosted options to paying a few dollars a month."
 slug: "free-read-it-later-apps-2026"
-date: "2026-04-06"
+date: "2026-05-01"
 author: "Fayner Brack"
 keywords: "free read it later app, read it later free, instapaper free, wallabag, karakeep, raindrop free tier"
 ---

@@ -50,6 +50,8 @@ const ArticleRow = z.object({
 	estimatedReadTime: MinutesSchema,
 	contentSourceTier: dynamoField(z.enum(["tier-0", "tier-1"])),
 });
+/** Every ArticleRow attribute except `content`, derived so the list stays in sync with the schema. */
+const ArticleMetadataFields = ArticleRow.omit({ content: true }).keyof().options;
 
 const UserArticleRow = z.object({
 	userId: UserIdSchema,
@@ -271,6 +273,7 @@ export function initDynamoDbArticleStore(deps: {
 			tableName,
 			schema: ArticleRow,
 			keys: urls,
+			projection: query.excludeContent ? ArticleMetadataFields : undefined,
 		});
 
 		const articlesByUrl = new Map<string, z.infer<typeof ArticleRow>>();

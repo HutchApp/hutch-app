@@ -70,6 +70,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -105,6 +106,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -137,6 +139,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -171,6 +174,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -206,6 +210,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -243,6 +248,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			await auth.createUser({
@@ -283,6 +289,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			await auth.createUser({
@@ -324,6 +331,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			await auth.createUser({
@@ -368,6 +376,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -410,6 +419,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -448,6 +458,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -479,6 +490,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -512,6 +524,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -544,6 +557,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -576,6 +590,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -616,6 +631,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -647,6 +663,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -690,6 +707,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -734,6 +752,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -778,6 +797,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -796,11 +816,18 @@ describe("View routes", () => {
 			expect(
 				doc.querySelector(".article-body__summary-error")?.textContent,
 			).toContain("couldn't generate a summary");
+			expect(
+				doc.querySelector("[data-test-reader-summary-failure-reason]")
+					?.textContent,
+			).toBe("deepseek timeout");
 		});
 
-		it("marks the summary slot hidden when status=skipped", async () => {
+		it("renders a visible info card with the reason copy when status=skipped", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
-			const findGeneratedSummary: FindGeneratedSummary = async () => ({ status: "skipped" });
+			const findGeneratedSummary: FindGeneratedSummary = async () => ({
+				status: "skipped",
+				reason: "content-too-short",
+			});
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 			const applyParseResult = createFakeApplyParseResult({
 				articleStore: fixture.articleStore,
@@ -819,6 +846,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -834,8 +862,16 @@ describe("View routes", () => {
 			assert(slot, "summary slot must be rendered");
 			expect(slot.getAttribute("data-summary-status")).toBe("skipped");
 			expect(
-				slot.classList.contains("article-body__summary-slot--hidden"),
+				slot.classList.contains("article-body__summary-slot--visible"),
 			).toBe(true);
+			const info = doc.querySelector(".article-body__summary-info");
+			assert(info, "info card must be rendered");
+			expect(info.getAttribute("data-test-reader-summary-skip-reason")).toBe(
+				"content-too-short",
+			);
+			expect(info.textContent).toBe(
+				"This article is too short to summarise.",
+			);
 		});
 
 		it("hides the summary slot when the crawl has failed (reader-failed card already signals the problem)", async () => {
@@ -859,6 +895,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				summary:{
  	findGeneratedSummary: findGeneratedSummary,
@@ -1023,6 +1060,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -1077,6 +1115,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -1113,6 +1152,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -1146,6 +1186,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -1284,6 +1325,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -1323,6 +1365,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
 			});
@@ -1383,6 +1426,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
@@ -1435,6 +1479,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 
@@ -1472,6 +1517,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -1513,6 +1559,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
 				summary:{
@@ -1563,6 +1610,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
@@ -1603,6 +1651,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 				freshness: { refreshArticleIfStale: async () => ({ action: "reprime" }) },
 			});
@@ -1644,6 +1693,7 @@ describe("View routes", () => {
 					publishSaveAnonymousLink: publishSaveAnonymousLink,
 					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
 					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
 				},
 			});
 

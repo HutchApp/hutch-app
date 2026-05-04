@@ -23,7 +23,10 @@ config:
   hutch:dynamodbOauthTable: hutch-oauth-ecd3db9
   hutch:dynamodbVerificationTokensTable: hutch-verification-tokens-3f85043
   hutch:dynamodbPasswordResetTokensTable: hutch-password-reset-tokens
+  hutch:dynamodbPendingSignupsTable: hutch-pending-signups
   hutch:contentBucketName: hutch-article-content-prod
   hutch:pendingHtmlBucketName: hutch-pending-html-prod
+  hutch:userExportBucketName: hutch-user-exports-prod
+  hutch:alertEmail: hutch+devops@readplace.com
   hutch:excludedVisitorHashes: []
 encryptionsalt: v1:l9Qbc2Rjk0w=:v1:atrW398hQVu5eMhu:NQ2XG9vAOXAa+XxkU2+ksKYFAJJLTA==

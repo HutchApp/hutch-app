@@ -76,7 +76,7 @@ When runtime code requires an environment variable, every link in the chain from
 Two failure modes to guard against:
 
 1. **Production-only `requireEnv`**: runtime code requires the variable only inside `if (persistence === "prod")`. Local dev takes the in-memory path and skips the call entirely, so the app works locally and tests pass. The missing variable only surfaces when the Lambda initialises in the deployed environment, crashing every request with a 500.
-2. **Local env hides CI gap**: `pnpm check-infra` and `pulumi up` pass on your laptop because the variable is set in your shell, but the CI deploy job never receives the secret. `requireEnv` aborts Pulumi at the start of the deploy step with `AssertionError: Environment variable X is required but not set`.
+2. **Local env hides missing GitHub secret**: `pnpm check-infra` and `pulumi up` pass on your laptop because the variable is set in your shell, but the CI deploy job has no value for it because the GitHub secret was never created. `requireEnv` aborts Pulumi at the start of the deploy step with `AssertionError: Environment variable X is required but not set`.
 
 Env vars come in two flavors. Each has a different chain from source to runtime. Trace an existing var of the same flavor end-to-end and replicate the pattern.
 

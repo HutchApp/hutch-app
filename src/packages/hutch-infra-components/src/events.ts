@@ -216,6 +216,43 @@ export type RefreshArticleContentDetail = z.infer<
 	typeof RefreshArticleContentCommand.detailSchema
 >;
 
+export const ExportUserDataCommand = defineEvent({
+	name: "export-user-data-command",
+	source: "hutch.api",
+	detailType: "ExportUserDataCommand",
+	detailSchema: z.object({
+		userId: z.string(),
+		email: z.string(),
+		requestedAt: z.string(),
+	}),
+});
+export type ExportUserDataDetail = z.infer<typeof ExportUserDataCommand.detailSchema>;
+
+export const UserDataExportedEvent = defineEvent({
+	name: "user-data-exported",
+	source: "hutch.export-user-data",
+	detailType: "UserDataExported",
+	detailSchema: z.object({
+		userId: z.string(),
+		articleCount: z.number(),
+		s3Key: z.string(),
+		exportedAt: z.string(),
+	}),
+});
+export type UserDataExportedDetail = z.infer<typeof UserDataExportedEvent.detailSchema>;
+
+export const UserDataExportFailedEvent = defineEvent({
+	name: "user-data-export-failed",
+	source: "hutch.export-user-data",
+	detailType: "UserDataExportFailed",
+	detailSchema: z.object({
+		userId: z.string(),
+		reason: z.string(),
+		receiveCount: z.number(),
+	}),
+});
+export type UserDataExportFailedDetail = z.infer<typeof UserDataExportFailedEvent.detailSchema>;
+
 export const UpdateFetchTimestampCommand = defineEvent({
 	name: "update-fetch-timestamp-command",
 	source: "hutch.api",

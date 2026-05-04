@@ -76,7 +76,6 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		processContent,
 		putTierSource: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
-		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
 		logger: noopLogger,
 		logParseError: jest.fn(),
@@ -126,17 +125,16 @@ describe("initSaveLinkRawHtmlCommandHandler", () => {
 		});
 	});
 
-	it("marks crawl ready before publishing the extracted event so the reader UI un-sticks immediately", async () => {
+	it("writes the tier-0 source before publishing TierContentExtractedEvent (selector relies on the source being listable)", async () => {
 		const calls: string[] = [];
-		const markCrawlReady = jest.fn(async () => { calls.push("markCrawlReady"); });
 		const publishEvent = jest.fn(async () => { calls.push("publishEvent"); });
 		const putTierSource: PutTierSource = jest.fn(async () => { calls.push("putTierSource"); });
 
-		const { handler } = createHandler({ markCrawlReady, publishEvent, putTierSource });
+		const { handler } = createHandler({ publishEvent, putTierSource });
 
 		await handler(createSqsEvent({ url: "https://example.com/article", userId: "user-1" }), stubContext, () => {});
 
-		expect(calls).toEqual(["putTierSource", "markCrawlReady", "publishEvent"]);
+		expect(calls).toEqual(["putTierSource", "publishEvent"]);
 	});
 
 	it("marks crawl 'failed' inline on terminal parse errors and rethrows so SQS retries observe the failure", async () => {

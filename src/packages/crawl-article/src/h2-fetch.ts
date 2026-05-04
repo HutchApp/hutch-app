@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import http2 from "node:http2";
+import { fetchCurl } from "./curl-fetch";
 
 const MAX_REDIRECTS = 5;
 const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
@@ -110,21 +111,67 @@ function toFetchHeaders(incoming: http2.IncomingHttpHeaders): Headers {
  * challenge`) and plain "Attention Required!" interstitials (no cf-mitigated
  * header), since both are TLS-fingerprint blocks that real browsers bypass
  * via h2. Non-Cloudflare 403s and non-403 responses pass through unchanged.
+ *
+ * If the h2 fallback itself fails with a TLS- or protocol-level error (e.g.
+ * Cloudflare refuses to negotiate h2 via ALPN downgrade), a curl subprocess
+ * fallback kicks in. curl's OpenSSL-based TLS fingerprint differs from
+ * Node.js's and passes Cloudflare's JA3/JA4 heuristics. Clear network
+ * failures (DNS, connection refused) and aborts skip curl since they would
+ * fail the same way and only add latency.
  */
 export function withH2Fallback(
 	baseFetch: typeof fetch,
 	h2FetchImpl: typeof fetchH2 = fetchH2,
+	curlFetchImpl: typeof fetchCurl = fetchCurl,
 ): typeof fetch {
 	return async (input, init) => {
-		const response = await baseFetch(input, init);
+		let response: Response;
+		try {
+			response = await baseFetch(input, init);
+		} catch (error) {
+			const signal = init?.signal ?? undefined;
+			if (!signal?.aborted || !isTimeoutError(signal.reason)) throw error;
+			const url = urlFromInput(input);
+			return curlFetchImpl(url, { headers: toPlainHeaders(init?.headers) });
+		}
 		if (response.status !== 403) return response;
 		if (response.headers.get("server")?.toLowerCase() !== "cloudflare") return response;
 		await response.text();
-		return h2FetchImpl(urlFromInput(input), {
+		const url = urlFromInput(input);
+		const fallbackInit = {
 			headers: toPlainHeaders(init?.headers),
 			signal: init?.signal ?? undefined,
-		});
+		};
+		try {
+			return await h2FetchImpl(url, fallbackInit);
+		} catch (error) {
+			if (!shouldFallbackToCurl(error, fallbackInit.signal)) throw error;
+			if (fallbackInit.signal?.aborted) {
+				return curlFetchImpl(url, { headers: fallbackInit.headers });
+			}
+			return curlFetchImpl(url, fallbackInit);
+		}
 	};
+}
+
+function isTimeoutError(reason: unknown): boolean {
+	return reason instanceof Error && reason.name === "TimeoutError";
+}
+
+const NETWORK_ERROR_CODES = new Set([
+	"ENOTFOUND",
+	"ECONNREFUSED",
+	"EHOSTUNREACH",
+	"ENETUNREACH",
+]);
+
+function shouldFallbackToCurl(error: unknown, signal: AbortSignal | undefined): boolean {
+	if (signal?.aborted && !isTimeoutError(signal.reason)) return false;
+	if (!(error instanceof Error)) return true;
+	if ("code" in error && typeof error.code === "string" && NETWORK_ERROR_CODES.has(error.code)) {
+		return false;
+	}
+	return true;
 }
 
 type FetchInput = Parameters<typeof fetch>[0];

@@ -2,7 +2,9 @@ import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import assert from "node:assert";
 import { resolve } from "node:path";
-import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus, HutchS3ReadWrite } from "@packages/hutch-infra-components/infra";
+import { HutchLambda, HutchAPIGateway, HutchDynamoDBAccess, HutchEventBus, HutchS3ReadWrite, HutchSQS, HutchSQSBackedLambda } from "@packages/hutch-infra-components/infra";
+import { ExportUserDataCommand } from "@packages/hutch-infra-components";
+import { EXPORT_DOWNLOAD_TTL_DAYS, EXPORT_S3_KEY_PREFIX } from "../runtime/web/pages/export/export-ttl";
 import { PARSE_ERROR_STREAM, CRAWL_OUTCOME_STREAM } from "@packages/hutch-infra-components";
 import { DomainRegistration } from "./domain-registration";
 import { DomainRedirect } from "./domain-redirect";
@@ -19,6 +21,8 @@ assert(staticDomains.length > 0, "staticDomains must have at least one entry");
 const staticBucketName = config.require("staticBucketName");
 const contentBucketName = config.require("contentBucketName");
 const pendingHtmlBucketName = config.require("pendingHtmlBucketName");
+const userExportBucketName = config.require("userExportBucketName");
+const alertEmail = config.require("alertEmail");
 const tableNames = {
 	articles: config.require("dynamodbArticlesTable"),
 	userArticles: config.require("dynamodbUserArticlesTable"),
@@ -27,6 +31,7 @@ const tableNames = {
 	oauth: config.require("dynamodbOauthTable"),
 	verificationTokens: config.require("dynamodbVerificationTokensTable"),
 	passwordResetTokens: config.require("dynamodbPasswordResetTokensTable"),
+	pendingSignups: config.require("dynamodbPendingSignupsTable"),
 };
 
 const storage = new HutchStorage("hutch", {
@@ -93,6 +98,7 @@ const dynamodb = new HutchDynamoDBAccess("hutch-dynamodb-access", {
 		{ arn: storage.oauthTable.arn, includeIndexes: true },
 		{ arn: storage.verificationTokensTable.arn, includeIndexes: false },
 		{ arn: storage.passwordResetTokensTable.arn, includeIndexes: false },
+		{ arn: storage.pendingSignupsTable.arn, includeIndexes: false },
 	],
 	actions: [
 		"dynamodb:GetItem",
@@ -137,9 +143,12 @@ const lambda = new HutchLambda("hutch", {
 		DYNAMODB_OAUTH_TABLE: storage.oauthTable.name,
 		DYNAMODB_VERIFICATION_TOKENS_TABLE: storage.verificationTokensTable.name,
 		DYNAMODB_PASSWORD_RESET_TOKENS_TABLE: storage.passwordResetTokensTable.name,
+		DYNAMODB_PENDING_SIGNUPS_TABLE: storage.pendingSignupsTable.name,
 		GOOGLE_LOGIN_CLIENT_ID: requireEnv("GOOGLE_LOGIN_CLIENT_ID"),
 		GOOGLE_LOGIN_CLIENT_SECRET: requireEnv("GOOGLE_LOGIN_CLIENT_SECRET"),
 		RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
+		STRIPE_SECRET_KEY: requireEnv("STRIPE_SECRET_KEY"),
+		STRIPE_PRICE_ID: requireEnv("STRIPE_PRICE_ID"),
 		STATIC_BASE_URL: staticAssets.baseUrl,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		CONTENT_BUCKET_NAME: contentBucketName,
@@ -207,6 +216,84 @@ for (const [i, domain] of additionalDomains.entries()) {
 		],
 	});
 }
+
+// --- User Data Export Bucket ---
+// Stores user-data export JSON files keyed under exports/<userId>/<timestamp>.json.
+// Bucket-private; downloads are issued via short-lived presigned URLs from the
+// worker Lambda. The lifecycle rule expires every object under the export
+// prefix after EXPORT_DOWNLOAD_TTL_DAYS so unused archives are evicted at the
+// same cadence as the presigned URL TTL — both numbers move together via the
+// shared constant in runtime/web/pages/export/export-ttl.ts.
+
+const userExportBucket = new HutchS3ReadWrite("user-export-bucket", {
+	bucketName: userExportBucketName,
+});
+
+new aws.s3.BucketLifecycleConfigurationV2("user-export-bucket-lifecycle", {
+	bucket: userExportBucket.bucket,
+	rules: [
+		{
+			id: "expire-user-exports",
+			status: "Enabled",
+			filter: { prefix: EXPORT_S3_KEY_PREFIX },
+			expiration: { days: EXPORT_DOWNLOAD_TTL_DAYS },
+		},
+	],
+});
+
+// --- ExportUserData worker Lambda ---
+// Subscribes to ExportUserDataCommand published by the web Lambda when a logged-in
+// user clicks "Email Me My Data". Paginates the user's articles, streams a JSON
+// blob to userExportBucket, generates a presigned GetObject URL valid for the
+// shared TTL, emails the user the link via Resend, and publishes
+// UserDataExportedEvent. SQS retry → DLQ on transient failure; the
+// HutchSQSBackedLambda CloudWatch alarm pages the operator on DLQ arrival.
+
+const exportUserDataDynamodb = new HutchDynamoDBAccess("export-user-data-dynamodb", {
+	tables: [
+		{ arn: storage.articlesTable.arn, includeIndexes: false },
+		{ arn: storage.userArticlesTable.arn, includeIndexes: true },
+	],
+	actions: ["dynamodb:GetItem", "dynamodb:BatchGetItem", "dynamodb:Query"],
+});
+
+const exportUserDataQueue = new HutchSQS("export-user-data", {
+	// Max single-export wall time before SQS makes the message visible again
+	// for retry. 900s matches the worker Lambda timeout below so a single
+	// invocation cannot be redelivered while still running.
+	visibilityTimeoutSeconds: 900,
+});
+
+const exportUserDataLambda = new HutchLambda("export-user-data", {
+	entryPoint: "./src/runtime/export-user-data.main.ts",
+	outputDir: ".lib/export-user-data",
+	assetDir: "./src/runtime",
+	memorySize: 1024,
+	timeout: 900,
+	environment: {
+		PERSISTENCE: "prod",
+		DYNAMODB_ARTICLES_TABLE: storage.articlesTable.name,
+		DYNAMODB_USER_ARTICLES_TABLE: storage.userArticlesTable.name,
+		EVENT_BUS_NAME: eventBus.eventBusName,
+		USER_EXPORT_BUCKET_NAME: userExportBucket.bucket,
+		RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
+	},
+	policies: [
+		...exportUserDataDynamodb.policies,
+		...userExportBucket.readPolicies("export-user-data-bucket-read"),
+		...userExportBucket.writePolicies("export-user-data-bucket-write"),
+	],
+});
+
+eventBus.grantPublish(exportUserDataLambda);
+
+const exportUserDataLambdaWithSQS = new HutchSQSBackedLambda("export-user-data", {
+	lambda: exportUserDataLambda,
+	queue: exportUserDataQueue,
+	alertEmailDLQEntry: alertEmail,
+});
+
+eventBus.subscribe(ExportUserDataCommand, exportUserDataLambdaWithSQS);
 
 // --- Analytics Dashboard ---
 
@@ -304,7 +391,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 		JSON.stringify({
 			widgets: [
 				logWidget({
-					title: "UTM Source (%)",
+					title: "Pageviews by utm_source (%)",
 					logGroupNames: [hutchLogGroupName],
 					query: [
 						"fields @timestamp, utm_source",
@@ -347,14 +434,14 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					view: "table",
 				}),
 				logWidget({
-					title: "UTM Content (%)",
+					title: "Pageviews by Source / Medium / Content (%)",
 					logGroupNames: [hutchLogGroupName],
 					query: [
-						"fields @timestamp, utm_content",
+						"fields @timestamp, utm_source, utm_medium, utm_content, concat(utm_source, \" / \", coalesce(utm_medium, \"-\"), \" / \", coalesce(utm_content, \"-\")) as utm_path",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						...excludeVisitorHashesClause(),
-						"| filter ispresent(utm_content) and utm_content != \"\"",
-						"| stats count(*) as visits by utm_content",
+						"| filter ispresent(utm_source) and utm_source != \"\"",
+						"| stats count(*) as visits by utm_path",
 						"| sort visits desc",
 						"| limit 10",
 					].join(" "),
@@ -404,15 +491,15 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					view: "timeSeries",
 				}),
 				logWidget({
-					title: "Public View Entry Point — totals by source",
+					title: "Public View Entry Point — by Source / Medium / Content (%)",
 					logGroupNames: [hutchLogGroupName],
 					query: [
-						"fields @timestamp, utm_content",
+						"fields @timestamp, utm_source, utm_medium, utm_content, concat(utm_source, \" / \", coalesce(utm_medium, \"-\"), \" / \", utm_content) as utm_path",
 						"| filter stream = \"analytics\" and event = \"pageview\"",
 						"| filter path = \"/view\"",
 						...excludeVisitorHashesClause(),
 						entryPointFilter,
-						"| stats count(*) as clicks by utm_content",
+						"| stats count(*) as clicks by utm_path",
 						"| sort clicks desc",
 					].join(" "),
 					x: 0, y: 40, width: 12, height: 8,
@@ -520,4 +607,7 @@ new aws.cloudwatch.Dashboard("readplace-observability", {
 export const apiUrl: pulumi.Input<string> = canonicalDomain ? `https://${canonicalDomain}` : gateway.apiUrl;
 export const functionName = lambda.functionName;
 export const staticBaseUrl = staticAssets.baseUrl;
+export const exportUserDataQueueUrl = exportUserDataQueue.queueUrl;
+export const exportUserDataDlqUrl = exportUserDataQueue.dlqUrl;
+export const userExportBucketOutputName = userExportBucket.bucket;
 export const _dependencies = [gateway.defaultRoute];

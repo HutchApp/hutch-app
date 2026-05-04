@@ -2,7 +2,11 @@ name: Stuck articles canary
 
 # Read-only DDB scan against the prod articles table that fails the run with
 # one node:test sub-test per article whose state machines never reached a
-# terminal-good state. A green run means there are no stuck articles.
+# terminal-good state AND whose `originalUrl` is still reachable on the
+# public network. Rows whose URL no longer resolves (DNS failure, TCP refused,
+# TLS handshake error, timeout) are filtered out before the report is written
+# — those rows are not actionable, the origin is gone. A green run means
+# there are no actionable stuck articles.
 #
 # Runs daily at 06:30 AEST (30 minutes after the tier-1 crawl-pipeline canary
 # so the two prod-scan canaries don't contend) and on demand from the Actions

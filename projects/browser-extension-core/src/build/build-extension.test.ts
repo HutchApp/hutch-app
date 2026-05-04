@@ -101,7 +101,7 @@ describe("createBuildPlan", () => {
 		expect(plan.esbuildOptions.define.__APP_DOMAINS__).toBe('["readplace.com","127.0.0.1","localhost"]');
 	});
 
-	it("includes six output directories", () => {
+	it("includes five output directories", () => {
 		const plan = createBuildPlan({
 			config: { target: "firefox91" },
 			projectDir,
@@ -115,7 +115,6 @@ describe("createBuildPlan", () => {
 			join(outDir, "background"),
 			join(outDir, "content"),
 			join(outDir, "icons"),
-			join(outDir, "icons-saved"),
 		]);
 	});
 
@@ -135,7 +134,6 @@ describe("createBuildPlan", () => {
 			{ src: join(srcDir, "runtime", "popup", "popup.template.html"), dest: join(outDir, "popup", "popup.template.html"), recursive: false },
 			{ src: join(coreDir, "src", "popup", "popup.styles.css"), dest: join(outDir, "popup", "popup.styles.css"), recursive: false },
 			{ src: join(srcDir, "icons"), dest: join(outDir, "icons"), recursive: true },
-			{ src: join(srcDir, "icons-saved"), dest: join(outDir, "icons-saved"), recursive: true },
 		]);
 	});
 
@@ -234,7 +232,7 @@ describe("plan.buildExtension", () => {
 
 		await plan.buildExtension();
 
-		expect(createdDirs.length).toBe(6);
+		expect(createdDirs.length).toBe(5);
 		expect(createdDirs[0].options).toEqual({ recursive: true });
 	});
 
@@ -266,7 +264,7 @@ describe("plan.buildExtension", () => {
 
 		await plan.buildExtension();
 
-		expect(copiedFiles.length).toBe(5);
+		expect(copiedFiles.length).toBe(4);
 		expect(copiedFiles[0].dest).toContain("manifest.json");
 	});
 
@@ -282,7 +280,7 @@ describe("plan.buildExtension", () => {
 
 		await plan.buildExtension();
 
-		const iconsCopy = copiedFiles.find((c) => c.dest.endsWith("icons") && !c.dest.endsWith("icons-saved"));
+		const iconsCopy = copiedFiles.find((c) => c.dest.endsWith("icons"));
 		expect(iconsCopy?.options).toEqual({ recursive: true, force: true });
 
 		const manifestCopy = copiedFiles.find((c) => c.dest.endsWith("manifest.json"));

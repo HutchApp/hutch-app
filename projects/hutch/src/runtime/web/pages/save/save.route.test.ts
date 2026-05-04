@@ -128,7 +128,8 @@ describe("Save routes", () => {
 
 			expect(response.status).toBe(303);
 			const location = response.headers.location;
-			expect(location).toContain("/login?return=");
+			expect(location).toContain("/login");
+			expect(location).toContain("return=");
 			const returnUrl = decodeURIComponent(location.split("return=")[1]);
 			expect(returnUrl).toBe("/save?url=https://example.com/article");
 		});
@@ -155,7 +156,8 @@ describe("Save routes", () => {
 			const saveResponse = await agent.get("/save?url=https://example.com/article");
 			expect(saveResponse.status).toBe(303);
 			const loginRedirect = saveResponse.headers.location;
-			expect(loginRedirect).toContain("/login?return=");
+			expect(loginRedirect).toContain("/login");
+			expect(loginRedirect).toContain("return=");
 
 			const returnParam = decodeURIComponent(loginRedirect.split("return=")[1]);
 			await agent
@@ -203,7 +205,7 @@ describe("Save routes", () => {
 
 			expect(response.status).toBe(303);
 			const location = response.headers.location;
-			expect(location.startsWith("/login?return=")).toBe(true);
+			expect(location.startsWith("/login")).toBe(true);
 			const returnParam = new URL(`http://localhost${location}`).searchParams.get("return");
 			expect(returnParam).toBe("/save?url=https://example.com/article&utm_source=medium");
 		});
