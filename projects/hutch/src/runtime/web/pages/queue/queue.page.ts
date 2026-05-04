@@ -7,8 +7,7 @@ import express from "express";
 import type { LogParseError } from "@packages/hutch-infra-components";
 import { SaveArticleInputSchema, SaveHtmlInputSchema, ArticleStatusSchema, MAX_RAW_HTML_REQUEST_BYTES, RAW_HTML_FIELD, isSaveableUrl } from "../../../domain/article/article.schema";
 import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
-import { calculateReadTime } from "../../../domain/article/estimated-read-time";
-import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
+import type { RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
 import type {
 	DeleteArticle,
 	FindArticleById,
@@ -32,7 +31,7 @@ import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.
 import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
 import type { PublishSaveLinkRawHtmlCommand } from "../../../providers/events/publish-save-link-raw-html-command.types";
 import type { PutPendingHtml } from "../../../providers/pending-html/pending-html.types";
-import type { UserId } from "../../../domain/user/user.types";
+import { saveArticleFromUrl } from "../../shared/save-article/save-article-from-url";
 import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { wantsSiren } from "../../content-negotiation";
@@ -86,88 +85,6 @@ async function loadSummaries(
 		const r = results[i];
 		return [a.url, r.status === "fulfilled" ? r.value : undefined] as const;
 	}));
-}
-
-async function markUnreadIfRead(deps: Pick<QueueDependencies, "updateArticleStatus">, saved: SavedArticle): Promise<SavedArticle> {
-	if (saved.status === "read") {
-		await deps.updateArticleStatus(saved.id, saved.userId, "unread");
-		return { ...saved, status: "unread", readAt: undefined };
-	}
-	return saved;
-}
-
-type SaveArticleFromUrlResult = { ok: true; saved: Awaited<ReturnType<SaveArticle>> };
-
-async function saveArticleFromUrl(deps: QueueDependencies, params: {
-	userId: UserId;
-	url: string;
-	freshness: ContentFreshnessResult;
-}): Promise<SaveArticleFromUrlResult> {
-	const { userId, url, freshness } = params;
-
-	if (freshness.action === "new") {
-		// Save a hostname-only stub immediately so the queue card has something to
-		// render at t=0. The real metadata + content arrive asynchronously via the
-		// SaveLinkCommand handler; markCrawlPending is what flips the reader slot
-		// into the polling state.
-		const hostname = new URL(url).hostname;
-		const saved = await deps.saveArticle({
-			userId,
-			url,
-			metadata: {
-				title: `Article from ${hostname}`,
-				siteName: hostname,
-				excerpt: `Saved from ${hostname}.`,
-				wordCount: 0,
-			},
-			estimatedReadTime: calculateReadTime(0),
-		});
-		await deps.markCrawlPending({ url });
-		await deps.markSummaryPending({ url });
-		// Pre-populate the freshness window with the request time so a quick
-		// re-save can skip dispatching a duplicate SaveLinkCommand while the
-		// worker is mid-crawl. The worker overwrites contentFetchedAt with the
-		// actual fetch time after success. Must succeed — awaited (not
-		// fire-and-forget) because a missing freshness row would let the next
-		// save dispatch a duplicate worker invocation.
-		await deps.publishUpdateFetchTimestamp({
-			url,
-			contentFetchedAt: new Date().toISOString(),
-		});
-		await deps.publishLinkSaved({ url, userId });
-		return { ok: true, saved: await markUnreadIfRead(deps, saved) };
-	}
-
-	if (freshness.action === "reprime") {
-		const saved = await deps.saveArticle({
-			userId,
-			url,
-			metadata: { title: "", siteName: "", excerpt: "", wordCount: 0 },
-			estimatedReadTime: calculateReadTime(0),
-		});
-		await deps.markCrawlPending({ url });
-		await deps.markSummaryPending({ url });
-		await deps.publishUpdateFetchTimestamp({
-			url,
-			contentFetchedAt: new Date().toISOString(),
-		});
-		await deps.publishLinkSaved({ url, userId });
-		return { ok: true, saved: await markUnreadIfRead(deps, saved) };
-	}
-
-	const saved = await deps.saveArticle({
-		userId,
-		url,
-		metadata: { title: "", siteName: "", excerpt: "", wordCount: 0 },
-		estimatedReadTime: calculateReadTime(0),
-	});
-
-	if (freshness.action === "refreshed" && freshness.article.article.content) {
-		await deps.markSummaryPending({ url });
-		await deps.publishLinkSaved({ url, userId });
-	}
-
-	return { ok: true, saved: await markUnreadIfRead(deps, saved) };
 }
 
 export function initQueueRoutes(deps: QueueDependencies): Router {

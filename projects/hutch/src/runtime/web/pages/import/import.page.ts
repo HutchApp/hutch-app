@@ -75,7 +75,6 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 		});
 
 		if (!pageResult) {
-			res.status(404);
 			res.redirect(303, "/queue?error_code=import_session_not_found");
 			return;
 		}
