@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { SortOrder } from "../../../providers/article-store/article-store.types";
-import type { TabId } from "./queue.tabs";
+import { type TabId, tabQuery } from "./queue.tabs";
 
 export interface QueueUrlState {
 	tab: TabId;
@@ -27,11 +27,13 @@ export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 
 export function buildQueueUrl(state: Partial<QueueUrlState>): string {
 	const params = new URLSearchParams();
+	const tab = state.tab ?? "queue";
+	const { defaultOrder } = tabQuery(tab);
 
-	if (state.tab && state.tab !== "queue") {
-		params.set("tab", state.tab);
+	if (tab !== "queue") {
+		params.set("tab", tab);
 	}
-	if (state.order && state.order !== "desc") {
+	if (state.order && state.order !== defaultOrder) {
 		params.set("order", state.order);
 	}
 	if (state.page && state.page > 1) {

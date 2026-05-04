@@ -65,12 +65,14 @@ describe("buildQueueUrl", () => {
 		expect(buildQueueUrl({ tab: "done" })).toBe("/queue?tab=done");
 	});
 
-	it("should omit default order (desc)", () => {
+	it("should omit order matching tab defaultOrder", () => {
 		expect(buildQueueUrl({ order: "desc" })).toBe("/queue");
+		expect(buildQueueUrl({ tab: "done", order: "desc" })).toBe("/queue?tab=done");
 	});
 
-	it("should include non-default order", () => {
+	it("should include order differing from tab defaultOrder", () => {
 		expect(buildQueueUrl({ order: "asc" })).toBe("/queue?order=asc");
+		expect(buildQueueUrl({ tab: "done", order: "asc" })).toBe("/queue?tab=done&order=asc");
 	});
 
 	it("should omit page 1", () => {
