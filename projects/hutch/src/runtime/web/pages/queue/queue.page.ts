@@ -137,9 +137,10 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const extensionInstalled = isExtensionInstalled(req);
 		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
 		const browser = detectBrowser(req);
+		const showImportForm = req.query.feature === "import";
 		sendComponent(
 			res,
-			renderPage(req, QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed })),
+			renderPage(req, QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed, showImportForm })),
 		);
 	});
 
