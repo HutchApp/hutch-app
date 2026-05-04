@@ -346,6 +346,52 @@ describe("withH2Fallback", () => {
 		expect(curlImpl).not.toHaveBeenCalled();
 	});
 
+	it("falls back to curl when h2 times out (signal fires during h2 attempt)", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
+		const controller = new AbortController();
+		const reason = Object.assign(new Error("The operation timed out"), { name: "TimeoutError" });
+		const h2Impl = jest.fn<ReturnType<typeof fetchH2>, Parameters<typeof fetchH2>>(async () => {
+			controller.abort(reason);
+			throw reason;
+		});
+		const curlImpl = jest.fn<ReturnType<typeof fetchCurl>, Parameters<typeof fetchCurl>>(async () =>
+			new Response("<html>curl after h2 timeout</html>", { status: 200, headers: { "content-type": "text/html" } }),
+		);
+		const wrapped = withH2Fallback(baseFetch, h2Impl, curlImpl);
+
+		const response = await wrapped("https://example.com", {
+			headers: { "user-agent": "Test/1.0" },
+			signal: controller.signal,
+		});
+
+		expect(response.status).toBe(200);
+		expect(await response.text()).toBe("<html>curl after h2 timeout</html>");
+		expect(curlImpl).toHaveBeenCalledWith("https://example.com", {
+			headers: { "user-agent": "Test/1.0" },
+		});
+	});
+
+	it("does not pass the exhausted signal to curl when h2 times out", async () => {
+		const baseFetch: typeof fetch = async () =>
+			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });
+		const controller = new AbortController();
+		const reason = Object.assign(new Error("timed out"), { name: "TimeoutError" });
+		const h2Impl = jest.fn<ReturnType<typeof fetchH2>, Parameters<typeof fetchH2>>(async () => {
+			controller.abort(reason);
+			throw reason;
+		});
+		const curlImpl = jest.fn<ReturnType<typeof fetchCurl>, Parameters<typeof fetchCurl>>(async () =>
+			new Response("ok", { status: 200 }),
+		);
+		const wrapped = withH2Fallback(baseFetch, h2Impl, curlImpl);
+
+		await wrapped("https://example.com", { signal: controller.signal });
+
+		const curlCall = curlImpl.mock.calls[0];
+		expect(curlCall[1]).toEqual({ headers: undefined });
+	});
+
 	it("falls back to curl when h2 throws a non-Error value", async () => {
 		const baseFetch: typeof fetch = async () =>
 			new Response("challenge", { status: 403, headers: { server: "cloudflare" } });

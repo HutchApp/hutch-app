@@ -146,6 +146,9 @@ export function withH2Fallback(
 			return await h2FetchImpl(url, fallbackInit);
 		} catch (error) {
 			if (!shouldFallbackToCurl(error, fallbackInit.signal)) throw error;
+			if (fallbackInit.signal?.aborted) {
+				return curlFetchImpl(url, { headers: fallbackInit.headers });
+			}
 			return curlFetchImpl(url, fallbackInit);
 		}
 	};
@@ -163,7 +166,7 @@ const NETWORK_ERROR_CODES = new Set([
 ]);
 
 function shouldFallbackToCurl(error: unknown, signal: AbortSignal | undefined): boolean {
-	if (signal?.aborted) return false;
+	if (signal?.aborted && !isTimeoutError(signal.reason)) return false;
 	if (!(error instanceof Error)) return true;
 	if ("code" in error && typeof error.code === "string" && NETWORK_ERROR_CODES.has(error.code)) {
 		return false;
