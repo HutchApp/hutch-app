@@ -82,6 +82,7 @@ import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
 import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
+import { initMarkExtensionInstalled } from "./web/mark-extension-installed.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { renderPage } from "./web/render-page";
 import { sendComponent } from "./web/send-component";
@@ -202,6 +203,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		}
 		next();
 	});
+
+	const markExtensionInstalled = initMarkExtensionInstalled();
+	app.use(markExtensionInstalled);
 
 	app.get("/robots.txt", (_req: Request, res: Response) => {
 		res.type("text/plain").send(

@@ -1,5 +1,7 @@
 import assert from "node:assert";
-import { DISMISS_COOKIE_NAME } from "@packages/onboarding-extension-signal";
+import {
+	DISMISS_COOKIE_NAME,
+} from "@packages/onboarding-extension-signal";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
 import type { LogParseError } from "@packages/hutch-infra-components";

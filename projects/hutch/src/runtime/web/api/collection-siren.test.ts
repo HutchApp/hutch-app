@@ -224,4 +224,5 @@ describe("toArticleCollectionEntity", () => {
 			"url",
 		]);
 	});
+
 });

@@ -489,6 +489,47 @@ describe("POST /queue/:id/delete (Siren)", () => {
 	});
 });
 
+describe("extension-installed cookie middleware", () => {
+	it("sets the extension-installed cookie on the Siren entry point before login", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+		const response = await request(testApp.app)
+			.get("/")
+			.set("Accept", SIREN_MEDIA_TYPE)
+			.redirects(0);
+
+		expect(response.status).toBe(303);
+		const setCookie = response.headers["set-cookie"];
+		assert(Array.isArray(setCookie), "expected Set-Cookie header");
+		const cookie = setCookie.find((c: string) => c.startsWith("hutch_ext_installed="));
+		assert(cookie, "expected hutch_ext_installed cookie");
+		expect(cookie).toContain("hutch_ext_installed=1");
+		expect(cookie).toContain("Path=/");
+		expect(cookie).toContain("SameSite=Lax");
+		expect(cookie).toContain("Max-Age=");
+	});
+
+	it("does not set the cookie on browser session requests", async () => {
+		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
+		const agent = request.agent(testApp.app);
+		await agent
+			.post("/login")
+			.type("form")
+			.send({ email: "test@example.com", password: "password123" });
+
+		const response = await agent
+			.get("/queue")
+			.set("Accept", "text/html");
+
+		expect(response.status).toBe(200);
+		const setCookie = response.headers["set-cookie"];
+		const cookies = Array.isArray(setCookie) ? setCookie : [];
+		const cookie = cookies.find((c: string) => c.startsWith("hutch_ext_installed="));
+		expect(cookie).toBeUndefined();
+	});
+});
+
 describe("GET / (Siren entry point)", () => {
 	it("redirects Siren clients to /queue", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
