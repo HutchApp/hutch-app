@@ -7,7 +7,7 @@ import type { PutImageObject } from "./s3-put-image-object";
 
 const MAX_IMAGES = 20;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const DOWNLOAD_TIMEOUT_MS = 5_000;
+const DOWNLOAD_TIMEOUT_MS = 3_000;
 const CONCURRENCY = 5;
 
 export type DownloadedMedia = { originalUrl: string; cdnUrl: string };

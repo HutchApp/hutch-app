@@ -90,6 +90,8 @@ function buildCurlArgs(params: { url: string; headers?: Record<string, string> }
 		"--location",
 		"--max-redirs",
 		String(MAX_REDIRECTS),
+		"--connect-timeout",
+		"5",
 		"--dump-header",
 		"-",
 		"--output",

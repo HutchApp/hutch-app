@@ -68,10 +68,10 @@ export function initRecrawlLinkInitiatedHandler(deps: {
 			// then stalls), AWS hard-kills the Lambda before any catch runs —
 			// so crawlStatus only flips to 'failed' after SQS retries exhaust
 			// (~180s with visibility-timeout=60 × maxReceiveCount=3), exactly
-			// racing the Tier 1+ canary's 180s budget. Rejecting the race ~5s
-			// before Lambda death leaves enough headroom to markCrawlFailed
-			// and exit cleanly so the canary and readers see 'failed' fast.
-			const workBudgetMs = context.getRemainingTimeInMillis() - 5000;
+			// racing the Tier 1+ canary's 180s budget. Rejecting the race ~2s
+			// before Lambda death leaves enough headroom for the markCrawlFailed
+			// DDB write (~50ms) and clean exit.
+			const workBudgetMs = context.getRemainingTimeInMillis() - 2000;
 			let timeoutHandle: NodeJS.Timeout | undefined;
 			try {
 				await Promise.race([

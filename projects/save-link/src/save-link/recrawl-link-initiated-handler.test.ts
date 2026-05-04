@@ -137,7 +137,7 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 		});
 
 		// Tight remaining time so the race fires almost immediately.
-		const tightContext: Context = { ...stubContext, getRemainingTimeInMillis: () => 5050 };
+		const tightContext: Context = { ...stubContext, getRemainingTimeInMillis: () => 2050 };
 
 		await expect(
 			handler(createSqsEvent({ url: "https://hex.ooo/library/last_question.html" }), tightContext, () => {}),
