@@ -82,6 +82,7 @@ import { initExportRoutes } from "./web/pages/export/export.page";
 import { initBlogRoutes } from "./web/pages/blog";
 import { getAllPostMetadata } from "./web/pages/blog/blog.posts";
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
+import { initMarkExtensionInstalled } from "./web/mark-extension-installed.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
 import { renderPage } from "./web/render-page";
 import { sendComponent } from "./web/send-component";
@@ -438,7 +439,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		logParseError: deps.logParseError,
 		now: deps.now,
 	});
-	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
+	const markExtensionInstalled = initMarkExtensionInstalled();
+	app.use("/queue", extensionCors, dualAuthMiddleware, markExtensionInstalled, queueRouter);
 
 	const saveRouter = initSaveRoutes();
 	app.use("/save", saveRouter);

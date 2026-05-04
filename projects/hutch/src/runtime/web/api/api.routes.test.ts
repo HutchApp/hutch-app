@@ -489,17 +489,17 @@ describe("POST /queue/:id/delete (Siren)", () => {
 	});
 });
 
-describe("POST /queue/extension-installed (Siren mark-extension-installed)", () => {
-	it("sets the extension-installed cookie and returns 204", async () => {
+describe("extension-installed cookie middleware", () => {
+	it("sets the extension-installed cookie on authenticated Siren requests", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
-			.post("/queue/extension-installed")
+			.get("/queue")
 			.set("Accept", SIREN_MEDIA_TYPE)
 			.set("Authorization", `Bearer ${accessToken}`);
 
-		expect(response.status).toBe(204);
+		expect(response.status).toBe(200);
 		const setCookie = response.headers["set-cookie"];
 		assert(Array.isArray(setCookie), "expected Set-Cookie header");
 		const cookie = setCookie.find((c: string) => c.startsWith("hutch_ext_installed="));
@@ -510,14 +510,24 @@ describe("POST /queue/extension-installed (Siren mark-extension-installed)", () 
 		expect(cookie).toContain("Max-Age=");
 	});
 
-	it("returns 401 without token", async () => {
+	it("does not set the cookie on browser session requests", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		await testApp.auth.createUser({ email: "test@example.com", password: "password123" });
+		const agent = request.agent(testApp.app);
+		await agent
+			.post("/login")
+			.type("form")
+			.send({ email: "test@example.com", password: "password123" });
 
-		const response = await request(testApp.app)
-			.post("/queue/extension-installed")
-			.set("Accept", SIREN_MEDIA_TYPE);
+		const response = await agent
+			.get("/queue")
+			.set("Accept", "text/html");
 
-		expect(response.status).toBe(401);
+		expect(response.status).toBe(200);
+		const setCookie = response.headers["set-cookie"];
+		const cookies = Array.isArray(setCookie) ? setCookie : [];
+		const cookie = cookies.find((c: string) => c.startsWith("hutch_ext_installed="));
+		expect(cookie).toBeUndefined();
 	});
 });
 
