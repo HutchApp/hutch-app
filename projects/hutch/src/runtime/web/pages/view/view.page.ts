@@ -141,13 +141,17 @@ function handleViewArticle(deps: ViewDependencies) {
 		// the crawl already reached a terminal state. Without this, FB/X scrapers
 		// keep getting the Readplace fallback even after the upstream page later
 		// exposes an og:image. Skip when freshness already re-primed in this
-		// request (avoids double-pinning the worker on the same render).
+		// request (avoids double-pinning the worker on the same render) or when
+		// freshness returned "skip" (content was verified fresh within the
+		// staleness TTL — re-crawling won't find a new image and would loop on
+		// every visit for articles that genuinely have no upstream thumbnail).
 		const reprimedThisRequest =
 			freshness.action === "new" || freshness.action === "reprime";
 		const crawlIsTerminal =
 			state.crawl?.status === "ready" || state.crawl?.status === "failed";
 		if (
 			!reprimedThisRequest &&
+			freshness.action !== "skip" &&
 			metadata.imageUrl === undefined &&
 			crawlIsTerminal
 		) {

@@ -1139,9 +1139,12 @@ describe("View routes", () => {
 					markCrawlFailed: fixture.articleCrawl.markCrawlFailed,
 					markCrawlStage: fixture.articleCrawl.markCrawlStage,
 				},
-				// Force freshness to "skip" so the only path that can call
-				// markCrawlPending is the imageUrl self-heal in view.page.ts.
-				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
+				// Force freshness to "unchanged" (304 — upstream checked but not
+				// modified) so the only path that can call markCrawlPending is the
+				// imageUrl self-heal in view.page.ts. "skip" would suppress the
+				// self-heal because it means content was verified fresh within the
+				// staleness TTL.
+				freshness: { refreshArticleIfStale: async () => ({ action: "unchanged" }) },
 				parser: {
 					parseArticle,
 					crawlArticle: fixture.parser.crawlArticle,
@@ -1159,6 +1162,68 @@ describe("View routes", () => {
 			const response = await request(app).get(`/view/${ENCODED}`);
 			expect(response.status).toBe(200);
 			expect(markCrawlPendingCalls).toBe(1);
+		});
+
+		it("does not self-heal when freshness is skip (content verified fresh within TTL)", async () => {
+			const parseArticle: ParseArticle = async () => ({
+				ok: true,
+				article: {
+					title: "Hello",
+					siteName: "example.com",
+					excerpt: "An article.",
+					wordCount: 100,
+					content: "<p>Body</p>",
+				},
+			});
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
+				parseArticle,
+			});
+			await fixture.articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Hello",
+					siteName: "example.com",
+					excerpt: "An article.",
+					wordCount: 100,
+				},
+				estimatedReadTime: MinutesSchema.parse(1),
+			});
+			await fixture.articleCrawl.markCrawlReady({ url: ARTICLE_URL });
+			let markCrawlPendingCalls = 0;
+			const { app } = createTestApp({
+				...fixture,
+				articleCrawl: {
+					findArticleCrawlStatus: fixture.articleCrawl.findArticleCrawlStatus,
+					markCrawlPending: async (params) => {
+						markCrawlPendingCalls += 1;
+						await fixture.articleCrawl.markCrawlPending(params);
+					},
+					forceMarkCrawlPending: fixture.articleCrawl.forceMarkCrawlPending,
+					markCrawlReady: fixture.articleCrawl.markCrawlReady,
+					markCrawlFailed: fixture.articleCrawl.markCrawlFailed,
+					markCrawlStage: fixture.articleCrawl.markCrawlStage,
+				},
+				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
+				},
+			});
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+			expect(response.status).toBe(200);
+			expect(markCrawlPendingCalls).toBe(0);
 		});
 
 		it("falls back to the Readplace default images when article has no imageUrl", async () => {
