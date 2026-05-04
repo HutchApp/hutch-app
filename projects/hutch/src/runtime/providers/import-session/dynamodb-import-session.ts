@@ -120,6 +120,22 @@ export function initDynamoDbImportSession(deps: {
 				},
 			});
 		},
+		toggleAllImportSelection: async ({ id, userId, checked }) => {
+			const row = await loadOwned(id, userId);
+			if (!row) return;
+			const next = checked
+				? []
+				: Array.from({ length: row.totalUrls }, (_v, i) => i);
+			await table.update({
+				Key: { sessionId: id },
+				ConditionExpression: "userId = :uid",
+				UpdateExpression: "SET deselected = :d",
+				ExpressionAttributeValues: {
+					":uid": userId,
+					":d": next,
+				},
+			});
+		},
 		deleteImportSession: async ({ id, userId }) => {
 			await table.delete({
 				Key: { sessionId: id },

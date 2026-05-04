@@ -50,6 +50,12 @@ export type ToggleImportSelection = (params: {
 	checked: boolean;
 }) => Promise<void>;
 
+export type ToggleAllImportSelection = (params: {
+	id: ImportSessionId;
+	userId: UserId;
+	checked: boolean;
+}) => Promise<void>;
+
 export type DeleteImportSession = (params: {
 	id: ImportSessionId;
 	userId: UserId;
@@ -61,5 +67,6 @@ export interface ImportSessionStore {
 	loadImportSessionPage: LoadImportSessionPage;
 	loadAllImportSessionUrls: LoadAllImportSessionUrls;
 	toggleImportSelection: ToggleImportSelection;
+	toggleAllImportSelection: ToggleAllImportSelection;
 	deleteImportSession: DeleteImportSession;
 }

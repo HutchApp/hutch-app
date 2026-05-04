@@ -84,6 +84,46 @@ describe("toImportViewModel", () => {
 		expect(vm.rows.map((r) => r.index)).toEqual([50, 51]);
 	});
 
+	it("flags the master checkbox as fully selected when nothing is deselected", () => {
+		const session = makeSession({ totalUrls: 3 });
+
+		const vm = toImportViewModel(
+			{ session, pageUrls: [], page: 1, pageSize: 50 },
+			3,
+		);
+
+		expect(vm.allSelected).toBe(true);
+		expect(vm.noneSelected).toBe(false);
+		expect(vm.someSelected).toBe(false);
+		expect(vm.toggleAllUrl).toBe(`/import/${session.id}/toggle-all`);
+	});
+
+	it("flags the master checkbox as fully deselected when every row is deselected", () => {
+		const session = makeSession({ totalUrls: 2, deselected: new Set([0, 1]) });
+
+		const vm = toImportViewModel(
+			{ session, pageUrls: [], page: 1, pageSize: 50 },
+			0,
+		);
+
+		expect(vm.allSelected).toBe(false);
+		expect(vm.noneSelected).toBe(true);
+		expect(vm.someSelected).toBe(false);
+	});
+
+	it("flags the master checkbox as partially selected (indeterminate) when some are deselected", () => {
+		const session = makeSession({ totalUrls: 3, deselected: new Set([1]) });
+
+		const vm = toImportViewModel(
+			{ session, pageUrls: [], page: 1, pageSize: 50 },
+			2,
+		);
+
+		expect(vm.allSelected).toBe(false);
+		expect(vm.noneSelected).toBe(false);
+		expect(vm.someSelected).toBe(true);
+	});
+
 	it("propagates the truncated flag and totalFoundInFile from the session header", () => {
 		const session = makeSession({ totalUrls: 2_000, totalFoundInFile: 2_345, truncated: true });
 
