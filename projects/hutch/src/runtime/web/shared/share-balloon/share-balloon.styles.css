@@ -123,21 +123,26 @@
 }
 
 .share-balloon__copied {
-  position: absolute;
-  bottom: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
   right: 0;
-  margin-bottom: 0.5rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.8125rem;
+  bottom: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 2rem;
+  font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-error);
   white-space: nowrap;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   opacity: 0;
   pointer-events: none;
-  backdrop-filter: blur(6px) saturate(1.4);
-  -webkit-backdrop-filter: blur(6px) saturate(1.4);
   transition: opacity 300ms ease;
+  z-index: 1000;
 }
 
 .share-balloon__copied--visible {
@@ -147,7 +152,8 @@
 @media (prefers-reduced-motion: reduce) {
   .share-balloon,
   .share-balloon__chat,
-  .share-balloon__close {
+  .share-balloon__close,
+  .share-balloon__copied {
     transition: none;
   }
   .share-balloon:active {
