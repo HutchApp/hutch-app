@@ -36,6 +36,7 @@ import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
 import { extractReturnUrl, parseReturnUrl } from "./parse-return-url";
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from "./session-cookie";
 import { buildVerificationEmailHtml } from "./verification-email";
+import { buildWelcomeEmailHtml } from "./welcome-email";
 import { flattenZodErrors } from "./flatten-zod-errors";
 import { initFetchUserCount } from "./fetch-user-count";
 
@@ -43,6 +44,7 @@ const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough(
 const CheckoutSuccessQuerySchema = z.object({ session_id: z.string().min(1) }).passthrough();
 
 const EMAIL_FROM = "Fayner Brack <readplace@readplace.com>";
+const WELCOME_EMAIL_FROM = "Fayner from Readplace <fayner@readplace.com>";
 
 interface AuthDependencies {
 	createUserWithPasswordHash: CreateUserWithPasswordHash;
@@ -63,6 +65,7 @@ interface AuthDependencies {
 	consumePendingSignup: ConsumePendingSignup;
 	appOrigin: string;
 	baseUrl: string;
+	staticBaseUrl: string;
 	logError: (message: string, error?: Error) => void;
 }
 
@@ -85,6 +88,20 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 	const buildCancelUrl = (path: "/signup", returnUrl: string | undefined): string => {
 		const suffix = returnUrl ? `?return=${encodeURIComponent(returnUrl)}` : "";
 		return `${deps.appOrigin}${path}${suffix}`;
+	};
+
+	const sendWelcomeEmail = (email: string): void => {
+		const installUrl = `${deps.baseUrl}/install`;
+		const avatarUrl = `${deps.staticBaseUrl}/fayner-brack.jpg`;
+		deps.sendEmail({
+			from: WELCOME_EMAIL_FROM,
+			to: email,
+			bcc: "readplace+welcome@readplace.com",
+			subject: "Welcome to Readplace",
+			html: buildWelcomeEmailHtml({ installUrl, avatarUrl }),
+		}).catch((err) => {
+			deps.logError("[Email] Welcome email failed", err instanceof Error ? err : new Error(String(err)));
+		});
 	};
 
 	const sendVerificationEmail = (userId: UserId, email: string): void => {
@@ -317,6 +334,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const sessionId = await deps.createSession({ userId: created.userId, emailVerified: true });
 		res.cookie(SESSION_COOKIE_NAME, sessionId, SESSION_COOKIE_OPTIONS);
+		sendWelcomeEmail(pending.email);
 		res.redirect(303, returnPath);
 	});
 
@@ -349,6 +367,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 
 		await deps.markEmailVerified(verifyResult.email);
+		sendWelcomeEmail(verifyResult.email);
 
 		const sessionId = req.cookies?.[SESSION_COOKIE_NAME];
 		if (sessionId) {

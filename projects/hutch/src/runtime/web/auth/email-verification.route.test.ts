@@ -37,7 +37,7 @@ describe("Email verification", () => {
 			expect(sent[0].to).toBe("new@example.com");
 			expect(sent[0].from).toContain("readplace@readplace.com");
 			expect(sent[0].subject).toContain("Verify");
-			expect(sent[0].html).toContain("verify-email?token=");
+			expect(sent[0].html).toContain("verify-email?token&#x3D;");
 		});
 
 		it("should complete signup even when email sending fails", async () => {
@@ -129,7 +129,7 @@ describe("Email verification", () => {
 			});
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in verification email");
 			const token = tokenMatch[1];
 
@@ -171,7 +171,7 @@ describe("Email verification", () => {
 			});
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in verification email");
 			const token = tokenMatch[1];
 
@@ -204,7 +204,7 @@ describe("Email verification", () => {
 			expect(session.emailVerified).toBe(false);
 
 			const sent = email.getSentEmails();
-			const tokenMatch = sent[0].html.match(/token=([a-f0-9]+)/);
+			const tokenMatch = sent[0].html.match(/token&#x3D;([a-f0-9]+)/);
 			assert(tokenMatch, "Expected token in verification email");
 			const token = tokenMatch[1];
 
@@ -236,6 +236,51 @@ describe("Email verification", () => {
 			const session = await auth.getSessionUserId(sessionId);
 			assert(session, "Expected session to exist");
 			expect(session.emailVerified).toBe(false);
+		});
+
+		it("should send a welcome email after successful verification", async () => {
+			const { app, email, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			await completeStripeSignup({
+				app,
+				stripe,
+				email: "welcome@example.com",
+				password: "password123",
+			});
+
+			const sentBeforeVerify = email.getSentEmails();
+			expect(sentBeforeVerify).toHaveLength(1);
+			const tokenMatch = sentBeforeVerify[0].html.match(/token&#x3D;([a-f0-9]+)/);
+			assert(tokenMatch, "Expected token in verification email");
+			const token = tokenMatch[1];
+
+			await request(app).get(`/verify-email?token=${token}`);
+
+			const sent = email.getSentEmails();
+			expect(sent).toHaveLength(2);
+			const welcome = sent[1];
+			expect(welcome.to).toBe("welcome@example.com");
+			expect(welcome.from).toContain("fayner@readplace.com");
+			expect(welcome.bcc).toBe("readplace+welcome@readplace.com");
+			expect(welcome.subject).toBe("Welcome to Readplace");
+			expect(welcome.html).toContain("/install");
+		});
+
+		it("should not send a welcome email when the verification token is invalid", async () => {
+			const { app, email, stripe } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			await completeStripeSignup({
+				app,
+				stripe,
+				email: "nowelcome@example.com",
+				password: "password123",
+			});
+
+			await request(app).get("/verify-email?token=invalidtoken");
+
+			const sent = email.getSentEmails();
+			expect(sent).toHaveLength(1);
+			expect(sent[0].subject).toContain("Verify");
 		});
 	});
 });
