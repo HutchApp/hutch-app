@@ -124,6 +124,25 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
+	it("calls markCrawlFailed immediately on crawl failure so the canary sees a terminal state", async () => {
+		const failingCrawl: CrawlArticle = async () => ({ status: "failed" });
+		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
+
+		const handler = createHandler({
+			crawlArticle: failingCrawl,
+			markCrawlFailed,
+		});
+
+		await expect(
+			handler(createSqsEvent({ url: "https://example.com/unreachable" }), stubContext, () => {}),
+		).rejects.toThrow();
+
+		expect(markCrawlFailed).toHaveBeenCalledWith({
+			url: "https://example.com/unreachable",
+			reason: "crawl-failed",
+		});
+	});
+
 	it("throws when the event detail is invalid", async () => {
 		const handler = createHandler();
 		const invalidEvent: SQSEvent = {

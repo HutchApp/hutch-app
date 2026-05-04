@@ -72,6 +72,13 @@ export function initSaveLinkWork(deps: {
 		if (crawlResult.status !== "fetched") {
 			const reason = `crawl-${crawlResult.status}`;
 			logParseError({ url, reason });
+			// markCrawlStage only updates crawlStage (not crawlStatus), so this
+			// "failed" status survives SQS redelivery. If a retry succeeds, the
+			// downstream selector's unconditional markCrawlReady overwrites it.
+			// Without this, the DLQ path (~200s with 3 retries × 60s visibility)
+			// exceeds the tier-1+ canary's 180s poll budget and readers see
+			// "pending" instead of a clear terminal state.
+			await markCrawlFailed({ url, reason });
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${reason}`);
 		}

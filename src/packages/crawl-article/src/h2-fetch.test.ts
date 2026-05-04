@@ -436,7 +436,7 @@ describe("withH2Fallback", () => {
 		},
 	);
 
-	it("propagates baseFetch error when there is no signal (no timeout to detect)", async () => {
+	it("propagates baseFetch error when there is no signal and no connection error code", async () => {
 		const socketError = new Error("socket hang up");
 		const baseFetch: typeof fetch = async () => {
 			throw socketError;
@@ -447,4 +447,31 @@ describe("withH2Fallback", () => {
 		await expect(wrapped("https://example.com")).rejects.toBe(socketError);
 		expect(curlImpl).not.toHaveBeenCalled();
 	});
+
+	it.each(["ECONNRESET", "EPIPE", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_SOCKET"])(
+		"falls back to curl when baseFetch throws %s with a live signal",
+		async (code) => {
+			const connError = Object.assign(new Error(`read ${code}`), { code });
+			const baseFetch: typeof fetch = async () => {
+				throw connError;
+			};
+			const signal = AbortSignal.timeout(5000);
+			const curlImpl = jest.fn<ReturnType<typeof fetchCurl>, Parameters<typeof fetchCurl>>(async () =>
+				new Response("<html>curl ok</html>", { status: 200, headers: { "content-type": "text/html" } }),
+			);
+			const wrapped = withH2Fallback(baseFetch, jest.fn(), curlImpl);
+
+			const response = await wrapped("https://hex.ooo/page.html", {
+				headers: { "user-agent": "Test/1.0" },
+				signal,
+			});
+
+			expect(response.status).toBe(200);
+			expect(await response.text()).toBe("<html>curl ok</html>");
+			expect(curlImpl).toHaveBeenCalledWith("https://hex.ooo/page.html", {
+				headers: { "user-agent": "Test/1.0" },
+				signal,
+			});
+		},
+	);
 });

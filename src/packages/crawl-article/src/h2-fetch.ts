@@ -118,6 +118,10 @@ function toFetchHeaders(incoming: http2.IncomingHttpHeaders): Headers {
  * Node.js's and passes Cloudflare's JA3/JA4 heuristics. Clear network
  * failures (DNS, connection refused) and aborts skip curl since they would
  * fail the same way and only add latency.
+ *
+ * The primary fetch also falls back to curl on connection-level errors
+ * (ECONNRESET, socket hangup) because curl's different TLS stack (OpenSSL
+ * vs undici) may succeed where Node's fetch was rejected.
  */
 export function withH2Fallback(
 	baseFetch: typeof fetch,
@@ -130,9 +134,15 @@ export function withH2Fallback(
 			response = await baseFetch(input, init);
 		} catch (error) {
 			const signal = init?.signal ?? undefined;
-			if (!signal?.aborted || !isTimeoutError(signal.reason)) throw error;
-			const url = urlFromInput(input);
-			return curlFetchImpl(url, { headers: toPlainHeaders(init?.headers) });
+			if (signal?.aborted && isTimeoutError(signal.reason)) {
+				const url = urlFromInput(input);
+				return curlFetchImpl(url, { headers: toPlainHeaders(init?.headers) });
+			}
+			if (isConnectionResetError(error) && !signal?.aborted) {
+				const url = urlFromInput(input);
+				return curlFetchImpl(url, { headers: toPlainHeaders(init?.headers), signal });
+			}
+			throw error;
 		}
 		if (response.status !== 403) return response;
 		if (response.headers.get("server")?.toLowerCase() !== "cloudflare") return response;
@@ -153,6 +163,25 @@ export function withH2Fallback(
 
 function isTimeoutError(reason: unknown): boolean {
 	return reason instanceof Error && reason.name === "TimeoutError";
+}
+
+/**
+ * Connection-level errors where curl's OpenSSL TLS stack may succeed where
+ * Node's undici was rejected (e.g. server resets after TLS fingerprint
+ * inspection). Generic errors without a code are excluded — only known
+ * connection error codes trigger the fallback.
+ */
+const CONNECTION_RESET_CODES = new Set([
+	"ECONNRESET",
+	"EPIPE",
+	"UND_ERR_CONNECT_TIMEOUT",
+	"UND_ERR_SOCKET",
+]);
+
+function isConnectionResetError(error: unknown): boolean {
+	if (!(error instanceof Error)) return false;
+	if (!("code" in error) || typeof error.code !== "string") return false;
+	return CONNECTION_RESET_CODES.has(error.code);
 }
 
 const NETWORK_ERROR_CODES = new Set([
