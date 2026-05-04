@@ -76,6 +76,22 @@ describe("extractUrls", () => {
 		expect(result.urls).toEqual(["https://EXAMPLE.com/", "https://example.com/post"]);
 	});
 
+	it("preserves URLs with query strings and fragments during normalization", () => {
+		const text = [
+			"https://example.com/?q=test",
+			"https://example.com/#section",
+			"https://example.com/page?a=1#top",
+		].join("\n");
+
+		const result = extractUrls(Buffer.from(text));
+
+		expect(result.urls).toEqual([
+			"https://example.com/?q=test",
+			"https://example.com/#section",
+			"https://example.com/page?a=1#top",
+		]);
+	});
+
 	it("caps the result at MAX_URLS_PER_IMPORT and reports truncation", () => {
 		const urls = Array.from(
 			{ length: MAX_URLS_PER_IMPORT + 5 },
