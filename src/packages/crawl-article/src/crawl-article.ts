@@ -1,8 +1,8 @@
 import { parseHTML } from "linkedom";
 import { withAiaChasing } from "./aia-fetch";
 import type { CrawlArticle, CrawlArticleResult, ThumbnailImage } from "./crawl-article.types";
-import type { fetchCurl } from "./curl-fetch";
-import { type fetchH2, withH2Fallback } from "./h2-fetch";
+import { fetchCurl } from "./curl-fetch";
+import { fetchH2, withH2Fallback } from "./h2-fetch";
 import { headerOrUndefined } from "./header-utils";
 
 const FETCH_TIMEOUT_MS = 10000;
