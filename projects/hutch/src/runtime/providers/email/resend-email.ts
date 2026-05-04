@@ -6,13 +6,16 @@ export function initResendEmail(apiKey: string): { sendEmail: SendEmail } {
 	const resend = new Resend(apiKey);
 
 	const sendEmail: SendEmail = async (message) => {
-		await resend.emails.send({
+		const result = await resend.emails.send({
 			from: message.from,
 			to: message.to,
 			subject: message.subject,
 			html: message.html,
 			...(message.bcc && { bcc: message.bcc }),
 		});
+		if (result.error) {
+			throw new Error(`Resend ${result.error.name}: ${result.error.message}`);
+		}
 	};
 
 	return { sendEmail };
