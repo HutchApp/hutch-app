@@ -190,7 +190,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		sendComponent(res, renderPage(req, LoginPage({ returnUrl, userCount })));
+		sendComponent(req, res, renderPage(req, LoginPage({ returnUrl, userCount })));
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
@@ -200,7 +200,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!parsed.success) {
 			const userCount = await fetchUserCount();
 			sendComponent(
-				res,
+				req, res,
 				renderPage(req, LoginPage(
 					{
 						returnUrl,
@@ -220,7 +220,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!credentials.ok) {
 			const userCount = await fetchUserCount();
 			sendComponent(
-				res,
+				req, res,
 				renderPage(req, LoginPage(
 					{
 						returnUrl,
@@ -246,13 +246,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		sendComponent(
-			res,
-			renderPage(
-				req,
-				SignupPage({ returnUrl, userCount, loadedAt: deps.now().getTime() }),
-			),
-		);
+		sendComponent(req, res, renderPage(req, SignupPage({ returnUrl, userCount, loadedAt: deps.now().getTime() })));
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
@@ -283,7 +277,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!parsed.success) {
 			const userCount = await fetchUserCount();
 			sendComponent(
-				res,
+				req, res,
 				renderPage(req, SignupPage(
 					{
 						returnUrl,
@@ -304,7 +298,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (existing) {
 			const userCount = await fetchUserCount();
 			sendComponent(
-				res,
+				req, res,
 				renderPage(req, SignupPage(
 					{
 						returnUrl,
@@ -345,7 +339,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!parsedQuery.success) {
 			const userCount = await fetchUserCount();
 			sendComponent(
-				res,
+				req, res,
 				renderPage(req, SignupPage(
 					{
 						userCount,
@@ -364,14 +358,8 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const renderFailure = async (statusCode: number, globalError: string) => {
 			const userCount = await fetchUserCount();
 			sendComponent(
-				res,
-				renderPage(
-					req,
-					SignupPage(
-						{ userCount, loadedAt: deps.now().getTime(), globalError },
-						{ statusCode },
-					),
-				),
+				req, res,
+				renderPage(req, SignupPage({ userCount, loadedAt: deps.now().getTime(), globalError }, { statusCode })),
 			);
 		};
 
@@ -441,7 +429,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!token) {
 			sendComponent(
-				res,
+				req, res,
 				renderPage(req, VerifyEmailPage({
 					success: false,
 					error: "No verification token provided.",
@@ -454,7 +442,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		if (!verifyResult.ok) {
 			sendComponent(
-				res,
+				req, res,
 				renderPage(req, VerifyEmailPage({
 					success: false,
 					error: "This verification link is invalid or has already been used.",
@@ -471,7 +459,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			await deps.markSessionEmailVerified(sessionId);
 		}
 
-		sendComponent(res, renderPage(req, VerifyEmailPage({ success: true })));
+		sendComponent(req, res, renderPage(req, VerifyEmailPage({ success: true })));
 	});
 
 	router.post("/logout", async (req: Request, res: Response) => {
