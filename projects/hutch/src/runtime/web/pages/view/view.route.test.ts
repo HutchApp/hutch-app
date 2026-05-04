@@ -1084,6 +1084,81 @@ describe("View routes", () => {
 			expect(
 				doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
 			).toBe(`https://readplace.com/view/${ENCODED}`);
+			expect(
+				doc
+					.querySelector('meta[name="twitter:description"]')
+					?.getAttribute("content"),
+			).toBe("A lovely article.");
+			expect(
+				doc.querySelector('meta[name="twitter:image"]')?.getAttribute("content"),
+			).toBe("https://cdn.example.com/hero.jpg");
+		});
+
+		it("re-primes the crawl when imageUrl is missing and the crawl is in a terminal state", async () => {
+			const parseArticle: ParseArticle = async () => ({
+				ok: true,
+				article: {
+					title: "Hello",
+					siteName: "example.com",
+					excerpt: "An article.",
+					wordCount: 100,
+					content: "<p>Body</p>",
+				},
+			});
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
+				parseArticle,
+			});
+			// Pre-populate: article exists with no imageUrl and crawl="ready". This
+			// simulates a return visitor on a previously-cached article whose
+			// upstream thumbnail wasn't extracted on the first crawl.
+			await fixture.articleStore.saveArticleGlobally({
+				url: ARTICLE_URL,
+				metadata: {
+					title: "Hello",
+					siteName: "example.com",
+					excerpt: "An article.",
+					wordCount: 100,
+				},
+				estimatedReadTime: MinutesSchema.parse(1),
+			});
+			await fixture.articleCrawl.markCrawlReady({ url: ARTICLE_URL });
+			let markCrawlPendingCalls = 0;
+			const { app } = createTestApp({
+				...fixture,
+				articleCrawl: {
+					findArticleCrawlStatus: fixture.articleCrawl.findArticleCrawlStatus,
+					markCrawlPending: async (params) => {
+						markCrawlPendingCalls += 1;
+						await fixture.articleCrawl.markCrawlPending(params);
+					},
+					forceMarkCrawlPending: fixture.articleCrawl.forceMarkCrawlPending,
+					markCrawlReady: fixture.articleCrawl.markCrawlReady,
+					markCrawlFailed: fixture.articleCrawl.markCrawlFailed,
+					markCrawlStage: fixture.articleCrawl.markCrawlStage,
+				},
+				// Force freshness to "skip" so the only path that can call
+				// markCrawlPending is the imageUrl self-heal in view.page.ts.
+				freshness: { refreshArticleIfStale: async () => ({ action: "skip" }) },
+				parser: {
+					parseArticle,
+					crawlArticle: fixture.parser.crawlArticle,
+				},
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
+				},
+			});
+
+			const response = await request(app).get(`/view/${ENCODED}`);
+			expect(response.status).toBe(200);
+			expect(markCrawlPendingCalls).toBe(1);
 		});
 
 		it("falls back to the Readplace default images when article has no imageUrl", async () => {
@@ -1575,6 +1650,7 @@ describe("View routes", () => {
 					siteName: "example.com",
 					excerpt: "Cached excerpt.",
 					wordCount: 200,
+					imageUrl: "https://cdn.example.com/cached.jpg",
 				},
 				estimatedReadTime: MinutesSchema.parse(2),
 			});

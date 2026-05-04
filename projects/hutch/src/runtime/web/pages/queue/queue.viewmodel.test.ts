@@ -379,17 +379,17 @@ describe("toQueueViewModel", () => {
 		expect(vm.articles[0].excerpt).toBe("Decision-helper blurb.");
 	});
 
-	it("should fall back to the AI summary when the excerpt is absent (legacy ready row)", () => {
+	it("should fall back to the metadata excerpt (not the AI summary) when the AI excerpt is absent (legacy ready row)", () => {
 		const article = makeArticle();
 		const summaryByUrl = new Map<string, GeneratedSummary | undefined>([
-			[ARTICLE_URL, { status: "ready", summary: "AI-generated summary." }],
+			[ARTICLE_URL, { status: "ready", summary: "Long AI summary." }],
 		]);
 		const vm = toQueueViewModel(makeResult([article]), DEFAULT_FILTERS, {
 			now: NOW,
 			summaryByUrl,
 		});
 
-		expect(vm.articles[0].excerpt).toBe("AI-generated summary.");
+		expect(vm.articles[0].excerpt).toBe("An excerpt");
 	});
 
 	it("should fall back to the metadata excerpt when the summary is pending", () => {

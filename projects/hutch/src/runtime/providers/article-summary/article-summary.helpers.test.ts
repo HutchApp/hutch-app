@@ -14,13 +14,22 @@ describe("pickExcerpt", () => {
 		).toBe("Short decision-helper blurb.");
 	});
 
-	it("falls back to the summary text when status is ready but excerpt is absent", () => {
+	it("returns the fallback when status is ready but excerpt is absent (does not use summary text)", () => {
 		expect(
 			pickExcerpt(
-				{ status: "ready", summary: "AI-generated summary." },
+				{ status: "ready", summary: "Long AI summary covering many points." },
 				"Parsed excerpt.",
 			),
-		).toBe("AI-generated summary.");
+		).toBe("Parsed excerpt.");
+	});
+
+	it("returns the fallback when status is ready but excerpt is the empty string", () => {
+		expect(
+			pickExcerpt(
+				{ status: "ready", summary: "AI summary.", excerpt: "" },
+				"Parsed excerpt.",
+			),
+		).toBe("Parsed excerpt.");
 	});
 
 	it("returns the fallback when summary is undefined", () => {

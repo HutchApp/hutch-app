@@ -136,6 +136,25 @@ function handleViewArticle(deps: ViewDependencies) {
 			article: { url: articleUrl, metadata, estimatedReadTime },
 			pollUrlBuilder,
 		});
+
+		// Self-heal social cards when an article's stored thumbnail is missing but
+		// the crawl already reached a terminal state. Without this, FB/X scrapers
+		// keep getting the Readplace fallback even after the upstream page later
+		// exposes an og:image. Skip when freshness already re-primed in this
+		// request (avoids double-pinning the worker on the same render).
+		const reprimedThisRequest =
+			freshness.action === "new" || freshness.action === "reprime";
+		const crawlIsTerminal =
+			state.crawl?.status === "ready" || state.crawl?.status === "failed";
+		if (
+			!reprimedThisRequest &&
+			metadata.imageUrl === undefined &&
+			crawlIsTerminal
+		) {
+			await deps.markCrawlPending({ url: articleUrl });
+			await deps.publishSaveAnonymousLink({ url: articleUrl });
+		}
+
 		const utmParams = collectUtmParams(req.query);
 
 		const actions: ViewAction[] = [

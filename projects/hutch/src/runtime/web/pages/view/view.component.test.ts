@@ -116,6 +116,7 @@ describe("ViewPage", () => {
 	it("emits OG metadata using the article title and excerpt", () => {
 		const doc = render();
 
+		const canonical = `https://readplace.com/view/${encodeURIComponent("https://example.com/post")}`;
 		expect(
 			doc.querySelector('meta[property="og:title"]')?.getAttribute("content"),
 		).toBe("Hello World | Reader View");
@@ -128,16 +129,87 @@ describe("ViewPage", () => {
 			doc.querySelector('meta[property="og:image"]')?.getAttribute("content"),
 		).toBe("https://cdn.example.com/hero.jpg");
 		expect(
+			doc
+				.querySelector('meta[property="og:image:alt"]')
+				?.getAttribute("content"),
+		).toBe("Hello World");
+		expect(
 			doc.querySelector('meta[property="og:type"]')?.getAttribute("content"),
 		).toBe("article");
 		expect(
+			doc.querySelector('meta[property="og:url"]')?.getAttribute("content"),
+		).toBe(canonical);
+		expect(
+			doc
+				.querySelector('meta[property="og:site_name"]')
+				?.getAttribute("content"),
+		).toBe("Readplace");
+		expect(
 			doc.querySelector('link[rel="canonical"]')?.getAttribute("href"),
-		).toBe(
-			`https://readplace.com/view/${encodeURIComponent("https://example.com/post")}`,
-		);
+		).toBe(canonical);
 	});
 
-	it("falls back to the Readplace default images when article has no imageUrl", () => {
+	it("emits Twitter Card metadata mirroring the article fields when imageUrl is set", () => {
+		const doc = render();
+
+		expect(
+			doc.querySelector('meta[name="twitter:title"]')?.getAttribute("content"),
+		).toBe("Hello World | Reader View");
+		expect(
+			doc
+				.querySelector('meta[name="twitter:description"]')
+				?.getAttribute("content"),
+		).toBe("A lovely article.");
+		expect(
+			doc.querySelector('meta[name="twitter:image"]')?.getAttribute("content"),
+		).toBe("https://cdn.example.com/hero.jpg");
+	});
+
+	it("uses the AI excerpt for og:description and twitter:description when summary is ready with an excerpt", () => {
+		const doc = render({
+			...baseInput,
+			summary: {
+				status: "ready",
+				summary: "Long TL;DR that should not surface in social cards.",
+				excerpt: "AI-curated excerpt.",
+			},
+		});
+
+		expect(
+			doc
+				.querySelector('meta[property="og:description"]')
+				?.getAttribute("content"),
+		).toBe("AI-curated excerpt.");
+		expect(
+			doc
+				.querySelector('meta[name="twitter:description"]')
+				?.getAttribute("content"),
+		).toBe("AI-curated excerpt.");
+	});
+
+	it("falls back to metadata.excerpt (not summary text) when summary is ready without an excerpt", () => {
+		const doc = render({
+			...baseInput,
+			metadata: { ...baseInput.metadata, excerpt: "Fallback." },
+			summary: {
+				status: "ready",
+				summary: "Long TL;DR that must not surface in social cards.",
+			},
+		});
+
+		expect(
+			doc
+				.querySelector('meta[property="og:description"]')
+				?.getAttribute("content"),
+		).toBe("Fallback.");
+		expect(
+			doc
+				.querySelector('meta[name="twitter:description"]')
+				?.getAttribute("content"),
+		).toBe("Fallback.");
+	});
+
+	it("falls back to the Readplace default images and alt when article has no imageUrl", () => {
 		const { imageUrl: _unused, ...metadataNoImage } = baseInput.metadata;
 		const doc = render({ ...baseInput, metadata: metadataNoImage });
 
@@ -149,6 +221,11 @@ describe("ViewPage", () => {
 			?.getAttribute("content");
 		expect(ogImage).toMatch(/og-image-1200x630\.png$/);
 		expect(twitterImage).toMatch(/twitter-card-1200x600\.png$/);
+		expect(
+			doc
+				.querySelector('meta[property="og:image:alt"]')
+				?.getAttribute("content"),
+		).toBe("Readplace — A read-it-later app");
 	});
 
 	it("falls back to 'View on Readplace.' description when excerpt is empty", () => {
