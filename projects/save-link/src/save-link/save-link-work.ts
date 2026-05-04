@@ -72,6 +72,9 @@ export function initSaveLinkWork(deps: {
 		if (crawlResult.status !== "fetched") {
 			const reason = `crawl-${crawlResult.status}`;
 			logParseError({ url, reason });
+			if (crawlResult.status === "failed") {
+				await markCrawlFailed({ url, reason });
+			}
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${reason}`);
 		}
