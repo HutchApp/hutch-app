@@ -65,6 +65,7 @@ interface AuthDependencies {
 	consumePendingSignup: ConsumePendingSignup;
 	appOrigin: string;
 	baseUrl: string;
+	staticBaseUrl: string;
 	logError: (message: string, error?: Error) => void;
 }
 
@@ -91,12 +92,13 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 	const sendWelcomeEmail = (email: string): void => {
 		const installUrl = `${deps.baseUrl}/install`;
+		const avatarUrl = `${deps.staticBaseUrl}/fayner-brack.jpg`;
 		deps.sendEmail({
 			from: WELCOME_EMAIL_FROM,
 			to: email,
 			bcc: "readplace+welcome@readplace.com",
 			subject: "Welcome to Readplace",
-			html: buildWelcomeEmailHtml({ installUrl }),
+			html: buildWelcomeEmailHtml({ installUrl, avatarUrl }),
 		}).catch((err) => {
 			deps.logError("[Email] Welcome email failed", err instanceof Error ? err : new Error(String(err)));
 		});

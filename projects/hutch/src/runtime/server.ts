@@ -381,6 +381,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		consumePendingSignup: deps.consumePendingSignup,
 		appOrigin,
 		baseUrl: deps.baseUrl,
+		staticBaseUrl,
 		logError: deps.logError,
 	});
 	app.use(authRouter);
