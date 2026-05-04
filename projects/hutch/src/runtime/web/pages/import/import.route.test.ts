@@ -229,6 +229,178 @@ describe("Import routes", () => {
 		});
 	});
 
+	describe("GET /import/:id master checkbox", () => {
+		it("renders the master checkbox checked when every row is selected", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const file = Buffer.from("https://example.com/a https://example.com/b");
+			const { body, contentType } = multipartBody("urls.txt", file);
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+
+			const response = await agent.get(create.headers.location);
+
+			const doc = new JSDOM(response.text).window.document;
+			const master = doc.querySelector<HTMLInputElement>("[data-test-import-select-all]");
+			assert(master, "master checkbox must exist");
+			expect(master.hasAttribute("checked")).toBe(true);
+			expect(master.hasAttribute("data-import-indeterminate")).toBe(false);
+		});
+
+		it("renders the master checkbox unchecked-with-indeterminate when partially selected", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const file = Buffer.from("https://example.com/a https://example.com/b");
+			const { body, contentType } = multipartBody("urls.txt", file);
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+			const sessionPath = create.headers.location;
+			await agent
+				.post(`${sessionPath}/toggle`)
+				.type("form")
+				.send({ index: 0, checked: "false" });
+
+			const response = await agent.get(sessionPath);
+
+			const doc = new JSDOM(response.text).window.document;
+			const master = doc.querySelector<HTMLInputElement>("[data-test-import-select-all]");
+			assert(master, "master checkbox must exist");
+			expect(master.hasAttribute("checked")).toBe(false);
+			expect(master.hasAttribute("data-import-indeterminate")).toBe(true);
+		});
+
+		it("renders the master checkbox unchecked with no indeterminate marker when all are deselected", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const file = Buffer.from("https://example.com/a https://example.com/b");
+			const { body, contentType } = multipartBody("urls.txt", file);
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+			const sessionPath = create.headers.location;
+			await agent.post(`${sessionPath}/toggle-all`).type("form").send({ checked: "false" });
+
+			const response = await agent.get(sessionPath);
+
+			const doc = new JSDOM(response.text).window.document;
+			const master = doc.querySelector<HTMLInputElement>("[data-test-import-select-all]");
+			assert(master, "master checkbox must exist");
+			expect(master.hasAttribute("checked")).toBe(false);
+			expect(master.hasAttribute("data-import-indeterminate")).toBe(false);
+		});
+	});
+
+	describe("POST /import/:id/toggle-all", () => {
+		it("deselects every row and updates the summary to 0 of N", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const file = Buffer.from("https://example.com/a https://example.com/b https://example.com/c");
+			const { body, contentType } = multipartBody("urls.txt", file);
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+			const sessionPath = create.headers.location;
+
+			const toggleResp = await agent
+				.post(`${sessionPath}/toggle-all`)
+				.type("form")
+				.send({ checked: "false" });
+			expect(toggleResp.status).toBe(303);
+
+			const review = await agent.get(sessionPath);
+			const doc = new JSDOM(review.text).window.document;
+			const checkboxes = doc.querySelectorAll<HTMLInputElement>("[data-test-import-checkbox]");
+			expect(checkboxes).toHaveLength(3);
+			for (const cb of checkboxes) {
+				expect(cb.hasAttribute("checked")).toBe(false);
+			}
+			expect(doc.querySelector("[data-test-import-summary]")?.textContent).toContain("0 of 3 selected");
+		});
+
+		it("re-selects every row from a partially-deselected state", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const file = Buffer.from("https://example.com/a https://example.com/b");
+			const { body, contentType } = multipartBody("urls.txt", file);
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+			const sessionPath = create.headers.location;
+			await agent
+				.post(`${sessionPath}/toggle`)
+				.type("form")
+				.send({ index: 0, checked: "false" });
+
+			const toggleResp = await agent
+				.post(`${sessionPath}/toggle-all`)
+				.type("form")
+				.send({ checked: "true" });
+			expect(toggleResp.status).toBe(303);
+
+			const review = await agent.get(sessionPath);
+			const doc = new JSDOM(review.text).window.document;
+			const checkboxes = doc.querySelectorAll<HTMLInputElement>("[data-test-import-checkbox]");
+			for (const cb of checkboxes) {
+				expect(cb.hasAttribute("checked")).toBe(true);
+			}
+			expect(doc.querySelector("[data-test-import-summary]")?.textContent).toContain("2 of 2 selected");
+		});
+
+		it("deselects rows on pages the user is not currently viewing", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const urls = Array.from({ length: 60 }, (_v, i) => `https://example.com/post-${i}`);
+			const { body, contentType } = multipartBody("many.txt", Buffer.from(urls.join("\n")));
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+			const sessionPath = create.headers.location;
+
+			await agent.post(`${sessionPath}/toggle-all`).type("form").send({ checked: "false" });
+
+			const page2 = await agent.get(`${sessionPath}?page=2`);
+			const doc2 = new JSDOM(page2.text).window.document;
+			const page2Checkboxes = doc2.querySelectorAll<HTMLInputElement>("[data-test-import-checkbox]");
+			expect(page2Checkboxes).toHaveLength(10);
+			for (const cb of page2Checkboxes) {
+				expect(cb.hasAttribute("checked")).toBe(false);
+			}
+		});
+
+		it("preserves the current page in the redirect", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const urls = Array.from({ length: 60 }, (_v, i) => `https://example.com/post-${i}`);
+			const { body, contentType } = multipartBody("many.txt", Buffer.from(urls.join("\n")));
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+			const sessionPath = create.headers.location;
+
+			const toggleResp = await agent
+				.post(`${sessionPath}/toggle-all?page=2`)
+				.type("form")
+				.send({ checked: "false" });
+
+			expect(toggleResp.status).toBe(303);
+			expect(toggleResp.headers.location).toBe(`${sessionPath}?page=2`);
+		});
+
+		it("returns 422 for malformed body", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+			const { body, contentType } = multipartBody("urls.txt", Buffer.from("https://example.com/a"));
+			const create = await agent.post("/import").set("Content-Type", contentType).send(body);
+
+			const response = await agent
+				.post(`${create.headers.location}/toggle-all`)
+				.type("form")
+				.send({ checked: "maybe" });
+
+			expect(response.status).toBe(422);
+		});
+
+		it("returns 422 for an invalid session id format", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+
+			const response = await agent
+				.post("/import/not-an-id/toggle-all")
+				.type("form")
+				.send({ checked: "false" });
+
+			expect(response.status).toBe(422);
+		});
+	});
+
 	describe("POST /import/:id/commit", () => {
 		it("imports selected URLs into the user's queue and deletes the session", async () => {
 			const { app, auth, articleStore } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));

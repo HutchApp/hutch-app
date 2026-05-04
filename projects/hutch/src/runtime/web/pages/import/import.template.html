@@ -1,6 +1,20 @@
     <main class="import">
       <h1 class="import__title">Review imported links</h1>
-      <p class="import__summary" data-test-import-summary>{{totalSelected}} of {{totalUrls}} selected</p>
+      <form method="POST" action="{{toggleAllUrl}}" class="import__select-all"
+            hx-boost="true" hx-target="main" hx-select="main" hx-swap="outerHTML show:none"
+            data-test-form="import-toggle-all">
+        <input type="hidden" name="checked" value="{{#if allSelected}}false{{else}}true{{/if}}">
+        <label class="import__select-all-label">
+          <input type="checkbox"
+                 name="confirm"
+                 {{#if allSelected}}checked{{/if}}
+                 {{#if someSelected}}data-import-indeterminate{{/if}}
+                 onclick="this.form.requestSubmit()"
+                 data-test-import-select-all>
+          <span class="import__summary" data-test-import-summary>{{totalSelected}} of {{totalUrls}} selected</span>
+        </label>
+        <noscript><button type="submit" class="import__row-toggle-btn">Toggle all</button></noscript>
+      </form>
       {{#if truncated}}
       <p class="import__truncated-banner" data-test-import-truncated>Your file contained {{totalFoundInFile}} links. We&rsquo;ve imported the first {{totalUrls}}.</p>
       {{/if}}
