@@ -1,6 +1,7 @@
 import type { Request, Response, Router } from "express";
 import express from "express";
 import { z } from "zod";
+import type { HutchLogger } from "@packages/hutch-logger";
 import type {
 	CountUsers,
 	CreateGoogleUser,
@@ -46,6 +47,24 @@ const CheckoutSuccessQuerySchema = z.object({ session_id: z.string().min(1) }).p
 const EMAIL_FROM = "Fayner Brack <readplace@readplace.com>";
 const WELCOME_EMAIL_FROM = "Fayner from Readplace <fayner@readplace.com>";
 
+const SIGNUP_MIN_SUBMIT_MS = 2500;
+
+export type BotDefenseRejectReason =
+	| "honeypot"
+	| "submit_too_fast"
+	| "missing_timestamp"
+	| "invalid_timestamp";
+
+export interface BotDefenseEvent {
+	stream: "bot-defense";
+	event: "signup_rejected";
+	reason: BotDefenseRejectReason;
+	timestamp: string;
+	ip?: string;
+	email_domain?: string;
+	time_to_submit_ms?: number;
+}
+
 interface AuthDependencies {
 	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
@@ -67,6 +86,48 @@ interface AuthDependencies {
 	baseUrl: string;
 	staticBaseUrl: string;
 	logError: (message: string, error?: Error) => void;
+	now: () => Date;
+	botDefenseLogger: HutchLogger.Typed<BotDefenseEvent>;
+}
+
+type BotDefenseResult =
+	| { trip: false }
+	| { trip: true; reason: BotDefenseRejectReason; timeToSubmitMs?: number };
+
+function checkSignupBotDefense(
+	body: Record<string, unknown>,
+	nowMs: number,
+): BotDefenseResult {
+	const website = body.website;
+	if (typeof website === "string" && website.length > 0) {
+		return { trip: true, reason: "honeypot" };
+	}
+
+	const rawLoadedAt = body.loadedAt;
+	if (typeof rawLoadedAt !== "string" || rawLoadedAt.length === 0) {
+		return { trip: true, reason: "missing_timestamp" };
+	}
+
+	const loadedAt = Number.parseInt(rawLoadedAt, 10);
+	if (!Number.isFinite(loadedAt) || String(loadedAt) !== rawLoadedAt) {
+		return { trip: true, reason: "invalid_timestamp" };
+	}
+
+	const elapsed = nowMs - loadedAt;
+	if (elapsed < SIGNUP_MIN_SUBMIT_MS) {
+		return { trip: true, reason: "submit_too_fast", timeToSubmitMs: elapsed };
+	}
+
+	return { trip: false };
+}
+
+function extractEmailDomain(body: Record<string, unknown>): string | undefined {
+	const email = body.email;
+	if (typeof email !== "string") return undefined;
+	const at = email.indexOf("@");
+	if (at === -1) return undefined;
+	const domain = email.slice(at + 1).toLowerCase();
+	return domain.length > 0 ? domain : undefined;
 }
 
 export function initAuthRoutes(deps: AuthDependencies): Router {
@@ -185,11 +246,38 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		sendComponent(res, renderPage(req, SignupPage({ returnUrl, userCount })));
+		sendComponent(
+			res,
+			renderPage(
+				req,
+				SignupPage({ returnUrl, userCount, loadedAt: deps.now().getTime() }),
+			),
+		);
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
 		const returnUrl = extractReturnUrl(req.query);
+		const body = (req.body ?? {}) as Record<string, unknown>;
+
+		const botCheck = checkSignupBotDefense(body, deps.now().getTime());
+		if (botCheck.trip) {
+			const event: BotDefenseEvent = {
+				stream: "bot-defense",
+				event: "signup_rejected",
+				reason: botCheck.reason,
+				timestamp: deps.now().toISOString(),
+			};
+			if (req.ip) event.ip = req.ip;
+			const emailDomain = extractEmailDomain(body);
+			if (emailDomain) event.email_domain = emailDomain;
+			if (botCheck.timeToSubmitMs !== undefined) {
+				event.time_to_submit_ms = botCheck.timeToSubmitMs;
+			}
+			deps.botDefenseLogger.info(event);
+			res.redirect(303, "/?signup=pending");
+			return;
+		}
+
 		const parsed = SignupSchema.safeParse(req.body);
 
 		if (!parsed.success) {
@@ -200,6 +288,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 					{
 						returnUrl,
 						userCount,
+						loadedAt: deps.now().getTime(),
 						email: req.body?.email,
 						errors: flattenZodErrors(parsed.error.issues),
 					},
@@ -220,6 +309,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 					{
 						returnUrl,
 						userCount,
+						loadedAt: deps.now().getTime(),
 						email,
 						globalError: "An account with this email already exists",
 					},
@@ -259,6 +349,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 				renderPage(req, SignupPage(
 					{
 						userCount,
+						loadedAt: deps.now().getTime(),
 						globalError: "Missing checkout session — please start again.",
 					},
 					{ statusCode: 400 },
@@ -274,7 +365,13 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				res,
-				renderPage(req, SignupPage({ userCount, globalError }, { statusCode })),
+				renderPage(
+					req,
+					SignupPage(
+						{ userCount, loadedAt: deps.now().getTime(), globalError },
+						{ statusCode },
+					),
+				),
 			);
 		};
 

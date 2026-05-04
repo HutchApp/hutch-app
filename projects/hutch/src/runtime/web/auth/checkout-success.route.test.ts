@@ -34,6 +34,7 @@ describe("GET /auth/checkout/success", () => {
 			email: "unpaid@example.com",
 			password: "password123",
 			confirmPassword: "password123",
+			loadedAt: String(Date.now() - 5000),
 		});
 		const checkoutSessionId = CheckoutSessionIdSchema.parse(
 			new URL(signup.headers.location).pathname.replace(/^\//, ""),
@@ -101,6 +102,7 @@ describe("GET /auth/checkout/success", () => {
 			email: "race@example.com",
 			password: "password123",
 			confirmPassword: "password123",
+			loadedAt: String(Date.now() - 5000),
 		});
 		const checkoutSessionId = CheckoutSessionIdSchema.parse(
 			new URL(signup.headers.location).pathname.replace(/^\//, ""),

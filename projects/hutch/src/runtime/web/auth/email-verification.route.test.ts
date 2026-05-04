@@ -92,6 +92,7 @@ describe("Email verification", () => {
 				logParseError: () => {},
 				importSessionStore: initInMemoryImportSession({ now: () => new Date() }),
 				now: () => new Date(),
+				botDefenseLogger: { info: () => {}, error: () => {}, warn: () => {}, debug: () => {} },
 			});
 
 			const { successResponse } = await completeStripeSignup({
@@ -113,6 +114,7 @@ describe("Email verification", () => {
 				email: "existing@example.com",
 				password: "password123",
 				confirmPassword: "password123",
+				loadedAt: String(Date.now() - 5000),
 			});
 
 			expect(email.getSentEmails()).toHaveLength(0);

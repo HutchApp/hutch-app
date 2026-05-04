@@ -63,6 +63,7 @@ describe("createTestApp + createDefaultTestAppFixture", () => {
 			shared: fixture.shared,
 			stripe: fixture.stripe,
 			pendingSignup: fixture.pendingSignup,
+			botDefense: fixture.botDefense,
 		});
 
 		expect(typeof result.app).toBe("function");

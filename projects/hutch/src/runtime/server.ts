@@ -68,7 +68,9 @@ import type {
 	VerifyPasswordResetToken,
 } from "./providers/password-reset/password-reset.types";
 import type { OAuthModel } from "./providers/oauth/oauth-model";
+import type { HutchLogger } from "@packages/hutch-logger";
 import { initAuthRoutes } from "./web/auth/auth.page";
+import type { BotDefenseEvent } from "./web/auth/auth.page";
 import { initGoogleAuthRoutes } from "./web/auth/google-auth.page";
 import { SESSION_COOKIE_NAME } from "./web/auth/session-cookie";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
@@ -163,6 +165,7 @@ interface AppDependencies {
 	retrieveCheckoutSession: RetrieveCheckoutSession;
 	storePendingSignup: StorePendingSignup;
 	consumePendingSignup: ConsumePendingSignup;
+	botDefenseLogger: HutchLogger.Typed<BotDefenseEvent>;
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
@@ -390,6 +393,8 @@ export function createApp(dependencies: AppDependencies): Express {
 		baseUrl: deps.baseUrl,
 		staticBaseUrl,
 		logError: deps.logError,
+		now: deps.now,
+		botDefenseLogger: deps.botDefenseLogger,
 	});
 	app.use(authRouter);
 
