@@ -12,6 +12,7 @@ import { initSelectMostCompleteContent } from "../select-content/select-content"
 import { SELECT_CONTENT_TIMEOUTS } from "../select-content/timeouts";
 import { initPromoteTierToCanonical } from "../select-content/promote-tier-to-canonical";
 import { initFindContentSourceTier } from "../select-content/find-content-source-tier";
+import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
 import { initRecrawlContentExtractedHandler } from "../select-content/recrawl-content-extracted-handler";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
@@ -55,6 +56,11 @@ const { findContentSourceTier } = initFindContentSourceTier({
 	tableName: articlesTable,
 });
 
+const { markCrawlReady } = initDynamoDbArticleCrawl({
+	client: dynamoClient,
+	tableName: articlesTable,
+});
+
 const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
 	sqsClient,
 	queueUrl: generateSummaryQueueUrl,
@@ -71,6 +77,7 @@ export const handler = initRecrawlContentExtractedHandler({
 	selectMostCompleteContent,
 	promoteTierToCanonical,
 	findContentSourceTier,
+	markCrawlReady,
 	dispatchGenerateSummary,
 	publishEvent,
 	logger: consoleLogger,

@@ -7,6 +7,7 @@ import {
 	RecrawlContentExtractedEvent,
 	RecrawlCompletedEvent,
 } from "@packages/hutch-infra-components";
+import type { MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
 import type { ListAvailableTierSources } from "./list-available-tier-sources";
 import type { SelectMostCompleteContent } from "./select-content";
 import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
@@ -18,6 +19,7 @@ export function initRecrawlContentExtractedHandler(deps: {
 	selectMostCompleteContent: SelectMostCompleteContent;
 	promoteTierToCanonical: PromoteTierToCanonical;
 	findContentSourceTier: FindContentSourceTier;
+	markCrawlReady: MarkCrawlReady;
 	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
 	publishEvent: PublishEvent;
 	logger: HutchLogger;
@@ -27,6 +29,7 @@ export function initRecrawlContentExtractedHandler(deps: {
 		selectMostCompleteContent,
 		promoteTierToCanonical,
 		findContentSourceTier,
+		markCrawlReady,
 		dispatchGenerateSummary,
 		publishEvent,
 		logger,
@@ -114,6 +117,13 @@ export function initRecrawlContentExtractedHandler(deps: {
 					reason,
 				});
 			} else {
+				// Tie + canonical preserved: promoteTierToCanonical (the only writer
+				// of crawlStatus="ready") was skipped, so we must flip the row back
+				// out of the "pending" state that admin/recrawl's
+				// forceMarkCrawlPending unconditionally wrote — otherwise readers
+				// (and the Tier 1+ canary) poll a forever-"pending" row that never
+				// resolves, since the canonical content is already on disk.
+				await markCrawlReady({ url: detail.url });
 				logger.info("[RecrawlContentExtracted] tie kept canonical unchanged", {
 					url: detail.url,
 					reason,
