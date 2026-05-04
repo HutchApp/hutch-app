@@ -20,7 +20,6 @@ const PendingSignupRow = z.object({
 	passwordHash: dynamoField(z.string()),
 	userId: dynamoField(UserIdSchema),
 	returnUrl: dynamoField(z.string()),
-	expiresAt: z.number(),
 });
 
 export function initDynamoDbPendingSignup(deps: {
@@ -55,7 +54,6 @@ export function initDynamoDbPendingSignup(deps: {
 			ReturnValues: "ALL_OLD",
 		});
 		if (!Attributes) return null;
-		if (Attributes.expiresAt < Math.floor(Date.now() / 1000)) return null;
 
 		const returnUrl = Attributes.returnUrl ?? undefined;
 		if (Attributes.method === "email") {
