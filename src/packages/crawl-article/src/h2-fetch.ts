@@ -125,7 +125,15 @@ export function withH2Fallback(
 	curlFetchImpl: typeof fetchCurl = fetchCurl,
 ): typeof fetch {
 	return async (input, init) => {
-		const response = await baseFetch(input, init);
+		let response: Response;
+		try {
+			response = await baseFetch(input, init);
+		} catch (error) {
+			const signal = init?.signal ?? undefined;
+			if (!signal?.aborted || !isTimeoutError(signal.reason)) throw error;
+			const url = urlFromInput(input);
+			return curlFetchImpl(url, { headers: toPlainHeaders(init?.headers) });
+		}
 		if (response.status !== 403) return response;
 		if (response.headers.get("server")?.toLowerCase() !== "cloudflare") return response;
 		await response.text();
@@ -141,6 +149,10 @@ export function withH2Fallback(
 			return curlFetchImpl(url, fallbackInit);
 		}
 	};
+}
+
+function isTimeoutError(reason: unknown): boolean {
+	return reason instanceof Error && reason.name === "TimeoutError";
 }
 
 const NETWORK_ERROR_CODES = new Set([
