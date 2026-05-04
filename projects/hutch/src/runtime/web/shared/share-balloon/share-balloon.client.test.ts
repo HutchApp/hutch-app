@@ -15,7 +15,7 @@ const FIXTURE = `<!DOCTYPE html><html><body>
   <button type="button" data-share-balloon-close></button>
   <div data-share-balloon-buttons>
     <button type="button" data-share-balloon data-share-url="${ARTICLE_URL}" data-share-title="${ARTICLE_TITLE}"></button>
-    <button type="button" data-share-balloon-copy data-share-url="${ARTICLE_URL}"></button>
+    <button type="button" data-share-balloon-copy></button>
   </div>
   <span data-share-balloon-copied>Link copied!</span>
 </div>
