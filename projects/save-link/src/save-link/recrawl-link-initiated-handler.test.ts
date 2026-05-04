@@ -124,32 +124,6 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
-	it("markCrawlFailed and rethrows when saveLinkWork exceeds the Lambda's remaining-time budget", async () => {
-		// Hanging crawl simulates the Lambda-killed-mid-fetch scenario: never resolves.
-		const hangingCrawl: CrawlArticle = () => new Promise(() => {});
-		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
-		const publishEvent = jest.fn().mockResolvedValue(undefined);
-
-		const handler = createHandler({
-			crawlArticle: hangingCrawl,
-			markCrawlFailed,
-			publishEvent,
-		});
-
-		// Tight remaining time so the race fires almost immediately.
-		const tightContext: Context = { ...stubContext, getRemainingTimeInMillis: () => 5050 };
-
-		await expect(
-			handler(createSqsEvent({ url: "https://hex.ooo/library/last_question.html" }), tightContext, () => {}),
-		).rejects.toThrow(/exceeded.*budget/);
-
-		expect(markCrawlFailed).toHaveBeenCalledWith({
-			url: "https://hex.ooo/library/last_question.html",
-			reason: expect.stringMatching(/exceeded.*budget/),
-		});
-		expect(publishEvent).not.toHaveBeenCalled();
-	});
-
 	it("throws when the event detail is invalid", async () => {
 		const handler = createHandler();
 		const invalidEvent: SQSEvent = {

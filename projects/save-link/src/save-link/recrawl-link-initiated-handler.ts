@@ -1,4 +1,3 @@
-import assert from "node:assert";
 import type { SQSHandler } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle } from "@packages/crawl-article";
@@ -56,40 +55,14 @@ export function initRecrawlLinkInitiatedHandler(deps: {
 		logPrefix: "[RecrawlLinkInitiated]",
 	});
 
-	return async (event, context) => {
+	return async (event) => {
 		for (const record of event.Records) {
 			const envelope = JSON.parse(record.body);
 			const detail = RecrawlLinkInitiatedEvent.detailSchema.parse(envelope.detail);
 
 			logger.info("[RecrawlLinkInitiated] processing", { url: detail.url });
 
-			// Race against the Lambda's remaining budget. If saveLinkWork hangs
-			// past the deadline (e.g. an origin that accepts the TCP connection
-			// then stalls), AWS hard-kills the Lambda before any catch runs —
-			// so crawlStatus only flips to 'failed' after SQS retries exhaust
-			// (~180s with visibility-timeout=60 × maxReceiveCount=3), exactly
-			// racing the Tier 1+ canary's 180s budget. Rejecting the race ~5s
-			// before Lambda death leaves enough headroom to markCrawlFailed
-			// and exit cleanly so the canary and readers see 'failed' fast.
-			const workBudgetMs = context.getRemainingTimeInMillis() - 5000;
-			let timeoutHandle: NodeJS.Timeout | undefined;
-			try {
-				await Promise.race([
-					saveLinkWork(detail.url),
-					new Promise<never>((_, reject) => {
-						timeoutHandle = setTimeout(
-							() => reject(new Error(`recrawl worker exceeded ${workBudgetMs}ms budget`)),
-							workBudgetMs,
-						);
-					}),
-				]);
-			} catch (err) {
-				assert(err instanceof Error, "saveLinkWork and the budget timer always reject with an Error");
-				await deps.markCrawlFailed({ url: detail.url, reason: err.message });
-				throw err;
-			} finally {
-				clearTimeout(timeoutHandle);
-			}
+			await saveLinkWork(detail.url);
 
 			await publishEvent({
 				source: RecrawlContentExtractedEvent.source,
