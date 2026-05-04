@@ -1,18 +1,34 @@
 import { buildQueueUrl, parseQueueUrl } from "./queue.url";
 
 describe("parseQueueUrl", () => {
-	it("should default to unread status for empty query", () => {
+	it("should default to queue tab for empty query", () => {
 		const state = parseQueueUrl({});
-		expect(state).toEqual({ status: "unread", order: "desc", page: 1 });
+		expect(state).toEqual({ tab: "queue", order: "desc", page: 1 });
 	});
 
-	it("should parse valid status", () => {
-		expect(parseQueueUrl({ status: "read" }).status).toBe("read");
-		expect(parseQueueUrl({ status: "unread" }).status).toBe("unread");
+	it("should parse tab parameter", () => {
+		expect(parseQueueUrl({ tab: "done" }).tab).toBe("done");
+		expect(parseQueueUrl({ tab: "queue" }).tab).toBe("queue");
 	});
 
-	it("should default to unread for invalid status", () => {
-		expect(parseQueueUrl({ status: "invalid" }).status).toBe("unread");
+	it("should default to queue tab for invalid tab", () => {
+		expect(parseQueueUrl({ tab: "invalid" }).tab).toBe("queue");
+	});
+
+	it("should map legacy status=read to done tab", () => {
+		expect(parseQueueUrl({ status: "read" }).tab).toBe("done");
+	});
+
+	it("should map legacy status=unread to queue tab", () => {
+		expect(parseQueueUrl({ status: "unread" }).tab).toBe("queue");
+	});
+
+	it("should prefer tab over legacy status when both present", () => {
+		expect(parseQueueUrl({ tab: "queue", status: "read" }).tab).toBe("queue");
+	});
+
+	it("should default to queue tab for invalid legacy status", () => {
+		expect(parseQueueUrl({ status: "invalid" }).tab).toBe("queue");
 	});
 
 	it("should parse order", () => {
@@ -41,12 +57,12 @@ describe("buildQueueUrl", () => {
 		expect(buildQueueUrl({})).toBe("/queue");
 	});
 
-	it("should omit default status (unread)", () => {
-		expect(buildQueueUrl({ status: "unread" })).toBe("/queue");
+	it("should omit default tab (queue)", () => {
+		expect(buildQueueUrl({ tab: "queue" })).toBe("/queue");
 	});
 
-	it("should include non-default status", () => {
-		expect(buildQueueUrl({ status: "read" })).toBe("/queue?status=read");
+	it("should include non-default tab", () => {
+		expect(buildQueueUrl({ tab: "done" })).toBe("/queue?tab=done");
 	});
 
 	it("should omit default order (desc)", () => {
@@ -66,8 +82,8 @@ describe("buildQueueUrl", () => {
 	});
 
 	it("should combine multiple params", () => {
-		const url = buildQueueUrl({ status: "read", order: "asc", page: 3 });
-		expect(url).toContain("status=read");
+		const url = buildQueueUrl({ tab: "done", order: "asc", page: 3 });
+		expect(url).toContain("tab=done");
 		expect(url).toContain("order=asc");
 		expect(url).toContain("page=3");
 	});

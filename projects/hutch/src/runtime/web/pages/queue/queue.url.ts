@@ -1,14 +1,15 @@
 import { z } from "zod";
-import type { ArticleStatus } from "../../../domain/article/article.types";
 import type { SortOrder } from "../../../providers/article-store/article-store.types";
+import type { TabId } from "./queue.tabs";
 
 export interface QueueUrlState {
-	status: ArticleStatus;
+	tab: TabId;
 	order: SortOrder;
 	page: number;
 }
 
 const QueueQuerySchema = z.object({
+	tab: z.enum(["queue", "done"]).optional().catch(undefined),
 	status: z.enum(["unread", "read"]).optional().catch(undefined),
 	order: z.enum(["asc", "desc"]).optional().catch(undefined),
 	page: z.coerce.number().int().min(1).optional().catch(undefined),
@@ -16,8 +17,9 @@ const QueueQuerySchema = z.object({
 
 export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 	const parsed = QueueQuerySchema.parse(query);
+	const tab = parsed.tab ?? (parsed.status === "read" ? "done" : "queue");
 	return {
-		status: parsed.status ?? "unread",
+		tab,
 		order: parsed.order ?? "desc",
 		page: parsed.page ?? 1,
 	};
@@ -26,8 +28,8 @@ export function parseQueueUrl(query: Record<string, unknown>): QueueUrlState {
 export function buildQueueUrl(state: Partial<QueueUrlState>): string {
 	const params = new URLSearchParams();
 
-	if (state.status && state.status !== "unread") {
-		params.set("status", state.status);
+	if (state.tab && state.tab !== "queue") {
+		params.set("tab", state.tab);
 	}
 	if (state.order && state.order !== "desc") {
 		params.set("order", state.order);

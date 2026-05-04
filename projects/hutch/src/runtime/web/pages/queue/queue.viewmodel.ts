@@ -165,8 +165,8 @@ export function toQueueViewModel(
 		totalArticles: options?.totalArticles ?? result.total,
 		unreadCount: options?.unreadCount ?? result.total,
 		filterUrls: {
-			unread: buildQueueUrl({ ...baseFilters, status: "unread" }),
-			read: buildQueueUrl({ ...baseFilters, status: "read" }),
+			unread: buildQueueUrl({ ...baseFilters, tab: "queue" }),
+			read: buildQueueUrl({ ...baseFilters, tab: "done" }),
 		},
 		paginationUrls: {
 			prev:

@@ -2188,14 +2188,14 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-sort]")?.textContent).toContain("first");
 		});
 
-		it("should include status in sort toggle URL when on read tab", async () => {
+		it("should include tab in sort toggle URL when on done tab", async () => {
 			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
-			const response = await agent.get("/queue?status=read");
+			const response = await agent.get("/queue?tab=done");
 			const doc = new JSDOM(response.text).window.document;
 			const sortLink = doc.querySelector("[data-test-sort]");
-			expect(sortLink?.getAttribute("href")).toContain("status=read");
+			expect(sortLink?.getAttribute("href")).toContain("tab=done");
 		});
 
 		it("should toggle sort order from desc to asc", async () => {

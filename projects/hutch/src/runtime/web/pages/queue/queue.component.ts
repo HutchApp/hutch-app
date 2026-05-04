@@ -71,10 +71,10 @@ export function formatUnreadLabel(count: number): string {
 }
 
 function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: boolean; browser: BrowserName; onboardingDismissed: boolean }): QueueDisplayModel {
-	const activeStatus = vm.filters.status;
+	const activeTab = vm.filters.tab;
 	const nextOrder = vm.filters.order === "desc" ? "asc" : "desc";
 	const sortLabel = vm.filters.order === "desc" ? "Newest first ↓" : "Oldest first ↑";
-	const sortUrl = buildQueueUrl({ status: activeStatus, order: nextOrder });
+	const sortUrl = buildQueueUrl({ tab: activeTab, order: nextOrder });
 
 	const onboardingHtml = options.onboardingDismissed
 		? ""
@@ -92,9 +92,9 @@ function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: 
 		hasArticles: !vm.isEmpty,
 		onboardingHtml,
 		articles: vm.articles.map(toArticleDisplayModel),
-		filterUnreadClass: filterLinkClass(activeStatus === "unread"),
+		filterUnreadClass: filterLinkClass(activeTab === "queue"),
 		filterUnreadLabel: formatUnreadLabel(vm.unreadCount),
-		filterReadClass: filterLinkClass(activeStatus === "read"),
+		filterReadClass: filterLinkClass(activeTab === "done"),
 		filterUnreadUrl: vm.filterUrls.unread,
 		filterReadUrl: vm.filterUrls.read,
 		sortUrl,
