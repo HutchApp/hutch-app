@@ -73,6 +73,8 @@ import { initGoogleAuthRoutes } from "./web/auth/google-auth.page";
 import { SESSION_COOKIE_NAME } from "./web/auth/session-cookie";
 import { initForgotPasswordRoutes } from "./web/auth/forgot-password.page";
 import { initQueueRoutes } from "./web/pages/queue/queue.page";
+import { initImportSessionRoutes } from "./web/pages/import/import.page";
+import type { ImportSessionStore } from "./domain/import-session/import-session.types";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { initSaveRoutes } from "./web/pages/save/save.page";
 import { initViewRoutes } from "./web/pages/view/view.page";
@@ -155,6 +157,7 @@ interface AppDependencies {
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
 	logParseError: LogParseError;
+	importSessionStore: ImportSessionStore;
 	now: () => Date;
 	createCheckoutSession: CreateCheckoutSession;
 	retrieveCheckoutSession: RetrieveCheckoutSession;
@@ -444,6 +447,19 @@ export function createApp(dependencies: AppDependencies): Express {
 		now: deps.now,
 	});
 	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
+
+	const importRouter = initImportSessionRoutes({
+		importSessionStore: deps.importSessionStore,
+		saveArticle: deps.saveArticle,
+		updateArticleStatus: deps.updateArticleStatus,
+		markCrawlPending: deps.markCrawlPending,
+		markSummaryPending: deps.markSummaryPending,
+		publishUpdateFetchTimestamp: deps.publishUpdateFetchTimestamp,
+		publishLinkSaved: deps.publishLinkSaved,
+		refreshArticleIfStale: deps.refreshArticleIfStale,
+		logError: deps.logError,
+	});
+	app.use("/import", requireAuth, importRouter);
 
 	const saveRouter = initSaveRoutes();
 	app.use("/save", saveRouter);

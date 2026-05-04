@@ -59,6 +59,7 @@ describe("createTestApp + createDefaultTestAppFixture", () => {
 				clientSecret: "test-google-client-secret",
 			},
 			admin: fixture.admin,
+			importSession: fixture.importSession,
 			shared: fixture.shared,
 			stripe: fixture.stripe,
 			pendingSignup: fixture.pendingSignup,

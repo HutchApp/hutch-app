@@ -46,6 +46,8 @@ import { initInMemoryRefreshArticleContent } from "./providers/events/in-memory-
 import { initInMemoryUpdateFetchTimestamp } from "./providers/events/in-memory-update-fetch-timestamp";
 import { initPutPendingHtml } from "./providers/pending-html/put-pending-html";
 import { initInMemoryPendingHtml } from "./providers/pending-html/in-memory-pending-html";
+import { initInMemoryImportSession } from "./providers/import-session/in-memory-import-session";
+import { initDynamoDbImportSession } from "./providers/import-session/dynamodb-import-session";
 import { initExchangeGoogleCode } from "./providers/google-auth/google-token";
 import { initInMemoryStripeCheckout } from "./providers/stripe-checkout/in-memory-stripe-checkout";
 import { initStripeCheckout } from "./providers/stripe-checkout/stripe-checkout";
@@ -87,6 +89,7 @@ function initProviders() {
 		const eventBusName = requireEnv("EVENT_BUS_NAME");
 		const contentBucketName = requireEnv("CONTENT_BUCKET_NAME");
 		const pendingHtmlBucketName = requireEnv("PENDING_HTML_BUCKET_NAME");
+		const importSessionsTable = requireEnv("DYNAMODB_IMPORT_SESSIONS_TABLE");
 		const client = createDynamoDocumentClient();
 		const s3Client = new S3Client({});
 
@@ -141,11 +144,17 @@ function initProviders() {
 			fetch: globalThis.fetch,
 		});
 		const pendingSignup = initDynamoDbPendingSignup({ client, tableName: pendingSignupsTable });
+		const importSessionStore = initDynamoDbImportSession({
+			client,
+			tableName: importSessionsTable,
+			now: () => new Date(),
+		});
 
 		return {
 			auth,
 			articleStore,
 			readArticleContent,
+			importSessionStore,
 
 			...initResendEmail(resendApiKey),
 			...initDynamoDbEmailVerification({ client, tableName: verificationTokensTable }),
@@ -263,6 +272,8 @@ function initProviders() {
 		staleTtlMs,
 	});
 
+	const importSessionStore = initInMemoryImportSession({ now: () => new Date() });
+
 	return {
 		auth,
 		articleStore,
@@ -270,6 +281,7 @@ function initProviders() {
 			storageProviderQueryOrder: [articleStore.readContent],
 			logError,
 		}),
+		importSessionStore,
 
 		...initLogEmail(),
 		...initInMemoryEmailVerification(),
@@ -308,7 +320,7 @@ function parseAdminEmails(raw: string): readonly string[] {
 export function createHutchApp(deps?: {
 	appOrigin?: string;
 }) {
-	const { auth, articleStore, oauthModel, validateAccessToken, ...providers } = initProviders();
+	const { auth, articleStore, oauthModel, validateAccessToken, importSessionStore, ...providers } = initProviders();
 
 	const appOrigin = deps?.appOrigin ?? requireEnv("APP_ORIGIN", { defaultValue: `http://localhost:${getEnv("PORT") || "3000"}` });
 	const staticBaseUrl = requireEnv("STATIC_BASE_URL");
@@ -335,6 +347,7 @@ export function createHutchApp(deps?: {
 		validateAccessToken,
 		httpErrorMessageMapping,
 		logParseError,
+		importSessionStore,
 		now: () => new Date(),
 	});
 
