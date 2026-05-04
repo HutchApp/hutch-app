@@ -3,6 +3,7 @@ import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
 
+import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -516,7 +517,7 @@ describe("Auth routes", () => {
 			 * never invoked by attempting to consume any plausible session id and
 			 * receiving null. */
 			const consumed = await pendingSignup.consumePendingSignup(
-				"cs_test_never_created" as unknown as Parameters<typeof pendingSignup.consumePendingSignup>[0],
+				CheckoutSessionIdSchema.parse("cs_test_never_created"),
 			);
 			expect(consumed).toBeNull();
 		});
