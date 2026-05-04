@@ -1,20 +1,12 @@
 import assert from "node:assert";
 import { initCrawlArticle, DEFAULT_CRAWL_HEADERS } from "./crawl-article";
 import type { CrawlArticleResult } from "./crawl-article.types";
-import type { fetchCurl } from "./curl-fetch";
 
 const noopLogError = () => {};
-
-// Default stub: never reaches real network in unit tests. Tests that want to
-// verify fallback behaviour pass a curl impl explicitly via overrides.fetchCurl.
-const stubFetchCurl: typeof fetchCurl = async () => {
-	throw new Error("stub fetchCurl: not invoked");
-};
 
 function initCrawl(overrides?: {
 	fetch?: typeof fetch;
 	logError?: (message: string, error?: Error) => void;
-	fetchCurl?: typeof fetchCurl;
 }) {
 	const defaultFetch: typeof fetch = async () =>
 		new Response("<html></html>", {
@@ -25,7 +17,6 @@ function initCrawl(overrides?: {
 		fetch: overrides?.fetch ?? defaultFetch,
 		logError: overrides?.logError ?? noopLogError,
 		headers: { ...DEFAULT_CRAWL_HEADERS },
-		fetchCurl: overrides?.fetchCurl ?? stubFetchCurl,
 	});
 }
 
@@ -316,8 +307,8 @@ describe("initCrawlArticle — failure modes", () => {
 		expect(logError).toHaveBeenCalledWith('[CrawlArticle] Unexpected Content-Type "" for https://example.com');
 	});
 
-	it("returns status 'failed' and logs with the Error instance when fetch throws a clear network error (curl fallback skipped)", async () => {
-		const networkError = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
+	it("returns status 'failed' and logs with the Error instance when fetch throws", async () => {
+		const networkError = new Error("network down");
 		const fakeFetch: typeof fetch = async () => { throw networkError; };
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
@@ -328,24 +319,10 @@ describe("initCrawlArticle — failure modes", () => {
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Network error for https://example.com", networkError);
 	});
 
-	it("returns status 'failed' when fetch throws a transient error and curl fallback also fails", async () => {
-		const fakeFetch: typeof fetch = async () => { throw new Error("network down"); };
-		const curlError = new Error("curl also failed");
-		const fakeCurl: typeof fetchCurl = async () => { throw curlError; };
-		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
-
-		const result = await crawlArticle({ url: "https://example.com" });
-
-		expect(result).toEqual({ status: "failed" });
-		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Network error for https://example.com", curlError);
-	});
-
-	it("returns status 'failed' and logs undefined when fetch throws a non-Error value and curl fallback also fails with a non-Error", async () => {
+	it("returns status 'failed' and logs undefined when fetch throws a non-Error value", async () => {
 		const fakeFetch: typeof fetch = async () => { throw "string error"; };
-		const fakeCurl: typeof fetchCurl = async () => { throw "string error from curl"; };
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
 
 		const result = await crawlArticle({ url: "https://example.com" });
 
@@ -504,8 +481,8 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 		expect(logError).toHaveBeenCalledWith(`[CrawlArticle] Thumbnail too large (${oversizedBody.length} bytes) for https://cdn.example.com/thumb.jpg`);
 	});
 
-	it("logs and returns thumbnailImage undefined when the thumbnail fetch throws a clear network error (curl fallback skipped)", async () => {
-		const networkError = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
+	it("logs and returns thumbnailImage undefined when the thumbnail fetch throws", async () => {
+		const networkError = new Error("connection reset");
 		const fakeFetch = articleThenImageFetch(() => { throw networkError; });
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
@@ -517,11 +494,10 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Thumbnail network error for https://cdn.example.com/thumb.jpg", networkError);
 	});
 
-	it("logs with undefined when the thumbnail fetch throws a non-Error value and curl fallback also fails with a non-Error", async () => {
+	it("logs with undefined when the thumbnail fetch throws a non-Error value", async () => {
 		const fakeFetch = articleThenImageFetch(() => { throw "boom"; });
-		const fakeCurl: typeof fetchCurl = async () => { throw "boom from curl"; };
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
+		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
 
 		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
 

@@ -72,14 +72,6 @@ export function initSaveLinkWork(deps: {
 		if (crawlResult.status !== "fetched") {
 			const reason = `crawl-${crawlResult.status}`;
 			logParseError({ url, reason });
-			// Mirror the parse-failure path: flip the crawl state to `failed`
-			// immediately so readers and the Tier 1+ canary see the terminal
-			// state on the next poll. SQS will still retry the message; if a
-			// retry succeeds, the success path's unconditional markCrawlReady
-			// (via promote-tier-to-canonical) overwrites this row back to
-			// `ready`. Without this, transient fetch failures linger in
-			// `pending` for ~180s while the SQS retry/DLQ chain resolves.
-			await markCrawlFailed({ url, reason });
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${reason}`);
 		}
@@ -89,7 +81,10 @@ export function initSaveLinkWork(deps: {
 		if (!parseResult.ok) {
 			logParseError({ url, reason: parseResult.reason });
 			// Parse failures are terminal: re-running the worker against the
-			// same HTML will re-fail the same way.
+			// same HTML will re-fail the same way. Flip the crawl state to
+			// `failed` immediately so readers and the Tier 1+ canary see the
+			// terminal state on the next poll, instead of waiting for SQS
+			// retries → DLQ (~90s+) before the DLQ handler updates it.
 			await markCrawlFailed({ url, reason: parseResult.reason });
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${parseResult.reason}`);
