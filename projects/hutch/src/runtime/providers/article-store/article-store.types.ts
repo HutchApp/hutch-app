@@ -12,7 +12,7 @@ export interface SaveArticleParams {
 	estimatedReadTime: SavedArticle["estimatedReadTime"];
 }
 
-type SortField = "savedAt";
+export type SortField = "savedAt" | "readAt";
 export type SortOrder = "asc" | "desc";
 
 export interface FindArticlesQuery {

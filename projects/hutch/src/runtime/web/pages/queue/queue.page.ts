@@ -38,6 +38,7 @@ import { SIREN_MEDIA_TYPE, sirenError } from "../../api/siren";
 import { toArticleCollectionEntity } from "../../api/collection-siren";
 import { toArticleEntity } from "../../api/article-siren";
 import { parseQueueUrl, buildQueueUrl } from "./queue.url";
+import { tabQuery } from "./queue.tabs";
 import type { HttpErrorMessageMapping } from "./queue.error";
 import { toQueueViewModel } from "./queue.viewmodel";
 import { QueuePage } from "./queue.component";
@@ -173,12 +174,15 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
 		const userId = req.userId;
 		const urlState = parseQueueUrl(req.query);
+		const tab = tabQuery(urlState.tab);
 		const filterUrl = typeof req.query.url === "string" ? req.query.url : undefined;
 
+		const order = urlState.order ?? tab.defaultOrder;
 		const result = await deps.findArticlesByUser({
 			userId,
-			status: urlState.status,
-			order: urlState.order,
+			status: tab.status,
+			sort: tab.sort,
+			order,
 			page: urlState.page,
 		});
 
@@ -192,7 +196,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 			res.type(SIREN_MEDIA_TYPE).json(
 				toArticleCollectionEntity(filtered, {
-					status: urlState.status,
+					status: tab.status,
 					order: urlState.order,
 					page: urlState.page,
 					pageSize: result.pageSize,
@@ -202,7 +206,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			return;
 		}
 
-		const unreadCount = urlState.status === "unread"
+		const unreadCount = urlState.tab === "queue"
 			? result.total
 			: (await deps.findArticlesByUser({ userId, status: "unread", page: 1, pageSize: 1 })).total;
 		const totalArticles = (await deps.findArticlesByUser({ userId, page: 1, pageSize: 1 })).total;

@@ -53,12 +53,19 @@ export class HutchStorage extends pulumi.ComponentResource {
 				{ name: "userId", type: "S" },
 				{ name: "url", type: "S" },
 				{ name: "savedAt", type: "S" },
+				{ name: "readAt", type: "S" },
 			],
 			globalSecondaryIndexes: [
 				{
 					name: "userId-savedAt-index",
 					hashKey: "userId",
 					rangeKey: "savedAt",
+					projectionType: "ALL",
+				},
+				{
+					name: "userId-readAt-index",
+					hashKey: "userId",
+					rangeKey: "readAt",
 					projectionType: "ALL",
 				},
 			],

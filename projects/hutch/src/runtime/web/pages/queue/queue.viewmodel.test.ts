@@ -42,7 +42,7 @@ function makeResult(
 }
 
 const NOW = new Date("2025-06-01T13:00:00Z");
-const DEFAULT_FILTERS = { status: "unread" as const, order: "desc" as const, page: 1 };
+const DEFAULT_FILTERS = { tab: "queue" as const, order: "desc" as const, page: 1 };
 
 describe("toQueueViewModel", () => {
 	it("should map article fields to view model", () => {
@@ -106,7 +106,7 @@ describe("toQueueViewModel", () => {
 		const vm = toQueueViewModel(makeResult([]), DEFAULT_FILTERS, { now: NOW });
 
 		expect(vm.filterUrls.unread).toBe("/queue");
-		expect(vm.filterUrls.read).toBe("/queue?status=read");
+		expect(vm.filterUrls.read).toBe("/queue?tab=done");
 	});
 
 	it("should set isUnread to true for unread articles", () => {
@@ -268,11 +268,11 @@ describe("toQueueViewModel", () => {
 
 	it("should include return query in action URLs for non-default view", () => {
 		const article = makeArticle({ status: "read" });
-		const filters = { order: "asc" as const, page: 1, status: "read" as const };
+		const filters = { order: "asc" as const, page: 1, tab: "done" as const };
 		const vm = toQueueViewModel(makeResult([article]), filters, { now: NOW });
 
 		const deleteAction = vm.articles[0].actions.find(a => a.testAction === "delete");
-		expect(deleteAction?.url).toBe(`/queue/${ARTICLE_ID}/delete?status=read&order=asc`);
+		expect(deleteAction?.url).toBe(`/queue/${ARTICLE_ID}/delete?tab=done&order=asc`);
 	});
 
 	it("should not include query string in action URLs for default view", () => {
@@ -305,7 +305,7 @@ describe("toQueueViewModel", () => {
 
 	it("should include return query in mark-read URL for non-default view", () => {
 		const article = makeArticle({ status: "unread" });
-		const filters = { order: "asc" as const, page: 1, status: "unread" as const };
+		const filters = { order: "asc" as const, page: 1, tab: "queue" as const };
 		const vm = toQueueViewModel(makeResult([article]), filters, { now: NOW });
 
 		const markReadAction = vm.articles[0].actions.find(a => a.testAction === "mark-read");

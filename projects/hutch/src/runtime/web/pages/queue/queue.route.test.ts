@@ -2188,14 +2188,14 @@ describe("Queue routes", () => {
 			expect(doc.querySelector("[data-test-sort]")?.textContent).toContain("first");
 		});
 
-		it("should include status in sort toggle URL when on read tab", async () => {
+		it("should include tab in sort toggle URL when on done tab", async () => {
 			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const agent = await loginAgent(app, auth);
 
-			const response = await agent.get("/queue?status=read");
+			const response = await agent.get("/queue?tab=done");
 			const doc = new JSDOM(response.text).window.document;
 			const sortLink = doc.querySelector("[data-test-sort]");
-			expect(sortLink?.getAttribute("href")).toContain("status=read");
+			expect(sortLink?.getAttribute("href")).toContain("tab=done");
 		});
 
 		it("should toggle sort order from desc to asc", async () => {
@@ -2218,6 +2218,82 @@ describe("Queue routes", () => {
 			const sortLink = doc.querySelector("[data-test-sort]");
 			expect(sortLink?.getAttribute("href")).toBe("/queue");
 			expect(sortLink?.textContent).toContain("Oldest first");
+		});
+
+		it("should order Done tab by readAt descending (most recently read first)", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/a" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/b" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/c" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const cards = queueDoc.querySelectorAll("[data-test-article-list] .queue-article");
+			const idByUrl = new Map<string, string>();
+			for (const card of cards) {
+				const url = card.querySelector("[data-test-article-url]")?.getAttribute("href");
+				const id = card.getAttribute("data-test-article");
+				assert(url && id, "article card must expose url and id");
+				idByUrl.set(url, id);
+			}
+
+			const idA = idByUrl.get("https://example.com/a");
+			const idB = idByUrl.get("https://example.com/b");
+			const idC = idByUrl.get("https://example.com/c");
+			assert(idA && idB && idC, "all three articles must be in the saved list");
+
+			await agent.post(`/queue/${idB}/status`).type("form").send({ status: "read" });
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await agent.post(`/queue/${idA}/status`).type("form").send({ status: "read" });
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await agent.post(`/queue/${idC}/status`).type("form").send({ status: "read" });
+
+			const readResponse = await agent.get("/queue?status=read");
+			const readDoc = new JSDOM(readResponse.text).window.document;
+			const readIds = Array.from(
+				readDoc.querySelectorAll("[data-test-article-list] .queue-article"),
+			).map((el) => el.getAttribute("data-test-article"));
+
+			expect(readIds).toEqual([idC, idA, idB]);
+		});
+
+		it("should order Done tab by readAt ascending when order=asc", async () => {
+			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(app, auth);
+
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/a" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/b" });
+			await agent.post("/queue/save").type("form").send({ url: "https://example.com/c" });
+
+			const queueResponse = await agent.get("/queue");
+			const queueDoc = new JSDOM(queueResponse.text).window.document;
+			const idByUrl = new Map<string, string>();
+			for (const card of queueDoc.querySelectorAll("[data-test-article-list] .queue-article")) {
+				const url = card.querySelector("[data-test-article-url]")?.getAttribute("href");
+				const id = card.getAttribute("data-test-article");
+				assert(url && id, "article card must expose url and id");
+				idByUrl.set(url, id);
+			}
+			const idA = idByUrl.get("https://example.com/a");
+			const idB = idByUrl.get("https://example.com/b");
+			const idC = idByUrl.get("https://example.com/c");
+			assert(idA && idB && idC, "all three articles must be in the saved list");
+
+			await agent.post(`/queue/${idB}/status`).type("form").send({ status: "read" });
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await agent.post(`/queue/${idA}/status`).type("form").send({ status: "read" });
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await agent.post(`/queue/${idC}/status`).type("form").send({ status: "read" });
+
+			const readResponse = await agent.get("/queue?status=read&order=asc");
+			const readDoc = new JSDOM(readResponse.text).window.document;
+			const readIds = Array.from(
+				readDoc.querySelectorAll("[data-test-article-list] .queue-article"),
+			).map((el) => el.getAttribute("data-test-article"));
+
+			expect(readIds).toEqual([idB, idA, idC]);
 		});
 	});
 
