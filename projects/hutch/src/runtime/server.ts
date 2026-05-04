@@ -204,6 +204,9 @@ export function createApp(dependencies: AppDependencies): Express {
 		next();
 	});
 
+	const markExtensionInstalled = initMarkExtensionInstalled();
+	app.use(markExtensionInstalled);
+
 	app.get("/robots.txt", (_req: Request, res: Response) => {
 		res.type("text/plain").send(
 			[
@@ -439,8 +442,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		logParseError: deps.logParseError,
 		now: deps.now,
 	});
-	const markExtensionInstalled = initMarkExtensionInstalled();
-	app.use("/queue", extensionCors, dualAuthMiddleware, markExtensionInstalled, queueRouter);
+	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
 
 	const saveRouter = initSaveRoutes();
 	app.use("/save", saveRouter);

@@ -490,16 +490,15 @@ describe("POST /queue/:id/delete (Siren)", () => {
 });
 
 describe("extension-installed cookie middleware", () => {
-	it("sets the extension-installed cookie on authenticated Siren requests", async () => {
+	it("sets the extension-installed cookie on the Siren entry point before login", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const accessToken = await createAccessToken(testApp);
 
 		const response = await request(testApp.app)
-			.get("/queue")
+			.get("/")
 			.set("Accept", SIREN_MEDIA_TYPE)
-			.set("Authorization", `Bearer ${accessToken}`);
+			.redirects(0);
 
-		expect(response.status).toBe(200);
+		expect(response.status).toBe(303);
 		const setCookie = response.headers["set-cookie"];
 		assert(Array.isArray(setCookie), "expected Set-Cookie header");
 		const cookie = setCookie.find((c: string) => c.startsWith("hutch_ext_installed="));
