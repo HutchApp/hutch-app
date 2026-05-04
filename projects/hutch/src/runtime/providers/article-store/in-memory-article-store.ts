@@ -157,6 +157,7 @@ export function initInMemoryArticleStore(): {
 		const page = query.page ?? 1;
 		const pageSize = query.pageSize ?? 20;
 		const order = query.order ?? "desc";
+		const sort = query.sort ?? "savedAt";
 
 		let userArts = Array.from(userArticles.values()).filter(
 			(ua) => ua.userId === query.userId,
@@ -167,7 +168,11 @@ export function initInMemoryArticleStore(): {
 		}
 
 		userArts.sort((a, b) => {
-			const diff = a.savedAt.getTime() - b.savedAt.getTime();
+			const aValue = sort === "readAt" ? a.readAt : a.savedAt;
+			const bValue = sort === "readAt" ? b.readAt : b.savedAt;
+			assert(aValue, "sort field must be set on every row matching this query");
+			assert(bValue, "sort field must be set on every row matching this query");
+			const diff = aValue.getTime() - bValue.getTime();
 			return order === "asc" ? diff : -diff;
 		});
 

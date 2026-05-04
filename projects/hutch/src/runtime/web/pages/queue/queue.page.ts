@@ -178,6 +178,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const result = await deps.findArticlesByUser({
 			userId,
 			status: urlState.status,
+			sort: urlState.status === "read" ? "readAt" : "savedAt",
 			order: urlState.order,
 			page: urlState.page,
 		});

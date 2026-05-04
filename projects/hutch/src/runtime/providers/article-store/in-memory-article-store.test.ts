@@ -215,6 +215,71 @@ describe("initInMemoryArticleStore", () => {
 			expect(result.articles[1].id.value).toBe(a2.id.value);
 		});
 
+		it("should sort by readAt descending when sort=readAt", async () => {
+			const store = initInMemoryArticleStore();
+			const a1 = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/first" }),
+			);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			const a2 = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/second" }),
+			);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			const a3 = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/third" }),
+			);
+
+			await store.updateArticleStatus(a2.id, USER_A, "read");
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await store.updateArticleStatus(a1.id, USER_A, "read");
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await store.updateArticleStatus(a3.id, USER_A, "read");
+
+			const result = await store.findArticlesByUser({
+				userId: USER_A,
+				status: "read",
+				sort: "readAt",
+			});
+
+			expect(result.articles.map((a) => a.id.value)).toEqual([
+				a3.id.value,
+				a1.id.value,
+				a2.id.value,
+			]);
+		});
+
+		it("should sort by readAt ascending when sort=readAt and order=asc", async () => {
+			const store = initInMemoryArticleStore();
+			const a1 = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/first" }),
+			);
+			const a2 = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/second" }),
+			);
+			const a3 = await store.saveArticle(
+				makeArticleParams({ url: "https://example.com/third" }),
+			);
+
+			await store.updateArticleStatus(a2.id, USER_A, "read");
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await store.updateArticleStatus(a1.id, USER_A, "read");
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			await store.updateArticleStatus(a3.id, USER_A, "read");
+
+			const result = await store.findArticlesByUser({
+				userId: USER_A,
+				status: "read",
+				sort: "readAt",
+				order: "asc",
+			});
+
+			expect(result.articles.map((a) => a.id.value)).toEqual([
+				a2.id.value,
+				a1.id.value,
+				a3.id.value,
+			]);
+		});
+
 		it("should paginate results", async () => {
 			const store = initInMemoryArticleStore();
 			for (let i = 0; i < 5; i++) {

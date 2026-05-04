@@ -199,6 +199,8 @@ export function initDynamoDbArticleStore(deps: {
 		const page = query.page ?? 1;
 		const pageSize = query.pageSize ?? 20;
 		const order = query.order ?? "desc";
+		const sort = query.sort ?? "savedAt";
+		const indexName = sort === "readAt" ? "userId-readAt-index" : "userId-savedAt-index";
 
 		const expressionValues: Record<string, unknown> = {
 			":userId": query.userId,
@@ -216,7 +218,7 @@ export function initDynamoDbArticleStore(deps: {
 		let countStartKey: Record<string, unknown> | undefined;
 		do {
 			const { count, lastEvaluatedKey } = await userArticles.query({
-				IndexName: "userId-savedAt-index",
+				IndexName: indexName,
 				KeyConditionExpression: "userId = :userId",
 				FilterExpression: filterExpression,
 				ExpressionAttributeValues: expressionValues,
@@ -235,7 +237,7 @@ export function initDynamoDbArticleStore(deps: {
 
 		do {
 			const { items, lastEvaluatedKey } = await userArticles.query({
-				IndexName: "userId-savedAt-index",
+				IndexName: indexName,
 				KeyConditionExpression: "userId = :userId",
 				FilterExpression: filterExpression,
 				ExpressionAttributeValues: expressionValues,
