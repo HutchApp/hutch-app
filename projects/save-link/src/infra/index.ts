@@ -94,7 +94,10 @@ const summaryGenerationFailedQueue = new HutchSQS("summary-generation-failed", {
 });
 
 const recrawlLinkInitiatedQueue = new HutchSQS("recrawl-link-initiated", {
-	visibilityTimeoutSeconds: 60,
+	// Must exceed the Lambda timeout below so SQS doesn't redeliver while the
+	// worker is still running. AWS recommends ~6× the function timeout; we set
+	// it just above to keep the SQS retry chain inside the canary's 180s budget.
+	visibilityTimeoutSeconds: 100,
 });
 
 const recrawlContentExtractedQueue = new HutchSQS("recrawl-content-extracted", {
@@ -429,7 +432,12 @@ const recrawlLinkInitiatedLambda = new HutchLambda("recrawl-link-initiated", {
 	outputDir: ".lib/recrawl-link-initiated",
 	assetDir: "./src",
 	memorySize: 256,
-	timeout: 30,
+	// 90s gives saveLinkWork room to complete on hex.ooo and similar origins
+	// that hold the connection open while the body trickles through curl
+	// fallback + downloadMedia. The previous 30s was getting hard-killed before
+	// the worker could mark the row 'failed' on hangs, leaving the canary to
+	// poll 'pending' for the full SQS retry/DLQ window (~180s).
+	timeout: 90,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
