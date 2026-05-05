@@ -139,7 +139,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const browser = detectBrowser(req);
 		const showImportForm = req.query.feature === "import";
 		sendComponent(
-			res,
+			req, res,
 			renderPage(req, QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, browser, onboardingDismissed, showImportForm })),
 		);
 	});
@@ -306,7 +306,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				unreadCount,
 				summaryByUrl,
 			});
-			sendComponent(res, renderPage(req, QueuePage(vm, { statusCode: 422 })));
+			sendComponent(req, res, renderPage(req, QueuePage(vm, { statusCode: 422 })));
 			return;
 		}
 
@@ -357,7 +357,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		});
 
 		sendComponent(
-			res,
+			req, res,
 			renderPage(req, ReaderPage({ ...article, content: state.content }, {
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
@@ -389,7 +389,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			pollCount,
 			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
 		});
-		sendComponent(res, component);
+		sendComponent(req, res, component);
 	});
 
 	router.get("/:id/reader", async (req: Request, res: Response) => {
@@ -412,7 +412,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
 			extensionInstallUrl: extensionInstallUrlIfMissing(req),
 		});
-		sendComponent(res, component);
+		sendComponent(req, res, component);
 	});
 
 	router.post("/:id/status", async (req: Request, res: Response) => {
