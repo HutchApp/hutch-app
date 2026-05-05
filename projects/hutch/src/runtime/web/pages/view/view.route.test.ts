@@ -1757,6 +1757,26 @@ describe("View routes", () => {
 			expect(response.text).not.toContain("hx-boost");
 		});
 
+		it("returns markdown with empty body when article content is not yet available", async () => {
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app } = createTestApp({
+				...fixture,
+				events: {
+					...fixture.events,
+					publishSaveAnonymousLink: async () => {},
+				},
+			});
+
+			const response = await request(app)
+				.get(`/view/${ENCODED}`)
+				.set("Accept", "text/markdown");
+
+			expect(response.status).toBe(200);
+			expect(response.headers["content-type"]).toBe("text/markdown; charset=utf-8");
+			expect(response.text).toContain(`Canonical: ${ARTICLE_URL}`);
+			expect(response.text).not.toContain("<p>");
+		});
+
 		it("renders the landing page as markdown when /view is requested without a URL", async () => {
 			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
