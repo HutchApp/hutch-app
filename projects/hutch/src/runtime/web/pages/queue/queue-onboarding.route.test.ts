@@ -166,7 +166,42 @@ describe("Queue onboarding", () => {
 		assert(success, "success section must be rendered");
 	});
 
-	it("does not render onboarding when dismiss cookie matches current version", async () => {
+	/** Dismissal hides the onboarding only when *both* cookies are present together.
+	 *
+	 * The dismiss button only appears in the success state, which requires the
+	 * install-extension step to be complete — meaning the install cookie was set in
+	 * this browser at the moment of dismissal. So the only way to reach
+	 * "dismiss cookie present, install cookie absent" is if the user has moved to
+	 * a different context where the install cookie doesn't apply:
+	 *
+	 *   - Same user, different browser. The user installed the extension in
+	 *     Browser A and dismissed there. Cookies are browser-scoped, so Browser B
+	 *     normally has neither cookie — but if the dismiss cookie is carried over
+	 *     (profile import, manual cookie copy, sync tooling) without the install
+	 *     cookie, Browser B still needs the extension installed locally.
+	 *   - Same browser, install cookie lost. The user uninstalled the extension
+	 *     after dismissing, or cleared the install cookie selectively. The dismiss
+	 *     should not silently suppress the prompt to reinstall.
+	 *
+	 * The two tests below pin both directions of the rule:
+	 *   1. Both cookies present → onboarding stays hidden (the happy path).
+	 *   2. Dismiss cookie alone → onboarding re-renders with install-extension
+	 *      marked incomplete, so the user is prompted to install in this browser.
+	 */
+	it("does not render onboarding when dismiss cookie matches current version and extension is installed", async () => {
+		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const agent = await loginAgent(app, auth);
+
+		const response = await agent
+			.get("/queue")
+			.set("Cookie", `${DISMISS_COOKIE_NAME}=${ONBOARDING_VERSION}; ${COOKIE_NAME}=${COOKIE_VALUE}`);
+
+		const doc = new JSDOM(response.text).window.document;
+		const onboarding = doc.querySelector("[data-test-onboarding]");
+		expect(onboarding).toBeNull();
+	});
+
+	it("re-renders onboarding when dismiss cookie is present but extension cookie is missing", async () => {
 		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const agent = await loginAgent(app, auth);
 
@@ -176,7 +211,11 @@ describe("Queue onboarding", () => {
 
 		const doc = new JSDOM(response.text).window.document;
 		const onboarding = doc.querySelector("[data-test-onboarding]");
-		expect(onboarding).toBeNull();
+		assert(onboarding, "onboarding must re-render so the user can install the extension in this browser");
+		expect(onboarding.classList.contains("onboarding--visible")).toBe(true);
+		const installStep = doc.querySelector('[data-test-onboarding-step="install-extension"]');
+		assert(installStep);
+		expect(installStep.getAttribute("data-test-onboarding-complete")).toBe("false");
 	});
 
 	it("re-renders onboarding when dismiss cookie has a stale version", async () => {
@@ -185,7 +224,7 @@ describe("Queue onboarding", () => {
 
 		const response = await agent
 			.get("/queue")
-			.set("Cookie", `${DISMISS_COOKIE_NAME}=stale-version`);
+			.set("Cookie", `${DISMISS_COOKIE_NAME}=stale-version; ${COOKIE_NAME}=${COOKIE_VALUE}`);
 
 		const doc = new JSDOM(response.text).window.document;
 		const onboarding = doc.querySelector("[data-test-onboarding]");

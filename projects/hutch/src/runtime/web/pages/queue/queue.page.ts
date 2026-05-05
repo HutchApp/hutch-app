@@ -135,7 +135,12 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const summaryByUrl = await loadSummaries(deps.findGeneratedSummary, result.articles);
 		const vm = toQueueViewModel(result, urlState, { unreadCount, totalArticles, saveError, importFlash, summaryByUrl });
 		const extensionInstalled = isExtensionInstalled(req);
-		const onboardingDismissed = req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
+		/** Dismissal only counts when the extension is also installed in *this* browser.
+		 * The dismiss button only appears once every step (including install-extension)
+		 * is complete, so a dismiss without the install cookie means the user is in a
+		 * different browser context (or has lost the install cookie) — show the popup
+		 * again so they can install the extension here. */
+		const onboardingDismissed = extensionInstalled && req.cookies?.[DISMISS_COOKIE_NAME] === ONBOARDING_VERSION;
 		const browser = detectBrowser(req);
 		const showImportForm = req.query.feature === "import";
 		sendComponent(
