@@ -116,6 +116,23 @@ describe("initInMemoryImportSession", () => {
 		expect(after.deselected.size).toBe(0);
 	});
 
+	it("re-selects one row after bulk deselect", async () => {
+		const store = initInMemoryImportSession({ now: () => new Date() });
+		const session = await store.createImportSession({
+			userId: owner,
+			urls: ["https://example.com/a", "https://example.com/b", "https://example.com/c"],
+			truncated: false,
+			totalFoundInFile: 3,
+		});
+
+		await store.toggleAllImportSelection({ id: session.id, userId: owner, checked: false });
+		await store.toggleImportSelection({ id: session.id, userId: owner, index: 1, checked: true });
+
+		const after = await store.findImportSession({ id: session.id, userId: owner });
+		assert(after, "session must exist");
+		expect([...after.deselected].sort()).toEqual([0, 2]);
+	});
+
 	it("ignores bulk toggles from a non-owner", async () => {
 		const store = initInMemoryImportSession({ now: () => new Date() });
 		const session = await store.createImportSession({

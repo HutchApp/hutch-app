@@ -26,9 +26,11 @@ const SessionRow = z.object({
 	truncated: z.boolean(),
 	urls: z.array(z.string()),
 	deselected: dynamoField(z.array(z.number().int())),
+	allDeselected: dynamoField(z.boolean()),
 });
 
 function toSession(row: z.infer<typeof SessionRow>): ImportSession {
+	const isAllDeselected = row.allDeselected ?? false;
 	return {
 		id: row.sessionId,
 		userId: row.userId,
@@ -37,7 +39,9 @@ function toSession(row: z.infer<typeof SessionRow>): ImportSession {
 		totalUrls: row.totalUrls,
 		totalFoundInFile: row.totalFoundInFile,
 		truncated: row.truncated,
-		deselected: new Set(row.deselected ?? []),
+		deselected: isAllDeselected
+			? new Set(Array.from({ length: row.totalUrls }, (_v, i) => i))
+			: new Set(row.deselected ?? []),
 	};
 }
 
@@ -76,6 +80,7 @@ export function initDynamoDbImportSession(deps: {
 					truncated,
 					urls: [...urls],
 					deselected: [],
+					allDeselected: false,
 				},
 			});
 			return {
@@ -107,32 +112,35 @@ export function initDynamoDbImportSession(deps: {
 		toggleImportSelection: async ({ id, userId, index, checked }) => {
 			const row = await loadOwned(id, userId);
 			if (!row) return;
-			const current = new Set<number>(row.deselected ?? []);
+			const isAllDeselected = row.allDeselected ?? false;
+			if (isAllDeselected && !checked) return;
+			const current = isAllDeselected
+				? new Set(Array.from({ length: row.totalUrls }, (_v, i) => i))
+				: new Set<number>(row.deselected ?? []);
 			if (checked) current.delete(index);
 			else current.add(index);
 			await table.update({
 				Key: { sessionId: id },
 				ConditionExpression: "userId = :uid",
-				UpdateExpression: "SET deselected = :d",
+				UpdateExpression: "SET deselected = :d, allDeselected = :a",
 				ExpressionAttributeValues: {
 					":uid": userId,
 					":d": Array.from(current),
+					":a": false,
 				},
 			});
 		},
 		toggleAllImportSelection: async ({ id, userId, checked }) => {
 			const row = await loadOwned(id, userId);
 			if (!row) return;
-			const next = checked
-				? []
-				: Array.from({ length: row.totalUrls }, (_v, i) => i);
 			await table.update({
 				Key: { sessionId: id },
 				ConditionExpression: "userId = :uid",
-				UpdateExpression: "SET deselected = :d",
+				UpdateExpression: "SET deselected = :d, allDeselected = :a",
 				ExpressionAttributeValues: {
 					":uid": userId,
-					":d": next,
+					":d": [],
+					":a": !checked,
 				},
 			});
 		},
