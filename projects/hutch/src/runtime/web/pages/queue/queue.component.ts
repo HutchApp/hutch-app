@@ -44,7 +44,6 @@ interface QueueDisplayModel {
 	pluralSuffix: string;
 	saveError?: string;
 	importFlash?: string;
-	showImportForm: boolean;
 	importFormHiddenClass: string;
 	isEmpty: boolean;
 	hasArticles: boolean;
@@ -94,7 +93,6 @@ function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: 
 		pluralSuffix: vm.total !== 1 ? "s" : "",
 		saveError: vm.saveError,
 		importFlash: vm.importFlash,
-		showImportForm: options.showImportForm,
 		importFormHiddenClass: options.showImportForm ? "" : " queue__import-form--hidden",
 		isEmpty: vm.isEmpty,
 		hasArticles: !vm.isEmpty,
