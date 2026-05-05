@@ -28,7 +28,7 @@ describe("selectRecipients", () => {
 		const id = CheckoutSessionIdSchema.parse("cs_test_eligible");
 		const result = await selectRecipients({
 			now: NOW,
-			rows: [{ checkoutSessionId: id, email: "buyer@example.com", method: "email" }],
+			rows: [{ checkoutSessionId: id, email: "buyer@example.com" }],
 			retrieveCheckoutSession: createRetrieve({}),
 		});
 
@@ -42,7 +42,7 @@ describe("selectRecipients", () => {
 		const id = CheckoutSessionIdSchema.parse("cs_test_expired");
 		const result = await selectRecipients({
 			now: NOW,
-			rows: [{ checkoutSessionId: id, email: "buyer@example.com", method: "email" }],
+			rows: [{ checkoutSessionId: id, email: "buyer@example.com" }],
 			retrieveCheckoutSession: createRetrieve({ status: "expired", ageSeconds: 60 * 60 * 24 }),
 		});
 
@@ -50,7 +50,7 @@ describe("selectRecipients", () => {
 		expect(result.skipped).toEqual([]);
 	});
 
-	it("skips a row that already has recoveryEmailSentAt set", async () => {
+	it("skips a row that already has checkoutRecoveryEmailSentAt set", async () => {
 		const id = CheckoutSessionIdSchema.parse("cs_test_already");
 		const result = await selectRecipients({
 			now: NOW,
@@ -58,8 +58,7 @@ describe("selectRecipients", () => {
 				{
 					checkoutSessionId: id,
 					email: "already@example.com",
-					method: "email",
-					recoveryEmailSentAt: 1234567890,
+					checkoutRecoveryEmailSentAt: 1234567890,
 				},
 			],
 			retrieveCheckoutSession: async () => {
@@ -77,7 +76,7 @@ describe("selectRecipients", () => {
 		const id = CheckoutSessionIdSchema.parse("cs_test_missing");
 		const result = await selectRecipients({
 			now: NOW,
-			rows: [{ checkoutSessionId: id, email: "missing@example.com", method: "email" }],
+			rows: [{ checkoutSessionId: id, email: "missing@example.com" }],
 			retrieveCheckoutSession: async () => ({ ok: false, reason: "not-found" }),
 		});
 
@@ -87,17 +86,17 @@ describe("selectRecipients", () => {
 		]);
 	});
 
-	it("skips a row whose Stripe session has been paid", async () => {
+	it("skips a row whose Stripe session has been paid (already a founding member)", async () => {
 		const id = CheckoutSessionIdSchema.parse("cs_test_paid");
 		const result = await selectRecipients({
 			now: NOW,
-			rows: [{ checkoutSessionId: id, email: "paid@example.com", method: "email" }],
+			rows: [{ checkoutSessionId: id, email: "paid@example.com" }],
 			retrieveCheckoutSession: createRetrieve({ paid: true, status: "complete" }),
 		});
 
 		expect(result.recipients).toEqual([]);
 		expect(result.skipped).toEqual([
-			{ checkoutSessionId: id, email: "paid@example.com", reason: "session-paid" },
+			{ checkoutSessionId: id, email: "paid@example.com", reason: "already-founding-member" },
 		]);
 	});
 
@@ -105,7 +104,7 @@ describe("selectRecipients", () => {
 		const id = CheckoutSessionIdSchema.parse("cs_test_recent");
 		const result = await selectRecipients({
 			now: NOW,
-			rows: [{ checkoutSessionId: id, email: "recent@example.com", method: "email" }],
+			rows: [{ checkoutSessionId: id, email: "recent@example.com" }],
 			retrieveCheckoutSession: createRetrieve({ ageSeconds: 60 * 30 }),
 		});
 
@@ -138,13 +137,12 @@ describe("selectRecipients", () => {
 		const result = await selectRecipients({
 			now: NOW,
 			rows: [
-				{ checkoutSessionId: eligibleId, email: "ok@example.com", method: "email" },
-				{ checkoutSessionId: recentId, email: "recent@example.com", method: "google" },
+				{ checkoutSessionId: eligibleId, email: "ok@example.com" },
+				{ checkoutSessionId: recentId, email: "recent@example.com" },
 				{
 					checkoutSessionId: sentId,
 					email: "sent@example.com",
-					method: "email",
-					recoveryEmailSentAt: 1,
+					checkoutRecoveryEmailSentAt: 1,
 				},
 			],
 			retrieveCheckoutSession,

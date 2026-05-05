@@ -10,7 +10,7 @@ import { CheckoutSessionIdSchema } from "../stripe-checkout/stripe-checkout.sche
 import type {
 	ConsumePendingSignup,
 	ListAllPendingSignups,
-	MarkPendingSignupRecoveryEmailSent,
+	MarkCheckoutRecoveryEmailSent,
 	PendingSignup,
 	StorePendingSignup,
 } from "./pending-signup.types";
@@ -22,14 +22,13 @@ const PendingSignupRow = z.object({
 	passwordHash: dynamoField(z.string()),
 	userId: dynamoField(UserIdSchema),
 	returnUrl: dynamoField(z.string()),
-	recoveryEmailSentAt: dynamoField(z.number()),
+	checkoutRecoveryEmailSentAt: dynamoField(z.number()),
 });
 
 const PendingSignupSummaryRow = z.object({
 	checkoutSessionId: CheckoutSessionIdSchema,
-	method: z.enum(["email", "google"]),
 	email: z.string(),
-	recoveryEmailSentAt: dynamoField(z.number()),
+	checkoutRecoveryEmailSentAt: dynamoField(z.number()),
 });
 
 export function initDynamoDbPendingSignup(deps: {
@@ -39,7 +38,7 @@ export function initDynamoDbPendingSignup(deps: {
 	storePendingSignup: StorePendingSignup;
 	consumePendingSignup: ConsumePendingSignup;
 	listAllPendingSignups: ListAllPendingSignups;
-	markPendingSignupRecoveryEmailSent: MarkPendingSignupRecoveryEmailSent;
+	markCheckoutRecoveryEmailSent: MarkCheckoutRecoveryEmailSent;
 } {
 	const table = defineDynamoTable({
 		client: deps.client,
@@ -103,17 +102,15 @@ export function initDynamoDbPendingSignup(deps: {
 		do {
 			const page = await summaryTable.scan({
 				ProjectionExpression:
-					"checkoutSessionId, email, #method, recoveryEmailSentAt",
-				ExpressionAttributeNames: { "#method": "method" },
+					"checkoutSessionId, email, checkoutRecoveryEmailSentAt",
 				ExclusiveStartKey: lastEvaluatedKey,
 			});
 			for (const row of page.items) {
 				summaries.push({
 					checkoutSessionId: row.checkoutSessionId,
 					email: row.email,
-					method: row.method,
-					...(row.recoveryEmailSentAt !== undefined
-						? { recoveryEmailSentAt: row.recoveryEmailSentAt }
+					...(row.checkoutRecoveryEmailSentAt !== undefined
+						? { checkoutRecoveryEmailSentAt: row.checkoutRecoveryEmailSentAt }
 						: {}),
 				});
 			}
@@ -122,13 +119,13 @@ export function initDynamoDbPendingSignup(deps: {
 		return summaries;
 	};
 
-	const markPendingSignupRecoveryEmailSent: MarkPendingSignupRecoveryEmailSent = async ({
+	const markCheckoutRecoveryEmailSent: MarkCheckoutRecoveryEmailSent = async ({
 		checkoutSessionId,
 		sentAt,
 	}) => {
 		await table.update({
 			Key: { checkoutSessionId },
-			UpdateExpression: "SET recoveryEmailSentAt = :sentAt",
+			UpdateExpression: "SET checkoutRecoveryEmailSentAt = :sentAt",
 			ExpressionAttributeValues: { ":sentAt": sentAt },
 		});
 	};
@@ -137,7 +134,7 @@ export function initDynamoDbPendingSignup(deps: {
 		storePendingSignup,
 		consumePendingSignup,
 		listAllPendingSignups,
-		markPendingSignupRecoveryEmailSent,
+		markCheckoutRecoveryEmailSent,
 	};
 }
 /* c8 ignore stop */

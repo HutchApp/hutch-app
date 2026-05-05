@@ -2,21 +2,21 @@ import type { CheckoutSessionId } from "../stripe-checkout/stripe-checkout.types
 import type {
 	ConsumePendingSignup,
 	ListAllPendingSignups,
-	MarkPendingSignupRecoveryEmailSent,
+	MarkCheckoutRecoveryEmailSent,
 	PendingSignup,
 	StorePendingSignup,
 } from "./pending-signup.types";
 
 interface StoredEntry {
 	signup: PendingSignup;
-	recoveryEmailSentAt?: number;
+	checkoutRecoveryEmailSentAt?: number;
 }
 
 export function initInMemoryPendingSignup(): {
 	storePendingSignup: StorePendingSignup;
 	consumePendingSignup: ConsumePendingSignup;
 	listAllPendingSignups: ListAllPendingSignups;
-	markPendingSignupRecoveryEmailSent: MarkPendingSignupRecoveryEmailSent;
+	markCheckoutRecoveryEmailSent: MarkCheckoutRecoveryEmailSent;
 } {
 	const store = new Map<CheckoutSessionId, StoredEntry>();
 
@@ -35,25 +35,24 @@ export function initInMemoryPendingSignup(): {
 		Array.from(store.entries()).map(([checkoutSessionId, entry]) => ({
 			checkoutSessionId,
 			email: entry.signup.email,
-			method: entry.signup.method,
-			...(entry.recoveryEmailSentAt !== undefined
-				? { recoveryEmailSentAt: entry.recoveryEmailSentAt }
+			...(entry.checkoutRecoveryEmailSentAt !== undefined
+				? { checkoutRecoveryEmailSentAt: entry.checkoutRecoveryEmailSentAt }
 				: {}),
 		}));
 
-	const markPendingSignupRecoveryEmailSent: MarkPendingSignupRecoveryEmailSent = async ({
+	const markCheckoutRecoveryEmailSent: MarkCheckoutRecoveryEmailSent = async ({
 		checkoutSessionId,
 		sentAt,
 	}) => {
 		const entry = store.get(checkoutSessionId);
 		if (!entry) throw new Error(`No pending signup: ${checkoutSessionId}`);
-		entry.recoveryEmailSentAt = sentAt;
+		entry.checkoutRecoveryEmailSentAt = sentAt;
 	};
 
 	return {
 		storePendingSignup,
 		consumePendingSignup,
 		listAllPendingSignups,
-		markPendingSignupRecoveryEmailSent,
+		markCheckoutRecoveryEmailSent,
 	};
 }

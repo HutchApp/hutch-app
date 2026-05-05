@@ -1,11 +1,12 @@
 /* c8 ignore start -- composition root, no logic to test */
-import { writeFile } from "node:fs/promises";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
+import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { initDynamoDbPendingSignup } from "../providers/pending-signup/dynamodb-pending-signup";
 import { initResendEmail } from "../providers/email/resend-email";
 import { initStripeCheckout } from "../providers/stripe-checkout/stripe-checkout";
-import { buildCheckoutRecoveryEmail } from "../web/auth/checkout-recovery-email";
-import { getEnv, requireEnv } from "../require-env";
+import { CheckoutRecoveryEmail } from "../web/auth/checkout-recovery-email";
+import { buildSignupResumeUrl } from "../web/auth/signup-resume-url";
+import { requireEnv } from "../require-env";
 import { selectRecipients } from "./select-recipients";
 
 async function main(): Promise<void> {
@@ -17,8 +18,8 @@ async function main(): Promise<void> {
 	const from = requireEnv("RECOVERY_EMAIL_FROM");
 	const replyTo = requireEnv("RECOVERY_EMAIL_REPLY_TO");
 	const bcc = requireEnv("RECOVERY_EMAIL_BCC");
-	const dryRun = requireEnv<"true" | "false">("RECOVERY_EMAIL_DRY_RUN") === "true";
-	const reportPath = getEnv("RECOVERY_REPORT_PATH");
+
+	const logger = HutchLogger.from(consoleLogger);
 
 	const dynamoClient = createDynamoDocumentClient();
 	const pendingSignup = initDynamoDbPendingSignup({ client: dynamoClient, tableName });
@@ -31,9 +32,9 @@ async function main(): Promise<void> {
 
 	const founderAvatarUrl = `${origin}/fayner-brack.jpg`;
 
-	console.log(`[recovery] Scanning ${tableName} for pending signups…`);
+	logger.info(`[recovery] Scanning ${tableName} for pending signups…`);
 	const rows = await pendingSignup.listAllPendingSignups();
-	console.log(`[recovery] Found ${rows.length} pending signup row(s).`);
+	logger.info(`[recovery] Found ${rows.length} pending signup row(s).`);
 
 	const { recipients, skipped } = await selectRecipients({
 		now: new Date(),
@@ -41,19 +42,19 @@ async function main(): Promise<void> {
 		retrieveCheckoutSession: stripe.retrieveCheckoutSession,
 	});
 
-	console.log(
+	logger.info(
 		`[recovery] ${recipients.length} candidate(s), ${skipped.length} skipped.`,
 	);
 	for (const skip of skipped) {
-		console.log(`[recovery]   skip ${skip.email} (${skip.reason})`);
+		logger.info(`[recovery]   skip ${skip.email} (${skip.reason})`);
 	}
 
 	let sent = 0;
 	const errors: { email: string; error: string }[] = [];
 
 	for (const recipient of recipients) {
-		const resumeUrl = `${origin}/signup?email=${encodeURIComponent(recipient.email)}&utm_source=recovery`;
-		const { html, text } = buildCheckoutRecoveryEmail({
+		const resumeUrl = buildSignupResumeUrl({ origin, email: recipient.email });
+		const email = CheckoutRecoveryEmail({
 			founderAvatarUrl,
 			resumeUrl,
 			monthlyPrice: "$3.99",
@@ -65,50 +66,26 @@ async function main(): Promise<void> {
 			bcc,
 			replyTo,
 			subject: "Did something stop you?",
-			html,
-			text,
+			html: email.to("text/html"),
+			text: email.to("text/plain"),
 		};
-
-		if (dryRun) {
-			console.log(`[recovery] DRY RUN → would send to ${recipient.email}`);
-			console.log(`[recovery]   resumeUrl=${resumeUrl}`);
-			continue;
-		}
 
 		try {
 			await sendEmail(message);
-			await pendingSignup.markPendingSignupRecoveryEmailSent({
+			await pendingSignup.markCheckoutRecoveryEmailSent({
 				checkoutSessionId: recipient.checkoutSessionId,
 				sentAt: Math.floor(Date.now() / 1000),
 			});
 			sent++;
-			console.log(`[recovery] sent → ${recipient.email}`);
+			logger.info(`[recovery] sent → ${recipient.email}`);
 		} catch (err) {
 			const error = err instanceof Error ? err.message : String(err);
 			errors.push({ email: recipient.email, error });
-			console.error(`[recovery] FAILED → ${recipient.email}: ${error}`);
+			logger.error(`[recovery] FAILED → ${recipient.email}: ${error}`);
 		}
 	}
 
-	if (reportPath !== undefined) {
-		await writeFile(
-			reportPath,
-			`${JSON.stringify(
-				{
-					candidates: recipients.length,
-					skipped,
-					sent,
-					errors,
-					dryRun,
-				},
-				null,
-				2,
-			)}\n`,
-			"utf8",
-		);
-	}
-
-	console.log(
+	logger.info(
 		`[recovery] Done. ${recipients.length} candidate(s), ${skipped.length} skipped, ${sent} sent, ${errors.length} error(s).`,
 	);
 }

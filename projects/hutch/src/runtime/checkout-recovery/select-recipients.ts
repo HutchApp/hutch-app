@@ -14,7 +14,7 @@ export interface RecoveryCandidate {
 export type SkipReason =
 	| "already-sent"
 	| "session-not-found"
-	| "session-paid"
+	| "already-founding-member"
 	| "session-too-recent";
 
 export interface SkippedRow {
@@ -38,7 +38,7 @@ export async function selectRecipients(params: {
 	const skipped: SkippedRow[] = [];
 
 	for (const row of params.rows) {
-		if (row.recoveryEmailSentAt !== undefined) {
+		if (row.checkoutRecoveryEmailSentAt !== undefined) {
 			skipped.push({
 				checkoutSessionId: row.checkoutSessionId,
 				email: row.email,
@@ -61,7 +61,7 @@ export async function selectRecipients(params: {
 			skipped.push({
 				checkoutSessionId: row.checkoutSessionId,
 				email: row.email,
-				reason: "session-paid",
+				reason: "already-founding-member",
 			});
 			continue;
 		}
