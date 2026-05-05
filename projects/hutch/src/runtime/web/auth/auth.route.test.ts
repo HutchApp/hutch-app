@@ -339,6 +339,36 @@ describe("Auth routes", () => {
 			expect(verification.subject).toBe("Verify your email — Readplace");
 		});
 
+		it("should show duplicate-email error when a race condition causes createUserWithPasswordHash to fail during free signup", async () => {
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			let raceFindCount = 0;
+			const { app } = createTestApp({
+				...fixture,
+				auth: {
+					...fixture.auth,
+					findUserByEmail: async (email) => {
+						if (email === "race@example.com") {
+							raceFindCount++;
+							if (raceFindCount === 1) return null;
+						}
+						return fixture.auth.findUserByEmail(email);
+					},
+				},
+			});
+			await fixture.auth.createUser({ email: "race@example.com", password: "existing" });
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "race@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
+			});
+
+			expect(response.status).toBe(422);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-global-error]")?.textContent).toContain("already exists");
+		});
+
 		it("should redirect new visitors to a Stripe checkout URL when over the founding limit", async () => {
 			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			for (let i = 0; i < 101; i++) {

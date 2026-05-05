@@ -237,6 +237,106 @@ describe("Google auth routes", () => {
 			expect(consumed).toBeNull();
 		}, 30000);
 
+		it("logs in the existing user when a race condition causes createGoogleUser to fail during free signup", async () => {
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			let raceFindCount = 0;
+			const { app } = createTestApp({
+				...fixture,
+				auth: {
+					...fixture.auth,
+					findUserByEmail: async (email) => {
+						if (email === "race-google@example.com") {
+							raceFindCount++;
+							if (raceFindCount === 1) return null;
+						}
+						return fixture.auth.findUserByEmail(email);
+					},
+				},
+				google: {
+					exchangeGoogleCode: stubExchange({ email: "race-google@example.com" }),
+					clientId: "test-google-client-id",
+					clientSecret: "test-google-client-secret",
+				},
+			});
+			await fixture.auth.createUser({ email: "race-google@example.com", password: "existing" });
+			const state = signState(freshState());
+
+			const response = await request(app)
+				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(state)}`)
+				.set("Cookie", `hutch_gstate=${encodeURIComponent(state)}`);
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+			expect(cookiesFrom(response).join(";")).toContain("hutch_sid=");
+
+			const lookup = await fixture.auth.findUserByEmail("race-google@example.com");
+			expect(lookup?.emailVerified).toBe(true);
+		});
+
+		it("marks email verified during race condition when existing user is unverified", async () => {
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			let raceFindCount = 0;
+			const { app } = createTestApp({
+				...fixture,
+				auth: {
+					...fixture.auth,
+					findUserByEmail: async (email) => {
+						if (email === "unverified-race@example.com") {
+							raceFindCount++;
+							if (raceFindCount === 1) return null;
+						}
+						return fixture.auth.findUserByEmail(email);
+					},
+				},
+				google: {
+					exchangeGoogleCode: stubExchange({ email: "unverified-race@example.com" }),
+					clientId: "test-google-client-id",
+					clientSecret: "test-google-client-secret",
+				},
+			});
+			await fixture.auth.createUser({ email: "unverified-race@example.com", password: "existing" });
+			const beforeLookup = await fixture.auth.findUserByEmail("unverified-race@example.com");
+			expect(beforeLookup?.emailVerified).toBe(false);
+			const state = signState(freshState());
+
+			const response = await request(app)
+				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(state)}`)
+				.set("Cookie", `hutch_gstate=${encodeURIComponent(state)}`);
+
+			expect(response.status).toBe(303);
+			const afterLookup = await fixture.auth.findUserByEmail("unverified-race@example.com");
+			expect(afterLookup?.emailVerified).toBe(true);
+		});
+
+		it("renders error when race condition causes createGoogleUser to fail and user cannot be found", async () => {
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { app } = createTestApp({
+				...fixture,
+				auth: {
+					...fixture.auth,
+					findUserByEmail: async (email) => {
+						if (email === "vanished@example.com") return null;
+						return fixture.auth.findUserByEmail(email);
+					},
+					createGoogleUser: async () => ({ ok: false, reason: "email-already-exists" }),
+				},
+				google: {
+					exchangeGoogleCode: stubExchange({ email: "vanished@example.com" }),
+					clientId: "test-google-client-id",
+					clientSecret: "test-google-client-secret",
+				},
+			});
+			const state = signState(freshState());
+
+			const response = await request(app)
+				.get(`/auth/google/callback?code=test-code&state=${encodeURIComponent(state)}`)
+				.set("Cookie", `hutch_gstate=${encodeURIComponent(state)}`);
+
+			expect(response.status).toBe(400);
+			const doc = new JSDOM(response.text).window.document;
+			expect(doc.querySelector("[data-test-global-error]")?.textContent).toContain("Account creation failed");
+		});
+
 		it("redirects a brand-new user through Stripe when over the founding limit", async () => {
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 			const { app, auth } = createTestApp({
