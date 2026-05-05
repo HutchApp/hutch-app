@@ -30,7 +30,7 @@ export interface QueueFlowConfig {
   passwordResetProgress: PasswordResetProgress
   preQueueActionFactories: PreQueueActionFactories
   preQueueProgressObjects: Record<string, boolean>[]
-  maxNavigations?: number
+  maxNavigations: number
 }
 
 export async function runQueueFlow(page: Page, config: QueueFlowConfig): Promise<void> {
@@ -93,7 +93,7 @@ export async function runQueueFlow(page: Page, config: QueueFlowConfig): Promise
   )
 
   const client = new HATEOASClient(page, navigationHandler)
-  const navConfig: NavigationConfig = { maxNavigations: config.maxNavigations ?? 75 }
+  const navConfig: NavigationConfig = { maxNavigations: config.maxNavigations }
 
   const startURL = `${config.baseURL.replace(/\/+$/, '')}/`
   const result = await client.navigate(startURL, navConfig)
