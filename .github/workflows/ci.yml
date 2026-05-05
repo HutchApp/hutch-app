@@ -178,8 +178,14 @@ jobs:
       project: ${{ matrix.project }}
 
   # Submit Firefox extension to AMO for signing (runs after pipeline deploys infra)
+  # always() disarms the implicit success() guard so a skipped deploy-platform
+  # doesn't cascade into skipping this publish; pipeline.result == 'success'
+  # keeps it gated on the actual deploy chain.
   ff-extension-publish:
-    if: needs.detect-projects.outputs.ff-affected == 'true'
+    if: >-
+      always()
+      && needs.pipeline.result == 'success'
+      && needs.detect-projects.outputs.ff-affected == 'true'
     needs: [detect-projects, pipeline]
     permissions:
       contents: write
@@ -188,7 +194,10 @@ jobs:
 
   # Publish Chrome extension to Chrome Web Store
   chrome-extension-publish:
-    if: needs.detect-projects.outputs.chrome-affected == 'true'
+    if: >-
+      always()
+      && needs.pipeline.result == 'success'
+      && needs.detect-projects.outputs.chrome-affected == 'true'
     needs: [detect-projects, pipeline]
     permissions:
       contents: write

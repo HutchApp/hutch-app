@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Readplace — Save Articles & Read Later",
-  "version": "1.0.83",
+  "version": "1.0.85",
   "description": "Save articles with one click. A privacy-first read-it-later app and Pocket alternative.",
   "browser_specific_settings": {
     "gecko": {
@@ -23,22 +23,44 @@
     "https://readplace.com/*"
   ],
   "icons": {
-    "16": "icons/icon-16.png",
-    "32": "icons/icon-32.png",
-    "48": "icons/icon-48.png",
-    "64": "icons/icon-64.png",
-    "96": "icons/icon-96.png",
-    "128": "icons/icon-128.png"
+    "16": "icons/light/icon-16.png",
+    "32": "icons/light/icon-32.png",
+    "48": "icons/light/icon-48.png",
+    "64": "icons/light/icon-64.png",
+    "96": "icons/light/icon-96.png",
+    "128": "icons/light/icon-128.png"
   },
   "browser_action": {
     "default_popup": "popup/popup.template.html",
     "default_title": "Readplace",
     "default_icon": {
-      "16": "icons/icon-16.png",
-      "32": "icons/icon-32.png",
-      "48": "icons/icon-48.png",
-      "64": "icons/icon-64.png"
-    }
+      "16": "icons/dark/icon-16.png",
+      "32": "icons/dark/icon-32.png",
+      "48": "icons/dark/icon-48.png",
+      "64": "icons/dark/icon-64.png"
+    },
+    "theme_icons": [
+      {
+        "size": 16,
+        "light": "icons/light/icon-16.png",
+        "dark": "icons/dark/icon-16.png"
+      },
+      {
+        "size": 32,
+        "light": "icons/light/icon-32.png",
+        "dark": "icons/dark/icon-32.png"
+      },
+      {
+        "size": 48,
+        "light": "icons/light/icon-48.png",
+        "dark": "icons/dark/icon-48.png"
+      },
+      {
+        "size": 64,
+        "light": "icons/light/icon-64.png",
+        "dark": "icons/dark/icon-64.png"
+      }
+    ]
   },
   "background": {
     "scripts": [
