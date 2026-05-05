@@ -9,32 +9,43 @@
   >
     <span aria-hidden="true">&times;</span>
   </button>
-  <button
-    type="button"
-    class="share-balloon"
-    data-share-balloon
-    data-share-url="{{shareUrl}}"
-    data-share-title="{{shareTitle}}"
-    aria-label="Share this article"
-    data-test-share-balloon
-  >
-    <div class="share-balloon__chat" data-share-balloon-chat>
-      <img
-        class="share-balloon__avatar"
-        src="{{founderAvatarUrl}}"
-        alt=""
-        width="32"
-        height="32"
-        aria-hidden="true"
-        data-test-share-balloon-avatar
-      />
-      <span class="share-balloon__text">
-        <span class="share-balloon__greeting" data-test-share-balloon-greeting>Hi, I'm Fayner Brack.</span>
-        <span class="share-balloon__hint" data-test-share-balloon-hint>Thanks for trying Readplace.</span>
-        <span class="share-balloon__hint" data-test-share-balloon-hint>{{shareHint}}</span>
-      </span>
-    </div>
-    <span class="share-balloon__icon" aria-hidden="true">{{{shareIconSvg}}}</span>
-  </button>
+  <div class="share-balloon__buttons" data-share-balloon-buttons>
+    <button
+      type="button"
+      class="share-balloon"
+      data-share-balloon
+      data-share-url="{{shareUrl}}"
+      data-share-title="{{shareTitle}}"
+      aria-label="Share this article"
+      data-test-share-balloon
+    >
+      <div class="share-balloon__chat" data-share-balloon-chat>
+        <img
+          class="share-balloon__avatar"
+          src="{{founderAvatarUrl}}"
+          alt=""
+          width="32"
+          height="32"
+          aria-hidden="true"
+          data-test-share-balloon-avatar
+        />
+        <span class="share-balloon__text">
+          <span class="share-balloon__greeting" data-test-share-balloon-greeting>Hi, I'm Fayner Brack.</span>
+          <span class="share-balloon__hint" data-test-share-balloon-hint>Thanks for trying Readplace.</span>
+          <span class="share-balloon__hint" data-test-share-balloon-hint>{{shareHint}}</span>
+        </span>
+      </div>
+      <span class="share-balloon__icon" aria-hidden="true">{{{shareIconSvg}}}</span>
+    </button>
+    <button
+      type="button"
+      class="share-balloon__copy"
+      data-share-balloon-copy
+      aria-label="Copy link"
+      data-test-share-balloon-copy
+    >
+      <span class="share-balloon__icon" aria-hidden="true">{{{copyIconSvg}}}</span>
+    </button>
+  </div>
   <span class="share-balloon__copied" data-share-balloon-copied data-test-share-balloon-copied aria-hidden="true">Link copied!</span>
 </div>
