@@ -24,6 +24,10 @@ interface AuthFormData {
 	userCount: number;
 }
 
+interface SignupFormData extends AuthFormData {
+	loadedAt: number;
+}
+
 interface FieldViewModel {
 	errorClass: string;
 	error?: string;
@@ -82,7 +86,7 @@ export function VerifyEmailPage(data: { success: boolean; error?: string }): Pag
 	};
 }
 
-export function SignupPage(data: AuthFormData, options?: { statusCode?: number }): PageBody {
+export function SignupPage(data: SignupFormData, options?: { statusCode?: number }): PageBody {
 	const email = data.email ?? "";
 	const errors = data.errors;
 
@@ -90,6 +94,7 @@ export function SignupPage(data: AuthFormData, options?: { statusCode?: number }
 		email,
 		globalError: data.globalError,
 		returnUrl: data.returnUrl ? encodeURIComponent(data.returnUrl) : undefined,
+		loadedAt: data.loadedAt,
 		emailField: toFieldViewModel(errors, "email"),
 		passwordField: toFieldViewModel(errors, "password"),
 		confirmPasswordField: toFieldViewModel(errors, "confirmPassword"),

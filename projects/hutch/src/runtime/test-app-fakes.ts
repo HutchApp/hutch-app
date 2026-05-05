@@ -1,6 +1,8 @@
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import type { CrawlArticle } from "@packages/crawl-article";
+import type { HutchLogger } from "@packages/hutch-logger";
 import { noopLogger } from "@packages/hutch-logger";
+import type { BotDefenseEvent } from "./web/auth/auth.page";
 import { calculateReadTime } from "./domain/article/estimated-read-time";
 import type {
 	ParseArticle,
@@ -204,6 +206,18 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 	const stripe = initInMemoryStripeCheckout();
 	const pendingSignup = initInMemoryPendingSignup();
 
+	const botDefenseEvents: BotDefenseEvent[] = [];
+	/** Shared capture handler for every level — production code only ever calls
+	 * .info(), so the other levels collapse onto the same function. Avoids per-
+	 * level no-op closures that V8 reports as uncovered functions. */
+	const capture = (data: BotDefenseEvent) => { botDefenseEvents.push(data); };
+	const botDefenseLogger: HutchLogger.Typed<BotDefenseEvent> = {
+		info: capture,
+		error: capture,
+		warn: capture,
+		debug: capture,
+	};
+
 	return {
 		auth,
 		articleStore: {
@@ -269,5 +283,6 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 		},
 		stripe,
 		pendingSignup,
+		botDefense: { logger: botDefenseLogger, events: botDefenseEvents },
 	};
 }

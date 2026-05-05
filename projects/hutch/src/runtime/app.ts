@@ -56,6 +56,7 @@ import { initDynamoDbPendingSignup } from "./providers/pending-signup/dynamodb-p
 import { HutchLogger, consoleLogger } from "@packages/hutch-logger";
 import { initLogParseError, type ParseErrorEvent } from "@packages/hutch-infra-components";
 import { createApp } from "./server";
+import type { BotDefenseEvent } from "./web/auth/auth.page";
 import { httpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { getEnv, requireEnv } from "./require-env";
 
@@ -349,6 +350,7 @@ export function createHutchApp(deps?: {
 		logParseError,
 		importSessionStore,
 		now: () => new Date(),
+		botDefenseLogger: HutchLogger.fromJSON<BotDefenseEvent>(),
 	});
 
 	return { app, auth, articleStore, oauthModel };

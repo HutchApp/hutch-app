@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import type { CrawlArticle } from "@packages/crawl-article";
+import type { HutchLogger } from "@packages/hutch-logger";
 import type { LogParseError } from "@packages/hutch-infra-components";
+import type { BotDefenseEvent } from "./web/auth/auth.page";
 import type { ParseArticle } from "./providers/article-parser/article-parser.types";
 import type { PublishLinkSaved } from "./providers/events/publish-link-saved.types";
 import type { PublishRecrawlLinkInitiated } from "./providers/events/publish-recrawl-link-initiated.types";
@@ -214,6 +216,11 @@ export interface ImportSessionBundle {
 	importSessionStore: ImportSessionStore;
 }
 
+export interface BotDefenseBundle {
+	logger: HutchLogger.Typed<BotDefenseEvent>;
+	events: BotDefenseEvent[];
+}
+
 export interface TestAppFixture {
 	auth: AuthBundle;
 	articleStore: ArticleStoreBundle;
@@ -233,6 +240,7 @@ export interface TestAppFixture {
 	shared: SharedBundle;
 	stripe: StripeCheckoutBundle;
 	pendingSignup: PendingSignupBundle;
+	botDefense: BotDefenseBundle;
 }
 
 export interface TestAppResult {
@@ -247,6 +255,7 @@ export interface TestAppResult {
 	passwordReset: PasswordResetBundle;
 	stripe: StripeCheckoutBundle;
 	pendingSignup: PendingSignupBundle;
+	botDefense: BotDefenseBundle;
 }
 
 function flattenFixtureToAppDependencies(
@@ -311,6 +320,7 @@ function flattenFixtureToAppDependencies(
 		retrieveCheckoutSession: fixture.stripe.retrieveCheckoutSession,
 		storePendingSignup: fixture.pendingSignup.storePendingSignup,
 		consumePendingSignup: fixture.pendingSignup.consumePendingSignup,
+		botDefenseLogger: fixture.botDefense.logger,
 	};
 }
 
@@ -328,5 +338,6 @@ export function createTestApp(fixture: TestAppFixture): TestAppResult {
 		passwordReset: fixture.passwordReset,
 		stripe: fixture.stripe,
 		pendingSignup: fixture.pendingSignup,
+		botDefense: fixture.botDefense,
 	};
 }

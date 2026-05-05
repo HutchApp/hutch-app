@@ -3,11 +3,18 @@ import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
 
+import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
 } from "../../test-app-fakes";
 import { completeStripeSignup } from "./test-helpers/complete-stripe-signup";
+
+/** A loadedAt value safely older than the bot-defense minimum submit window
+ * (2.5s), so the form submission passes the timing gate. */
+function freshLoadedAt(): string {
+	return String(Date.now() - 5000);
+}
 
 describe("Auth routes", () => {
 	describe("GET /login", () => {
@@ -183,6 +190,38 @@ describe("Auth routes", () => {
 			expect(doc.querySelector('input[name="confirmPassword"]')?.getAttribute("type")).toBe("password");
 		});
 
+		it("should render a visually-hidden honeypot input named 'website' inside the signup form", async () => {
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const response = await request(app).get("/signup");
+
+			const doc = new JSDOM(response.text).window.document;
+			const form = doc.querySelector('[data-test-form="signup"]');
+			assert(form, "signup form must be rendered");
+			const honeypotContainer = form.querySelector(".auth-form__visually-hidden");
+			assert(honeypotContainer, "honeypot container must be rendered inside the signup form");
+			expect(honeypotContainer.getAttribute("aria-hidden")).toBe("true");
+			const honeypot = honeypotContainer.querySelector('input[name="website"]');
+			assert(honeypot, "honeypot input[name=website] must be rendered");
+			expect(honeypot.getAttribute("type")).toBe("text");
+			expect(honeypot.getAttribute("tabindex")).toBe("-1");
+			expect(honeypot.getAttribute("autocomplete")).toBe("off");
+		});
+
+		it("should render a hidden loadedAt input with the current server-side ms timestamp", async () => {
+			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const before = Date.now();
+			const response = await request(app).get("/signup");
+			const after = Date.now();
+
+			const doc = new JSDOM(response.text).window.document;
+			const loadedAtInput = doc.querySelector('input[name="loadedAt"]');
+			assert(loadedAtInput, "loadedAt input must be rendered");
+			expect(loadedAtInput.getAttribute("type")).toBe("hidden");
+			const loadedAt = Number.parseInt(loadedAtInput.getAttribute("value") ?? "", 10);
+			expect(loadedAt).toBeGreaterThanOrEqual(before);
+			expect(loadedAt).toBeLessThanOrEqual(after);
+		});
+
 		it("should redirect authenticated user to /queue", async () => {
 			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			await auth.createUser({ email: "test@example.com", password: "password123" });
@@ -227,6 +266,7 @@ describe("Auth routes", () => {
 				email: "new@example.com",
 				password: "password123",
 				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
 			});
 
 			expect(response.status).toBe(303);
@@ -301,6 +341,7 @@ describe("Auth routes", () => {
 				email: "existing@example.com",
 				password: "password123",
 				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
 			});
 
 			expect(response.status).toBe(422);
@@ -317,6 +358,7 @@ describe("Auth routes", () => {
 				email: "new@example.com",
 				password: "password123",
 				confirmPassword: "differentpassword",
+				loadedAt: freshLoadedAt(),
 			});
 
 			expect(response.status).toBe(422);
@@ -336,6 +378,7 @@ describe("Auth routes", () => {
 					email: "new@example.com",
 					password: "password123",
 					confirmPassword: "differentpassword",
+					loadedAt: freshLoadedAt(),
 				});
 
 			expect(response.status).toBe(422);
@@ -356,6 +399,7 @@ describe("Auth routes", () => {
 					email: "existing@example.com",
 					password: "password123",
 					confirmPassword: "password123",
+					loadedAt: freshLoadedAt(),
 				});
 
 			expect(response.status).toBe(422);
@@ -372,11 +416,189 @@ describe("Auth routes", () => {
 				email: "new@example.com",
 				password: "short",
 				confirmPassword: "short",
+				loadedAt: freshLoadedAt(),
 			});
 
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
 			expect(doc.querySelector('[data-test-error="password"]')?.textContent).toBe("Password must be at least 8 characters");
+		});
+	});
+
+	describe("POST /signup — bot defense", () => {
+		it("returns a fake-success 303 to /?signup=pending and logs a 'honeypot' rejection when the hidden website field is filled", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
+				website: "https://spam.example",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).toMatchObject({
+				stream: "bot-defense",
+				event: "signup_rejected",
+				reason: "honeypot",
+				email_domain: "example.com",
+			});
+		});
+
+		it("logs 'missing_timestamp' and fakes success when loadedAt is absent from the form payload", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).toMatchObject({ reason: "missing_timestamp" });
+		});
+
+		it("logs 'missing_timestamp' when loadedAt is an empty string", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: "",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).toMatchObject({ reason: "missing_timestamp" });
+		});
+
+		it("omits email_domain from the event when the honeypot payload has no email", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
+				website: "https://spam.example",
+			});
+
+			expect(response.status).toBe(303);
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).not.toHaveProperty("email_domain");
+		});
+
+		it("omits email_domain when email has no @ sign", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "no-at-sign",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
+				website: "https://spam.example",
+			});
+
+			expect(response.status).toBe(303);
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).not.toHaveProperty("email_domain");
+		});
+
+		it("logs 'invalid_timestamp' and fakes success when loadedAt is not a parseable integer", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: "not-a-number",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).toMatchObject({ reason: "invalid_timestamp" });
+		});
+
+		it("logs 'invalid_timestamp' when loadedAt is a float string", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: "123.45",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			expect(botDefense.events[0]).toMatchObject({ reason: "invalid_timestamp" });
+		});
+
+		it("logs 'submit_too_fast' with the elapsed time when the form is submitted within the 2.5s window", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: String(Date.now() - 1000),
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			const event = botDefense.events[0];
+			assert(event, "expected a captured bot-defense event");
+			expect(event.reason).toBe("submit_too_fast");
+			expect(event.time_to_submit_ms).toBeGreaterThanOrEqual(1000);
+			expect(event.time_to_submit_ms).toBeLessThan(2500);
+		});
+
+		it("does not create a Stripe checkout session or store a pending signup when the honeypot is tripped", async () => {
+			const { app, pendingSignup, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "bot@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: freshLoadedAt(),
+				website: "https://spam.example",
+			});
+
+			expect(response.headers.location).toBe("/?signup=pending");
+			expect(botDefense.events).toHaveLength(1);
+			/** No Stripe session was created — if one had been, the redirect would
+			 * be to checkout.stripe.test/. We also confirm storePendingSignup was
+			 * never invoked by attempting to consume any plausible session id and
+			 * receiving null. */
+			const consumed = await pendingSignup.consumePendingSignup(
+				CheckoutSessionIdSchema.parse("cs_test_never_created"),
+			);
+			expect(consumed).toBeNull();
+		});
+
+		it("falls through to the existing happy path (303 to Stripe) when the honeypot is empty and loadedAt is older than 2.5s", async () => {
+			const { app, botDefense } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(app).post("/signup").type("form").send({
+				email: "real@example.com",
+				password: "password123",
+				confirmPassword: "password123",
+				loadedAt: String(Date.now() - 5000),
+				website: "",
+			});
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toMatch(/^https:\/\/checkout\.stripe\.test\//);
+			expect(botDefense.events).toEqual([]);
 		});
 	});
 
@@ -526,7 +748,7 @@ describe("Auth routes", () => {
 			const response = await request(app)
 				.post("/signup")
 				.type("form")
-				.send({ email: "", password: "short", confirmPassword: "short" });
+				.send({ email: "", password: "short", confirmPassword: "short", loadedAt: freshLoadedAt() });
 
 			expect(response.status).toBe(422);
 			const doc = new JSDOM(response.text).window.document;
