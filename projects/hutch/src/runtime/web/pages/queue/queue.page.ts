@@ -152,13 +152,18 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 		/** Persist derivable completions (currently only install-extension via the
 		 * cookie) so a future cookie clear doesn't re-open the step, and so any
-		 * future derivable step plugs into the same loop. */
+		 * future derivable step plugs into the same loop. Best-effort: a transient
+		 * DynamoDB failure must not prevent the page from rendering. */
 		const derivedCtx = { extensionInstalled, savedViaExtension, browser, isMobile };
 		for (const step of ONBOARDING_STEPS) {
 			if (!step.derivable) continue;
 			if (!step.isComplete(derivedCtx)) continue;
 			if (completedSteps.has(step.id)) continue;
-			await deps.markOnboardingStepCompleted({ userId, stepId: step.id, completedAt: deps.now() });
+			try {
+				await deps.markOnboardingStepCompleted({ userId, stepId: step.id, completedAt: deps.now() });
+			} catch (err) {
+				deps.logError("Failed to persist derivable onboarding completion", err instanceof Error ? err : undefined);
+			}
 		}
 
 		const showImportForm = req.query.feature === "import";

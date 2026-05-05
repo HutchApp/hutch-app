@@ -342,6 +342,29 @@ describe("Queue onboarding", () => {
 		assert(success, "success section must be rendered");
 	});
 
+	it("renders the page when best-effort derivable persistence throws", async () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+		const throwing: typeof fixture.onboarding = {
+			onboarding: {
+				...fixture.onboarding.onboarding,
+				markOnboardingStepCompleted: async () => { throw new Error("DynamoDB transient failure"); },
+				debugStateFor: fixture.onboarding.onboarding.debugStateFor,
+			},
+		};
+		const testApp = createTestApp({ ...fixture, onboarding: throwing });
+		const { agent } = await bootstrap(testApp);
+
+		const response = await agent
+			.get("/queue")
+			.set("Cookie", `${COOKIE_NAME}=${COOKIE_VALUE}`);
+
+		expect(response.status).toBe(200);
+		const doc = new JSDOM(response.text).window.document;
+		const step = doc.querySelector('[data-test-onboarding-step="install-extension"]');
+		assert(step, "install-extension step must still render despite persistence failure");
+		expect(step.getAttribute("data-test-onboarding-complete")).toBe("true");
+	});
+
 	it("POST /queue/dismiss-onboarding sets dismiss cookie to current version and redirects to /queue", async () => {
 		const testApp = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 		const { agent } = await bootstrap(testApp);
