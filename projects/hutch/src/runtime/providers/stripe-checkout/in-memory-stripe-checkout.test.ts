@@ -31,8 +31,8 @@ describe("initInMemoryStripeCheckout", () => {
 		expect(session.url).not.toContain("checkout.stripe.test");
 	});
 
-	it("returns unpaid status until markPaid is called", async () => {
-		const stripe = initInMemoryStripeCheckout();
+	it("returns unpaid open status until markPaid is called", async () => {
+		const stripe = initInMemoryStripeCheckout({ now: () => new Date("2026-01-01T00:00:00Z") });
 		const session = await stripe.createCheckoutSession({
 			customerEmail: "buyer@example.com",
 			successUrl: "https://app.test/ok",
@@ -44,13 +44,51 @@ describe("initInMemoryStripeCheckout", () => {
 		if (before.ok) {
 			expect(before.paid).toBe(false);
 			expect(before.customerEmail).toBe("buyer@example.com");
+			expect(before.status).toBe("open");
+			expect(before.created).toBe(Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000));
 		}
 
 		stripe.markPaid(session.id);
 
 		const after = await stripe.retrieveCheckoutSession(session.id);
 		assert.equal(after.ok, true);
-		if (after.ok) expect(after.paid).toBe(true);
+		if (after.ok) {
+			expect(after.paid).toBe(true);
+			expect(after.status).toBe("complete");
+		}
+	});
+
+	it("uses the system clock for created when no clock is injected", async () => {
+		const stripe = initInMemoryStripeCheckout();
+		const before = Math.floor(Date.now() / 1000);
+		const session = await stripe.createCheckoutSession({
+			customerEmail: "buyer@example.com",
+			successUrl: "https://app.test/ok",
+			cancelUrl: "https://app.test/cancel",
+		});
+		const after = Math.floor(Date.now() / 1000);
+
+		const retrieved = await stripe.retrieveCheckoutSession(session.id);
+		assert.equal(retrieved.ok, true);
+		if (retrieved.ok) {
+			expect(retrieved.created).toBeGreaterThanOrEqual(before);
+			expect(retrieved.created).toBeLessThanOrEqual(after);
+		}
+	});
+
+	it("marks a session expired", async () => {
+		const stripe = initInMemoryStripeCheckout();
+		const session = await stripe.createCheckoutSession({
+			customerEmail: "buyer@example.com",
+			successUrl: "https://app.test/ok",
+			cancelUrl: "https://app.test/cancel",
+		});
+
+		stripe.markExpired(session.id);
+
+		const retrieved = await stripe.retrieveCheckoutSession(session.id);
+		assert.equal(retrieved.ok, true);
+		if (retrieved.ok) expect(retrieved.status).toBe("expired");
 	});
 
 	it("returns not-found when retrieving an unknown session", async () => {
@@ -64,6 +102,13 @@ describe("initInMemoryStripeCheckout", () => {
 	it("throws when marking an unknown session as paid", () => {
 		const stripe = initInMemoryStripeCheckout();
 		expect(() => stripe.markPaid(CheckoutSessionIdSchema.parse("cs_test_missing"))).toThrow(
+			/No checkout session/,
+		);
+	});
+
+	it("throws when marking an unknown session as expired", () => {
+		const stripe = initInMemoryStripeCheckout();
+		expect(() => stripe.markExpired(CheckoutSessionIdSchema.parse("cs_test_missing"))).toThrow(
 			/No checkout session/,
 		);
 	});

@@ -51,4 +51,54 @@ describe("initInMemoryPendingSignup", () => {
 		const second = await consumePendingSignup(checkoutSessionId);
 		expect(second).toBeNull();
 	});
+
+	it("lists all stored signups and reflects markPendingSignupRecoveryEmailSent", async () => {
+		const {
+			storePendingSignup,
+			listAllPendingSignups,
+			markPendingSignupRecoveryEmailSent,
+		} = initInMemoryPendingSignup();
+		const emailId = CheckoutSessionIdSchema.parse("cs_test_list_email");
+		const googleId = CheckoutSessionIdSchema.parse("cs_test_list_google");
+		const userId = UserIdSchema.parse("u-list-1");
+		await storePendingSignup({
+			checkoutSessionId: emailId,
+			signup: { method: "email", email: "a@example.com", passwordHash: "hash" },
+		});
+		await storePendingSignup({
+			checkoutSessionId: googleId,
+			signup: { method: "google", email: "b@example.com", userId },
+		});
+
+		const before = await listAllPendingSignups();
+		expect(before).toHaveLength(2);
+		const emailRow = before.find((r) => r.checkoutSessionId === emailId);
+		assert(emailRow, "email row must be present");
+		expect(emailRow.email).toBe("a@example.com");
+		expect(emailRow.method).toBe("email");
+		expect(emailRow.recoveryEmailSentAt).toBeUndefined();
+
+		await markPendingSignupRecoveryEmailSent({
+			checkoutSessionId: emailId,
+			sentAt: 1735000000,
+		});
+
+		const after = await listAllPendingSignups();
+		const emailRowAfter = after.find((r) => r.checkoutSessionId === emailId);
+		assert(emailRowAfter, "email row must still be present");
+		expect(emailRowAfter.recoveryEmailSentAt).toBe(1735000000);
+		const googleRowAfter = after.find((r) => r.checkoutSessionId === googleId);
+		assert(googleRowAfter, "google row must still be present");
+		expect(googleRowAfter.recoveryEmailSentAt).toBeUndefined();
+	});
+
+	it("throws when marking an unknown checkout session as recovery-email sent", async () => {
+		const { markPendingSignupRecoveryEmailSent } = initInMemoryPendingSignup();
+		await expect(
+			markPendingSignupRecoveryEmailSent({
+				checkoutSessionId: CheckoutSessionIdSchema.parse("cs_test_missing"),
+				sentAt: 1,
+			}),
+		).rejects.toThrow(/No pending signup/);
+	});
 });

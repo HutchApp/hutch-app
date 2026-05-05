@@ -6,6 +6,13 @@ export type PendingSignup =
 	| { method: "email"; email: string; passwordHash: string; returnUrl?: string }
 	| { method: "google"; email: string; userId: UserId; returnUrl?: string };
 
+export interface PendingSignupSummary {
+	checkoutSessionId: CheckoutSessionId;
+	email: string;
+	method: "email" | "google";
+	recoveryEmailSentAt?: number;
+}
+
 export type StorePendingSignup = (params: {
 	checkoutSessionId: CheckoutSessionId;
 	signup: PendingSignup;
@@ -14,4 +21,11 @@ export type StorePendingSignup = (params: {
 export type ConsumePendingSignup = (
 	checkoutSessionId: CheckoutSessionId,
 ) => Promise<PendingSignup | null>;
+
+export type ListAllPendingSignups = () => Promise<PendingSignupSummary[]>;
+
+export type MarkPendingSignupRecoveryEmailSent = (params: {
+	checkoutSessionId: CheckoutSessionId;
+	sentAt: number;
+}) => Promise<void>;
 /* c8 ignore stop */
