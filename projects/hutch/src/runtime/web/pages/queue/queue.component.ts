@@ -44,7 +44,7 @@ interface QueueDisplayModel {
 	pluralSuffix: string;
 	saveError?: string;
 	importFlash?: string;
-	showImportForm: boolean;
+	importFormHiddenClass: string;
 	isEmpty: boolean;
 	hasArticles: boolean;
 	onboardingHtml: string;
@@ -93,7 +93,7 @@ function toQueueDisplayModel(vm: QueueViewModel, options: { extensionInstalled: 
 		pluralSuffix: vm.total !== 1 ? "s" : "",
 		saveError: vm.saveError,
 		importFlash: vm.importFlash,
-		showImportForm: options.showImportForm,
+		importFormHiddenClass: options.showImportForm ? "" : " queue__import-form--hidden",
 		isEmpty: vm.isEmpty,
 		hasArticles: !vm.isEmpty,
 		onboardingHtml,
@@ -131,10 +131,36 @@ const AUTO_SUBMIT_SCRIPT = `
 </script>
 `;
 
+const IMPORT_AUTO_SUBMIT_SCRIPT = `
+<script>
+	(function () {
+		function wire() {
+			var form = document.querySelector('form.queue__import-form');
+			if (!form) return;
+			var input = form.querySelector('input[type="file"]');
+			if (!input) return;
+			input.addEventListener('change', function () {
+				if (input.files && input.files.length > 0) form.requestSubmit();
+			});
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', wire, { once: true });
+		} else {
+			wire();
+		}
+	})();
+</script>
+`;
+
 export function QueuePage(vm: QueueViewModel, options?: { saveUrl?: string; extensionInstalled?: boolean; browser?: BrowserName; onboardingDismissed?: boolean; showImportForm?: boolean; statusCode?: number }): PageBody {
 	const saveUrl = options?.saveUrl;
-	const displayModel = toQueueDisplayModel(vm, { extensionInstalled: options?.extensionInstalled ?? false, browser: options?.browser ?? "other", onboardingDismissed: options?.onboardingDismissed ?? false, showImportForm: options?.showImportForm ?? false });
+	const showImportForm = options?.showImportForm ?? false;
+	const displayModel = toQueueDisplayModel(vm, { extensionInstalled: options?.extensionInstalled ?? false, browser: options?.browser ?? "other", onboardingDismissed: options?.onboardingDismissed ?? false, showImportForm });
 	const content = render(QUEUE_TEMPLATE, { ...displayModel, saveUrl });
+
+	const scriptParts: string[] = [];
+	if (saveUrl) scriptParts.push(AUTO_SUBMIT_SCRIPT);
+	if (showImportForm) scriptParts.push(IMPORT_AUTO_SUBMIT_SCRIPT);
 
 	return {
 		seo: {
@@ -146,7 +172,7 @@ export function QueuePage(vm: QueueViewModel, options?: { saveUrl?: string; exte
 		styles: `${QUEUE_STYLES}\n${ONBOARDING_STYLES}`,
 		bodyClass: "page-queue",
 		content,
-		scripts: saveUrl ? AUTO_SUBMIT_SCRIPT : undefined,
+		scripts: scriptParts.length > 0 ? scriptParts.join("\n") : undefined,
 		statusCode: options?.statusCode,
 	};
 }
