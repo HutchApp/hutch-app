@@ -68,6 +68,22 @@ const BUNDLES = [
 			"});",
 		].join("\n"),
 	},
+	{
+		entry: path.join(
+			PROJECT_ROOT,
+			"src/runtime/web/pages/import/import.client.ts",
+		),
+		outfile: path.join(OUT_DIR, "import.client.js"),
+		globalName: "ImportClient",
+		footer: [
+			"ImportClient.initIndeterminateCheckboxes({",
+			"  document: window.document,",
+			"  addSwapListener: function (listener) {",
+			"    window.document.body.addEventListener('htmx:afterSwap', listener);",
+			"  }",
+			"});",
+		].join("\n"),
+	},
 ];
 
 function buildOptions(bundle) {

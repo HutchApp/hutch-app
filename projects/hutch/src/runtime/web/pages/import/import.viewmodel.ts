@@ -20,6 +20,10 @@ export interface ImportViewModel {
 	readonly nextUrl?: string;
 	readonly commitUrl: string;
 	readonly toggleUrl: string;
+	readonly toggleAllUrl: string;
+	readonly allSelected: boolean;
+	readonly noneSelected: boolean;
+	readonly someSelected: boolean;
 }
 
 export function toImportViewModel(
@@ -30,6 +34,8 @@ export function toImportViewModel(
 	const totalPages = Math.max(1, Math.ceil(session.totalUrls / pageSize));
 	const start = (page - 1) * pageSize;
 	const sessionId = session.id;
+	const allSelected = totalSelected === session.totalUrls;
+	const noneSelected = totalSelected === 0;
 	return {
 		sessionId,
 		rows: pageUrls.map((url, i) => {
@@ -50,5 +56,9 @@ export function toImportViewModel(
 		nextUrl: page < totalPages ? buildImportUrl(sessionId, page + 1) : undefined,
 		commitUrl: `/import/${sessionId}/commit`,
 		toggleUrl: `/import/${sessionId}/toggle`,
+		toggleAllUrl: `/import/${sessionId}/toggle-all`,
+		allSelected,
+		noneSelected,
+		someSelected: !allSelected && !noneSelected,
 	};
 }

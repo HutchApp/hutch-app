@@ -82,6 +82,56 @@ describe("initInMemoryImportSession", () => {
 		expect(reset.deselected.size).toBe(0);
 	});
 
+	it("deselects every row via toggleAllImportSelection({ checked: false })", async () => {
+		const store = initInMemoryImportSession({ now: () => new Date() });
+		const session = await store.createImportSession({
+			userId: owner,
+			urls: ["https://example.com/a", "https://example.com/b", "https://example.com/c"],
+			truncated: false,
+			totalFoundInFile: 3,
+		});
+
+		await store.toggleAllImportSelection({ id: session.id, userId: owner, checked: false });
+
+		const after = await store.findImportSession({ id: session.id, userId: owner });
+		assert(after, "session must exist after bulk toggle");
+		expect([...after.deselected].sort()).toEqual([0, 1, 2]);
+	});
+
+	it("re-selects every row via toggleAllImportSelection({ checked: true })", async () => {
+		const store = initInMemoryImportSession({ now: () => new Date() });
+		const session = await store.createImportSession({
+			userId: owner,
+			urls: ["https://example.com/a", "https://example.com/b"],
+			truncated: false,
+			totalFoundInFile: 2,
+		});
+		await store.toggleImportSelection({ id: session.id, userId: owner, index: 0, checked: false });
+		await store.toggleImportSelection({ id: session.id, userId: owner, index: 1, checked: false });
+
+		await store.toggleAllImportSelection({ id: session.id, userId: owner, checked: true });
+
+		const after = await store.findImportSession({ id: session.id, userId: owner });
+		assert(after, "session must exist after bulk toggle");
+		expect(after.deselected.size).toBe(0);
+	});
+
+	it("ignores bulk toggles from a non-owner", async () => {
+		const store = initInMemoryImportSession({ now: () => new Date() });
+		const session = await store.createImportSession({
+			userId: owner,
+			urls: ["https://example.com/a", "https://example.com/b"],
+			truncated: false,
+			totalFoundInFile: 2,
+		});
+
+		await store.toggleAllImportSelection({ id: session.id, userId: otherUser, checked: false });
+
+		const after = await store.findImportSession({ id: session.id, userId: owner });
+		assert(after, "session must still exist");
+		expect(after.deselected.size).toBe(0);
+	});
+
 	it("ignores toggles from a non-owner", async () => {
 		const store = initInMemoryImportSession({ now: () => new Date() });
 		const session = await store.createImportSession({
