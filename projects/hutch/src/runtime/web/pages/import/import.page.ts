@@ -6,6 +6,7 @@ import {
 	IMPORT_COMMIT_CONCURRENCY,
 	IMPORT_PAGE_SIZE,
 	ImportSessionIdSchema,
+	ImportToggleAllSchema,
 	ImportToggleSchema,
 	MAX_IMPORT_FILE_BYTES,
 } from "../../../domain/import-session/import-session.schema";
@@ -98,6 +99,25 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 			id: parsedId.data,
 			userId: req.userId,
 			index: parsedBody.data.index,
+			checked: parsedBody.data.checked === "true",
+		});
+
+		const page = parseImportPage(req.query);
+		res.redirect(303, page > 1 ? `/import/${parsedId.data}?page=${page}` : `/import/${parsedId.data}`);
+	});
+
+	router.post("/:id/toggle-all", async (req: Request, res: Response) => {
+		assert(req.userId, "userId required - route must be protected by requireAuth");
+		const parsedId = ImportSessionIdSchema.safeParse(req.params.id);
+		const parsedBody = ImportToggleAllSchema.safeParse(req.body);
+		if (!parsedId.success || !parsedBody.success) {
+			res.status(422).send("");
+			return;
+		}
+
+		await deps.importSessionStore.toggleAllImportSelection({
+			id: parsedId.data,
+			userId: req.userId,
 			checked: parsedBody.data.checked === "true",
 		});
 

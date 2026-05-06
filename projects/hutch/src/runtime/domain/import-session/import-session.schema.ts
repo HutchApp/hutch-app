@@ -12,6 +12,10 @@ export const ImportToggleSchema = z.object({
 	checked: z.enum(["true", "false"]),
 });
 
+export const ImportToggleAllSchema = z.object({
+	checked: z.enum(["true", "false"]),
+});
+
 export const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
 export const MAX_URLS_PER_IMPORT = 2_000;
 export const IMPORT_SESSION_TTL_SECONDS = 24 * 60 * 60;

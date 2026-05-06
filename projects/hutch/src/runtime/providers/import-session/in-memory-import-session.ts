@@ -73,6 +73,15 @@ export function initInMemoryImportSession(deps: {
 				row.deselected.add(index);
 			}
 		},
+		toggleAllImportSelection: async ({ id, userId, checked }) => {
+			const row = load(id, userId);
+			if (!row) return;
+			if (checked) {
+				row.deselected.clear();
+			} else {
+				for (let i = 0; i < row.session.totalUrls; i++) row.deselected.add(i);
+			}
+		},
 		deleteImportSession: async ({ id, userId }) => {
 			const row = load(id, userId);
 			if (row) sessions.delete(id);
