@@ -278,9 +278,6 @@ importers:
       node-html-markdown:
         specifier: 2.0.0
         version: 2.0.0
-      parse-srcset:
-        specifier: 1.0.2
-        version: 1.0.2
       resend:
         specifier: 6.9.3
         version: 6.9.3
