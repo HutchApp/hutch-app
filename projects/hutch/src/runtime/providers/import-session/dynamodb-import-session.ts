@@ -26,11 +26,11 @@ const SessionRow = z.object({
 	truncated: z.boolean(),
 	urls: z.array(z.string()),
 	deselected: dynamoField(z.array(z.number().int())),
-	allDeselected: dynamoField(z.boolean()),
+	allSelected: dynamoField(z.boolean()),
 });
 
 function toSession(row: z.infer<typeof SessionRow>): ImportSession {
-	const isAllDeselected = row.allDeselected ?? false;
+	const allSelected = row.allSelected ?? true;
 	return {
 		id: row.sessionId,
 		userId: row.userId,
@@ -39,9 +39,9 @@ function toSession(row: z.infer<typeof SessionRow>): ImportSession {
 		totalUrls: row.totalUrls,
 		totalFoundInFile: row.totalFoundInFile,
 		truncated: row.truncated,
-		deselected: isAllDeselected
-			? new Set(Array.from({ length: row.totalUrls }, (_v, i) => i))
-			: new Set(row.deselected ?? []),
+		deselected: allSelected
+			? new Set(row.deselected ?? [])
+			: new Set(Array.from({ length: row.totalUrls }, (_v, i) => i)),
 	};
 }
 
@@ -80,7 +80,7 @@ export function initDynamoDbImportSession(deps: {
 					truncated,
 					urls: [...urls],
 					deselected: [],
-					allDeselected: false,
+					allSelected: true,
 				},
 			});
 			return {
@@ -112,21 +112,21 @@ export function initDynamoDbImportSession(deps: {
 		toggleImportSelection: async ({ id, userId, index, checked }) => {
 			const row = await loadOwned(id, userId);
 			if (!row) return;
-			const isAllDeselected = row.allDeselected ?? false;
-			if (isAllDeselected && !checked) return;
-			const current = isAllDeselected
-				? new Set(Array.from({ length: row.totalUrls }, (_v, i) => i))
-				: new Set<number>(row.deselected ?? []);
+			const allSelected = row.allSelected ?? true;
+			if (!allSelected && !checked) return;
+			const current = allSelected
+				? new Set<number>(row.deselected ?? [])
+				: new Set(Array.from({ length: row.totalUrls }, (_v, i) => i));
 			if (checked) current.delete(index);
 			else current.add(index);
 			await table.update({
 				Key: { sessionId: id },
 				ConditionExpression: "userId = :uid",
-				UpdateExpression: "SET deselected = :d, allDeselected = :a",
+				UpdateExpression: "SET deselected = :d, allSelected = :a",
 				ExpressionAttributeValues: {
 					":uid": userId,
 					":d": Array.from(current),
-					":a": false,
+					":a": true,
 				},
 			});
 		},
@@ -136,11 +136,11 @@ export function initDynamoDbImportSession(deps: {
 			await table.update({
 				Key: { sessionId: id },
 				ConditionExpression: "userId = :uid",
-				UpdateExpression: "SET deselected = :d, allDeselected = :a",
+				UpdateExpression: "SET deselected = :d, allSelected = :a",
 				ExpressionAttributeValues: {
 					":uid": userId,
 					":d": [],
-					":a": !checked,
+					":a": checked,
 				},
 			});
 		},
