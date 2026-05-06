@@ -304,6 +304,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			if (!created.ok) {
 				const refreshedCount = await fetchUserCount();
 				sendComponent(
+					req,
 					res,
 					renderPage(req, SignupPage(
 						{
