@@ -5,23 +5,23 @@ import { z } from "zod";
 import type {
 	ArticleMetadata,
 	Minutes,
-} from "../../../domain/article/article.types";
-import { calculateReadTime } from "../../../domain/article/estimated-read-time";
+} from "@packages/domain/article";
+import { calculateReadTime } from "@packages/domain/article";
 import type {
 	FindArticleByUrl,
 	SaveArticleGlobally,
-} from "../../../providers/article-store/article-store.types";
-import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
+} from "@packages/test-fixtures/providers/article-store";
+import type { ReadArticleContent } from "@packages/test-fixtures/providers/article-store";
 import type {
 	FindArticleCrawlStatus,
 	MarkCrawlPending,
-} from "../../../providers/article-crawl/article-crawl.types";
-import type { RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
+} from "@packages/test-fixtures/providers/article-crawl";
+import type { RefreshArticleIfStale } from "@packages/test-fixtures/providers/article-freshness";
 import type {
 	FindGeneratedSummary,
 	MarkSummaryPending,
-} from "../../../providers/article-summary/article-summary.types";
-import type { PublishSaveAnonymousLink } from "../../../providers/events/publish-save-anonymous-link.types";
+} from "@packages/test-fixtures/providers/article-summary";
+import type { PublishSaveAnonymousLink } from "@packages/test-fixtures/providers/events";
 import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";

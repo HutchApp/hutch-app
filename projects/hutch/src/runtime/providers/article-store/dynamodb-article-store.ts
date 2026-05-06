@@ -8,12 +8,12 @@ import {
 	dynamoField,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
-import type { SavedArticle } from "../../domain/article/article.types";
-import { MinutesSchema, ArticleStatusSchema } from "../../domain/article/article.schema";
+import type { SavedArticle } from "@packages/domain/article";
+import { MinutesSchema, ArticleStatusSchema } from "@packages/domain/article";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
-import { ReaderArticleHashId, ReaderArticleHashIdSchema } from "../../domain/article/reader-article-hash-id";
-import { UserIdSchema } from "../../domain/user/user.schema";
-import type { UserId } from "../../domain/user/user.types";
+import { ReaderArticleHashId, ReaderArticleHashIdSchema } from "@packages/domain/article";
+import { UserIdSchema } from "@packages/domain/user";
+import type { UserId } from "@packages/domain/user";
 import type {
 	DeleteArticle,
 	FindArticleById,
@@ -23,8 +23,8 @@ import type {
 	SaveArticle,
 	SaveArticleGlobally,
 	UpdateArticleStatus,
-} from "./article-store.types";
-import type { ContentProvider } from "./read-article-content";
+} from "@packages/test-fixtures/providers/article-store";
+import type { ContentProvider } from "@packages/test-fixtures/providers/article-store";
 
 const ArticleContentRow = z.object({
 	content: dynamoField(z.string()),

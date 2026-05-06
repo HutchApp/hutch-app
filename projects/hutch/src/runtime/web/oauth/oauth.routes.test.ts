@@ -6,9 +6,9 @@ import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../test-app-fakes";
+} from "@packages/test-fixtures";
 
-import type { UserId } from "../../domain/user/user.types";
+import type { UserId } from "@packages/domain/user";
 
 function generatePKCE() {
 	const verifier = randomBytes(32).toString("base64url");

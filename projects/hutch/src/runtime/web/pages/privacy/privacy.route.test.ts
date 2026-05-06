@@ -3,7 +3,7 @@ import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 
 describe("GET /privacy", () => {
 	const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));

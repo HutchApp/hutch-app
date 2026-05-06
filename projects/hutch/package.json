@@ -8,33 +8,12 @@
     "./test-app": {
       "types": "./dist/runtime/test-app.d.ts",
       "default": "./dist/runtime/test-app.js"
-    },
-    "./test-app-fakes": {
-      "types": "./dist/runtime/test-app-fakes.d.ts",
-      "default": "./dist/runtime/test-app-fakes.js"
-    },
-    "./in-memory-article-store": {
-      "types": "./dist/runtime/providers/article-store/in-memory-article-store.d.ts",
-      "default": "./dist/runtime/providers/article-store/in-memory-article-store.js"
-    },
-    "./in-memory-article-crawl": {
-      "types": "./dist/runtime/providers/article-crawl/in-memory-article-crawl.d.ts",
-      "default": "./dist/runtime/providers/article-crawl/in-memory-article-crawl.js"
     }
   },
   "typesVersions": {
     "*": {
       "test-app": [
         "./dist/runtime/test-app.d.ts"
-      ],
-      "test-app-fakes": [
-        "./dist/runtime/test-app-fakes.d.ts"
-      ],
-      "in-memory-article-store": [
-        "./dist/runtime/providers/article-store/in-memory-article-store.d.ts"
-      ],
-      "in-memory-article-crawl": [
-        "./dist/runtime/providers/article-crawl/in-memory-article-crawl.d.ts"
       ]
     }
   },
@@ -63,17 +42,16 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1001.0",
     "@aws-sdk/s3-request-presigner": "3.1001.0",
-    "@mozilla/readability": "0.6.0",
     "@node-oauth/express-oauth-server": "4.1.5",
     "@node-oauth/oauth2-server": "5.2.1",
     "@packages/article-resource-unique-id": "workspace:*",
     "@packages/article-state-types": "workspace:*",
     "@packages/crawl-article": "workspace:*",
+    "@packages/domain": "workspace:*",
     "@packages/hutch-infra-components": "workspace:*",
     "@packages/hutch-logger": "workspace:*",
     "@packages/hutch-storage-client": "workspace:*",
     "@packages/onboarding-extension-signal": "workspace:*",
-    "@types/parse-srcset": "1.0.0",
     "browser-extension-core": "workspace:*",
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
@@ -83,9 +61,7 @@
     "handlebars": "4.7.8",
     "helmet": "8.1.0",
     "isbot": "5.1.39",
-    "linkedom": "0.18.12",
     "markdown-it": "14.1.1",
-    "parse-srcset": "1.0.2",
     "resend": "6.9.3",
     "save-link": "workspace:*",
     "serverless-http": "4.0.0",
@@ -94,6 +70,7 @@
   "devDependencies": {
     "@aws-sdk/client-cloudfront": "3.1001.0",
     "@packages/check-unused-css": "workspace:*",
+    "@packages/test-fixtures": "workspace:*",
     "@packages/test-phase-runner": "workspace:*",
     "@playwright/test": "1.58.2",
     "@pulumi/aws": "7.20.0",

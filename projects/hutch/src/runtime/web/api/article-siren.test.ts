@@ -2,9 +2,9 @@ import type {
 	ArticleStatus,
 	Minutes,
 	SavedArticle,
-} from "../../domain/article/article.types";
-import { ReaderArticleHashId } from "../../domain/article/reader-article-hash-id";
-import type { UserId } from "../../domain/user/user.types";
+} from "@packages/domain/article";
+import { ReaderArticleHashId } from "@packages/domain/article";
+import type { UserId } from "@packages/domain/user";
 import { toArticleSubEntity, toArticleEntity } from "./article-siren";
 
 const ARTICLE_URL = "https://example.com/article";

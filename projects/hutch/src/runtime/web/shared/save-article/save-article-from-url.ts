@@ -1,12 +1,12 @@
-import { calculateReadTime } from "../../../domain/article/estimated-read-time";
-import type { ContentFreshnessResult, RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
-import type { MarkCrawlPending } from "../../../providers/article-crawl/article-crawl.types";
-import type { MarkSummaryPending } from "../../../providers/article-summary/article-summary.types";
-import type { SaveArticle, UpdateArticleStatus } from "../../../providers/article-store/article-store.types";
-import type { PublishLinkSaved } from "../../../providers/events/publish-link-saved.types";
-import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
-import type { UserId } from "../../../domain/user/user.types";
-import type { SavedArticle } from "../../../domain/article/article.types";
+import { calculateReadTime } from "@packages/domain/article";
+import type { ContentFreshnessResult, RefreshArticleIfStale } from "@packages/test-fixtures/providers/article-freshness";
+import type { MarkCrawlPending } from "@packages/test-fixtures/providers/article-crawl";
+import type { MarkSummaryPending } from "@packages/test-fixtures/providers/article-summary";
+import type { SaveArticle, UpdateArticleStatus } from "@packages/test-fixtures/providers/article-store";
+import type { PublishLinkSaved } from "@packages/test-fixtures/providers/events";
+import type { PublishUpdateFetchTimestamp } from "@packages/test-fixtures/providers/events";
+import type { UserId } from "@packages/domain/user";
+import type { SavedArticle } from "@packages/domain/article";
 
 export interface SaveArticleFromUrlDependencies {
 	saveArticle: SaveArticle;

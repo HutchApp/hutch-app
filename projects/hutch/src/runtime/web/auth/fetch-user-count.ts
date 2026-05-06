@@ -1,4 +1,4 @@
-import type { CountUsers } from "../../providers/auth/auth.types";
+import type { CountUsers } from "@packages/test-fixtures/providers/auth";
 
 export function initFetchUserCount(deps: {
 	countUsers: CountUsers;

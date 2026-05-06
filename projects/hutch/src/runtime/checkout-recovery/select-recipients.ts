@@ -1,8 +1,8 @@
 import type {
 	CheckoutSessionId,
 	RetrieveCheckoutSession,
-} from "../providers/stripe-checkout/stripe-checkout.types";
-import type { PendingSignupSummary } from "../providers/pending-signup/pending-signup.types";
+} from "@packages/test-fixtures/providers/stripe-checkout";
+import type { PendingSignupSummary } from "@packages/test-fixtures/providers/pending-signup";
 
 const ONE_HOUR_SECONDS = 60 * 60;
 

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import type { SuperTest, Test } from "supertest";
 import request from "supertest";
 import type { Express } from "express";
-import { CheckoutSessionIdSchema } from "../../../providers/stripe-checkout/stripe-checkout.schema";
-import type { CheckoutSessionId } from "../../../providers/stripe-checkout/stripe-checkout.types";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
+import type { CheckoutSessionId } from "@packages/test-fixtures/providers/stripe-checkout";
 import type { AuthBundle } from "../../../test-app";
 import { FOUNDING_MEMBER_LIMIT } from "../../shared/founding-progress/founding-allocation";
 

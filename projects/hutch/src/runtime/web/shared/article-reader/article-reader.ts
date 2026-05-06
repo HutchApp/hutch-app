@@ -1,5 +1,5 @@
-import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
-import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { ArticleCrawl } from "@packages/test-fixtures/providers/article-crawl";
+import type { GeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 import type { Component } from "../../component.types";
 import { HtmlPage } from "../../html-page";
 import { renderProgressBarOob } from "../article-body/progress-bar.component";
@@ -11,7 +11,7 @@ import {
 	type ProgressTick,
 	SUMMARY_STAGE_TO_PCT,
 	type SummaryStage,
-} from "../article-body/progress-mapping";
+} from "@packages/domain/article";
 import { renderReaderSlot } from "../article-body/reader-slot/reader-slot.component";
 import { renderSummarySlot } from "../article-body/summary-slot/summary-slot.component";
 import type {

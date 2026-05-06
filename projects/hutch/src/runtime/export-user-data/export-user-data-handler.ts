@@ -7,9 +7,9 @@ import {
 	UserDataExportedEvent,
 } from "@packages/hutch-infra-components";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
-import type { FindArticlesByUser } from "../providers/article-store/article-store.types";
-import { UserIdSchema } from "../domain/user/user.schema";
-import type { SendEmail } from "../providers/email/email.types";
+import type { FindArticlesByUser } from "@packages/test-fixtures/providers/article-store";
+import { UserIdSchema } from "@packages/domain/user";
+import type { SendEmail } from "@packages/test-fixtures/providers/email";
 import type { UploadUserDataExport } from "../providers/user-data-export/user-data-export.types";
 import {
 	type ExportEnvelope,

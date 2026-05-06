@@ -1,4 +1,4 @@
-import type { SavedArticle } from "../../../domain/article/article.types";
+import type { SavedArticle } from "@packages/domain/article";
 
 export interface ExportArticle {
 	url: string;

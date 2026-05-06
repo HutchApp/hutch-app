@@ -1,11 +1,11 @@
 import type {
 	Minutes,
 	SavedArticle,
-} from "../../../domain/article/article.types";
-import { ReaderArticleHashId } from "../../../domain/article/reader-article-hash-id";
-import type { UserId } from "../../../domain/user/user.types";
-import type { FindArticlesResult } from "../../../providers/article-store/article-store.types";
-import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
+} from "@packages/domain/article";
+import { ReaderArticleHashId } from "@packages/domain/article";
+import type { UserId } from "@packages/domain/user";
+import type { FindArticlesResult } from "@packages/test-fixtures/providers/article-store";
+import type { GeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 import { toQueueViewModel } from "./queue.viewmodel";
 
 const ARTICLE_URL = "https://example.com/post";

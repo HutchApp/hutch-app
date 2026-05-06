@@ -36,7 +36,9 @@ export default {
 		"@packages/article-resource-unique-id",
 		"@packages/article-state-types",
 		"@packages/crawl-article",
+		"@packages/domain",
 		"@packages/onboarding-extension-signal",
+		"@packages/test-fixtures",
 	],
 	ignoreBinaries: [
 		...(baseConfig.ignoreBinaries || []),

@@ -1,5 +1,5 @@
-import { CheckoutSessionIdSchema } from "../providers/stripe-checkout/stripe-checkout.schema";
-import type { RetrieveCheckoutSession } from "../providers/stripe-checkout/stripe-checkout.types";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
+import type { RetrieveCheckoutSession } from "@packages/test-fixtures/providers/stripe-checkout";
 import { selectRecipients } from "./select-recipients";
 
 const NOW = new Date("2026-05-03T12:00:00Z");

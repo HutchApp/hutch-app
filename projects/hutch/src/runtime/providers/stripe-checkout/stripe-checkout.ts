@@ -1,11 +1,11 @@
 /* c8 ignore start -- thin Stripe API wrapper, tested via integration */
 import { z } from "zod";
-import { CheckoutSessionIdSchema } from "./stripe-checkout.schema";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
 import { STRIPE_TRIAL_PERIOD_DAYS } from "./stripe-trial-config";
 import type {
 	CreateCheckoutSession,
 	RetrieveCheckoutSession,
-} from "./stripe-checkout.types";
+} from "@packages/test-fixtures/providers/stripe-checkout";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 

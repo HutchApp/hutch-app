@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import type { Minutes } from "../../../domain/article/article.types";
+import type { Minutes } from "@packages/domain/article";
 import type {
 	ArticleCrawl,
 	FindArticleCrawlStatus,
 	MarkCrawlPending,
-} from "../../../providers/article-crawl/article-crawl.types";
+} from "@packages/test-fixtures/providers/article-crawl";
 import type {
 	FindGeneratedSummary,
 	GeneratedSummary,
 	MarkSummaryPending,
-} from "../../../providers/article-summary/article-summary.types";
-import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
+} from "@packages/test-fixtures/providers/article-summary";
+import type { ReadArticleContent } from "@packages/test-fixtures/providers/article-store";
 import { initArticleReader } from "./article-reader";
 import type { ArticleSnapshot, PollUrlBuilder } from "./article-reader.types";
 

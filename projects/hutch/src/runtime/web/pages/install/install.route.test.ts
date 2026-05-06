@@ -5,7 +5,7 @@ import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 
 const TEST_XPI_FILENAME = "abc123-1.0.0.xpi";
 

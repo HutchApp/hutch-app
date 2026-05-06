@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import type { Minutes } from "../../../domain/article/article.types";
+import type { Minutes } from "@packages/domain/article";
 import { renderArticleBody } from "./article-body.component";
 
 const baseInput = {

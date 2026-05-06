@@ -13,10 +13,10 @@ import type {
 	Token,
 	User,
 } from "@node-oauth/oauth2-server";
-import type { UserId } from "../../domain/user/user.types";
-import { getClient } from "./oauth-clients";
-import type { OAuthModel } from "./oauth-model";
-import { generateToken } from "./generate-token";
+import type { UserId } from "@packages/domain/user";
+import { getClient } from "@packages/test-fixtures/providers/oauth";
+import type { OAuthModel } from "@packages/test-fixtures/providers/oauth";
+import { generateToken } from "@packages/test-fixtures/providers/oauth";
 
 function toEpochSeconds(date: Date): number {
 	return Math.floor(date.getTime() / 1000);

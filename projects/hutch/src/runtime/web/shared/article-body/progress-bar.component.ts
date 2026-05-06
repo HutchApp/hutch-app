@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { render } from "../../render";
-import type { ProgressTick } from "./progress-mapping";
+import type { ProgressTick } from "@packages/domain/article";
 
 const TEMPLATE = readFileSync(join(__dirname, "progress-bar.template.html"), "utf-8");
 

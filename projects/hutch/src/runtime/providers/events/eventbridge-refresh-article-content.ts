@@ -1,7 +1,7 @@
 /* c8 ignore start -- thin SDK wrapper, only used in prod path */
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import { RefreshArticleContentCommand } from "@packages/hutch-infra-components";
-import type { PublishRefreshArticleContent } from "./publish-refresh-article-content.types";
+import type { PublishRefreshArticleContent } from "@packages/test-fixtures/providers/events";
 
 export function initEventBridgeRefreshArticleContent(deps: {
 	publishEvent: PublishEvent;

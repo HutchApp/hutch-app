@@ -1,4 +1,4 @@
-import type { GeneratedSummary } from "./article-summary.types";
+import type { GeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 
 export function pickExcerpt(
 	summary: GeneratedSummary | undefined,

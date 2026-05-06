@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SortOrder } from "../../../providers/article-store/article-store.types";
+import type { SortOrder } from "@packages/test-fixtures/providers/article-store";
 import { type TabId, tabQuery } from "./queue.tabs";
 
 export interface QueueUrlState {

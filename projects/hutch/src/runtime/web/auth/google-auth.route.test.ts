@@ -6,11 +6,11 @@ import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../test-app-fakes";
+} from "@packages/test-fixtures";
 
-import { GoogleIdSchema } from "../../providers/google-auth/google-auth.schema";
-import type { ExchangeGoogleCode } from "../../providers/google-auth/google-token.types";
-import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
+import { GoogleIdSchema } from "@packages/test-fixtures/providers/google-auth";
+import type { ExchangeGoogleCode } from "@packages/test-fixtures/providers/google-auth";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
 
 const TEST_CLIENT_ID = "test-google-client-id";
 const TEST_CLIENT_SECRET = "test-google-client-secret";

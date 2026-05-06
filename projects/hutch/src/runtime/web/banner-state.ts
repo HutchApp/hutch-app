@@ -1,4 +1,4 @@
-import type { UserId } from "../domain/user/user.types";
+import type { UserId } from "@packages/domain/user";
 
 export interface BannerStateSource {
 	userId?: UserId;

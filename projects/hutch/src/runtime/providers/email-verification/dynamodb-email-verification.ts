@@ -6,12 +6,12 @@ import {
 	defineDynamoTable,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
-import { UserIdSchema } from "../../domain/user/user.schema";
+import { UserIdSchema } from "@packages/domain/user";
 import type {
 	CreateVerificationToken,
 	VerifyEmailToken,
-} from "./email-verification.types";
-import { VerificationTokenSchema } from "./email-verification.schema";
+} from "@packages/test-fixtures/providers/email-verification";
+import { VerificationTokenSchema } from "@packages/test-fixtures/providers/email-verification";
 
 const TOKEN_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 

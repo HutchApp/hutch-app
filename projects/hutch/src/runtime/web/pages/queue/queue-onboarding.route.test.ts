@@ -14,7 +14,7 @@ import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 
 async function loginAgent(app: TestAppResult['app'], auth: TestAppResult['auth']) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });

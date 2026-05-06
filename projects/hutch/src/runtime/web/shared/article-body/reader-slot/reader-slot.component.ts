@@ -1,4 +1,4 @@
-import type { ArticleCrawl } from "../../../../providers/article-crawl/article-crawl.types";
+import type { ArticleCrawl } from "@packages/test-fixtures/providers/article-crawl";
 import { renderReaderFailed } from "./reader-failed.component";
 import { renderReaderPending } from "./reader-pending.component";
 import { renderReaderReady } from "./reader-ready.component";

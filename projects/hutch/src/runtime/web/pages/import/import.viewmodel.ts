@@ -1,4 +1,4 @@
-import type { ImportSessionPage } from "../../../domain/import-session/import-session.types";
+import type { ImportSessionPage } from "@packages/domain/import-session";
 import { buildImportUrl } from "./import.url";
 
 export interface ImportRowViewModel {

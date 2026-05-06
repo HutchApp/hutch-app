@@ -6,15 +6,15 @@ import {
 	dynamoField,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
-import { UserIdSchema } from "../../domain/user/user.schema";
+import { UserIdSchema } from "@packages/domain/user";
 import {
 	IMPORT_SESSION_TTL_SECONDS,
 	ImportSessionIdSchema,
-} from "../../domain/import-session/import-session.schema";
+} from "@packages/domain/import-session";
 import type {
 	ImportSession,
 	ImportSessionStore,
-} from "../../domain/import-session/import-session.types";
+} from "@packages/domain/import-session";
 
 const SessionRow = z.object({
 	sessionId: ImportSessionIdSchema,

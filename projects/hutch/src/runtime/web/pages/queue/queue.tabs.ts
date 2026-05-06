@@ -1,5 +1,5 @@
-import type { ArticleStatus } from "../../../domain/article/article.types";
-import type { SortField, SortOrder } from "../../../providers/article-store/article-store.types";
+import type { ArticleStatus } from "@packages/domain/article";
+import type { SortField, SortOrder } from "@packages/test-fixtures/providers/article-store";
 
 export type TabId = "queue" | "done";
 

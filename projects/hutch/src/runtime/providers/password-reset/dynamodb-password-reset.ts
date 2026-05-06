@@ -9,8 +9,8 @@ import { z } from "zod";
 import type {
 	CreatePasswordResetToken,
 	VerifyPasswordResetToken,
-} from "./password-reset.types";
-import { PasswordResetTokenSchema } from "./password-reset.schema";
+} from "@packages/test-fixtures/providers/password-reset";
+import { PasswordResetTokenSchema } from "@packages/test-fixtures/providers/password-reset";
 
 const TOKEN_TTL_SECONDS = 60 * 60; // 1 hour
 

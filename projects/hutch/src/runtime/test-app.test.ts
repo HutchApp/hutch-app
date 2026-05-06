@@ -1,10 +1,10 @@
 import request from "supertest";
-import { GoogleIdSchema } from "./providers/google-auth/google-auth.schema";
+import { GoogleIdSchema } from "@packages/test-fixtures/providers/google-auth";
 import { createTestApp } from "./test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "./test-app-fakes";
+} from "@packages/test-fixtures";
 
 describe("createTestApp + createDefaultTestAppFixture", () => {
 	it("produces a working app with default in-memory dependencies", async () => {

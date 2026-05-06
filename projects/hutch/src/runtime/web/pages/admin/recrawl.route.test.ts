@@ -1,13 +1,13 @@
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { MinutesSchema } from "../../../domain/article/article.schema";
-import type { ParseArticle, ParseArticleResult } from "../../../providers/article-parser/article-parser.types";
+import { MinutesSchema } from "@packages/domain/article";
+import type { ParseArticle, ParseArticleResult } from "@packages/test-fixtures/providers/article-parser";
 import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
 	createFakeSummaryProvider,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 
 const ADMIN_EMAIL = "ops@readplace.com";
 const ADMIN_PASSWORD = "password123";

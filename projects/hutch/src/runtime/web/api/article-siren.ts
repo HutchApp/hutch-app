@@ -1,4 +1,4 @@
-import type { SavedArticle } from "../../domain/article/article.types";
+import type { SavedArticle } from "@packages/domain/article";
 import type { SirenEntity, SirenLink, SirenSubEntity } from "./siren";
 
 export function toArticleSubEntity(article: SavedArticle): SirenSubEntity {

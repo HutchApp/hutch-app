@@ -1,7 +1,7 @@
 /* c8 ignore start -- thin Google API wrapper, tested via integration */
 import { z } from "zod";
-import { GoogleIdSchema } from "./google-auth.schema";
-import type { ExchangeGoogleCode } from "./google-token.types";
+import { GoogleIdSchema } from "@packages/test-fixtures/providers/google-auth";
+import type { ExchangeGoogleCode } from "@packages/test-fixtures/providers/google-auth";
 
 const GoogleTokenResponse = z.object({
 	id_token: z.string(),

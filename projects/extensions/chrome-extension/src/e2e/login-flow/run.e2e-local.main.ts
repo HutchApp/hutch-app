@@ -34,7 +34,7 @@ const TEST_LINK_TITLE = "Test Article";
 
 async function startTestServer(): Promise<http.Server> {
 	const { createTestApp } = await import("hutch/test-app");
-	const { createDefaultTestAppFixture } = await import("hutch/test-app-fakes");
+	const { createDefaultTestAppFixture } = await import("@packages/test-fixtures");
 
 	const origin = `http://127.0.0.1:${TEST_PORT}`;
 	const { app, auth } = createTestApp(createDefaultTestAppFixture(origin));

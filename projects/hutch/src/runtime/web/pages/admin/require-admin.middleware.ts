@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
-import type { FindUserByEmail } from "../../../providers/auth/auth.types";
+import type { FindUserByEmail } from "@packages/test-fixtures/providers/auth";
 
 export interface RequireAdminDeps {
 	findUserByEmail: FindUserByEmail;

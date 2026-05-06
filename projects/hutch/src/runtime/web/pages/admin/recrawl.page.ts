@@ -6,16 +6,16 @@ import type {
 	FindArticleCrawlStatus,
 	ForceMarkCrawlPending,
 	MarkCrawlPending,
-} from "../../../providers/article-crawl/article-crawl.types";
-import type { FindArticleByUrl } from "../../../providers/article-store/article-store.types";
-import type { ReadArticleContent } from "../../../providers/article-store/read-article-content";
+} from "@packages/test-fixtures/providers/article-crawl";
+import type { FindArticleByUrl } from "@packages/test-fixtures/providers/article-store";
+import type { ReadArticleContent } from "@packages/test-fixtures/providers/article-store";
 import type {
 	FindGeneratedSummary,
 	ForceMarkSummaryPending,
 	MarkSummaryPending,
-} from "../../../providers/article-summary/article-summary.types";
-import type { PublishRecrawlLinkInitiated } from "../../../providers/events/publish-recrawl-link-initiated.types";
-import type { FindUserByEmail } from "../../../providers/auth/auth.types";
+} from "@packages/test-fixtures/providers/article-summary";
+import type { PublishRecrawlLinkInitiated } from "@packages/test-fixtures/providers/events";
+import type { FindUserByEmail } from "@packages/test-fixtures/providers/auth";
 import { renderPage } from "../../render-page";
 import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";
 import { initArticleReader } from "../../shared/article-reader/article-reader";

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import type { UserId } from "../../../domain/user/user.types";
-import type { FindUserByEmail } from "../../../providers/auth/auth.types";
+import type { UserId } from "@packages/domain/user";
+import type { FindUserByEmail } from "@packages/test-fixtures/providers/auth";
 import { initRequireAdmin } from "./require-admin.middleware";
 
 interface RecordedRes {

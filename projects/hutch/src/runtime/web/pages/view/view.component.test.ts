@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import type { Minutes } from "../../../domain/article/article.types";
+import type { Minutes } from "@packages/domain/article";
 import { Base } from "../../base.component";
 import { ViewPage, type ViewPageInput } from "./view.component";
 

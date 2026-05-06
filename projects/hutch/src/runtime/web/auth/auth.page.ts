@@ -12,24 +12,24 @@ import type {
 	MarkEmailVerified,
 	MarkSessionEmailVerified,
 	VerifyCredentials,
-} from "../../providers/auth/auth.types";
-import { hashPassword } from "../../providers/auth/password";
-import type { UserId } from "../../domain/user/user.types";
-import type { SendEmail } from "../../providers/email/email.types";
+} from "@packages/test-fixtures/providers/auth";
+import { hashPassword } from "@packages/test-fixtures/providers/auth";
+import type { UserId } from "@packages/domain/user";
+import type { SendEmail } from "@packages/test-fixtures/providers/email";
 import type {
 	CreateVerificationToken,
 	VerifyEmailToken,
-} from "../../providers/email-verification/email-verification.types";
-import { VerificationTokenSchema } from "../../providers/email-verification/email-verification.schema";
+} from "@packages/test-fixtures/providers/email-verification";
+import { VerificationTokenSchema } from "@packages/test-fixtures/providers/email-verification";
 import type {
 	ConsumePendingSignup,
 	StorePendingSignup,
-} from "../../providers/pending-signup/pending-signup.types";
-import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
+} from "@packages/test-fixtures/providers/pending-signup";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
 import type {
 	CreateCheckoutSession,
 	RetrieveCheckoutSession,
-} from "../../providers/stripe-checkout/stripe-checkout.types";
+} from "@packages/test-fixtures/providers/stripe-checkout";
 import { renderPage } from "../render-page";
 import { sendComponent } from "../send-component";
 import { LoginSchema, SignupSchema } from "./auth.schema";
@@ -50,21 +50,8 @@ const EMAIL_FROM = "Fayner Brack <readplace@readplace.com>";
 
 const SIGNUP_MIN_SUBMIT_MS = 2500;
 
-export type BotDefenseRejectReason =
-	| "honeypot"
-	| "submit_too_fast"
-	| "missing_timestamp"
-	| "invalid_timestamp";
-
-export interface BotDefenseEvent {
-	stream: "bot-defense";
-	event: "signup_rejected";
-	reason: BotDefenseRejectReason;
-	timestamp: string;
-	ip?: string;
-	email_domain?: string;
-	time_to_submit_ms?: number;
-}
+import type { BotDefenseEvent, BotDefenseRejectReason } from "@packages/test-fixtures/providers/auth";
+export type { BotDefenseEvent, BotDefenseRejectReason };
 
 interface AuthDependencies {
 	createUserWithPasswordHash: CreateUserWithPasswordHash;

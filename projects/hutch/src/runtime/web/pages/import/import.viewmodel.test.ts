@@ -1,6 +1,6 @@
-import { ImportSessionIdSchema } from "../../../domain/import-session/import-session.schema";
-import type { ImportSession } from "../../../domain/import-session/import-session.types";
-import { UserIdSchema } from "../../../domain/user/user.schema";
+import { ImportSessionIdSchema } from "@packages/domain/import-session";
+import type { ImportSession } from "@packages/domain/import-session";
+import { UserIdSchema } from "@packages/domain/user";
 import { toImportViewModel } from "./import.viewmodel";
 
 function makeSession(overrides: Partial<ImportSession> = {}): ImportSession {

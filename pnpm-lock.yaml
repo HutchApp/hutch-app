@@ -94,6 +94,9 @@ importers:
       '@packages/check-unused-css':
         specifier: workspace:*
         version: link:../../../src/packages/check-unused-css
+      '@packages/test-fixtures':
+        specifier: workspace:*
+        version: link:../../../src/packages/test-fixtures
       '@packages/test-phase-runner':
         specifier: workspace:*
         version: link:../../../src/packages/test-phase-runner
@@ -155,6 +158,9 @@ importers:
       '@packages/check-unused-css':
         specifier: workspace:*
         version: link:../../../src/packages/check-unused-css
+      '@packages/test-fixtures':
+        specifier: workspace:*
+        version: link:../../../src/packages/test-fixtures
       '@packages/test-phase-runner':
         specifier: workspace:*
         version: link:../../../src/packages/test-phase-runner
@@ -206,9 +212,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: 3.1001.0
         version: 3.1001.0
-      '@mozilla/readability':
-        specifier: 0.6.0
-        version: 0.6.0
       '@node-oauth/express-oauth-server':
         specifier: 4.1.5
         version: 4.1.5(express@4.22.1)
@@ -224,6 +227,9 @@ importers:
       '@packages/crawl-article':
         specifier: workspace:*
         version: link:../../src/packages/crawl-article
+      '@packages/domain':
+        specifier: workspace:*
+        version: link:../../src/packages/domain
       '@packages/hutch-infra-components':
         specifier: workspace:*
         version: link:../../src/packages/hutch-infra-components
@@ -236,9 +242,6 @@ importers:
       '@packages/onboarding-extension-signal':
         specifier: workspace:*
         version: link:../../src/packages/onboarding-extension-signal
-      '@types/parse-srcset':
-        specifier: 1.0.0
-        version: 1.0.0
       browser-extension-core:
         specifier: workspace:*
         version: link:../browser-extension-core
@@ -266,15 +269,9 @@ importers:
       isbot:
         specifier: 5.1.39
         version: 5.1.39
-      linkedom:
-        specifier: 0.18.12
-        version: 0.18.12
       markdown-it:
         specifier: 14.1.1
         version: 14.1.1
-      parse-srcset:
-        specifier: 1.0.2
-        version: 1.0.2
       resend:
         specifier: 6.9.3
         version: 6.9.3
@@ -294,6 +291,9 @@ importers:
       '@packages/check-unused-css':
         specifier: workspace:*
         version: link:../../src/packages/check-unused-css
+      '@packages/test-fixtures':
+        specifier: workspace:*
+        version: link:../../src/packages/test-fixtures
       '@packages/test-phase-runner':
         specifier: workspace:*
         version: link:../../src/packages/test-phase-runner
@@ -552,6 +552,31 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  src/packages/domain:
+    dependencies:
+      '@packages/article-resource-unique-id':
+        specifier: workspace:*
+        version: link:../article-resource-unique-id
+      zod:
+        specifier: 4.1.13
+        version: 4.1.13
+    devDependencies:
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
+      c8:
+        specifier: 10.1.3
+        version: 10.1.3
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   src/packages/hutch-infra-components:
     dependencies:
       '@aws-sdk/client-eventbridge':
@@ -616,6 +641,58 @@ importers:
       concurrently:
         specifier: 9.2.1
         version: 9.2.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  src/packages/test-fixtures:
+    dependencies:
+      '@mozilla/readability':
+        specifier: 0.6.0
+        version: 0.6.0
+      '@node-oauth/oauth2-server':
+        specifier: 5.2.1
+        version: 5.2.1
+      '@packages/article-resource-unique-id':
+        specifier: workspace:*
+        version: link:../article-resource-unique-id
+      '@packages/crawl-article':
+        specifier: workspace:*
+        version: link:../crawl-article
+      '@packages/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@packages/hutch-infra-components':
+        specifier: workspace:*
+        version: link:../hutch-infra-components
+      '@packages/hutch-logger':
+        specifier: workspace:*
+        version: link:../hutch-logger
+      linkedom:
+        specifier: 0.18.12
+        version: 0.18.12
+      parse-srcset:
+        specifier: 1.0.2
+        version: 1.0.2
+      zod:
+        specifier: 4.1.13
+        version: 4.1.13
+    devDependencies:
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
+      '@types/parse-srcset':
+        specifier: 1.0.0
+        version: 1.0.0
+      c8:
+        specifier: 10.1.3
+        version: 10.1.3
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
       typescript:
         specifier: 5.9.3
         version: 5.9.3

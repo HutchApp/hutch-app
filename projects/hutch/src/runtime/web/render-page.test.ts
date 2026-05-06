@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import { UserIdSchema } from "../domain/user/user.schema";
+import { UserIdSchema } from "@packages/domain/user";
 import type { BannerStateSource } from "./banner-state";
 import type { PageBody } from "./page-body.types";
 import { renderPage } from "./render-page";

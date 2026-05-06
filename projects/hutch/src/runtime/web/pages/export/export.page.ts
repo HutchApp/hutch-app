@@ -1,8 +1,8 @@
 import assert from "node:assert";
 import type { Request, Response, Router } from "express";
 import express from "express";
-import type { FindEmailByUserId } from "../../../providers/auth/auth.types";
-import type { PublishExportUserDataCommand } from "../../../providers/events/publish-export-user-data-command.types";
+import type { FindEmailByUserId } from "@packages/test-fixtures/providers/auth";
+import type { PublishExportUserDataCommand } from "@packages/test-fixtures/providers/events";
 import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { ExportPage } from "./export.component";

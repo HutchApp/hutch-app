@@ -1,7 +1,7 @@
-import type { SavedArticle } from "../../../domain/article/article.types";
-import type { FindArticlesResult } from "../../../providers/article-store/article-store.types";
+import type { SavedArticle } from "@packages/domain/article";
+import type { FindArticlesResult } from "@packages/test-fixtures/providers/article-store";
 import { pickExcerpt } from "../../../providers/article-summary/article-summary.helpers";
-import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { GeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 import type { QueueUrlState } from "./queue.url";
 import { buildQueueUrl } from "./queue.url";
 

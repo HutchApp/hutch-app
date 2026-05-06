@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Minutes } from "../../../domain/article/article.types";
-import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
-import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { Minutes } from "@packages/domain/article";
+import type { ArticleCrawl } from "@packages/test-fixtures/providers/article-crawl";
+import type { GeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 import { requireEnv } from "../../../require-env";
 import { render } from "../../render";
 import { renderProgressBar } from "./progress-bar.component";
-import type { ProgressTick } from "./progress-mapping";
+import type { ProgressTick } from "@packages/domain/article";
 import { renderReaderSlot } from "./reader-slot/reader-slot.component";
 import { renderSummarySlot } from "./summary-slot/summary-slot.component";
 

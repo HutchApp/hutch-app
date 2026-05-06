@@ -2,18 +2,18 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Request, Response, Router } from "express";
 import express from "express";
 import { z } from "zod";
-import { UserIdSchema } from "../../domain/user/user.schema";
+import { UserIdSchema } from "@packages/domain/user";
 import type {
 	CountUsers,
 	CreateGoogleUser,
 	CreateSession,
 	FindUserByEmail,
 	MarkEmailVerified,
-} from "../../providers/auth/auth.types";
-import type { SendEmail } from "../../providers/email/email.types";
-import type { ExchangeGoogleCode } from "../../providers/google-auth/google-token.types";
-import type { StorePendingSignup } from "../../providers/pending-signup/pending-signup.types";
-import type { CreateCheckoutSession } from "../../providers/stripe-checkout/stripe-checkout.types";
+} from "@packages/test-fixtures/providers/auth";
+import type { SendEmail } from "@packages/test-fixtures/providers/email";
+import type { ExchangeGoogleCode } from "@packages/test-fixtures/providers/google-auth";
+import type { StorePendingSignup } from "@packages/test-fixtures/providers/pending-signup";
+import type { CreateCheckoutSession } from "@packages/test-fixtures/providers/stripe-checkout";
 import { isFoundingAllocationExhausted } from "../shared/founding-progress/founding-allocation";
 import { initSendWelcomeEmail } from "./send-welcome-email";
 import { renderPage } from "../render-page";

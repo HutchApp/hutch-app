@@ -1,8 +1,8 @@
 import type {
 	FindArticlesResult,
 	SortOrder,
-} from "../../providers/article-store/article-store.types";
-import type { ArticleStatus } from "../../domain/article/article.types";
+} from "@packages/test-fixtures/providers/article-store";
+import type { ArticleStatus } from "@packages/domain/article";
 import type { SirenEntity, SirenLink } from "./siren";
 import { toArticleSubEntity } from "./article-siren";
 

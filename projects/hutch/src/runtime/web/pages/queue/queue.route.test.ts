@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { MinutesSchema } from "../../../domain/article/article.schema";
+import { MinutesSchema } from "@packages/domain/article";
 import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
@@ -12,9 +12,9 @@ import {
 	createFakePublishSaveAnonymousLink,
 	createNoopLogError,
 	initReadabilityParser,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 
-import type { RefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
+import type { RefreshArticleIfStale } from "@packages/test-fixtures/providers/article-freshness";
 
 async function loginAgent(app: TestAppResult['app'], auth: TestAppResult['auth']) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });

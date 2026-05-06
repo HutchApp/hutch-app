@@ -5,18 +5,18 @@ import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../test-app-fakes";
+} from "@packages/test-fixtures";
 
-import { initInMemoryAuth } from "../../providers/auth/in-memory-auth";
-import { initInMemoryArticleStore } from "../../providers/article-store/in-memory-article-store";
+import { initInMemoryAuth } from "@packages/test-fixtures/providers/auth";
+import { initInMemoryArticleStore } from "@packages/test-fixtures/providers/article-store";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
-import { initInMemoryEmailVerification } from "../../providers/email-verification/in-memory-email-verification";
-import { initInMemoryPasswordReset } from "../../providers/password-reset/in-memory-password-reset";
-import { initInMemoryStripeCheckout } from "../../providers/stripe-checkout/in-memory-stripe-checkout";
-import { initInMemoryPendingSignup } from "../../providers/pending-signup/in-memory-pending-signup";
-import { createOAuthModel, initInMemoryOAuthModel } from "../../providers/oauth/oauth-model";
-import { createValidateAccessToken } from "../../providers/oauth/validate-access-token";
-import { initInMemoryImportSession } from "../../providers/import-session/in-memory-import-session";
+import { initInMemoryEmailVerification } from "@packages/test-fixtures/providers/email-verification";
+import { initInMemoryPasswordReset } from "@packages/test-fixtures/providers/password-reset";
+import { initInMemoryStripeCheckout } from "@packages/test-fixtures/providers/stripe-checkout";
+import { initInMemoryPendingSignup } from "@packages/test-fixtures/providers/pending-signup";
+import { createOAuthModel, initInMemoryOAuthModel } from "@packages/test-fixtures/providers/oauth";
+import { createValidateAccessToken } from "@packages/test-fixtures/providers/oauth";
+import { initInMemoryImportSession } from "@packages/test-fixtures/providers/import-session";
 import { createApp } from "../../server";
 import { httpErrorMessageMapping } from "../pages/queue/queue.error";
 import { completeStripeSignup } from "./test-helpers/complete-stripe-signup";

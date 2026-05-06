@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import type { AccessToken } from "../domain/oauth/oauth.types";
-import type { UserId } from "../domain/user/user.types";
-import { AccessTokenSchema } from "../domain/oauth/oauth.schema";
+import type { AccessToken } from "@packages/domain/oauth";
+import type { UserId } from "@packages/domain/user";
+import { AccessTokenSchema } from "@packages/domain/oauth";
 import { wantsSiren } from "./content-negotiation";
 import { SIREN_MEDIA_TYPE, sirenError } from "./api/siren";
 

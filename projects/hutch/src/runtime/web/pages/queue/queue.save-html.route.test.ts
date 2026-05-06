@@ -1,15 +1,15 @@
 import assert from "node:assert";
 import request from "supertest";
 import type { Token, Client } from "@node-oauth/oauth2-server";
-import type { PublishSaveLinkRawHtmlCommand } from "../../../providers/events/publish-save-link-raw-html-command.types";
-import type { UserId } from "../../../domain/user/user.types";
+import type { PublishSaveLinkRawHtmlCommand } from "@packages/test-fixtures/providers/events";
+import type { UserId } from "@packages/domain/user";
 import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 import { SIREN_MEDIA_TYPE } from "../../api/siren";
-import { MAX_RAW_HTML_BYTES, MAX_RAW_HTML_REQUEST_BYTES } from "../../../domain/article/article.schema";
+import { MAX_RAW_HTML_BYTES, MAX_RAW_HTML_REQUEST_BYTES } from "@packages/domain/article";
 
 const TEST_USER_ID = "test-user-123" as UserId;
 

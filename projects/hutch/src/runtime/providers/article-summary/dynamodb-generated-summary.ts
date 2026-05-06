@@ -14,7 +14,7 @@ import type {
 	FindGeneratedSummary,
 	ForceMarkSummaryPending,
 	MarkSummaryPending,
-} from "./article-summary.types";
+} from "@packages/test-fixtures/providers/article-summary";
 
 const ArticleSummaryRow = z.object({
 	url: z.string(),

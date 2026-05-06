@@ -10,15 +10,15 @@ import {
   createFakePublishSaveAnonymousLink,
   createFakeSummaryProvider,
   initReadabilityParser,
-} from '../runtime/test-app-fakes'
+} from '@packages/test-fixtures'
 import { requireEnv } from '../runtime/require-env'
-import { initRefreshArticleIfStale } from '../runtime/providers/article-freshness/check-content-freshness'
+import { initRefreshArticleIfStale } from '@packages/test-fixtures/providers/article-freshness'
 import { DEFAULT_CRAWL_HEADERS, initCrawlArticle } from '@packages/crawl-article'
-import { theInformationPreParser } from '../runtime/providers/article-parser/the-information-pre-parser'
-import { initInMemoryRefreshArticleContent } from '../runtime/providers/events/in-memory-refresh-article-content'
-import { initInMemoryUpdateFetchTimestamp } from '../runtime/providers/events/in-memory-update-fetch-timestamp'
-import { initInMemoryStripeCheckout } from '../runtime/providers/stripe-checkout/in-memory-stripe-checkout'
-import { CheckoutSessionIdSchema } from '../runtime/providers/stripe-checkout/stripe-checkout.schema'
+import { theInformationPreParser } from '@packages/test-fixtures/providers/article-parser'
+import { initInMemoryRefreshArticleContent } from '@packages/test-fixtures/providers/events'
+import { initInMemoryUpdateFetchTimestamp } from '@packages/test-fixtures/providers/events'
+import { initInMemoryStripeCheckout } from '@packages/test-fixtures/providers/stripe-checkout'
+import { CheckoutSessionIdSchema } from '@packages/test-fixtures/providers/stripe-checkout'
 
 const PORT = Number(requireEnv('E2E_PORT'))
 const origin = `http://localhost:${PORT}`

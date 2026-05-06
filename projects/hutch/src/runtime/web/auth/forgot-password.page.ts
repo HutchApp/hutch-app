@@ -1,12 +1,12 @@
 import type { Request, Response, Router } from "express";
 import express from "express";
-import type { SendEmail } from "../../providers/email/email.types";
-import type { UserExistsByEmail, UpdatePassword } from "../../providers/auth/auth.types";
+import type { SendEmail } from "@packages/test-fixtures/providers/email";
+import type { UserExistsByEmail, UpdatePassword } from "@packages/test-fixtures/providers/auth";
 import type {
 	CreatePasswordResetToken,
 	VerifyPasswordResetToken,
-} from "../../providers/password-reset/password-reset.types";
-import { PasswordResetTokenSchema } from "../../providers/password-reset/password-reset.schema";
+} from "@packages/test-fixtures/providers/password-reset";
+import { PasswordResetTokenSchema } from "@packages/test-fixtures/providers/password-reset";
 import { z } from "zod";
 import { renderPage } from "../render-page";
 import { sendComponent } from "../send-component";

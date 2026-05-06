@@ -1,7 +1,7 @@
-import { ReaderArticleHashIdSchema } from "../../../domain/article/reader-article-hash-id";
-import { MinutesSchema } from "../../../domain/article/article.schema";
-import type { SavedArticle } from "../../../domain/article/article.types";
-import { UserIdSchema } from "../../../domain/user/user.schema";
+import { ReaderArticleHashIdSchema } from "@packages/domain/article";
+import { MinutesSchema } from "@packages/domain/article";
+import type { SavedArticle } from "@packages/domain/article";
+import { UserIdSchema } from "@packages/domain/user";
 import {
 	saveArticleFromUrl,
 	type SaveArticleFromUrlDependencies,

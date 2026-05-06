@@ -3,11 +3,11 @@ import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
 
-import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../test-app-fakes";
+} from "@packages/test-fixtures";
 import { completeStripeSignup } from "./test-helpers/complete-stripe-signup";
 
 /** A loadedAt value safely older than the bot-defense minimum submit window

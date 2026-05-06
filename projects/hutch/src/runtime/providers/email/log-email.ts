@@ -1,4 +1,4 @@
-import type { SendEmail } from "./email.types";
+import type { SendEmail } from "@packages/test-fixtures/providers/email";
 
 export function initLogEmail(): { sendEmail: SendEmail } {
 	const sendEmail: SendEmail = async (message) => {

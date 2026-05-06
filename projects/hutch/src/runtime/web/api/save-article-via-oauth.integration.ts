@@ -9,7 +9,7 @@ import { createTestApp } from "../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../test-app-fakes";
+} from "@packages/test-fixtures";
 import { SIREN_MEDIA_TYPE } from "./siren";
 
 const CLIENT_ID = "hutch-firefox-extension";

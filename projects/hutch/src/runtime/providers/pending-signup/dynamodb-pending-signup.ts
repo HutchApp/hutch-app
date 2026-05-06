@@ -5,15 +5,15 @@ import {
 	dynamoField,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
-import { UserIdSchema } from "../../domain/user/user.schema";
-import { CheckoutSessionIdSchema } from "../stripe-checkout/stripe-checkout.schema";
+import { UserIdSchema } from "@packages/domain/user";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
 import type {
 	ConsumePendingSignup,
 	ListAllPendingSignups,
 	MarkCheckoutRecoveryEmailSent,
 	PendingSignup,
 	StorePendingSignup,
-} from "./pending-signup.types";
+} from "@packages/test-fixtures/providers/pending-signup";
 
 const PendingSignupRow = z.object({
 	checkoutSessionId: CheckoutSessionIdSchema,

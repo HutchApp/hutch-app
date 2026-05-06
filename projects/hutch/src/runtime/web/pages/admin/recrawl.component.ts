@@ -1,12 +1,12 @@
 import type {
 	ArticleMetadata,
 	Minutes,
-} from "../../../domain/article/article.types";
-import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
-import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
+} from "@packages/domain/article";
+import type { ArticleCrawl } from "@packages/test-fixtures/providers/article-crawl";
+import type { GeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 import type { PageBody } from "../../page-body.types";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
-import type { ProgressTick } from "../../shared/article-body/progress-mapping";
+import type { ProgressTick } from "@packages/domain/article";
 import { RECRAWL_STYLES } from "./recrawl.styles";
 
 const PROGRESS_BAR_SCRIPT = `<script src="/client-dist/progress-bar.client.js" defer></script>`;

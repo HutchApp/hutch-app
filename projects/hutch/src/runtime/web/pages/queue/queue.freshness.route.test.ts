@@ -1,12 +1,12 @@
 import request from "supertest";
-import { initRefreshArticleIfStale } from "../../../providers/article-freshness/check-content-freshness";
-import type { PublishRefreshArticleContent } from "../../../providers/events/publish-refresh-article-content.types";
-import type { PublishUpdateFetchTimestamp } from "../../../providers/events/publish-update-fetch-timestamp.types";
+import { initRefreshArticleIfStale } from "@packages/test-fixtures/providers/article-freshness";
+import type { PublishRefreshArticleContent } from "@packages/test-fixtures/providers/events";
+import type { PublishUpdateFetchTimestamp } from "@packages/test-fixtures/providers/events";
 import { createTestApp, type TestAppResult } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 
 async function loginAgent(app: TestAppResult["app"], auth: TestAppResult["auth"]) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });

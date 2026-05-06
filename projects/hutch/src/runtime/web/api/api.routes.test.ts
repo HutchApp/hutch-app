@@ -11,9 +11,9 @@ import {
 	createFakePublishSaveAnonymousLink,
 	createNoopLogError,
 	initReadabilityParser,
-} from "../../test-app-fakes";
+} from "@packages/test-fixtures";
 
-import type { UserId } from "../../domain/user/user.types";
+import type { UserId } from "@packages/domain/user";
 import { SIREN_MEDIA_TYPE } from "./siren";
 
 const TEST_USER_ID = "test-user-123" as UserId;

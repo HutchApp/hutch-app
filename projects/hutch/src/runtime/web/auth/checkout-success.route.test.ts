@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { createTestApp } from "../../test-app";
-import { TEST_APP_ORIGIN, createDefaultTestAppFixture } from "../../test-app-fakes";
-import { CheckoutSessionIdSchema } from "../../providers/stripe-checkout/stripe-checkout.schema";
+import { TEST_APP_ORIGIN, createDefaultTestAppFixture } from "@packages/test-fixtures";
+import { CheckoutSessionIdSchema } from "@packages/test-fixtures/providers/stripe-checkout";
 import { completeStripeSignup } from "./test-helpers/complete-stripe-signup";
 import { FOUNDING_MEMBER_LIMIT } from "../shared/founding-progress/founding-allocation";
 
@@ -134,7 +134,7 @@ describe("GET /auth/checkout/success", () => {
 	it("creates a Google user with a verified email after Stripe success", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const { app, auth, stripe, pendingSignup } = createTestApp(fixture);
-		const { UserIdSchema } = await import("../../domain/user/user.schema");
+		const { UserIdSchema } = await import("@packages/domain/user");
 
 		const checkout = await stripe.createCheckoutSession({
 			customerEmail: "google-buyer@example.com",
@@ -166,7 +166,7 @@ describe("GET /auth/checkout/success", () => {
 	it("sends a welcome email after a new Google user completes Stripe checkout", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const { app, email, stripe, pendingSignup } = createTestApp(fixture);
-		const { UserIdSchema } = await import("../../domain/user/user.schema");
+		const { UserIdSchema } = await import("@packages/domain/user");
 
 		const checkout = await stripe.createCheckoutSession({
 			customerEmail: "google-welcome@example.com",
@@ -199,7 +199,7 @@ describe("GET /auth/checkout/success", () => {
 	it("logs the existing user in when a Google sign-up arrives for an email that already exists", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const { app, auth, stripe, pendingSignup } = createTestApp(fixture);
-		const { UserIdSchema } = await import("../../domain/user/user.schema");
+		const { UserIdSchema } = await import("@packages/domain/user");
 
 		const existing = await auth.createUser({
 			email: "preexisting@example.com",
@@ -237,7 +237,7 @@ describe("GET /auth/checkout/success", () => {
 	it("does not send a welcome email when a Google sign-up falls back to an existing email/password account", async () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 		const { app, auth, email, stripe, pendingSignup } = createTestApp(fixture);
-		const { UserIdSchema } = await import("../../domain/user/user.schema");
+		const { UserIdSchema } = await import("@packages/domain/user");
 
 		const existing = await auth.createUser({
 			email: "existing-welcome@example.com",

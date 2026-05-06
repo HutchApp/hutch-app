@@ -2,7 +2,7 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import type { S3Client } from "@aws-sdk/client-s3";
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
-import type { PutPendingHtml } from "./pending-html.types";
+import type { PutPendingHtml } from "@packages/test-fixtures/providers/pending-html";
 
 export function initPutPendingHtml(deps: {
 	client: S3Client;

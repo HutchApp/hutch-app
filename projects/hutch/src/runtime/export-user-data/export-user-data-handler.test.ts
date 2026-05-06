@@ -1,8 +1,8 @@
 import { noopLogger, HutchLogger } from "@packages/hutch-logger";
 import type { SQSEvent, SQSRecord, SQSRecordAttributes } from "aws-lambda";
-import { initInMemoryArticleStore } from "../providers/article-store/in-memory-article-store";
-import type { Minutes } from "../domain/article/article.types";
-import type { UserId } from "../domain/user/user.types";
+import { initInMemoryArticleStore } from "@packages/test-fixtures/providers/article-store";
+import type { Minutes } from "@packages/domain/article";
+import type { UserId } from "@packages/domain/user";
 import type { UploadUserDataExport } from "../providers/user-data-export/user-data-export.types";
 import { initExportUserDataHandler } from "./export-user-data-handler";
 

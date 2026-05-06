@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import type { ErrorRequestHandler, Request, Response, Router } from "express";
 import express from "express";
-import { extractUrls } from "../../../domain/import-session/extract-urls";
+import { extractUrls } from "@packages/domain/import-session";
 import {
 	IMPORT_COMMIT_CONCURRENCY,
 	IMPORT_PAGE_SIZE,
@@ -9,8 +9,8 @@ import {
 	ImportToggleAllSchema,
 	ImportToggleSchema,
 	MAX_IMPORT_FILE_BYTES,
-} from "../../../domain/import-session/import-session.schema";
-import type { ImportSessionStore } from "../../../domain/import-session/import-session.types";
+} from "@packages/domain/import-session";
+import type { ImportSessionStore } from "@packages/domain/import-session";
 import { renderPage } from "../../render-page";
 import { sendComponent } from "../../send-component";
 import { saveArticleFromUrl, type SaveArticleFromUrlDependencies } from "../../shared/save-article/save-article-from-url";

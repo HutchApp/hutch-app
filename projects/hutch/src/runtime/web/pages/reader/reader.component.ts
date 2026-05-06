@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SavedArticle } from "../../../domain/article/article.types";
-import type { ArticleCrawl } from "../../../providers/article-crawl/article-crawl.types";
+import type { SavedArticle } from "@packages/domain/article";
+import type { ArticleCrawl } from "@packages/test-fixtures/providers/article-crawl";
 import { pickExcerpt, truncateForSeo } from "../../../providers/article-summary/article-summary.helpers";
-import type { GeneratedSummary } from "../../../providers/article-summary/article-summary.types";
+import type { GeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 import type { PageBody } from "../../page-body.types";
 import { render } from "../../render";
 import { renderArticleBody } from "../../shared/article-body/article-body.component";
-import type { ProgressTick } from "../../shared/article-body/progress-mapping";
+import type { ProgressTick } from "@packages/domain/article";
 import {
 	SHARE_BALLOON_SCRIPT,
 	renderShareBalloon,

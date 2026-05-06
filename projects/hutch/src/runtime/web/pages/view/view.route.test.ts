@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { MinutesSchema } from "../../../domain/article/article.schema";
-import { UserIdSchema } from "../../../domain/user/user.schema";
+import { MinutesSchema } from "@packages/domain/article";
+import { UserIdSchema } from "@packages/domain/user";
 import type {
 	ParseArticle,
 	ParseArticleResult,
-} from "../../../providers/article-parser/article-parser.types";
-import type { FindArticleCrawlStatus } from "../../../providers/article-crawl/article-crawl.types";
-import type { FindGeneratedSummary } from "../../../providers/article-summary/article-summary.types";
+} from "@packages/test-fixtures/providers/article-parser";
+import type { FindArticleCrawlStatus } from "@packages/test-fixtures/providers/article-crawl";
+import type { FindGeneratedSummary } from "@packages/test-fixtures/providers/article-summary";
 import { createTestApp } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
@@ -17,7 +17,7 @@ import {
 	createFakePublishLinkSaved,
 	createFakePublishRecrawlLinkInitiated,
 	createFakePublishSaveAnonymousLink,
-} from "../../../test-app-fakes";
+} from "@packages/test-fixtures";
 
 const ARTICLE_URL = "https://example.com/post";
 const ENCODED = encodeURIComponent(ARTICLE_URL);
