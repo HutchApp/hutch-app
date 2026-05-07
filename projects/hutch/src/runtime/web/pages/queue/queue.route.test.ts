@@ -1905,10 +1905,24 @@ describe("Queue routes", () => {
 
 				const btn = doc.querySelector("[data-test-share-balloon]");
 				assert(btn, "share button must be rendered on /read");
-				expect(btn.getAttribute("data-share-url")).toBe(
+				const shareUrl = new URL(btn.getAttribute("data-share-url") ?? "");
+				expect(`${shareUrl.origin}${shareUrl.pathname}`).toBe(
 					`https://readplace.com/view/${encodeURIComponent(articleUrl)}`,
 				);
+				expect(shareUrl.searchParams.get("utm_source")).toBe("share-balloon");
+				expect(shareUrl.searchParams.get("utm_medium")).toBe("share");
+				expect(shareUrl.searchParams.get("utm_campaign")).toBe("reader-internal");
 				expect(btn.getAttribute("data-share-title")).toBe("Shareable Post");
+
+				const copyBtn = doc.querySelector("[data-test-share-balloon-copy]");
+				assert(copyBtn, "copy button must be rendered on /read");
+				const copyUrl = new URL(copyBtn.getAttribute("data-share-url") ?? "");
+				expect(`${copyUrl.origin}${copyUrl.pathname}`).toBe(
+					`https://readplace.com/view/${encodeURIComponent(articleUrl)}`,
+				);
+				expect(copyUrl.searchParams.get("utm_source")).toBe("share-balloon");
+				expect(copyUrl.searchParams.get("utm_medium")).toBe("copy");
+				expect(copyUrl.searchParams.get("utm_campaign")).toBe("reader-internal");
 			});
 
 			it("uses the 'share this post' hint copy (not the /view 'share this view' copy)", async () => {

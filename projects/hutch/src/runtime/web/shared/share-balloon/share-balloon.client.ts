@@ -82,7 +82,8 @@ export function initShareBalloon(
 	const copiedLabel = pickElement(wrap, "[data-share-balloon-copied]");
 	const status = pickElement(deps.document, "[data-share-balloon-status]");
 
-	const url = pickAttribute(btn, "data-share-url");
+	const shareUrl = pickAttribute(btn, "data-share-url");
+	const copyUrl = pickAttribute(copyBtn, "data-share-url");
 	const title = pickAttribute(btn, "data-share-title");
 
 	const canShare = typeof deps.navigator.share === "function";
@@ -136,7 +137,7 @@ export function initShareBalloon(
 
 	function onShareClick() {
 		if (deps.navigator.share !== undefined) {
-			deps.navigator.share({ title, url }).catch((err) => {
+			deps.navigator.share({ title, url: shareUrl }).catch((err) => {
 				if (err && err.name === "AbortError") return;
 			});
 		}
@@ -144,7 +145,7 @@ export function initShareBalloon(
 
 	function onCopyClick() {
 		if (deps.navigator.clipboard !== undefined) {
-			deps.navigator.clipboard.writeText(url).then(flashCopied, () => {
+			deps.navigator.clipboard.writeText(copyUrl).then(flashCopied, () => {
 				status.textContent = "Unable to copy link";
 			});
 		}

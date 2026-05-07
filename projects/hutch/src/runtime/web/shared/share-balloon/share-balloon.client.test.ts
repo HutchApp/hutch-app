@@ -6,7 +6,8 @@ import { initShareBalloon } from "./share-balloon.client";
 const OPEN_CLASS = "share-balloon__wrap--open";
 const COPIED_VISIBLE_CLASS = "share-balloon__copied--visible";
 const STORAGE_KEY = "readplace.share-dismissed";
-const ARTICLE_URL = "https://example.com/post";
+const ARTICLE_URL_SHARE = "https://example.com/post?utm_medium=share";
+const ARTICLE_URL_COPY = "https://example.com/post?utm_medium=copy";
 const ARTICLE_TITLE = "Hello World";
 
 const FIXTURE = `<!DOCTYPE html><html><body>
@@ -14,8 +15,8 @@ const FIXTURE = `<!DOCTYPE html><html><body>
 <div data-share-balloon-wrap hidden>
   <div data-share-balloon-buttons>
     <div data-share-balloon-chat></div>
-    <button type="button" data-share-balloon-copy></button>
-    <button type="button" data-share-balloon data-share-url="${ARTICLE_URL}" data-share-title="${ARTICLE_TITLE}"></button>
+    <button type="button" data-share-balloon-copy data-share-url="${ARTICLE_URL_COPY}"></button>
+    <button type="button" data-share-balloon data-share-url="${ARTICLE_URL_SHARE}" data-share-title="${ARTICLE_TITLE}"></button>
   </div>
   <button type="button" data-share-balloon-close></button>
   <span data-share-balloon-copied>Link copied!</span>
@@ -257,7 +258,7 @@ describe("initShareBalloon — share click", () => {
 
 		expect(share).toHaveBeenCalledWith({
 			title: ARTICLE_TITLE,
-			url: ARTICLE_URL,
+			url: ARTICLE_URL_SHARE,
 		});
 	});
 
@@ -315,7 +316,7 @@ describe("initShareBalloon — copy click", () => {
 		ctrl.attach();
 
 		fireEvent.click(element(document, "[data-share-balloon-copy]"));
-		expect(writeText).toHaveBeenCalledWith(ARTICLE_URL);
+		expect(writeText).toHaveBeenCalledWith(ARTICLE_URL_COPY);
 
 		await flushPromises();
 		expect(copiedLabel.classList.contains(COPIED_VISIBLE_CLASS)).toBe(true);

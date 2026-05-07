@@ -73,6 +73,7 @@ export function ViewPage(input: ViewPageInput): PageBody {
 		shareUrl: canonicalViewUrl,
 		shareTitle: input.metadata.title,
 		shareHint: "Click here to share this view!",
+		shareSource: "reader-public",
 	});
 
 	const content = render(VIEW_TEMPLATE, {

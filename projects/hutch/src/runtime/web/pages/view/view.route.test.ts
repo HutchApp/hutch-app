@@ -408,7 +408,7 @@ describe("View routes", () => {
 	});
 
 	describe("Share balloon", () => {
-		it("renders a share button with the canonical view URL and article title", async () => {
+		it("renders a share button with the canonical view URL, UTM tracking params, and article title", async () => {
 			const parseArticle: ParseArticle = async () => buildParseResult();
 			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 			const applyParseResult = createFakeApplyParseResult({
@@ -442,10 +442,24 @@ describe("View routes", () => {
 			const btn = doc.querySelector("[data-test-share-balloon]");
 			assert(btn, "share button must be rendered");
 			expect(btn.getAttribute("aria-label")).toBe("Share this article");
-			expect(btn.getAttribute("data-share-url")).toBe(
+			const shareUrl = new URL(btn.getAttribute("data-share-url") ?? "");
+			expect(`${shareUrl.origin}${shareUrl.pathname}`).toBe(
 				`https://readplace.com/view/${ENCODED}`,
 			);
+			expect(shareUrl.searchParams.get("utm_source")).toBe("share-balloon");
+			expect(shareUrl.searchParams.get("utm_medium")).toBe("share");
+			expect(shareUrl.searchParams.get("utm_campaign")).toBe("reader-public");
 			expect(btn.getAttribute("data-share-title")).toBe("Hello World");
+
+			const copyBtn = doc.querySelector("[data-test-share-balloon-copy]");
+			assert(copyBtn, "copy button must be rendered");
+			const copyUrl = new URL(copyBtn.getAttribute("data-share-url") ?? "");
+			expect(`${copyUrl.origin}${copyUrl.pathname}`).toBe(
+				`https://readplace.com/view/${ENCODED}`,
+			);
+			expect(copyUrl.searchParams.get("utm_source")).toBe("share-balloon");
+			expect(copyUrl.searchParams.get("utm_medium")).toBe("copy");
+			expect(copyUrl.searchParams.get("utm_campaign")).toBe("reader-public");
 		});
 
 		it("renders a dismiss button with an accessible label", async () => {

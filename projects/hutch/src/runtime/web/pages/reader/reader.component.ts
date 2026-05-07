@@ -51,6 +51,7 @@ export function ReaderPage(
 		shareUrl: `${CANONICAL_BASE_URL}/view/${encodeURIComponent(article.url)}`,
 		shareTitle: article.metadata.title,
 		shareHint: "Click here to share this post!",
+		shareSource: "reader-internal",
 	});
 	const content = render(READER_TEMPLATE, { innerContent, shareBalloon });
 

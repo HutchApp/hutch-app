@@ -16,15 +16,36 @@ const SHARE_BALLOON_TEMPLATE = readFileSync(
 
 export const SHARE_BALLOON_SCRIPT = `<script src="/client-dist/share-balloon.client.js" defer></script>`;
 
+export type ShareBalloonSource = "reader-internal" | "reader-public";
+
 export interface ShareBalloonInput {
 	shareUrl: string;
 	shareTitle: string;
 	shareHint: string;
+	shareSource: ShareBalloonSource;
+}
+
+function withUtm(
+	baseUrl: string,
+	params: { medium: "copy" | "share"; campaign: ShareBalloonSource },
+): string {
+	const url = new URL(baseUrl);
+	url.searchParams.set("utm_source", "share-balloon");
+	url.searchParams.set("utm_medium", params.medium);
+	url.searchParams.set("utm_campaign", params.campaign);
+	return url.toString();
 }
 
 export function renderShareBalloon(input: ShareBalloonInput): string {
 	return render(SHARE_BALLOON_TEMPLATE, {
-		shareUrl: input.shareUrl,
+		shareUrlCopy: withUtm(input.shareUrl, {
+			medium: "copy",
+			campaign: input.shareSource,
+		}),
+		shareUrlShare: withUtm(input.shareUrl, {
+			medium: "share",
+			campaign: input.shareSource,
+		}),
 		shareTitle: input.shareTitle,
 		shareHint: input.shareHint,
 		shareIconSvg: SHARE_ICON_SVG,
