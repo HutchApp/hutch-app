@@ -2,7 +2,6 @@
   max-width: 480px;
   margin: 0 auto 32px;
   text-align: center;
-  /* phase-3-decoupling probe: this hutch web/ edit must not affect extensions */
 }
 
 .founding-progress__bar {

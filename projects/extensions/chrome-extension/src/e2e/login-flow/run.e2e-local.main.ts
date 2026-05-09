@@ -65,6 +65,7 @@ async function startTestServer(): Promise<ChildProcess> {
 		stdio: "inherit",
 		detached: true,
 	});
+	child.on("error", () => {}); // waitForServer will throw on its own timeout
 
 	// 30s — covers `pnpm nx` startup + cache check + node bootstrap.
 	await waitForServer(TEST_PORT, 30_000);
