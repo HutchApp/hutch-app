@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import Handlebars from "handlebars";
 import type { Minutes } from "@packages/domain/article";
 import { render } from "../../../render";
 
@@ -49,14 +50,5 @@ export function renderArticleHeaderOob(input: ArticleHeaderInput): string {
  * View") so each reader keeps its existing tab title shape.
  */
 export function renderDocumentTitleOob(documentTitle: string): string {
-	return `<title id="document-title" hx-swap-oob="outerHTML">${escapeHtml(documentTitle)}</title>`;
-}
-
-function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#39;");
+	return `<title id="document-title" hx-swap-oob="outerHTML">${Handlebars.Utils.escapeExpression(documentTitle)}</title>`;
 }

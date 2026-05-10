@@ -1,6 +1,17 @@
 import { createHash } from "node:crypto";
-import type { Request, Response } from "express";
 import type { Component } from "./component.types";
+
+export interface ConditionalGetRequest {
+	headers: Record<string, string | string[] | undefined>;
+}
+
+export interface ConditionalGetResponse {
+	setHeader(name: string, value: string | number | readonly string[]): unknown;
+	status(code: number): ConditionalGetResponse;
+	set(field: Record<string, string>): ConditionalGetResponse;
+	send(body: string): unknown;
+	end(): unknown;
+}
 
 /**
  * 1. Hash the rendered body so identical state replies with an identical ETag.
@@ -16,8 +27,8 @@ import type { Component } from "./component.types";
  *    which means OOB swaps run again on the same HTML — visibly idempotent.
  */
 export function sendConditionalHtml(
-	req: Request,
-	res: Response,
+	req: ConditionalGetRequest,
+	res: ConditionalGetResponse,
 	component: Component,
 ): void {
 	const parsed = component.to("text/html");

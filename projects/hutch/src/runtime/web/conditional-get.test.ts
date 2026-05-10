@@ -1,7 +1,10 @@
-import type { Request, Response } from "express";
-import type { Component } from "./component.types";
+import type {
+	ConditionalGetRequest,
+	ConditionalGetResponse,
+} from "./conditional-get";
 import { sendConditionalHtml } from "./conditional-get";
 import { HtmlPage } from "./html-page";
+import type { Component } from "./component.types";
 
 interface FakeResponse {
 	statusCode: number;
@@ -10,45 +13,40 @@ interface FakeResponse {
 	ended: boolean;
 }
 
-function fakeRes(): { res: Response; result: FakeResponse } {
+function fakeRes(): { res: ConditionalGetResponse; result: FakeResponse } {
 	const result: FakeResponse = {
 		statusCode: 200,
 		headers: {},
 		body: "",
 		ended: false,
 	};
-	const res: Partial<Response> = {
+	const res: ConditionalGetResponse = {
 		setHeader: (name: string, value: string | number | readonly string[]) => {
-			result.headers[name.toLowerCase()] = String(value);
-			return res as Response;
+			result.headers[String(name).toLowerCase()] = String(value);
 		},
-		set: (field: string | Record<string, string>) => {
-			if (typeof field === "object") {
-				for (const [k, v] of Object.entries(field)) {
-					result.headers[k.toLowerCase()] = v;
-				}
+		set: (field: Record<string, string>) => {
+			for (const [k, v] of Object.entries(field)) {
+				result.headers[k.toLowerCase()] = v;
 			}
-			return res as Response;
+			return res;
 		},
 		status: (code: number) => {
 			result.statusCode = code;
-			return res as Response;
+			return res;
 		},
 		send: (body: string) => {
 			result.body = body;
 			result.ended = true;
-			return res as Response;
 		},
 		end: () => {
 			result.ended = true;
-			return res as Response;
 		},
 	};
-	return { res: res as Response, result };
+	return { res, result };
 }
 
-function fakeReq(headers: Record<string, string> = {}): Request {
-	return { headers } as unknown as Request;
+function fakeReq(headers: Record<string, string> = {}): ConditionalGetRequest {
+	return { headers };
 }
 
 function htmlComponent(body: string): Component {
