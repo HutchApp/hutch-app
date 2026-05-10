@@ -74,6 +74,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		markCrawlReady: jest.fn().mockResolvedValue(undefined),
 		dispatchGenerateSummary: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
+		imagesCdnBaseUrl: "https://cdn.example.cloudfront.net",
 		logger: noopLogger,
 		...overrides,
 	};
@@ -147,6 +148,35 @@ describe("initRecrawlContentExtractedHandler", () => {
 		expect(publishEvent).toHaveBeenCalledWith(
 			expect.objectContaining({ detailType: "RecrawlCompleted" }),
 		);
+	});
+
+	it("on a tie, breaks in favour of the candidate with more CDN-host URLs even when canonical exists", async () => {
+		// Regression: pre-Referer-fix canonical (tier-0, raw origin URLs) tied
+		// with post-fix tier-1 (CDN URLs) — LLM said "only image URLs differ",
+		// which left readers stuck on the broken hotlink-protected origin.
+		const tier0 = tierSource("tier-0", { html: '<p>same body</p><img src="https://origin.example/a.png">' });
+		const tier1 = tierSource("tier-1", {
+			html: '<p>same body</p><img src="https://cdn.example.cloudfront.net/a.png"><img src="https://cdn.example.cloudfront.net/b.png">',
+		});
+		const promoteTierToCanonical = jest.fn().mockResolvedValue(undefined);
+		const findContentSourceTier = jest.fn().mockResolvedValue("tier-0");
+
+		const { handler } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
+			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "only image URLs differ" }),
+			findContentSourceTier,
+			promoteTierToCanonical,
+			imagesCdnBaseUrl: "https://cdn.example.cloudfront.net",
+		});
+
+		await handler(createSqsEvent({ url: "https://example.com/a" }), stubContext, () => {});
+
+		expect(findContentSourceTier).not.toHaveBeenCalled();
+		expect(promoteTierToCanonical).toHaveBeenCalledWith({
+			url: "https://example.com/a",
+			tier: "tier-1",
+			metadata: tier1.metadata,
+		});
 	});
 
 	it("on a tie with no canonical (recovering a stuck row), defaults to tier-1 and promotes so summary generation can find content", async () => {

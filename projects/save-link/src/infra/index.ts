@@ -534,6 +534,7 @@ const recrawlContentExtractedLambda = new HutchLambda("recrawl-content-extracted
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		DEEPSEEK_API_KEY: deepseekApiKey,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
 	},
 	policies: [
 		...recrawlContentExtractedDynamodb.policies,
