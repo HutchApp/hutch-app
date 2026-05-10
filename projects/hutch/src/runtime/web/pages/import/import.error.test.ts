@@ -13,9 +13,9 @@ describe("importErrorMessageMapping", () => {
 		expect(importErrorMessageMapping({ error_code: "save_failed" })).toBeUndefined();
 	});
 
-	it("maps import_too_large to the 5 MiB / concierge fallback message", () => {
+	it("maps import_too_large to the 5 MiB / contact fallback message", () => {
 		expect(importErrorMessageMapping({ error_code: "import_too_large" })).toBe(
-			"That file is too large. The limit is 5 MiB — please email it to hutch+migrate@readplace.com instead.",
+			"That file is too large. The limit is 5 MiB — please get in touch at fayner@readplace.com to increase the limit.",
 		);
 	});
 
