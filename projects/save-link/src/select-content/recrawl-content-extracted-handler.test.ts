@@ -171,6 +171,7 @@ describe("initRecrawlContentExtractedHandler", () => {
 
 		await handler(createSqsEvent({ url: "https://example.com/a" }), stubContext, () => {});
 
+		expect(findContentSourceTier).not.toHaveBeenCalled();
 		expect(promoteTierToCanonical).toHaveBeenCalledWith({
 			url: "https://example.com/a",
 			tier: "tier-1",
