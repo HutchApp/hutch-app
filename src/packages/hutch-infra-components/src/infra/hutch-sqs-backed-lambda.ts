@@ -13,7 +13,17 @@ export class HutchSQSBackedLambda extends pulumi.ComponentResource {
 			lambda: HutchLambda;
 			queue: HutchSQS;
 			alertEmailDLQEntry: string;
-			reportBatchItemFailures?: boolean;
+			/**
+			 * Maximum number of SQS records the EventSourceMapping will hand to a
+			 * single Lambda invocation. Required so every callsite makes the
+			 * choice explicit — set to 1 today on the handlers that process one
+			 * record at a time, raise it later without touching the handler
+			 * because every handler returns SQSBatchResponse and the mapping
+			 * always wires ReportBatchItemFailures.
+			 *
+			 * Valid range: 1–10 (AWS SQS EventSourceMapping limit for standard queues).
+			 */
+			batchSize: number;
 		},
 		opts?: pulumi.ComponentResourceOptions,
 	) {
@@ -39,10 +49,8 @@ export class HutchSQSBackedLambda extends pulumi.ComponentResource {
 		new aws.lambda.EventSourceMapping(`${name}-sqs-mapping`, {
 			eventSourceArn: args.queue.queueArn,
 			functionName: args.lambda.arn,
-			batchSize: 1,
-			...(args.reportBatchItemFailures
-				? { functionResponseTypes: ["ReportBatchItemFailures"] }
-				: {}),
+			batchSize: args.batchSize,
+			functionResponseTypes: ["ReportBatchItemFailures"],
 		}, { parent: this, aliases: [{ parent: pulumi.rootStackResource }] });
 
 		const topic = new aws.sns.Topic(`${name}-dlq-topic`, {
