@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import { withAiaChasing } from "./aia-fetch";
 import type { fetchCurl } from "./curl-fetch";
 import { type fetchH2, withH2Fallback } from "./h2-fetch";
@@ -30,6 +31,10 @@ export function initCrawlFetch(deps: {
 		deps.fetchCurl,
 	);
 	return async (url, init) => {
+		assert(
+			!(init?.referer && init.headers?.referer),
+			"Pass referer via the `referer` field or `headers.referer`, not both",
+		);
 		const headers: Record<string, string> = { ...deps.defaultHeaders, ...init?.headers };
 		if (init?.referer) headers.referer = init.referer;
 		return fetchWithFallback(url, { headers, signal: init?.signal });
