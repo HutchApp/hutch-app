@@ -2624,6 +2624,40 @@ describe("Queue routes", () => {
 			return id;
 		}
 
+		function createTerminalPipelineFixture() {
+			const articleHtml = `<html><head><title>Terminal Post</title></head><body><article><h1>Terminal Post</h1><p>Body.</p></article></body></html>`;
+			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
+			const findGeneratedSummary = async () => ({
+				status: "ready" as const,
+				summary: "Ready summary.",
+			});
+			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
+			const applyParseResult = createFakeApplyParseResult({
+				articleStore: fixture.articleStore,
+				articleCrawl: fixture.articleCrawl,
+				parseArticle,
+			});
+			return createTestApp({
+				...fixture,
+				parser: { parseArticle, crawlArticle },
+				events: {
+					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
+					publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
+					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
+					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
+					publishStaleCheckRequested: fixture.events.publishStaleCheckRequested,
+					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
+					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
+				},
+				summary: {
+					findGeneratedSummary,
+					markSummaryPending: fixture.summary.markSummaryPending,
+					forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
+				},
+			});
+		}
+
 		it("renders hx-get polling on the queue list card while crawl is pending", async () => {
 			// Default fixture leaves crawl in pending state — no fake publish wiring.
 			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
@@ -2646,37 +2680,7 @@ describe("Queue routes", () => {
 		});
 
 		it("does not render hx-get on the queue list card once both pipelines terminate", async () => {
-			const articleHtml = `<html><head><title>Done Post</title></head><body><article><h1>Done Post</h1><p>Body.</p></article></body></html>`;
-			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
-			const findGeneratedSummary = async () => ({
-				status: "ready" as const,
-				summary: "Ready summary.",
-			});
-			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({
-				articleStore: fixture.articleStore,
-				articleCrawl: fixture.articleCrawl,
-				parseArticle,
-			});
-			const { app, auth } = createTestApp({
-				...fixture,
-				parser: { parseArticle, crawlArticle },
-				events: {
-					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-					publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
-					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
-					publishStaleCheckRequested: fixture.events.publishStaleCheckRequested,
-					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
-					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
-				},
-				summary: {
-					findGeneratedSummary,
-					markSummaryPending: fixture.summary.markSummaryPending,
-					forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
-				},
-			});
+			const { app, auth } = createTerminalPipelineFixture();
 			const agent = await loginAgent(app, auth);
 
 			await agent
@@ -2715,37 +2719,7 @@ describe("Queue routes", () => {
 		});
 
 		it("GET /queue/:id/card stops polling once both pipelines terminate", async () => {
-			const articleHtml = `<html><head><title>Terminal Post</title></head><body><article><h1>Terminal Post</h1><p>Body.</p></article></body></html>`;
-			const crawlArticle = async () => ({ status: "fetched" as const, html: articleHtml });
-			const findGeneratedSummary = async () => ({
-				status: "ready" as const,
-				summary: "Ready summary.",
-			});
-			const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
-			const { parseArticle } = initReadabilityParser({ crawlArticle, sitePreParsers: [], logError: createNoopLogError() });
-			const applyParseResult = createFakeApplyParseResult({
-				articleStore: fixture.articleStore,
-				articleCrawl: fixture.articleCrawl,
-				parseArticle,
-			});
-			const { app, auth } = createTestApp({
-				...fixture,
-				parser: { parseArticle, crawlArticle },
-				events: {
-					publishLinkSaved: createFakePublishLinkSaved(applyParseResult),
-					publishRecrawlLinkInitiated: createFakePublishRecrawlLinkInitiated(applyParseResult),
-					publishSaveAnonymousLink: createFakePublishSaveAnonymousLink(applyParseResult),
-					publishSaveLinkRawHtmlCommand: fixture.events.publishSaveLinkRawHtmlCommand,
-					publishStaleCheckRequested: fixture.events.publishStaleCheckRequested,
-					publishUpdateFetchTimestamp: fixture.events.publishUpdateFetchTimestamp,
-					publishExportUserDataCommand: fixture.events.publishExportUserDataCommand,
-				},
-				summary: {
-					findGeneratedSummary,
-					markSummaryPending: fixture.summary.markSummaryPending,
-					forceMarkSummaryPending: fixture.summary.forceMarkSummaryPending,
-				},
-			});
+			const { app, auth } = createTerminalPipelineFixture();
 			const agent = await loginAgent(app, auth);
 
 			await agent
