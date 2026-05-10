@@ -60,8 +60,18 @@
     <p id="list-error" class="list-view__error" hidden>Failed to load links</p>
   </div>
 
-  <div id="loading-view" class="view view--loading">
-    <p>Loading...</p>
+  <div id="saving-view" class="view saving-view">
+    <p class="saving-view__title">Saving&hellip;</p>
+    <div
+      class="saving-view__progress"
+      role="progressbar"
+      aria-busy="true"
+      aria-label="Saving article"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div class="saving-view__progress-fill"></div>
+    </div>
   </div>
 
   <div id="spinner-overlay" class="spinner-overlay" hidden>

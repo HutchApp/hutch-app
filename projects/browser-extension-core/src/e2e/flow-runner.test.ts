@@ -44,7 +44,7 @@ describe("FlowRunner", () => {
 		const driver = createTestDriver();
 		const stateHandler: FlowStateHandler = {
 			detectCurrentState: async () => ({
-				activeView: "loading-view",
+				activeView: "saving-view",
 				availableActions: [],
 			}),
 			executeAction: async () => {},
