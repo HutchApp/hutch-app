@@ -183,6 +183,54 @@ body {
   color: var(--popup-brand-text);
 }
 
+/* --- Saving view --- */
+
+.saving-view {
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px 24px;
+  gap: 16px;
+}
+
+.saving-view__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--popup-text);
+  margin: 0;
+}
+
+.saving-view__progress {
+  width: 100%;
+  height: 4px;
+  background: var(--popup-surface);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/**
+ * 1. Asymptotic ease toward 90% over 3s — the bar moves quickly at first then
+ *    slows, so the popup feels responsive even when the save is fast and stays
+ *    plausible when the save is slow. State classes interrupt the transition.
+ */
+.saving-view__progress-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--popup-brand);
+  border-radius: 2px;
+  transition: width 3s cubic-bezier(0, 0.7, 0.3, 1); /* 1 */
+}
+
+/* purgecss-ignore-start: applied dynamically in popup.browser.ts when starting/finishing the save progress bar */
+.saving-view__progress-fill--starting {
+  width: 90%;
+}
+
+.saving-view__progress-fill--complete {
+  width: 100%;
+  transition: width 0.2s ease-out;
+}
+/* purgecss-ignore-end */
+
 /* --- Shortcut hint --- */
 
 .shortcut-hint {
@@ -536,19 +584,6 @@ body {
   font-size: 13px;
   text-align: center;
   margin: 0;
-}
-
-/* --- Loading view --- */
-
-.view--loading {
-  padding: 32px 16px;
-  align-items: center;
-}
-
-.view--loading > p {
-  margin: 0;
-  font-size: 13px;
-  color: var(--popup-label);
 }
 
 /* --- Spinner overlay --- */

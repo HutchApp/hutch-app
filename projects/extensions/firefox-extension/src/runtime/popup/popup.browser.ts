@@ -21,6 +21,32 @@ function showView(id: string) {
 	if (target) target.hidden = false;
 }
 
+/**
+ * 1. Defer one frame so the browser has committed the initial 0% width
+ *    before we set the target. Without this the transition collapses into a
+ *    single computed-style read and the bar jumps to 90% with no animation.
+ */
+function startSavingProgress() {
+	const fill = document.querySelector(".saving-view__progress-fill");
+	if (!fill) return;
+	requestAnimationFrame(() => {
+		fill.classList.add("saving-view__progress-fill--starting");
+	});
+}
+
+function finishSavingProgress(): Promise<void> {
+	return new Promise((resolve) => {
+		const fill = document.querySelector(".saving-view__progress-fill");
+		if (!fill) {
+			resolve();
+			return;
+		}
+		fill.classList.remove("saving-view__progress-fill--starting");
+		fill.classList.add("saving-view__progress-fill--complete");
+		setTimeout(resolve, 350); // 200ms snap to 100% + 150ms hold
+	});
+}
+
 function send(message: PopupMessage): Promise<unknown> {
 	return browser.runtime.sendMessage(message);
 }
@@ -270,6 +296,11 @@ async function saveAndShowList() {
 		return;
 	}
 
+	const savingTitle = document.querySelector(".saving-view__title");
+	if (savingTitle) savingTitle.textContent = "Saving\u2026";
+	const progressBar = document.querySelector(".saving-view__progress");
+	if (progressBar) progressBar.setAttribute("aria-label", "Saving article");
+
 	const saveResult = (await send({
 		type: "save-current-tab",
 		url: activeTab.url,
@@ -282,6 +313,7 @@ async function saveAndShowList() {
 	}
 
 	if (saveResult.ok && saveResult.value.ok) {
+		await finishSavingProgress();
 		showView("saved-view");
 		return;
 	}
@@ -318,7 +350,8 @@ document.getElementById("login-button")?.addEventListener("click", async () => {
 		return;
 	}
 
-	showView("loading-view");
+	showView("saving-view");
+	startSavingProgress();
 	await saveAndShowList();
 });
 
@@ -355,6 +388,7 @@ if (shortcutHint) {
 	}
 }
 
+startSavingProgress();
 saveAndShowList().catch((error) => {
 	logger.error("Failed to initialize popup:", error);
 	showView("list-view");
