@@ -4,6 +4,8 @@ import type {
 	WriteAutoHealAttempt,
 } from "./article-crawl.types";
 
+// Not atomic: concurrent calls may each slip one extra attempt through.
+// Acceptable — the cap is a cost guard, not a correctness invariant.
 export function initIncrementCrawlAutoHealAttempt(deps: {
 	findAutoHealState: FindAutoHealState;
 	writeAutoHealAttempt: WriteAutoHealAttempt;
