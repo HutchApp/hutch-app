@@ -22,6 +22,7 @@ export function initRecrawlContentExtractedHandler(deps: {
 	markCrawlReady: MarkCrawlReady;
 	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
 	publishEvent: PublishEvent;
+	imagesCdnBaseUrl: string;
 	logger: HutchLogger;
 }): SQSHandler {
 	const {
@@ -32,8 +33,10 @@ export function initRecrawlContentExtractedHandler(deps: {
 		markCrawlReady,
 		dispatchGenerateSummary,
 		publishEvent,
+		imagesCdnBaseUrl,
 		logger,
 	} = deps;
+	const cdnHost = new URL(imagesCdnBaseUrl).host;
 
 	return async (event) => {
 		for (const record of event.Records) {
@@ -74,8 +77,20 @@ export function initRecrawlContentExtractedHandler(deps: {
 					reason: decision.reason,
 				});
 				if (decision.winner === "tie") {
-					const existingTier = await findContentSourceTier(detail.url);
-					if (existingTier) {
+					/* The LLM treats "only image URLs differ" as a tie, but a
+					 * recrawl after the Referer fix migrates <img src> from the
+					 * origin to our CDN — never a wash. Hotlink-protected
+					 * origins 403 the reader's browser
+					 * without our server-side Referer trick, so any net-positive
+					 * shift toward the CDN host is unambiguously an improvement.
+					 * Override the tie when one candidate has more occurrences
+					 * of the CDN host than the others. */
+					const cdnTie = breakTieByCdnRewriteCount(sources, cdnHost);
+					const existingTier = cdnTie ? undefined : await findContentSourceTier(detail.url);
+					if (cdnTie) {
+						winnerTier = cdnTie.tier;
+						reason = cdnTie.reason;
+					} else if (existingTier) {
 						/* Recrawl tie + canonical already set: keep canonical
 						 * exactly as-is; the operator still gets a fresh summary
 						 * via the unconditional dispatchGenerateSummary below. */
@@ -142,4 +157,23 @@ export function initRecrawlContentExtractedHandler(deps: {
 			});
 		}
 	};
+}
+
+function breakTieByCdnRewriteCount(
+	sources: readonly TierSource[],
+	cdnHost: string,
+): { tier: TierSource["tier"]; reason: string } | undefined {
+	const counts = sources
+		.map((source) => ({ tier: source.tier, count: countOccurrences(source.html, cdnHost) }))
+		.sort((a, b) => b.count - a.count);
+	const [top, second] = counts;
+	if (!top || !second || top.count <= second.count) return undefined;
+	return {
+		tier: top.tier,
+		reason: `tie broken: ${top.tier} has ${top.count} CDN-rewritten URLs vs ${second.count} in next candidate`,
+	};
+}
+
+function countOccurrences(haystack: string, needle: string): number {
+	return haystack.split(needle).length - 1;
 }
