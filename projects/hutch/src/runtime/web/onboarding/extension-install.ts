@@ -8,11 +8,8 @@ const INSTALL_URLS: Record<BrowserName, string> = {
 	other: "/install",
 };
 
-/** Reads the server-only liveness cookie. The legacy hutch_ext_installed
- * cookie (writable from the extension's content script) is intentionally
- * ignored here — its presence does not prove the extension is currently
- * installed, only that an extension was once installed in this browser
- * within the last year. See mark-extension-installed.middleware.ts. */
+/** True when the extension is actively installed (server-only liveness
+ * cookie is present and not yet expired). */
 export function isExtensionInstalled(req: Request): boolean {
 	return req.cookies?.[ALIVE_COOKIE_NAME] === ALIVE_COOKIE_VALUE;
 }
