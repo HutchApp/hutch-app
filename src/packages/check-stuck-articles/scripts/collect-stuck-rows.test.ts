@@ -24,14 +24,13 @@ interface ScanResultLike {
 
 function createFakeClient(
 	impl: (input: ScanCommandLike) => ScanResultLike,
-): { client: DynamoDBDocumentClient; calls: ScanCommandLike[] } {
+): { client: Partial<DynamoDBDocumentClient>; calls: ScanCommandLike[] } {
 	const calls: ScanCommandLike[] = [];
 	const send = (async (command: ScanCommandLike) => {
 		calls.push(command);
 		return impl(command);
 	}) as unknown as SendFn;
-	const client = { send } as Partial<DynamoDBDocumentClient> as DynamoDBDocumentClient;
-	return { client, calls };
+	return { client: { send }, calls };
 }
 
 const TABLE = "test-articles";
@@ -40,7 +39,7 @@ const ORIGIN = "https://example.test";
 describe("collectStuckRows", () => {
 	it("issues a Scan against the configured table with the canary FilterExpression", async () => {
 		const { client, calls } = createFakeClient(() => ({ Items: [], Count: 0 }));
-		await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		assert.equal(calls.length, 1);
 		assert.equal(calls[0]?.input.TableName, TABLE);
 		assert.equal(
@@ -58,7 +57,7 @@ describe("collectStuckRows", () => {
 
 	it("projects the attributes classifyRow and checkTerminalState consume", async () => {
 		const { client, calls } = createFakeClient(() => ({ Items: [], Count: 0 }));
-		await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		const projection = calls[0]?.input.ProjectionExpression ?? "";
 		for (const attr of [
 			"originalUrl",
@@ -86,7 +85,7 @@ describe("collectStuckRows", () => {
 			],
 			Count: 1,
 		}));
-		const stuck = await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		const stuck = await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		assert.equal(stuck.length, 1);
 		assert.equal(stuck[0]?.originalUrl, "https://example.test/article");
 		assert.deepEqual(stuck[0]?.reasons, ["crawl-pending"]);
@@ -113,7 +112,7 @@ describe("collectStuckRows", () => {
 			],
 			Count: 1,
 		}));
-		const stuck = await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		const stuck = await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		assert.deepEqual(stuck, []);
 	});
 
@@ -128,7 +127,7 @@ describe("collectStuckRows", () => {
 			],
 			Count: 1,
 		}));
-		const stuck = await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		const stuck = await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		assert.deepEqual(stuck, []);
 	});
 
@@ -142,7 +141,7 @@ describe("collectStuckRows", () => {
 			],
 			Count: 1,
 		}));
-		const stuck = await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		const stuck = await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		assert.deepEqual(stuck, []);
 	});
 
@@ -174,7 +173,7 @@ describe("collectStuckRows", () => {
 				Count: 1,
 			};
 		});
-		const stuck = await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		const stuck = await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		assert.equal(calls.length, 2);
 		assert.equal(calls[0]?.input.ExclusiveStartKey, undefined);
 		assert.deepEqual(calls[1]?.input.ExclusiveStartKey, { url: "page1.test/a" });
@@ -193,7 +192,7 @@ describe("collectStuckRows", () => {
 			],
 			Count: 1,
 		}));
-		const stuck = await collectStuckRows({ client, tableName: TABLE, origin: ORIGIN });
+		const stuck = await collectStuckRows({ client: client as DynamoDBDocumentClient, tableName: TABLE, origin: ORIGIN });
 		assert.equal(stuck.length, 1);
 		assert.deepEqual(stuck[0]?.reasons, ["summary-ready-without-text"]);
 	});
