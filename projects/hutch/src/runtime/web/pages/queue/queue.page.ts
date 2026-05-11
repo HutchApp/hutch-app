@@ -5,7 +5,7 @@ import {
 	SAVE_COOKIE_NAME,
 	SAVE_COOKIE_VALUE,
 } from "@packages/onboarding-extension-signal";
-import type { ErrorRequestHandler, Request, Response, Router } from "express";
+import type { ErrorRequestHandler, Request, RequestHandler, Response, Router } from "express";
 import express from "express";
 import type { LogParseError } from "@packages/hutch-infra-components";
 import type { ValidateSaveableUrl } from "@packages/domain/article";
@@ -21,6 +21,7 @@ import type {
 	DeleteArticle,
 	FindArticleById,
 	FindArticleByUrl,
+	FindArticleUrlById,
 	FindArticlesByUser,
 	SaveArticle,
 	UpdateArticleStatus,
@@ -103,6 +104,7 @@ interface QueueDependencies {
 	findArticlesByUser: FindArticlesByUser;
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
+	findArticleUrlById: FindArticleUrlById;
 	saveArticle: SaveArticle;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
@@ -117,6 +119,10 @@ interface QueueDependencies {
 	publishUpdateFetchTimestamp: PublishUpdateFetchTimestamp;
 	readArticleContent: ReadArticleContent;
 	httpErrorMessageMapping: HttpErrorMessageMapping;
+	/** Auth middleware applied to every queue route except the public
+	 * `GET /:id/read` permalink. Owned by the composition root so the same
+	 * middleware applies to all other authenticated mounts. */
+	dualAuth: RequestHandler;
 	logError: (message: string, error?: Error) => void;
 	logParseError: LogParseError;
 	now: () => Date;
@@ -148,6 +154,86 @@ async function loadCrawls(
 
 export function initQueueRoutes(deps: QueueDependencies): Router {
 	const router = express.Router();
+	const reader = initArticleReader({
+		findArticleCrawlStatus: deps.findArticleCrawlStatus,
+		findGeneratedSummary: deps.findGeneratedSummary,
+		readArticleContent: deps.readArticleContent,
+		findArticleByUrl: deps.findArticleByUrl,
+		formatDocumentTitle: formatReaderDocumentTitle,
+		backLink: { href: "/queue", label: "← Back to queue" },
+		now: deps.now,
+	});
+
+	function pollUrlBuilderForId(articleId: string): PollUrlBuilder {
+		return {
+			summary: (n) => `/queue/${articleId}/summary?poll=${n}`,
+			reader: (n) => `/queue/${articleId}/reader?poll=${n}`,
+		};
+	}
+
+	/** Public share-able permalink. Users copy this URL from the browser
+	 * address bar to share an article, so any visitor — owner, different
+	 * logged-in user, or anonymous — must land somewhere useful. Owners get
+	 * their personalised reader (mark-as-read, progress). Everyone else is
+	 * redirected to `/view/<original-url>`, the public route that already
+	 * has full OG/Twitter/Schema.org metadata so social-media previews
+	 * unfurl correctly. Declared BEFORE `router.use(deps.dualAuth)` so the
+	 * auth middleware doesn't pre-empt anonymous traffic with a /login
+	 * redirect. */
+	router.get("/:id/read", async (req: Request, res: Response) => {
+		const parsedId = ReaderArticleHashIdSchema.safeParse(req.params.id);
+		if (!parsedId.success) {
+			res.redirect(303, "/queue");
+			return;
+		}
+
+		const requesterId = req.userId;
+		const ownedArticle = requesterId
+			? await deps.findArticleById(parsedId.data, requesterId)
+			: null;
+
+		if (!ownedArticle) {
+			const articleUrl = await deps.findArticleUrlById(parsedId.data);
+			if (!articleUrl) {
+				res.redirect(303, "/queue");
+				return;
+			}
+			/** 302 (not 301) because the redirect is conditional on
+			 * auth/ownership — the same URL renders differently for the
+			 * owner, so caches must not pin a single response. */
+			res.redirect(302, `/view/${encodeURIComponent(articleUrl)}`);
+			return;
+		}
+
+		if (ownedArticle.status === "unread") {
+			await deps.updateArticleStatus(ownedArticle.id, ownedArticle.userId, "read");
+		}
+
+		const audioEnabled = req.query.feature === "audio";
+		const state = await reader.resolveReaderState({
+			article: {
+				url: ownedArticle.url,
+				metadata: ownedArticle.metadata,
+				estimatedReadTime: ownedArticle.estimatedReadTime,
+			},
+			pollUrlBuilder: pollUrlBuilderForId(ownedArticle.id.value),
+		});
+
+		sendComponent(
+			req, res,
+			renderPage(req, ReaderPage({ ...ownedArticle, content: state.content }, {
+				summary: state.summary,
+				summaryPollUrl: state.summaryPollUrl,
+				crawl: state.crawl,
+				readerPollUrl: state.readerPollUrl,
+				progress: state.progress,
+				audioEnabled,
+				extensionInstallUrl: extensionInstallUrlIfMissing(req),
+			})),
+		);
+	});
+
+	router.use(deps.dualAuth);
 
 	router.get("/", async (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
@@ -425,64 +511,6 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			deps.logError("Failed to save article", error instanceof Error ? error : undefined);
 			res.redirect(303, "/queue?error_code=save_failed");
 		}
-	});
-
-	const reader = initArticleReader({
-		findArticleCrawlStatus: deps.findArticleCrawlStatus,
-		findGeneratedSummary: deps.findGeneratedSummary,
-		readArticleContent: deps.readArticleContent,
-		findArticleByUrl: deps.findArticleByUrl,
-		formatDocumentTitle: formatReaderDocumentTitle,
-		backLink: { href: "/queue", label: "← Back to queue" },
-		now: deps.now,
-	});
-
-	function pollUrlBuilderForId(articleId: string): PollUrlBuilder {
-		return {
-			summary: (n) => `/queue/${articleId}/summary?poll=${n}`,
-			reader: (n) => `/queue/${articleId}/reader?poll=${n}`,
-		};
-	}
-
-	router.get("/:id/read", async (req: Request, res: Response) => {
-		assert(req.userId, "userId required - route must be protected by requireAuth");
-		const userId = req.userId;
-		const parsedId = ReaderArticleHashIdSchema.safeParse(req.params.id);
-		const article = parsedId.success
-			? await deps.findArticleById(parsedId.data, userId)
-			: null;
-
-		if (!article) {
-			res.redirect(303, "/queue");
-			return;
-		}
-
-		if (article.status === "unread") {
-			await deps.updateArticleStatus(article.id, userId, "read");
-		}
-
-		const audioEnabled = req.query.feature === "audio";
-		const state = await reader.resolveReaderState({
-			article: {
-				url: article.url,
-				metadata: article.metadata,
-				estimatedReadTime: article.estimatedReadTime,
-			},
-			pollUrlBuilder: pollUrlBuilderForId(article.id.value),
-		});
-
-		sendComponent(
-			req, res,
-			renderPage(req, ReaderPage({ ...article, content: state.content }, {
-				summary: state.summary,
-				summaryPollUrl: state.summaryPollUrl,
-				crawl: state.crawl,
-				readerPollUrl: state.readerPollUrl,
-				progress: state.progress,
-				audioEnabled,
-				extensionInstallUrl: extensionInstallUrlIfMissing(req),
-			})),
-		);
 	});
 
 	router.get("/:id/summary", async (req: Request, res: Response) => {

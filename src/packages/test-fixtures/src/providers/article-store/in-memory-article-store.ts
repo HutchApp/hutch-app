@@ -13,6 +13,7 @@ import type {
 	FindArticleById,
 	FindArticleByUrl,
 	FindArticleFreshness,
+	FindArticleUrlById,
 	FindArticlesByUser,
 	SaveArticle,
 	SaveArticleGlobally,
@@ -64,6 +65,7 @@ export function initInMemoryArticleStore(): {
 	saveArticleGlobally: SaveArticleGlobally;
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
+	findArticleUrlById: FindArticleUrlById;
 	findArticleFreshness: FindArticleFreshness;
 	findArticlesByUser: FindArticlesByUser;
 	deleteArticle: DeleteArticle;
@@ -139,6 +141,11 @@ export function initInMemoryArticleStore(): {
 		if (!ua) return null;
 
 		return toSavedArticle(article, ua);
+	};
+
+	const findArticleUrlById: FindArticleUrlById = async (id) => {
+		const article = findArticleByRouteId(id);
+		return article ? article.originalUrl : null;
 	};
 
 	const findArticleByUrl: FindArticleByUrl = async (url) => {
@@ -268,6 +275,7 @@ export function initInMemoryArticleStore(): {
 		saveArticleGlobally,
 		findArticleById,
 		findArticleByUrl,
+		findArticleUrlById,
 		findArticleFreshness,
 		findArticlesByUser,
 		deleteArticle,

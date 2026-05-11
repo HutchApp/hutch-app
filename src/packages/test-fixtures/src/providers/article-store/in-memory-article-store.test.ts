@@ -67,6 +67,37 @@ describe("initInMemoryArticleStore", () => {
 		});
 	});
 
+	describe("findArticleUrlById", () => {
+		it("should return null for an unknown hash", async () => {
+			const store = initInMemoryArticleStore();
+			const unknown = ReaderArticleHashId.from("https://nobody-saved.com/this");
+
+			const url = await store.findArticleUrlById(unknown);
+
+			expect(url).toBeNull();
+		});
+
+		it("should return the original URL even when no user owns the article", async () => {
+			const store = initInMemoryArticleStore();
+			await store.saveArticleGlobally({
+				url: "https://example.com/global-only",
+				metadata: {
+					title: "Global Only",
+					siteName: "example.com",
+					excerpt: "",
+					wordCount: 0,
+				},
+				estimatedReadTime: 0 as Minutes,
+				savedAt: new Date(),
+			});
+			const id = ReaderArticleHashId.from("https://example.com/global-only");
+
+			const url = await store.findArticleUrlById(id);
+
+			expect(url).toBe("https://example.com/global-only");
+		});
+	});
+
 	describe("article deduplication", () => {
 		it("should reuse the same global article when two users save the same URL", async () => {
 			const store = initInMemoryArticleStore();

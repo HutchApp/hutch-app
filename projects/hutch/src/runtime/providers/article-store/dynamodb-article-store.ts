@@ -19,6 +19,7 @@ import type {
 	FindArticleById,
 	FindArticleByUrl,
 	FindArticleFreshness,
+	FindArticleUrlById,
 	FindArticlesByUser,
 	SaveArticle,
 	SaveArticleGlobally,
@@ -93,6 +94,7 @@ export function initDynamoDbArticleStore(deps: {
 	saveArticleGlobally: SaveArticleGlobally;
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
+	findArticleUrlById: FindArticleUrlById;
 	findArticlesByUser: FindArticlesByUser;
 	deleteArticle: DeleteArticle;
 	updateArticleStatus: UpdateArticleStatus;
@@ -350,6 +352,11 @@ export function initDynamoDbArticleStore(deps: {
 		};
 	};
 
+	const findArticleUrlById: FindArticleUrlById = async (id) => {
+		const article = await findArticleByRouteId(id);
+		return article ? article.originalUrl : null;
+	};
+
 	const findArticleByUrl: FindArticleByUrl = async (url) => {
 		const articleResourceUniqueId = ArticleResourceUniqueId.parse(url);
 		const row = await articles.get(
@@ -399,6 +406,7 @@ export function initDynamoDbArticleStore(deps: {
 		saveArticleGlobally,
 		findArticleById,
 		findArticleByUrl,
+		findArticleUrlById,
 		findArticlesByUser,
 		deleteArticle,
 		updateArticleStatus,
