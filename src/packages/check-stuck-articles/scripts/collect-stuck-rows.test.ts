@@ -203,6 +203,29 @@ describe("collectStuckRows", () => {
 		assert.deepEqual(stuck, []);
 	});
 
+	it("tolerates rows without savedAt (pre-savedAt rows still exist in prod)", async () => {
+		const { client } = createFakeClient(() => ({
+			Items: [
+				{
+					url: "legacy.test/old",
+					originalUrl: "https://legacy.test/old",
+					crawlStatus: "pending",
+					contentFetchedAt: new Date(NOW.getTime() - 30 * 60_000).toISOString(),
+					/* savedAt intentionally absent — matches prod rows predating the attribute */
+				},
+			],
+			Count: 1,
+		}));
+		const stuck = await collectStuckRows({
+			client,
+			tableName: TABLE,
+			origin: ORIGIN,
+			now: () => NOW,
+		});
+		assert.equal(stuck.length, 1);
+		assert.equal(stuck[0]?.originalUrl, "https://legacy.test/old");
+	});
+
 	it("paginates: a LastEvaluatedKey on page 1 triggers a second Scan with ExclusiveStartKey", async () => {
 		let callIndex = 0;
 		const { client, calls } = createFakeClient(() => {

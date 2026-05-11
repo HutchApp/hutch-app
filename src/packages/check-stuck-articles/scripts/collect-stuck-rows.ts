@@ -24,7 +24,7 @@ const StuckArticleRow = z.object({
 	summaryStatus: dynamoField(SummaryStatusSchema),
 	crawlStatus: dynamoField(CrawlStatusSchema),
 	contentFetchedAt: dynamoField(z.string()),
-	savedAt: z.string(),
+	savedAt: dynamoField(z.string()), /* pre-savedAt rows exist in prod */
 });
 
 export interface StuckRow {
