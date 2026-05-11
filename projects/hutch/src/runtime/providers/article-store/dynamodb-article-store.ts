@@ -146,6 +146,7 @@ export function initDynamoDbArticleStore(deps: {
 					wordCount: params.metadata.wordCount,
 					imageUrl: params.metadata.imageUrl,
 					estimatedReadTime: params.estimatedReadTime,
+					firstSeenAt: new Date().toISOString(), // anchors the stuck-articles canary's min-age filter
 				},
 				ConditionExpression: "attribute_not_exists(#url)",
 				ExpressionAttributeNames: { "#url": "url" },
