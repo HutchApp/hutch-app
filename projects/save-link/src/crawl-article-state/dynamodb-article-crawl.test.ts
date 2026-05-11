@@ -28,6 +28,7 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			const { markCrawlReady } = initDynamoDbArticleCrawl({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
 			});
 
 			await markCrawlReady({ url: URL });
@@ -58,6 +59,7 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			const { markCrawlFailed } = initDynamoDbArticleCrawl({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
 			});
 
 			await markCrawlFailed({ url: URL, reason: "timeout" });
@@ -90,6 +92,100 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			expect(command.input.ExpressionAttributeValues?.[":reason"]).toBe(
 				"timeout",
 			);
+			expect(command.input.ExpressionAttributeValues?.[":failedAt"]).toBe(
+				"2026-05-01T00:00:00.000Z",
+			);
+		});
+	});
+
+	describe("markCrawlUnsupported", () => {
+		it("issues an UpdateItem with a guard against regressing from ready", async () => {
+			let received: unknown;
+			const client = createFakeClient((input) => {
+				received = input;
+				return {};
+			});
+			const { markCrawlUnsupported } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
+			});
+
+			await markCrawlUnsupported({ url: URL, reason: "non-html content type: application/pdf" });
+
+			const command = received as {
+				input: {
+					UpdateExpression?: string;
+					ConditionExpression?: string;
+					ExpressionAttributeValues?: Record<string, unknown>;
+				};
+			};
+			expect(command.input.UpdateExpression).toContain(
+				"crawlStatus = :unsupported",
+			);
+			expect(command.input.UpdateExpression).toContain(
+				"crawlUnsupportedReason = :reason",
+			);
+			expect(command.input.UpdateExpression).toContain(
+				"crawlFailedAt = :failedAt",
+			);
+			expect(command.input.UpdateExpression).toContain(
+				"REMOVE crawlFailureReason",
+			);
+			expect(command.input.ConditionExpression).toContain(
+				"attribute_not_exists(crawlStatus)",
+			);
+			expect(command.input.ConditionExpression).toContain(
+				"crawlStatus = :pending",
+			);
+			expect(command.input.ConditionExpression).toContain(
+				"crawlStatus = :failed",
+			);
+			expect(command.input.ConditionExpression).toContain(
+				"crawlStatus = :unsupported",
+			);
+			expect(command.input.ExpressionAttributeValues?.[":reason"]).toBe(
+				"non-html content type: application/pdf",
+			);
+			expect(command.input.ExpressionAttributeValues?.[":unsupported"]).toBe(
+				"unsupported",
+			);
+			expect(command.input.ExpressionAttributeValues?.[":failedAt"]).toBe(
+				"2026-05-01T00:00:00.000Z",
+			);
+		});
+
+		it("swallows ConditionalCheckFailedException (ready row preserved)", async () => {
+			const client = createFakeClient(() => {
+				throw new ConditionalCheckFailedException({
+					$metadata: {},
+					message: "condition failed",
+				});
+			});
+			const { markCrawlUnsupported } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
+			});
+
+			await expect(
+				markCrawlUnsupported({ url: URL, reason: "r" }),
+			).resolves.toBeUndefined();
+		});
+
+		it("rethrows non-ConditionalCheck errors", async () => {
+			const client = createFakeClient(() => {
+				throw new Error("throttled");
+			});
+			const { markCrawlUnsupported } = initDynamoDbArticleCrawl({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
+			});
+
+			await expect(
+				markCrawlUnsupported({ url: URL, reason: "r" }),
+			).rejects.toThrow("throttled");
 		});
 	});
 
@@ -103,6 +199,7 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			const { markCrawlStage } = initDynamoDbArticleCrawl({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
 			});
 
 			await markCrawlStage({ url: URL, stage: "crawl-fetched" });
@@ -128,6 +225,7 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			const { markCrawlStage } = initDynamoDbArticleCrawl({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
 			});
 
 			await expect(
@@ -147,6 +245,7 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			const { markCrawlFailed } = initDynamoDbArticleCrawl({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
 			});
 
 			await expect(
@@ -161,6 +260,7 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			const { markCrawlFailed } = initDynamoDbArticleCrawl({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
 			});
 
 			await expect(markCrawlFailed({ url: URL, reason: "r" })).rejects.toThrow(
@@ -175,6 +275,7 @@ describe("initDynamoDbArticleCrawl (unit)", () => {
 			const { markCrawlReady } = initDynamoDbArticleCrawl({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
+				now: () => new Date("2026-05-01T00:00:00.000Z"),
 			});
 
 			await expect(markCrawlReady({ url: URL })).rejects.toThrow("throttled");

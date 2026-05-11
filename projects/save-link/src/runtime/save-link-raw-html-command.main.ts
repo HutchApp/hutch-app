@@ -70,6 +70,7 @@ const { putTierSource } = initPutTierSource({
 const { markCrawlFailed } = initDynamoDbArticleCrawl({
 	client: dynamoClient,
 	tableName: articlesTable,
+	now: () => new Date(),
 });
 
 const { publishEvent } = initEventBridgePublisher({

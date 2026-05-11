@@ -14,6 +14,7 @@ const dynamoClient = createDynamoDocumentClient();
 const crawlStore = initDynamoDbArticleCrawl({
 	client: dynamoClient,
 	tableName: articlesTable,
+	now: () => new Date(),
 });
 
 const summaryStore = initDynamoDbGeneratedSummary({
