@@ -1,10 +1,5 @@
-import { noopLogger } from "@packages/hutch-logger";
-import { AggregateConcurrencyError } from "@packages/domain/article";
 import type { Article, Minutes } from "@packages/domain/article";
-import {
-	ConditionalCheckFailedException,
-	type DynamoDBDocumentClient,
-} from "@packages/hutch-storage-client";
+import type { DynamoDBDocumentClient } from "@packages/hutch-storage-client";
 import { initDynamoDbArticleStore } from "./dynamodb-article-store";
 
 type SendFn = DynamoDBDocumentClient["send"];
@@ -23,7 +18,6 @@ const URL = "https://example.com/article";
 function buildArticle(overrides: Partial<Article> = {}): Article {
 	return {
 		url: URL,
-		version: 3,
 		crawl: { status: "ready" },
 		summary: {
 			status: "ready",
@@ -51,7 +45,6 @@ interface UpdateInput {
 	input: {
 		Key?: { url: string };
 		UpdateExpression?: string;
-		ConditionExpression?: string;
 		ExpressionAttributeValues?: Record<string, unknown>;
 	};
 }
@@ -62,7 +55,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded).toBeUndefined();
@@ -72,7 +64,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const client = createFakeClient(() => ({
 			Item: {
 				url: URL,
-				version: 4,
 				crawlStatus: "ready",
 				summaryStatus: "ready",
 				summary: "Generated.",
@@ -93,13 +84,11 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
 		const loaded = await store.load(URL);
 		expect(loaded).toMatchObject({
 			url: URL,
-			version: 4,
 			crawl: { status: "ready" },
 			summary: {
 				status: "ready",
@@ -113,23 +102,16 @@ describe("initDynamoDbArticleStore.load", () => {
 		expect(loaded?.etag).toBe('"v1"');
 	});
 
-	it("projects a pre-aggregate row (no version, no summary) as version=0 with pending sub-states", async () => {
-		// Pre-aggregate rows live in DDB today. Phase 1 reads them through the
-		// aggregate adapter and the orchestrator can transition them; the
-		// first successful save bumps version to 1. The schema absorbs the
-		// missing attributes via dynamoField; the projection function fills
-		// in safe defaults.
+	it("projects a pre-aggregate row (no summary) with pending sub-states", async () => {
 		const client = createFakeClient(() => ({
 			Item: { url: URL },
 		}));
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
 		const loaded = await store.load(URL);
-		expect(loaded?.version).toBe(0);
 		expect(loaded?.crawl).toEqual({ status: "pending" });
 		expect(loaded?.summary).toEqual({ status: "pending" });
 		expect(loaded?.metadata.title).toBe("");
@@ -149,7 +131,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.crawl).toEqual({
@@ -177,7 +158,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.crawl).toEqual({
@@ -204,7 +184,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.crawl).toEqual({
@@ -224,7 +203,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.summary).toEqual({ status: "skipped" });
@@ -241,7 +219,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.summary).toEqual({
@@ -254,11 +231,6 @@ describe("initDynamoDbArticleStore.load", () => {
 	});
 
 	it("projects a ready summary with missing summary text as empty string (legacy corruption safety net)", async () => {
-		// A row written before the PR #271 assertion was tightened could land
-		// in (summaryStatus=ready, summary=undefined). The aggregate adapter
-		// must tolerate this on READ (so the orchestrator can re-transition
-		// it back to pending) while the discriminated union prevents new
-		// WRITES from ever producing this shape again.
 		const client = createFakeClient(() => ({
 			Item: {
 				url: URL,
@@ -268,7 +240,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.summary).toEqual({
@@ -280,18 +251,12 @@ describe("initDynamoDbArticleStore.load", () => {
 	});
 
 	it("projects failed crawl with legacy missing reason/failedAt as 'unknown'/empty", async () => {
-		// Survives a row written before the assertion at
-		// dynamodb-article-crawl.ts:41 was tightened. The aggregate adapter
-		// tolerates the absent fields on read so old rows can flow through the
-		// orchestrator at all; the writer-side discriminated union ensures new
-		// writes are well-formed.
 		const client = createFakeClient(() => ({
 			Item: { url: URL, crawlStatus: "failed" },
 		}));
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.crawl).toEqual({
@@ -308,7 +273,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.crawl).toEqual({
@@ -325,7 +289,6 @@ describe("initDynamoDbArticleStore.load", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 		const loaded = await store.load(URL);
 		expect(loaded?.summary).toEqual({ status: "failed", reason: "unknown" });
@@ -333,7 +296,7 @@ describe("initDynamoDbArticleStore.load", () => {
 });
 
 describe("initDynamoDbArticleStore.save", () => {
-	it("writes SET version=expected+1 and conditions on version=expected when expectedVersion > 0", async () => {
+	it("writes an unconditional update with the article fields", async () => {
 		let received: unknown;
 		const client = createFakeClient((input) => {
 			received = input;
@@ -342,43 +305,14 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({ version: 5 }),
-			expectedVersion: 5,
-		});
+		await store.save(buildArticle());
 
 		const cmd = received as UpdateInput;
-		expect(cmd.input.UpdateExpression).toContain("version = :nextVersion");
-		expect(cmd.input.ConditionExpression).toBe("version = :expectedVersion");
-		expect(cmd.input.ExpressionAttributeValues?.[":nextVersion"]).toBe(6);
-		expect(cmd.input.ExpressionAttributeValues?.[":expectedVersion"]).toBe(5);
-	});
-
-	it("permits the first aggregate write against a pre-aggregate row (attribute_not_exists(version))", async () => {
-		let received: unknown;
-		const client = createFakeClient((input) => {
-			received = input;
-			return {};
-		});
-		const store = initDynamoDbArticleStore({
-			client: client as DynamoDBDocumentClient,
-			tableName: TABLE,
-			logger: noopLogger,
-		});
-
-		await store.save({
-			article: buildArticle({ version: 0 }),
-			expectedVersion: 0,
-		});
-
-		const cmd = received as UpdateInput;
-		expect(cmd.input.ConditionExpression).toBe(
-			"attribute_not_exists(version) OR version = :expectedVersion",
-		);
-		expect(cmd.input.ExpressionAttributeValues?.[":nextVersion"]).toBe(1);
+		expect(cmd.input.UpdateExpression).toContain("crawlStatus = :crawlStatus");
+		expect(cmd.input.UpdateExpression).toContain("summaryStatus = :summaryStatus");
+		expect(cmd.input.UpdateExpression).toContain("title = :title");
 	});
 
 	it("sets metadata + summary ready payload and REMOVEs failure-side attributes", async () => {
@@ -390,11 +324,10 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				summary: {
 					status: "ready",
 					summary: "Generated.",
@@ -403,11 +336,9 @@ describe("initDynamoDbArticleStore.save", () => {
 					outputTokens: 5,
 				},
 			}),
-			expectedVersion: 3,
-		});
+		);
 
 		const cmd = received as UpdateInput;
-		// Summary ready payload must move atomically with status.
 		expect(cmd.input.UpdateExpression).toContain("summaryStatus = :summaryStatus");
 		expect(cmd.input.UpdateExpression).toContain("summary = :summary");
 		expect(cmd.input.UpdateExpression).toContain(
@@ -419,19 +350,12 @@ describe("initDynamoDbArticleStore.save", () => {
 		expect(cmd.input.UpdateExpression).toContain(
 			"summaryExcerpt = :summaryExcerpt",
 		);
-		// And every failure-side attribute is REMOVEd so the row can never be
-		// (status=ready, summaryFailureReason=...) — the very pattern that
-		// produced the 2026-05-10 forever-polling reader.
 		expect(cmd.input.UpdateExpression).toContain("REMOVE");
 		expect(cmd.input.UpdateExpression).toContain("summaryFailureReason");
 		expect(cmd.input.UpdateExpression).toContain("summarySkippedReason");
 	});
 
 	it("for summary=pending, REMOVEs every payload attribute to prevent ready/missing-text drift", async () => {
-		// This is the writer-side contract that makes the 2026-05-10 bug
-		// impossible: a transition that moves summary back to pending MUST
-		// drop the cached text, excerpt, and token counts so no later code
-		// path sees an inconsistent (status=pending, summary="x") row.
 		let received: unknown;
 		const client = createFakeClient((input) => {
 			received = input;
@@ -440,15 +364,13 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				summary: { status: "pending" },
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain("summaryStatus = :summaryStatus");
@@ -473,19 +395,17 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				crawl: {
 					status: "failed",
 					reason: "ETIMEDOUT",
 					failedAt: "2026-05-10T12:00:00Z",
 				},
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain(
@@ -507,19 +427,17 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				crawl: {
 					status: "unsupported",
 					reason: "application/pdf",
 					failedAt: "2026-05-10T12:00:00Z",
 				},
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain(
@@ -541,13 +459,9 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({ crawl: { status: "pending" } }),
-			expectedVersion: 1,
-		});
+		await store.save(buildArticle({ crawl: { status: "pending" } }));
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain("REMOVE");
@@ -565,15 +479,13 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				summary: { status: "failed", reason: "AI throttled" },
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain(
@@ -595,15 +507,13 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				summary: { status: "skipped", reason: "content-too-short" },
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain(
@@ -623,13 +533,9 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({ summary: { status: "skipped" } }),
-			expectedVersion: 1,
-		});
+		await store.save(buildArticle({ summary: { status: "skipped" } }));
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain("REMOVE");
@@ -645,11 +551,10 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				summary: {
 					status: "ready",
 					summary: "Generated.",
@@ -657,8 +562,7 @@ describe("initDynamoDbArticleStore.save", () => {
 					outputTokens: 5,
 				},
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain("REMOVE");
@@ -674,11 +578,10 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				metadata: {
 					title: "T",
 					siteName: "example.com",
@@ -686,8 +589,7 @@ describe("initDynamoDbArticleStore.save", () => {
 					wordCount: 100,
 				},
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain("REMOVE");
@@ -703,17 +605,15 @@ describe("initDynamoDbArticleStore.save", () => {
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
-		await store.save({
-			article: buildArticle({
+		await store.save(
+			buildArticle({
 				contentFetchedAt: undefined,
 				etag: undefined,
 				lastModified: undefined,
 			}),
-			expectedVersion: 1,
-		});
+		);
 
 		const cmd = received as UpdateInput;
 		expect(cmd.input.UpdateExpression).toContain("contentFetchedAt");
@@ -721,76 +621,17 @@ describe("initDynamoDbArticleStore.save", () => {
 		expect(cmd.input.UpdateExpression).toContain("lastModified");
 	});
 
-	it("translates ConditionalCheckFailedException into AggregateConcurrencyError", async () => {
-		// This is the load-bearing translation: the orchestrator's retry budget
-		// only fires on AggregateConcurrencyError. A bare DDB exception would
-		// bypass the budget and surface directly to SQS for full-message retry.
-		const client = createFakeClient(() => {
-			throw new ConditionalCheckFailedException({
-				$metadata: {},
-				message: "conditional check failed",
-			});
-		});
-		const store = initDynamoDbArticleStore({
-			client: client as DynamoDBDocumentClient,
-			tableName: TABLE,
-			logger: noopLogger,
-		});
-
-		await expect(
-			store.save({
-				article: buildArticle(),
-				expectedVersion: 3,
-			}),
-		).rejects.toBeInstanceOf(AggregateConcurrencyError);
-	});
-
-	it("emits a 'concurrency conflict' warning on conflict so operators can grep CloudWatch", async () => {
-		const warnings: unknown[][] = [];
-		const logger = {
-			...noopLogger,
-			warn: (...args: unknown[]) => {
-				warnings.push(args);
-			},
-		};
-		const client = createFakeClient(() => {
-			throw new ConditionalCheckFailedException({
-				$metadata: {},
-				message: "conditional check failed",
-			});
-		});
-		const store = initDynamoDbArticleStore({
-			client: client as DynamoDBDocumentClient,
-			tableName: TABLE,
-			logger,
-		});
-
-		await expect(
-			store.save({
-				article: buildArticle(),
-				expectedVersion: 3,
-			}),
-		).rejects.toBeInstanceOf(AggregateConcurrencyError);
-
-		expect(warnings).toHaveLength(1);
-		expect(String(warnings[0]?.[0])).toContain("concurrency conflict");
-	});
-
-	it("rethrows non-conditional errors without wrapping (e.g. DDB throttle)", async () => {
+	it("rethrows errors from the DynamoDB client", async () => {
 		const client = createFakeClient(() => {
 			throw new Error("ProvisionedThroughputExceededException");
 		});
 		const store = initDynamoDbArticleStore({
 			client: client as DynamoDBDocumentClient,
 			tableName: TABLE,
-			logger: noopLogger,
 		});
 
 		await expect(
-			store.save({
-				article: buildArticle(),
-				expectedVersion: 1,
-			}),
+			store.save(buildArticle()),
 		).rejects.toThrow("ProvisionedThroughputExceededException");
 	});
 });

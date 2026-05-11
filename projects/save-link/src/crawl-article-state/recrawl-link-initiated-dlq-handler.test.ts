@@ -40,7 +40,6 @@ const URL = "https://example.com/failed";
 function buildArticle(overrides: Partial<Article> = {}): Article {
 	return {
 		url: URL,
-		version: 1,
 		crawl: { status: "pending" },
 		summary: { status: "pending" },
 		metadata: {
@@ -80,7 +79,7 @@ describe("initRecrawlLinkInitiatedDlqHandler", () => {
 	it("transitions the article to crawl=failed + summary=failed and publishes CrawlArticleFailedEvent in one orchestration", async () => {
 		const store = initInMemoryArticleStore();
 		const dispatcher = initInMemoryEffectDispatcher();
-		store.seed(buildArticle({ version: 1 }));
+		store.seed(buildArticle());
 		const transitionAndPersist = initTransitionAndPersist({
 			store,
 			dispatcher: dispatcher.dispatch,

@@ -4,7 +4,6 @@ import { markCrawlExhausted } from "./mark-crawl-exhausted";
 
 const baseArticle: Article = {
 	url: "https://example.com/article",
-	version: 4,
 	crawl: { status: "pending" },
 	summary: { status: "pending" },
 	metadata: {

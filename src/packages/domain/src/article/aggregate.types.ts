@@ -25,22 +25,13 @@ export type SummaryState =
 	| { status: "failed"; reason: string }
 	| { status: "skipped"; reason?: string };
 
-/**
- * 1. Held on the aggregate so the refresh transition can produce a fully
- *    consistent (metadata + summary reset) post-state in one operation
- *    instead of two parallel writes.
- * 2. Freshness fields ride along on the aggregate because the same refresh
- *    transition that resets the summary also stamps the new freshness
- *    headers; keeping them on the aggregate keeps the write atomic.
- */
 export interface Article {
 	url: string;
-	version: number;
 	crawl: CrawlState;
 	summary: SummaryState;
-	metadata: ArticleMetadata; /* 1 */
-	estimatedReadTime: Minutes; /* 1 */
-	contentFetchedAt?: string; /* 2 */
-	etag?: string; /* 2 */
-	lastModified?: string; /* 2 */
+	metadata: ArticleMetadata;
+	estimatedReadTime: Minutes;
+	contentFetchedAt?: string;
+	etag?: string;
+	lastModified?: string;
 }

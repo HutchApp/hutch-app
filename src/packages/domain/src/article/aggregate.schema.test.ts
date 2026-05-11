@@ -102,7 +102,6 @@ describe("SummaryStateSchema", () => {
 describe("ArticleAggregateSchema", () => {
 	const validRow = {
 		url: "https://example.com/a",
-		version: 5,
 		crawl: { status: "ready" },
 		summary: {
 			status: "ready",
@@ -123,23 +122,9 @@ describe("ArticleAggregateSchema", () => {
 		expect(ArticleAggregateSchema.safeParse(validRow).success).toBe(true);
 	});
 
-	it("rejects a negative version", () => {
-		// version=0 represents a pre-aggregate row on first read; negative
-		// values would break the CAS arithmetic, surfacing earlier here.
-		expect(
-			ArticleAggregateSchema.safeParse({ ...validRow, version: -1 }).success,
-		).toBe(false);
-	});
-
 	it("rejects an empty url", () => {
 		expect(
 			ArticleAggregateSchema.safeParse({ ...validRow, url: "" }).success,
 		).toBe(false);
-	});
-
-	it("accepts version 0 for a pre-aggregate row projected by the storage adapter", () => {
-		expect(
-			ArticleAggregateSchema.safeParse({ ...validRow, version: 0 }).success,
-		).toBe(true);
 	});
 });

@@ -25,7 +25,6 @@ const logger = HutchLogger.from(consoleLogger);
 const store = initDynamoDbArticleStore({
 	client: dynamoClient,
 	tableName: articlesTable,
-	logger,
 });
 
 const { publishEvent } = initEventBridgePublisher({

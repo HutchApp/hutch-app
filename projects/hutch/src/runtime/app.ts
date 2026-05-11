@@ -137,11 +137,9 @@ function initProviders() {
 		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
 		const { publishExportUserDataCommand } = initEventBridgeExportUserDataCommand({ publishEvent });
 		const { putPendingHtml } = initPutPendingHtml({ client: new S3Client({}), bucketName: pendingHtmlBucketName });
-		const aggregateLogger = HutchLogger.from(consoleLogger);
 		const aggregateStore = initDynamoDbAggregateStore({
 			client,
 			tableName: articlesTable,
-			logger: aggregateLogger,
 		});
 		const aggregateDispatcher = initLambdaEffectDispatcher({
 			publishEvent,

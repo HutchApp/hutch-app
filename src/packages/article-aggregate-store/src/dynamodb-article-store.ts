@@ -9,22 +9,13 @@ import type {
 	CrawlState,
 	SummaryState,
 } from "@packages/domain/article";
-import {
-	AggregateConcurrencyError,
-	type Minutes,
-} from "@packages/domain/article";
-import type { HutchLogger } from "@packages/hutch-logger";
-import {
-	ConditionalCheckFailedException,
-	type DynamoDBDocumentClient,
-	defineDynamoTable,
-	dynamoField,
-} from "@packages/hutch-storage-client";
+import type { Minutes } from "@packages/domain/article";
+import type { DynamoDBDocumentClient } from "@packages/hutch-storage-client";
+import { defineDynamoTable, dynamoField } from "@packages/hutch-storage-client";
 import { z } from "zod";
 
 const ArticleAggregateRow = z.object({
 	url: z.string(),
-	version: dynamoField(z.number().int().nonnegative()),
 	crawlStatus: dynamoField(CrawlStatusSchema),
 	crawlFailureReason: dynamoField(z.string()),
 	crawlUnsupportedReason: dynamoField(z.string()),
@@ -108,7 +99,6 @@ function rowToSummary(row: Row): SummaryState {
 function rowToArticle(row: Row): Article {
 	return {
 		url: row.url,
-		version: row.version ?? 0,
 		crawl: rowToCrawl(row),
 		summary: rowToSummary(row),
 		metadata: {
@@ -248,17 +238,14 @@ function planFreshness(article: Article, plan: UpdatePlan): void {
 	setOrRemoveOptional(plan, "lastModified", article.lastModified);
 }
 
-function buildUpdate(
-	article: Article,
-	nextVersion: number,
-): {
+function buildUpdate(article: Article): {
 	UpdateExpression: string;
 	ExpressionAttributeValues: Record<string, unknown>;
 } {
 	const plan: UpdatePlan = {
-		sets: ["version = :nextVersion"],
+		sets: [],
 		removes: [],
-		values: { ":nextVersion": nextVersion },
+		values: {},
 	};
 	planCrawl(article.crawl, plan);
 	planSummary(article.summary, plan);
@@ -277,7 +264,6 @@ function buildUpdate(
 export interface DynamoDbArticleStoreDeps {
 	client: DynamoDBDocumentClient;
 	tableName: string;
-	logger: HutchLogger;
 }
 
 export function initDynamoDbArticleStore(
@@ -296,40 +282,14 @@ export function initDynamoDbArticleStore(
 			if (!row) return undefined;
 			return rowToArticle(row);
 		},
-		save: async ({ article, expectedVersion }) => {
+		save: async (article) => {
 			const id = ArticleResourceUniqueId.parse(article.url);
-			const nextVersion = expectedVersion + 1;
-			const update = buildUpdate(article, nextVersion);
-			try {
-				await table.update({
-					Key: { url: id.value },
-					UpdateExpression: update.UpdateExpression,
-					ConditionExpression:
-						expectedVersion === 0
-							? "attribute_not_exists(version) OR version = :expectedVersion"
-							: "version = :expectedVersion",
-					ExpressionAttributeValues: {
-						...update.ExpressionAttributeValues,
-						":expectedVersion": expectedVersion,
-					},
-				});
-			} catch (err) {
-				if (err instanceof ConditionalCheckFailedException) {
-					// Log so the operator can grep these in CloudWatch Logs Insights
-					// for tuning the retry budget; a separate metric filter on the
-					// log group can roll this up to a CloudWatch metric without
-					// requiring an SDK dependency here.
-					deps.logger.warn("[article-aggregate-store] concurrency conflict", {
-						url: article.url,
-						expectedVersion,
-					});
-					throw new AggregateConcurrencyError({
-						url: article.url,
-						expectedVersion,
-					});
-				}
-				throw err;
-			}
+			const update = buildUpdate(article);
+			await table.update({
+				Key: { url: id.value },
+				UpdateExpression: update.UpdateExpression,
+				ExpressionAttributeValues: update.ExpressionAttributeValues,
+			});
 		},
 	};
 }

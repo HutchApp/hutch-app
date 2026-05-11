@@ -1,12 +1,10 @@
 import assert from "node:assert";
-import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
-import {
-	AggregateConcurrencyError,
-	type Article,
-	type ArticleStore,
-	type CrawlState,
-	type Minutes,
-	type SummaryState,
+import type {
+	Article,
+	ArticleStore,
+	CrawlState,
+	Minutes,
+	SummaryState,
 } from "@packages/domain/article";
 import type { FindArticleByUrl } from "../article-store/article-store.types";
 import type { ArticleMetadata } from "@packages/domain/article";
@@ -64,20 +62,18 @@ export interface BridgeWriters {
 	}) => Promise<void>;
 }
 
-export interface AggregateBridgeStore extends ArticleStore {
-	peekVersion: (url: string) => number;
-}
-
+/**
+ * In-memory aggregate adapter that delegates to the existing per-state
+ * test-fixture providers (`articleStore`, `articleCrawl`, `summary`). This
+ * is the bridge that lets `/admin/recrawl` and other aggregate-callers run
+ * in the test app while existing route tests keep asserting against the
+ * legacy fixture methods (e.g. `harness.summary.findGeneratedSummary(...)`
+ * still returns the correct projection because the bridge wrote to it).
+ */
 export function initBridgeArticleStore(deps: {
 	readers: BridgeReaders;
 	writers: BridgeWriters;
-}): AggregateBridgeStore {
-	const versions = new Map<string, number>();
-
-	function canonical(url: string): string {
-		return ArticleResourceUniqueId.parse(url).value;
-	}
-
+}): ArticleStore {
 	async function load(url: string): Promise<Article | undefined> {
 		const article = await deps.readers.findArticleByUrl(url);
 		if (!article) return undefined;
@@ -93,7 +89,6 @@ export function initBridgeArticleStore(deps: {
 
 		return {
 			url: article.url,
-			version: versions.get(canonical(article.url)) ?? 0,
 			crawl,
 			summary,
 			metadata: article.metadata,
@@ -101,33 +96,17 @@ export function initBridgeArticleStore(deps: {
 		};
 	}
 
-	async function save(params: {
-		article: Article;
-		expectedVersion: number;
-	}): Promise<void> {
-		const key = canonical(params.article.url);
-		const onDisk = versions.get(key) ?? 0;
-		if (onDisk !== params.expectedVersion) {
-			throw new AggregateConcurrencyError({
-				url: params.article.url,
-				expectedVersion: params.expectedVersion,
-			});
-		}
-		await writeCrawl(deps.writers, params.article);
-		await writeSummary(deps.writers, params.article);
+	async function save(article: Article): Promise<void> {
+		await writeCrawl(deps.writers, article);
+		await writeSummary(deps.writers, article);
 		await deps.writers.writeMetadata({
-			url: params.article.url,
-			metadata: params.article.metadata,
-			estimatedReadTime: params.article.estimatedReadTime,
+			url: article.url,
+			metadata: article.metadata,
+			estimatedReadTime: article.estimatedReadTime,
 		});
-		versions.set(key, params.expectedVersion + 1);
 	}
 
-	return {
-		load,
-		save,
-		peekVersion: (url) => versions.get(canonical(url)) ?? 0,
-	};
+	return { load, save };
 }
 
 function toCrawl(

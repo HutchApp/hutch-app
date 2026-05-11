@@ -27,7 +27,6 @@ const logger = HutchLogger.from(consoleLogger);
 const store = initDynamoDbArticleStore({
 	client,
 	tableName: articlesTable,
-	logger,
 });
 
 const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({

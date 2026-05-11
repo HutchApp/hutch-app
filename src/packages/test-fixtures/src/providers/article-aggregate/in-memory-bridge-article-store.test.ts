@@ -1,8 +1,4 @@
-import {
-	AggregateConcurrencyError,
-	type Article,
-	type Minutes,
-} from "@packages/domain/article";
+import type { Article, Minutes } from "@packages/domain/article";
 import { initInMemoryArticleCrawl } from "../article-crawl";
 import { initInMemoryArticleStore } from "../article-store/in-memory-article-store";
 import { createFakeSummaryProvider } from "../../fixture";
@@ -104,12 +100,11 @@ describe("initBridgeArticleStore.load", () => {
 		expect(result).toBeUndefined();
 	});
 
-	it("projects a fully-seeded row into an Article aggregate at version 0", async () => {
+	it("projects a fully-seeded row into an Article aggregate", async () => {
 		const harness = buildHarness();
 		await seedRow(harness);
 
 		const article = await harness.bridge.load(URL);
-		expect(article?.version).toBe(0);
 		expect(article?.crawl).toEqual({ status: "ready" });
 		expect(article?.summary).toEqual({
 			status: "ready",
@@ -235,7 +230,6 @@ describe("initBridgeArticleStore.save", () => {
 	function makeArticle(overrides: Partial<Article> = {}): Article {
 		return {
 			url: URL,
-			version: 0,
 			crawl: { status: "ready" },
 			summary: {
 				status: "ready",
@@ -255,31 +249,22 @@ describe("initBridgeArticleStore.save", () => {
 	}
 
 	it("routes crawl=pending through forceMarkCrawlPending so legacy readers see status=pending", async () => {
-		// This is the contract the bridge exists to maintain: the existing
-		// reader path (articleCrawl.findArticleCrawlStatus, used by
-		// resolveReaderState) reflects the aggregate write the moment save()
-		// resolves — no synchronization gap.
 		const harness = buildHarness();
 		await seedRow(harness);
-		await harness.bridge.save({
-			article: makeArticle({ crawl: { status: "pending" } }),
-			expectedVersion: 0,
-		});
+		await harness.bridge.save(
+			makeArticle({ crawl: { status: "pending" } }),
+		);
 		expect(
 			await harness.articleCrawl.findArticleCrawlStatus(URL),
 		).toMatchObject({ status: "pending" });
 	});
 
 	it("routes summary=pending through forceMarkSummaryPending so the existing summary fixture flips", async () => {
-		// The /admin/recrawl route test asserts harness.summary.findGeneratedSummary
-		// returns { status: 'pending' } after a recrawl. The bridge's save MUST
-		// trigger that flip or the existing test breaks.
 		const harness = buildHarness();
 		await seedRow(harness);
-		await harness.bridge.save({
-			article: makeArticle({ summary: { status: "pending" } }),
-			expectedVersion: 0,
-		});
+		await harness.bridge.save(
+			makeArticle({ summary: { status: "pending" } }),
+		);
 		expect(await harness.summary.findGeneratedSummary(URL)).toEqual({
 			status: "pending",
 		});
@@ -288,10 +273,9 @@ describe("initBridgeArticleStore.save", () => {
 	it("routes crawl=ready through markCrawlReady", async () => {
 		const harness = buildHarness();
 		await seedRow(harness, { crawl: "failed" });
-		await harness.bridge.save({
-			article: makeArticle({ crawl: { status: "ready" } }),
-			expectedVersion: 0,
-		});
+		await harness.bridge.save(
+			makeArticle({ crawl: { status: "ready" } }),
+		);
 		expect(
 			await harness.articleCrawl.findArticleCrawlStatus(URL),
 		).toEqual({ status: "ready" });
@@ -300,16 +284,15 @@ describe("initBridgeArticleStore.save", () => {
 	it("routes crawl=failed through markCrawlFailed with the reason", async () => {
 		const harness = buildHarness();
 		await seedRow(harness, { crawl: "pending" });
-		await harness.bridge.save({
-			article: makeArticle({
+		await harness.bridge.save(
+			makeArticle({
 				crawl: {
 					status: "failed",
 					reason: "EHOSTUNREACH",
 					failedAt: "2026-05-11T00:00:00Z",
 				},
 			}),
-			expectedVersion: 0,
-		});
+		);
 		expect(
 			await harness.articleCrawl.findArticleCrawlStatus(URL),
 		).toEqual({ status: "failed", reason: "EHOSTUNREACH" });
@@ -318,16 +301,15 @@ describe("initBridgeArticleStore.save", () => {
 	it("routes crawl=unsupported through markCrawlUnsupported with the reason", async () => {
 		const harness = buildHarness();
 		await seedRow(harness, { crawl: "pending" });
-		await harness.bridge.save({
-			article: makeArticle({
+		await harness.bridge.save(
+			makeArticle({
 				crawl: {
 					status: "unsupported",
 					reason: "application/pdf",
 					failedAt: "2026-05-11T00:00:00Z",
 				},
 			}),
-			expectedVersion: 0,
-		});
+		);
 		expect(
 			await harness.articleCrawl.findArticleCrawlStatus(URL),
 		).toEqual({ status: "unsupported", reason: "application/pdf" });
@@ -336,8 +318,8 @@ describe("initBridgeArticleStore.save", () => {
 	it("routes summary=ready through markSummaryReady, propagating excerpt", async () => {
 		const harness = buildHarness();
 		await seedRow(harness, { summary: "pending" });
-		await harness.bridge.save({
-			article: makeArticle({
+		await harness.bridge.save(
+			makeArticle({
 				summary: {
 					status: "ready",
 					summary: "Generated.",
@@ -346,8 +328,7 @@ describe("initBridgeArticleStore.save", () => {
 					outputTokens: 5,
 				},
 			}),
-			expectedVersion: 0,
-		});
+		);
 		expect(await harness.summary.findGeneratedSummary(URL)).toEqual({
 			status: "ready",
 			summary: "Generated.",
@@ -358,12 +339,11 @@ describe("initBridgeArticleStore.save", () => {
 	it("routes summary=failed through markSummaryFailed", async () => {
 		const harness = buildHarness();
 		await seedRow(harness, { summary: "pending" });
-		await harness.bridge.save({
-			article: makeArticle({
+		await harness.bridge.save(
+			makeArticle({
 				summary: { status: "failed", reason: "AI throttled" },
 			}),
-			expectedVersion: 0,
-		});
+		);
 		expect(await harness.summary.findGeneratedSummary(URL)).toEqual({
 			status: "failed",
 			reason: "AI throttled",
@@ -373,12 +353,11 @@ describe("initBridgeArticleStore.save", () => {
 	it("routes summary=skipped (with reason) through markSummarySkipped", async () => {
 		const harness = buildHarness();
 		await seedRow(harness, { summary: "pending" });
-		await harness.bridge.save({
-			article: makeArticle({
+		await harness.bridge.save(
+			makeArticle({
 				summary: { status: "skipped", reason: "content-too-short" },
 			}),
-			expectedVersion: 0,
-		});
+		);
 		expect(await harness.summary.findGeneratedSummary(URL)).toEqual({
 			status: "skipped",
 			reason: "content-too-short",
@@ -388,42 +367,19 @@ describe("initBridgeArticleStore.save", () => {
 	it("routes summary=skipped (without reason) through markSummarySkipped", async () => {
 		const harness = buildHarness();
 		await seedRow(harness, { summary: "pending" });
-		await harness.bridge.save({
-			article: makeArticle({ summary: { status: "skipped" } }),
-			expectedVersion: 0,
-		});
+		await harness.bridge.save(
+			makeArticle({ summary: { status: "skipped" } }),
+		);
 		expect(await harness.summary.findGeneratedSummary(URL)).toEqual({
 			status: "skipped",
 		});
 	});
 
-	it("bumps version on a successful save (one save = +1)", async () => {
-		const harness = buildHarness();
-		await seedRow(harness);
-		expect(harness.bridge.peekVersion(URL)).toBe(0);
-		await harness.bridge.save({
-			article: makeArticle({ summary: { status: "pending" } }),
-			expectedVersion: 0,
-		});
-		expect(harness.bridge.peekVersion(URL)).toBe(1);
-	});
-
-	it("throws AggregateConcurrencyError when expectedVersion does not match", async () => {
-		const harness = buildHarness();
-		await seedRow(harness);
-		await expect(
-			harness.bridge.save({
-				article: makeArticle({ summary: { status: "pending" } }),
-				expectedVersion: 4,
-			}),
-		).rejects.toBeInstanceOf(AggregateConcurrencyError);
-	});
-
 	it("propagates metadata changes through writeMetadata", async () => {
 		const harness = buildHarness();
 		await seedRow(harness);
-		await harness.bridge.save({
-			article: makeArticle({
+		await harness.bridge.save(
+			makeArticle({
 				metadata: {
 					title: "New title",
 					siteName: "example.com",
@@ -432,8 +388,7 @@ describe("initBridgeArticleStore.save", () => {
 				},
 				estimatedReadTime: 3 as Minutes,
 			}),
-			expectedVersion: 0,
-		});
+		);
 
 		const stored = await harness.articleStore.findArticleByUrl(URL);
 		expect(stored?.metadata.title).toBe("New title");

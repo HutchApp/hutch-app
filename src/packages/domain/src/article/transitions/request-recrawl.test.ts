@@ -4,7 +4,6 @@ import { requestRecrawl } from "./request-recrawl";
 
 const baseArticle: Article = {
 	url: "https://example.com/article",
-	version: 12,
 	crawl: { status: "ready" },
 	summary: {
 		status: "ready",
@@ -47,12 +46,11 @@ describe("requestRecrawl", () => {
 		]);
 	});
 
-	it("preserves metadata, freshness, url, and version", () => {
+	it("preserves metadata, freshness, and url", () => {
 		const { article } = requestRecrawl(baseArticle);
 		expect(article.metadata).toEqual(baseArticle.metadata);
 		expect(article.estimatedReadTime).toBe(baseArticle.estimatedReadTime);
 		expect(article.url).toBe(baseArticle.url);
-		expect(article.version).toBe(baseArticle.version);
 	});
 
 	it("resets a previously failed crawl back to pending without retaining the reason", () => {

@@ -4,7 +4,6 @@ import { recrawlTieKeptCanonical } from "./recrawl-tie-kept-canonical";
 
 const baseArticle: Article = {
 	url: "https://example.com/article",
-	version: 8,
 	crawl: { status: "pending" },
 	summary: { status: "pending" },
 	metadata: {
@@ -42,9 +41,8 @@ describe("recrawlTieKeptCanonical", () => {
 		expect(article.summary).toEqual(baseArticle.summary);
 	});
 
-	it("preserves url and version", async () => {
+	it("preserves url", async () => {
 		const { article } = recrawlTieKeptCanonical(baseArticle);
 		expect(article.url).toBe(baseArticle.url);
-		expect(article.version).toBe(baseArticle.version);
 	});
 });

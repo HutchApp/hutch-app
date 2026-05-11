@@ -2,7 +2,7 @@ import { S3Client } from "@aws-sdk/client-s3";
 import { SQSClient } from "@aws-sdk/client-sqs";
 import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import OpenAI from "openai";
-import { consoleLogger, HutchLogger } from "@packages/hutch-logger";
+import { consoleLogger } from "@packages/hutch-logger";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import {
 	initEventBridgePublisher,
@@ -38,8 +38,6 @@ const deepseekClient = new OpenAI({
 	baseURL: "https://api.deepseek.com",
 	timeout: SELECT_CONTENT_TIMEOUTS.deepseekMs,
 });
-const logger = HutchLogger.from(consoleLogger);
-
 const { readTierSource } = initReadTierSource({
 	client: s3Client,
 	bucketName: contentBucketName,
@@ -69,7 +67,6 @@ const { findContentSourceTier } = initFindContentSourceTier({
 const aggregateStore = initDynamoDbArticleStore({
 	client: dynamoClient,
 	tableName: articlesTable,
-	logger,
 });
 
 const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({

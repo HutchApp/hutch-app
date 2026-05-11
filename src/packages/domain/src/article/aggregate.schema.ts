@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { Minutes } from "./article.types";
 
+/**
+ * Boundary schema for the Article aggregate. Used by the storage adapter to
+ * project a DynamoDB row into a typed aggregate; never as an internal
+ * function-parameter validator (TypeScript already enforces those shapes).
+ */
+
 const CrawlStageSchema = z.enum([
 	"crawl-fetching",
 	"crawl-fetched",
@@ -58,7 +64,6 @@ const ArticleMetadataSchema = z.object({
 
 export const ArticleAggregateSchema = z.object({
 	url: z.string().min(1),
-	version: z.number().int().nonnegative(),
 	crawl: CrawlStateSchema,
 	summary: SummaryStateSchema,
 	metadata: ArticleMetadataSchema,

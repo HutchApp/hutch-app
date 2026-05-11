@@ -14,9 +14,7 @@ export type {
 	ArticleStore,
 	LoadArticle,
 	SaveArticle as SaveAggregateArticle,
-	SaveArticleParams as SaveAggregateArticleParams,
 } from "./storage.types";
-export { AggregateConcurrencyError } from "./storage.types";
 export type { Effect, DispatchEffects } from "./effect.types";
 export {
 	refreshContent,

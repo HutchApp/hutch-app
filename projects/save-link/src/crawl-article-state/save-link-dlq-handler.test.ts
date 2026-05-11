@@ -40,7 +40,6 @@ const URL = "https://example.com/failed";
 function buildArticle(overrides: Partial<Article> = {}): Article {
 	return {
 		url: URL,
-		version: 1,
 		crawl: { status: "pending" },
 		summary: { status: "pending" },
 		metadata: {
@@ -86,7 +85,7 @@ describe("initSaveLinkDlqHandler", () => {
 		// per orchestration.
 		const store = initInMemoryArticleStore();
 		const dispatcher = initInMemoryEffectDispatcher();
-		store.seed(buildArticle({ version: 1 }));
+		store.seed(buildArticle());
 		const transitionAndPersist = initTransitionAndPersist({
 			store,
 			dispatcher: dispatcher.dispatch,
@@ -159,7 +158,7 @@ describe("initSaveLinkDlqHandler", () => {
 		// back to "crawl failed" because of an exhausted retry message.
 		const store = initInMemoryArticleStore();
 		const dispatcher = initInMemoryEffectDispatcher();
-		store.seed(buildArticle({ version: 1, crawl: { status: "ready" } }));
+		store.seed(buildArticle({ crawl: { status: "ready" } }));
 		const transitionAndPersist = initTransitionAndPersist({
 			store,
 			dispatcher: dispatcher.dispatch,

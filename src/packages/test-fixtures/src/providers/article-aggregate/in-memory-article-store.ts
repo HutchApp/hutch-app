@@ -1,8 +1,11 @@
 import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
-import { AggregateConcurrencyError } from "@packages/domain/article";
 import type { Article, ArticleStore } from "@packages/domain/article";
 
 export interface InMemoryArticleStore extends ArticleStore {
+	/**
+	 * Seeds an aggregate. Use to set up pre-transition state in tests;
+	 * production code never calls this.
+	 */
 	seed: (article: Article) => void;
 	peek: (url: string) => Article | undefined;
 }
@@ -18,17 +21,8 @@ export function initInMemoryArticleStore(): InMemoryArticleStore {
 		load: async (url) => {
 			return aggregates.get(canonical(url));
 		},
-		save: async ({ article, expectedVersion }) => {
-			const key = canonical(article.url);
-			const current = aggregates.get(key);
-			const onDiskVersion = current?.version ?? 0;
-			if (onDiskVersion !== expectedVersion) {
-				throw new AggregateConcurrencyError({
-					url: article.url,
-					expectedVersion,
-				});
-			}
-			aggregates.set(key, { ...article, version: expectedVersion + 1 });
+		save: async (article) => {
+			aggregates.set(canonical(article.url), article);
 		},
 		seed: (article) => {
 			aggregates.set(canonical(article.url), article);

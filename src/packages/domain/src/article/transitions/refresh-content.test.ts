@@ -4,7 +4,6 @@ import { refreshContent } from "./refresh-content";
 
 const baseArticle: Article = {
 	url: "https://example.com/article",
-	version: 7,
 	crawl: { status: "ready" },
 	summary: {
 		status: "ready",
@@ -73,10 +72,9 @@ describe("refreshContent", () => {
 		expect(article.crawl).toEqual(baseArticle.crawl);
 	});
 
-	it("preserves url and version", () => {
+	it("preserves url", () => {
 		const { article } = refreshContent(baseArticle, refreshParams);
 		expect(article.url).toBe(baseArticle.url);
-		expect(article.version).toBe(baseArticle.version);
 	});
 
 	it("returns exactly one DispatchGenerateSummaryCommand effect for the article URL", () => {

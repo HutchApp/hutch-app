@@ -38,7 +38,6 @@ const ARTICLE_URL = "https://example.com/article";
 function buildSavedArticle(overrides: Partial<Article> = {}): Article {
 	return {
 		url: ARTICLE_URL,
-		version: 1,
 		crawl: { status: "ready" },
 		summary: {
 			status: "ready",
@@ -104,7 +103,7 @@ describe("initRefreshArticleContentHandler", () => {
 		// article AND the event the worker needs.
 		const store = initInMemoryArticleStore();
 		const dispatcher = initInMemoryEffectDispatcher();
-		store.seed(buildSavedArticle({ version: 1 }));
+		store.seed(buildSavedArticle());
 
 		const transitionAndPersist = initTransitionAndPersist({
 			store,
@@ -136,7 +135,6 @@ describe("initRefreshArticleContentHandler", () => {
 		const updated = store.peek(ARTICLE_URL);
 		expect(updated?.metadata.title).toBe("New title");
 		expect(updated?.summary).toEqual({ status: "pending" });
-		expect(updated?.version).toBe(2);
 		expect(dispatcher.flat()).toEqual([
 			{ kind: "DispatchGenerateSummaryCommand", url: ARTICLE_URL },
 		]);
@@ -159,9 +157,9 @@ describe("initRefreshArticleContentHandler", () => {
 				order.push("load");
 				return store.load(u);
 			},
-			save: async (p: Parameters<typeof store.save>[0]) => {
+			save: async (a: Parameters<typeof store.save>[0]) => {
 				order.push("save");
-				return store.save(p);
+				return store.save(a);
 			},
 		};
 		const wrappedDispatcher = async (
@@ -242,7 +240,7 @@ describe("initRefreshArticleContentHandler", () => {
 		// SQS retries it.
 		const store = initInMemoryArticleStore();
 		const dispatcher = initInMemoryEffectDispatcher();
-		store.seed(buildSavedArticle({ version: 1 }));
+		store.seed(buildSavedArticle());
 		const failingSave = async () => {
 			throw new Error("DDB throttled");
 		};

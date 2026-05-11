@@ -7,6 +7,4 @@ export type {
 	Effect,
 	DispatchEffects,
 	SaveAggregateArticle,
-	SaveAggregateArticleParams,
 } from "@packages/domain/article";
-export { AggregateConcurrencyError } from "@packages/domain/article";

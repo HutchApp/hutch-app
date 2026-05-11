@@ -5,13 +5,11 @@ import type { DispatchEffects, Effect } from "./effect.types";
 import { initTransitionAndPersist } from "./transition-and-persist";
 import { refreshContent } from "./transitions/refresh-content";
 import { requestRecrawl } from "./transitions/request-recrawl";
-import type { ArticleStore, SaveArticleParams } from "./storage.types";
-import { AggregateConcurrencyError } from "./storage.types";
+import type { ArticleStore } from "./storage.types";
 
 function buildArticle(overrides: Partial<Article> = {}): Article {
 	return {
 		url: "https://example.com/article",
-		version: 1,
 		crawl: { status: "ready" },
 		summary: {
 			status: "ready",
@@ -33,60 +31,28 @@ function buildArticle(overrides: Partial<Article> = {}): Article {
 
 interface FakeStoreCallLog {
 	loads: string[];
-	saves: SaveArticleParams[];
+	saves: Article[];
 }
 
 function initFakeStore(initial: Article): {
 	store: ArticleStore;
 	log: FakeStoreCallLog;
-	mutateOnLoad: (mutator: () => void) => void;
-	failNextSavesWithConflict: (n: number) => void;
 } {
 	let current: Article = initial;
 	const log: FakeStoreCallLog = { loads: [], saves: [] };
-	let conflictBudget = 0;
-	let onLoadHook: (() => void) | undefined;
 
 	const store: ArticleStore = {
 		load: async (url) => {
 			log.loads.push(url);
-			if (onLoadHook) {
-				const hook = onLoadHook;
-				onLoadHook = undefined;
-				hook();
-			}
 			return current.url === url ? current : undefined;
 		},
-		save: async ({ article, expectedVersion }) => {
-			log.saves.push({ article, expectedVersion });
-			if (conflictBudget > 0) {
-				conflictBudget -= 1;
-				current = { ...current, version: current.version + 1 };
-				throw new AggregateConcurrencyError({
-					url: article.url,
-					expectedVersion,
-				});
-			}
-			if (current.version !== expectedVersion) {
-				throw new AggregateConcurrencyError({
-					url: article.url,
-					expectedVersion,
-				});
-			}
-			current = { ...article, version: expectedVersion + 1 };
+		save: async (article) => {
+			log.saves.push(article);
+			current = article;
 		},
 	};
 
-	return {
-		store,
-		log,
-		mutateOnLoad: (mutator) => {
-			onLoadHook = mutator;
-		},
-		failNextSavesWithConflict: (n: number) => {
-			conflictBudget = n;
-		},
-	};
+	return { store, log };
 }
 
 function initFakeDispatcher(): {
@@ -123,8 +89,8 @@ describe("transitionAndPersist", () => {
 		contentFetchedAt: "2026-05-11T00:00:00Z",
 	};
 
-	it("loads, applies transition, saves at expectedVersion=loaded version, then dispatches effects", async () => {
-		const initial = buildArticle({ version: 7 });
+	it("loads, applies transition, saves, then dispatches effects", async () => {
+		const initial = buildArticle();
 		const { store, log } = initFakeStore(initial);
 		const { dispatcher, dispatched } = initFakeDispatcher();
 		const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
@@ -137,15 +103,14 @@ describe("transitionAndPersist", () => {
 
 		expect(log.loads).toEqual([initial.url]);
 		assert.equal(log.saves.length, 1);
-		expect(log.saves[0]?.expectedVersion).toBe(7);
-		expect(log.saves[0]?.article.summary).toEqual({ status: "pending" });
+		expect(log.saves[0]?.summary).toEqual({ status: "pending" });
 		expect(dispatched).toEqual([
 			[{ kind: "DispatchGenerateSummaryCommand", url: initial.url }],
 		]);
 	});
 
 	it("dispatches AFTER save so a failed save never produces a phantom event", async () => {
-		const initial = buildArticle({ version: 3 });
+		const initial = buildArticle();
 		const { store } = initFakeStore(initial);
 		const callOrder: string[] = [];
 		const wrappedStore: ArticleStore = {
@@ -153,9 +118,9 @@ describe("transitionAndPersist", () => {
 				callOrder.push("load");
 				return store.load(u);
 			},
-			save: async (p) => {
+			save: async (a) => {
 				callOrder.push("save");
-				return store.save(p);
+				return store.save(a);
 			},
 		};
 		const dispatcher: DispatchEffects = async () => {
@@ -175,82 +140,8 @@ describe("transitionAndPersist", () => {
 		expect(callOrder).toEqual(["load", "save", "dispatch"]);
 	});
 
-	it("throws and does NOT dispatch when the storage save fails permanently", async () => {
-		const initial = buildArticle({ version: 1 });
-		const { store, failNextSavesWithConflict } = initFakeStore(initial);
-		const { dispatcher, dispatched } = initFakeDispatcher();
-		failNextSavesWithConflict(10); // exceeds retry budget
-		const transitionAndPersist = initTransitionAndPersist({
-			store,
-			dispatcher,
-			retryBudget: 1,
-		});
-
-		await expect(
-			transitionAndPersist({
-				url: initial.url,
-				transition: refreshContent,
-				params: refreshParams,
-			}),
-		).rejects.toBeInstanceOf(AggregateConcurrencyError);
-
-		expect(dispatched).toEqual([]);
-	});
-
-	it("throws when the dispatcher throws, surfacing the SQS-retry signal", async () => {
-		// This is the contract that closes class #2: if a handler returns
-		// without throwing, every effect has been dispatched. The dispatcher
-		// throwing here is what forces the handler to throw, which is what
-		// keeps the SQS message in flight for redelivery.
-		const initial = buildArticle({ version: 1 });
-		const { store } = initFakeStore(initial);
-		const { dispatcher, failOnce } = initFakeDispatcher();
-		failOnce();
-		const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
-
-		await expect(
-			transitionAndPersist({
-				url: initial.url,
-				transition: refreshContent,
-				params: refreshParams,
-			}),
-		).rejects.toThrow("dispatcher exploded");
-	});
-
-	it("rebases against the new version on AggregateConcurrencyError and retries within budget", async () => {
-		const initial = buildArticle({ version: 4 });
-		const { store, log, failNextSavesWithConflict } = initFakeStore(initial);
-		const { dispatcher, dispatched } = initFakeDispatcher();
-		failNextSavesWithConflict(2);
-		const transitionAndPersist = initTransitionAndPersist({
-			store,
-			dispatcher,
-			retryBudget: 3,
-		});
-
-		await transitionAndPersist({
-			url: initial.url,
-			transition: requestRecrawl,
-			params: undefined,
-		});
-
-		// 1 initial save attempt + 2 conflicts = 3 saves total, then the 4th
-		// (with the rebased version) succeeds.
-		expect(log.saves.length).toBe(3);
-		expect(log.saves[0]?.expectedVersion).toBe(4);
-		expect(log.saves[1]?.expectedVersion).toBe(5);
-		expect(log.saves[2]?.expectedVersion).toBe(6);
-		expect(dispatched).toEqual([
-			[{ kind: "PublishRecrawlLinkInitiatedEvent", url: initial.url }],
-		]);
-	});
-
-	it("does NOT retry on non-concurrency save errors — surfaces the failure to SQS", async () => {
-		// Concurrency conflicts are expected and rebase-safe; everything else
-		// (DDB throttle, IAM, network) needs SQS to retry the whole message,
-		// not the orchestrator rebasing in-process. The orchestrator
-		// distinguishes the two by checking the error type.
-		const initial = buildArticle({ version: 1 });
+	it("throws and does NOT dispatch when the storage save fails", async () => {
+		const initial = buildArticle();
 		const failingStore: ArticleStore = {
 			load: async () => initial,
 			save: async () => {
@@ -261,7 +152,6 @@ describe("transitionAndPersist", () => {
 		const transitionAndPersist = initTransitionAndPersist({
 			store: failingStore,
 			dispatcher,
-			retryBudget: 5,
 		});
 
 		await expect(
@@ -274,25 +164,20 @@ describe("transitionAndPersist", () => {
 		expect(dispatched).toEqual([]);
 	});
 
-	it("uses the default retry budget when none is provided", async () => {
-		// Asserts the default-budget code path runs; otherwise the `??`
-		// fallback in DEFAULT_RETRY_BUDGET sits uncovered for any reader
-		// inspecting how this function is configured.
-		const initial = buildArticle({ version: 1 });
+	it("throws when the dispatcher throws, surfacing the SQS-retry signal", async () => {
+		const initial = buildArticle();
 		const { store } = initFakeStore(initial);
-		const { dispatcher, dispatched } = initFakeDispatcher();
-		const transitionAndPersist = initTransitionAndPersist({
-			store,
-			dispatcher,
-		});
+		const { dispatcher, failOnce } = initFakeDispatcher();
+		failOnce();
+		const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
 
-		await transitionAndPersist({
-			url: initial.url,
-			transition: refreshContent,
-			params: refreshParams,
-		});
-
-		expect(dispatched).toHaveLength(1);
+		await expect(
+			transitionAndPersist({
+				url: initial.url,
+				transition: refreshContent,
+				params: refreshParams,
+			}),
+		).rejects.toThrow("dispatcher exploded");
 	});
 
 	it("fails when the URL has no aggregate row at all", async () => {
@@ -311,11 +196,6 @@ describe("transitionAndPersist", () => {
 	});
 
 	it("resolves to undefined when skipIfMissing is set and the URL has no aggregate row", async () => {
-		// DLQ handlers fire against URLs whose article row may never have been
-		// created (e.g. SaveLinkCommand failed before the row was written).
-		// Asserting on missing rows there sends the message back to SQS for
-		// retry indefinitely; skipIfMissing makes the no-op return cleanly so
-		// the DLQ handler can ack the message and move on.
 		const initial = buildArticle();
 		const { store, log } = initFakeStore(initial);
 		const { dispatcher, dispatched } = initFakeDispatcher();
@@ -331,5 +211,22 @@ describe("transitionAndPersist", () => {
 		expect(result).toBeUndefined();
 		expect(log.saves).toEqual([]);
 		expect(dispatched).toEqual([]);
+	});
+
+	it("works with requestRecrawl transition", async () => {
+		const initial = buildArticle();
+		const { store } = initFakeStore(initial);
+		const { dispatcher, dispatched } = initFakeDispatcher();
+		const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
+
+		await transitionAndPersist({
+			url: initial.url,
+			transition: requestRecrawl,
+			params: undefined,
+		});
+
+		expect(dispatched).toEqual([
+			[{ kind: "PublishRecrawlLinkInitiatedEvent", url: initial.url }],
+		]);
 	});
 });
