@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { COOKIE_NAME, COOKIE_VALUE, SAVE_COOKIE_NAME, SAVE_COOKIE_VALUE } from "@packages/onboarding-extension-signal";
+import { ALIVE_COOKIE_NAME, ALIVE_COOKIE_VALUE, SAVE_COOKIE_NAME, SAVE_COOKIE_VALUE } from "@packages/onboarding-extension-signal";
 import type { BrowserName } from "./onboarding.types";
 
 const INSTALL_URLS: Record<BrowserName, string> = {
@@ -8,8 +8,10 @@ const INSTALL_URLS: Record<BrowserName, string> = {
 	other: "/install",
 };
 
+/** True when the extension is actively installed (server-only liveness
+ * cookie is present and not yet expired). */
 export function isExtensionInstalled(req: Request): boolean {
-	return req.cookies?.[COOKIE_NAME] === COOKIE_VALUE;
+	return req.cookies?.[ALIVE_COOKIE_NAME] === ALIVE_COOKIE_VALUE;
 }
 
 export function isExtensionSavedArticle(req: Request): boolean {
