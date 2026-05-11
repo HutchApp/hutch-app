@@ -103,8 +103,7 @@ function handleViewLanding(deps: ViewDependencies) {
 	};
 }
 
-function handleViewArticle(deps: ViewDependencies) {
-	const reader = initArticleReader(buildArticleReaderDeps(deps));
+function handleViewArticle(deps: ViewDependencies, reader: ReturnType<typeof initArticleReader>) {
 	return async (
 		req: Request<Record<string, string>>,
 		res: Response,
@@ -204,8 +203,7 @@ function handleViewArticle(deps: ViewDependencies) {
 	};
 }
 
-function handleViewSummary(deps: ViewDependencies) {
-	const reader = initArticleReader(buildArticleReaderDeps(deps));
+function handleViewSummary(deps: ViewDependencies, reader: ReturnType<typeof initArticleReader>) {
 	return async (req: Request, res: Response): Promise<void> => {
 		const validation = deps.validateSaveableUrl(req.query.url);
 		if (validation.status === "ERROR") {
@@ -223,8 +221,7 @@ function handleViewSummary(deps: ViewDependencies) {
 	};
 }
 
-function handleViewReader(deps: ViewDependencies) {
-	const reader = initArticleReader(buildArticleReaderDeps(deps));
+function handleViewReader(deps: ViewDependencies, reader: ReturnType<typeof initArticleReader>) {
 	return async (req: Request, res: Response): Promise<void> => {
 		const validation = deps.validateSaveableUrl(req.query.url);
 		if (validation.status === "ERROR") {
@@ -245,11 +242,12 @@ function handleViewReader(deps: ViewDependencies) {
 
 export function initViewRoutes(deps: ViewDependencies): Router {
 	const router = express.Router();
+	const reader = initArticleReader(buildArticleReaderDeps(deps));
 
 	router.get("/", handleViewLanding(deps));
-	router.get("/summary", handleViewSummary(deps));
-	router.get("/reader", handleViewReader(deps));
-	router.get<string, Record<string, string>>("/*", handleViewArticle(deps));
+	router.get("/summary", handleViewSummary(deps, reader));
+	router.get("/reader", handleViewReader(deps, reader));
+	router.get<string, Record<string, string>>("/*", handleViewArticle(deps, reader));
 
 	return router;
 }
