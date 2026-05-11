@@ -203,6 +203,28 @@ describe("collectStuckRows", () => {
 		assert.deepEqual(stuck, []);
 	});
 
+	it("parses a pre-savedAt row (savedAt absent) without ZodError", async () => {
+		const { client } = createFakeClient(() => ({
+			Items: [
+				{
+					url: "example.test/old",
+					originalUrl: "https://example.test/old",
+					crawlStatus: "pending",
+					contentFetchedAt: new Date(NOW.getTime() - 30 * 60_000).toISOString(),
+				},
+			],
+			Count: 1,
+		}));
+		const stuck = await collectStuckRows({
+			client,
+			tableName: TABLE,
+			origin: ORIGIN,
+			now: () => NOW,
+		});
+		assert.equal(stuck.length, 1);
+		assert.equal(stuck[0]?.originalUrl, "https://example.test/old");
+	});
+
 	it("paginates: a LastEvaluatedKey on page 1 triggers a second Scan with ExclusiveStartKey", async () => {
 		let callIndex = 0;
 		const { client, calls } = createFakeClient(() => {
