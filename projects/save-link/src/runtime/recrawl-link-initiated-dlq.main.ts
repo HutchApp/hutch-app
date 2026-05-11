@@ -1,12 +1,7 @@
-import { SQSClient } from "@aws-sdk/client-sqs";
 import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { consoleLogger, HutchLogger } from "@packages/hutch-logger";
-import {
-	initEventBridgePublisher,
-	initSqsCommandDispatcher,
-} from "@packages/hutch-infra-components/runtime";
-import { GenerateSummaryCommand } from "@packages/hutch-infra-components";
+import { initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import {
 	initDynamoDbArticleStore,
 	initLambdaEffectDispatcher,
@@ -17,7 +12,6 @@ import { initRecrawlLinkInitiatedDlqHandler } from "../crawl-article-state/recra
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const eventBusName = requireEnv("EVENT_BUS_NAME");
-const generateSummaryQueueUrl = requireEnv("GENERATE_SUMMARY_QUEUE_URL");
 
 const dynamoClient = createDynamoDocumentClient();
 const logger = HutchLogger.from(consoleLogger);
@@ -32,16 +26,7 @@ const { publishEvent } = initEventBridgePublisher({
 	eventBusName,
 });
 
-const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
-	sqsClient: new SQSClient({}),
-	queueUrl: generateSummaryQueueUrl,
-	command: GenerateSummaryCommand,
-});
-
-const dispatcher = initLambdaEffectDispatcher({
-	publishEvent,
-	dispatchGenerateSummary,
-});
+const dispatcher = initLambdaEffectDispatcher({ publishEvent });
 
 const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
 
