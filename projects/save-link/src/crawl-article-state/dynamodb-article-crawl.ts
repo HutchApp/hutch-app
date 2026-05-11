@@ -30,6 +30,7 @@ async function swallowConditionalCheckFailure(
 export function initDynamoDbArticleCrawl(deps: {
 	client: DynamoDBDocumentClient;
 	tableName: string;
+	now: () => Date;
 }): {
 	markCrawlReady: MarkCrawlReady;
 	markCrawlFailed: MarkCrawlFailed;
@@ -72,7 +73,7 @@ export function initDynamoDbArticleCrawl(deps: {
 					":failed": "failed",
 					":pending": "pending",
 					":reason": reason,
-					":failedAt": new Date().toISOString(),
+					":failedAt": deps.now().toISOString(),
 				},
 			}),
 		);
@@ -87,7 +88,7 @@ export function initDynamoDbArticleCrawl(deps: {
 			table.update({
 				Key: { url: articleResourceUniqueId.value },
 				UpdateExpression:
-					"SET crawlStatus = :unsupported, crawlUnsupportedReason = :reason, crawlFailedAt = :failedAt",
+					"SET crawlStatus = :unsupported, crawlUnsupportedReason = :reason, crawlFailedAt = :failedAt REMOVE crawlFailureReason",
 				ConditionExpression:
 					"attribute_not_exists(crawlStatus) OR crawlStatus = :pending OR crawlStatus = :failed OR crawlStatus = :unsupported",
 				ExpressionAttributeValues: {
@@ -95,7 +96,7 @@ export function initDynamoDbArticleCrawl(deps: {
 					":pending": "pending",
 					":failed": "failed",
 					":reason": reason,
-					":failedAt": new Date().toISOString(),
+					":failedAt": deps.now().toISOString(),
 				},
 			}),
 		);

@@ -57,6 +57,7 @@ const { updateFetchTimestamp } = initUpdateFetchTimestamp({
 const { markCrawlFailed, markCrawlUnsupported, markCrawlStage } = initDynamoDbArticleCrawl({
 	client,
 	tableName: articlesTable,
+	now: () => new Date(),
 });
 
 const { markSummarySkipped } = initDynamoDbGeneratedSummary({
