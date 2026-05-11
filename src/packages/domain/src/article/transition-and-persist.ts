@@ -21,24 +21,14 @@ export interface TransitionAndPersistParams<P> {
 }
 
 /**
- * Single orchestration for every aggregate write: load → run pure transition →
- * version-CAS save → all-or-nothing effect dispatch. The contract a handler
- * gets is "if I returned, the storage write AND the effect dispatch both
- * succeeded; if anything failed I threw, my SQS message stays in flight and
- * is redelivered."
- *
- * 1. Rebase-and-retry on AggregateConcurrencyError. The retry budget is
- *    deliberately small: the racy writers in production are the canary scan,
- *    the canary recovery path, and the operator recrawl — none generate more
- *    than a handful of concurrent writes to the same URL. If the conflict
- *    metric (emitted by the DDB adapter) shows the budget is wrong, tune
- *    here rather than per-handler.
- * 2. The dispatcher MUST throw on any failure so SQS redelivers. On
- *    redelivery this orchestration runs again — the now-persisted aggregate
- *    is reloaded, the transition is re-applied (idempotent because the
- *    aggregate already reflects the change), and the effects are
- *    re-dispatched. Consumers already de-duplicate via the existing
- *    at-least-once EventBridge contract.
+ * 1. The retry budget is deliberately small: the racy writers in production
+ *    are the canary scan, the canary recovery path, and the operator
+ *    recrawl — none generate more than a handful of concurrent writes to
+ *    the same URL. If the conflict metric (emitted by the DDB adapter)
+ *    shows the budget is wrong, tune here rather than per-handler.
+ * 2. Dispatcher failure surfaces to the handler so SQS redelivers the
+ *    input. Consumers already de-duplicate via the existing at-least-once
+ *    EventBridge contract.
  */
 export interface TransitionAndPersistDeps {
 	store: ArticleStore;

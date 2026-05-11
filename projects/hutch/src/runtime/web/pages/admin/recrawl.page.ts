@@ -106,11 +106,6 @@ function handleRecrawlArticle(
 			return;
 		}
 
-		// Always recrawl. No cache, no TTL. The `requestRecrawl` transition
-		// resets BOTH substates to pending atomically and produces the
-		// RecrawlLinkInitiated event in one orchestration: handler success
-		// implies the row is pending AND the worker has been notified, with
-		// no intermediate state visible to a concurrent reader.
 		await deps.transitionAndPersist({
 			url: articleUrl,
 			transition: requestRecrawl,

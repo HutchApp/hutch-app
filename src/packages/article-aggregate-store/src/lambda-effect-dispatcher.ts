@@ -16,21 +16,6 @@ export interface LambdaEffectDispatcherDeps {
 	dispatchGenerateSummary?: DispatchCommand<typeof GenerateSummaryCommand>;
 }
 
-/**
- * Dispatches each aggregate effect to its existing wire format. Phase-1
- * transitions produce one effect per invocation, so "all-or-nothing per
- * orchestration" reduces to "fire the effect; if it throws, the orchestrator
- * throws and SQS redelivers the input." On redelivery the orchestrator
- * reloads the (now-persisted) aggregate, re-runs the transition (idempotent
- * because the aggregate state already reflects it), and re-emits the same
- * effect — consumers dedupe via the existing at-least-once EventBridge /
- * SQS semantics.
- *
- * Multi-effect transitions (Phase 2+) will land here and rely on the same
- * loop; only when a single transition needs to fan out to >10 destinations
- * does this need to grow into a batched PutEvents implementation. None of
- * Phase 1 or Phase 2's planned transitions cross that threshold.
- */
 export function initLambdaEffectDispatcher(
 	deps: LambdaEffectDispatcherDeps,
 ): DispatchEffects {

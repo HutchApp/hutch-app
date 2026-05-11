@@ -637,9 +637,6 @@ const refreshArticleContentQueue = new HutchSQS("refresh-article-content", {
 
 const refreshArticleContentDynamodb = new HutchDynamoDBAccess("refresh-article-content-dynamodb", {
 	tables: [{ arn: articlesTableArn, includeIndexes: false }],
-	// GetItem: aggregate.load reads the row before applying the refresh
-	// transition. UpdateItem: aggregate.save persists the transitioned row
-	// with version CAS.
 	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
 });
 

@@ -11,10 +11,6 @@ import {
 import type { FindArticleByUrl } from "../article-store/article-store.types";
 import type { ArticleMetadata } from "@packages/domain/article";
 
-/**
- * Read-side projections the bridge calls. Independent of the writer side so
- * the test app can pass each provider its own fixture instance.
- */
 export interface BridgeReaders {
 	findArticleByUrl: FindArticleByUrl;
 	findArticleCrawlStatus: (
@@ -37,14 +33,8 @@ export interface BridgeReaders {
 	>;
 }
 
-/**
- * Write-side delegates. The bridge calls these when the aggregate's save
- * needs to update each substate. Writers for `summary=ready/failed/skipped`
- * are optional — a test fixture only needs to provide them when it uses
- * the bridge against a transition that can produce those summary states.
- * Phase-1's /admin/recrawl path only produces `summary=pending`, so the
- * default test app omits the rest; Phase-2 DLQ handlers will set them.
- */
+// Summary-state writers are optional because Phase-1's /admin/recrawl path
+// only produces `summary=pending`; Phase-2 DLQ handlers will set the rest.
 export interface BridgeWriters {
 	forceMarkCrawlPending: (params: { url: string }) => Promise<void>;
 	markCrawlReady: (params: { url: string }) => Promise<void>;
@@ -75,26 +65,9 @@ export interface BridgeWriters {
 }
 
 export interface AggregateBridgeStore extends ArticleStore {
-	/**
-	 * Returns the current bridge-tracked version for a URL. Tests can assert
-	 * the version bumped after a save without reaching into private state.
-	 */
 	peekVersion: (url: string) => number;
 }
 
-/**
- * In-memory aggregate adapter that delegates to the existing per-state
- * test-fixture providers (`articleStore`, `articleCrawl`, `summary`). This
- * is the bridge that lets `/admin/recrawl` and other aggregate-callers run
- * in the test app while existing route tests keep asserting against the
- * legacy fixture methods (e.g. `harness.summary.findGeneratedSummary(...)`
- * still returns the correct projection because the bridge wrote to it).
- *
- * Version tracking lives in the bridge alone — the underlying legacy
- * fixtures don't model version. This is sufficient for test scenarios
- * because the test app is single-writer per invocation; production uses
- * `initDynamoDbArticleStore` which has real row-level CAS on disk.
- */
 export function initBridgeArticleStore(deps: {
 	readers: BridgeReaders;
 	writers: BridgeWriters;

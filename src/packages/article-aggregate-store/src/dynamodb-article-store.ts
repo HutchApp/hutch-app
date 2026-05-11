@@ -75,11 +75,6 @@ function rowToCrawl(row: Row): CrawlState {
 		};
 	}
 	if (row.crawlStatus === "ready") return { status: "ready" };
-	// pending and the legacy-stub case (status absent) both project as pending.
-	// The legacy-stub branch lets the aggregate own all rows including the ones
-	// older than the state machine — the storage adapter's job is to make every
-	// row look like a valid aggregate, not to filter rows the rest of the
-	// system can't handle.
 	return row.crawlStage
 		? { status: "pending", stage: row.crawlStage }
 		: { status: "pending" };
@@ -95,12 +90,6 @@ function rowToSummary(row: Row): SummaryState {
 			: { status: "skipped" };
 	}
 	if (row.summaryStatus === "ready") {
-		// Legacy fallback: rows can carry a `summary` string with no
-		// `summaryInputTokens` / `summaryOutputTokens` (pre-state-machine
-		// backfills, see dynamodb-generated-summary.ts:78). The aggregate
-		// requires both counts; coerce missing values to 0 rather than
-		// rejecting the row — Phase 4's legacy-stub migration (out of scope
-		// for this PR) is the place to backfill real values.
 		const summary = row.summary ?? "";
 		const ready: SummaryState = {
 			status: "ready",
@@ -119,8 +108,6 @@ function rowToSummary(row: Row): SummaryState {
 function rowToArticle(row: Row): Article {
 	return {
 		url: row.url,
-		// Pre-aggregate rows have no version attribute on disk and project to 0;
-		// first aggregate save then writes version 1.
 		version: row.version ?? 0,
 		crawl: rowToCrawl(row),
 		summary: rowToSummary(row),
@@ -163,10 +150,8 @@ function planCrawl(crawl: CrawlState, plan: UpdatePlan): void {
 		plan.removes.push("crawlFailureReason");
 		return;
 	}
-	// ready / pending: clear every failure-side attribute so a future reader
-	// never sees a status=ready row with a lingering crawlFailureReason. The
-	// aggregate's discriminated union makes this impossible to forget in
-	// code — the adapter just mirrors it at the wire format.
+	// Clear failure-side attributes so a future reader never sees a
+	// status=ready row with a lingering crawlFailureReason.
 	plan.removes.push("crawlFailureReason");
 	plan.removes.push("crawlUnsupportedReason");
 	plan.removes.push("crawlFailedAt");
@@ -258,7 +243,7 @@ function planMetadata(article: Article, plan: UpdatePlan): void {
 
 function planFreshness(article: Article, plan: UpdatePlan): void {
 	setOrRemoveOptional(plan, "contentFetchedAt", article.contentFetchedAt);
-	/* c8 ignore next -- V8 block-coverage phantom on the optional-field argument expression; see bcoe/c8#319 and https://v8.dev/blog/javascript-code-coverage */
+	/* c8 ignore next 2 -- V8 block-coverage phantom on the optional-field argument expression; see bcoe/c8#319 and https://v8.dev/blog/javascript-code-coverage */
 	setOrRemoveOptional(plan, "etag", article.etag);
 	setOrRemoveOptional(plan, "lastModified", article.lastModified);
 }
