@@ -1,4 +1,4 @@
-/* c8 ignore start -- thin AWS SDK wrapper, tested via integration */
+/* c8 ignore start -- thin AWS SDK wrapper, tested via production canaries (article-pipeline-health) */
 import assert from "node:assert";
 import type { S3Client } from "@aws-sdk/client-s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
@@ -9,6 +9,7 @@ import {
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
+import { parseS3Uri } from "./parse-s3-uri";
 
 export type ArticleContentResult = { content: string; imageUrl?: string };
 export type FindArticleContent = (url: string) => Promise<ArticleContentResult | undefined>;
@@ -17,15 +18,6 @@ const ArticleContentRow = z.object({
 	contentLocation: dynamoField(z.string()),
 	imageUrl: dynamoField(z.string()),
 });
-
-function parseS3Uri(uri: string): { bucket: string; key: string } {
-	const withoutProtocol = uri.slice("s3://".length);
-	const slashIndex = withoutProtocol.indexOf("/");
-	return {
-		bucket: withoutProtocol.slice(0, slashIndex),
-		key: withoutProtocol.slice(slashIndex + 1),
-	};
-}
 
 export function initFindArticleContent(deps: {
 	dynamoClient: DynamoDBDocumentClient;

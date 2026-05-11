@@ -6,10 +6,31 @@ import { initDynamoDbGeneratedSummary } from "./dynamodb-generated-summary";
 
 type SendFn = DynamoDBDocumentClient["send"];
 
+type CapturedCommand = {
+	input: {
+		Key?: Record<string, unknown>;
+		UpdateExpression?: string;
+		ConditionExpression?: string;
+		ExpressionAttributeValues?: Record<string, unknown>;
+	};
+};
+
 function createFakeClient(impl: (input: unknown) => unknown): Partial<DynamoDBDocumentClient> {
 	return {
 		send: (async (input: unknown) => impl(input)) as unknown as SendFn,
 	};
+}
+
+function createCapturingClient(): {
+	client: Partial<DynamoDBDocumentClient>;
+	commands: CapturedCommand[];
+} {
+	const commands: CapturedCommand[] = [];
+	const client = createFakeClient((input) => {
+		commands.push(input as CapturedCommand);
+		return {};
+	});
+	return { client, commands };
 }
 
 const TABLE = "test-articles";
@@ -141,33 +162,159 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 			});
 			expect(await findGeneratedSummary(URL)).toBeUndefined();
 		});
+
+		it("canonicalises tracking-param variants to the same Key.url", async () => {
+			// The wrapper delegates URL canonicalization to ArticleResourceUniqueId
+			// (covered exhaustively in @packages/article-resource-unique-id). This
+			// case is a regression guard that the wrapper actually applies it —
+			// every variant must produce the same Key.url, otherwise DDB rows
+			// would fragment per tracking-param combination.
+			const captures: Array<Record<string, unknown> | undefined> = [];
+			const client = createFakeClient((input) => {
+				captures.push((input as CapturedCommand).input.Key);
+				return { Item: undefined };
+			});
+			const { findGeneratedSummary } = initDynamoDbGeneratedSummary({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			const canonical = "https://example.com/article";
+			await findGeneratedSummary(canonical);
+			await findGeneratedSummary(`${canonical}?source=friends_link&sk=abc123`);
+			await findGeneratedSummary(`${canonical}?utm_source=twitter&utm_medium=social`);
+
+			expect(captures).toHaveLength(3);
+			expect(captures[0]).toEqual(captures[1]);
+			expect(captures[0]).toEqual(captures[2]);
+		});
 	});
 
 	describe("saveGeneratedSummary", () => {
-		it("issues an UpdateItem that sets summary and status=ready", async () => {
-			let received: unknown;
-			const client = createFakeClient((input) => {
-				received = input;
-				return {};
-			});
+		it("writes summary, excerpt, token counts, and status=ready", async () => {
+			const { client, commands } = createCapturingClient();
 			const { saveGeneratedSummary } = initDynamoDbGeneratedSummary({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
 			});
 
-			await saveGeneratedSummary({ url: URL, summary: "done", excerpt: "blurb", inputTokens: 1, outputTokens: 2 });
+			await saveGeneratedSummary({
+				url: URL,
+				summary: "done",
+				excerpt: "blurb",
+				inputTokens: 100,
+				outputTokens: 50,
+			});
 
-			expect(received).toBeDefined();
+			expect(commands).toHaveLength(1);
+			const update = commands[0].input;
+			expect(update.UpdateExpression).toContain("summary = :summary");
+			expect(update.UpdateExpression).toContain("summaryExcerpt = :excerpt");
+			expect(update.UpdateExpression).toContain("summaryInputTokens = :inputTokens");
+			expect(update.UpdateExpression).toContain("summaryOutputTokens = :outputTokens");
+			expect(update.UpdateExpression).toContain("summaryStatus = :ready");
+			expect(update.ExpressionAttributeValues?.[":summary"]).toBe("done");
+			expect(update.ExpressionAttributeValues?.[":excerpt"]).toBe("blurb");
+			expect(update.ExpressionAttributeValues?.[":inputTokens"]).toBe(100);
+			expect(update.ExpressionAttributeValues?.[":outputTokens"]).toBe(50);
+			expect(update.ExpressionAttributeValues?.[":ready"]).toBe("ready");
+		});
+
+		it("clears prior failure and skip reasons via REMOVE so a successful redrive wipes stale markers", async () => {
+			// Regression guard: the prior integration tests asserted that
+			// markSummaryFailed → saveGeneratedSummary cleared summaryFailureReason
+			// and that a seeded skipped row's summarySkippedReason was wiped on
+			// forced retry. Both reduce to the same UpdateExpression shape — if
+			// either REMOVE attribute is dropped the read side will surface a
+			// stale failure/skip reason after the row has flipped to ready.
+			const { client, commands } = createCapturingClient();
+			const { saveGeneratedSummary } = initDynamoDbGeneratedSummary({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await saveGeneratedSummary({
+				url: URL,
+				summary: "done",
+				excerpt: "blurb",
+				inputTokens: 1,
+				outputTokens: 2,
+			});
+
+			expect(commands[0].input.UpdateExpression).toContain(
+				"REMOVE summaryFailureReason, summarySkippedReason",
+			);
+		});
+	});
+
+	describe("markSummaryPending", () => {
+		it("sets summaryStatus=pending under a guard that never clobbers a ready row", async () => {
+			const { client, commands } = createCapturingClient();
+			const { markSummaryPending } = initDynamoDbGeneratedSummary({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await markSummaryPending({ url: URL });
+
+			expect(commands).toHaveLength(1);
+			const update = commands[0].input;
+			expect(update.UpdateExpression).toBe("SET summaryStatus = :pending");
+			expect(update.ConditionExpression).toContain("attribute_not_exists(summaryStatus)");
+			expect(update.ConditionExpression).toContain("summaryStatus <> :ready");
+			expect(update.ExpressionAttributeValues?.[":pending"]).toBe("pending");
+			expect(update.ExpressionAttributeValues?.[":ready"]).toBe("ready");
+		});
+	});
+
+	describe("markSummaryFailed", () => {
+		it("sets summaryStatus=failed with reason, guarded so ready/skipped rows cannot regress", async () => {
+			const { client, commands } = createCapturingClient();
+			const { markSummaryFailed } = initDynamoDbGeneratedSummary({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await markSummaryFailed({ url: URL, reason: "deepseek timeout" });
+
+			expect(commands).toHaveLength(1);
+			const update = commands[0].input;
+			expect(update.UpdateExpression).toContain("summaryStatus = :failed");
+			expect(update.UpdateExpression).toContain("summaryFailureReason = :reason");
+			expect(update.ConditionExpression).toContain("attribute_not_exists(summaryStatus)");
+			expect(update.ConditionExpression).toContain("summaryStatus = :pending");
+			expect(update.ConditionExpression).toContain("summaryStatus = :failed");
+			expect(update.ExpressionAttributeValues?.[":failed"]).toBe("failed");
+			expect(update.ExpressionAttributeValues?.[":pending"]).toBe("pending");
+			expect(update.ExpressionAttributeValues?.[":reason"]).toBe("deepseek timeout");
+		});
+	});
+
+	describe("markSummarySkipped", () => {
+		it("sets summaryStatus=skipped with reason, guarded so only new or pending rows transition", async () => {
+			const { client, commands } = createCapturingClient();
+			const { markSummarySkipped } = initDynamoDbGeneratedSummary({
+				client: client as DynamoDBDocumentClient,
+				tableName: TABLE,
+			});
+
+			await markSummarySkipped({ url: URL, reason: "content-too-short" });
+
+			expect(commands).toHaveLength(1);
+			const update = commands[0].input;
+			expect(update.UpdateExpression).toContain("summaryStatus = :skipped");
+			expect(update.UpdateExpression).toContain("summarySkippedReason = :reason");
+			expect(update.ConditionExpression).toContain("attribute_not_exists(summaryStatus)");
+			expect(update.ConditionExpression).toContain("summaryStatus = :pending");
+			expect(update.ExpressionAttributeValues?.[":skipped"]).toBe("skipped");
+			expect(update.ExpressionAttributeValues?.[":pending"]).toBe("pending");
+			expect(update.ExpressionAttributeValues?.[":reason"]).toBe("content-too-short");
 		});
 	});
 
 	describe("markSummaryStage", () => {
 		it("issues an unconditional UpdateItem that sets summaryStage", async () => {
-			let received: unknown;
-			const client = createFakeClient((input) => {
-				received = input;
-				return {};
-			});
+			const { client, commands } = createCapturingClient();
 			const { markSummaryStage } = initDynamoDbGeneratedSummary({
 				client: client as DynamoDBDocumentClient,
 				tableName: TABLE,
@@ -175,18 +322,11 @@ describe("initDynamoDbGeneratedSummary (unit)", () => {
 
 			await markSummaryStage({ url: URL, stage: "summary-generating" });
 
-			const command = received as {
-				input: {
-					UpdateExpression?: string;
-					ConditionExpression?: string;
-					ExpressionAttributeValues?: Record<string, unknown>;
-				};
-			};
-			expect(command.input.UpdateExpression).toBe("SET summaryStage = :stage");
-			expect(command.input.ConditionExpression).toBeUndefined();
-			expect(command.input.ExpressionAttributeValues?.[":stage"]).toBe(
-				"summary-generating",
-			);
+			expect(commands).toHaveLength(1);
+			const update = commands[0].input;
+			expect(update.UpdateExpression).toBe("SET summaryStage = :stage");
+			expect(update.ConditionExpression).toBeUndefined();
+			expect(update.ExpressionAttributeValues?.[":stage"]).toBe("summary-generating");
 		});
 	});
 

@@ -50,6 +50,11 @@ const BASE_EXCLUDE_PATTERNS = [
   // See: https://github.com/bcoe/c8/issues/126 and https://github.com/jestjs/jest/issues/11188
   '**/*.test.ts',
 
+  // Integration test files share the same role as *.test.ts (they exist to
+  // exercise other code, not to be exercised) but use a distinct suffix so
+  // run-tests.config.js can phase them separately. Excluded for the same reason.
+  '**/*.integration.ts',
+
   // Barrel re-exports — no logic, just re-export statements
   '**/index.ts',
 
