@@ -76,9 +76,7 @@ function pollUrlBuilderFor(articleUrl: string): PollUrlBuilder {
 function buildArticleReaderDeps(deps: ViewDependencies): ArticleReaderDeps {
 	return {
 		findArticleCrawlStatus: deps.findArticleCrawlStatus,
-		markCrawlPending: deps.markCrawlPending,
 		findGeneratedSummary: deps.findGeneratedSummary,
-		markSummaryPending: deps.markSummaryPending,
 		readArticleContent: deps.readArticleContent,
 		findArticleByUrl: deps.findArticleByUrl,
 		formatDocumentTitle: formatViewDocumentTitle,

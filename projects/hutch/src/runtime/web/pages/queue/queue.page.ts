@@ -428,9 +428,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 	const reader = initArticleReader({
 		findArticleCrawlStatus: deps.findArticleCrawlStatus,
-		markCrawlPending: deps.markCrawlPending,
 		findGeneratedSummary: deps.findGeneratedSummary,
-		markSummaryPending: deps.markSummaryPending,
 		readArticleContent: deps.readArticleContent,
 		findArticleByUrl: deps.findArticleByUrl,
 		formatDocumentTitle: formatReaderDocumentTitle,
