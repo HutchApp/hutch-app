@@ -579,6 +579,15 @@ body {
   font-size: 13px;
 }
 
+.list-view__warning {
+  margin: 8px 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-left: 3px solid var(--popup-warning, var(--popup-error));
+  background: color-mix(in srgb, var(--popup-warning, var(--popup-error)) 12%, transparent);
+  color: var(--popup-text);
+}
+
 .login__error {
   color: var(--popup-error);
   font-size: 13px;
