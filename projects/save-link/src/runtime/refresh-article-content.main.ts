@@ -1,21 +1,33 @@
 import { SQSClient } from "@aws-sdk/client-sqs";
+import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
-import { consoleLogger } from "@packages/hutch-logger";
-import { initSqsCommandDispatcher } from "@packages/hutch-infra-components/runtime";
+import { consoleLogger, HutchLogger } from "@packages/hutch-logger";
+import {
+	initEventBridgePublisher,
+	initSqsCommandDispatcher,
+} from "@packages/hutch-infra-components/runtime";
 import { GenerateSummaryCommand } from "@packages/hutch-infra-components";
+import {
+	initDynamoDbArticleStore,
+	initLambdaEffectDispatcher,
+} from "@packages/article-aggregate-store";
+import { initTransitionAndPersist } from "@packages/domain/article";
 import { requireEnv } from "../require-env";
-import { initRefreshArticleContent } from "../save-link/refresh-article-content";
 import { initRefreshArticleContentHandler } from "../save-link/refresh-article-content-handler";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const generateSummaryQueueUrl = requireEnv("GENERATE_SUMMARY_QUEUE_URL");
+const eventBusName = requireEnv("EVENT_BUS_NAME");
 
 const client = createDynamoDocumentClient();
 const sqsClient = new SQSClient({});
+const eventBridgeClient = new EventBridgeClient({});
+const logger = HutchLogger.from(consoleLogger);
 
-const { refreshArticleContent } = initRefreshArticleContent({
+const store = initDynamoDbArticleStore({
 	client,
 	tableName: articlesTable,
+	logger,
 });
 
 const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
@@ -24,8 +36,19 @@ const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
 	command: GenerateSummaryCommand,
 });
 
-export const handler = initRefreshArticleContentHandler({
-	refreshArticleContent,
+const { publishEvent } = initEventBridgePublisher({
+	client: eventBridgeClient,
+	eventBusName,
+});
+
+const dispatcher = initLambdaEffectDispatcher({
+	publishEvent,
 	dispatchGenerateSummary,
-	logger: consoleLogger,
+});
+
+const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
+
+export const handler = initRefreshArticleContentHandler({
+	transitionAndPersist,
+	logger,
 });

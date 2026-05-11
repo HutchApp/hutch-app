@@ -637,7 +637,10 @@ const refreshArticleContentQueue = new HutchSQS("refresh-article-content", {
 
 const refreshArticleContentDynamodb = new HutchDynamoDBAccess("refresh-article-content-dynamodb", {
 	tables: [{ arn: articlesTableArn, includeIndexes: false }],
-	actions: ["dynamodb:UpdateItem"],
+	// GetItem: aggregate.load reads the row before applying the refresh
+	// transition. UpdateItem: aggregate.save persists the transitioned row
+	// with version CAS.
+	actions: ["dynamodb:GetItem", "dynamodb:UpdateItem"],
 });
 
 const refreshArticleContentLambda = new HutchLambda("refresh-article-content", {
@@ -649,12 +652,15 @@ const refreshArticleContentLambda = new HutchLambda("refresh-article-content", {
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+		EVENT_BUS_NAME: eventBus.eventBusName,
 	},
 	policies: [
 		...refreshArticleContentDynamodb.policies,
 		...generateSummaryQueue.policies.map((p) => ({ ...p, name: `refresh-${p.name}` })),
 	],
 });
+
+eventBus.grantPublish(refreshArticleContentLambda);
 
 const refreshArticleContentWithSQS = new HutchSQSBackedLambda("refresh-article-content", {
 	lambda: refreshArticleContentLambda,

@@ -4,6 +4,32 @@ export type {
 	ArticleMetadata,
 	SavedArticle,
 } from "./article.types";
+export type { Article, CrawlState, SummaryState } from "./aggregate.types";
+export {
+	ArticleAggregateSchema,
+	CrawlStateSchema,
+	SummaryStateSchema,
+} from "./aggregate.schema";
+export type {
+	ArticleStore,
+	LoadArticle,
+	SaveArticle as SaveAggregateArticle,
+	SaveArticleParams as SaveAggregateArticleParams,
+} from "./storage.types";
+export { AggregateConcurrencyError } from "./storage.types";
+export type { Effect, DispatchEffects } from "./effect.types";
+export {
+	refreshContent,
+	type RefreshContentParams,
+	type TransitionResult,
+} from "./transitions/refresh-content";
+export { requestRecrawl } from "./transitions/request-recrawl";
+export {
+	initTransitionAndPersist,
+	type Transition,
+	type TransitionAndPersistDeps,
+	type TransitionAndPersistParams,
+} from "./transition-and-persist";
 export {
 	CRAWL_STAGE_TO_PCT,
 	CRAWL_STAGES,

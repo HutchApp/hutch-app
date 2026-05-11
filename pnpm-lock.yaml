@@ -370,6 +370,9 @@ importers:
       '@11ty/posthtml-urls':
         specifier: 1.0.3
         version: 1.0.3
+      '@aws-sdk/client-eventbridge':
+        specifier: 3.1001.0
+        version: 3.1001.0
       '@aws-sdk/client-s3':
         specifier: 3.1001.0
         version: 3.1001.0
@@ -379,6 +382,9 @@ importers:
       '@mozilla/readability':
         specifier: 0.6.0
         version: 0.6.0
+      '@packages/article-aggregate-store':
+        specifier: workspace:*
+        version: link:../../src/packages/article-aggregate-store
       '@packages/article-resource-unique-id':
         specifier: workspace:*
         version: link:../../src/packages/article-resource-unique-id
@@ -388,6 +394,9 @@ importers:
       '@packages/crawl-article':
         specifier: workspace:*
         version: link:../../src/packages/crawl-article
+      '@packages/domain':
+        specifier: workspace:*
+        version: link:../../src/packages/domain
       '@packages/hutch-infra-components':
         specifier: workspace:*
         version: link:../../src/packages/hutch-infra-components
@@ -431,6 +440,46 @@ importers:
       '@types/aws-lambda':
         specifier: 8.10.161
         version: 8.10.161
+      '@types/jest':
+        specifier: 29.5.14
+        version: 29.5.14
+      c8:
+        specifier: 10.1.3
+        version: 10.1.3
+      concurrently:
+        specifier: 9.2.1
+        version: 9.2.1
+      jest:
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@22.19.1)(node-notifier@10.0.1)(ts-node@10.9.2(@types/node@22.19.1)(typescript@5.9.3))
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  src/packages/article-aggregate-store:
+    dependencies:
+      '@packages/article-resource-unique-id':
+        specifier: workspace:*
+        version: link:../article-resource-unique-id
+      '@packages/article-state-types':
+        specifier: workspace:*
+        version: link:../article-state-types
+      '@packages/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@packages/hutch-infra-components':
+        specifier: workspace:*
+        version: link:../hutch-infra-components
+      '@packages/hutch-logger':
+        specifier: workspace:*
+        version: link:../hutch-logger
+      '@packages/hutch-storage-client':
+        specifier: workspace:*
+        version: link:../hutch-storage-client
+      zod:
+        specifier: 4.1.13
+        version: 4.1.13
+    devDependencies:
       '@types/jest':
         specifier: 29.5.14
         version: 29.5.14

@@ -1,30 +1,19 @@
 import type { Handler, SQSBatchItemFailure, SQSBatchResponse, SQSEvent } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
-import type { DispatchCommand } from "@packages/hutch-infra-components/runtime";
-import type { GenerateSummaryCommand } from "@packages/hutch-infra-components";
+import type { Minutes } from "@packages/domain/article";
+import {
+	type initTransitionAndPersist,
+	refreshContent,
+} from "@packages/domain/article";
 import { RefreshArticleContentCommand } from "./index";
 
-export type RefreshArticleContent = (params: {
-	url: string;
-	metadata: {
-		title: string;
-		siteName: string;
-		excerpt: string;
-		wordCount: number;
-		imageUrl?: string;
-	};
-	estimatedReadTime: number;
-	etag?: string;
-	lastModified?: string;
-	contentFetchedAt: string;
-}) => Promise<void>;
+export type TransitionAndPersist = ReturnType<typeof initTransitionAndPersist>;
 
 export function initRefreshArticleContentHandler(deps: {
-	refreshArticleContent: RefreshArticleContent;
-	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
+	transitionAndPersist: TransitionAndPersist;
 	logger: HutchLogger;
 }): Handler<SQSEvent, SQSBatchResponse> {
-	const { refreshArticleContent, dispatchGenerateSummary, logger } = deps;
+	const { transitionAndPersist, logger } = deps;
 
 	return async (event): Promise<SQSBatchResponse> => {
 		const batchItemFailures: SQSBatchItemFailure[] = [];
@@ -36,13 +25,17 @@ export function initRefreshArticleContentHandler(deps: {
 
 				logger.info("[RefreshArticleContent] processing", { url: detail.url });
 
-				await refreshArticleContent(detail);
-
-				// refreshArticleContent has already reset summaryStatus to pending and
-				// cleared the cached summary text, so the worker won't short-circuit
-				// on the cache-hit branch in summarizeArticle. Mirrors the
-				// recrawl-content-extracted handler's unconditional dispatch.
-				await dispatchGenerateSummary({ url: detail.url });
+				await transitionAndPersist({
+					url: detail.url,
+					transition: refreshContent,
+					params: {
+						metadata: detail.metadata,
+						estimatedReadTime: detail.estimatedReadTime as Minutes,
+						contentFetchedAt: detail.contentFetchedAt,
+						etag: detail.etag,
+						lastModified: detail.lastModified,
+					},
+				});
 
 				logger.info("[RefreshArticleContent] completed", { url: detail.url });
 			} catch (error) {
