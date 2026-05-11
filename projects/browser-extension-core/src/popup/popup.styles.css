@@ -9,6 +9,7 @@
   --popup-surface: #F4F5F8;
   --popup-placeholder: #8C919D;
   --popup-error: #C45C5C;
+  --popup-warning: #C8923C;
   --popup-link-hover: #996D1F;
   --popup-delete: #5B5B66;
   --popup-delete-hover-bg: #FFE4E4;
@@ -38,6 +39,7 @@
     --popup-surface: #1E2A3A;
     --popup-placeholder: #556070;
     --popup-error: #E87070;
+    --popup-warning: #D4A04A;
     --popup-link-hover: #D4A04A;
     --popup-delete: #6A7080;
     --popup-delete-hover-bg: #3D1F1F;
