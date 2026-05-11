@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import {
 	CrawlArticleFailedEvent,
 	type GenerateSummaryCommand,
@@ -12,7 +13,7 @@ import type { DispatchEffects, Effect } from "@packages/domain/article";
 
 export interface LambdaEffectDispatcherDeps {
 	publishEvent: PublishEvent;
-	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
+	dispatchGenerateSummary?: DispatchCommand<typeof GenerateSummaryCommand>;
 }
 
 /**
@@ -46,6 +47,10 @@ async function dispatch(
 ): Promise<void> {
 	switch (effect.kind) {
 		case "DispatchGenerateSummaryCommand":
+			assert(
+				deps.dispatchGenerateSummary,
+				"DispatchGenerateSummaryCommand effect requires dispatchGenerateSummary dep",
+			);
 			await deps.dispatchGenerateSummary({ url: effect.url });
 			return;
 		case "PublishRecrawlLinkInitiatedEvent":

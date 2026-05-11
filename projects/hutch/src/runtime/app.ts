@@ -34,14 +34,12 @@ import {
 import { S3Client } from "@aws-sdk/client-s3";
 import { initS3ReadContent } from "./providers/article-store/s3-read-content";
 import { initReadArticleContent } from "@packages/test-fixtures/providers/article-store";
-import { EventBridgeClient, initEventBridgePublisher, initSqsCommandDispatcher } from "@packages/hutch-infra-components/runtime";
-import { GenerateSummaryCommand } from "@packages/hutch-infra-components";
+import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
 import {
 	initDynamoDbArticleStore as initDynamoDbAggregateStore,
 	initLambdaEffectDispatcher,
 } from "@packages/article-aggregate-store";
 import { initTransitionAndPersist } from "@packages/domain/article";
-import { SQSClient } from "@aws-sdk/client-sqs";
 import { initEventBridgeLinkSaved } from "./providers/events/eventbridge-link-saved";
 import { initEventBridgeRecrawlLinkInitiated } from "./providers/events/eventbridge-recrawl-link-initiated";
 import { initEventBridgeSaveAnonymousLink } from "./providers/events/eventbridge-save-anonymous-link";
@@ -139,21 +137,14 @@ function initProviders() {
 		const { publishUpdateFetchTimestamp } = initEventBridgeUpdateFetchTimestamp({ publishEvent });
 		const { publishExportUserDataCommand } = initEventBridgeExportUserDataCommand({ publishEvent });
 		const { putPendingHtml } = initPutPendingHtml({ client: new S3Client({}), bucketName: pendingHtmlBucketName });
-		const generateSummaryQueueUrl = requireEnv("GENERATE_SUMMARY_QUEUE_URL");
 		const aggregateLogger = HutchLogger.from(consoleLogger);
 		const aggregateStore = initDynamoDbAggregateStore({
 			client,
 			tableName: articlesTable,
 			logger: aggregateLogger,
 		});
-		const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
-			sqsClient: new SQSClient({}),
-			queueUrl: generateSummaryQueueUrl,
-			command: GenerateSummaryCommand,
-		});
 		const aggregateDispatcher = initLambdaEffectDispatcher({
 			publishEvent,
-			dispatchGenerateSummary,
 		});
 		const transitionAndPersist = initTransitionAndPersist({
 			store: aggregateStore,

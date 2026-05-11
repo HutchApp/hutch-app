@@ -72,6 +72,35 @@ describe("initLambdaEffectDispatcher", () => {
 		expect(calls).toEqual(["publish", "dispatch"]);
 	});
 
+	it("throws if DispatchGenerateSummaryCommand arrives without dispatchGenerateSummary dep", async () => {
+		const dispatch = initLambdaEffectDispatcher({
+			publishEvent: async () => {},
+		});
+
+		await expect(
+			dispatch([
+				{ kind: "DispatchGenerateSummaryCommand", url: "https://a/" },
+			]),
+		).rejects.toThrow(
+			"DispatchGenerateSummaryCommand effect requires dispatchGenerateSummary dep",
+		);
+	});
+
+	it("dispatches PublishRecrawlLinkInitiatedEvent without dispatchGenerateSummary dep", async () => {
+		const publishedEvents: unknown[] = [];
+		const dispatch = initLambdaEffectDispatcher({
+			publishEvent: async (p) => {
+				publishedEvents.push(p);
+			},
+		});
+
+		await dispatch([
+			{ kind: "PublishRecrawlLinkInitiatedEvent", url: "https://a/" },
+		]);
+
+		expect(publishedEvents).toHaveLength(1);
+	});
+
 	it("translates PublishCrawlArticleFailedEvent with reason + receiveCount in the detail payload", async () => {
 		const publishedEvents: {
 			source: string;
