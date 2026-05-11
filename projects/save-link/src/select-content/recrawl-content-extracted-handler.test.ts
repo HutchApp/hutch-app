@@ -71,7 +71,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		selectMostCompleteContent: jest.fn<ReturnType<SelectMostCompleteContent>, Parameters<SelectMostCompleteContent>>().mockResolvedValue({ winner: "tie", reason: "" }),
 		promoteTierToCanonical: jest.fn<ReturnType<PromoteTierToCanonical>, Parameters<PromoteTierToCanonical>>().mockResolvedValue(undefined),
 		findContentSourceTier: jest.fn<ReturnType<FindContentSourceTier>, Parameters<FindContentSourceTier>>().mockResolvedValue(undefined),
-		markCrawlReady: jest.fn().mockResolvedValue(undefined),
+		transitionAndPersist: jest.fn().mockResolvedValue(undefined),
 		dispatchGenerateSummary: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
 		imagesCdnBaseUrl: "https://cdn.example.cloudfront.net",
@@ -125,11 +125,18 @@ describe("initRecrawlContentExtractedHandler", () => {
 		);
 	});
 
-	it("on a tie with an existing canonical, keeps canonical unchanged, flips crawlStatus back to 'ready' (the canary unsticks here), and still dispatches GenerateSummaryCommand", async () => {
+	it("on a tie with an existing canonical, keeps canonical unchanged and runs the recrawlTieKeptCanonical aggregate transition (one orchestration; the canary unsticks here)", async () => {
+		// The legacy handler called markCrawlReady + dispatchGenerateSummary
+		// + publishEvent(RecrawlCompleted) as three sequential awaits. The
+		// aggregate's recrawlTieKeptCanonical transition bundles all three
+		// into one orchestration: the orchestrator persists the new article
+		// (crawl=ready) AND dispatches both effects, or throws — no partial
+		// state where (crawl=ready, summary=pending, no worker ever
+		// notified) is reachable.
 		const tier0 = tierSource("tier-0");
 		const tier1 = tierSource("tier-1");
 		const promoteTierToCanonical = jest.fn().mockResolvedValue(undefined);
-		const markCrawlReady = jest.fn().mockResolvedValue(undefined);
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
 
@@ -138,7 +145,7 @@ describe("initRecrawlContentExtractedHandler", () => {
 			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "equally complete" }),
 			findContentSourceTier: jest.fn().mockResolvedValue("tier-1"),
 			promoteTierToCanonical,
-			markCrawlReady,
+			transitionAndPersist,
 			dispatchGenerateSummary,
 			publishEvent,
 		});
@@ -146,11 +153,15 @@ describe("initRecrawlContentExtractedHandler", () => {
 		await handler(createSqsEvent({ url: "https://example.com/a" }), stubContext, () => {});
 
 		expect(promoteTierToCanonical).not.toHaveBeenCalled();
-		expect(markCrawlReady).toHaveBeenCalledWith({ url: "https://example.com/a" });
-		expect(dispatchGenerateSummary).toHaveBeenCalledWith({ url: "https://example.com/a" });
-		expect(publishEvent).toHaveBeenCalledWith(
-			expect.objectContaining({ detailType: "RecrawlCompleted" }),
+		expect(transitionAndPersist).toHaveBeenCalledTimes(1);
+		expect(transitionAndPersist).toHaveBeenCalledWith(
+			expect.objectContaining({ url: "https://example.com/a" }),
 		);
+		// The transition emits both effects internally, so the handler does
+		// NOT call the legacy dispatch+publish helpers for the tie-kept-canonical
+		// branch — those run only for the promotion path.
+		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
+		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
 	it("on a tie, breaks in favour of the candidate with more CDN-host URLs even when canonical exists", async () => {

@@ -309,4 +309,27 @@ describe("transitionAndPersist", () => {
 			}),
 		).rejects.toThrow(/no aggregate found/);
 	});
+
+	it("resolves to undefined when skipIfMissing is set and the URL has no aggregate row", async () => {
+		// DLQ handlers fire against URLs whose article row may never have been
+		// created (e.g. SaveLinkCommand failed before the row was written).
+		// Asserting on missing rows there sends the message back to SQS for
+		// retry indefinitely; skipIfMissing makes the no-op return cleanly so
+		// the DLQ handler can ack the message and move on.
+		const initial = buildArticle();
+		const { store, log } = initFakeStore(initial);
+		const { dispatcher, dispatched } = initFakeDispatcher();
+		const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
+
+		const result = await transitionAndPersist({
+			url: "https://other.example.com/missing",
+			transition: refreshContent,
+			params: refreshParams,
+			skipIfMissing: true,
+		});
+
+		expect(result).toBeUndefined();
+		expect(log.saves).toEqual([]);
+		expect(dispatched).toEqual([]);
+	});
 });

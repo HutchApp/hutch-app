@@ -11,6 +11,13 @@ export interface TransitionAndPersistParams<P> {
 	url: string;
 	transition: Transition<P>;
 	params: P;
+	/**
+	 * If true, the orchestrator resolves to `undefined` when no aggregate
+	 * exists for the URL instead of asserting. Used by DLQ handlers that
+	 * can fire against URLs whose row was never created (e.g. the original
+	 * save-link command failed before writing).
+	 */
+	skipIfMissing?: boolean;
 }
 
 /**
@@ -47,12 +54,15 @@ export function initTransitionAndPersist(deps: TransitionAndPersistDeps) {
 	async function attempt<P>(
 		params: TransitionAndPersistParams<P>,
 		remaining: number,
-	): Promise<Article> {
+	): Promise<Article | undefined> {
 		const article = await deps.store.load(params.url);
-		assert(
-			article,
-			`Cannot run transition: no aggregate found for ${params.url}`,
-		);
+		if (!article) {
+			if (params.skipIfMissing) return undefined;
+			assert(
+				false,
+				`Cannot run transition: no aggregate found for ${params.url}`,
+			);
+		}
 
 		const result = params.transition(article, params.params);
 
@@ -74,7 +84,7 @@ export function initTransitionAndPersist(deps: TransitionAndPersistDeps) {
 
 	return async function transitionAndPersist<P>(
 		params: TransitionAndPersistParams<P>,
-	): Promise<Article> {
+	): Promise<Article | undefined> {
 		return attempt(params, retryBudget);
 	};
 }

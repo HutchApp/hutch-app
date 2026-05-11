@@ -1,23 +1,22 @@
 import type { Handler, SQSBatchItemFailure, SQSBatchResponse, SQSEvent } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
-import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
+import { SaveLinkRawHtmlCommand } from "@packages/hutch-infra-components";
 import {
-	CrawlArticleFailedEvent,
-	SaveLinkRawHtmlCommand,
-} from "@packages/hutch-infra-components";
-import type { MarkCrawlFailed } from "./article-crawl.types";
-import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
+	type initTransitionAndPersist,
+	markCrawlExhausted,
+} from "@packages/domain/article";
+
+export type TransitionAndPersist = ReturnType<typeof initTransitionAndPersist>;
 
 interface SaveLinkRawHtmlDlqHandlerDeps {
-	markCrawlFailed: MarkCrawlFailed;
-	markSummaryFailed: MarkSummaryFailed;
-	publishEvent: PublishEvent;
+	transitionAndPersist: TransitionAndPersist;
+	now: () => Date;
 	logger: HutchLogger;
 }
 
 /* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
 export function initSaveLinkRawHtmlDlqHandler(deps: SaveLinkRawHtmlDlqHandlerDeps): Handler<SQSEvent, SQSBatchResponse> {
-	const { markCrawlFailed, markSummaryFailed, publishEvent, logger } = deps;
+	const { transitionAndPersist, now, logger } = deps;
 
 	return async (event): Promise<SQSBatchResponse> => {
 		const batchItemFailures: SQSBatchItemFailure[] = [];
@@ -34,13 +33,15 @@ export function initSaveLinkRawHtmlDlqHandler(deps: SaveLinkRawHtmlDlqHandlerDep
 					receiveCount,
 				});
 
-				await markCrawlFailed({ url: command.url, reason });
-				await markSummaryFailed({ url: command.url, reason: "crawl failed" });
-
-				await publishEvent({
-					source: CrawlArticleFailedEvent.source,
-					detailType: CrawlArticleFailedEvent.detailType,
-					detail: JSON.stringify({ url: command.url, reason, receiveCount }),
+				await transitionAndPersist({
+					url: command.url,
+					transition: markCrawlExhausted,
+					params: {
+						reason,
+						receiveCount,
+						failedAt: now().toISOString(),
+					},
+					skipIfMissing: true,
 				});
 			} catch (error) {
 				logger.error("[SaveLinkRawHtmlDlq] record failed", {

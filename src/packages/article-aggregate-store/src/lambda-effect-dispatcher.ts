@@ -1,5 +1,7 @@
 import {
+	CrawlArticleFailedEvent,
 	type GenerateSummaryCommand,
+	RecrawlCompletedEvent,
 	RecrawlLinkInitiatedEvent,
 } from "@packages/hutch-infra-components";
 import type {
@@ -50,6 +52,24 @@ async function dispatch(
 			await deps.publishEvent({
 				source: RecrawlLinkInitiatedEvent.source,
 				detailType: RecrawlLinkInitiatedEvent.detailType,
+				detail: JSON.stringify({ url: effect.url }),
+			});
+			return;
+		case "PublishCrawlArticleFailedEvent":
+			await deps.publishEvent({
+				source: CrawlArticleFailedEvent.source,
+				detailType: CrawlArticleFailedEvent.detailType,
+				detail: JSON.stringify({
+					url: effect.url,
+					reason: effect.reason,
+					receiveCount: effect.receiveCount,
+				}),
+			});
+			return;
+		case "PublishRecrawlCompletedEvent":
+			await deps.publishEvent({
+				source: RecrawlCompletedEvent.source,
+				detailType: RecrawlCompletedEvent.detailType,
 				detail: JSON.stringify({ url: effect.url }),
 			});
 			return;

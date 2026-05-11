@@ -25,6 +25,11 @@ export {
 } from "./transitions/refresh-content";
 export { requestRecrawl } from "./transitions/request-recrawl";
 export {
+	markCrawlExhausted,
+	type MarkCrawlExhaustedParams,
+} from "./transitions/mark-crawl-exhausted";
+export { recrawlTieKeptCanonical } from "./transitions/recrawl-tie-kept-canonical";
+export {
 	initTransitionAndPersist,
 	type Transition,
 	type TransitionAndPersistDeps,

@@ -1,4 +1,8 @@
-import { RecrawlLinkInitiatedEvent } from "@packages/hutch-infra-components";
+import {
+	CrawlArticleFailedEvent,
+	RecrawlCompletedEvent,
+	RecrawlLinkInitiatedEvent,
+} from "@packages/hutch-infra-components";
 import { initLambdaEffectDispatcher } from "./lambda-effect-dispatcher";
 
 describe("initLambdaEffectDispatcher", () => {
@@ -66,6 +70,64 @@ describe("initLambdaEffectDispatcher", () => {
 		]);
 
 		expect(calls).toEqual(["publish", "dispatch"]);
+	});
+
+	it("translates PublishCrawlArticleFailedEvent with reason + receiveCount in the detail payload", async () => {
+		const publishedEvents: {
+			source: string;
+			detailType: string;
+			detail: string;
+		}[] = [];
+		const dispatch = initLambdaEffectDispatcher({
+			publishEvent: async (p) => {
+				publishedEvents.push(p);
+			},
+			dispatchGenerateSummary: async () => {},
+		});
+
+		await dispatch([
+			{
+				kind: "PublishCrawlArticleFailedEvent",
+				url: "https://a/",
+				reason: "exceeded SQS maxReceiveCount",
+				receiveCount: 5,
+			},
+		]);
+
+		expect(publishedEvents).toHaveLength(1);
+		expect(publishedEvents[0]?.source).toBe(CrawlArticleFailedEvent.source);
+		expect(publishedEvents[0]?.detailType).toBe(
+			CrawlArticleFailedEvent.detailType,
+		);
+		expect(JSON.parse(publishedEvents[0]?.detail ?? "{}")).toEqual({
+			url: "https://a/",
+			reason: "exceeded SQS maxReceiveCount",
+			receiveCount: 5,
+		});
+	});
+
+	it("translates PublishRecrawlCompletedEvent with the registered source/detailType", async () => {
+		const publishedEvents: {
+			source: string;
+			detailType: string;
+			detail: string;
+		}[] = [];
+		const dispatch = initLambdaEffectDispatcher({
+			publishEvent: async (p) => {
+				publishedEvents.push(p);
+			},
+			dispatchGenerateSummary: async () => {},
+		});
+
+		await dispatch([
+			{ kind: "PublishRecrawlCompletedEvent", url: "https://a/" },
+		]);
+
+		expect(publishedEvents).toHaveLength(1);
+		expect(publishedEvents[0]?.source).toBe(RecrawlCompletedEvent.source);
+		expect(publishedEvents[0]?.detailType).toBe(
+			RecrawlCompletedEvent.detailType,
+		);
 	});
 
 	it("throws if any effect's adapter throws — surfaces the SQS-retry signal", async () => {

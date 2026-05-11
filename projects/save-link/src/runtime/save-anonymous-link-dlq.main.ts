@@ -1,25 +1,31 @@
+import { SQSClient } from "@aws-sdk/client-sqs";
+import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
-import { consoleLogger } from "@packages/hutch-logger";
-import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
+import { consoleLogger, HutchLogger } from "@packages/hutch-logger";
+import {
+	initEventBridgePublisher,
+	initSqsCommandDispatcher,
+} from "@packages/hutch-infra-components/runtime";
+import { GenerateSummaryCommand } from "@packages/hutch-infra-components";
+import {
+	initDynamoDbArticleStore,
+	initLambdaEffectDispatcher,
+} from "@packages/article-aggregate-store";
+import { initTransitionAndPersist } from "@packages/domain/article";
 import { requireEnv } from "../require-env";
-import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
-import { initDynamoDbGeneratedSummary } from "../generate-summary/dynamodb-generated-summary";
 import { initSaveAnonymousLinkDlqHandler } from "../crawl-article-state/save-anonymous-link-dlq-handler";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const eventBusName = requireEnv("EVENT_BUS_NAME");
+const generateSummaryQueueUrl = requireEnv("GENERATE_SUMMARY_QUEUE_URL");
 
 const dynamoClient = createDynamoDocumentClient();
+const logger = HutchLogger.from(consoleLogger);
 
-const crawlStore = initDynamoDbArticleCrawl({
+const store = initDynamoDbArticleStore({
 	client: dynamoClient,
 	tableName: articlesTable,
-	now: () => new Date(),
-});
-
-const summaryStore = initDynamoDbGeneratedSummary({
-	client: dynamoClient,
-	tableName: articlesTable,
+	logger,
 });
 
 const { publishEvent } = initEventBridgePublisher({
@@ -27,9 +33,21 @@ const { publishEvent } = initEventBridgePublisher({
 	eventBusName,
 });
 
-export const handler = initSaveAnonymousLinkDlqHandler({
-	markCrawlFailed: crawlStore.markCrawlFailed,
-	markSummaryFailed: summaryStore.markSummaryFailed,
+const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
+	sqsClient: new SQSClient({}),
+	queueUrl: generateSummaryQueueUrl,
+	command: GenerateSummaryCommand,
+});
+
+const dispatcher = initLambdaEffectDispatcher({
 	publishEvent,
-	logger: consoleLogger,
+	dispatchGenerateSummary,
+});
+
+const transitionAndPersist = initTransitionAndPersist({ store, dispatcher });
+
+export const handler = initSaveAnonymousLinkDlqHandler({
+	transitionAndPersist,
+	now: () => new Date(),
+	logger,
 });

@@ -1,10 +1,19 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { SQSClient } from "@aws-sdk/client-sqs";
+import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import OpenAI from "openai";
-import { consoleLogger } from "@packages/hutch-logger";
+import { consoleLogger, HutchLogger } from "@packages/hutch-logger";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
-import { EventBridgeClient, initEventBridgePublisher, initSqsCommandDispatcher } from "@packages/hutch-infra-components/runtime";
+import {
+	initEventBridgePublisher,
+	initSqsCommandDispatcher,
+} from "@packages/hutch-infra-components/runtime";
 import { GenerateSummaryCommand } from "@packages/hutch-infra-components";
+import {
+	initDynamoDbArticleStore,
+	initLambdaEffectDispatcher,
+} from "@packages/article-aggregate-store";
+import { initTransitionAndPersist } from "@packages/domain/article";
 import { requireEnv } from "../require-env";
 import { initReadTierSource } from "../select-content/read-tier-source";
 import { initListAvailableTierSources } from "../select-content/list-available-tier-sources";
@@ -12,7 +21,6 @@ import { initSelectMostCompleteContent } from "../select-content/select-content"
 import { SELECT_CONTENT_TIMEOUTS } from "../select-content/timeouts";
 import { initPromoteTierToCanonical } from "../select-content/promote-tier-to-canonical";
 import { initFindContentSourceTier } from "../select-content/find-content-source-tier";
-import { initDynamoDbArticleCrawl } from "../crawl-article-state/dynamodb-article-crawl";
 import { initRecrawlContentExtractedHandler } from "../select-content/recrawl-content-extracted-handler";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
@@ -30,6 +38,7 @@ const deepseekClient = new OpenAI({
 	baseURL: "https://api.deepseek.com",
 	timeout: SELECT_CONTENT_TIMEOUTS.deepseekMs,
 });
+const logger = HutchLogger.from(consoleLogger);
 
 const { readTierSource } = initReadTierSource({
 	client: s3Client,
@@ -57,10 +66,10 @@ const { findContentSourceTier } = initFindContentSourceTier({
 	tableName: articlesTable,
 });
 
-const { markCrawlReady } = initDynamoDbArticleCrawl({
+const aggregateStore = initDynamoDbArticleStore({
 	client: dynamoClient,
 	tableName: articlesTable,
-	now: () => new Date(),
+	logger,
 });
 
 const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
@@ -74,12 +83,22 @@ const { publishEvent } = initEventBridgePublisher({
 	eventBusName,
 });
 
+const aggregateDispatcher = initLambdaEffectDispatcher({
+	publishEvent,
+	dispatchGenerateSummary,
+});
+
+const transitionAndPersist = initTransitionAndPersist({
+	store: aggregateStore,
+	dispatcher: aggregateDispatcher,
+});
+
 export const handler = initRecrawlContentExtractedHandler({
 	listAvailableTierSources,
 	selectMostCompleteContent,
 	promoteTierToCanonical,
 	findContentSourceTier,
-	markCrawlReady,
+	transitionAndPersist,
 	dispatchGenerateSummary,
 	publishEvent,
 	imagesCdnBaseUrl,

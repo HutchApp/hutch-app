@@ -7,19 +7,24 @@ import {
 	RecrawlContentExtractedEvent,
 	RecrawlCompletedEvent,
 } from "@packages/hutch-infra-components";
-import type { MarkCrawlReady } from "../crawl-article-state/article-crawl.types";
+import {
+	type initTransitionAndPersist,
+	recrawlTieKeptCanonical,
+} from "@packages/domain/article";
 import type { ListAvailableTierSources } from "./list-available-tier-sources";
 import type { SelectMostCompleteContent } from "./select-content";
 import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
 import type { FindContentSourceTier } from "./find-content-source-tier";
 import type { TierSource } from "./tier-source.types";
 
+export type TransitionAndPersist = ReturnType<typeof initTransitionAndPersist>;
+
 export function initRecrawlContentExtractedHandler(deps: {
 	listAvailableTierSources: ListAvailableTierSources;
 	selectMostCompleteContent: SelectMostCompleteContent;
 	promoteTierToCanonical: PromoteTierToCanonical;
 	findContentSourceTier: FindContentSourceTier;
-	markCrawlReady: MarkCrawlReady;
+	transitionAndPersist: TransitionAndPersist;
 	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
 	publishEvent: PublishEvent;
 	imagesCdnBaseUrl: string;
@@ -30,7 +35,7 @@ export function initRecrawlContentExtractedHandler(deps: {
 		selectMostCompleteContent,
 		promoteTierToCanonical,
 		findContentSourceTier,
-		markCrawlReady,
+		transitionAndPersist,
 		dispatchGenerateSummary,
 		publishEvent,
 		imagesCdnBaseUrl,
@@ -137,30 +142,35 @@ export function initRecrawlContentExtractedHandler(deps: {
 						tier: winnerTier,
 						reason,
 					});
+
+					/* Always dispatch — the user-save chain gates this on canonical
+					 * change to dedup re-saves; recrawl explicitly opts out so the
+					 * operator gets a fresh AI excerpt every time. */
+					await dispatchGenerateSummary({ url: detail.url });
+
+					await publishEvent({
+						source: RecrawlCompletedEvent.source,
+						detailType: RecrawlCompletedEvent.detailType,
+						detail: JSON.stringify({ url: detail.url }),
+					});
 				} else {
-					// Tie + canonical preserved: promoteTierToCanonical (the only writer
-					// of crawlStatus="ready") was skipped, so we must flip the row back
-					// out of the "pending" state that admin/recrawl's
-					// forceMarkCrawlPending unconditionally wrote — otherwise readers
-					// (and the Tier 1+ canary) poll a forever-"pending" row that never
-					// resolves, since the canonical content is already on disk.
-					await markCrawlReady({ url: detail.url });
+					// Tie + canonical preserved: collapse the three legacy writes
+					// (markCrawlReady + dispatchGenerateSummary + publishEvent) into
+					// one aggregate transition. The recrawlTieKeptCanonical transition
+					// produces the post-state aggregate AND both effects; the
+					// orchestrator's save->dispatch contract closes the regression
+					// where a missed dispatch left the row in (crawl=ready,
+					// summary=pending) with no worker ever picking it up.
+					await transitionAndPersist({
+						url: detail.url,
+						transition: recrawlTieKeptCanonical,
+						params: undefined,
+					});
 					logger.info("[RecrawlContentExtracted] tie kept canonical unchanged", {
 						url: detail.url,
 						reason,
 					});
 				}
-
-				/* Always dispatch — the user-save chain gates this on canonical
-				 * change to dedup re-saves; recrawl explicitly opts out so the
-				 * operator gets a fresh AI excerpt every time. */
-				await dispatchGenerateSummary({ url: detail.url });
-
-				await publishEvent({
-					source: RecrawlCompletedEvent.source,
-					detailType: RecrawlCompletedEvent.detailType,
-					detail: JSON.stringify({ url: detail.url }),
-				});
 			} catch (error) {
 				logger.error("[RecrawlContentExtracted] record failed", {
 					messageId: record.messageId,
