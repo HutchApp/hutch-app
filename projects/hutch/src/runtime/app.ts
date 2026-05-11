@@ -7,7 +7,7 @@ import { initInMemoryAuth, hashPassword, verifyPassword } from "@packages/test-f
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "@packages/test-fixtures/providers/article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
-import { DEFAULT_CRAWL_HEADERS, initCrawlArticle, initCrawlFetch } from "@packages/crawl-article";
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle, initCrawlFetch, initLazyPdfExtractTextOnly } from "@packages/crawl-article";
 import { initReadabilityParser } from "@packages/test-fixtures/providers/article-parser";
 import { theInformationPreParser } from "@packages/test-fixtures/providers/article-parser";
 import { initRefreshArticleIfStale } from "@packages/test-fixtures/providers/article-freshness";
@@ -72,7 +72,12 @@ function initProviders() {
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
 	const crawlFetch = initCrawlFetch({ fetch: globalThis.fetch, defaultHeaders: { ...DEFAULT_CRAWL_HEADERS } });
-	const crawlArticle = initCrawlArticle({ crawlFetch, logError });
+	// SSR's /save flow publishes SaveLinkCommand and lets the save-link Lambda
+	// (which has full OCR support) do the heavy lifting. Text-only here keeps
+	// the hutch bundle free of the canvas + DeepInfra deps that only the
+	// background worker actually needs.
+	const extractPdf = initLazyPdfExtractTextOnly();
+	const crawlArticle = initCrawlArticle({ crawlFetch, extractPdf, logError });
 	const { parseHtml } = initReadabilityParser({
 		crawlArticle,
 		sitePreParsers: [theInformationPreParser],

@@ -24,6 +24,7 @@ import type {
 import { initLambdaEffectDispatcher } from "./domain/article-aggregate/lambda-effect-dispatcher";
 import { initReadabilityParser } from "./domain/article-parser/readability-parser";
 import { theInformationPreParser } from "./domain/article-parser/the-information-pre-parser";
+import { initSaveLinkPdfExtractTextOnly } from "./domain/article-parser/init-save-link-pdf-extract";
 import { initFindArticleCrawlStatus } from "./providers/article-crawl/find-article-crawl-status";
 import { initFindArticleFreshness } from "./providers/article-crawl/find-article-freshness";
 import { requireEnv } from "../require-env";
@@ -43,7 +44,11 @@ const logError = (message: string, error?: Error) =>
 	consoleLogger.error(message, { error });
 
 const crawlFetch = initCrawlFetch({ fetch: globalThis.fetch, defaultHeaders: { ...DEFAULT_CRAWL_HEADERS } });
-const crawlArticle = initCrawlArticle({ crawlFetch, logError });
+// stale-check only issues conditional GETs; it never re-extracts a fetched
+// PDF body, so the text-only extractor satisfies the dep without dragging in
+// the napi-rs/canvas + DeepInfra dependency tree.
+const extractPdf = initSaveLinkPdfExtractTextOnly();
+const crawlArticle = initCrawlArticle({ crawlFetch, extractPdf, logError });
 
 const { parseHtml } = initReadabilityParser({
 	crawlArticle,

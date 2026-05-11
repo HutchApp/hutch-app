@@ -69,6 +69,7 @@ const contentMediaCdn = new HutchS3ContentMediaCDN("content-media", {
 });
 
 const deepseekApiKey = pulumi.secret(requireEnv("DEEPSEEK_API_KEY"));
+const deepInfraApiKey = pulumi.secret(requireEnv("DEEPINFRA_API_KEY"));
 
 const eventBus = HutchEventBus.fromPlatformStack(config);
 
@@ -82,11 +83,14 @@ const linkSavedQueue = new HutchSQS("link-saved", {
 	visibilityTimeoutSeconds: 60,
 });
 
-// saveLinkWork-bearing queues use 360s visibility = 2× the 180s Lambda
+// saveLinkWork-bearing queues use 720s visibility = 2× the 360s Lambda
 // timeout (AWS guidance) so a long-running invocation never has the message
-// re-delivered to a second worker before the first finishes.
+// re-delivered to a second worker before the first finishes. The 360s
+// Lambda timeout is sized for the scanned-PDF OCR path: the canary probe
+// of a 13-page PDF with 3-way parallel batching against gemma-4-31B-it
+// completed in 157s wall time, so 360s is ~2× the worst observed.
 const saveLinkCommandQueue = new HutchSQS("save-link-command", {
-	visibilityTimeoutSeconds: 360,
+	visibilityTimeoutSeconds: 720,
 });
 
 // maxReceiveCount=1: SQS retries are removed for the anonymous save path.
@@ -97,12 +101,12 @@ const saveLinkCommandQueue = new HutchSQS("save-link-command", {
 // generate-summary) keep the default maxReceiveCount=3 so transient
 // Deepseek/DDB blips still self-heal at the SQS layer.
 const saveAnonymousLinkCommandQueue = new HutchSQS("save-anonymous-link-command", {
-	visibilityTimeoutSeconds: 360,
+	visibilityTimeoutSeconds: 720,
 	dlqMaxReceiveCount: 1,
 });
 
 const saveLinkRawHtmlCommandQueue = new HutchSQS("save-link-raw-html-command", {
-	visibilityTimeoutSeconds: 360,
+	visibilityTimeoutSeconds: 720,
 });
 
 const anonymousLinkSavedQueue = new HutchSQS("anonymous-link-saved", {
@@ -118,7 +122,7 @@ const summaryGenerationFailedQueue = new HutchSQS("summary-generation-failed", {
 });
 
 const recrawlLinkInitiatedQueue = new HutchSQS("recrawl-link-initiated", {
-	visibilityTimeoutSeconds: 360,
+	visibilityTimeoutSeconds: 720,
 });
 
 const staleCheckRequestedQueue = new HutchSQS("stale-check-requested", {
@@ -140,18 +144,24 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	entryPoint: "./src/runtime/save-link-command.main.ts",
 	outputDir: ".lib/save-link-command",
 	assetDir: "./src",
-	memorySize: 256,
-	// 180s budget for saveLinkWork: large XHTML/HTML pages (e.g. iana media-types)
-	// take >30s to fetch + parse end-to-end. Paired with 360s SQS visibility
-	// (≥2× Lambda timeout per AWS guidance) so the message stays held for the
-	// full execution. Phase 2 of the unstick-articles plan.
-	timeout: 180,
+	// 2048 MB gives ~1.16 vCPU and ample headroom for the scanned-PDF OCR path:
+	// pdfjs holds the 25 MiB PDF buffer + per-page decoded structures, and
+	// napi-rs/canvas materializes one ~9 MB RGBA bitmap per page being
+	// rendered. Five pages in flight per batch × three concurrent batches stays
+	// well under the cap.
+	memorySize: 2048,
+	// 360s covers the worst-case scanned-PDF flow. Step 0 probe of a 13-page
+	// PDF with 3-way parallel batching against gemma-4-31B-it on DeepInfra
+	// completed in 157s; 360s is ~2× that for safety. Paired with 720s SQS
+	// visibility (≥2× Lambda timeout per AWS guidance).
+	timeout: 360,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+		DEEPINFRA_API_KEY: deepInfraApiKey,
 	},
 	policies: [
 		...saveLinkCommandDynamodb.policies,
@@ -198,8 +208,11 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 	entryPoint: "./src/runtime/save-link-raw-html-command.main.ts",
 	outputDir: ".lib/save-link-raw-html-command",
 	assetDir: "./src",
-	memorySize: 256,
-	timeout: 180,
+	// Bumped in tandem with save-link-command: parses already-fetched HTML
+	// from S3 (pendingHtml) and never re-crawls PDFs, but the readability/
+	// linkedom path on large XHTML benefits from the same headroom.
+	memorySize: 2048,
+	timeout: 360,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
@@ -256,14 +269,17 @@ const saveAnonymousLinkCommandLambda = new HutchLambda("save-anonymous-link-comm
 	entryPoint: "./src/runtime/save-anonymous-link-command.main.ts",
 	outputDir: ".lib/save-anonymous-link-command",
 	assetDir: "./src",
-	memorySize: 256,
-	timeout: 180,
+	// Mirrors save-link-command: same crawl pipeline, same scanned-PDF OCR
+	// path, same headroom requirements.
+	memorySize: 2048,
+	timeout: 360,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+		DEEPINFRA_API_KEY: deepInfraApiKey,
 	},
 	policies: [
 		...saveAnonymousLinkCommandDynamodb.policies,
@@ -542,14 +558,17 @@ const recrawlLinkInitiatedLambda = new HutchLambda("recrawl-link-initiated", {
 	entryPoint: "./src/runtime/recrawl-link-initiated.main.ts",
 	outputDir: ".lib/recrawl-link-initiated",
 	assetDir: "./src",
-	memorySize: 256,
-	timeout: 180,
+	// Mirrors save-link-command: re-fetches articles and may hit the scanned
+	// PDF OCR path on a recrawl.
+	memorySize: 2048,
+	timeout: 360,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
 		EVENT_BUS_NAME: eventBus.eventBusName,
 		IMAGES_CDN_BASE_URL: contentMediaCdn.baseUrl,
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+		DEEPINFRA_API_KEY: deepInfraApiKey,
 	},
 	policies: [
 		...recrawlLinkInitiatedDynamodb.policies,
