@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@packages/article-resource-unique-id": "workspace:*",
+    "@packages/article-state-types": "workspace:*",
     "zod": "4.1.13"
   },
   "devDependencies": {

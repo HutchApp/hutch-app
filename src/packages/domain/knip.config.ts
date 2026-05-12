@@ -11,6 +11,7 @@ export default {
 		// knip doesn't resolve workspace subpath for @packages/* imports
 		// (consistent with the workaround in @packages/crawl-article)
 		"@packages/article-resource-unique-id",
+		"@packages/article-state-types",
 	],
 	ignoreBinaries: [
 		"knip",

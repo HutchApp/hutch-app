@@ -1,8 +1,13 @@
 import type { DispatchEffect } from "@packages/domain/article-aggregate";
 import {
+	AnonymousLinkSavedEvent,
+	CrawlArticleCompletedEvent,
 	CrawlArticleFailedEvent,
 	type GenerateSummaryCommand,
+	LinkSavedEvent,
 	RecrawlCompletedEvent,
+	SummaryGeneratedEvent,
+	SummaryGenerationFailedEvent,
 } from "@packages/hutch-infra-components";
 import type {
 	DispatchCommand,
@@ -36,6 +41,49 @@ export function initLambdaEffectDispatcher(deps: {
 					source: RecrawlCompletedEvent.source,
 					detailType: RecrawlCompletedEvent.detailType,
 					detail: JSON.stringify({ url: effect.url }),
+				});
+				return;
+			case "publish-crawl-article-completed":
+				await publishEvent({
+					source: CrawlArticleCompletedEvent.source,
+					detailType: CrawlArticleCompletedEvent.detailType,
+					detail: JSON.stringify({ url: effect.url }),
+				});
+				return;
+			case "publish-link-saved":
+				await publishEvent({
+					source: LinkSavedEvent.source,
+					detailType: LinkSavedEvent.detailType,
+					detail: JSON.stringify({ url: effect.url, userId: effect.userId }),
+				});
+				return;
+			case "publish-anonymous-link-saved":
+				await publishEvent({
+					source: AnonymousLinkSavedEvent.source,
+					detailType: AnonymousLinkSavedEvent.detailType,
+					detail: JSON.stringify({ url: effect.url }),
+				});
+				return;
+			case "publish-summary-generated":
+				await publishEvent({
+					source: SummaryGeneratedEvent.source,
+					detailType: SummaryGeneratedEvent.detailType,
+					detail: JSON.stringify({
+						url: effect.url,
+						inputTokens: effect.inputTokens,
+						outputTokens: effect.outputTokens,
+					}),
+				});
+				return;
+			case "publish-summary-generation-failed":
+				await publishEvent({
+					source: SummaryGenerationFailedEvent.source,
+					detailType: SummaryGenerationFailedEvent.detailType,
+					detail: JSON.stringify({
+						url: effect.url,
+						reason: effect.reason,
+						receiveCount: effect.receiveCount,
+					}),
 				});
 				return;
 			default: {
