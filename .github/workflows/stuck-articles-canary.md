@@ -33,3 +33,5 @@ You have been triggered because the `Stuck articles canary` workflow failed on i
 
 - **git-commit** (`.claude/skills/git-commit/SKILL.md`) — Conventional Commits format for any fix commit.
 - **test-driven-design** (`.claude/skills/test-driven-design/SKILL.md`) — when the fix touches the state machines or the classifier.
+- **crawl-pipeline-rca** (`.claude/skills/crawl-pipeline-rca/SKILL.md`) — the primary methodology for this canary: rows stuck non-terminal in a command → event → handler chain. Use it to locate the missing terminal-state write rather than treating the symptom on the stuck rows.
+- **infrastructure-design** (`.claude/skills/infrastructure-design/SKILL.md`) — when the root cause is an IAM grant, EventBridge rule, SQS binding, or other Pulumi-managed wiring.

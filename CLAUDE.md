@@ -126,6 +126,24 @@ const Row = z.object({
 });
 ```
 
+Do not leave time-bound or plan-bound comments in the code. These include leftover notes from an implementation plan ("this is a test to do X, remove when Y is concluded"), references to the current task or PR ("added for the auth migration", "temporary until rollout completes"), or any wording that assumes a particular moment in time ("new", "recently", "for now", "currently", "as of today"). Such comments rot when the surrounding code changes — no one remembers to update them. If a condition genuinely needs to be revisited, encode it in code (a failing test, a feature flag with an owner, a tracked issue) rather than in a comment.
+
+```typescript
+// BAD - Plan-bound, will rot when the experiment ends
+// Temporary: remove this branch after the migration to v2 is complete
+if (useLegacyPath) { ... }
+
+// BAD - Time-bound, becomes a lie as the code evolves
+// Currently we only support GET — POST coming soon
+function handle(req: Request) { ... }
+
+// GOOD - Constraint enforced by assert; no comment to rot
+function handle(req: Request) {
+	assert.equal(req.method, "GET");
+	// ...
+}
+```
+
 ### Unused Variables
 
 Use underscore prefix (`_`) to indicate intentionally unused variables. Biome is configured to allow this.

@@ -28,6 +28,11 @@ When fixing CI failures, apply these skills based on the type of failure:
 - **test-driven-design** (`.claude/skills/test-driven-design/SKILL.md`): When fixing test failures, coverage issues, or violations of testing conventions (dependency injection, assertion patterns, etc.)
 - **e2e-testing** (`.claude/skills/e2e-testing/SKILL.md`): When fixing E2E test failures, including locator timeouts, FlowRunner issues, or Playwright-related errors
 - **web** (`.claude/skills/web/SKILL.md`): When fixing issues in web adapter files (CSS selector issues, SSR patterns, client-side JS, HTML templates)
+- **ai-agent-editor** (`.claude/skills/ai-agent-editor/SKILL.md`): When CI fails on skills, `CLAUDE.md`, or other AI-agent documentation (broken links, format checks)
+- **blog-post-editor** (`.claude/skills/blog-post-editor/SKILL.md`): When CI fails on blog post markdown files
+- **crawl-pipeline-rca** (`.claude/skills/crawl-pipeline-rca/SKILL.md`): When CI fails on the article crawl pipeline (state-machine rows stuck non-terminal, multi-Lambda chain timeouts, canary or SLO failures) — apply before bumping Lambda timeouts, SQS visibility, or `maxReceiveCount`
+- **extension-api-design** (`.claude/skills/extension-api-design/SKILL.md`): When CI fails on the Siren contract between the browser extension and the server (action-name mismatches, missing navigation links, malformed entities)
+- **infrastructure-design** (`.claude/skills/infrastructure-design/SKILL.md`): When CI fails on Pulumi preview/deploy
 
 ## Diagnosing GitHub Actions Failures
 

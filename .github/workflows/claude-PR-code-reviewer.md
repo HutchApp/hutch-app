@@ -78,10 +78,15 @@ cc @FagnerMartinsBrack - No high or medium priority issues found. This PR is rea
 
 When reviewing code, apply these skills based on the files being changed:
 
-- **test-driven-design** (`.claude/skills/test-driven-design/SKILL.md`): Review test files and testability patterns for adherence to conventions (dependency injection over mocks, partial application, assertion patterns, coverage rules, no negative test assertions, etc.)
+- **test-driven-design** (`.claude/skills/test-driven-design/SKILL.md`): Review test files and testability patterns for adherence to conventions (dependency injection over mocks, partial application, assertion patterns, coverage rules, no negative test assertions, Open/Closed diff-shape heuristic, etc.)
 - **e2e-testing** (`.claude/skills/e2e-testing/SKILL.md`): Review E2E test files (`e2e/` directories, `*.e2e*.ts` files) for proper selector strategies, action availability patterns, page detection, and FlowRunner usage
 - **web** (`.claude/skills/web/SKILL.md`): Review web adapter files (`.css`, `.html`, `.view.html`, `.client.js`) for SSR patterns, BEM naming, test attribute separation, and progressive enhancement
 - **git-commit** (`.claude/skills/git-commit/SKILL.md`): Verify commit messages follow Conventional Commits format with proper scope
+- **ai-agent-editor** (`.claude/skills/ai-agent-editor/SKILL.md`): Review changes to skills, `CLAUDE.md`, or other AI-agent documentation — flag duplicated code, time-bound/plan-bound comments, and prose that should be a reference or table
+- **blog-post-editor** (`.claude/skills/blog-post-editor/SKILL.md`): Review changes to blog post markdown files for authoring conventions
+- **crawl-pipeline-rca** (`.claude/skills/crawl-pipeline-rca/SKILL.md`): Review changes to the command → event → handler chain in the article crawl pipeline — watch for missing terminal-state writes, divergent entry points, and timeout/visibility bumps used as a shortcut
+- **extension-api-design** (`.claude/skills/extension-api-design/SKILL.md`): Review changes to the Siren hypermedia contract between the browser extension and the server (action names, navigation flows, request/response shapes) — server owns the protocol, the extension reads it
+- **infrastructure-design** (`.claude/skills/infrastructure-design/SKILL.md`): Review Pulumi infrastructure changes — flag environment-name branching, hard-coded values that belong in per-stage YAML, and other infra-config drift
 
 ## Summary Guidelines
 

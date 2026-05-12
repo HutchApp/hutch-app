@@ -9,6 +9,46 @@ Conventions for writing tests and designing code that is easy to test.
 
 ## Design for Testability
 
+### Prefer Additions and Removals Over Line Edits (Open/Closed)
+
+When changing behaviour for a new requirement, prefer a diff that is mostly **new files / new functions** or **wholesale deletions** over one that rewrites lines inside existing code — in-place edits are a smell. Code following the Open/Closed Principle grows by addition (new strategy, new handler, new module wired at the composition root) and shrinks by deletion (whole files or branches removed when a feature is retired), not by editing the middle of a function.
+
+Apply this as a review heuristic on your own diff before sending it:
+
+- If the diff is mostly `+`/`-` of whole blocks/files: good — likely extending rather than modifying.
+- If the diff is mostly mixed line edits inside an existing function: pause. Can the new behaviour live in a new function/module that the composition root selects between, leaving the existing path untouched?
+- Refactors that preserve behaviour are exempt — renaming, extracting, or simplifying internals will naturally produce line-level edits, and that is the point.
+
+```typescript
+// ❌ BAD - New "premium" tier added by editing the middle of an existing function
+function priceFor(plan: Plan) {
+	if (plan === "free") return 0;
+	if (plan === "pro") return 10;
+	if (plan === "premium") return 25; // <-- new line wedged in
+	throw new Error("unknown plan");
+}
+
+// ✅ GOOD - New tier added as a new entry; existing entries untouched.
+// Retiring a tier is a clean deletion of one line, not a rewrite.
+const PRICES = {
+	free: 0,
+	pro: 10,
+	premium: 25, // <-- pure addition
+} satisfies Record<Plan, number>;
+function priceFor(plan: Plan) {
+	return PRICES[plan];
+}
+```
+
+The testing payoff: additions and deletions map onto whole new tests being added or whole obsolete tests being removed. Line-edit diffs tend to mutate existing tests in ways that erode their meaning — a test that "still passes" after its assertions were rewritten is no longer protecting the original behaviour.
+
+Two refactors that almost always pay for themselves before adding a new case:
+
+1. **Replace an `if`/`switch` ladder with a map** when each branch returns a value or calls a same-shape function. The ladder is closed-for-extension by construction; the map is open.
+2. **Push the conditional up to the composition root.** If the new behaviour differs by environment, tenant, or feature flag, the branch belongs at the entry point that wires dependencies — not deep in a domain function. Domain code then stays oblivious to which variant it is running.
+
+If none of these shapes fit and the new case genuinely requires editing existing logic, that is a signal that MUST surface as a report to the user — not silently absorbing as line edits.
+
 ### Dependency Injection Over Mocks
 
 Prefer dependency injection over `jest.mock()`. Mocks couple tests to implementation details.

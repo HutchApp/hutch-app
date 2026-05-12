@@ -25,6 +25,11 @@ When fixing review issues, apply these skills based on the files being changed:
 - **test-driven-design** (`.claude/skills/test-driven-design/SKILL.md`): When fixing test-related issues, coverage problems, or testability patterns
 - **e2e-testing** (`.claude/skills/e2e-testing/SKILL.md`): When fixing E2E test issues (`e2e/` directories, `*.e2e*.ts` files)
 - **web** (`.claude/skills/web/SKILL.md`): When fixing web adapter issues (CSS, HTML templates, client-side JS, SSR patterns)
+- **ai-agent-editor** (`.claude/skills/ai-agent-editor/SKILL.md`): When fixing issues in skills, `CLAUDE.md`, or other AI-agent documentation
+- **blog-post-editor** (`.claude/skills/blog-post-editor/SKILL.md`): When fixing issues in blog post markdown files
+- **crawl-pipeline-rca** (`.claude/skills/crawl-pipeline-rca/SKILL.md`): When fixing issues in the article crawl pipeline (command/event/handler chain over Lambda + EventBridge + SQS)
+- **extension-api-design** (`.claude/skills/extension-api-design/SKILL.md`): When fixing issues in the Siren contract between the browser extension and the server
+- **infrastructure-design** (`.claude/skills/infrastructure-design/SKILL.md`): When fixing Pulumi infrastructure issues
 
 ## Git Push Instructions
 

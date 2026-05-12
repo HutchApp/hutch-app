@@ -29,3 +29,5 @@ You have been triggered because the `Tier 1+ crawl pipeline health` workflow fai
 
 - **git-commit** (`.claude/skills/git-commit/SKILL.md`) — Conventional Commits format for any fix commit.
 - **test-driven-design** (`.claude/skills/test-driven-design/SKILL.md`) — when the fix touches the crawler or parser code paths.
+- **crawl-pipeline-rca** (`.claude/skills/crawl-pipeline-rca/SKILL.md`) — when the canary points at a recrawl Lambda chain that succeeded in the first handler but the row never reached `ready`; use the methodology before bumping Lambda timeouts, SQS visibility, or `maxReceiveCount` to "give it more room".
+- **infrastructure-design** (`.claude/skills/infrastructure-design/SKILL.md`) — when the fix touches Pulumi infrastructure (Lambda config, IAM, EventBridge/SQS wiring).
