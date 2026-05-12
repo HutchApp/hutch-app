@@ -2,6 +2,7 @@ import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { noopLogger } from "@packages/hutch-logger";
 import type { CrawlArticle } from "@packages/crawl-article";
+import type { TransitionAndPersist } from "@packages/domain/article-aggregate";
 import { initSaveAnonymousLinkCommandHandler } from "./save-anonymous-link-command-handler";
 import { initProcessContentWithLocalMedia } from "./process-content-with-local-media";
 import type { ParseHtml } from "../article-parser/article-parser.types";
@@ -79,10 +80,8 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		putTierSource: jest.fn().mockResolvedValue(undefined),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
 		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
-		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
-		markCrawlUnsupported: jest.fn().mockResolvedValue(undefined),
+		transitionAndPersist: jest.fn().mockResolvedValue(undefined) as unknown as TransitionAndPersist,
 		markCrawlStage: jest.fn().mockResolvedValue(undefined),
-		markSummarySkipped: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
 		downloadMedia: noopDownloadMedia,
 		processContent,
@@ -171,11 +170,14 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		});
 	});
 
-	it("marks crawl 'failed' inline on terminal parse errors so /view + /admin/recrawl polling see failure at t+0", async () => {
-		const markCrawlFailed = jest.fn().mockResolvedValue(undefined);
+	it("dispatches markCrawlFailed inline on terminal parse errors so /view + /admin/recrawl polling see failure at t+0", async () => {
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 		const failedParse: ParseHtml = () => ({ ok: false, reason: "Readability crashed on this DOM" });
 
-		const handler = createHandler({ parseHtml: failedParse, markCrawlFailed });
+		const handler = createHandler({
+			parseHtml: failedParse,
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
+		});
 
 		const result = await handler(
 			createSqsEvent({ url: "https://example.com/bad" }),
@@ -184,15 +186,16 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		);
 
 		expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: "msg-1" }] });
-		expect(markCrawlFailed).toHaveBeenCalledWith({
+		const [transition, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect((transition as { name: string }).name).toBe("markCrawlFailed");
+		expect(params).toEqual({
 			url: "https://example.com/bad",
-			reason: "Readability crashed on this DOM",
+			input: { reason: "Readability crashed on this DOM" },
 		});
 	});
 
-	it("flips a non-html origin (e.g. PDF) directly to crawlStatus='unsupported' + summaryStatus='skipped', does NOT throw, and does NOT emit TierContentExtracted", async () => {
-		const markCrawlUnsupported = jest.fn().mockResolvedValue(undefined);
-		const markSummarySkipped = jest.fn().mockResolvedValue(undefined);
+	it("dispatches markCrawlUnsupported when the origin is non-html (PDF), does NOT throw, and does NOT emit TierContentExtracted", async () => {
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
 		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
 		const unsupportedCrawl: CrawlArticle = async () => ({
@@ -202,8 +205,7 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 
 		const handler = createHandler({
 			crawlArticle: unsupportedCrawl,
-			markCrawlUnsupported,
-			markSummarySkipped,
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 			publishEvent,
 			putTierSource,
 		});
@@ -215,13 +217,11 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		);
 
 		expect(result).toEqual({ batchItemFailures: [] });
-		expect(markCrawlUnsupported).toHaveBeenCalledWith({
+		const [transition, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect((transition as { name: string }).name).toBe("markCrawlUnsupported");
+		expect(params).toEqual({
 			url: "https://example.com/doc.pdf",
-			reason: "non-html content type: application/pdf",
-		});
-		expect(markSummarySkipped).toHaveBeenCalledWith({
-			url: "https://example.com/doc.pdf",
-			reason: "crawl-unsupported",
+			input: { reason: "non-html content type: application/pdf" },
 		});
 		expect(putTierSource).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();

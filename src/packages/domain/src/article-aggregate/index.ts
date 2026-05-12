@@ -21,6 +21,30 @@ export {
 	markCrawlExhausted,
 	type MarkCrawlExhaustedInput,
 } from "./transitions/mark-crawl-exhausted";
+export {
+	markCrawlFailed,
+	type MarkCrawlFailedInput,
+} from "./transitions/mark-crawl-failed";
+export {
+	markCrawlUnsupported,
+	type MarkCrawlUnsupportedInput,
+} from "./transitions/mark-crawl-unsupported";
+export {
+	markSummarySkipped,
+	type MarkSummarySkippedInput,
+} from "./transitions/mark-summary-skipped";
+export {
+	markSummaryReady,
+	type MarkSummaryReadyInput,
+} from "./transitions/mark-summary-ready";
+export {
+	markSummaryExhausted,
+	type MarkSummaryExhaustedInput,
+} from "./transitions/mark-summary-exhausted";
+export {
+	promoteTier,
+	type PromoteTierInput,
+} from "./transitions/promote-tier";
 export { recrawlTieKeptCanonical } from "./transitions/recrawl-tie-kept-canonical";
 export { recrawlPromoteTier } from "./transitions/recrawl-promote-tier";
 export {

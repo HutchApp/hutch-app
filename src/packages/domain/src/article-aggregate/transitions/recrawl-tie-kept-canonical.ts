@@ -2,8 +2,11 @@ import type { Article } from "../article.types";
 import type { Effect } from "../effects.types";
 import type { AggregateField } from "../storage.types";
 
-/* forceMarkCrawlPending unconditionally sets "pending" — without this
- * transition the row stays pending forever with canonical content on disk. */
+/* Recrawl tie with canonical kept: no tier flip, no metadata refresh, no
+ * summary reset. Generate-summary still fires so the summariser can decide
+ * whether to regenerate against the (possibly refreshed) body — on a cache
+ * hit it short-circuits without re-running the AI. Crawl flips to ready so
+ * the row admin/recrawl marked pending is unstuck. */
 export function recrawlTieKeptCanonical(
 	article: Article,
 	_input: undefined,

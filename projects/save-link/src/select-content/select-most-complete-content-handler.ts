@@ -3,14 +3,16 @@ import type { Handler, SQSBatchItemFailure, SQSBatchResponse, SQSEvent } from "a
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import {
-	TierContentExtractedEvent,
-	LinkSavedEvent,
-	AnonymousLinkSavedEvent,
 	CrawlArticleCompletedEvent,
+	TierContentExtractedEvent,
 } from "@packages/hutch-infra-components";
+import {
+	promoteTier,
+	type TransitionAndPersist,
+} from "@packages/domain/article-aggregate";
 import type { ListAvailableTierSources } from "./list-available-tier-sources";
 import type { SelectMostCompleteContent } from "./select-content";
-import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
+import type { WriteCanonicalContent } from "./promote-tier-to-canonical";
 import type { FindContentSourceTier } from "./find-content-source-tier";
 import type { TierSource } from "./tier-source.types";
 
@@ -18,17 +20,21 @@ import type { TierSource } from "./tier-source.types";
 export function initSelectMostCompleteContentHandler(deps: {
 	listAvailableTierSources: ListAvailableTierSources;
 	selectMostCompleteContent: SelectMostCompleteContent;
-	promoteTierToCanonical: PromoteTierToCanonical;
+	writeCanonicalContent: WriteCanonicalContent;
 	findContentSourceTier: FindContentSourceTier;
+	transitionAndPersist: TransitionAndPersist;
 	publishEvent: PublishEvent;
+	now: () => Date;
 	logger: HutchLogger;
 }): Handler<SQSEvent, SQSBatchResponse> {
 	const {
 		listAvailableTierSources,
 		selectMostCompleteContent,
-		promoteTierToCanonical,
+		writeCanonicalContent,
 		findContentSourceTier,
+		transitionAndPersist,
 		publishEvent,
+		now,
 		logger,
 	} = deps;
 
@@ -48,10 +54,10 @@ export function initSelectMostCompleteContentHandler(deps: {
 					 * arriving here; a later retry from the same message converges
 					 * once both objects are listable. After maxReceiveCount the
 					 * message lands in the DLQ, where the DLQ handler flips
-					 * crawlStatus to "failed" and emits CrawlArticleFailedEvent.
-					 * Surrounding try/catch routes the throw to batchItemFailures
-					 * so sibling records still settle under any future
-					 * batchSize > 1. */
+					 * crawlStatus to "failed" via markCrawlExhausted and emits
+					 * CrawlArticleFailedEvent. Surrounding try/catch routes the
+					 * throw to batchItemFailures so sibling records still settle
+					 * under any future batchSize > 1. */
 					logger.warn("[SelectContent] no tier sources available, retrying", {
 						url: detail.url,
 					});
@@ -86,7 +92,10 @@ export function initSelectMostCompleteContentHandler(deps: {
 							/* Recrawl tie: a canonical already exists. Promoting the
 							 * same content again would be a no-op write but a real
 							 * summary regeneration — wasted Deepseek tokens. Emit
-							 * CrawlArticleCompleted to settle the pipeline and skip. */
+							 * CrawlArticleCompleted to settle the pipeline and skip.
+							 * No aggregate transition because crawl/summary state is
+							 * unchanged; this event is a "pipeline settled"
+							 * notification only. */
 							await publishEvent({
 								source: CrawlArticleCompletedEvent.source,
 								detailType: CrawlArticleCompletedEvent.detailType,
@@ -99,8 +108,8 @@ export function initSelectMostCompleteContentHandler(deps: {
 						 * one is a deterministic tiebreaker rather than a quality
 						 * call. Prefer tier-1 (Readability-parsed) when present,
 						 * else tier-0 (raw HTML). Without this default the row
-						 * sits at crawlStatus=pending forever — promoteTierToCanonical
-						 * is the only writer of crawlStatus="ready". */
+						 * sits at crawlStatus=pending forever — promoteTier is
+						 * the only writer of crawlStatus="ready". */
 						const fallback =
 							sources.find((source) => source.tier === "tier-1") ??
 							sources.find((source) => source.tier === "tier-0");
@@ -124,44 +133,34 @@ export function initSelectMostCompleteContentHandler(deps: {
 				const currentTier = await findContentSourceTier(detail.url);
 				const canonicalChanged = currentTier !== winnerTier;
 
-				await promoteTierToCanonical({
+				/* Inline write FIRST: copy the winning tier source to the canonical
+				 * S3 key and write contentLocation / contentSourceTier /
+				 * canonicalSourceTier (non-aggregate columns). The aggregate
+				 * transition that follows flips crawlStatus to "ready"; readers
+				 * keying on "ready" must find the canonical body on disk by then. */
+				await writeCanonicalContent({
 					url: detail.url,
 					tier: winnerTier,
-					metadata: winnerSource.metadata,
 				});
 
-				await publishEvent({
-					source: CrawlArticleCompletedEvent.source,
-					detailType: CrawlArticleCompletedEvent.detailType,
-					detail: JSON.stringify({ url: detail.url }),
+				await transitionAndPersist(promoteTier, {
+					url: detail.url,
+					input: {
+						tier: winnerTier,
+						metadata: winnerSource.metadata,
+						estimatedReadTime: winnerSource.metadata.estimatedReadTime,
+						contentFetchedAt: now().toISOString(),
+						canonicalChanged,
+						userId: detail.userId,
+					},
 				});
 
-				if (canonicalChanged) {
-					if (detail.userId) {
-						await publishEvent({
-							source: LinkSavedEvent.source,
-							detailType: LinkSavedEvent.detailType,
-							detail: JSON.stringify({ url: detail.url, userId: detail.userId }),
-						});
-					} else {
-						await publishEvent({
-							source: AnonymousLinkSavedEvent.source,
-							detailType: AnonymousLinkSavedEvent.detailType,
-							detail: JSON.stringify({ url: detail.url }),
-						});
-					}
-					logger.info("[SelectContent] promoted tier to canonical", {
-						url: detail.url,
-						tier: winnerTier,
-						reason,
-					});
-				} else {
-					logger.info("[SelectContent] re-selected same tier; canonical unchanged", {
-						url: detail.url,
-						tier: winnerTier,
-						reason,
-					});
-				}
+				logger.info(
+					canonicalChanged
+						? "[SelectContent] promoted tier to canonical"
+						: "[SelectContent] re-selected same tier; canonical unchanged",
+					{ url: detail.url, tier: winnerTier, reason },
+				);
 			} catch (error) {
 				logger.error("[SelectContent] record failed", {
 					messageId: record.messageId,

@@ -2,6 +2,7 @@ import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { noopLogger } from "@packages/hutch-logger";
 import type { CrawlArticle } from "@packages/crawl-article";
+import type { TransitionAndPersist } from "@packages/domain/article-aggregate";
 import { initRecrawlLinkInitiatedHandler } from "./recrawl-link-initiated-handler";
 import { initProcessContentWithLocalMedia } from "./process-content-with-local-media";
 import type { ParseHtml } from "../article-parser/article-parser.types";
@@ -32,17 +33,20 @@ const stubContext: Context = {
 
 function createSqsEvent(detail: { url: string }): SQSEvent {
 	return {
-		Records: [{
-			messageId: "msg-1",
-			receiptHandle: "receipt-1",
-			body: JSON.stringify({ detail }),
-			attributes: stubAttributes,
-			messageAttributes: {},
-			md5OfBody: "",
-			eventSource: "aws:sqs",
-			eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:RecrawlLinkInitiated",
-			awsRegion: "ap-southeast-2",
-		}],
+		Records: [
+			{
+				messageId: "msg-1",
+				receiptHandle: "receipt-1",
+				body: JSON.stringify({ detail }),
+				attributes: stubAttributes,
+				messageAttributes: {},
+				md5OfBody: "",
+				eventSource: "aws:sqs",
+				eventSourceARN:
+					"arn:aws:sqs:ap-southeast-2:123456789:RecrawlLinkInitiated",
+				awsRegion: "ap-southeast-2",
+			},
+		],
 	};
 }
 
@@ -51,7 +55,7 @@ const noopDownloadMedia: DownloadMedia = async () => [];
 const processContent = initProcessContentWithLocalMedia({
 	rewriteHtmlUrls: (html, rewriteUrl) => {
 		const plugin = urls({ eachURL: rewriteUrl });
-		return posthtml().use(plugin).process(html).then(result => result.html);
+		return posthtml().use(plugin).process(html).then((result) => result.html);
 	},
 });
 
@@ -62,7 +66,13 @@ const successfulCrawl: CrawlArticle = async () => ({
 
 const successfulParse: ParseHtml = () => ({
 	ok: true,
-	article: { title: "Test", siteName: "example.com", excerpt: "test", wordCount: 10, content: "<p>Article content</p>" },
+	article: {
+		title: "Test",
+		siteName: "example.com",
+		excerpt: "test",
+		wordCount: 10,
+		content: "<p>Article content</p>",
+	},
 });
 
 const imagesCdnBaseUrl = "https://cdn.example.com";
@@ -78,10 +88,8 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		putTierSource: jest.fn().mockResolvedValue(undefined),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
 		updateFetchTimestamp: jest.fn().mockResolvedValue(undefined),
-		markCrawlFailed: jest.fn().mockResolvedValue(undefined),
-		markCrawlUnsupported: jest.fn().mockResolvedValue(undefined),
+		transitionAndPersist: jest.fn().mockResolvedValue(undefined) as unknown as TransitionAndPersist,
 		markCrawlStage: jest.fn().mockResolvedValue(undefined),
-		markSummarySkipped: jest.fn().mockResolvedValue(undefined),
 		publishEvent: jest.fn().mockResolvedValue(undefined),
 		downloadMedia: noopDownloadMedia,
 		processContent,
@@ -90,7 +98,11 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 		logger: noopLogger,
 		logParseError: jest.fn(),
 		logCrawlOutcome: jest.fn(),
-		readTierSnapshot: jest.fn().mockResolvedValue({ tier0Status: "not_attempted", tier1Status: "not_attempted", pickedTier: "none" }),
+		readTierSnapshot: jest.fn().mockResolvedValue({
+			tier0Status: "not_attempted",
+			tier1Status: "not_attempted",
+			pickedTier: "none",
+		}),
 		...overrides,
 	});
 }
@@ -100,7 +112,11 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
 		const handler = createHandler({ publishEvent });
 
-		await handler(createSqsEvent({ url: "https://example.com/article" }), stubContext, () => {});
+		await handler(
+			createSqsEvent({ url: "https://example.com/article" }),
+			stubContext,
+			() => {},
+		);
 
 		expect(publishEvent).toHaveBeenCalledTimes(1);
 		expect(publishEvent).toHaveBeenCalledWith({
@@ -125,13 +141,14 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 			() => {},
 		);
 
-		expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: "msg-1" }] });
+		expect(result).toEqual({
+			batchItemFailures: [{ itemIdentifier: "msg-1" }],
+		});
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
-	it("flips a non-html origin (e.g. PDF) directly to crawlStatus='unsupported' + summaryStatus='skipped', does NOT throw, and does NOT emit RecrawlContentExtracted", async () => {
-		const markCrawlUnsupported = jest.fn().mockResolvedValue(undefined);
-		const markSummarySkipped = jest.fn().mockResolvedValue(undefined);
+	it("flips a non-html origin (e.g. PDF) directly to crawlStatus='unsupported' + summaryStatus='skipped' via markCrawlUnsupported, does NOT throw, and does NOT emit RecrawlContentExtracted", async () => {
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
 		const unsupportedCrawl: CrawlArticle = async () => ({
 			status: "unsupported",
@@ -140,8 +157,7 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 
 		const handler = createHandler({
 			crawlArticle: unsupportedCrawl,
-			markCrawlUnsupported,
-			markSummarySkipped,
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 			publishEvent,
 		});
 
@@ -152,13 +168,12 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 		);
 
 		expect(result).toEqual({ batchItemFailures: [] });
-		expect(markCrawlUnsupported).toHaveBeenCalledWith({
+		expect(transitionAndPersist).toHaveBeenCalledTimes(1);
+		const [transition, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect((transition as { name: string }).name).toBe("markCrawlUnsupported");
+		expect(params).toEqual({
 			url: "https://example.com/doc.pdf",
-			reason: "non-html content type: application/pdf",
-		});
-		expect(markSummarySkipped).toHaveBeenCalledWith({
-			url: "https://example.com/doc.pdf",
-			reason: "crawl-unsupported",
+			input: { reason: "non-html content type: application/pdf" },
 		});
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
@@ -166,20 +181,25 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 	it("reports the record as a batch failure when the event detail is invalid (Zod failure)", async () => {
 		const handler = createHandler();
 		const invalidEvent: SQSEvent = {
-			Records: [{
-				messageId: "msg-1",
-				receiptHandle: "receipt-1",
-				body: JSON.stringify({ detail: { invalid: true } }),
-				attributes: stubAttributes,
-				messageAttributes: {},
-				md5OfBody: "",
-				eventSource: "aws:sqs",
-				eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:RecrawlLinkInitiated",
-				awsRegion: "ap-southeast-2",
-			}],
+			Records: [
+				{
+					messageId: "msg-1",
+					receiptHandle: "receipt-1",
+					body: JSON.stringify({ detail: { invalid: true } }),
+					attributes: stubAttributes,
+					messageAttributes: {},
+					md5OfBody: "",
+					eventSource: "aws:sqs",
+					eventSourceARN:
+						"arn:aws:sqs:ap-southeast-2:123456789:RecrawlLinkInitiated",
+					awsRegion: "ap-southeast-2",
+				},
+			],
 		};
 
 		const result = await handler(invalidEvent, stubContext, () => {});
-		expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: "msg-1" }] });
+		expect(result).toEqual({
+			batchItemFailures: [{ itemIdentifier: "msg-1" }],
+		});
 	});
 });

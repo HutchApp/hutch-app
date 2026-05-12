@@ -1,24 +1,35 @@
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { S3Client } from "@aws-sdk/client-s3";
+import { SQSClient } from "@aws-sdk/client-sqs";
 import OpenAI from "openai";
 import { consoleLogger } from "@packages/hutch-logger";
-import { EventBridgeClient, initEventBridgePublisher } from "@packages/hutch-infra-components/runtime";
+import {
+	EventBridgeClient,
+	initEventBridgePublisher,
+	initSqsCommandDispatcher,
+} from "@packages/hutch-infra-components/runtime";
+import { GenerateSummaryCommand } from "@packages/hutch-infra-components";
+import { initTransitionAndPersist } from "@packages/domain/article-aggregate";
 import { requireEnv } from "../require-env";
 import { initFindArticleContent } from "../save-link/find-article-content";
 import { initLinkSummariser } from "../generate-summary/link-summariser";
 import { initCreateDeepseekMessage } from "../generate-summary/create-deepseek-message";
 import { MAX_SUMMARY_LENGTH } from "../generate-summary/max-summary-length";
 import { GENERATE_SUMMARY_TIMEOUTS } from "../generate-summary/timeouts";
-import { initDynamoDbGeneratedSummary } from "../generate-summary/dynamodb-generated-summary";
+import { initDynamoDbMarkSummaryStage } from "../generate-summary/mark-summary-stage";
 import { stripHtml } from "../generate-summary/strip-html";
 import { initGenerateSummaryHandler } from "../generate-summary/generate-summary-handler";
+import { initDynamoDbArticleStore } from "../article-aggregate/dynamodb-article-store";
+import { initLambdaEffectDispatcher } from "../article-aggregate/lambda-effect-dispatcher";
 
 const articlesTable = requireEnv("DYNAMODB_ARTICLES_TABLE");
 const deepseekApiKey = requireEnv("DEEPSEEK_API_KEY");
 const eventBusName = requireEnv("EVENT_BUS_NAME");
+const generateSummaryQueueUrl = requireEnv("GENERATE_SUMMARY_QUEUE_URL");
 
 const dynamoClient = createDynamoDocumentClient();
 const s3Client = new S3Client({});
+const sqsClient = new SQSClient({});
 const deepseekClient = new OpenAI({
 	apiKey: deepseekApiKey,
 	baseURL: "https://api.deepseek.com",
@@ -26,7 +37,8 @@ const deepseekClient = new OpenAI({
 });
 
 const createMessage = initCreateDeepseekMessage({
-	createChatCompletion: (params) => deepseekClient.chat.completions.create(params),
+	createChatCompletion: (params) =>
+		deepseekClient.chat.completions.create(params),
 });
 
 const { findArticleContent } = initFindArticleContent({
@@ -35,7 +47,7 @@ const { findArticleContent } = initFindArticleContent({
 	tableName: articlesTable,
 });
 
-const summaryStore = initDynamoDbGeneratedSummary({
+const { markSummaryStage } = initDynamoDbMarkSummaryStage({
 	client: dynamoClient,
 	tableName: articlesTable,
 });
@@ -48,10 +60,7 @@ const { summarizeArticle } = initLinkSummariser({
 		const visibleLength = cleanedText.replace(/\s/g, "").length;
 		return visibleLength <= MAX_SUMMARY_LENGTH * 3;
 	},
-	findGeneratedSummary: summaryStore.findGeneratedSummary,
-	saveGeneratedSummary: summaryStore.saveGeneratedSummary,
-	markSummarySkipped: summaryStore.markSummarySkipped,
-	markSummaryStage: summaryStore.markSummaryStage,
+	markSummaryStage,
 });
 
 const { publishEvent } = initEventBridgePublisher({
@@ -59,9 +68,31 @@ const { publishEvent } = initEventBridgePublisher({
 	eventBusName,
 });
 
+const { dispatch: dispatchGenerateSummary } = initSqsCommandDispatcher({
+	sqsClient,
+	queueUrl: generateSummaryQueueUrl,
+	command: GenerateSummaryCommand,
+});
+
+const { store } = initDynamoDbArticleStore({
+	client: dynamoClient,
+	tableName: articlesTable,
+});
+
+const { dispatchEffect } = initLambdaEffectDispatcher({
+	dispatchGenerateSummary,
+	publishEvent,
+});
+
+const { transitionAndPersist } = initTransitionAndPersist({
+	store,
+	dispatchEffect,
+});
+
 export const handler = initGenerateSummaryHandler({
 	summarizeArticle,
 	findArticleContent,
-	publishEvent,
+	loadArticle: store.load,
+	transitionAndPersist,
 	logger: consoleLogger,
 });

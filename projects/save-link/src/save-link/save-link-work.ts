@@ -1,23 +1,29 @@
 import { createHash } from "node:crypto";
 import type { HutchLogger } from "@packages/hutch-logger";
 import type { CrawlArticle, ThumbnailImage } from "@packages/crawl-article";
-import type {
-	MarkCrawlFailed,
-	MarkCrawlStage,
-	MarkCrawlUnsupported,
-} from "../crawl-article-state/article-crawl.types";
-import type { MarkSummarySkipped } from "../generate-summary/article-summary.types";
+import {
+	markCrawlFailed,
+	markCrawlUnsupported,
+	type TransitionAndPersist,
+} from "@packages/domain/article-aggregate";
+import type { MarkCrawlStage } from "../crawl-article-state/mark-crawl-stage";
 import { ArticleResourceUniqueId } from "./article-resource-unique-id";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia, DownloadedMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
-import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-components";
+import type {
+	LogCrawlOutcome,
+	LogParseError,
+} from "@packages/hutch-infra-components";
 import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import { estimatedReadTimeFromWordCount } from "./estimated-read-time";
 import type { PutTierSource } from "../select-content/put-tier-source";
 
-export type ProcessContent = (params: { html: string; media: DownloadedMedia[] }) => Promise<string>;
+export type ProcessContent = (params: {
+	html: string;
+	media: DownloadedMedia[];
+}) => Promise<string>;
 
 /**
  * `"tier-1-written"` — the worker fetched, parsed, and wrote a tier-1 source.
@@ -37,10 +43,8 @@ export function initSaveLinkWork(deps: {
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
 	updateFetchTimestamp: UpdateFetchTimestamp;
-	markCrawlFailed: MarkCrawlFailed;
-	markCrawlUnsupported: MarkCrawlUnsupported;
+	transitionAndPersist: TransitionAndPersist;
 	markCrawlStage: MarkCrawlStage;
-	markSummarySkipped: MarkSummarySkipped;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
 	imagesCdnBaseUrl: string;
@@ -57,10 +61,8 @@ export function initSaveLinkWork(deps: {
 		putTierSource,
 		putImageObject,
 		updateFetchTimestamp,
-		markCrawlFailed,
-		markCrawlUnsupported,
+		transitionAndPersist,
 		markCrawlStage,
-		markSummarySkipped,
 		downloadMedia,
 		processContent,
 		imagesCdnBaseUrl,
@@ -88,12 +90,15 @@ export function initSaveLinkWork(deps: {
 		const crawlResult = await crawlArticle({ url, fetchThumbnail: true });
 		if (crawlResult.status === "unsupported") {
 			// Permanently non-html origin (PDF, image, archive, …). Flip directly
-			// to the terminal `unsupported` state and mark the summary axis
-			// skipped so the canary doesn't keep flagging the row. No throw:
-			// this is a successful terminal outcome, not work to retry.
+			// to the terminal `unsupported` state — the aggregate transition pairs
+			// crawl=unsupported with summary=skipped("crawl-unsupported") so the
+			// canary doesn't keep flagging the row. No throw: this is a successful
+			// terminal outcome, not work to retry.
 			logParseError({ url, reason: `crawl-unsupported: ${crawlResult.reason}` });
-			await markCrawlUnsupported({ url, reason: crawlResult.reason });
-			await markSummarySkipped({ url, reason: "crawl-unsupported" });
+			await transitionAndPersist(markCrawlUnsupported, {
+				url,
+				input: { reason: crawlResult.reason },
+			});
 			await emitTier1Failure(url);
 			return "unsupported";
 		}
@@ -113,7 +118,10 @@ export function initSaveLinkWork(deps: {
 			// `failed` immediately so readers and the Tier 1+ canary see the
 			// terminal state on the next poll, instead of waiting for SQS
 			// retries → DLQ (~90s+) before the DLQ handler updates it.
-			await markCrawlFailed({ url, reason: parseResult.reason });
+			await transitionAndPersist(markCrawlFailed, {
+				url,
+				input: { reason: parseResult.reason },
+			});
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${parseResult.reason}`);
 		}

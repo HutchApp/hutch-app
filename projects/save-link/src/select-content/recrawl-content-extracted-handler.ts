@@ -14,26 +14,28 @@ import {
 import { RecrawlContentExtractedEvent } from "@packages/hutch-infra-components";
 import type { ListAvailableTierSources } from "./list-available-tier-sources";
 import type { SelectMostCompleteContent } from "./select-content";
-import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
+import type { WriteCanonicalContent } from "./promote-tier-to-canonical";
 import type { FindContentSourceTier } from "./find-content-source-tier";
 import type { TierSource } from "./tier-source.types";
 
 export function initRecrawlContentExtractedHandler(deps: {
 	listAvailableTierSources: ListAvailableTierSources;
 	selectMostCompleteContent: SelectMostCompleteContent;
-	promoteTierToCanonical: PromoteTierToCanonical;
+	writeCanonicalContent: WriteCanonicalContent;
 	findContentSourceTier: FindContentSourceTier;
 	transitionAndPersist: TransitionAndPersist;
 	imagesCdnBaseUrl: string;
+	now: () => Date;
 	logger: HutchLogger;
 }): Handler<SQSEvent, SQSBatchResponse> {
 	const {
 		listAvailableTierSources,
 		selectMostCompleteContent,
-		promoteTierToCanonical,
+		writeCanonicalContent,
 		findContentSourceTier,
 		transitionAndPersist,
 		imagesCdnBaseUrl,
+		now,
 		logger,
 	} = deps;
 	const cdnHost = new URL(imagesCdnBaseUrl).host;
@@ -54,9 +56,10 @@ export function initRecrawlContentExtractedHandler(deps: {
 					 * Surrounding try/catch routes the throw to batchItemFailures
 					 * so sibling records still settle under any future
 					 * batchSize > 1. */
-					logger.warn("[RecrawlContentExtracted] no tier sources available, retrying", {
-						url: detail.url,
-					});
+					logger.warn(
+						"[RecrawlContentExtracted] no tier sources available, retrying",
+						{ url: detail.url },
+					);
 					throw new Error(
 						`no tier sources available for ${detail.url}; will retry`,
 					);
@@ -92,7 +95,9 @@ export function initRecrawlContentExtractedHandler(deps: {
 						 * Override the tie when one candidate has more occurrences
 						 * of the CDN host than the others. */
 						const cdnTie = breakTieByCdnRewriteCount(sources, cdnHost);
-						const existingTier = cdnTie ? undefined : await findContentSourceTier(detail.url);
+						const existingTier = cdnTie
+							? undefined
+							: await findContentSourceTier(detail.url);
 						if (cdnTie) {
 							winnerTier = cdnTie.tier;
 							reason = cdnTie.reason;
@@ -109,7 +114,10 @@ export function initRecrawlContentExtractedHandler(deps: {
 							const fallback =
 								sources.find((source) => source.tier === "tier-1") ??
 								sources.find((source) => source.tier === "tier-0");
-							assert(fallback, "tie with no candidate tiers should be unreachable");
+							assert(
+								fallback,
+								"tie with no candidate tiers should be unreachable",
+							);
 							winnerTier = fallback.tier;
 							reason = `tie on recrawl recovery; defaulted to ${fallback.tier}`;
 						}
@@ -120,13 +128,27 @@ export function initRecrawlContentExtractedHandler(deps: {
 				}
 
 				if (winnerTier !== undefined) {
-					const winnerSource = sources.find((source) => source.tier === winnerTier);
-					assert(winnerSource, `winner tier ${winnerTier} missing from candidate set`);
+					const winnerSource = sources.find(
+						(source) => source.tier === winnerTier,
+					);
+					assert(
+						winnerSource,
+						`winner tier ${winnerTier} missing from candidate set`,
+					);
 
-					await promoteTierToCanonical({
+					await writeCanonicalContent({
 						url: detail.url,
 						tier: winnerTier,
-						metadata: winnerSource.metadata,
+					});
+
+					await transitionAndPersist(recrawlPromoteTier, {
+						url: detail.url,
+						input: {
+							winnerTier,
+							metadata: winnerSource.metadata,
+							estimatedReadTime: winnerSource.metadata.estimatedReadTime,
+							contentFetchedAt: now().toISOString(),
+						},
 					});
 
 					logger.info("[RecrawlContentExtracted] promoted tier to canonical", {
@@ -134,20 +156,15 @@ export function initRecrawlContentExtractedHandler(deps: {
 						tier: winnerTier,
 						reason,
 					});
-
-					await transitionAndPersist(recrawlPromoteTier, {
-						url: detail.url,
-						input: undefined,
-					});
 				} else {
 					await transitionAndPersist(recrawlTieKeptCanonical, {
 						url: detail.url,
 						input: undefined,
 					});
-					logger.info("[RecrawlContentExtracted] tie kept canonical unchanged", {
-						url: detail.url,
-						reason,
-					});
+					logger.info(
+						"[RecrawlContentExtracted] tie kept canonical unchanged",
+						{ url: detail.url, reason },
+					);
 				}
 			} catch (error) {
 				logger.error("[RecrawlContentExtracted] record failed", {
@@ -167,7 +184,10 @@ function breakTieByCdnRewriteCount(
 	cdnHost: string,
 ): { tier: TierSource["tier"]; reason: string } | undefined {
 	const counts = sources
-		.map((source) => ({ tier: source.tier, count: countOccurrences(source.html, cdnHost) }))
+		.map((source) => ({
+			tier: source.tier,
+			count: countOccurrences(source.html, cdnHost),
+		}))
 		.sort((a, b) => b.count - a.count);
 	const [top, second] = counts;
 	if (!top || !second || top.count <= second.count) return undefined;

@@ -6,17 +6,16 @@ import {
 	SaveAnonymousLinkCommand,
 	TierContentExtractedEvent,
 } from "@packages/hutch-infra-components";
-import type {
-	MarkCrawlFailed,
-	MarkCrawlStage,
-	MarkCrawlUnsupported,
-} from "../crawl-article-state/article-crawl.types";
-import type { MarkSummarySkipped } from "../generate-summary/article-summary.types";
+import type { TransitionAndPersist } from "@packages/domain/article-aggregate";
+import type { MarkCrawlStage } from "../crawl-article-state/mark-crawl-stage";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "./s3-put-image-object";
 import type { UpdateFetchTimestamp } from "./update-fetch-timestamp-handler";
-import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-components";
+import type {
+	LogCrawlOutcome,
+	LogParseError,
+} from "@packages/hutch-infra-components";
 import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import { initSaveLinkWork, type ProcessContent } from "./save-link-work";
 import type { PutTierSource } from "../select-content/put-tier-source";
@@ -27,10 +26,8 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
 	updateFetchTimestamp: UpdateFetchTimestamp;
-	markCrawlFailed: MarkCrawlFailed;
-	markCrawlUnsupported: MarkCrawlUnsupported;
+	transitionAndPersist: TransitionAndPersist;
 	markCrawlStage: MarkCrawlStage;
-	markSummarySkipped: MarkSummarySkipped;
 	publishEvent: PublishEvent;
 	downloadMedia: DownloadMedia;
 	processContent: ProcessContent;
@@ -49,10 +46,8 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 		putTierSource: deps.putTierSource,
 		putImageObject: deps.putImageObject,
 		updateFetchTimestamp: deps.updateFetchTimestamp,
-		markCrawlFailed: deps.markCrawlFailed,
-		markCrawlUnsupported: deps.markCrawlUnsupported,
+		transitionAndPersist: deps.transitionAndPersist,
 		markCrawlStage: deps.markCrawlStage,
-		markSummarySkipped: deps.markSummarySkipped,
 		downloadMedia: deps.downloadMedia,
 		processContent: deps.processContent,
 		imagesCdnBaseUrl: deps.imagesCdnBaseUrl,
@@ -87,10 +82,10 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 					detailType: TierContentExtractedEvent.detailType,
 					detail: JSON.stringify({ url: detail.url, tier: "tier-1" }),
 				});
-				logger.info("[SaveAnonymousLinkCommand] emitted TierContentExtractedEvent", {
-					url: detail.url,
-					tier: "tier-1",
-				});
+				logger.info(
+					"[SaveAnonymousLinkCommand] emitted TierContentExtractedEvent",
+					{ url: detail.url, tier: "tier-1" },
+				);
 			} catch (error) {
 				logger.error("[SaveAnonymousLinkCommand] record failed", {
 					messageId: record.messageId,

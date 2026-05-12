@@ -50,6 +50,28 @@ describe("initLambdaEffectDispatcher", () => {
 		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
 	});
 
+	it("publishes a CrawlArticleCompletedEvent for a publish-crawl-article-completed effect", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "publish-crawl-article-completed",
+			url: "https://example.com/article",
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.save-link",
+			detailType: "CrawlArticleCompleted",
+			detail: JSON.stringify({ url: "https://example.com/article" }),
+		});
+		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
+	});
+
 	it("publishes a RecrawlCompletedEvent for a publish-recrawl-completed effect, carrying only the url in detail", async () => {
 		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
@@ -68,6 +90,110 @@ describe("initLambdaEffectDispatcher", () => {
 			source: "hutch.save-link",
 			detailType: "RecrawlCompleted",
 			detail: JSON.stringify({ url: "https://example.com/article" }),
+		});
+		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
+	});
+
+	it("publishes a LinkSavedEvent for a publish-link-saved effect, carrying url + userId in detail", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "publish-link-saved",
+			url: "https://example.com/article",
+			userId: "user-123",
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.save-link",
+			detailType: "LinkSaved",
+			detail: JSON.stringify({
+				url: "https://example.com/article",
+				userId: "user-123",
+			}),
+		});
+		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
+	});
+
+	it("publishes an AnonymousLinkSavedEvent for a publish-anonymous-link-saved effect, carrying only the url", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "publish-anonymous-link-saved",
+			url: "https://example.com/article",
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.save-link",
+			detailType: "AnonymousLinkSaved",
+			detail: JSON.stringify({ url: "https://example.com/article" }),
+		});
+		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
+	});
+
+	it("publishes a SummaryGeneratedEvent for a publish-summary-generated effect, carrying token counts", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "publish-summary-generated",
+			url: "https://example.com/article",
+			inputTokens: 1234,
+			outputTokens: 567,
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.save-link",
+			detailType: "GlobalSummaryGenerated",
+			detail: JSON.stringify({
+				url: "https://example.com/article",
+				inputTokens: 1234,
+				outputTokens: 567,
+			}),
+		});
+		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
+	});
+
+	it("publishes a SummaryGenerationFailedEvent for a publish-summary-generation-failed effect, carrying reason + receiveCount", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "publish-summary-generation-failed",
+			url: "https://example.com/article",
+			reason: "deepseek 503",
+			receiveCount: 6,
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.save-link",
+			detailType: "SummaryGenerationFailed",
+			detail: JSON.stringify({
+				url: "https://example.com/article",
+				reason: "deepseek 503",
+				receiveCount: 6,
+			}),
 		});
 		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
 	});

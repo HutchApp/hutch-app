@@ -1,8 +1,6 @@
 import { noopLogger } from "@packages/hutch-logger";
+import type { TransitionAndPersist } from "@packages/domain/article-aggregate";
 import { initSelectMostCompleteContentDlqHandler } from "./select-most-complete-content-dlq-handler";
-import type { MarkCrawlFailed } from "../crawl-article-state/article-crawl.types";
-import type { MarkSummaryFailed } from "../generate-summary/article-summary.types";
-import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
 function attributes(receiveCount: number): SQSRecordAttributes {
@@ -34,67 +32,59 @@ function createSqsEvent(
 	receiveCount = 3,
 ): SQSEvent {
 	return {
-		Records: [{
-			messageId: "msg-1",
-			receiptHandle: "receipt-1",
-			body: JSON.stringify({ detail }),
-			attributes: attributes(receiveCount),
-			messageAttributes: {},
-			md5OfBody: "",
-			eventSource: "aws:sqs",
-			eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content-dlq",
-			awsRegion: "ap-southeast-2",
-		}],
+		Records: [
+			{
+				messageId: "msg-1",
+				receiptHandle: "receipt-1",
+				body: JSON.stringify({ detail }),
+				attributes: attributes(receiveCount),
+				messageAttributes: {},
+				md5OfBody: "",
+				eventSource: "aws:sqs",
+				eventSourceARN:
+					"arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content-dlq",
+				awsRegion: "ap-southeast-2",
+			},
+		],
 	};
 }
 
 describe("initSelectMostCompleteContentDlqHandler", () => {
-	it("marks crawl and summary failed and publishes CrawlArticleFailedEvent when a TierContentExtractedEvent message exhausts retries", async () => {
-		const markCrawlFailed: MarkCrawlFailed = jest.fn().mockResolvedValue(undefined);
-		const markSummaryFailed: MarkSummaryFailed = jest.fn().mockResolvedValue(undefined);
-		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
+	it("dispatches markCrawlExhausted with receiveCount when a TierContentExtractedEvent message exhausts retries", async () => {
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 
 		const handler = initSelectMostCompleteContentDlqHandler({
-			markCrawlFailed,
-			markSummaryFailed,
-			publishEvent,
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 			logger: noopLogger,
 		});
 
 		await handler(
-			createSqsEvent({ url: "https://example.com/failed", tier: "tier-1", userId: "user-1" }, 4),
+			createSqsEvent(
+				{
+					url: "https://example.com/failed",
+					tier: "tier-1",
+					userId: "user-1",
+				},
+				4,
+			),
 			stubContext,
 			() => {},
 		);
 
-		expect(markCrawlFailed).toHaveBeenCalledWith({
+		expect(transitionAndPersist).toHaveBeenCalledTimes(1);
+		const [transition, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect((transition as { name: string }).name).toBe("markCrawlExhausted");
+		expect(params).toEqual({
 			url: "https://example.com/failed",
-			reason: "exceeded SQS maxReceiveCount",
-		});
-		expect(markSummaryFailed).toHaveBeenCalledWith({
-			url: "https://example.com/failed",
-			reason: "crawl failed",
-		});
-		expect(publishEvent).toHaveBeenCalledWith({
-			source: "hutch.save-link",
-			detailType: "CrawlArticleFailed",
-			detail: JSON.stringify({
-				url: "https://example.com/failed",
-				reason: "exceeded SQS maxReceiveCount",
-				receiveCount: 4,
-			}),
+			input: { reason: "exceeded SQS maxReceiveCount", receiveCount: 4 },
 		});
 	});
 
 	it("works without userId (anonymous source)", async () => {
-		const markCrawlFailed: MarkCrawlFailed = jest.fn().mockResolvedValue(undefined);
-		const markSummaryFailed: MarkSummaryFailed = jest.fn().mockResolvedValue(undefined);
-		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 
 		const handler = initSelectMostCompleteContentDlqHandler({
-			markCrawlFailed,
-			markSummaryFailed,
-			publishEvent,
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 			logger: noopLogger,
 		});
 
@@ -104,33 +94,37 @@ describe("initSelectMostCompleteContentDlqHandler", () => {
 			() => {},
 		);
 
-		expect(markCrawlFailed).toHaveBeenCalled();
-		expect(publishEvent).toHaveBeenCalled();
+		expect(transitionAndPersist).toHaveBeenCalledTimes(1);
 	});
 
 	it("reports the record as a batch failure on invalid envelope detail (Zod failure)", async () => {
+		const transitionAndPersist = jest.fn();
 		const handler = initSelectMostCompleteContentDlqHandler({
-			markCrawlFailed: jest.fn(),
-			markSummaryFailed: jest.fn(),
-			publishEvent: jest.fn(),
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 			logger: noopLogger,
 		});
 
 		const invalid: SQSEvent = {
-			Records: [{
-				messageId: "msg-1",
-				receiptHandle: "receipt-1",
-				body: JSON.stringify({ detail: { invalid: true } }),
-				attributes: attributes(3),
-				messageAttributes: {},
-				md5OfBody: "",
-				eventSource: "aws:sqs",
-				eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content-dlq",
-				awsRegion: "ap-southeast-2",
-			}],
+			Records: [
+				{
+					messageId: "msg-1",
+					receiptHandle: "receipt-1",
+					body: JSON.stringify({ detail: { invalid: true } }),
+					attributes: attributes(3),
+					messageAttributes: {},
+					md5OfBody: "",
+					eventSource: "aws:sqs",
+					eventSourceARN:
+						"arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content-dlq",
+					awsRegion: "ap-southeast-2",
+				},
+			],
 		};
 
 		const result = await handler(invalid, stubContext, () => {});
-		expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: "msg-1" }] });
+		expect(result).toEqual({
+			batchItemFailures: [{ itemIdentifier: "msg-1" }],
+		});
+		expect(transitionAndPersist).not.toHaveBeenCalled();
 	});
 });

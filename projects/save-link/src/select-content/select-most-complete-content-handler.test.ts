@@ -1,8 +1,9 @@
 import { noopLogger } from "@packages/hutch-logger";
+import type { TransitionAndPersist } from "@packages/domain/article-aggregate";
 import { initSelectMostCompleteContentHandler } from "./select-most-complete-content-handler";
 import type { ListAvailableTierSources } from "./list-available-tier-sources";
 import type { SelectMostCompleteContent } from "./select-content";
-import type { PromoteTierToCanonical } from "./promote-tier-to-canonical";
+import type { WriteCanonicalContent } from "./promote-tier-to-canonical";
 import type { FindContentSourceTier } from "./find-content-source-tier";
 import type { TierSource, TierSourceMetadata } from "./tier-source.types";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
@@ -29,7 +30,9 @@ const stubContext: Context = {
 	succeed: () => {},
 };
 
-const stubMetadata = (overrides: Partial<TierSourceMetadata> = {}): TierSourceMetadata => ({
+const stubMetadata = (
+	overrides: Partial<TierSourceMetadata> = {},
+): TierSourceMetadata => ({
 	title: "Title",
 	siteName: "example.com",
 	excerpt: "excerpt",
@@ -38,7 +41,10 @@ const stubMetadata = (overrides: Partial<TierSourceMetadata> = {}): TierSourceMe
 	...overrides,
 });
 
-function tierSource(tier: TierSource["tier"], overrides: Partial<TierSource> = {}): TierSource {
+function tierSource(
+	tier: TierSource["tier"],
+	overrides: Partial<TierSource> = {},
+): TierSource {
 	return {
 		tier,
 		html: `<p>${tier} html</p>`,
@@ -47,31 +53,62 @@ function tierSource(tier: TierSource["tier"], overrides: Partial<TierSource> = {
 	};
 }
 
-function createSqsEvent(detail: { url: string; tier: "tier-0" | "tier-1"; userId?: string }): SQSEvent {
+function createSqsEvent(detail: {
+	url: string;
+	tier: "tier-0" | "tier-1";
+	userId?: string;
+}): SQSEvent {
 	return {
-		Records: [{
-			messageId: "msg-1",
-			receiptHandle: "receipt-1",
-			body: JSON.stringify({ detail }),
-			attributes: stubAttributes,
-			messageAttributes: {},
-			md5OfBody: "",
-			eventSource: "aws:sqs",
-			eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content",
-			awsRegion: "ap-southeast-2",
-		}],
+		Records: [
+			{
+				messageId: "msg-1",
+				receiptHandle: "receipt-1",
+				body: JSON.stringify({ detail }),
+				attributes: stubAttributes,
+				messageAttributes: {},
+				md5OfBody: "",
+				eventSource: "aws:sqs",
+				eventSourceARN:
+					"arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content",
+				awsRegion: "ap-southeast-2",
+			},
+		],
 	};
 }
+
+const FROZEN_NOW = new Date("2026-05-12T12:00:00.000Z");
 
 type HandlerDeps = Parameters<typeof initSelectMostCompleteContentHandler>[0];
 
 function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	const deps: HandlerDeps = {
-		listAvailableTierSources: jest.fn<ReturnType<ListAvailableTierSources>, Parameters<ListAvailableTierSources>>().mockResolvedValue([]),
-		selectMostCompleteContent: jest.fn<ReturnType<SelectMostCompleteContent>, Parameters<SelectMostCompleteContent>>().mockResolvedValue({ winner: "tie", reason: "" }),
-		promoteTierToCanonical: jest.fn<ReturnType<PromoteTierToCanonical>, Parameters<PromoteTierToCanonical>>().mockResolvedValue(undefined),
-		findContentSourceTier: jest.fn<ReturnType<FindContentSourceTier>, Parameters<FindContentSourceTier>>().mockResolvedValue(undefined),
+		listAvailableTierSources: jest
+			.fn<
+				ReturnType<ListAvailableTierSources>,
+				Parameters<ListAvailableTierSources>
+			>()
+			.mockResolvedValue([]),
+		selectMostCompleteContent: jest
+			.fn<
+				ReturnType<SelectMostCompleteContent>,
+				Parameters<SelectMostCompleteContent>
+			>()
+			.mockResolvedValue({ winner: "tie", reason: "" }),
+		writeCanonicalContent: jest
+			.fn<
+				ReturnType<WriteCanonicalContent>,
+				Parameters<WriteCanonicalContent>
+			>()
+			.mockResolvedValue(undefined),
+		findContentSourceTier: jest
+			.fn<
+				ReturnType<FindContentSourceTier>,
+				Parameters<FindContentSourceTier>
+			>()
+			.mockResolvedValue(undefined),
+		transitionAndPersist: jest.fn().mockResolvedValue(undefined) as unknown as TransitionAndPersist,
 		publishEvent: jest.fn().mockResolvedValue(undefined),
+		now: () => FROZEN_NOW,
 		logger: noopLogger,
 		...overrides,
 	};
@@ -79,7 +116,7 @@ function createHandler(overrides: Partial<HandlerDeps> = {}) {
 }
 
 describe("initSelectMostCompleteContentHandler", () => {
-	it("no sources available — reports as a batch failure so SQS redelivers the record (covers worker→S3→EventBridge→SQS races)", async () => {
+	it("no sources available — reports as a batch failure so SQS redelivers (covers worker→S3→EventBridge→SQS races)", async () => {
 		const { handler, deps } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([]),
 		});
@@ -90,222 +127,326 @@ describe("initSelectMostCompleteContentHandler", () => {
 			() => {},
 		);
 
-		expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: "msg-1" }] });
-		expect(deps.promoteTierToCanonical).not.toHaveBeenCalled();
+		expect(result).toEqual({
+			batchItemFailures: [{ itemIdentifier: "msg-1" }],
+		});
+		expect(deps.writeCanonicalContent).not.toHaveBeenCalled();
+		expect(deps.transitionAndPersist).not.toHaveBeenCalled();
 		expect(deps.publishEvent).not.toHaveBeenCalled();
 	});
 
-	it("single source short-circuits the contest and promotes that tier without calling Deepseek", async () => {
+	it("single source — writes canonical and dispatches promoteTier with userId + canonicalChanged=true", async () => {
 		const tier1 = tierSource("tier-1");
-		const promoteTierToCanonical = jest.fn().mockResolvedValue(undefined);
-		const selectMostCompleteContent = jest.fn();
-		const publishEvent = jest.fn().mockResolvedValue(undefined);
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
+		const writeCanonicalContent = jest.fn().mockResolvedValue(undefined);
+
+		const { handler, deps } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier1]),
+			writeCanonicalContent,
+			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
+		});
+
+		await handler(
+			createSqsEvent({
+				url: "https://example.com/a",
+				tier: "tier-1",
+				userId: "user-1",
+			}),
+			stubContext,
+			() => {},
+		);
+
+		expect(deps.selectMostCompleteContent).not.toHaveBeenCalled();
+		expect(writeCanonicalContent).toHaveBeenCalledWith({
+			url: "https://example.com/a",
+			tier: "tier-1",
+		});
+		expect(transitionAndPersist).toHaveBeenCalledTimes(1);
+		const [transition, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect((transition as { name: string }).name).toBe("promoteTier");
+		expect(params).toEqual({
+			url: "https://example.com/a",
+			input: {
+				tier: "tier-1",
+				metadata: tier1.metadata,
+				estimatedReadTime: tier1.metadata.estimatedReadTime,
+				contentFetchedAt: FROZEN_NOW.toISOString(),
+				canonicalChanged: true,
+				userId: "user-1",
+			},
+		});
+	});
+
+	it("two sources, tier-0 wins — writes canonical for tier-0 and dispatches promoteTier with canonicalChanged=true (was tier-1)", async () => {
+		const tier0 = tierSource("tier-0");
+		const tier1 = tierSource("tier-1");
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
+		const writeCanonicalContent = jest.fn().mockResolvedValue(undefined);
 
 		const { handler } = createHandler({
-			listAvailableTierSources: jest.fn().mockResolvedValue([tier1]),
-			selectMostCompleteContent,
-			promoteTierToCanonical,
-			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
-			publishEvent,
-		});
-
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1", userId: "user-1" }), stubContext, () => {});
-
-		expect(selectMostCompleteContent).not.toHaveBeenCalled();
-		expect(promoteTierToCanonical).toHaveBeenCalledWith({
-			url: "https://example.com/a",
-			tier: "tier-1",
-			metadata: tier1.metadata,
-		});
-		expect(publishEvent).toHaveBeenCalledWith(
-			expect.objectContaining({ detailType: "CrawlArticleCompleted" }),
-		);
-		expect(publishEvent).toHaveBeenCalledWith(
-			expect.objectContaining({
-				detailType: "LinkSaved",
-				detail: JSON.stringify({ url: "https://example.com/a", userId: "user-1" }),
-			}),
-		);
-	});
-
-	it("two sources, tier-0 wins — promotes tier-0 and emits LinkSaved with userId", async () => {
-		const tier0 = tierSource("tier-0");
-		const tier1 = tierSource("tier-1");
-
-		const { handler, deps } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
-			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tier-0", reason: "tier-0 wins" }),
+			selectMostCompleteContent: jest
+				.fn()
+				.mockResolvedValue({ winner: "tier-0", reason: "tier-0 wins" }),
 			findContentSourceTier: jest.fn().mockResolvedValue("tier-1"),
+			writeCanonicalContent,
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 		});
 
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1", userId: "user-1" }), stubContext, () => {});
+		await handler(
+			createSqsEvent({
+				url: "https://example.com/a",
+				tier: "tier-1",
+				userId: "user-1",
+			}),
+			stubContext,
+			() => {},
+		);
 
-		expect(deps.promoteTierToCanonical).toHaveBeenCalledWith({
+		expect(writeCanonicalContent).toHaveBeenCalledWith({
 			url: "https://example.com/a",
 			tier: "tier-0",
-			metadata: tier0.metadata,
 		});
-		expect(deps.publishEvent).toHaveBeenCalledWith(
-			expect.objectContaining({
-				detailType: "LinkSaved",
-				detail: JSON.stringify({ url: "https://example.com/a", userId: "user-1" }),
-			}),
-		);
+		const [, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect(params).toEqual({
+			url: "https://example.com/a",
+			input: {
+				tier: "tier-0",
+				metadata: tier0.metadata,
+				estimatedReadTime: tier0.metadata.estimatedReadTime,
+				contentFetchedAt: FROZEN_NOW.toISOString(),
+				canonicalChanged: true,
+				userId: "user-1",
+			},
+		});
 	});
 
-	it("two sources, tier-1 wins — promotes tier-1 and emits AnonymousLinkSaved when no userId", async () => {
+	it("two sources, tier-1 wins — promotes tier-1 with canonicalChanged=true and no userId on the transition input", async () => {
 		const tier0 = tierSource("tier-0");
 		const tier1 = tierSource("tier-1");
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 
-		const { handler, deps } = createHandler({
+		const { handler } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
-			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tier-1", reason: "tier-1 wins" }),
+			selectMostCompleteContent: jest
+				.fn()
+				.mockResolvedValue({ winner: "tier-1", reason: "tier-1 wins" }),
 			findContentSourceTier: jest.fn().mockResolvedValue("tier-0"),
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 		});
 
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1" }), stubContext, () => {});
+		await handler(
+			createSqsEvent({ url: "https://example.com/a", tier: "tier-1" }),
+			stubContext,
+			() => {},
+		);
 
-		expect(deps.promoteTierToCanonical).toHaveBeenCalledWith({
+		const [, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect(params).toEqual({
 			url: "https://example.com/a",
-			tier: "tier-1",
-			metadata: tier1.metadata,
+			input: {
+				tier: "tier-1",
+				metadata: tier1.metadata,
+				estimatedReadTime: tier1.metadata.estimatedReadTime,
+				contentFetchedAt: FROZEN_NOW.toISOString(),
+				canonicalChanged: true,
+				userId: undefined,
+			},
 		});
-		expect(deps.publishEvent).toHaveBeenCalledWith(
-			expect.objectContaining({
-				detailType: "AnonymousLinkSaved",
-				detail: JSON.stringify({ url: "https://example.com/a" }),
-			}),
-		);
-		expect(deps.publishEvent).not.toHaveBeenCalledWith(
-			expect.objectContaining({ detailType: "LinkSaved" }),
-		);
 	});
 
-	it("tie with an existing canonical keeps it unchanged — emits CrawlArticleCompleted only, no LinkSaved/AnonymousLinkSaved", async () => {
+	it("tie with an existing canonical keeps it unchanged — emits CrawlArticleCompleted only and skips the aggregate transition", async () => {
 		const tier0 = tierSource("tier-0");
 		const tier1 = tierSource("tier-1");
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
+		const transitionAndPersist = jest.fn();
+		const writeCanonicalContent = jest.fn();
 
-		const { handler, deps } = createHandler({
+		const { handler } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
-			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "equally complete" }),
+			selectMostCompleteContent: jest
+				.fn()
+				.mockResolvedValue({ winner: "tie", reason: "equally complete" }),
 			findContentSourceTier: jest.fn().mockResolvedValue("tier-1"),
 			publishEvent,
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
+			writeCanonicalContent,
 		});
 
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-0", userId: "user-1" }), stubContext, () => {});
-
-		expect(deps.promoteTierToCanonical).not.toHaveBeenCalled();
-		const events = publishEvent.mock.calls.map((call: [{ detailType: string }]) => call[0].detailType);
-		expect(events).toEqual(["CrawlArticleCompleted"]);
-	});
-
-	it("tie with no canonical yet (first save) defaults to tier-1 and emits LinkSaved so the row never sits stuck", async () => {
-		const tier0 = tierSource("tier-0");
-		const tier1 = tierSource("tier-1");
-		const publishEvent = jest.fn().mockResolvedValue(undefined);
-
-		const { handler, deps } = createHandler({
-			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
-			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "identical content" }),
-			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
-			publishEvent,
-		});
-
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1", userId: "user-1" }), stubContext, () => {});
-
-		expect(deps.promoteTierToCanonical).toHaveBeenCalledWith({
-			url: "https://example.com/a",
-			tier: "tier-1",
-			metadata: tier1.metadata,
-		});
-		const events = publishEvent.mock.calls.map((call: [{ detailType: string }]) => call[0].detailType);
-		expect(events).toEqual(["CrawlArticleCompleted", "LinkSaved"]);
-	});
-
-	it("tie with no canonical and only tier-0 available (no tier-1) defaults to tier-0", async () => {
-		const tier0 = tierSource("tier-0");
-		const tier0Alt = tierSource("tier-0", { metadata: stubMetadata({ title: "Alt" }) });
-
-		const { handler, deps } = createHandler({
-			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier0Alt]),
-			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tie", reason: "tied tier-0 candidates" }),
-			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
-		});
-
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-0", userId: "user-1" }), stubContext, () => {});
-
-		expect(deps.promoteTierToCanonical).toHaveBeenCalledWith(
-			expect.objectContaining({ url: "https://example.com/a", tier: "tier-0" }),
+		await handler(
+			createSqsEvent({
+				url: "https://example.com/a",
+				tier: "tier-0",
+				userId: "user-1",
+			}),
+			stubContext,
+			() => {},
 		);
-	});
 
-	it("re-selecting the same winner does not emit LinkSaved (canonical unchanged) but still emits CrawlArticleCompleted", async () => {
-		const tier0 = tierSource("tier-0");
-		const tier1 = tierSource("tier-1");
-		const publishEvent = jest.fn().mockResolvedValue(undefined);
-
-		const { handler, deps } = createHandler({
-			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
-			selectMostCompleteContent: jest.fn().mockResolvedValue({ winner: "tier-0", reason: "still tier-0" }),
-			findContentSourceTier: jest.fn().mockResolvedValue("tier-0"),
-			publishEvent,
-		});
-
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-1", userId: "user-1" }), stubContext, () => {});
-
-		expect(deps.promoteTierToCanonical).toHaveBeenCalled(); // metadata may have changed; safe to overwrite
-		const events = publishEvent.mock.calls.map((call: [{ detailType: string }]) => call[0].detailType);
+		expect(transitionAndPersist).not.toHaveBeenCalled();
+		expect(writeCanonicalContent).not.toHaveBeenCalled();
+		const events = publishEvent.mock.calls.map(
+			(call: [{ detailType: string }]) => call[0].detailType,
+		);
 		expect(events).toEqual(["CrawlArticleCompleted"]);
 	});
 
-	it("first save (no prior canonical) on a single-tier short-circuit emits LinkSaved", async () => {
+	it("tie with no canonical (first save) defaults to tier-1 and dispatches promoteTier with canonicalChanged=true", async () => {
 		const tier0 = tierSource("tier-0");
+		const tier1 = tierSource("tier-1");
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 
-		const { handler, deps } = createHandler({
+		const { handler } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
+			selectMostCompleteContent: jest
+				.fn()
+				.mockResolvedValue({ winner: "tie", reason: "identical content" }),
+			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
+		});
+
+		await handler(
+			createSqsEvent({
+				url: "https://example.com/a",
+				tier: "tier-1",
+				userId: "user-1",
+			}),
+			stubContext,
+			() => {},
+		);
+
+		const [, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect(params).toEqual({
+			url: "https://example.com/a",
+			input: {
+				tier: "tier-1",
+				metadata: tier1.metadata,
+				estimatedReadTime: tier1.metadata.estimatedReadTime,
+				contentFetchedAt: FROZEN_NOW.toISOString(),
+				canonicalChanged: true,
+				userId: "user-1",
+			},
+		});
+	});
+
+	it("tie with no canonical and only tier-0 candidates defaults to tier-0", async () => {
+		const tier0 = tierSource("tier-0");
+		const tier0Alt = tierSource("tier-0", {
+			metadata: stubMetadata({ title: "Alt" }),
+		});
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
+
+		const { handler } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier0Alt]),
+			selectMostCompleteContent: jest
+				.fn()
+				.mockResolvedValue({ winner: "tie", reason: "tied tier-0 candidates" }),
+			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
+		});
+
+		await handler(
+			createSqsEvent({
+				url: "https://example.com/a",
+				tier: "tier-0",
+				userId: "user-1",
+			}),
+			stubContext,
+			() => {},
+		);
+
+		const [, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect((params as { input: { tier: string } }).input.tier).toBe("tier-0");
+	});
+
+	it("re-selecting the same winner dispatches promoteTier with canonicalChanged=false (the transition decides whether to emit LinkSaved)", async () => {
+		const tier0 = tierSource("tier-0");
+		const tier1 = tierSource("tier-1");
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
+
+		const { handler } = createHandler({
+			listAvailableTierSources: jest.fn().mockResolvedValue([tier0, tier1]),
+			selectMostCompleteContent: jest
+				.fn()
+				.mockResolvedValue({ winner: "tier-0", reason: "still tier-0" }),
+			findContentSourceTier: jest.fn().mockResolvedValue("tier-0"),
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
+		});
+
+		await handler(
+			createSqsEvent({
+				url: "https://example.com/a",
+				tier: "tier-1",
+				userId: "user-1",
+			}),
+			stubContext,
+			() => {},
+		);
+
+		const [, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect(params).toEqual({
+			url: "https://example.com/a",
+			input: {
+				tier: "tier-0",
+				metadata: tier0.metadata,
+				estimatedReadTime: tier0.metadata.estimatedReadTime,
+				contentFetchedAt: FROZEN_NOW.toISOString(),
+				canonicalChanged: false,
+				userId: "user-1",
+			},
+		});
+	});
+
+	it("first save (no prior canonical) on a single-tier short-circuit dispatches promoteTier with canonicalChanged=true", async () => {
+		const tier0 = tierSource("tier-0");
+		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
+
+		const { handler } = createHandler({
 			listAvailableTierSources: jest.fn().mockResolvedValue([tier0]),
 			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
+			transitionAndPersist: transitionAndPersist as unknown as TransitionAndPersist,
 		});
 
-		await handler(createSqsEvent({ url: "https://example.com/a", tier: "tier-0", userId: "user-1" }), stubContext, () => {});
-
-		expect(deps.publishEvent).toHaveBeenCalledWith(
-			expect.objectContaining({ detailType: "LinkSaved" }),
+		await handler(
+			createSqsEvent({
+				url: "https://example.com/a",
+				tier: "tier-0",
+				userId: "user-1",
+			}),
+			stubContext,
+			() => {},
 		);
-	});
 
-	it("single source short-circuits with the only-available-tier reason (covers the unreachable-selector path)", async () => {
-		const tier1Only = tierSource("tier-1");
-		const handler2 = createHandler({
-			listAvailableTierSources: jest.fn().mockResolvedValue([tier1Only]),
-			selectMostCompleteContent: jest.fn(), // unreachable on length 1
-			findContentSourceTier: jest.fn().mockResolvedValue(undefined),
-		});
-		await handler2.handler(createSqsEvent({ url: "https://example.com/x", tier: "tier-1" }), stubContext, () => {});
-		expect(handler2.deps.selectMostCompleteContent).not.toHaveBeenCalled();
-		expect(handler2.deps.promoteTierToCanonical).toHaveBeenCalledWith(
-			expect.objectContaining({ tier: "tier-1" }),
-		);
+		const [, params] = transitionAndPersist.mock.calls[0] ?? [];
+		expect(
+			(params as { input: { canonicalChanged: boolean } }).input.canonicalChanged,
+		).toBe(true);
 	});
 
 	it("reports the record as a batch failure on invalid event detail (Zod failure surfaces before processing)", async () => {
 		const { handler } = createHandler();
 
 		const invalidEvent: SQSEvent = {
-			Records: [{
-				messageId: "msg-1",
-				receiptHandle: "receipt-1",
-				body: JSON.stringify({ detail: { wrong: "shape" } }),
-				attributes: stubAttributes,
-				messageAttributes: {},
-				md5OfBody: "",
-				eventSource: "aws:sqs",
-				eventSourceARN: "arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content",
-				awsRegion: "ap-southeast-2",
-			}],
+			Records: [
+				{
+					messageId: "msg-1",
+					receiptHandle: "receipt-1",
+					body: JSON.stringify({ detail: { wrong: "shape" } }),
+					attributes: stubAttributes,
+					messageAttributes: {},
+					md5OfBody: "",
+					eventSource: "aws:sqs",
+					eventSourceARN:
+						"arn:aws:sqs:ap-southeast-2:123456789:select-most-complete-content",
+					awsRegion: "ap-southeast-2",
+				},
+			],
 		};
 
 		const result = await handler(invalidEvent, stubContext, () => {});
-		expect(result).toEqual({ batchItemFailures: [{ itemIdentifier: "msg-1" }] });
+		expect(result).toEqual({
+			batchItemFailures: [{ itemIdentifier: "msg-1" }],
+		});
 	});
 });
