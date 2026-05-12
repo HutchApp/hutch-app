@@ -8,6 +8,7 @@ import {
 	HutchSQSBackedLambda,
 	HutchS3ReadWrite,
 	HutchS3ContentMediaCDN,
+	type LambdaPolicy,
 } from "@packages/hutch-infra-components/infra";
 import {
 	SaveLinkCommand,
@@ -27,6 +28,16 @@ import {
 import { requireEnv } from "../require-env";
 import { GENERATE_SUMMARY_TIMEOUTS } from "../generate-summary/timeouts";
 import { SELECT_CONTENT_TIMEOUTS } from "../select-content/timeouts";
+
+/* Pulumi requires unique resource names per stack. Two Lambdas that attach
+ * the same shared queue's send-policy would collide on the policy's name,
+ * so each callsite namespaces it with a per-Lambda prefix. */
+function renamePolicies(
+	policies: readonly LambdaPolicy[],
+	prefix: string,
+): LambdaPolicy[] {
+	return policies.map((p) => ({ ...p, name: `${prefix}-${p.name}` }));
+}
 
 const config = new pulumi.Config();
 const alertEmail = config.require("alertEmail");
@@ -170,10 +181,7 @@ new HutchDLQEventHandler("save-link-dlq", {
 	additionalEnvironment: {
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
 	},
-	additionalPolicies: generateSummaryQueue.policies.map((p) => ({
-		...p,
-		name: `save-link-dlq-${p.name}`,
-	})),
+	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "save-link-dlq"),
 });
 
 // --- SaveLinkRawHtmlCommand handler ---
@@ -229,10 +237,7 @@ new HutchDLQEventHandler("save-link-raw-html-dlq", {
 	additionalEnvironment: {
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
 	},
-	additionalPolicies: generateSummaryQueue.policies.map((p) => ({
-		...p,
-		name: `save-link-raw-html-dlq-${p.name}`,
-	})),
+	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "save-link-raw-html-dlq"),
 });
 
 // --- SaveAnonymousLinkCommand handler ---
@@ -284,10 +289,7 @@ new HutchDLQEventHandler("save-anonymous-link-dlq", {
 	additionalEnvironment: {
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
 	},
-	additionalPolicies: generateSummaryQueue.policies.map((p) => ({
-		...p,
-		name: `save-anonymous-link-dlq-${p.name}`,
-	})),
+	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "save-anonymous-link-dlq"),
 });
 
 // --- StaleCheckRequested handler ---
@@ -492,7 +494,7 @@ const anonymousLinkSavedLambda = new HutchLambda("anonymous-link-saved", {
 		...anonymousLinkSavedDynamodb.policies,
 		// Rename the shared queue's send-policy so the Pulumi URN doesn't
 		// collide with the link-saved Lambda's attachment of the same policy.
-		...generateSummaryQueue.policies.map((p) => ({ ...p, name: `anonymous-${p.name}` })),
+		...renamePolicies(generateSummaryQueue.policies, "anonymous"),
 		...contentBucket.readPolicies("anonymous-link-saved-s3"),
 	],
 });
@@ -555,10 +557,7 @@ new HutchDLQEventHandler("recrawl-link-initiated-dlq", {
 	additionalEnvironment: {
 		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
 	},
-	additionalPolicies: generateSummaryQueue.policies.map((p) => ({
-		...p,
-		name: `recrawl-link-initiated-dlq-${p.name}`,
-	})),
+	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "recrawl-link-initiated-dlq"),
 });
 
 // --- RecrawlContentExtracted handler ---
@@ -588,7 +587,7 @@ const recrawlContentExtractedLambda = new HutchLambda("recrawl-content-extracted
 		...recrawlContentExtractedDynamodb.policies,
 		...contentBucket.readPolicies("recrawl-content-extracted-content-read"),
 		...contentBucket.writePolicies("recrawl-content-extracted-content-write"),
-		...generateSummaryQueue.policies.map((p) => ({ ...p, name: `recrawl-${p.name}` })),
+		...renamePolicies(generateSummaryQueue.policies, "recrawl"),
 	],
 });
 
@@ -678,7 +677,7 @@ const refreshArticleContentLambda = new HutchLambda("refresh-article-content", {
 	},
 	policies: [
 		...refreshArticleContentDynamodb.policies,
-		...generateSummaryQueue.policies.map((p) => ({ ...p, name: `refresh-${p.name}` })),
+		...renamePolicies(generateSummaryQueue.policies, "refresh"),
 	],
 });
 

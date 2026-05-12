@@ -137,7 +137,7 @@ export function initRecrawlContentExtractedHandler(deps: {
 
 					await transitionAndPersist(recrawlPromoteTier, {
 						url: detail.url,
-						input: { winnerTier },
+						input: undefined,
 					});
 				} else {
 					await transitionAndPersist(recrawlTieKeptCanonical, {

@@ -22,10 +22,7 @@ export {
 	type MarkCrawlExhaustedInput,
 } from "./transitions/mark-crawl-exhausted";
 export { recrawlTieKeptCanonical } from "./transitions/recrawl-tie-kept-canonical";
-export {
-	recrawlPromoteTier,
-	type RecrawlPromoteTierInput,
-} from "./transitions/recrawl-promote-tier";
+export { recrawlPromoteTier } from "./transitions/recrawl-promote-tier";
 export {
 	initTransitionAndPersist,
 	type Transition,

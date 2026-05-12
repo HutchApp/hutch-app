@@ -120,7 +120,7 @@ describe("initRecrawlContentExtractedHandler", () => {
 		});
 		expect(transitionAndPersist).toHaveBeenCalledWith(recrawlPromoteTier, {
 			url: "https://example.com/a",
-			input: { winnerTier: "tier-1" },
+			input: undefined,
 		});
 	});
 
@@ -199,7 +199,7 @@ describe("initRecrawlContentExtractedHandler", () => {
 		});
 		expect(transitionAndPersist).toHaveBeenCalledWith(recrawlPromoteTier, {
 			url: "https://example.com/a",
-			input: { winnerTier: "tier-1" },
+			input: undefined,
 		});
 	});
 
@@ -244,7 +244,7 @@ describe("initRecrawlContentExtractedHandler", () => {
 		});
 		expect(transitionAndPersist).toHaveBeenCalledWith(recrawlPromoteTier, {
 			url: "https://example.com/a",
-			input: { winnerTier: "tier-1" },
+			input: undefined,
 		});
 	});
 });

@@ -21,9 +21,7 @@ function buildArticle(overrides: Partial<Article> = {}): Article {
 
 describe("recrawlPromoteTier", () => {
 	it("flips crawl from pending to ready after a tier promotion", () => {
-		const { article } = recrawlPromoteTier(buildArticle(), {
-			winnerTier: "tier-1",
-		});
+		const { article } = recrawlPromoteTier(buildArticle(), undefined);
 
 		assert.deepEqual(article.crawl, { kind: "ready" });
 	});
@@ -31,7 +29,7 @@ describe("recrawlPromoteTier", () => {
 	it("emits generate-summary and publish-recrawl-completed effects in that order", () => {
 		const { effects } = recrawlPromoteTier(
 			buildArticle({ url: "https://example.com/post" }),
-			{ winnerTier: "tier-0" },
+			undefined,
 		);
 
 		assert.deepEqual(effects, [
@@ -41,9 +39,7 @@ describe("recrawlPromoteTier", () => {
 	});
 
 	it("declares writes for crawl only (the canonical metadata + S3 copy are owned by promoteTierToCanonical outside the aggregate)", () => {
-		const { writes } = recrawlPromoteTier(buildArticle(), {
-			winnerTier: "tier-1",
-		});
+		const { writes } = recrawlPromoteTier(buildArticle(), undefined);
 
 		assert.deepEqual([...writes], ["crawl"]);
 	});
@@ -52,18 +48,9 @@ describe("recrawlPromoteTier", () => {
 		const before = buildArticle();
 		const snapshot = JSON.parse(JSON.stringify(before));
 
-		recrawlPromoteTier(before, { winnerTier: "tier-1" });
+		recrawlPromoteTier(before, undefined);
 
 		assert.deepEqual(before, snapshot);
-	});
-
-	it("produces the same aggregate state regardless of which tier won (sibling-transition contract)", () => {
-		const tier0 = recrawlPromoteTier(buildArticle(), { winnerTier: "tier-0" });
-		const tier1 = recrawlPromoteTier(buildArticle(), { winnerTier: "tier-1" });
-
-		assert.deepEqual(tier0.article, tier1.article);
-		assert.deepEqual(tier0.effects, tier1.effects);
-		assert.deepEqual(tier0.writes, tier1.writes);
 	});
 
 	it("exposes its function name so transitionAndPersist can tag the row for the Phase 2 canary measurement", () => {

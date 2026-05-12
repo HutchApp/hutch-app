@@ -2,13 +2,9 @@ import type { Article } from "../article.types";
 import type { Effect } from "../effects.types";
 import type { AggregateField } from "../storage.types";
 
-export interface RecrawlPromoteTierInput {
-	winnerTier: "tier-0" | "tier-1";
-}
-
 export function recrawlPromoteTier(
 	article: Article,
-	_input: RecrawlPromoteTierInput,
+	_input: undefined,
 ): {
 	article: Article;
 	effects: readonly Effect[];
