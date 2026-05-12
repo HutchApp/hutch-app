@@ -17,11 +17,11 @@ import type { HutchSQS } from "./hutch-sqs";
  *
  * `additionalDynamoActions`, `additionalEnvironment`, and `additionalPolicies`
  * are escape hatches for callers whose transition needs richer access than
- * the default "UpdateItem only, no extra env". Phase 2 of the aggregate
- * migration uses them to add `dynamodb:GetItem` (the aggregate's
- * `store.load` reads before it writes) and to pass `GENERATE_SUMMARY_QUEUE_URL`
- * even though the migrated DLQ transition never dispatches a summary command —
- * the aggregate effect dispatcher is wired uniformly so a future transition
+ * the default "UpdateItem only, no extra env". Aggregate-migrated DLQ
+ * handlers use them to add `dynamodb:GetItem` (the aggregate's `store.load`
+ * reads before it writes) and to pass `GENERATE_SUMMARY_QUEUE_URL` even
+ * when the current transition does not dispatch a summary command — the
+ * aggregate effect dispatcher is wired uniformly so a future transition
  * change at the same callsite cannot regress without re-wiring infra.
  */
 export class HutchDLQEventHandler extends pulumi.ComponentResource {
