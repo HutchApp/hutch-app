@@ -14,4 +14,19 @@ export type Effect =
 			reason: string;
 			receiveCount: number;
 	  }
-	| { kind: "publish-recrawl-completed"; url: string };
+	| { kind: "publish-recrawl-completed"; url: string }
+	| { kind: "publish-crawl-article-completed"; url: string }
+	| { kind: "publish-link-saved"; url: string; userId: string }
+	| { kind: "publish-anonymous-link-saved"; url: string }
+	| {
+			kind: "publish-summary-generated";
+			url: string;
+			inputTokens: number;
+			outputTokens: number;
+	  }
+	| {
+			kind: "publish-summary-generation-failed";
+			url: string;
+			reason: string;
+			receiveCount: number;
+	  };
