@@ -28,11 +28,6 @@ export type TransitionAndPersist = <TInput>(
  * re-runs the (idempotent) transition, re-saves identical state, and re-
  * dispatches. The summary worker short-circuits on cached `ready` rows so a
  * duplicate `generate-summary` is harmless.
- *
- * The transition's runtime `name` (via Function.name) is threaded through to
- * `store.save` so the storage adapter can tag the row with the most recent
- * aggregate writer. The Phase 2 canary uses that tag to bucket stuck rows
- * by migrated vs. legacy writer.
  */
 export function initTransitionAndPersist(deps: {
 	store: ArticleStore;

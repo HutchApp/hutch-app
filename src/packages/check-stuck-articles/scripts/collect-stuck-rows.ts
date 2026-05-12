@@ -25,9 +25,6 @@ const StuckArticleRow = z.object({
 	crawlStatus: dynamoField(CrawlStatusSchema),
 	contentFetchedAt: dynamoField(z.string()),
 	savedAt: z.string(),
-	/* Phase 2 canary tag — the transition function name from the most recent
-	 * aggregate save. classifyRow reads it to bucket stuck rows by migrated vs.
-	 * legacy writer. Legacy rows do not carry the attribute. */
 	aggregateTransitionName: dynamoField(z.string()),
 });
 

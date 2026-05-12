@@ -97,12 +97,6 @@ export function initRecrawlContentExtractedHandler(deps: {
 							winnerTier = cdnTie.tier;
 							reason = cdnTie.reason;
 						} else if (existingTier) {
-							/* Recrawl tie + canonical already set: keep canonical
-							 * exactly as-is; the aggregate's recrawlTieKeptCanonical
-							 * transition flips the crawl row to ready and emits
-							 * GenerateSummary + RecrawlCompleted effects together.
-							 * Skipping promotion is encoded by `winnerTier ===
-							 * undefined` and is handled below. */
 							winnerTier = undefined;
 							reason = decision.reason;
 						} else {
@@ -141,24 +135,11 @@ export function initRecrawlContentExtractedHandler(deps: {
 						reason,
 					});
 
-					/* The recrawlPromoteTier aggregate transition pairs the
-					 * crawl-ready flip with both effects (generate-summary,
-					 * publish-recrawl-completed) in one save+dispatch — a future
-					 * branch that returns before invoking it would leave the row
-					 * in a partial state, which is exactly the cross-axis writer
-					 * pathology Phase 2 is betting it can eliminate. */
 					await transitionAndPersist(recrawlPromoteTier, {
 						url: detail.url,
 						input: { winnerTier },
 					});
 				} else {
-					/* Tie + canonical preserved: promoteTierToCanonical (the only
-					 * tier-promoting writer of crawlStatus="ready") was skipped,
-					 * so the aggregate's recrawlTieKeptCanonical transition flips
-					 * the row back out of the "pending" state that admin/recrawl's
-					 * forceMarkCrawlPending unconditionally wrote, and pairs it
-					 * with the same generate-summary + publish-recrawl-completed
-					 * effects so the operator always sees a fresh AI excerpt. */
 					await transitionAndPersist(recrawlTieKeptCanonical, {
 						url: detail.url,
 						input: undefined,

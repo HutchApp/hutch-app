@@ -9,11 +9,6 @@ type ArticleStateFields = {
 
 type TerminalCheckResult = { terminal: true } | { terminal: false; message: string };
 
-/**
- * "-after-aggregate-migration" variants spell out the Phase 2 falsifiable
- * measurement context so an operator reading the canary report knows the
- * row implicates the migration plan, not generic backlog drift.
- */
 const REASON_MESSAGES: Record<StuckReason, string> = {
 	"summary-pending": "summaryStatus is 'pending' — summary worker never produced a terminal outcome",
 	"crawl-pending": "crawlStatus is 'pending' — crawl worker never produced a terminal outcome",

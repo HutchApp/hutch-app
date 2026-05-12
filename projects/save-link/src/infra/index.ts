@@ -160,13 +160,6 @@ const saveLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-command
 eventBus.subscribe(SaveLinkCommand, saveLinkCommandLambdaWithSQS);
 
 // --- SaveLinkCommand DLQ consumer ---
-// Drives the markCrawlExhausted aggregate transition: flips crawl + summary
-// to failed in one atomic save and publishes CrawlArticleFailedEvent. The
-// HutchSQSBackedLambda above already wires the DLQ-arrival CloudWatch alarm
-// + admin email. The aggregate's `store.load` needs GetItem in addition to
-// UpdateItem; the effect dispatcher is wired with the generate-summary SQS
-// queue so a future transition change at this callsite cannot regress
-// without re-wiring infra.
 new HutchDLQEventHandler("save-link-dlq", {
 	sourceQueue: saveLinkCommandQueue,
 	tableArn: articlesTableArn,
@@ -226,9 +219,6 @@ const saveLinkRawHtmlCommandLambdaWithSQS = new HutchSQSBackedLambda("save-link-
 eventBus.subscribe(SaveLinkRawHtmlCommand, saveLinkRawHtmlCommandLambdaWithSQS);
 
 // --- SaveLinkRawHtmlCommand DLQ consumer ---
-// Mirrors save-link-dlq: drives the markCrawlExhausted aggregate transition
-// after maxReceiveCount on the raw-HTML save chain. See save-link-dlq above
-// for the same env/policy rationale.
 new HutchDLQEventHandler("save-link-raw-html-dlq", {
 	sourceQueue: saveLinkRawHtmlCommandQueue,
 	tableArn: articlesTableArn,
@@ -284,8 +274,6 @@ const saveAnonymousLinkCommandLambdaWithSQS = new HutchSQSBackedLambda("save-ano
 eventBus.subscribe(SaveAnonymousLinkCommand, saveAnonymousLinkCommandLambdaWithSQS);
 
 // --- SaveAnonymousLinkCommand DLQ consumer ---
-// Drives the markCrawlExhausted aggregate transition for the anonymous
-// /view auto-heal chain. See save-link-dlq for env/policy rationale.
 new HutchDLQEventHandler("save-anonymous-link-dlq", {
 	sourceQueue: saveAnonymousLinkCommandQueue,
 	tableArn: articlesTableArn,
@@ -557,8 +545,6 @@ const recrawlLinkInitiatedLambdaWithSQS = new HutchSQSBackedLambda("recrawl-link
 eventBus.subscribe(RecrawlLinkInitiatedEvent, recrawlLinkInitiatedLambdaWithSQS);
 
 // --- RecrawlLinkInitiated DLQ consumer ---
-// Drives the markCrawlExhausted aggregate transition for the admin recrawl
-// chain. See save-link-dlq for env/policy rationale.
 new HutchDLQEventHandler("recrawl-link-initiated-dlq", {
 	sourceQueue: recrawlLinkInitiatedQueue,
 	tableArn: articlesTableArn,

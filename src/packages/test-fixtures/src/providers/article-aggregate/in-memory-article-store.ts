@@ -16,9 +16,6 @@ interface SavedCall {
  * URL (the same key the production DynamoDB store uses) so a `save({url:
  * "https://example.com/a?utm=x"})` followed by `load("https://example.com/a")`
  * reads the same row — mirroring DynamoDB's normalization at the boundary.
- *
- * Records each `save` call on `savedCalls` so tests can assert on the
- * transition name and the `writes` scope the orchestrator threaded through.
  */
 export function initInMemoryArticleStore(): ArticleStore & {
 	seed: (article: Article) => void;

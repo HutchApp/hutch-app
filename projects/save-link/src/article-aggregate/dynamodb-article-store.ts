@@ -27,12 +27,6 @@ import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id
  * Fields outside this schema (routeId, originalUrl, content, contentSourceTier)
  * are owned by separate writers and are *not* touched by the aggregate save —
  * the UpdateExpression below only writes the attributes the aggregate models.
- *
- * `aggregateTransitionName` is the Phase 2 canary tag: the name of the
- * transition function that last wrote this row through the aggregate. The
- * check-stuck-articles scan reads it to bucket stuck rows by migrated vs.
- * legacy writer; if a row produced by a migrated transition still shows up
- * stuck a week later, the aggregate hypothesis is wrong and Phase 3+ stops.
  */
 const ArticleAggregateRow = z.object({
 	title: dynamoField(z.string()),
@@ -248,17 +242,6 @@ function appendCrawlClauses(
 	removes.push("crawlFailureReason", "crawlUnsupportedReason");
 }
 
-/**
- * Build the UpdateExpression scoped to the aggregate fields this transition
- * actually mutated. The `writes` set is the transition's promise to the
- * storage adapter: any field not in `writes` is left untouched on the row,
- * so a concurrent inline writer on a different axis is never clobbered by
- * an aggregate save it didn't intend to.
- *
- * `aggregateTransitionName` is written on every save regardless of `writes`
- * — it is the canary tag, not a domain field, and a non-Phase-2 transition
- * (refreshContent) writing `"refreshContent"` is correct.
- */
 function buildSaveCommand(params: {
 	article: Article;
 	transitionName: string;

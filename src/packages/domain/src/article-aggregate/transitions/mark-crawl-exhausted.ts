@@ -7,17 +7,7 @@ export interface MarkCrawlExhaustedInput {
 	receiveCount: number;
 }
 
-/**
- * Collapse the four DLQ handlers' hand-rolled "markCrawlFailed +
- * markSummaryFailed + publish CrawlArticleFailedEvent" sequence onto one
- * transition. Returning both terminal states alongside the publish effect
- * makes it a compile error for a future writer to flip only one axis — the
- * cross-axis stuck-row pathology this Phase 2 migration is betting it can
- * eliminate.
- *
- * `writes: ["crawl", "summary"]` scopes the aggregate save so a concurrent
- * inline metadata/freshness writer is not clobbered on retry.
- */
+/* `writes` scoped to crawl + summary so a concurrent inline metadata/freshness writer is not clobbered. */
 export function markCrawlExhausted(
 	article: Article,
 	input: MarkCrawlExhaustedInput,
