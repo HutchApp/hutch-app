@@ -8,6 +8,13 @@ import type { FindArticleFreshness } from "../article-store/article-store.types"
 import type { PublishRefreshArticleContent } from "../events/publish-refresh-article-content.types";
 import type { PublishUpdateFetchTimestamp } from "../events/publish-update-fetch-timestamp.types";
 import { calculateReadTime } from "@packages/domain/article";
+// failed / unsupported are terminal: the operator owns recovery via
+// /admin/recrawl and the DLQ → email signal. Reader-side reprime is
+// gone (was: code-driven auto-heal on view). A row without a crawl
+// status row at all is a legacy stub — still nothing to refresh here
+// because no contentFetchedAt is recorded; let it fall through to the
+// stale-TTL check which already short-circuits when no timestamp exists.
+import { decideTerminalAction } from "./decide-terminal-action";
 
 export type ContentFreshnessResult =
 	| { action: "new" }
@@ -37,15 +44,8 @@ export function initRefreshArticleIfStale(deps: {
 		}
 
 		const crawl = await deps.findArticleCrawlStatus(params.url);
-		// failed / unsupported are terminal: the operator owns recovery via
-		// /admin/recrawl and the DLQ → email signal. Reader-side reprime is
-		// gone (was: code-driven auto-heal on view). A row without a crawl
-		// status row at all is a legacy stub — still nothing to refresh here
-		// because no contentFetchedAt is recorded; let it fall through to the
-		// stale-TTL check which already short-circuits when no timestamp exists.
-		if (crawl?.status === "failed" || crawl?.status === "unsupported") {
-			return { action: "skip" };
-		}
+		const action = decideTerminalAction(crawl);
+		if (action === "skip") return { action: "skip" };
 
 		if (freshness.contentFetchedAt) {
 			const fetchedAt = new Date(freshness.contentFetchedAt).getTime();
