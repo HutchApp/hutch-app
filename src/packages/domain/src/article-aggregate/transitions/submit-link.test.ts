@@ -163,6 +163,20 @@ describe("submitLink", () => {
 			assert.deepEqual([...writes], []);
 		});
 
+		it("does not flip an unsupported crawl row back to pending — operators use requestRecrawl for that", () => {
+			const before = buildArticle({
+				crawl: {
+					kind: "unsupported",
+					reason: { kind: "paywall" },
+				},
+			});
+
+			const { article, writes } = submitLink(before, { url: URL, now: NOW });
+
+			assert.equal(article, before);
+			assert.deepEqual([...writes], []);
+		});
+
 		it("still re-dispatches SubmitLinkCommand", () => {
 			const before = buildArticle({ crawl: { kind: "ready" } });
 
