@@ -62,6 +62,7 @@ const publishRefreshArticleContent: PublishRefreshArticleContent = async (params
 		detailType: RefreshArticleContentCommand.detailType,
 		detail: JSON.stringify({
 			url: params.url,
+			html: params.html,
 			metadata: params.metadata,
 			estimatedReadTime: params.estimatedReadTime,
 			etag: params.etag,
