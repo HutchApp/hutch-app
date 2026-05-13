@@ -11,16 +11,16 @@ import {
 	SAVE_COOKIE_VALUE,
 } from "@packages/onboarding-extension-signal";
 import { ONBOARDING_VERSION } from "../../onboarding/onboarding.steps";
-import { createTestApp, type TestAppResult } from "../../../test-app";
+import { useTestServer, type TestAppResult } from "../../../test-app";
 
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
 } from "@packages/test-fixtures";
 
-async function loginAgent(app: TestAppResult['app'], auth: TestAppResult['auth']) {
+async function loginAgent(server: import("node:http").Server, auth: TestAppResult['auth']) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
-	const agent = request.agent(app);
+	const agent = request.agent(server);
 	await agent
 		.post("/login")
 		.type("form")
@@ -28,10 +28,13 @@ async function loginAgent(app: TestAppResult['app'], auth: TestAppResult['auth']
 	return agent;
 }
 
+const useApp = useTestServer();
+
 describe("Queue onboarding", () => {
 	it("shows onboarding visible with both steps incomplete on empty queue", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent.get("/queue");
 
@@ -50,8 +53,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("does not complete save-first-article when the article was saved via the web form", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		await agent
 			.post("/queue/save")
@@ -70,8 +74,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("marks save-first-article complete when extension save cookie is present", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -84,8 +89,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("marks install-extension complete when alive cookie is present", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -102,8 +108,9 @@ describe("Queue onboarding", () => {
 	 * the extension is currently installed. The server must ignore it for
 	 * onboarding purposes — only the httpOnly hutch_ext_alive cookie counts. */
 	it("does not mark install-extension complete when only the legacy hutch_ext_installed cookie is present", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -116,8 +123,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows success message when both the alive and extension-save cookies are present", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -134,8 +142,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows 'Install the Chrome browser extension' for Chrome user-agent", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -148,8 +157,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows 'Install the Firefox browser extension' for Firefox user-agent", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -162,8 +172,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows 'Install a browser extension' for unrecognised user-agent", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -176,8 +187,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("shows success state even when viewing an empty filter tab", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue?status=read")
@@ -217,8 +229,9 @@ describe("Queue onboarding", () => {
 	 *      re-renders, proving the legacy cookie does not satisfy dismissal.
 	 */
 	it("does not render onboarding when dismiss cookie matches current version and extension is alive", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -230,8 +243,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("re-renders onboarding when dismiss cookie is present but alive cookie is missing", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -252,8 +266,9 @@ describe("Queue onboarding", () => {
 	 * written by the content script) but the httpOnly hutch_ext_alive lapses
 	 * once Siren requests stop. Onboarding must come back. */
 	it("re-renders onboarding after uninstall (dismiss + legacy cookie present, alive cookie missing)", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -269,8 +284,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("re-renders onboarding when dismiss cookie has a stale version", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent
 			.get("/queue")
@@ -283,8 +299,9 @@ describe("Queue onboarding", () => {
 	});
 
 	it("POST /queue/dismiss-onboarding sets dismiss cookie to current version and redirects to /queue", async () => {
-		const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-		const agent = await loginAgent(app, auth);
+		const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+		const { auth } = harness;
+		const agent = await loginAgent(harness.server, auth);
 
 		const response = await agent.post("/queue/dismiss-onboarding");
 

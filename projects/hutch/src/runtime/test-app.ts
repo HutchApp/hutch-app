@@ -1,3 +1,4 @@
+import type { Server } from "node:http";
 import type { Express } from "express";
 import type { CrawlArticle } from "@packages/crawl-article";
 import type { HutchLogger } from "@packages/hutch-logger";
@@ -362,5 +363,42 @@ export function createTestApp(fixture: TestAppFixture): TestAppResult {
 		stripe: fixture.stripe,
 		pendingSignup: fixture.pendingSignup,
 		botDefense: fixture.botDefense,
+	};
+}
+
+export interface TestAppHarness extends TestAppResult {
+	server: Server;
+	close: () => Promise<void>;
+}
+
+/** server.close only invokes the callback with an error when the socket was
+ * never bound — which can't happen below because we always reach here after
+ * listen(0). Treat the callback as completion regardless of the err arg so
+ * coverage doesn't carry a phantom reject branch. */
+function buildHarness(fixture: TestAppFixture): TestAppHarness {
+	const result = createTestApp(fixture);
+	const server = result.app.listen(0);
+	return {
+		...result,
+		server,
+		close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+	};
+}
+
+/** Per-suite factory that registers an `afterEach` to close every harness it
+ * creates. Call once at module scope (or describe scope) and use the returned
+ * function inside `it()` to build a fresh test server — the cleanup is
+ * transparent so tests don't have to thread `close()` through finally blocks
+ * or hoist fixture creation into `beforeEach` just for lifecycle reasons. */
+export function useTestServer(): (fixture: TestAppFixture) => TestAppHarness {
+	const harnesses: TestAppHarness[] = [];
+	afterEach(async () => {
+		const toClose = harnesses.splice(0);
+		await Promise.all(toClose.map((h) => h.close()));
+	});
+	return (fixture) => {
+		const harness = buildHarness(fixture);
+		harnesses.push(harness);
+		return harness;
 	};
 }

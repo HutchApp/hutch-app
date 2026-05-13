@@ -1,6 +1,7 @@
+import type { Server } from "node:http";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { createTestApp, type TestAppResult } from "../../../test-app";
+import { useTestServer, type TestAppHarness } from "../../../test-app";
 
 import {
 	TEST_APP_ORIGIN,
@@ -8,11 +9,11 @@ import {
 } from "@packages/test-fixtures";
 
 async function loginAgent(
-	app: TestAppResult['app'],
-	auth: TestAppResult['auth'],
+	server: Server,
+	auth: TestAppHarness["auth"],
 ) {
 	await auth.createUser({ email: "test@example.com", password: "password123" });
-	const agent = request.agent(app);
+	const agent = request.agent(server);
 	await agent
 		.post("/login")
 		.type("form")
@@ -20,11 +21,13 @@ async function loginAgent(
 	return agent;
 }
 
+const useApp = useTestServer();
+
 describe("Export routes", () => {
 	describe("GET /export (unauthenticated)", () => {
 		it("should redirect to /login", async () => {
-			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-			const response = await request(app).get("/export");
+			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const response = await request(harness.server).get("/export");
 
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/login");
@@ -33,8 +36,8 @@ describe("Export routes", () => {
 
 	describe("GET /export (authenticated)", () => {
 		it("renders the landing page with a POST form pointing at /export/start", async () => {
-			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-			const agent = await loginAgent(app, auth);
+			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(harness.server, harness.auth);
 
 			const response = await agent.get("/export");
 
@@ -51,8 +54,8 @@ describe("Export routes", () => {
 		});
 
 		it("renders a 'preparing' confirmation when ?status=preparing is present", async () => {
-			const { app, auth } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-			const agent = await loginAgent(app, auth);
+			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const agent = await loginAgent(harness.server, harness.auth);
 
 			const response = await agent.get("/export?status=preparing");
 
@@ -67,8 +70,8 @@ describe("Export routes", () => {
 
 	describe("POST /export/start (unauthenticated)", () => {
 		it("should redirect to /login", async () => {
-			const { app } = createTestApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-			const response = await request(app).post("/export/start");
+			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const response = await request(harness.server).post("/export/start");
 
 			expect(response.status).toBe(303);
 			expect(response.headers.location).toBe("/login");
@@ -83,8 +86,8 @@ describe("Export routes", () => {
 			fixture.auth.findEmailByUserId = async () => null;
 			let published = 0;
 			fixture.events.publishExportUserDataCommand = async () => { published++; };
-			const { app, auth } = createTestApp(fixture);
-			const agent = await loginAgent(app, auth);
+			const harness = useApp(fixture);
+			const agent = await loginAgent(harness.server, harness.auth);
 
 			const response = await agent.post("/export/start");
 
@@ -104,8 +107,8 @@ describe("Export routes", () => {
 			fixture.events.publishExportUserDataCommand = async (params) => {
 				published.push(params);
 			};
-			const { app, auth } = createTestApp(fixture);
-			const agent = await loginAgent(app, auth);
+			const harness = useApp(fixture);
+			const agent = await loginAgent(harness.server, harness.auth);
 
 			const response = await agent.post("/export/start");
 
