@@ -6,6 +6,7 @@ import {
 	type GenerateSummaryCommand,
 	LinkSavedEvent,
 	RecrawlCompletedEvent,
+	SubmitLinkCommand,
 	SummaryGeneratedEvent,
 	SummaryGenerationFailedEvent,
 } from "@packages/hutch-infra-components";
@@ -30,6 +31,21 @@ export function initLambdaEffectDispatcher(deps: {
 				 * dispatch — the attempt counter rides on the aggregate row, not
 				 * the SQS message, so workers don't need a new entry point. */
 				await dispatchGenerateSummary({ url: effect.url });
+				return;
+			case "dispatch-submit-link":
+				/* EventBridge route (not direct SQS): the existing EVENT_BUS_NAME
+				 * is wired on every Lambda, so no new queue / env var / IAM grant
+				 * is required at the publisher. The future subscriber Lambda
+				 * lands via eventBus.subscribe(SubmitLinkCommand, …) in infra. */
+				await publishEvent({
+					source: SubmitLinkCommand.source,
+					detailType: SubmitLinkCommand.detailType,
+					detail: JSON.stringify({
+						url: effect.url,
+						...(effect.userId !== undefined ? { userId: effect.userId } : {}),
+						...(effect.rawHtml !== undefined ? { rawHtml: effect.rawHtml } : {}),
+					}),
+				});
 				return;
 			case "publish-crawl-article-failed":
 				await publishEvent({

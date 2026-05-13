@@ -13,27 +13,69 @@ export type Transition<TInput> = (
 	writes: readonly AggregateField[];
 };
 
+export type UpsertTransition<TInput> = (
+	article: Article | undefined,
+	input: TInput,
+) => {
+	article: Article;
+	effects: readonly Effect[];
+	writes: readonly AggregateField[];
+};
+
 export type TransitionAndPersist = <TInput>(
 	transition: Transition<TInput>,
 	params: { url: string; input: TInput },
 ) => Promise<void>;
 
+export type UpsertAndPersist = <TInput>(
+	transition: UpsertTransition<TInput>,
+	params: { url: string; input: TInput },
+) => Promise<void>;
+
 /**
- * The single load → transition → save → dispatch orchestrator.
+ * Load → transition → save → dispatch orchestrator for the Article aggregate.
  *
- * Save and dispatch run in that order so a row's persisted state is always
- * caught up with the in-flight effects. If save throws, no effect dispatches.
- * If a dispatch throws after save succeeds, the caller (Lambda handler) sees
- * the failure and SQS retries: the next attempt re-loads the saved row,
- * re-runs the (idempotent) transition, re-saves identical state, and re-
- * dispatches. The summary worker short-circuits on cached `ready` rows so a
- * duplicate `generate-summary` is harmless.
+ * Returns two variants:
+ *
+ * - `transitionAndPersist` — the row MUST exist; asserts otherwise. Used by
+ *   every save-link Lambda that mutates an existing aggregate.
+ * - `upsertAndPersist` — the row MAY be absent. The transition synthesises a
+ *   first-save stub when `article === undefined`. Used by entry-point save
+ *   transitions (e.g. `submitLink`) where the queue card must render at t=0.
+ *
+ * Both share the save-before-dispatch ordering: if save throws no effect
+ * dispatches; if a dispatch throws after save succeeds the caller sees the
+ * failure and SQS retries from the persisted state. Both skip the storage
+ * `save` call entirely when the transition returns an empty `writes` array —
+ * e.g. `submitLink` on an in-flight pending row only needs to re-dispatch,
+ * not re-write.
  */
 export function initTransitionAndPersist(deps: {
 	store: ArticleStore;
 	dispatchEffect: DispatchEffect;
-}): { transitionAndPersist: TransitionAndPersist } {
+}): {
+	transitionAndPersist: TransitionAndPersist;
+	upsertAndPersist: UpsertAndPersist;
+} {
 	const { store, dispatchEffect } = deps;
+
+	async function persistAndDispatch(params: {
+		article: Article;
+		transitionName: string;
+		effects: readonly Effect[];
+		writes: readonly AggregateField[];
+	}): Promise<void> {
+		if (params.writes.length > 0) {
+			await store.save({
+				article: params.article,
+				transitionName: params.transitionName,
+				writes: params.writes,
+			});
+		}
+		for (const effect of params.effects) {
+			await dispatchEffect(effect);
+		}
+	}
 
 	const transitionAndPersist: TransitionAndPersist = async (
 		transition,
@@ -42,15 +84,24 @@ export function initTransitionAndPersist(deps: {
 		const existing = await store.load(params.url);
 		assert(existing, `Article aggregate not found for url: ${params.url}`);
 		const { article, effects, writes } = transition(existing, params.input);
-		await store.save({
+		await persistAndDispatch({
 			article,
 			transitionName: transition.name,
+			effects,
 			writes,
 		});
-		for (const effect of effects) {
-			await dispatchEffect(effect);
-		}
 	};
 
-	return { transitionAndPersist };
+	const upsertAndPersist: UpsertAndPersist = async (transition, params) => {
+		const existing = await store.load(params.url);
+		const { article, effects, writes } = transition(existing, params.input);
+		await persistAndDispatch({
+			article,
+			transitionName: transition.name,
+			effects,
+			writes,
+		});
+	};
+
+	return { transitionAndPersist, upsertAndPersist };
 }

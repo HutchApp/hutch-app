@@ -5,6 +5,8 @@ export {
 	type SaveLinkRawHtmlDetail,
 	SaveAnonymousLinkCommand,
 	type SaveAnonymousLinkDetail,
+	SubmitLinkCommand,
+	type SubmitLinkDetail,
 	StaleCheckRequestedEvent,
 	type StaleCheckRequestedDetail,
 	LinkSavedEvent,

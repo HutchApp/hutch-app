@@ -231,6 +231,80 @@ describe("initLambdaEffectDispatcher", () => {
 		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
 	});
 
+	it("publishes a SubmitLinkCommand for a dispatch-submit-link effect with only the url when no userId/rawHtml are set (anonymous /view save)", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "dispatch-submit-link",
+			url: "https://example.com/article",
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.api",
+			detailType: "SubmitLinkCommand",
+			detail: JSON.stringify({ url: "https://example.com/article" }),
+		});
+		expect(dispatchGenerateSummary).not.toHaveBeenCalled();
+	});
+
+	it("includes userId in a SubmitLinkCommand detail so the submit-link handler can write the save to the authenticated user's library", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "dispatch-submit-link",
+			url: "https://example.com/article",
+			userId: "user-123",
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.api",
+			detailType: "SubmitLinkCommand",
+			detail: JSON.stringify({
+				url: "https://example.com/article",
+				userId: "user-123",
+			}),
+		});
+	});
+
+	it("includes rawHtml in a SubmitLinkCommand detail so the submit-link handler can write the tier-0 source for extension uploads", async () => {
+		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
+		const publishEvent = jest.fn().mockResolvedValue(undefined);
+
+		const { dispatchEffect } = initLambdaEffectDispatcher({
+			dispatchGenerateSummary,
+			publishEvent,
+		});
+
+		await dispatchEffect({
+			kind: "dispatch-submit-link",
+			url: "https://example.com/article",
+			userId: "user-123",
+			rawHtml: "<html>captured DOM</html>",
+		});
+
+		expect(publishEvent).toHaveBeenCalledWith({
+			source: "hutch.api",
+			detailType: "SubmitLinkCommand",
+			detail: JSON.stringify({
+				url: "https://example.com/article",
+				userId: "user-123",
+				rawHtml: "<html>captured DOM</html>",
+			}),
+		});
+	});
+
 	it("publishes a SummaryGenerationFailedEvent for a publish-summary-generation-failed effect, carrying url/reason/receiveCount in detail", async () => {
 		const dispatchGenerateSummary = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
