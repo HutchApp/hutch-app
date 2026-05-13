@@ -399,9 +399,9 @@ describe("initTransitionAndPersist.upsertAndPersist", () => {
 			dispatched.push(effect);
 		};
 		const transition: UpsertTransition<undefined> = (article) => {
-			assert.notEqual(article, undefined, "expected existing row");
+			assert(article, "expected existing row");
 			return {
-				article: article as Article,
+				article,
 				effects: [{ kind: "dispatch-submit-link", url: URL }],
 				writes: [],
 			};
