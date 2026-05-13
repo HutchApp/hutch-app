@@ -1,8 +1,6 @@
 export {
 	SaveLinkCommand,
 	type SaveLinkDetail,
-	SubmitLinkCommand,
-	type SubmitLinkDetail,
 	SaveLinkRawHtmlCommand,
 	type SaveLinkRawHtmlDetail,
 	SaveAnonymousLinkCommand,

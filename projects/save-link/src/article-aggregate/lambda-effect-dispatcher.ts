@@ -6,7 +6,6 @@ import {
 	type GenerateSummaryCommand,
 	LinkSavedEvent,
 	RecrawlCompletedEvent,
-	type SubmitLinkCommand,
 	SummaryGeneratedEvent,
 	SummaryGenerationFailedEvent,
 } from "@packages/hutch-infra-components";
@@ -17,10 +16,9 @@ import type {
 
 export function initLambdaEffectDispatcher(deps: {
 	dispatchGenerateSummary: DispatchCommand<typeof GenerateSummaryCommand>;
-	dispatchSubmitLink: DispatchCommand<typeof SubmitLinkCommand>;
 	publishEvent: PublishEvent;
 }): { dispatchEffect: DispatchEffect } {
-	const { dispatchGenerateSummary, dispatchSubmitLink, publishEvent } = deps;
+	const { dispatchGenerateSummary, publishEvent } = deps;
 
 	const dispatchEffect: DispatchEffect = async (effect) => {
 		switch (effect.kind) {
@@ -32,13 +30,6 @@ export function initLambdaEffectDispatcher(deps: {
 				 * dispatch — the attempt counter rides on the aggregate row, not
 				 * the SQS message, so workers don't need a new entry point. */
 				await dispatchGenerateSummary({ url: effect.url });
-				return;
-			case "dispatch-submit-link":
-				await dispatchSubmitLink({
-					url: effect.url,
-					userId: effect.userId,
-					rawHtml: effect.rawHtml,
-				});
 				return;
 			case "publish-crawl-article-failed":
 				await publishEvent({
