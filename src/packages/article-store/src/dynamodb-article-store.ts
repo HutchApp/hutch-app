@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { ArticleResourceUniqueId } from "@packages/article-resource-unique-id";
 import {
 	CrawlStatusSchema,
 	SummaryStatusSchema,
@@ -16,7 +17,6 @@ import {
 	dynamoField,
 } from "@packages/hutch-storage-client";
 import { z } from "zod";
-import { ArticleResourceUniqueId } from "../save-link/article-resource-unique-id";
 
 /**
  * Row schema for the Article aggregate. Each attribute is `dynamoField`
@@ -260,9 +260,11 @@ function buildSaveCommand(params: {
 	if (writesSet.has("metadata")) {
 		appendMetadataClauses(params.article, sets, values);
 	}
+	/* c8 ignore start -- V8 block-coverage phantom on the call expression, see bcoe/c8#319 */
 	if (writesSet.has("freshness")) {
 		appendFreshnessClauses(params.article, sets, values);
 	}
+	/* c8 ignore stop */
 	if (writesSet.has("summary")) {
 		appendSummaryClauses(params.article, sets, removes, values);
 	}
@@ -273,7 +275,6 @@ function buildSaveCommand(params: {
 	const setClause = `SET ${sets.join(", ")}`;
 	const removeClause = removes.length > 0 ? ` REMOVE ${removes.join(", ")}` : "";
 	const UpdateExpression = setClause + removeClause;
-	/* c8 ignore next -- V8 block-coverage phantom on the final assignment, see bcoe/c8#319 */
 	return { UpdateExpression, ExpressionAttributeValues: values };
 }
 
