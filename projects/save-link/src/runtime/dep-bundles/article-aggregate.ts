@@ -4,7 +4,6 @@ import {
 	type ArticleStore,
 	type DispatchEffect,
 	type TransitionAndPersist,
-	type UpsertAndPersist,
 } from "@packages/domain/article-aggregate";
 import { initDynamoDbArticleStore } from "@packages/article-store";
 import { initLambdaEffectDispatcher } from "../../article-aggregate/lambda-effect-dispatcher";
@@ -14,7 +13,6 @@ export type ArticleAggregateDepBundle = {
 	store: ArticleStore;
 	dispatchEffect: DispatchEffect;
 	transitionAndPersist: TransitionAndPersist;
-	upsertAndPersist: UpsertAndPersist;
 };
 
 export function initArticleAggregateDepBundle(deps: {
@@ -28,12 +26,8 @@ export function initArticleAggregateDepBundle(deps: {
 	});
 	const { dispatchEffect } = initLambdaEffectDispatcher({
 		dispatchGenerateSummary: deps.events.dispatchGenerateSummary,
-		dispatchSubmitLink: deps.events.dispatchSubmitLink,
 		publishEvent: deps.events.publishEvent,
 	});
-	const { transitionAndPersist, upsertAndPersist } = initTransitionAndPersist({
-		store,
-		dispatchEffect,
-	});
-	return { store, dispatchEffect, transitionAndPersist, upsertAndPersist };
+	const { transitionAndPersist } = initTransitionAndPersist({ store, dispatchEffect });
+	return { store, dispatchEffect, transitionAndPersist };
 }

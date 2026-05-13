@@ -5,13 +5,12 @@ import { initEventsDepBundle } from "./events";
 import { initArticleAggregateDepBundle } from "./article-aggregate";
 
 describe("initArticleAggregateDepBundle", () => {
-	it("returns a bundle with store, dispatchEffect, transitionAndPersist, and upsertAndPersist fields", () => {
+	it("returns a bundle with store, dispatchEffect, and transitionAndPersist fields", () => {
 		const events = initEventsDepBundle({
 			eventBridgeClient: new EventBridgeClient({ region: "us-east-1" }),
 			eventBusName: "test-bus",
 			sqsClient: new SQSClient({ region: "us-east-1" }),
 			generateSummaryQueueUrl: "https://sqs.example/queue",
-			submitLinkQueueUrl: "https://sqs.example/submit-link",
 		});
 
 		const bundle = initArticleAggregateDepBundle({
@@ -23,6 +22,5 @@ describe("initArticleAggregateDepBundle", () => {
 		expect(typeof bundle.store).toBe("object");
 		expect(typeof bundle.dispatchEffect).toBe("function");
 		expect(typeof bundle.transitionAndPersist).toBe("function");
-		expect(typeof bundle.upsertAndPersist).toBe("function");
 	});
 });
