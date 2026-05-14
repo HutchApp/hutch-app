@@ -495,6 +495,24 @@ const linkSavedLambdaWithSQS = new HutchSQSBackedLambda("link-saved", {
 
 eventBus.subscribe(LinkSavedEvent, linkSavedLambdaWithSQS);
 
+// --- LinkSaved DLQ consumer ---
+// Flips summaryStatus to "failed" when a LinkSavedEvent message exhausts
+// maxReceiveCount on the link-saved queue. Without this, the row stays
+// summaryStatus='pending' forever because the GenerateSummaryCommand was
+// never dispatched and no downstream DLQ handler can catch it.
+new HutchDLQEventHandler("link-saved-dlq", {
+	sourceQueue: linkSavedQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+	batchSize: 1,
+	additionalDynamoActions: ["dynamodb:GetItem"],
+	additionalEnvironment: {
+		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+	},
+	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "link-saved-dlq"),
+});
+
 // --- AnonymousLinkSaved handler ---
 
 const anonymousLinkSavedDynamodb = new HutchDynamoDBAccess("anonymous-link-saved-dynamodb", {
@@ -530,6 +548,22 @@ const anonymousLinkSavedLambdaWithSQS = new HutchSQSBackedLambda("anonymous-link
 });
 
 eventBus.subscribe(AnonymousLinkSavedEvent, anonymousLinkSavedLambdaWithSQS);
+
+// --- AnonymousLinkSaved DLQ consumer ---
+// Mirrors link-saved-dlq: flips summaryStatus to "failed" when an
+// AnonymousLinkSavedEvent message exhausts maxReceiveCount.
+new HutchDLQEventHandler("anonymous-link-saved-dlq", {
+	sourceQueue: anonymousLinkSavedQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+	batchSize: 1,
+	additionalDynamoActions: ["dynamodb:GetItem"],
+	additionalEnvironment: {
+		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+	},
+	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "anonymous-link-saved-dlq"),
+});
 
 // --- RecrawlLinkInitiated handler ---
 
