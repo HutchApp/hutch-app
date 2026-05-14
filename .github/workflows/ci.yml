@@ -40,6 +40,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile --reporter=append-only --loglevel=warn
 
+      - name: Runner hardware probe (temp — revert after one CI run)
+        run: |
+          echo "::group::Runner hardware"
+          echo "nproc: $(nproc)"
+          lscpu | grep -E '^(Model name|CPU\(s\)|Thread|Core|Socket|Architecture):' || true
+          free -h | head -2
+          node -e 'const os=require("os"); console.log("os.cpus().length=", os.cpus().length); console.log(JSON.stringify(os.cpus()[0]))'
+          echo "::endgroup::"
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
