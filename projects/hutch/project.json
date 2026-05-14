@@ -19,14 +19,8 @@
       "options": { "cwd": "{projectRoot}" }
     },
     "check": {
-      "command": "true",
+      "command": "pnpm lint && pnpm test-with-coverage",
       "options": { "cwd": "{projectRoot}" },
-      "dependsOn": ["lint", "test-with-coverage"]
-    },
-    "lint": {
-      "dependsOn": ["compile"]
-    },
-    "test-with-coverage": {
       "dependsOn": ["compile"]
     },
     "test": {},
