@@ -973,13 +973,69 @@ describe("Queue routes", () => {
 			expect(response.headers.location).toBe("/queue");
 		});
 
-		it("should redirect unauthenticated users to login", async () => {
+		it("should redirect anonymous visitors with a malformed id to /queue", async () => {
 			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 
 			const response = await request(harness.server).get("/queue/someid/read");
 
 			expect(response.status).toBe(303);
-			expect(response.headers.location).toBe("/login");
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should redirect anonymous visitors with an unknown but well-formed hash to /queue", async () => {
+			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+
+			const response = await request(harness.server).get(`/queue/${"a".repeat(32)}/read`);
+
+			expect(response.status).toBe(303);
+			expect(response.headers.location).toBe("/queue");
+		});
+
+		it("should redirect anonymous visitors to the public /view permalink so social-media previews unfurl", async () => {
+			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { auth } = harness;
+			const ownerAgent = await loginAgent(harness.server, auth);
+
+			const articleUrl = "https://example.com/shared-article";
+			await ownerAgent.post("/queue/save").type("form").send({ url: articleUrl });
+
+			const queueResponse = await ownerAgent.get("/queue");
+			const articleId = new JSDOM(queueResponse.text).window.document
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+			assert.ok(articleId, "owner must see the saved article in their queue");
+
+			const response = await request(harness.server).get(`/queue/${articleId}/read`);
+
+			expect(response.status).toBe(302);
+			expect(response.headers.location).toBe(`/view/${encodeURIComponent(articleUrl)}`);
+		});
+
+		it("should redirect logged-in non-owners to the public /view permalink", async () => {
+			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
+			const { auth } = harness;
+			const ownerAgent = await loginAgent(harness.server, auth);
+
+			const articleUrl = "https://example.com/owner-only";
+			await ownerAgent.post("/queue/save").type("form").send({ url: articleUrl });
+
+			const queueResponse = await ownerAgent.get("/queue");
+			const articleId = new JSDOM(queueResponse.text).window.document
+				.querySelector("[data-test-article-list] .queue-article")
+				?.getAttribute("data-test-article");
+			assert.ok(articleId, "owner must see the saved article in their queue");
+
+			await auth.createUser({ email: "guest@example.com", password: "password123" });
+			const guestAgent = request.agent(harness.server);
+			await guestAgent
+				.post("/login")
+				.type("form")
+				.send({ email: "guest@example.com", password: "password123" });
+
+			const response = await guestAgent.get(`/queue/${articleId}/read`);
+
+			expect(response.status).toBe(302);
+			expect(response.headers.location).toBe(`/view/${encodeURIComponent(articleUrl)}`);
 		});
 
 		it("should link article title to reader view in queue when content exists", async () => {

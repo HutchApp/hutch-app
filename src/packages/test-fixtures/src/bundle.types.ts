@@ -62,6 +62,7 @@ import type {
 	FindArticleById,
 	FindArticleByUrl,
 	FindArticleFreshness,
+	FindArticleUrlById,
 	FindArticlesByUser,
 	SaveArticle,
 	SaveArticleGlobally,
@@ -126,6 +127,7 @@ export interface PendingSignupBundle {
 export interface ArticleStoreBundle {
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
+	findArticleUrlById: FindArticleUrlById;
 	findArticleFreshness: FindArticleFreshness;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;

@@ -243,6 +243,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 		articleStore: {
 			findArticleById: articleStoreMemory.findArticleById,
 			findArticleByUrl: articleStoreMemory.findArticleByUrl,
+			findArticleUrlById: articleStoreMemory.findArticleUrlById,
 			findArticleFreshness: articleStoreMemory.findArticleFreshness,
 			findArticlesByUser: articleStoreMemory.findArticlesByUser,
 			saveArticle: articleStoreMemory.saveArticle,

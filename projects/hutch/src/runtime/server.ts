@@ -34,6 +34,7 @@ import type {
 	DeleteArticle,
 	FindArticleById,
 	FindArticleByUrl,
+	FindArticleUrlById,
 	FindArticlesByUser,
 	SaveArticle,
 	SaveArticleGlobally,
@@ -128,6 +129,7 @@ interface AppDependencies {
 	};
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
+	findArticleUrlById: FindArticleUrlById;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;
 	saveArticleGlobally: SaveArticleGlobally;
@@ -467,6 +469,7 @@ export function createApp(dependencies: AppDependencies): Express {
 		findArticlesByUser: deps.findArticlesByUser,
 		findArticleById: deps.findArticleById,
 		findArticleByUrl: deps.findArticleByUrl,
+		findArticleUrlById: deps.findArticleUrlById,
 		saveArticle: deps.saveArticle,
 		deleteArticle: deps.deleteArticle,
 		updateArticleStatus: deps.updateArticleStatus,
@@ -481,11 +484,17 @@ export function createApp(dependencies: AppDependencies): Express {
 		publishUpdateFetchTimestamp: deps.publishUpdateFetchTimestamp,
 		readArticleContent: deps.readArticleContent,
 		httpErrorMessageMapping: deps.httpErrorMessageMapping,
+		dualAuth: dualAuthMiddleware,
 		logError: deps.logError,
 		logParseError: deps.logParseError,
 		now: deps.now,
 	});
-	app.use("/queue", extensionCors, dualAuthMiddleware, queueRouter);
+	/** `dualAuthMiddleware` is applied INSIDE the queue router rather than at this
+	 * mount so that `GET /queue/:id/read` can stay publicly reachable. Shared
+	 * `/read` permalinks (people copy them from the browser URL bar) redirect
+	 * non-owners and anonymous visitors to `/view/<url>` instead of bouncing
+	 * them to /login. */
+	app.use("/queue", extensionCors, queueRouter);
 
 	const importRouter = initImportSessionRoutes({
 		validateSaveableUrl: deps.validateSaveableUrl,

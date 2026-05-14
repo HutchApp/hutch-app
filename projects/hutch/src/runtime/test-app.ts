@@ -64,6 +64,7 @@ import type {
 	FindArticleById,
 	FindArticleByUrl,
 	FindArticleFreshness,
+	FindArticleUrlById,
 	FindArticlesByUser,
 	SaveArticle,
 	SaveArticleGlobally,
@@ -125,6 +126,7 @@ export interface PendingSignupBundle {
 export interface ArticleStoreBundle {
 	findArticleById: FindArticleById;
 	findArticleByUrl: FindArticleByUrl;
+	findArticleUrlById: FindArticleUrlById;
 	findArticleFreshness: FindArticleFreshness;
 	findArticlesByUser: FindArticlesByUser;
 	saveArticle: SaveArticle;
@@ -305,6 +307,7 @@ function flattenFixtureToAppDependencies(
 		findEmailByUserId: fixture.auth.findEmailByUserId,
 		findArticleById: fixture.articleStore.findArticleById,
 		findArticleByUrl: fixture.articleStore.findArticleByUrl,
+		findArticleUrlById: fixture.articleStore.findArticleUrlById,
 		findArticlesByUser: fixture.articleStore.findArticlesByUser,
 		saveArticle: fixture.articleStore.saveArticle,
 		saveArticleGlobally: fixture.articleStore.saveArticleGlobally,
