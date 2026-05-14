@@ -197,7 +197,9 @@ export const TEST_APP_ORIGIN = "http://localhost:3000";
 
 export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 
-	const auth = initInMemoryAuth();
+	const fastHashPassword = async (p: string) => `plain:${p}`;
+	const fastVerifyPassword = async (p: string, stored: string | undefined) => stored === `plain:${p}`;
+	const auth = initInMemoryAuth({ hashPassword: fastHashPassword, verifyPassword: fastVerifyPassword });
 	const articleStoreMemory = initInMemoryArticleStore();
 	const articleCrawl = initInMemoryArticleCrawl();
 	const crawlArticle = stubCrawlArticle;
@@ -239,7 +241,7 @@ export function createDefaultTestAppFixture(appOrigin: string): TestAppFixture {
 	};
 
 	return {
-		auth,
+		auth: { ...auth, hashPassword: fastHashPassword },
 		articleStore: {
 			findArticleById: articleStoreMemory.findArticleById,
 			findArticleByUrl: articleStoreMemory.findArticleByUrl,

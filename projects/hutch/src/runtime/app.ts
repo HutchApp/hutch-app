@@ -3,7 +3,7 @@ import assert from "node:assert";
 import type { Express } from "express";
 import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import type { Logger } from "./domain/logger";
-import { initInMemoryAuth } from "@packages/test-fixtures/providers/auth";
+import { initInMemoryAuth, hashPassword, verifyPassword } from "@packages/test-fixtures/providers/auth";
 import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "@packages/test-fixtures/providers/article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
@@ -192,7 +192,7 @@ function initProviders() {
 		};
 	}
 
-	const auth = initInMemoryAuth();
+	const auth = initInMemoryAuth({ hashPassword, verifyPassword });
 	const articleStore = initInMemoryArticleStore();
 	const oauthModel = createOAuthModel(initInMemoryOAuthModel());
 	const devStripe = initInMemoryStripeCheckout({ checkoutBaseUrl: "https://checkout.stripe.test", now: () => new Date() });
@@ -362,6 +362,7 @@ export function createHutchApp(deps?: {
 		validateSaveableUrl,
 		appOrigin,
 		staticBaseUrl,
+		hashPassword,
 		...auth,
 		...articleStore,
 		...providers,

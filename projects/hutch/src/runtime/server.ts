@@ -111,6 +111,7 @@ interface AppDependencies {
 	validateSaveableUrl: ValidateSaveableUrl;
 	appOrigin: string;
 	staticBaseUrl: string;
+	hashPassword: (password: string) => Promise<string>;
 	createUser: CreateUser;
 	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
@@ -401,6 +402,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/embed", initEmbedRoutes({ appOrigin }));
 
 	const authRouter = initAuthRoutes({
+		hashPassword: deps.hashPassword,
 		createUserWithPasswordHash: deps.createUserWithPasswordHash,
 		createGoogleUser: deps.createGoogleUser,
 		findUserByEmail: deps.findUserByEmail,

@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import type { UserId } from "@packages/domain/user";
 import { UserIdSchema } from "@packages/domain/user";
 import { initInMemoryAuth } from "./in-memory-auth";
+import { hashPassword, verifyPassword } from "./password";
+
+const makeAuth = () => initInMemoryAuth({ hashPassword, verifyPassword });
 
 describe("initInMemoryAuth", () => {
 	describe("createUser", () => {
 		it("should create a user and return a userId", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const result = await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			expect(result.ok).toBe(true);
@@ -17,7 +20,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should reject duplicate email", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 			const result = await auth.createUser({ email: "test@example.com", password: "otherpassword" });
 
@@ -25,7 +28,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should treat emails as case-insensitive", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "Test@Example.COM", password: "password123" });
 			const result = await auth.createUser({ email: "test@example.com", password: "otherpassword" });
 
@@ -33,7 +36,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should trim whitespace from emails", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "  test@example.com  ", password: "password123" });
 			const result = await auth.createUser({ email: "test@example.com", password: "otherpassword" });
 
@@ -41,7 +44,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should treat plus aliases as separate users", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "user@example.com", password: "password123" });
 			const result = await auth.createUser({ email: "user+tag@example.com", password: "password456" });
 
@@ -51,7 +54,7 @@ describe("initInMemoryAuth", () => {
 
 	describe("verifyCredentials", () => {
 		it("should verify correct password", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const createResult = await auth.createUser({ email: "test@example.com", password: "password123" });
 			if (!createResult.ok) throw new Error("User creation failed");
 
@@ -64,7 +67,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should reject wrong password", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const result = await auth.verifyCredentials({ email: "test@example.com", password: "wrongpassword" });
@@ -73,7 +76,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should reject nonexistent email", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 
 			const result = await auth.verifyCredentials({ email: "noone@example.com", password: "password123" });
 
@@ -81,7 +84,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should not match plus alias against base email", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "user@example.com", password: "password123" });
 
 			const result = await auth.verifyCredentials({ email: "user+tag@example.com", password: "password123" });
@@ -90,7 +93,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should verify with case-insensitive email", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const result = await auth.verifyCredentials({ email: "TEST@Example.COM", password: "password123" });
@@ -101,7 +104,7 @@ describe("initInMemoryAuth", () => {
 
 	describe("countUsers", () => {
 		it("should return zero when no users exist", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 
 			const count = await auth.countUsers();
 
@@ -109,7 +112,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should return the number of registered users", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "a@example.com", password: "password123" });
 			await auth.createUser({ email: "b@example.com", password: "password456" });
 
@@ -121,7 +124,7 @@ describe("initInMemoryAuth", () => {
 
 	describe("markEmailVerified", () => {
 		it("should mark user email as verified", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "user@example.com", password: "password123" });
 
 			await auth.markEmailVerified("user@example.com");
@@ -134,7 +137,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should handle case-insensitive email lookup", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "user@example.com", password: "password123" });
 
 			await auth.markEmailVerified("User@Example.COM");
@@ -149,7 +152,7 @@ describe("initInMemoryAuth", () => {
 
 	describe("markSessionEmailVerified", () => {
 		it("should mark session emailVerified flag to true", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const userId = "user-456" as UserId;
 			const sessionId = await auth.createSession({ userId, emailVerified: false });
 
@@ -160,7 +163,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should be a no-op for unknown sessions", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 
 			await auth.markSessionEmailVerified("nonexistent-session");
 		});
@@ -168,7 +171,7 @@ describe("initInMemoryAuth", () => {
 
 	describe("findUserByEmail", () => {
 		it("should return null for unknown email", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 
 			const result = await auth.findUserByEmail("noone@example.com");
 
@@ -176,7 +179,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should return userId and unverified flag after createUser", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const created = await auth.createUser({ email: "test@example.com", password: "password123" });
 			assert(created.ok, "User creation failed");
 
@@ -190,7 +193,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should reflect markEmailVerified", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 			await auth.markEmailVerified("test@example.com");
 
@@ -200,7 +203,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should handle case-insensitive email lookup", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const created = await auth.createUser({ email: "user@example.com", password: "password123" });
 			assert(created.ok, "User creation failed");
 
@@ -214,7 +217,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should record registeredAt as an ISO 8601 UTC timestamp captured at user creation", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const before = Date.now();
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 			const after = Date.now();
@@ -229,7 +232,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should record registeredAt for Google users too", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const userId = UserIdSchema.parse("google-user-rt");
 			const before = Date.now();
 			await auth.createGoogleUser({ email: "google@example.com", userId });
@@ -247,7 +250,7 @@ describe("initInMemoryAuth", () => {
 
 	describe("createGoogleUser", () => {
 		it("should create a user without a password and verified email", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const userId = UserIdSchema.parse("google-user-123");
 
 			const result = await auth.createGoogleUser({ email: "google@example.com", userId });
@@ -262,7 +265,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should reject duplicate email", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createUser({ email: "test@example.com", password: "password123" });
 
 			const result = await auth.createGoogleUser({
@@ -274,7 +277,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should normalize email case", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createGoogleUser({
 				email: "Google@Example.COM",
 				userId: UserIdSchema.parse("google-user-1"),
@@ -289,7 +292,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should produce a user that cannot log in with any password", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			await auth.createGoogleUser({
 				email: "google-only@example.com",
 				userId: UserIdSchema.parse("google-user-only"),
@@ -306,7 +309,7 @@ describe("initInMemoryAuth", () => {
 
 	describe("sessions", () => {
 		it("should create a session and resolve the userId", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const userId = "user-123" as UserId;
 			const sessionId = await auth.createSession({ userId, emailVerified: false });
 
@@ -316,7 +319,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should return null for unknown session", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 
 			const resolved = await auth.getSessionUserId("nonexistent-session");
 
@@ -324,7 +327,7 @@ describe("initInMemoryAuth", () => {
 		});
 
 		it("should destroy a session", async () => {
-			const auth = initInMemoryAuth();
+			const auth = makeAuth();
 			const userId = "user-123" as UserId;
 			const sessionId = await auth.createSession({ userId, emailVerified: false });
 

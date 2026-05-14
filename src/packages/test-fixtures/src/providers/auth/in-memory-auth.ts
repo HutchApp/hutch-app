@@ -19,7 +19,6 @@ import type {
 	VerifyCredentials,
 } from "./auth.types";
 import { normalizeEmail } from "./normalize-email";
-import { hashPassword, verifyPassword } from "./password";
 
 interface StoredUser {
 	id: UserId;
@@ -34,7 +33,10 @@ interface StoredSession {
 	emailVerified: boolean;
 }
 
-export function initInMemoryAuth(): {
+export function initInMemoryAuth(opts: {
+	hashPassword: (password: string) => Promise<string>;
+	verifyPassword: (password: string, stored: string | undefined) => Promise<boolean>;
+}): {
 	createUser: CreateUser;
 	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
@@ -51,6 +53,8 @@ export function initInMemoryAuth(): {
 	findEmailByUserId: FindEmailByUserId;
 	deleteUser: (email: string) => Promise<void>;
 } {
+	const _hashPassword = opts.hashPassword;
+	const _verifyPassword = opts.verifyPassword;
 	const users = new Map<string, StoredUser>();
 	const sessions = new Map<string, StoredSession>();
 
@@ -62,7 +66,7 @@ export function initInMemoryAuth(): {
 		}
 
 		const userId = UserIdSchema.parse(randomBytes(16).toString("hex"));
-		const passwordHash = await hashPassword(password);
+		const passwordHash = await _hashPassword(password);
 
 		users.set(normalizedEmail, {
 			id: userId,
@@ -132,7 +136,7 @@ export function initInMemoryAuth(): {
 			return { ok: false, reason: "invalid-credentials" };
 		}
 
-		const valid = await verifyPassword(password, user.passwordHash);
+		const valid = await _verifyPassword(password, user.passwordHash);
 		if (!valid) {
 			return { ok: false, reason: "invalid-credentials" };
 		}
@@ -188,7 +192,7 @@ export function initInMemoryAuth(): {
 		const normalizedEmail = normalizeEmail(email);
 		const user = users.get(normalizedEmail);
 		assert(user, `Cannot update password: no user found for ${normalizedEmail}`);
-		user.passwordHash = await hashPassword(password);
+		user.passwordHash = await _hashPassword(password);
 	};
 
 	const deleteUser = async (email: string): Promise<void> => {

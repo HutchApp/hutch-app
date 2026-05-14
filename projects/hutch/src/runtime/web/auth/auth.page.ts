@@ -13,7 +13,6 @@ import type {
 	MarkSessionEmailVerified,
 	VerifyCredentials,
 } from "@packages/test-fixtures/providers/auth";
-import { hashPassword } from "@packages/test-fixtures/providers/auth";
 import type { UserId } from "@packages/domain/user";
 import type { SendEmail } from "@packages/test-fixtures/providers/email";
 import type {
@@ -54,6 +53,7 @@ import type { BotDefenseEvent, BotDefenseRejectReason } from "@packages/test-fix
 export type { BotDefenseEvent, BotDefenseRejectReason };
 
 interface AuthDependencies {
+	hashPassword: (password: string) => Promise<string>;
 	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
 	findUserByEmail: FindUserByEmail;
@@ -301,7 +301,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			return;
 		}
 
-		const passwordHash = await hashPassword(password);
+		const passwordHash = await deps.hashPassword(password);
 
 		const userCount = await fetchUserCount();
 		if (!deps.foundingAllocation.isFoundingAllocationExhausted(userCount)) {

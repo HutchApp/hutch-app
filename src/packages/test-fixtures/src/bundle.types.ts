@@ -95,6 +95,7 @@ import type {
 export type { RefreshArticleIfStale, ContentFreshnessResult };
 
 export interface AuthBundle {
+	hashPassword: (password: string) => Promise<string>;
 	createUser: CreateUser;
 	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;

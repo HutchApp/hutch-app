@@ -137,6 +137,19 @@ describe("createDefaultTestAppFixture", () => {
 			.toBeUndefined();
 	});
 
+	it("auth uses a fast hash: createUser and verifyCredentials round-trip correctly", async () => {
+		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
+
+		const created = await fixture.auth.createUser({ email: "fast-hash@example.com", password: "pass123" });
+		expect(created.ok).toBe(true);
+
+		const ok = await fixture.auth.verifyCredentials({ email: "fast-hash@example.com", password: "pass123" });
+		expect(ok.ok).toBe(true);
+
+		const bad = await fixture.auth.verifyCredentials({ email: "fast-hash@example.com", password: "wrong" });
+		expect(bad.ok).toBe(false);
+	});
+
 	it("shared.logError and shared.logParseError are no-ops that don't throw", () => {
 		const fixture = createDefaultTestAppFixture(TEST_APP_ORIGIN);
 

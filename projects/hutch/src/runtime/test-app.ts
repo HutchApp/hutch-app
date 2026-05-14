@@ -94,6 +94,7 @@ import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
 import { initFoundingAllocation } from "./web/shared/founding-progress/founding-allocation";
 
 export interface AuthBundle {
+	hashPassword: (password: string) => Promise<string>;
 	createUser: CreateUser;
 	createUserWithPasswordHash: CreateUserWithPasswordHash;
 	createGoogleUser: CreateGoogleUser;
@@ -291,6 +292,7 @@ function flattenFixtureToAppDependencies(
 		logError: fixture.shared.logError,
 		logParseError: fixture.shared.logParseError,
 		httpErrorMessageMapping: fixture.shared.httpErrorMessageMapping,
+		hashPassword: fixture.auth.hashPassword,
 		createUser: fixture.auth.createUser,
 		createUserWithPasswordHash: fixture.auth.createUserWithPasswordHash,
 		createGoogleUser: fixture.auth.createGoogleUser,
