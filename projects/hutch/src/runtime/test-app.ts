@@ -378,14 +378,22 @@ export interface TestAppHarness extends TestAppResult {
 /** server.close only invokes the callback with an error when the socket was
  * never bound — which can't happen below because we always reach here after
  * listen(0). Treat the callback as completion regardless of the err arg so
- * coverage doesn't carry a phantom reject branch. */
+ * coverage doesn't carry a phantom reject branch.
+ *
+ * closeAllConnections() is called first to immediately destroy keep-alive
+ * sockets. Without it, server.close() waits for sockets to drain naturally,
+ * which can outlast jest's worker shutdown timeout and cause force-exits that
+ * truncate V8 coverage shards below the 99% threshold. */
 function buildHarness(fixture: TestAppFixture): TestAppHarness {
 	const result = createTestApp(fixture);
 	const server = result.app.listen(0);
 	return {
 		...result,
 		server,
-		close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+		close: () => new Promise<void>((resolve) => {
+			server.closeAllConnections();
+			server.close(() => resolve());
+		}),
 	};
 }
 
