@@ -61,6 +61,27 @@ export type SaveAnonymousLinkDetail = z.infer<
 	typeof SaveAnonymousLinkCommand.detailSchema
 >;
 
+/** Unified entry-point command for the redesigned save flow.
+ *
+ * Issued by hutch (user save / anonymous /view / operator recrawl) and
+ * re-issued by save-link's effect dispatcher when the aggregate's
+ * `submitLink` or `requestRecrawl` transitions fire. The future
+ * `submit-link` Lambda branches on `rawHtml`-present (tier-0 path) vs
+ * absent (tier-1 URL fetch path) and on `userId`-present (authenticated
+ * save) vs absent (anonymous /view save). Routes via EventBridge — no
+ * dedicated SQS queue required at the publisher. */
+export const SubmitLinkCommand = defineEvent({
+	name: "submit-link-command",
+	source: "hutch.api",
+	detailType: "SubmitLinkCommand",
+	detailSchema: z.object({
+		url: z.string(),
+		userId: z.string().optional(),
+		rawHtml: z.string().optional(),
+	}),
+});
+export type SubmitLinkDetail = z.infer<typeof SubmitLinkCommand.detailSchema>;
+
 export const StaleCheckRequestedEvent = defineEvent({
 	name: "stale-check-requested",
 	source: "hutch.api",

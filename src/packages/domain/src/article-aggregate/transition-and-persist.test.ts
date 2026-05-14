@@ -6,6 +6,7 @@ import type { AggregateField, ArticleStore, SaveArticle } from "./storage.types"
 import {
 	initTransitionAndPersist,
 	type Transition,
+	type UpsertTransition,
 } from "./transition-and-persist";
 
 function seededArticle(url: string): Article {
@@ -320,5 +321,145 @@ describe("initTransitionAndPersist", () => {
 
 		assert.equal(saved.length, 1);
 		assert.equal(saved[0]?.article.metadata.title, "Updated");
+	});
+
+	it("skips the DDB save when the transition returns an empty writes array but still dispatches the effect (idempotent re-dispatch path)", async () => {
+		const { store, saved } = createFakeStore([seededArticle(URL)]);
+		const dispatched: Effect[] = [];
+		const dispatchEffect: DispatchEffect = async (effect) => {
+			dispatched.push(effect);
+		};
+		const transition: Transition<undefined> = (article) => ({
+			article,
+			effects: [{ kind: "dispatch-submit-link", url: article.url }],
+			writes: [],
+		});
+
+		const { transitionAndPersist } = initTransitionAndPersist({
+			store,
+			dispatchEffect,
+		});
+
+		await transitionAndPersist(transition, { url: URL, input: undefined });
+
+		assert.equal(saved.length, 0);
+		assert.deepEqual(dispatched, [{ kind: "dispatch-submit-link", url: URL }]);
+	});
+});
+
+describe("initTransitionAndPersist.upsertAndPersist", () => {
+	const URL = "https://example.com/article";
+
+	it("synthesises a new row when load returns undefined so the entry-point save can render the queue card at t=0", async () => {
+		const { store, saved } = createFakeStore([]);
+		const dispatchEffect: DispatchEffect = async () => {};
+		const transition: UpsertTransition<{ now: string }> = (article, input) => {
+			if (article !== undefined) {
+				throw new Error("expected article to be undefined for this test");
+			}
+			return {
+				article: {
+					url: URL,
+					metadata: {
+						title: "Stub",
+						siteName: "example.com",
+						excerpt: "Saved.",
+						wordCount: 0,
+					},
+					freshness: { contentFetchedAt: input.now },
+					estimatedReadTime: 0,
+					crawl: { kind: "pending", pendingSince: input.now },
+					summary: { kind: "pending", pendingSince: input.now },
+					summaryAutoHeal: { attempts: 0 },
+				},
+				effects: [],
+				writes: ["crawl", "summary", "metadata", "freshness"],
+			};
+		};
+
+		const { upsertAndPersist } = initTransitionAndPersist({
+			store,
+			dispatchEffect,
+		});
+
+		await upsertAndPersist(transition, {
+			url: URL,
+			input: { now: "2026-05-13T12:00:00.000Z" },
+		});
+
+		assert.equal(saved.length, 1);
+		assert.equal(saved[0]?.article.crawl.kind, "pending");
+		assert.equal(saved[0]?.transitionName, "transition");
+	});
+
+	it("passes the existing article through to the transition when load returns a row so subsequent saves can short-circuit", async () => {
+		const { store, saved } = createFakeStore([seededArticle(URL)]);
+		const dispatched: Effect[] = [];
+		const dispatchEffect: DispatchEffect = async (effect) => {
+			dispatched.push(effect);
+		};
+		const transition: UpsertTransition<undefined> = (article) => {
+			assert(article, "expected existing row");
+			return {
+				article,
+				effects: [{ kind: "dispatch-submit-link", url: URL }],
+				writes: [],
+			};
+		};
+
+		const { upsertAndPersist } = initTransitionAndPersist({
+			store,
+			dispatchEffect,
+		});
+
+		await upsertAndPersist(transition, { url: URL, input: undefined });
+
+		assert.equal(saved.length, 0, "empty writes scope skips the DDB save");
+		assert.deepEqual(dispatched, [
+			{ kind: "dispatch-submit-link", url: URL },
+		]);
+	});
+
+	it("dispatches effects in declared order after save, matching transitionAndPersist's ordering guarantee", async () => {
+		const { store } = createFakeStore([]);
+		const order: string[] = [];
+		const dispatchEffect: DispatchEffect = async (effect) => {
+			order.push(`dispatch:${effect.kind}`);
+		};
+		const transition: UpsertTransition<{ now: string }> = (_article, input) => ({
+			article: {
+				url: URL,
+				metadata: {
+					title: "Stub",
+					siteName: "example.com",
+					excerpt: "Saved.",
+					wordCount: 0,
+				},
+				freshness: { contentFetchedAt: input.now },
+				estimatedReadTime: 0,
+				crawl: { kind: "pending", pendingSince: input.now },
+				summary: { kind: "pending", pendingSince: input.now },
+				summaryAutoHeal: { attempts: 0 },
+			},
+			effects: [{ kind: "dispatch-submit-link", url: URL }],
+			writes: ["crawl", "summary", "metadata", "freshness"],
+		});
+
+		const save: SaveArticle = async () => {
+			order.push("save");
+		};
+		const wrappedStore: ArticleStore = { load: store.load, save };
+
+		const { upsertAndPersist } = initTransitionAndPersist({
+			store: wrappedStore,
+			dispatchEffect,
+		});
+
+		await upsertAndPersist(transition, {
+			url: URL,
+			input: { now: "2026-05-13T12:00:00.000Z" },
+		});
+
+		assert.deepEqual(order, ["save", "dispatch:dispatch-submit-link"]);
 	});
 });
