@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
 import { MinutesSchema } from "@packages/domain/article";
-import { useTestServer, type TestAppResult } from "../../../test-app";
+import { useTestServer, loginAgent } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
@@ -15,16 +15,6 @@ import {
 } from "@packages/test-fixtures";
 
 import type { RefreshArticleIfStale } from "@packages/test-fixtures/providers/article-freshness";
-
-async function loginAgent(server: import("node:http").Server, auth: TestAppResult['auth']) {
-	await auth.createUser({ email: "test@example.com", password: "password123" });
-	const agent = request.agent(server);
-	await agent
-		.post("/login")
-		.type("form")
-		.send({ email: "test@example.com", password: "password123" });
-	return agent;
-}
 
 const useApp = useTestServer();
 

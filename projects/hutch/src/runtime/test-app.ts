@@ -86,6 +86,7 @@ import type { ExchangeGoogleCode } from "@packages/test-fixtures/providers/googl
 import type { OAuthModel } from "@packages/test-fixtures/providers/oauth";
 import type { ValidateAccessToken } from "./web/dual-auth.middleware";
 import type { ImportSessionStore } from "@packages/domain/import-session";
+import request from "supertest";
 import { createApp } from "./server";
 import type { ValidateSaveableUrl } from "@packages/domain/article";
 import type { HttpErrorMessageMapping } from "./web/pages/queue/queue.error";
@@ -401,4 +402,17 @@ export function useTestServer(): (fixture: TestAppFixture) => TestAppHarness {
 		harnesses.push(harness);
 		return harness;
 	};
+}
+
+export async function loginAgent(
+	server: Server,
+	auth: TestAppHarness["auth"],
+) {
+	await auth.createUser({ email: "test@example.com", password: "password123" });
+	const agent = request.agent(server);
+	await agent
+		.post("/login")
+		.type("form")
+		.send({ email: "test@example.com", password: "password123" });
+	return agent;
 }

@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import request from "supertest";
 import {
 	ALIVE_COOKIE_NAME,
 	ALIVE_COOKIE_VALUE,
@@ -11,22 +10,12 @@ import {
 	SAVE_COOKIE_VALUE,
 } from "@packages/onboarding-extension-signal";
 import { ONBOARDING_VERSION } from "../../onboarding/onboarding.steps";
-import { useTestServer, type TestAppResult } from "../../../test-app";
+import { useTestServer, loginAgent } from "../../../test-app";
 
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
 } from "@packages/test-fixtures";
-
-async function loginAgent(server: import("node:http").Server, auth: TestAppResult['auth']) {
-	await auth.createUser({ email: "test@example.com", password: "password123" });
-	const agent = request.agent(server);
-	await agent
-		.post("/login")
-		.type("form")
-		.send({ email: "test@example.com", password: "password123" });
-	return agent;
-}
 
 const useApp = useTestServer();
 

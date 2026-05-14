@@ -1,21 +1,11 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import request from "supertest";
-import { useTestServer, type TestAppHarness } from "../../../test-app";
+import { useTestServer, loginAgent } from "../../../test-app";
 import {
 	TEST_APP_ORIGIN,
 	createDefaultTestAppFixture,
 } from "@packages/test-fixtures";
-
-async function loginAgent(server: import("node:http").Server, auth: TestAppHarness["auth"]) {
-	await auth.createUser({ email: "test@example.com", password: "password123" });
-	const agent = request.agent(server);
-	await agent
-		.post("/login")
-		.type("form")
-		.send({ email: "test@example.com", password: "password123" });
-	return agent;
-}
 
 function summaryText(doc: Document): string {
 	return doc.querySelector("[data-test-import-summary]")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
