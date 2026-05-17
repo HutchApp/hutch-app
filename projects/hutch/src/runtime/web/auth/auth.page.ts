@@ -39,6 +39,7 @@ import { buildVerificationEmailHtml } from "./verification-email";
 import { flattenZodErrors } from "./flatten-zod-errors";
 import { initFetchUserCount } from "./fetch-user-count";
 import { initSendWelcomeEmail } from "./send-welcome-email";
+import { createBotDefenseEvent } from "./bot-defense-event";
 import type { FoundingAllocation } from "../shared/founding-progress/founding-allocation";
 
 const TokenQuerySchema = z.object({ token: z.string().optional() }).passthrough();
@@ -108,15 +109,6 @@ function checkSignupBotDefense(
 	}
 
 	return { trip: false };
-}
-
-function extractEmailDomain(body: Record<string, unknown>): string | undefined {
-	const email = body.email;
-	if (typeof email !== "string") return undefined;
-	const at = email.indexOf("@");
-	if (at === -1) return undefined;
-	const domain = email.slice(at + 1).toLowerCase();
-	return domain.length > 0 ? domain : undefined;
 }
 
 export function initAuthRoutes(deps: AuthDependencies): Router {
@@ -241,19 +233,12 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 
 		const botCheck = checkSignupBotDefense(body, deps.now().getTime());
 		if (botCheck.trip) {
-			const event: BotDefenseEvent = {
-				stream: "bot-defense",
-				event: "signup_rejected",
-				reason: botCheck.reason,
-				timestamp: deps.now().toISOString(),
-			};
-			if (req.ip) event.ip = req.ip;
-			const emailDomain = extractEmailDomain(body);
-			if (emailDomain) event.email_domain = emailDomain;
-			if (botCheck.timeToSubmitMs !== undefined) {
-				event.time_to_submit_ms = botCheck.timeToSubmitMs;
-			}
-			deps.botDefenseLogger.info(event);
+			deps.botDefenseLogger.info(createBotDefenseEvent({
+				trip: botCheck,
+				ip: req.ip,
+				body,
+				now: deps.now(),
+			}));
 			res.redirect(303, "/?signup=pending");
 			return;
 		}
