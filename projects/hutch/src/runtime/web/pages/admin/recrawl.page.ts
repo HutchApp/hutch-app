@@ -16,7 +16,8 @@ import type {
 } from "@packages/test-fixtures/providers/article-summary";
 import type { PublishRecrawlLinkInitiated } from "@packages/test-fixtures/providers/events";
 import type { FindUserByEmail } from "@packages/test-fixtures/providers/auth";
-import { renderPage } from "../../render-page";
+import { Base } from "../../base.component";
+import { bannerStateFromRequest } from "../../banner-state";
 import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type { PollUrlBuilder } from "../../shared/article-reader/article-reader.types";
@@ -58,10 +59,10 @@ function noStore(_req: Request, res: Response, next: NextFunction): void {
 }
 
 function renderNotFound(req: Request, res: Response) {
-	const html = renderPage(req, SaveErrorPage({
+	const html = Base(SaveErrorPage({
 		redirectUrl: "/admin/recrawl",
 		linkLabel: "Back to recrawl",
-	})).to("text/html");
+	}), bannerStateFromRequest(req)).to("text/html");
 	res.status(404).type("html").send(html.body);
 }
 
@@ -69,7 +70,7 @@ function handleLanding(req: Request, res: Response): void {
 	const submittedUrl =
 		typeof req.query.url === "string" ? req.query.url : undefined;
 	if (submittedUrl === undefined) {
-		const html = renderPage(req, AdminRecrawlLandingPage()).to("text/html");
+		const html = Base(AdminRecrawlLandingPage(), bannerStateFromRequest(req)).to("text/html");
 		res.status(html.statusCode).type("html").send(html.body);
 		return;
 	}
@@ -126,7 +127,7 @@ function handleRecrawlArticle(
 			pollUrlBuilder: pollUrlBuilderFor(articleUrl),
 		});
 
-		const html = renderPage(req, AdminRecrawlPage({
+		const html = Base(AdminRecrawlPage({
 			articleUrl,
 			metadata: existing.metadata,
 			estimatedReadTime: existing.estimatedReadTime,
@@ -138,7 +139,7 @@ function handleRecrawlArticle(
 			progress: state.progress,
 			contentSourceTier: existing.contentSourceTier,
 			extensionInstallUrl: extensionInstallUrlIfMissing(req),
-		})).to("text/html");
+		}), bannerStateFromRequest(req)).to("text/html");
 		assert(
 			state.crawl?.status === "pending",
 			"force-pending + resolveReaderState must leave the crawl in 'pending'",

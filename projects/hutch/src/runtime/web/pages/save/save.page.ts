@@ -1,7 +1,8 @@
 import type { Router } from "express";
 import express from "express";
 import { z } from "zod";
-import { renderPage } from "../../render-page";
+import { Base } from "../../base.component";
+import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
 import { collectUtmParams } from "../../shared/utm";
 import { SaveErrorPage } from "./save-error.component";
@@ -23,7 +24,7 @@ export function initSaveRoutes(): Router {
 		if (!url) {
 			const redirectUrl = req.userId ? "/queue" : "/";
 			const linkLabel = req.userId ? "Go to your queue" : "Go to homepage";
-			sendComponent(req, res, renderPage(req, SaveErrorPage({ redirectUrl, linkLabel })));
+			sendComponent(req, res, Base(SaveErrorPage({ redirectUrl, linkLabel }), bannerStateFromRequest(req)));
 			return;
 		}
 

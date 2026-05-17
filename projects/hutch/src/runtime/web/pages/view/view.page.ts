@@ -29,7 +29,8 @@ import { CacheableComponent } from "../../conditional-get";
 import { htmlToMarkdown } from "../../html-to-markdown";
 import { buildMarkdownFrontmatter } from "../../markdown-frontmatter";
 import { MarkdownPage } from "../../markdown-page";
-import { renderPage } from "../../render-page";
+import { Base } from "../../base.component";
+import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
 import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
@@ -59,7 +60,7 @@ interface ViewDependencies {
 function renderError(req: Request, res: Response) {
 	const redirectUrl = req.userId ? "/queue" : "/";
 	const linkLabel = req.userId ? "Go to your queue" : "Go to homepage";
-	sendComponent(req, res, renderPage(req, SaveErrorPage({ redirectUrl, linkLabel })));
+	sendComponent(req, res, Base(SaveErrorPage({ redirectUrl, linkLabel }), bannerStateFromRequest(req)));
 }
 
 function hostnameFrom(validatedUrl: string): string {
@@ -89,7 +90,7 @@ function handleViewLanding(deps: ViewDependencies) {
 		const submittedUrl =
 			typeof req.query.url === "string" ? req.query.url : undefined;
 		if (submittedUrl === undefined) {
-			sendComponent(req, res, renderPage(req, ViewLandingPage()));
+			sendComponent(req, res, Base(ViewLandingPage(), bannerStateFromRequest(req)));
 			return;
 		}
 		const validation = deps.validateSaveableUrl(submittedUrl);
@@ -185,7 +186,7 @@ function handleViewArticle(deps: ViewDependencies, reader: ReturnType<typeof ini
 
 		sendComponent(
 			req, res,
-			renderPage(req, ViewPage({
+			Base(ViewPage({
 				articleUrl,
 				metadata,
 				estimatedReadTime,
@@ -197,7 +198,7 @@ function handleViewArticle(deps: ViewDependencies, reader: ReturnType<typeof ini
 				progress: state.progress,
 				actions,
 				extensionInstallUrl: extensionInstallUrlIfMissing(req),
-			})),
+			}), bannerStateFromRequest(req)),
 		);
 	};
 }

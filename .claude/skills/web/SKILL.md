@@ -15,6 +15,23 @@ Pages and components follow a composable `Component` type. See:
 
 For page examples, see `projects/hutch/src/web/pages/*/`.
 
+### Don't DRY Trivial Composition
+
+A wrapper that only chains two function calls is not worth extracting. Inline the composition at the call site — the indirection hides what the route returns and forces readers to open another file to learn nothing.
+
+```typescript
+// ❌ BAD — wrapper adds a name but no logic
+export function renderPage(source: BannerStateSource, body: PageBody): Component {
+	return Base(body, bannerStateFromRequest(source));
+}
+sendComponent(req, res, renderPage(req, LoginPage(vm)));
+
+// ✅ GOOD — composition is visible at the call site
+sendComponent(req, res, Base(LoginPage(vm), bannerStateFromRequest(req)));
+```
+
+Extract a helper only when it owns real logic (branching, validation, transformation) — not when it just renames a chain.
+
 ## Server-Side Rendering with Progressive Enhancement
 
 This project uses an SSR-first approach. Core principles:

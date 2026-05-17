@@ -29,7 +29,8 @@ import type {
 	CreateCheckoutSession,
 	RetrieveCheckoutSession,
 } from "@packages/test-fixtures/providers/stripe-checkout";
-import { renderPage } from "../render-page";
+import { Base } from "../base.component";
+import { bannerStateFromRequest } from "../banner-state";
 import { sendComponent } from "../send-component";
 import { LoginSchema, SignupSchema } from "./auth.schema";
 import { LoginPage, SignupPage, VerifyEmailPage } from "./auth.component";
@@ -164,7 +165,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		}
 		const returnUrl = extractReturnUrl(req.query);
 		const userCount = await fetchUserCount();
-		sendComponent(req, res, renderPage(req, LoginPage({ returnUrl, userCount, foundingAllocation: deps.foundingAllocation })));
+		sendComponent(req, res, Base(LoginPage({ returnUrl, userCount, foundingAllocation: deps.foundingAllocation }), bannerStateFromRequest(req)));
 	});
 
 	router.post("/login", async (req: Request, res: Response) => {
@@ -175,7 +176,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				req, res,
-				renderPage(req, LoginPage(
+				Base(LoginPage(
 					{
 						returnUrl,
 						userCount,
@@ -184,7 +185,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						errors: flattenZodErrors(parsed.error.issues),
 					},
 					{ statusCode: 422 },
-				)),
+				), bannerStateFromRequest(req)),
 			);
 			return;
 		}
@@ -196,7 +197,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				req, res,
-				renderPage(req, LoginPage(
+				Base(LoginPage(
 					{
 						returnUrl,
 						userCount,
@@ -205,7 +206,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						globalError: "Invalid email or password",
 					},
 					{ statusCode: 422 },
-				)),
+				), bannerStateFromRequest(req)),
 			);
 			return;
 		}
@@ -224,7 +225,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		const userCount = await fetchUserCount();
 		const parsed = SignupQuerySchema.safeParse(req.query);
 		const email = parsed.success ? parsed.data.email : undefined;
-		sendComponent(req, res, renderPage(req, SignupPage({ returnUrl, userCount, foundingAllocation: deps.foundingAllocation, loadedAt: deps.now().getTime(), email })));
+		sendComponent(req, res, Base(SignupPage({ returnUrl, userCount, foundingAllocation: deps.foundingAllocation, loadedAt: deps.now().getTime(), email }), bannerStateFromRequest(req)));
 	});
 
 	router.post("/signup", async (req: Request, res: Response) => {
@@ -249,7 +250,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				req, res,
-				renderPage(req, SignupPage(
+				Base(SignupPage(
 					{
 						returnUrl,
 						userCount,
@@ -259,7 +260,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						errors: flattenZodErrors(parsed.error.issues),
 					},
 					{ statusCode: 422 },
-				)),
+				), bannerStateFromRequest(req)),
 			);
 			return;
 		}
@@ -271,7 +272,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				req, res,
-				renderPage(req, SignupPage(
+				Base(SignupPage(
 					{
 						returnUrl,
 						userCount,
@@ -281,7 +282,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						globalError: "An account with this email already exists",
 					},
 					{ statusCode: 422 },
-				)),
+				), bannerStateFromRequest(req)),
 			);
 			return;
 		}
@@ -296,7 +297,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 				sendComponent(
 					req,
 					res,
-					renderPage(req, SignupPage(
+					Base(SignupPage(
 						{
 							returnUrl,
 							userCount: refreshedCount,
@@ -306,7 +307,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 							globalError: "An account with this email already exists",
 						},
 						{ statusCode: 422 },
-					)),
+					), bannerStateFromRequest(req)),
 				);
 				return;
 			}
@@ -343,7 +344,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				req, res,
-				renderPage(req, SignupPage(
+				Base(SignupPage(
 					{
 						userCount,
 						foundingAllocation: deps.foundingAllocation,
@@ -351,7 +352,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 						globalError: "Missing checkout session — please start again.",
 					},
 					{ statusCode: 400 },
-				)),
+				), bannerStateFromRequest(req)),
 			);
 			return;
 		}
@@ -363,7 +364,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			const userCount = await fetchUserCount();
 			sendComponent(
 				req, res,
-				renderPage(req, SignupPage({ userCount, foundingAllocation: deps.foundingAllocation, loadedAt: deps.now().getTime(), globalError }, { statusCode })),
+				Base(SignupPage({ userCount, foundingAllocation: deps.foundingAllocation, loadedAt: deps.now().getTime(), globalError }, { statusCode }), bannerStateFromRequest(req)),
 			);
 		};
 
@@ -434,10 +435,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!token) {
 			sendComponent(
 				req, res,
-				renderPage(req, VerifyEmailPage({
+				Base(VerifyEmailPage({
 					success: false,
 					error: "No verification token provided.",
-				})),
+				}), bannerStateFromRequest(req)),
 			);
 			return;
 		}
@@ -447,10 +448,10 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 		if (!verifyResult.ok) {
 			sendComponent(
 				req, res,
-				renderPage(req, VerifyEmailPage({
+				Base(VerifyEmailPage({
 					success: false,
 					error: "This verification link is invalid or has already been used.",
-				})),
+				}), bannerStateFromRequest(req)),
 			);
 			return;
 		}
@@ -463,7 +464,7 @@ export function initAuthRoutes(deps: AuthDependencies): Router {
 			await deps.markSessionEmailVerified(sessionId);
 		}
 
-		sendComponent(req, res, renderPage(req, VerifyEmailPage({ success: true })));
+		sendComponent(req, res, Base(VerifyEmailPage({ success: true }), bannerStateFromRequest(req)));
 	});
 
 	router.post("/logout", async (req: Request, res: Response) => {

@@ -92,7 +92,8 @@ import type { FoundingAllocation } from "./web/shared/founding-progress/founding
 import { initDualAuth, type ValidateAccessToken } from "./web/dual-auth.middleware";
 import { initMarkExtensionInstalled } from "./web/mark-extension-installed.middleware";
 import { initOAuthRoutes } from "./web/oauth/oauth.routes";
-import { renderPage } from "./web/render-page";
+import { Base } from "./web/base.component";
+import { bannerStateFromRequest } from "./web/banner-state";
 import { sendComponent } from "./web/send-component";
 import { wantsMarkdown, wantsSiren } from "./web/content-negotiation";
 import { contentSignalMiddleware } from "./web/content-signal.middleware";
@@ -357,16 +358,16 @@ export function createApp(dependencies: AppDependencies): Express {
 		sendComponent(
 			req,
 			res,
-			renderPage(req, HomePage({ userCount, staticBaseUrl, browser, foundingAllocation })),
+			Base(HomePage({ userCount, staticBaseUrl, browser, foundingAllocation }), bannerStateFromRequest(req)),
 		);
 	});
 
 	app.get("/privacy", (req: Request, res: Response) => {
-		sendComponent(req, res, renderPage(req, PrivacyPage()));
+		sendComponent(req, res, Base(PrivacyPage(), bannerStateFromRequest(req)));
 	});
 
 	app.get("/terms", (req: Request, res: Response) => {
-		sendComponent(req, res, renderPage(req, TermsPage()));
+		sendComponent(req, res, Base(TermsPage(), bannerStateFromRequest(req)));
 	});
 
 	// Path-uniqued article fixture for staging e2e tests. The :id segment is
@@ -378,7 +379,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	// both expose it.
 	if (getEnv("NODE_ENV") !== "production") {
 		app.get("/e2e/article/:id", (req: Request, res: Response) => {
-			sendComponent(req, res, renderPage(req, E2EFixturePage()));
+			sendComponent(req, res, Base(E2EFixturePage(), bannerStateFromRequest(req)));
 		});
 	}
 
@@ -388,7 +389,7 @@ export function createApp(dependencies: AppDependencies): Express {
 			fetchFirefoxDownloadUrl(),
 			fetchChromeDownloadUrl(),
 		]);
-		sendComponent(req, res, renderPage(req, InstallPage({ firefox, chrome, browser })));
+		sendComponent(req, res, Base(InstallPage({ firefox, chrome, browser }), bannerStateFromRequest(req)));
 	});
 
 	const blogRouter = initBlogRoutes({ blogPosts });
@@ -568,7 +569,7 @@ export function createApp(dependencies: AppDependencies): Express {
 	app.use("/oauth", oauthRouter);
 
 	app.use((req: Request, res: Response) => {
-		sendComponent(req, res, renderPage(req, NotFoundPage()));
+		sendComponent(req, res, Base(NotFoundPage(), bannerStateFromRequest(req)));
 	});
 
 	return app;

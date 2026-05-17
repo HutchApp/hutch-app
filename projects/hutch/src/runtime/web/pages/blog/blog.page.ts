@@ -1,6 +1,7 @@
 import type { Request, Response, Router } from "express";
 import express from "express";
-import { renderPage } from "../../render-page";
+import { Base } from "../../base.component";
+import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
 import { BlogIndexPage } from "./blog-index.component";
 import { BlogPostPage } from "./blog-post.component";
@@ -19,7 +20,7 @@ export function initBlogRoutes(deps: { blogPosts: BlogPosts }): Router {
 
 	router.get("/", (req: Request, res: Response) => {
 		const posts = blogPosts.getAllPosts();
-		sendComponent(req, res, renderPage(req, BlogIndexPage({ posts })));
+		sendComponent(req, res, Base(BlogIndexPage({ posts }), bannerStateFromRequest(req)));
 	});
 
 	router.get("/:slug", (req: Request, res: Response) => {
@@ -30,10 +31,10 @@ export function initBlogRoutes(deps: { blogPosts: BlogPosts }): Router {
 		}
 		const post = blogPosts.findPostBySlug(req.params.slug);
 		if (!post) {
-			sendComponent(req, res, renderPage(req, NotFoundPage()));
+			sendComponent(req, res, Base(NotFoundPage(), bannerStateFromRequest(req)));
 			return;
 		}
-		sendComponent(req, res, renderPage(req, BlogPostPage({ post })));
+		sendComponent(req, res, Base(BlogPostPage({ post }), bannerStateFromRequest(req)));
 	});
 
 	return router;

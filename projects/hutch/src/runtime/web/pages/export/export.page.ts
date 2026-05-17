@@ -3,7 +3,8 @@ import type { Request, Response, Router } from "express";
 import express from "express";
 import type { FindEmailByUserId } from "@packages/test-fixtures/providers/auth";
 import type { PublishExportUserDataCommand } from "@packages/test-fixtures/providers/events";
-import { renderPage } from "../../render-page";
+import { Base } from "../../base.component";
+import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
 import { ExportPage } from "./export.component";
 
@@ -19,7 +20,7 @@ export function initExportRoutes(deps: ExportDependencies): Router {
 
 	router.get("/", (req: Request, res: Response) => {
 		const status = req.query.status === "preparing" ? "preparing" : "idle";
-		sendComponent(req, res, renderPage(req, ExportPage({ status })));
+		sendComponent(req, res, Base(ExportPage({ status }), bannerStateFromRequest(req)));
 	});
 
 	router.post("/start", async (req: Request, res: Response) => {

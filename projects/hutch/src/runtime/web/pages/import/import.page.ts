@@ -12,7 +12,8 @@ import {
 } from "@packages/domain/import-session";
 import type { ImportSessionStore } from "@packages/domain/import-session";
 import type { ValidateSaveableUrl, SaveableUrl, SaveableUrlErrorCode } from "@packages/domain/article";
-import { renderPage } from "../../render-page";
+import { Base } from "../../base.component";
+import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
 import type { QuerystringFeatureToggle } from "../../feature-toggle";
 import { saveArticleFromUrl, type SaveArticleFromUrlDependencies } from "../../shared/save-article/save-article-from-url";
@@ -59,7 +60,7 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 		}
 		const errorMessage = importErrorMessageMapping(req.query);
 		const vm = toImportUploadViewModel({ errorMessage });
-		sendComponent(req, res, renderPage(req, ImportUploadPage(vm)));
+		sendComponent(req, res, Base(ImportUploadPage(vm), bannerStateFromRequest(req)));
 	});
 
 	router.post("/", rawBodyParser, sizeLimitHandler, async (req: Request, res: Response) => {
@@ -109,7 +110,7 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 		const totalSelected =
 			pageResult.session.totalUrls - pageResult.session.deselected.size;
 		const vm = toImportViewModel(pageResult, totalSelected);
-		sendComponent(req, res, renderPage(req, ImportPage(vm)));
+		sendComponent(req, res, Base(ImportPage(vm), bannerStateFromRequest(req)));
 	});
 
 	router.post("/:id/toggle", async (req: Request, res: Response) => {

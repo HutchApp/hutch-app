@@ -44,7 +44,8 @@ import type { PublishLinkSaved } from "@packages/test-fixtures/providers/events"
 import type { PublishSaveLinkRawHtmlCommand } from "@packages/test-fixtures/providers/events";
 import type { PutPendingHtml } from "@packages/test-fixtures/providers/pending-html";
 import { saveArticleFromUrl, saveUnsaveableUrlStub } from "../../shared/save-article/save-article-from-url";
-import { renderPage } from "../../render-page";
+import { Base } from "../../base.component";
+import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
 import { RedirectComponent } from "../../redirect.component";
 import { CacheableComponent } from "../../conditional-get";
@@ -215,7 +216,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 
 		sendComponent(
 			req, res,
-			renderPage(req, ReaderPage({ ...ownedArticle, content: state.content }, {
+			Base(ReaderPage({ ...ownedArticle, content: state.content }, {
 				summary: state.summary,
 				summaryPollUrl: state.summaryPollUrl,
 				crawl: state.crawl,
@@ -223,7 +224,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				progress: state.progress,
 				audioEnabled,
 				extensionInstallUrl: extensionInstallUrlIfMissing(req),
-			})),
+			}), bannerStateFromRequest(req)),
 		);
 	});
 
@@ -294,7 +295,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 		const browser = detectBrowser(req);
 		sendComponent(
 			req, res,
-			renderPage(req, QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, extensionSavedArticle, browser, onboardingDismissed })),
+			Base(QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, extensionSavedArticle, browser, onboardingDismissed }), bannerStateFromRequest(req)),
 		);
 	});
 
@@ -493,7 +494,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 				summaryByUrl,
 				crawlByUrl,
 			});
-			sendComponent(req, res, renderPage(req, QueuePage(vm, { statusCode: 422 })));
+			sendComponent(req, res, Base(QueuePage(vm, { statusCode: 422 }), bannerStateFromRequest(req)));
 			return;
 		}
 

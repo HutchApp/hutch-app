@@ -4,7 +4,8 @@ import { z } from "zod";
 import ExpressOAuthServer from "@node-oauth/express-oauth-server";
 import type { OAuthModel } from "@packages/test-fixtures/providers/oauth";
 import { getClient, validateRedirectUri } from "@packages/test-fixtures/providers/oauth";
-import { renderPage } from "../render-page";
+import { Base } from "../base.component";
+import { bannerStateFromRequest } from "../banner-state";
 import { sendComponent } from "../send-component";
 import { OAuthAuthorizePage, OAuthCallbackPage } from "./oauth.component";
 
@@ -76,13 +77,13 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 
 		sendComponent(
 			req, res,
-			renderPage(req, OAuthAuthorizePage({
+			Base(OAuthAuthorizePage({
 				clientName: client.name,
 				clientId: client_id,
 				redirectUri: redirect_uri,
 				codeChallenge: parsed.data.code_challenge,
 				state,
-			})),
+			}), bannerStateFromRequest(req)),
 		);
 	});
 
@@ -163,7 +164,7 @@ export function initOAuthRoutes(deps: OAuthRouteDeps): Router {
 	});
 
 	router.get("/callback", (req: Request, res: Response) => {
-		sendComponent(req, res, renderPage(req, OAuthCallbackPage()));
+		sendComponent(req, res, Base(OAuthCallbackPage(), bannerStateFromRequest(req)));
 	});
 
 	return router;
