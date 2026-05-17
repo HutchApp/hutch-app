@@ -3,10 +3,13 @@ import type { CrawlArticle, CrawlArticleResult, ThumbnailImage } from "./crawl-a
 import type { CrawlFetch } from "./crawl-fetch";
 import { extensionFromContentType } from "./extension-from-content-type";
 import { headerOrUndefined } from "./header-utils";
+import { isPdfContentType, isPdfMagicBytes } from "./pdf-detect";
+import type { ExtractPdf } from "./pdf-extract.types";
 
 const FETCH_TIMEOUT_MS = 10000;
 const THUMBNAIL_FETCH_TIMEOUT_MS = 5000;
 const MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024;
+const MAX_PDF_BYTES = 25 * 1024 * 1024;
 
 /**
  * Browser-like headers required by Fastly/Cloudflare edge sniffers.
@@ -23,9 +26,10 @@ const X_TWITTER_PATTERN = /^https?:\/\/(x\.com|twitter\.com)\//;
 
 export function initCrawlArticle(deps: {
 	crawlFetch: CrawlFetch;
+	extractPdf: ExtractPdf;
 	logError: (message: string, error?: Error) => void;
 }): CrawlArticle {
-	const { crawlFetch, logError } = deps;
+	const { crawlFetch, extractPdf, logError } = deps;
 	return async (params) => {
 		if (X_TWITTER_PATTERN.test(params.url)) {
 			return fetchViaOembed({ crawlFetch, logError }, params);
@@ -44,12 +48,24 @@ export function initCrawlArticle(deps: {
 				return { status: "not-modified" };
 			}
 			if (!response.ok) {
-				deps.logError(`[CrawlArticle] HTTP ${response.status} for ${params.url}`);
+				logError(`[CrawlArticle] HTTP ${response.status} for ${params.url}`);
 				return { status: "failed" };
 			}
 			const contentType = response.headers.get("content-type") ?? "";
+			if (isPdfContentType(contentType)) {
+				return handlePdfResponse({ response, url: params.url, extractPdf, logError });
+			}
 			if (!isHtmlContentType(contentType)) {
-				deps.logError(`[CrawlArticle] Unexpected Content-Type "${contentType}" for ${params.url}`);
+				// Content-Type lied or is missing — fall back to a magic-byte sniff
+				// for PDFs. Many static origins serve PDFs as octet-stream or no
+				// header at all; sniffing the first 5 bytes matches what browsers
+				// and file(1) do.
+				const arrayBuffer = await response.arrayBuffer();
+				const buffer = Buffer.from(arrayBuffer);
+				if (isPdfMagicBytes(buffer)) {
+					return handlePdfBuffer({ buffer, response, url: params.url, extractPdf, logError });
+				}
+				logError(`[CrawlArticle] Unexpected Content-Type "${contentType}" for ${params.url}`);
 				return { status: "unsupported", reason: `non-html content type: ${contentType}` };
 			}
 			const html = await response.text();
@@ -68,10 +84,46 @@ export function initCrawlArticle(deps: {
 			if (thumbnailImage) result.thumbnailImage = thumbnailImage;
 			return result;
 		} catch (error) {
-			deps.logError(`[CrawlArticle] Network error for ${params.url}`, error instanceof Error ? error : undefined);
+			logError(`[CrawlArticle] Network error for ${params.url}`, error instanceof Error ? error : undefined);
 			return { status: "failed" };
 		}
 	};
+}
+
+async function handlePdfResponse(args: {
+	response: Response;
+	url: string;
+	extractPdf: ExtractPdf;
+	logError: (message: string, error?: Error) => void;
+}): Promise<CrawlArticleResult> {
+	const arrayBuffer = await args.response.arrayBuffer();
+	const buffer = Buffer.from(arrayBuffer);
+	return handlePdfBuffer({ buffer, response: args.response, url: args.url, extractPdf: args.extractPdf, logError: args.logError });
+}
+
+async function handlePdfBuffer(args: {
+	buffer: Buffer;
+	response: Response;
+	url: string;
+	extractPdf: ExtractPdf;
+	logError: (message: string, error?: Error) => void;
+}): Promise<CrawlArticleResult> {
+	if (args.buffer.length > MAX_PDF_BYTES) {
+		args.logError(`[CrawlArticle] PDF body too large (${args.buffer.length} bytes) for ${args.url}`);
+		return { status: "unsupported", reason: `pdf body too large: ${args.buffer.length} bytes` };
+	}
+	const extracted = await args.extractPdf({ buffer: args.buffer, url: args.url });
+	if (extracted.kind === "failed") {
+		args.logError(`[CrawlArticle] PDF extraction failed for ${args.url}: ${extracted.reason}`);
+		return { status: "unsupported", reason: `pdf extraction failed: ${extracted.reason}` };
+	}
+	const result: CrawlArticleResult & { status: "fetched" } = {
+		status: "fetched",
+		html: extracted.html,
+		etag: headerOrUndefined(args.response.headers, "etag"),
+		lastModified: headerOrUndefined(args.response.headers, "last-modified"),
+	};
+	return result;
 }
 
 async function fetchThumbnailImage(args: {

@@ -3,6 +3,8 @@ import { initCrawlArticle, DEFAULT_CRAWL_HEADERS } from "./crawl-article";
 import type { CrawlArticleResult } from "./crawl-article.types";
 import { initCrawlFetch } from "./crawl-fetch";
 import type { fetchCurl } from "./curl-fetch";
+import type { ExtractPdf } from "./pdf-extract.types";
+import { SCANNED_PDF_REASON } from "./pdf-html-helpers";
 
 const noopLogError = () => {};
 
@@ -12,10 +14,17 @@ const stubFetchCurl: typeof fetchCurl = async () => {
 	throw new Error("stub fetchCurl: not invoked");
 };
 
+// Default stub: PDF extraction is exercised by its own tests via `initCrawl`
+// overrides — the HTML-path tests must not silently invoke a real extractor.
+const stubExtractPdf: ExtractPdf = async () => {
+	throw new Error("stub extractPdf: not invoked");
+};
+
 function initCrawl(overrides?: {
 	fetch?: typeof fetch;
 	logError?: (message: string, error?: Error) => void;
 	fetchCurl?: typeof fetchCurl;
+	extractPdf?: ExtractPdf;
 }) {
 	const defaultFetch: typeof fetch = async () =>
 		new Response("<html></html>", {
@@ -29,6 +38,7 @@ function initCrawl(overrides?: {
 	});
 	return initCrawlArticle({
 		crawlFetch,
+		extractPdf: overrides?.extractPdf ?? stubExtractPdf,
 		logError: overrides?.logError ?? noopLogError,
 	});
 }
@@ -718,4 +728,135 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 	function assertFetched(result: CrawlArticleResult): asserts result is CrawlArticleResult & { status: "fetched" } {
 		assert(result.status === "fetched", `Expected 'fetched', got '${result.status}'`);
 	}
+});
+
+describe("initCrawlArticle — PDF branch", () => {
+	const pdfMagicBuffer = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(64, 0x20)]);
+
+	function pdfResponse(body: Buffer, headers: Record<string, string> = { "content-type": "application/pdf" }): Response {
+		return new Response(body, { status: 200, headers });
+	}
+
+	it("invokes extractPdf when Content-Type is application/pdf and returns synthetic HTML on success", async () => {
+		let capturedExtract: { buffer: Buffer; url: string } | undefined;
+		const extractPdf: ExtractPdf = async (params) => {
+			capturedExtract = params;
+			return { kind: "fetched", html: "<html><body><h1>Title</h1><p>Body</p></body></html>", title: "Title" };
+		};
+		const fakeFetch: typeof fetch = async () => pdfResponse(pdfMagicBuffer, {
+			"content-type": "application/pdf",
+			etag: '"pdf-123"',
+			"last-modified": "Wed, 21 Oct 2025 07:28:00 GMT",
+		});
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+
+		const result = await crawlArticle({ url: "https://example.com/doc.pdf" });
+
+		expect(result).toEqual({
+			status: "fetched",
+			html: "<html><body><h1>Title</h1><p>Body</p></body></html>",
+			etag: '"pdf-123"',
+			lastModified: "Wed, 21 Oct 2025 07:28:00 GMT",
+		});
+		expect(capturedExtract?.url).toBe("https://example.com/doc.pdf");
+		expect(capturedExtract?.buffer.subarray(0, 5).toString("ascii")).toBe("%PDF-");
+	});
+
+	it("invokes extractPdf for the application/x-pdf alias", async () => {
+		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>().mockResolvedValue({
+			kind: "fetched",
+			html: "<html><body><p>ok</p></body></html>",
+			title: "ok",
+		});
+		const fakeFetch: typeof fetch = async () => pdfResponse(pdfMagicBuffer, { "content-type": "application/x-pdf" });
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+
+		const result = await crawlArticle({ url: "https://example.com/legacy.pdf" });
+
+		expect(result.status).toBe("fetched");
+		expect(extractPdf).toHaveBeenCalledTimes(1);
+	});
+
+	it("falls back to magic-byte sniffing when Content-Type is octet-stream but body starts with %PDF-", async () => {
+		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>().mockResolvedValue({
+			kind: "fetched",
+			html: "<html><body><p>sniffed</p></body></html>",
+			title: "sniffed",
+		});
+		const fakeFetch: typeof fetch = async () => pdfResponse(pdfMagicBuffer, { "content-type": "application/octet-stream" });
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+
+		const result = await crawlArticle({ url: "https://example.com/noheader" });
+
+		expect(result.status).toBe("fetched");
+		expect(extractPdf).toHaveBeenCalledTimes(1);
+	});
+
+	it("falls back to magic-byte sniffing when Content-Type header is missing", async () => {
+		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>().mockResolvedValue({
+			kind: "fetched",
+			html: "<html><body><p>sniffed</p></body></html>",
+			title: "sniffed",
+		});
+		// Buffer body bypasses Response's auto Content-Type, so headers.get returns null.
+		const fakeFetch: typeof fetch = async () => new Response(pdfMagicBuffer, { status: 200, headers: {} });
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+
+		const result = await crawlArticle({ url: "https://example.com/silent" });
+
+		expect(result.status).toBe("fetched");
+		expect(extractPdf).toHaveBeenCalledTimes(1);
+	});
+
+	it("returns status 'unsupported' with the extractor reason when extractPdf reports failure", async () => {
+		const extractPdf: ExtractPdf = async () => ({ kind: "failed", reason: SCANNED_PDF_REASON });
+		const fakeFetch: typeof fetch = async () => pdfResponse(pdfMagicBuffer);
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf, logError });
+
+		const result = await crawlArticle({ url: "https://example.com/scan.pdf" });
+
+		expect(result).toEqual({
+			status: "unsupported",
+			reason: `pdf extraction failed: ${SCANNED_PDF_REASON}`,
+		});
+		expect(logError).toHaveBeenCalledWith(
+			`[CrawlArticle] PDF extraction failed for https://example.com/scan.pdf: ${SCANNED_PDF_REASON}`,
+		);
+	});
+
+	it("returns status 'unsupported' with the byte count when PDF body exceeds 25 MiB", async () => {
+		const oversize = Buffer.concat([Buffer.from("%PDF-1.4"), Buffer.alloc(25 * 1024 * 1024 + 1, 0x20)]);
+		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>();
+		const fakeFetch: typeof fetch = async () => pdfResponse(oversize);
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf, logError });
+
+		const result = await crawlArticle({ url: "https://example.com/huge.pdf" });
+
+		expect(result).toEqual({
+			status: "unsupported",
+			reason: `pdf body too large: ${oversize.length} bytes`,
+		});
+		expect(extractPdf).not.toHaveBeenCalled();
+		expect(logError).toHaveBeenCalledWith(
+			`[CrawlArticle] PDF body too large (${oversize.length} bytes) for https://example.com/huge.pdf`,
+		);
+	});
+
+	it("does not branch to extractPdf when Content-Type is non-PDF non-HTML and body lacks PDF magic bytes — surfaces 'unsupported'", async () => {
+		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>();
+		const fakeFetch: typeof fetch = async () => new Response("{}", {
+			status: 200,
+			headers: { "content-type": "application/json" },
+		});
+		const logError = jest.fn();
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf, logError });
+
+		const result = await crawlArticle({ url: "https://example.com/api" });
+
+		expect(result).toEqual({ status: "unsupported", reason: "non-html content type: application/json" });
+		expect(extractPdf).not.toHaveBeenCalled();
+		expect(logError).toHaveBeenCalledWith('[CrawlArticle] Unexpected Content-Type "application/json" for https://example.com/api');
+	});
 });

@@ -15,7 +15,7 @@ import {
 } from '@packages/test-fixtures'
 import { requireEnv } from '../runtime/domain/require-env'
 import { initRefreshArticleIfStale } from '@packages/test-fixtures/providers/article-freshness'
-import { DEFAULT_CRAWL_HEADERS, initCrawlArticle, initCrawlFetch } from '@packages/crawl-article'
+import { DEFAULT_CRAWL_HEADERS, initCrawlArticle, initCrawlFetch, initLazyPdfExtractTextOnly } from '@packages/crawl-article'
 import { theInformationPreParser } from '@packages/test-fixtures/providers/article-parser'
 import { initInMemoryRefreshArticleContent } from '@packages/test-fixtures/providers/events'
 import { initInMemoryUpdateFetchTimestamp } from '@packages/test-fixtures/providers/events'
@@ -32,7 +32,8 @@ const logger = HutchLogger.from(consoleLogger)
 
 const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }))
 const crawlFetch = initCrawlFetch({ fetch: globalThis.fetch, defaultHeaders: { ...DEFAULT_CRAWL_HEADERS } })
-const crawlArticle = initCrawlArticle({ crawlFetch, logError })
+const extractPdf = initLazyPdfExtractTextOnly()
+const crawlArticle = initCrawlArticle({ crawlFetch, extractPdf, logError })
 const { parseArticle, parseHtml } = initReadabilityParser({ crawlArticle, sitePreParsers: [theInformationPreParser], logError })
 
 /** E2E tests use localhost URLs because the test server IS localhost.

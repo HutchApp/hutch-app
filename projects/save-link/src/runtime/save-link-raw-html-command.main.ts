@@ -6,6 +6,7 @@ import { createDynamoDocumentClient } from "@packages/hutch-storage-client";
 import { requireEnv } from "../require-env";
 import { initReadPendingHtml } from "./providers/article-store/read-pending-html";
 import { initSaveLinkRawHtmlCommandHandler } from "./domain/save-link-raw-html/save-link-raw-html-command-handler";
+import { initLazyPdfExtractTextOnly } from "@packages/crawl-article";
 import { initObservabilityDepBundle } from "./dep-bundles/observability";
 import { initParserDepBundle } from "./dep-bundles/parser";
 import { initArticleStoreDepBundle } from "./dep-bundles/article-store";
@@ -26,8 +27,13 @@ const dynamoClient = createDynamoDocumentClient();
 const eventBridgeClient = new EventBridgeClient({});
 const now = () => new Date();
 
+// Text-only PDF extractor: this Lambda consumes already-fetched HTML from S3
+// (pendingHtml bucket) and never re-crawls a URL through crawlArticle, so the
+// OCR fallback (and its DeepInfra dependency) would be dead weight here.
+const extractPdf = initLazyPdfExtractTextOnly();
+
 const observability = initObservabilityDepBundle({ logger: consoleLogger, source: "save-link-raw-html", now });
-const parser = initParserDepBundle({ logError: observability.logError });
+const parser = initParserDepBundle({ logError: observability.logError, extractPdf });
 const articleStore = initArticleStoreDepBundle({ s3Client, dynamoClient, contentBucketName, articlesTable });
 const media = initMediaDepBundle({ parser, articleStore, logger: consoleLogger, imagesCdnBaseUrl });
 const events = initEventsDepBundle({ eventBridgeClient, eventBusName, sqsClient, generateSummaryQueueUrl });

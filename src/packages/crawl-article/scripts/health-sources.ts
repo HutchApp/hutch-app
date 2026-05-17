@@ -135,4 +135,18 @@ export const HEALTH_SOURCES: readonly HealthSource[] = [
 		expectedContent: "his stake in SpaceX last year by purchasing $1.4 billion of stock",
 		expectsThumbnail: true,
 	},
+	{
+		// First entry to exercise the PDF path. fai.org serves the file with
+		// Content-Type `application/pdf` and a clean text layer, so this canary
+		// exercises detection + pdfjs text extraction + Readability over the
+		// synthetic HTML.
+		//
+		// PDFs do not expose og:image/twitter:image metadata, so the thumbnail
+		// path is intentionally skipped — same precedent as the X/Twitter
+		// oembed entry below.
+		label: "PDF (FAI airmanship)",
+		url: "https://www.fai.org/sites/default/files/documents/airmanship_good.pdf",
+		expectedContent: "considerable confusion as to what airmanship actually comprises",
+		expectsThumbnail: false,
+	},
 ];
