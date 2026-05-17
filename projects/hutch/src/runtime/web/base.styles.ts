@@ -41,7 +41,6 @@ const LIGHT_THEME_VARIABLES: Record<string, string> = {
 	"--error-foreground": "hsl(0 0% 100%)",
 	"--error-bg": "hsl(0 43% 56% / 0.1)",
 	"--input-height": "48px",
-	"--header-height": "64px",
 	"--input-padding": "12px 16px",
 	"--input-font-size": "16px",
 	"--form-gap": "20px",
