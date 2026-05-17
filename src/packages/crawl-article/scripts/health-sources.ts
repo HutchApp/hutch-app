@@ -139,8 +139,7 @@ export const HEALTH_SOURCES: readonly HealthSource[] = [
 		// First entry to exercise the PDF path. fai.org serves the file with
 		// Content-Type `application/pdf` and a clean text layer, so this canary
 		// exercises detection + pdfjs text extraction + Readability over the
-		// synthetic HTML. The expectedContent phrase survives the full
-		// pipeline (verified locally before commit).
+		// synthetic HTML.
 		//
 		// PDFs do not expose og:image/twitter:image metadata, so the thumbnail
 		// path is intentionally skipped — same precedent as the X/Twitter

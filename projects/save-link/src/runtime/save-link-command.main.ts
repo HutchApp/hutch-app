@@ -33,9 +33,8 @@ const now = () => new Date();
 const deepInfraClient = new OpenAI({
 	apiKey: deepInfraApiKey,
 	baseURL: "https://api.deepinfra.com/v1/openai",
-	// 300s is gemma-4-31B-it's per-batch ceiling during the Step 0 probe; the
-	// Lambda timeout (360s after the bump) covers this with headroom for the
-	// non-LLM overhead of rendering + transport.
+	// 300s is gemma-4-31B-it's observed per-batch ceiling; the 360s Lambda
+	// timeout covers this with headroom for rendering + transport overhead.
 	timeout: 300_000,
 });
 

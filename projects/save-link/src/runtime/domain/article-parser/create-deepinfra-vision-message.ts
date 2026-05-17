@@ -2,8 +2,7 @@ import assert from "node:assert";
 
 /**
  * OpenAI-compatible vision request shape DeepInfra accepts for multimodal
- * models. Image inputs are base64 data URLs in `image_url` content blocks —
- * confirmed during the gemma-4-31B-it probe in this PR's planning phase.
+ * models. Image inputs are base64 data URLs in `image_url` content blocks.
  *
  * DeepInfra deprecated DeepSeek-OCR on 2026-05-07; the official deprecation
  * note points at google/gemma-4-31B-it as the replacement, which is what
@@ -39,10 +38,10 @@ type VisionChatCompletion = (params: {
 const MODEL_ID = "google/gemma-4-31B-it";
 
 /**
- * Per-batch output budget. The probe of a 13-page PDF returned ~6,914
- * completion tokens for the entire document. Capping each batch at 8,000
- * gives ~1,600 tokens of headroom per page in a 5-page batch — enough for
- * dense academic prose with bibliography while keeping the request bounded.
+ * Per-batch output budget. A 13-page PDF returns ~6,914 completion tokens for
+ * the entire document. Capping each batch at 8,000 gives ~1,600 tokens of
+ * headroom per page in a 5-page batch — enough for dense academic prose with
+ * bibliography while keeping the request bounded.
  */
 const MAX_BATCH_OUTPUT_TOKENS = 8000;
 

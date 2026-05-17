@@ -27,13 +27,7 @@ function stubPdfjsLib(params: {
 	};
 }
 
-/**
- * The crawler calls `renderPage` sequentially in a `for (let pageNum = 1; …)`
- * loop. The stub embeds the call-order index as the PNG payload byte so that
- * the createVisionMessage stub can read images back and verify which page
- * numbers landed in which batch. Avoiding any tagging on the page object
- * keeps the type assertions clean.
- */
+// Embeds call-order index as PNG payload byte to avoid tagging the page object
 function stubRenderPage(): RenderPdfPage {
 	let invocation = 0;
 	return async () => {

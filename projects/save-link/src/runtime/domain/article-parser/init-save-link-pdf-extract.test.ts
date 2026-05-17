@@ -19,10 +19,17 @@ function stubPdfjsLib(pageText: string): PdfjsLib {
 	};
 }
 
+function stubRenderablePage(): RenderablePdfPage {
+	return {
+		getViewport: () => ({ width: 0, height: 0 }),
+		render: () => ({ promise: Promise.resolve() }),
+	};
+}
+
 function stubPdfjsLibForRender(): PdfjsLibBase<RenderablePdfPage> {
 	return {
 		getDocument() {
-			return { promise: Promise.resolve({ numPages: 0, getMetadata: async () => ({}), getPage: async () => ({}) as RenderablePdfPage }) };
+			return { promise: Promise.resolve({ numPages: 0, getMetadata: async () => ({}), getPage: async () => stubRenderablePage() }) };
 		},
 	};
 }

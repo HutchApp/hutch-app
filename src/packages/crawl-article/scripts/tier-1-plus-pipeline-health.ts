@@ -18,7 +18,7 @@
  *
  * Required env:
  *   - RECRAWL_SERVICE_TOKEN: the shared secret
- *   - READPLACE_ORIGIN (optional): override origin (defaults to prod)
+ *   - READPLACE_ORIGIN: the origin URL (e.g. https://readplace.com)
  *
  * Run via: pnpm nx run @packages/crawl-article:tier-1-plus-pipeline-health
  */
@@ -33,19 +33,18 @@ function requireEnv(name: string): string {
 	return value;
 }
 
-const ORIGIN = process.env.READPLACE_ORIGIN ?? "https://readplace.com";
+const ORIGIN = requireEnv("READPLACE_ORIGIN");
 const SERVICE_TOKEN = requireEnv("RECRAWL_SERVICE_TOKEN");
 
 // 3s poll interval × 800 polls = 2400s (40 min) budget per source. A
 // successful Lambda cold start + crawl + parse + write still lands in a
 // few seconds; the budget exists to cover save-link's SQS retry → DLQ →
-// terminal markCrawlFailed path. The PDF-link-handling change bumped
-// saveLinkWork's Lambda timeout 180→360s and SQS visibility 360→720s
-// (≥2× Lambda timeout per AWS guidance) so the scanned-PDF OCR path has
-// room. Worst-case wall clock to DLQ is therefore visibility ×
-// maxReceiveCount = 720s × 3 = 2160s (~36 min); 40 min adds 4 min slack
-// for cold starts and the DLQ handler's terminal write — both of which
-// this canary MUST surface as a failing test, not a timeout.
+// terminal markCrawlFailed path. saveLinkWork's Lambda timeout is 360s
+// and SQS visibility is 720s (≥2× Lambda timeout per AWS guidance) so the
+// scanned-PDF OCR path has room. Worst-case wall clock to DLQ is therefore
+// visibility × maxReceiveCount = 720s × 3 = 2160s (~36 min); 40 min adds
+// 4 min slack for cold starts and the DLQ handler's terminal write — both
+// of which this canary MUST surface as a failing test, not a timeout.
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 2_400_000;
 

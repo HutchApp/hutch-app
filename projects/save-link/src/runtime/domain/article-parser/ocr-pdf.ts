@@ -4,19 +4,19 @@ import type { CreateVisionMessage } from "./create-deepinfra-vision-message";
 import type { RenderablePdfPage, RenderPdfPage } from "./render-pdf-page";
 
 /**
- * Pages per OCR request. The Step 0 probe showed wall-time scales with
- * (pages per request) × ~30s of generation. With 5 pages per batch, a 5/5/3
- * split of a 13-page PDF completed in 157s wall time when dispatched in
- * parallel — well inside the bumped 360s Lambda timeout. Bigger batches risk
- * exceeding the timeout; smaller batches multiply request overhead.
+ * Pages per OCR request. Wall-time scales with (pages per request) × ~30s of
+ * generation. With 5 pages per batch, a 5/5/3 split of a 13-page PDF
+ * completes in ~157s wall time when dispatched in parallel — well inside the
+ * 360s Lambda timeout. Bigger batches risk exceeding the timeout; smaller
+ * batches multiply request overhead.
  */
 const PAGES_PER_BATCH = 5;
 
 /**
  * Render at 150 DPI equivalent (scale ≈ 2 for a 72-DPI source PDF). High
  * enough that gemma-4-31B-it reads small caption text reliably; low enough
- * that page images stay around 300-500 KB after JPEG → PNG conversion. The
- * Step 0 probe used 150 DPI and achieved >97% character recall.
+ * that page images stay around 300-500 KB after JPEG → PNG conversion.
+ * 150 DPI achieves >97% character recall on gemma-4-31B-it.
  */
 const RENDER_SCALE = 2;
 

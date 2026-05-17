@@ -86,9 +86,9 @@ const linkSavedQueue = new HutchSQS("link-saved", {
 // saveLinkWork-bearing queues use 720s visibility = 2× the 360s Lambda
 // timeout (AWS guidance) so a long-running invocation never has the message
 // re-delivered to a second worker before the first finishes. The 360s
-// Lambda timeout is sized for the scanned-PDF OCR path: the canary probe
-// of a 13-page PDF with 3-way parallel batching against gemma-4-31B-it
-// completed in 157s wall time, so 360s is ~2× the worst observed.
+// Lambda timeout is sized for the scanned-PDF OCR path: a 13-page PDF with
+// 3-way parallel batching against gemma-4-31B-it completes in ~157s wall
+// time, so 360s is ~2× the worst observed.
 const saveLinkCommandQueue = new HutchSQS("save-link-command", {
 	visibilityTimeoutSeconds: 720,
 });
@@ -106,7 +106,7 @@ const saveAnonymousLinkCommandQueue = new HutchSQS("save-anonymous-link-command"
 });
 
 const saveLinkRawHtmlCommandQueue = new HutchSQS("save-link-raw-html-command", {
-	visibilityTimeoutSeconds: 720,
+	visibilityTimeoutSeconds: 480,
 });
 
 const anonymousLinkSavedQueue = new HutchSQS("anonymous-link-saved", {
@@ -150,10 +150,10 @@ const saveLinkCommandLambda = new HutchLambda("save-link-command", {
 	// rendered. Five pages in flight per batch × three concurrent batches stays
 	// well under the cap.
 	memorySize: 2048,
-	// 360s covers the worst-case scanned-PDF flow. Step 0 probe of a 13-page
-	// PDF with 3-way parallel batching against gemma-4-31B-it on DeepInfra
-	// completed in 157s; 360s is ~2× that for safety. Paired with 720s SQS
-	// visibility (≥2× Lambda timeout per AWS guidance).
+	// 360s covers the worst-case scanned-PDF flow: a 13-page PDF with 3-way
+	// parallel batching against gemma-4-31B-it on DeepInfra completes in ~157s;
+	// 360s is ~2× that for safety. Paired with 720s SQS visibility (≥2× Lambda
+	// timeout per AWS guidance).
 	timeout: 360,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
