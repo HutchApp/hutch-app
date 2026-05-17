@@ -208,11 +208,10 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 	entryPoint: "./src/runtime/save-link-raw-html-command.main.ts",
 	outputDir: ".lib/save-link-raw-html-command",
 	assetDir: "./src",
-	// Bumped in tandem with save-link-command: parses already-fetched HTML
-	// from S3 (pendingHtml) and never re-crawls PDFs, but the readability/
-	// linkedom path on large XHTML benefits from the same headroom.
-	memorySize: 2048,
-	timeout: 360,
+	// Text-only path (readability/linkedom on large XHTML + pdfjs text-layer).
+	// No canvas rendering or OCR, so less headroom than the OCR-capable Lambdas.
+	memorySize: 512,
+	timeout: 240,
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
 		CONTENT_BUCKET_NAME: contentBucketName,
