@@ -112,6 +112,40 @@ describe("initOcrPdf — parallel batched OCR", () => {
 		expect(result.html).not.toContain('id="y"');
 	});
 
+	it("strips <svg> and <math> elements from the vision response", async () => {
+		const ocr = initOcrPdf({
+			pdfjsLib: stubPdfjsLib({ numPages: 1, metadata: { Title: "SVG" } }),
+			renderPage: stubRenderPage(),
+			createVisionMessage: async () =>
+				"<p>safe</p><svg><foreignObject><div>xss</div></foreignObject></svg><math><mi>x</mi></math>",
+		});
+
+		const result = await ocr({ buffer: Buffer.from("%PDF"), url: "https://example.com/x.pdf" });
+
+		expect(result.kind).toBe("fetched");
+		if (result.kind !== "fetched") return;
+		expect(result.html).toContain("<p>safe</p>");
+		expect(result.html).not.toContain("<svg");
+		expect(result.html).not.toContain("<math");
+	});
+
+	it("drops href and src values starting with data:", async () => {
+		const ocr = initOcrPdf({
+			pdfjsLib: stubPdfjsLib({ numPages: 1, metadata: { Title: "Data" } }),
+			renderPage: stubRenderPage(),
+			createVisionMessage: async () =>
+				'<a href="data:text/html,<script>alert(1)</script>">click</a>' +
+				'<img src="data:image/png;base64,abc" alt="img">',
+		});
+
+		const result = await ocr({ buffer: Buffer.from("%PDF"), url: "https://example.com/x.pdf" });
+
+		expect(result.kind).toBe("fetched");
+		if (result.kind !== "fetched") return;
+		expect(result.html).not.toContain("data:");
+		expect(result.html).toContain('alt="img"');
+	});
+
 	it("drops href values starting with javascript:", async () => {
 		const ocr = initOcrPdf({
 			pdfjsLib: stubPdfjsLib({ numPages: 1, metadata: { Title: "JS" } }),

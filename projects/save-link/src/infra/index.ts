@@ -213,7 +213,7 @@ const saveLinkRawHtmlCommandLambda = new HutchLambda("save-link-raw-html-command
 	entryPoint: "./src/runtime/save-link-raw-html-command.main.ts",
 	outputDir: ".lib/save-link-raw-html-command",
 	assetDir: "./src",
-	// Text-only path (readability/linkedom on large XHTML + pdfjs text-layer).
+	// Text-only path (readability/linkedom on large XHTML).
 	// No canvas rendering or OCR, so less headroom than the OCR-capable Lambdas.
 	memorySize: 512,
 	timeout: 240,

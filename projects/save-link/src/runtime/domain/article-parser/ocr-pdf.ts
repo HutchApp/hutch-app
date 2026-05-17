@@ -107,7 +107,7 @@ function buildSyntheticHtml(params: { title: string; body: string }): string {
 
 const BLOCKED_ELEMENT_TAGS = new Set([
 	"script", "style", "iframe", "object", "embed", "form",
-	"input", "button", "link", "meta",
+	"input", "button", "link", "meta", "svg", "math",
 ]);
 
 const ALLOWED_ATTRIBUTES_BY_TAG: Record<string, ReadonlySet<string>> = {
@@ -132,7 +132,7 @@ function sanitizeFragment(fragmentHtml: string): string {
 		const allowed = ALLOWED_ATTRIBUTES_BY_TAG[tagName] ?? EMPTY_ATTR_SET;
 		for (const attr of Array.from(element.attributes)) {
 			const name = attr.name.toLowerCase();
-			if (!allowed.has(name) || ((name === "href" || name === "src") && /^\s*javascript:/i.test(attr.value))) {
+			if (!allowed.has(name) || ((name === "href" || name === "src") && /^\s*(javascript|data):/i.test(attr.value))) {
 				element.removeAttribute(attr.name);
 			}
 		}
