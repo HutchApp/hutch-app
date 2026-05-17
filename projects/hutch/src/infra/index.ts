@@ -564,6 +564,7 @@ new aws.cloudwatch.Dashboard("readplace-analytics", {
 					x: 0, y: 72, width: 12, height: 8,
 					view: "pie",
 				}),
+				/** Conversions — y=80; no excludeVisitorHashesClause() because conversion events carry no visitor_hash */
 				logWidget({
 					title: "Conversions by Source (unique users)",
 					logGroupNames: [hutchLogGroupName],
