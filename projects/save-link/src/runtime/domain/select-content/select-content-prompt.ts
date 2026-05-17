@@ -1,10 +1,15 @@
 import type { Tier } from "./tier.types";
 
 export const SELECT_CONTENT_SYSTEM_PROMPT = [
-	"Pick the more complete article body for the given URL.",
-	"Strong signals: coherent prose, paragraphs/headings, byline, dates.",
-	'Anti-signals: "verify you are human", "loading…", sitemap/navigation-only',
-	"content, boilerplate, off-topic chrome, error pages.",
+	"Pick the more complete AND less chrome-laden article body for the given URL.",
+	'"Most complete" means most actual article prose with the least gibberish.',
+	"Strong signals: coherent prose, paragraphs/headings, the substantive body text.",
+	'Anti-signals — penalise candidates carrying these: author byline/photo,',
+	'"N min read", publish date next to byline, "Press enter or click to view image",',
+	'"Get X\'s stories in your inbox", "Join Medium for free", "Remember me for faster',
+	'sign in", any sign-up/subscribe interstitial, "verify you are human", "loading…",',
+	"sitemap/navigation-only content, error pages, off-topic chrome.",
+	"Prefer a slightly shorter body that drops the chrome over a longer body that keeps it.",
 	'Reply with strict JSON only — no prose, no code fences: {"winner": "<label>" | "tie", "reason": "<short>"}.',
 	"<label> must be one of the candidate labels A, B, C, ... shown in the user message.",
 ].join(" ");

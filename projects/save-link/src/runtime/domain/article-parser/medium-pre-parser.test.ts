@@ -1,5 +1,10 @@
 import { mediumPreParser } from "./medium-pre-parser";
 
+/** Filler body that survives MIN_BODY_CHARS so individual rule tests can
+ * still assert on whatever the rule under test left behind. */
+const FILLER_PARAGRAPH =
+	"<p>This is filler body content that exceeds the minimum body character threshold so the pre-parser does not bail out and return undefined. The body must be long enough to land above the threshold after the rule under test has finished stripping the chrome elements being verified by the surrounding test case.</p>";
+
 function buildHtml(params: {
 	ogSiteName?: string;
 	appName?: string;
@@ -7,6 +12,7 @@ function buildHtml(params: {
 	titleTag?: string;
 	containerTag?: string;
 	includeContainer?: boolean;
+	includeFiller?: boolean;
 } = {}) {
 	const ogMeta = params.ogSiteName
 		? `<meta property="og:site_name" content="${params.ogSiteName}">`
@@ -16,7 +22,8 @@ function buildHtml(params: {
 		: "";
 	const titleTag = params.titleTag ?? "<title>Page</title>";
 	const tag = params.containerTag ?? "article";
-	const inner = params.articleInner ?? "";
+	const filler = params.includeFiller === false ? "" : FILLER_PARAGRAPH;
+	const inner = (params.articleInner ?? "") + filler;
 	const body = params.includeContainer === false ? inner : `<${tag}>${inner}</${tag}>`;
 	return `<html><head>${titleTag}${ogMeta}${appMeta}</head><body>${body}</body></html>`;
 }
@@ -48,12 +55,12 @@ describe("mediumPreParser.extract — fingerprint gate", () => {
 	it("accepts application-name=Medium as a fallback fingerprint", () => {
 		const html = buildHtml({
 			appName: "Medium",
-			articleInner: "<h1>Headline</h1><p>Body paragraph.</p>",
+			articleInner: "<h1>Headline</h1>",
 		});
 
 		const result = mediumPreParser.extract({ html });
 
-		expect(result?.bodyHtml).toContain("Body paragraph.");
+		expect(result?.bodyHtml).toContain("This is filler body content");
 	});
 
 	it("returns undefined when fingerprint present but no article container", () => {
@@ -65,14 +72,25 @@ describe("mediumPreParser.extract — fingerprint gate", () => {
 
 		expect(mediumPreParser.extract({ html })).toBeUndefined();
 	});
+
+	it("returns undefined when stripping reduces the body below MIN_BODY_CHARS so default Readability handles it", () => {
+		const html = buildHtml({
+			ogSiteName: "Medium",
+			includeFiller: false,
+			articleInner:
+				'<a href="/byline"><img data-testid="authorPhoto"></a><span data-testid="storyReadTime">5 min read</span>',
+		});
+
+		expect(mediumPreParser.extract({ html })).toBeUndefined();
+	});
 });
 
 describe("mediumPreParser.extract — author photo / read time / publish date", () => {
-	it("strips the byline cluster div when it wraps authorPhoto + storyReadTime", () => {
+	it("strips the author <a> link that wraps the authorPhoto img and removes the read-time + publish-date spans", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
 			articleInner:
-				'<div><img data-testid="authorPhoto" alt="Author"><span data-testid="storyReadTime">5 min read</span><span data-testid="storyPublishDate">Jun 21, 2018</span></div><p>Article body.</p>',
+				'<div><a href="/author"><img data-testid="authorPhoto" alt="Author"></a><span data-testid="storyReadTime">5 min read</span><span data-testid="storyPublishDate">Jun 21, 2018</span></div>',
 		});
 
 		const result = mediumPreParser.extract({ html });
@@ -80,14 +98,26 @@ describe("mediumPreParser.extract — author photo / read time / publish date", 
 		expect(result?.bodyHtml).not.toContain("authorPhoto");
 		expect(result?.bodyHtml).not.toContain("5 min read");
 		expect(result?.bodyHtml).not.toContain("Jun 21, 2018");
-		expect(result?.bodyHtml).toContain("Article body.");
+		expect(result?.bodyHtml).not.toContain('href="/author"');
+	});
+
+	it("preserves the filler body content alongside the chrome stripping", () => {
+		const html = buildHtml({
+			ogSiteName: "Medium",
+			articleInner:
+				'<div><a href="/author"><img data-testid="authorPhoto" alt="Author"></a></div>',
+		});
+
+		const result = mediumPreParser.extract({ html });
+
+		expect(result?.bodyHtml).toContain("This is filler body content");
 	});
 
 	it("preserves a storyReadTime-attributed span when its text is not 'N min read'", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
 			articleInner:
-				'<p><span data-testid="storyReadTime">Not a duration phrase</span></p><p>Body.</p>',
+				'<p><span data-testid="storyReadTime">Not a duration phrase</span></p>',
 		});
 
 		const result = mediumPreParser.extract({ html });
@@ -106,11 +136,11 @@ describe("mediumPreParser.extract — author photo / read time / publish date", 
 		expect(result?.bodyHtml).toContain("The presentation will be 5 min read on the agenda.");
 	});
 
-	it("strips 'Jun 21, 2018' formatted storyPublishDate", () => {
+	it("strips 'Jun 21, 2018' formatted storyPublishDate inside its enclosing <p>", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
 			articleInner:
-				'<p><span data-testid="storyPublishDate">Jun 21, 2018</span></p><p>Body.</p>',
+				'<p><span data-testid="storyPublishDate">Jun 21, 2018</span></p>',
 		});
 
 		const result = mediumPreParser.extract({ html });
@@ -118,10 +148,10 @@ describe("mediumPreParser.extract — author photo / read time / publish date", 
 		expect(result?.bodyHtml).not.toContain("Jun 21, 2018");
 	});
 
-	it("strips 'Jun 21' (no year) formatted storyPublishDate", () => {
+	it("strips 'Jun 21' (no year) formatted storyPublishDate inside its enclosing <p>", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
-			articleInner: '<p><span data-testid="storyPublishDate">Jun 21</span></p><p>Body.</p>',
+			articleInner: '<p><span data-testid="storyPublishDate">Jun 21</span></p>',
 		});
 
 		const result = mediumPreParser.extract({ html });
@@ -140,16 +170,15 @@ describe("mediumPreParser.extract — author photo / read time / publish date", 
 		expect(result?.bodyHtml).toContain("I visited Jun 21, 2018 to remember the date.");
 	});
 
-	it("falls back to removing only the authorPhoto img when no byline cluster div is identifiable", () => {
+	it("removes just the authorPhoto img when it has no enclosing <a> link", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
-			articleInner: '<img data-testid="authorPhoto" alt="Author"><p>Body.</p>',
+			articleInner: '<img data-testid="authorPhoto" alt="Author">',
 		});
 
 		const result = mediumPreParser.extract({ html });
 
 		expect(result?.bodyHtml).not.toContain("authorPhoto");
-		expect(result?.bodyHtml).toContain("Body.");
 	});
 });
 
@@ -182,23 +211,22 @@ describe("mediumPreParser.extract — picture tooltip", () => {
 });
 
 describe("mediumPreParser.extract — claps separator '--'", () => {
-	it("strips a <p><span>--</span></p> that follows the byline cluster in document order", () => {
+	it("strips a <p><span>--</span></p> that follows the authorPhoto in document order", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
 			articleInner:
-				'<div><img data-testid="authorPhoto" alt="A"><span data-testid="storyReadTime">5 min read</span></div><p><span>--</span></p><p>Body.</p>',
+				'<div><img data-testid="authorPhoto" alt="A"></div><p><span>--</span></p>',
 		});
 
 		const result = mediumPreParser.extract({ html });
 
-		expect(result?.bodyHtml).toContain("Body.");
 		expect(result?.bodyHtml).not.toMatch(/<p[^>]*><span[^>]*>\s*--\s*<\/span><\/p>/);
 	});
 
-	it("preserves a <p><span>--</span></p> when no byline cluster is present", () => {
+	it("preserves a <p><span>--</span></p> when no authorPhoto anchor is present", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
-			articleInner: "<p><span>--</span></p><p>Body.</p>",
+			articleInner: "<p><span>--</span></p>",
 		});
 
 		const result = mediumPreParser.extract({ html });
@@ -210,7 +238,7 @@ describe("mediumPreParser.extract — claps separator '--'", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
 			articleInner:
-				'<div><img data-testid="authorPhoto" alt="A"><span data-testid="storyReadTime">5 min read</span></div><p>The point — really — is preserved.</p>',
+				'<div><img data-testid="authorPhoto" alt="A"></div><p>The point — really — is preserved.</p>',
 		});
 
 		const result = mediumPreParser.extract({ html });

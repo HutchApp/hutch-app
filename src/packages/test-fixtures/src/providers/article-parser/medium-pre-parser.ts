@@ -38,9 +38,12 @@ const TITLE_SUFFIX_REGEX = /\s+[|\-–—]\s+.+$/;
  * medium.com and *.medium.com; authoritative detection happens in
  * `extract` via an HTML fingerprint (`<meta property="og:site_name"
  * content="Medium">` or `<meta name="application-name" content="Medium">`).
- * `extract` returns `undefined` when the fingerprint is missing or the
- * article container can't be located, letting the default Readability
- * extraction handle the page. */
+ * `extract` returns `undefined` when the fingerprint is missing, the
+ * article container can't be located, or stripping reduced the body
+ * below `MIN_BODY_CHARS` — in any of those cases the default Readability
+ * extraction handles the page so we never emit an empty article. */
+const MIN_BODY_CHARS = 200;
+
 export const mediumPreParser: SitePreParser = {
 	matches: () => true,
 	extract: ({ html }): SiteArticleContent | undefined => {
@@ -51,22 +54,34 @@ export const mediumPreParser: SitePreParser = {
 		const container = findArticleContainer(document);
 		if (!container) return undefined;
 
-		const bylineCluster = findBylineCluster(container);
+		const authorImg = container.querySelector('img[data-testid="authorPhoto"]');
 
-		stripClapsSeparators({ container, bylineCluster });
-		if (bylineCluster) {
-			bylineCluster.remove();
-		} else {
-			container.querySelector('img[data-testid="authorPhoto"]')?.remove();
-		}
+		stripClapsSeparators({ container, anchorElement: authorImg });
+		authorImg?.closest("a")?.remove();
+		authorImg?.remove();
 
-		stripByDataTestId({ container, testId: "storyReadTime", textRegex: READ_TIME_REGEX });
-		stripByDataTestId({ container, testId: "storyPublishDate", textRegex: PUBLISH_DATE_REGEX });
+		stripWithEnclosingParagraph({
+			container,
+			testId: "storyReadTime",
+			textRegex: READ_TIME_REGEX,
+		});
+		stripWithEnclosingParagraph({
+			container,
+			testId: "storyPublishDate",
+			textRegex: PUBLISH_DATE_REGEX,
+		});
 		stripPictureTooltip(container);
 		stripFooterSubscribeCta(container);
 
+		const bodyHtml = container.innerHTML;
+		/* Defensive fall-through: if our stripping dropped the body too,
+		 * yield to the default Readability extraction rather than emit an
+		 * empty article. The downstream parser then runs Readability on the
+		 * raw HTML — chrome will leak through, but at least the body exists. */
+		if (bodyHtml.length < MIN_BODY_CHARS) return undefined;
+
 		const title = extractTitle({ container, document });
-		return { title, bodyHtml: container.innerHTML };
+		return { title, bodyHtml };
 	},
 };
 
@@ -89,25 +104,9 @@ function findArticleContainer(document: DomDocument): DomElement | null {
 	return null;
 }
 
-function findBylineCluster(container: DomElement): DomElement | null {
-	const authorImg = container.querySelector('img[data-testid="authorPhoto"]');
-	if (!authorImg) return null;
-	let candidate: DomElement | null = authorImg.parentElement;
-	while (candidate) {
-		if (isBylineCluster(candidate)) return candidate;
-		candidate = candidate.parentElement;
-	}
-	return null;
-}
-
-function isBylineCluster(node: DomElement): boolean {
-	if (node.tagName !== "DIV") return false;
-	if (node.querySelector('[data-testid="storyReadTime"]')) return true;
-	return node.querySelector('[data-testid="storyPublishDate"]') !== null;
-}
 
 /* c8 ignore start -- V8 block coverage phantom on typed-parameter destructuring + iterator, see bcoe/c8#319 */
-function stripByDataTestId(params: {
+function stripWithEnclosingParagraph(params: {
 	container: DomElement;
 	testId: string;
 	textRegex: RegExp;
@@ -115,7 +114,10 @@ function stripByDataTestId(params: {
 	const matches = params.container.querySelectorAll(`[data-testid="${params.testId}"]`);
 	for (const node of matches) {
 		const text = node.textContent ?? "";
-		if (params.textRegex.test(text)) node.remove();
+		if (!params.textRegex.test(text)) continue;
+		const enclosingParagraph = node.closest("p");
+		const target = enclosingParagraph ?? node;
+		target.remove();
 	}
 }
 /* c8 ignore stop */
@@ -133,29 +135,28 @@ function stripPictureTooltip(container: DomElement): void {
 	} /* c8 ignore next -- V8 block coverage phantom on for...of iterator close, see bcoe/c8#319 */
 }
 
-/* The "--" claps separator must follow the byline cluster in document
+/* The "--" claps separator must follow the byline anchor in document
  * order — otherwise an em-dash-only paragraph inside body prose could be
- * stripped by accident. We capture the byline cluster's position before
- * it is removed and compare against each candidate <p>'s position. */
-/* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
+ * stripped by accident. We use the author photo's position as the anchor;
+ * if there is no author photo, claps are not stripped. */
+/* c8 ignore start -- V8 block coverage phantom on typed-parameter destructuring + iterator + guard-continue, see bcoe/c8#319 */
 function stripClapsSeparators(params: {
 	container: DomElement;
-	bylineCluster: DomElement | null;
+	anchorElement: DomElement | null;
 }): void {
-	if (!params.bylineCluster) return;
+	if (!params.anchorElement) return;
 	const allElements = Array.from(params.container.querySelectorAll("*"));
-	const bylineIndex = allElements.indexOf(params.bylineCluster);
-	if (bylineIndex === -1) return;
+	const anchorIndex = allElements.indexOf(params.anchorElement);
+	if (anchorIndex === -1) return;
 	const paragraphs = params.container.querySelectorAll("p");
-	/* c8 ignore next -- V8 block coverage phantom on for...of iterator protocol, see bcoe/c8#319 */
 	for (const p of paragraphs) {
 		const text = (p.textContent ?? "").trim();
-		/* c8 ignore next -- V8 block coverage phantom on guard-continue inside iterator, see bcoe/c8#319 */
 		if (!CLAPS_SEPARATOR_REGEX.test(text)) continue;
 		const pIndex = allElements.indexOf(p);
-		if (pIndex > bylineIndex) p.remove();
+		if (pIndex > anchorIndex) p.remove();
 	}
 }
+/* c8 ignore stop */
 
 /* Removes the "Get X's stories in your inbox" footer block. Once the
  * containing section/div is removed, the sibling "Join Medium for free…"
