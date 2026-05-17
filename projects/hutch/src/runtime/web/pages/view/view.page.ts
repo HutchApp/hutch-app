@@ -32,7 +32,7 @@ import { MarkdownPage } from "../../markdown-page";
 import { Base } from "../../base.component";
 import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
-import { extensionInstallUrlIfMissing } from "../../onboarding/extension-install";
+import { extensionInstallUrlIfMissing, isExtensionInstalled } from "../../onboarding/extension-install";
 import { initArticleReader } from "../../shared/article-reader/article-reader";
 import type {
 	ArticleReaderDeps,
@@ -206,7 +206,7 @@ function handleViewArticle(deps: ViewDependencies, reader: ReturnType<typeof ini
 					actions,
 					extensionInstallUrl: extensionInstallUrlIfMissing(req),
 				}),
-				{ ...bannerStateFromRequest(req), showExtensionSuggestionBanner },
+				{ ...bannerStateFromRequest(req), showExtensionSuggestionBanner, extensionInstalled: isExtensionInstalled(req) },
 			),
 		);
 	};

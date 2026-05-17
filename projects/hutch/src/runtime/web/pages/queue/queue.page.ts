@@ -308,7 +308,7 @@ export function initQueueRoutes(deps: QueueDependencies): Router {
 			req, res,
 			Base(
 				QueuePage(vm, { saveUrl: filterUrl, extensionInstalled, extensionSavedArticle, browser, onboardingDismissed }),
-				{ ...bannerStateFromRequest(req), showExtensionSuggestionBanner },
+				{ ...bannerStateFromRequest(req), showExtensionSuggestionBanner, extensionInstalled },
 			),
 		);
 	});

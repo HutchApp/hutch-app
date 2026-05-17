@@ -204,6 +204,7 @@ function renderBaseTemplate(body: PageBody, state: BannerState): string {
 		showVerificationBanner: state.isAuthenticated && state.emailVerified === false,
 		extensionSuggestionBanner: renderExtensionSuggestionBanner({
 			show: state.showExtensionSuggestionBanner ?? false,
+			extensionInstalled: state.extensionInstalled ?? false,
 		}),
 		bodyClass: body.bodyClass,
 		header: renderHeader(headerVariant, { isAuthenticated: state.isAuthenticated }),
