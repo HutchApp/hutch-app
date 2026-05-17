@@ -1,5 +1,12 @@
 import { parseHTML } from "linkedom";
-import type { CrawlArticle, CrawlArticleResult, ThumbnailImage } from "./crawl-article.types";
+import type {
+	ComprehensiveCrawl,
+	CrawlArticle,
+	CrawlArticleResult,
+	SimpleCrawl,
+	ThumbnailImage,
+} from "./crawl-article.types";
+import { PDF_DETECTED_REASON } from "./crawl-article.types";
 import type { CrawlFetch } from "./crawl-fetch";
 import { extensionFromContentType } from "./extension-from-content-type";
 import { headerOrUndefined } from "./header-utils";
@@ -24,12 +31,19 @@ export const DEFAULT_CRAWL_HEADERS = {
 
 const X_TWITTER_PATTERN = /^https?:\/\/(x\.com|twitter\.com)\//;
 
-export function initCrawlArticle(deps: {
+/**
+ * Simple-path crawler: HTML body + oembed for X/Twitter, plus thumbnail
+ * extraction. When the origin serves a PDF (either via Content-Type or magic
+ * bytes), this factory returns `{ status: "unsupported", reason:
+ * PDF_DETECTED_REASON, ... }` instead of running the PDF extractor — the
+ * orchestrator is responsible for deciding whether to invoke
+ * `initComprehensiveCrawl` to materialise the document.
+ */
+export function initSimpleCrawl(deps: {
 	crawlFetch: CrawlFetch;
-	extractPdf: ExtractPdf;
 	logError: (message: string, error?: Error) => void;
-}): CrawlArticle {
-	const { crawlFetch, extractPdf, logError } = deps;
+}): SimpleCrawl {
+	const { crawlFetch, logError } = deps;
 	return async (params) => {
 		if (X_TWITTER_PATTERN.test(params.url)) {
 			return fetchViaOembed({ crawlFetch, logError }, params);
@@ -53,7 +67,7 @@ export function initCrawlArticle(deps: {
 			}
 			const contentType = response.headers.get("content-type") ?? "";
 			if (isPdfContentType(contentType)) {
-				return handlePdfResponse({ response, url: params.url, extractPdf, logError });
+				return { status: "unsupported", reason: PDF_DETECTED_REASON };
 			}
 			if (!isHtmlContentType(contentType)) {
 				// Content-Type lied or is missing — fall back to a magic-byte sniff
@@ -63,7 +77,7 @@ export function initCrawlArticle(deps: {
 				const arrayBuffer = await response.arrayBuffer();
 				const buffer = Buffer.from(arrayBuffer);
 				if (isPdfMagicBytes(buffer)) {
-					return handlePdfBuffer({ buffer, response, url: params.url, extractPdf, logError });
+					return { status: "unsupported", reason: PDF_DETECTED_REASON };
 				}
 				logError(`[CrawlArticle] Unexpected Content-Type "${contentType}" for ${params.url}`);
 				return { status: "unsupported", reason: `non-html content type: ${contentType}` };
@@ -90,15 +104,87 @@ export function initCrawlArticle(deps: {
 	};
 }
 
-async function handlePdfResponse(args: {
-	response: Response;
-	url: string;
+/**
+ * Comprehensive-path crawler: fetches and extracts PDF documents. Each call
+ * holds the worker for as long as pdfjs needs to walk the document, so this
+ * factory is kept separate from the simple HTML path — the save-link
+ * orchestrator only invokes it after the simple factory has identified a PDF.
+ *
+ * Non-PDF content from this factory is `unsupported` (the simple factory
+ * already covers HTML); used standalone it cannot decide what to do with
+ * arbitrary bodies and the orchestrator pattern owns that decision.
+ */
+export function initComprehensiveCrawl(deps: {
+	crawlFetch: CrawlFetch;
 	extractPdf: ExtractPdf;
 	logError: (message: string, error?: Error) => void;
-}): Promise<CrawlArticleResult> {
-	const arrayBuffer = await args.response.arrayBuffer();
-	const buffer = Buffer.from(arrayBuffer);
-	return handlePdfBuffer({ buffer, response: args.response, url: args.url, extractPdf: args.extractPdf, logError: args.logError });
+}): ComprehensiveCrawl {
+	const { crawlFetch, extractPdf, logError } = deps;
+	return async (params) => {
+		const headers: Record<string, string> = {};
+		if (params.etag) headers["if-none-match"] = params.etag;
+		if (params.lastModified) headers["if-modified-since"] = params.lastModified;
+
+		try {
+			const response = await crawlFetch(params.url, {
+				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+				headers,
+			});
+			if (response.status === 304) {
+				return { status: "not-modified" };
+			}
+			if (!response.ok) {
+				logError(`[CrawlArticle] HTTP ${response.status} for ${params.url}`);
+				return { status: "failed" };
+			}
+			const arrayBuffer = await response.arrayBuffer();
+			const buffer = Buffer.from(arrayBuffer);
+			const contentType = response.headers.get("content-type") ?? "";
+			if (isPdfContentType(contentType) || isPdfMagicBytes(buffer)) {
+				return handlePdfBuffer({
+					buffer,
+					response,
+					url: params.url,
+					extractPdf,
+					logError,
+					onPdfPage: params.onPdfPage,
+				});
+			}
+			logError(`[CrawlArticle] Comprehensive crawl invoked on non-pdf "${contentType}" for ${params.url}`);
+			return { status: "unsupported", reason: `non-pdf content type: ${contentType}` };
+		} catch (error) {
+			logError(`[CrawlArticle] Network error for ${params.url}`, error instanceof Error ? error : undefined);
+			return { status: "failed" };
+		}
+	};
+}
+
+/**
+ * Backwards-compatible composed crawler: runs the simple factory first and
+ * falls through to the comprehensive factory when the simple factory reports
+ * `PDF_DETECTED_REASON`. Callers that need to observe the boundary between the
+ * two halves (e.g. the save-link orchestrator marking a stage) should instead
+ * construct `initSimpleCrawl` and `initComprehensiveCrawl` directly and run
+ * the same compose themselves.
+ */
+export function initCrawlArticle(deps: {
+	crawlFetch: CrawlFetch;
+	extractPdf: ExtractPdf;
+	logError: (message: string, error?: Error) => void;
+}): CrawlArticle {
+	const simpleCrawl = initSimpleCrawl({ crawlFetch: deps.crawlFetch, logError: deps.logError });
+	const comprehensiveCrawl = initComprehensiveCrawl({
+		crawlFetch: deps.crawlFetch,
+		extractPdf: deps.extractPdf,
+		logError: deps.logError,
+	});
+	return async (params) => {
+		const simpleResult = await simpleCrawl(params);
+		if (simpleResult.status === "unsupported" && simpleResult.reason === PDF_DETECTED_REASON) {
+			return comprehensiveCrawl(params);
+		}
+		return simpleResult;
+	};
 }
 
 async function handlePdfBuffer(args: {
@@ -107,12 +193,17 @@ async function handlePdfBuffer(args: {
 	url: string;
 	extractPdf: ExtractPdf;
 	logError: (message: string, error?: Error) => void;
+	onPdfPage?: (params: { pageIndex: number; pageCount: number }) => void;
 }): Promise<CrawlArticleResult> {
 	if (args.buffer.length > MAX_PDF_BYTES) {
 		args.logError(`[CrawlArticle] PDF body too large (${args.buffer.length} bytes) for ${args.url}`);
 		return { status: "unsupported", reason: `pdf body too large: ${args.buffer.length} bytes` };
 	}
-	const extracted = await args.extractPdf({ buffer: args.buffer, url: args.url });
+	const extracted = await args.extractPdf({
+		buffer: args.buffer,
+		url: args.url,
+		onProgress: args.onPdfPage,
+	});
 	if (extracted.kind === "failed") {
 		args.logError(`[CrawlArticle] PDF extraction failed for ${args.url}: ${extracted.reason}`);
 		return { status: "unsupported", reason: `pdf extraction failed: ${extracted.reason}` };

@@ -1,7 +1,7 @@
 import posthtml from "posthtml";
 import urls from "@11ty/posthtml-urls";
 import { noopLogger } from "@packages/hutch-logger";
-import type { CrawlArticle } from "@packages/crawl-article";
+import type { ComprehensiveCrawl, SimpleCrawl } from "@packages/crawl-article";
 import { markCrawlFailed, markCrawlUnsupported } from "@packages/domain/article-aggregate";
 import { initSaveAnonymousLinkCommandHandler } from "./save-anonymous-link-command-handler";
 import { initProcessContentWithLocalMedia } from "./process-content-with-local-media";
@@ -57,10 +57,14 @@ const processContent = initProcessContentWithLocalMedia({
 	},
 });
 
-const successfulCrawl: CrawlArticle = async () => ({
+const successfulSimpleCrawl: SimpleCrawl = async () => ({
 	status: "fetched",
 	html: "<html><body><p>Article content</p></body></html>",
 });
+
+const rejectingComprehensiveCrawl: ComprehensiveCrawl = async () => {
+	throw new Error("comprehensiveCrawl invoked unexpectedly");
+};
 
 const successfulParse: ParseHtml = () => ({
 	ok: true,
@@ -75,7 +79,8 @@ const fixedNow = () => new Date("2026-04-18T12:00:00.000Z");
 
 function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	return initSaveAnonymousLinkCommandHandler({
-		crawlArticle: successfulCrawl,
+		simpleCrawl: successfulSimpleCrawl,
+		comprehensiveCrawl: rejectingComprehensiveCrawl,
 		parseHtml: successfulParse,
 		putTierSource: jest.fn().mockResolvedValue(undefined),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
@@ -115,11 +120,11 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 	});
 
 	it("does not write a tier source or publish anything when the crawl fails (record reported as batch failure)", async () => {
-		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
+		const failedSimpleCrawl: SimpleCrawl = async () => ({ status: "failed" });
 		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
 
-		const handler = createHandler({ crawlArticle: failedCrawl, putTierSource, publishEvent });
+		const handler = createHandler({ simpleCrawl: failedSimpleCrawl, putTierSource, publishEvent });
 
 		const result = await handler(
 			createSqsEvent({ url: "https://example.com/unreachable" }),
@@ -134,9 +139,9 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 
 	it("reports crawl failures via logParseError with the crawl status as reason (record routed to batchItemFailures for SQS retry)", async () => {
 		const logParseError = jest.fn();
-		const failedCrawl: CrawlArticle = async () => ({ status: "failed" });
+		const failedSimpleCrawl: SimpleCrawl = async () => ({ status: "failed" });
 
-		const handler = createHandler({ crawlArticle: failedCrawl, logParseError });
+		const handler = createHandler({ simpleCrawl: failedSimpleCrawl, logParseError });
 
 		const result = await handler(
 			createSqsEvent({ url: "https://example.com/unreachable" }),
@@ -189,24 +194,26 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		});
 	});
 
-	it("flips a non-html origin (e.g. PDF) atomically to crawlStatus='unsupported' + summaryStatus='skipped' via one markCrawlUnsupported transition, does NOT throw, and does NOT emit TierContentExtracted", async () => {
+	it("flips a non-html origin atomically to crawlStatus='unsupported' when simpleCrawl reports non-pdf unsupported (no comprehensive fall-through)", async () => {
 		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
 		const putTierSource: PutTierSource = jest.fn().mockResolvedValue(undefined);
-		const unsupportedCrawl: CrawlArticle = async () => ({
+		const comprehensiveCrawl = jest.fn<ReturnType<ComprehensiveCrawl>, Parameters<ComprehensiveCrawl>>();
+		const unsupportedSimpleCrawl: SimpleCrawl = async () => ({
 			status: "unsupported",
-			reason: "non-html content type: application/pdf",
+			reason: "non-html content type: application/octet-stream",
 		});
 
 		const handler = createHandler({
-			crawlArticle: unsupportedCrawl,
+			simpleCrawl: unsupportedSimpleCrawl,
+			comprehensiveCrawl,
 			transitionAndPersist,
 			publishEvent,
 			putTierSource,
 		});
 
 		const result = await handler(
-			createSqsEvent({ url: "https://example.com/doc.pdf" }),
+			createSqsEvent({ url: "https://example.com/blob" }),
 			stubContext,
 			() => {},
 		);
@@ -214,9 +221,10 @@ describe("initSaveAnonymousLinkCommandHandler", () => {
 		expect(result).toEqual({ batchItemFailures: [] });
 		expect(transitionAndPersist).toHaveBeenCalledTimes(1);
 		expect(transitionAndPersist).toHaveBeenCalledWith(markCrawlUnsupported, {
-			url: "https://example.com/doc.pdf",
-			input: { reason: { kind: "non-html-content", contentType: "non-html content type: application/pdf" } },
+			url: "https://example.com/blob",
+			input: { reason: { kind: "non-html-content", contentType: "non-html content type: application/octet-stream" } },
 		});
+		expect(comprehensiveCrawl).not.toHaveBeenCalled();
 		expect(putTierSource).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();
 	});

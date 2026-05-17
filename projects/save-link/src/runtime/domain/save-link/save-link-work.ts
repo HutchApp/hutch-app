@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 import type { HutchLogger } from "@packages/hutch-logger";
-import type { CrawlArticle, ThumbnailImage } from "@packages/crawl-article";
+import type {
+	ComprehensiveCrawl,
+	CrawlArticleResult,
+	SimpleCrawl,
+	ThumbnailImage,
+} from "@packages/crawl-article";
+import { PDF_DETECTED_REASON } from "@packages/crawl-article";
 import {
 	markCrawlFailed,
 	markCrawlUnsupported,
@@ -32,7 +38,8 @@ export type SaveLinkWorkResult = "tier-1-written" | "unsupported";
 
 /* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
 export function initSaveLinkWork(deps: {
-	crawlArticle: CrawlArticle;
+	simpleCrawl: SimpleCrawl;
+	comprehensiveCrawl: ComprehensiveCrawl;
 	parseHtml: ParseHtml;
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
@@ -50,7 +57,8 @@ export function initSaveLinkWork(deps: {
 	logPrefix: string;
 }): { saveLinkWork: (url: string) => Promise<SaveLinkWorkResult> } {
 	const {
-		crawlArticle,
+		simpleCrawl,
+		comprehensiveCrawl,
 		parseHtml,
 		putTierSource,
 		putImageObject,
@@ -79,26 +87,68 @@ export function initSaveLinkWork(deps: {
 		});
 	};
 
+	const recordTerminalUnsupported = async (
+		url: string,
+		reason: string,
+	): Promise<void> => {
+		logParseError({ url, reason: `crawl-unsupported: ${reason}` });
+		await transitionAndPersist(markCrawlUnsupported, {
+			url,
+			input: {
+				reason: { kind: "non-html-content", contentType: reason },
+			},
+		});
+		await emitTier1Failure(url);
+	};
+
 	const saveLinkWork = async (url: string): Promise<SaveLinkWorkResult> => {
 		await markCrawlStage({ url, stage: "crawl-fetching" });
-		const crawlResult = await crawlArticle({ url, fetchThumbnail: true });
-		if (crawlResult.status === "unsupported") {
-			// Permanently non-html origin (PDF, image, archive, …). The aggregate
-			// transition flips both axes atomically — crawl=unsupported AND
-			// summary=skipped("crawl-unsupported") — so the summary canary cannot
-			// see a half-written row pending forever between two updates. No
-			// throw: this is a successful terminal outcome, not work to retry.
-			logParseError({ url, reason: `crawl-unsupported: ${crawlResult.reason}` });
-			await transitionAndPersist(markCrawlUnsupported, {
+		const simpleResult = await simpleCrawl({ url, fetchThumbnail: true });
+
+		/**
+		 * Compose the simple → comprehensive fall-through inline so we can
+		 * interleave the `comprehensive-fetching` stage marker. The composed
+		 * `initCrawlArticle` cannot do this because the stage write must
+		 * land in DynamoDB between the simple result and the comprehensive
+		 * fetch, not after.
+		 */
+		let crawlResult: CrawlArticleResult;
+		if (simpleResult.status === "unsupported" && simpleResult.reason === PDF_DETECTED_REASON) {
+			await markCrawlStage({ url, stage: "comprehensive-fetching" });
+			/**
+			 * Server only commits two coarse stages — `comprehensive-fetching` and
+			 * `comprehensive-extracting` — and the client smoother interpolates the
+			 * percentage between them. Writing for every page on a 50-page PDF
+			 * would be 50 DynamoDB UpdateItems per article; latched on the first
+			 * page only, it is exactly one.
+			 */
+			let extractingMarked = false;
+			crawlResult = await comprehensiveCrawl({
 				url,
-				input: {
-					reason: {
-						kind: "non-html-content",
-						contentType: crawlResult.reason,
-					},
+				fetchThumbnail: true,
+				onPdfPage: ({ pageIndex }) => {
+					if (extractingMarked || pageIndex !== 1) return;
+					extractingMarked = true;
+					markCrawlStage({ url, stage: "comprehensive-extracting" }).catch((error: unknown) => {
+						logger.warn(`${logPrefix} comprehensive-extracting stage write failed`, {
+							url,
+							error: String(error),
+						});
+					});
 				},
 			});
-			await emitTier1Failure(url);
+		} else {
+			crawlResult = simpleResult;
+		}
+
+		if (crawlResult.status === "unsupported") {
+			// Permanently non-html origin (PDF that failed extraction, image, archive,
+			// …). The aggregate transition flips both axes atomically —
+			// crawl=unsupported AND summary=skipped("crawl-unsupported") — so the
+			// summary canary cannot see a half-written row pending forever between
+			// two updates. No throw: this is a successful terminal outcome, not work
+			// to retry.
+			await recordTerminalUnsupported(url, crawlResult.reason);
 			return "unsupported";
 		}
 		if (crawlResult.status !== "fetched") {

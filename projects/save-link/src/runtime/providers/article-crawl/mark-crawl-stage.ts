@@ -17,6 +17,8 @@ import { ArticleResourceUniqueId } from "../../domain/save-link/article-resource
 export type CrawlStage =
 	| "crawl-fetching"
 	| "crawl-fetched"
+	| "comprehensive-fetching"
+	| "comprehensive-extracting"
 	| "crawl-parsed"
 	| "crawl-metadata-written"
 	| "crawl-content-uploaded";
