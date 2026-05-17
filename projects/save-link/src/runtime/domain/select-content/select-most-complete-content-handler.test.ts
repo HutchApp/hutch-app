@@ -316,6 +316,7 @@ describe("initSelectMostCompleteContentHandler", () => {
 				contentFetchedAt: FIXED_NOW.toISOString(),
 				now: FIXED_NOW.toISOString(),
 				canonicalChanged: true,
+				canonicalContentHash: computeCanonicalContentHash(tier1.html),
 				userId: "user-1",
 			},
 		});
