@@ -138,9 +138,9 @@ describe("toImportViewModel", () => {
 });
 
 describe("toImportUploadViewModel", () => {
-	it("returns the upload action URL pre-baked with the feature flag so the form preserves the toggle", () => {
+	it("returns /import as the upload action URL", () => {
 		const vm = toImportUploadViewModel({});
-		expect(vm.uploadAction).toBe("/import?feature=import");
+		expect(vm.uploadAction).toBe("/import");
 	});
 
 	it("passes through an error message when provided", () => {

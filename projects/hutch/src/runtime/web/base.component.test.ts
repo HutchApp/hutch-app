@@ -17,7 +17,7 @@ function createTestPageBody(overrides: Partial<PageBody> = {}): PageBody {
 	};
 }
 
-const GUEST_STATE: BannerState = { isAuthenticated: false, emailVerified: undefined, featureImport: false };
+const GUEST_STATE: BannerState = { isAuthenticated: false, emailVerified: undefined };
 
 describe("Base component", () => {
 	it("should render a complete HTML page with the provided title", () => {
@@ -77,7 +77,7 @@ describe("Base component", () => {
 
 	it("should render authenticated navigation when state is authenticated", () => {
 		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: true, emailVerified: true, featureImport: false }).to("text/html");
+		const result = Base(page, { isAuthenticated: true, emailVerified: true }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const nav = doc.querySelector("[data-test-nav-variant]");
@@ -85,28 +85,20 @@ describe("Base component", () => {
 		expect(nav.getAttribute("data-test-nav-variant")).toBe("authenticated");
 	});
 
-	it("renders the Import Links nav item when featureImport is on for an authenticated request", () => {
+	it("renders the Import Links nav item for an authenticated request", () => {
 		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: true, emailVerified: true, featureImport: true }).to("text/html");
+		const result = Base(page, { isAuthenticated: true, emailVerified: true }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const link = doc.querySelector('[data-test-nav-item="import"]');
-		assert(link, "Import Links nav item must be rendered when the feature flag is on");
+		assert(link, "Import Links nav item must be rendered for authenticated users");
 		expect(link.textContent).toBe("Import Links");
-		expect(link.getAttribute("href")).toBe("/import?feature=import");
+		expect(link.getAttribute("href")).toBe("/import");
 	});
 
-	it("hides the Import Links nav item when featureImport is off", () => {
+	it("hides the Import Links nav item for unauthenticated requests", () => {
 		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: true, emailVerified: true, featureImport: false }).to("text/html");
-		const doc = new JSDOM(result.body).window.document;
-
-		expect(doc.querySelector('[data-test-nav-item="import"]')).toBeNull();
-	});
-
-	it("hides the Import Links nav item for unauthenticated requests even when featureImport is on", () => {
-		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: false, emailVerified: undefined, featureImport: true }).to("text/html");
+		const result = Base(page, { isAuthenticated: false, emailVerified: undefined }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		expect(doc.querySelector('[data-test-nav-item="import"]')).toBeNull();
@@ -190,7 +182,7 @@ describe("Base component", () => {
 
 	it("should show verification banner when authenticated and email not verified", () => {
 		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: true, emailVerified: false, featureImport: false }).to("text/html");
+		const result = Base(page, { isAuthenticated: true, emailVerified: false }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -201,7 +193,7 @@ describe("Base component", () => {
 
 	it("should hide verification banner when email is verified", () => {
 		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: true, emailVerified: true, featureImport: false }).to("text/html");
+		const result = Base(page, { isAuthenticated: true, emailVerified: true }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -211,7 +203,7 @@ describe("Base component", () => {
 
 	it("should hide verification banner when not authenticated", () => {
 		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: false, emailVerified: false, featureImport: false }).to("text/html");
+		const result = Base(page, { isAuthenticated: false, emailVerified: false }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");
@@ -221,7 +213,7 @@ describe("Base component", () => {
 
 	it("should hide verification banner when emailVerified is undefined", () => {
 		const page = createTestPageBody();
-		const result = Base(page, { isAuthenticated: true, emailVerified: undefined, featureImport: false }).to("text/html");
+		const result = Base(page, { isAuthenticated: true, emailVerified: undefined }).to("text/html");
 		const doc = new JSDOM(result.body).window.document;
 
 		const banner = doc.querySelector("[data-test-verify-banner]");

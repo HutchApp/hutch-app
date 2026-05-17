@@ -230,24 +230,8 @@ describe("Queue routes", () => {
 		});
 	});
 
-	describe("GET /queue?feature=import", () => {
-		it("surfaces the Import Links nav item but no longer renders the upload form on /queue", async () => {
-			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
-			const { auth } = harness;
-			const agent = await loginAgent(harness.server, auth);
-
-			const response = await agent.get("/queue?feature=import");
-
-			expect(response.status).toBe(200);
-			const doc = new JSDOM(response.text).window.document;
-			const navLink = doc.querySelector('[data-test-nav-item="import"]');
-			assert(navLink, "Import Links nav item must be rendered when the feature flag is on");
-			expect(navLink.getAttribute("href")).toBe("/import?feature=import");
-			expect(doc.querySelector("form.queue__import-form")).toBeNull();
-			expect(doc.querySelector('[data-test-form="import-file"]')).toBeNull();
-		});
-
-		it("does not surface the Import Links nav item when the feature flag is missing", async () => {
+	describe("GET /queue Import Links nav", () => {
+		it("surfaces the Import Links nav item and does not render the upload form on /queue", async () => {
 			const harness = useApp(createDefaultTestAppFixture(TEST_APP_ORIGIN));
 			const { auth } = harness;
 			const agent = await loginAgent(harness.server, auth);
@@ -256,7 +240,11 @@ describe("Queue routes", () => {
 
 			expect(response.status).toBe(200);
 			const doc = new JSDOM(response.text).window.document;
-			expect(doc.querySelector('[data-test-nav-item="import"]')).toBeNull();
+			const navLink = doc.querySelector('[data-test-nav-item="import"]');
+			assert(navLink, "Import Links nav item must be rendered for authenticated users");
+			expect(navLink.getAttribute("href")).toBe("/import");
+			expect(doc.querySelector("form.queue__import-form")).toBeNull();
+			expect(doc.querySelector('[data-test-form="import-file"]')).toBeNull();
 		});
 	});
 });

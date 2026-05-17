@@ -521,7 +521,6 @@ export function createApp(dependencies: AppDependencies): Express {
 		publishLinkSaved: deps.publishLinkSaved,
 		refreshArticleIfStale: deps.refreshArticleIfStale,
 		logError: deps.logError,
-		featureToggle,
 	});
 	app.use("/import", requireAuth, importRouter);
 

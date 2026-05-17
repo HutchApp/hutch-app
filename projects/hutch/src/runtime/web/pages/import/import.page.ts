@@ -15,7 +15,6 @@ import type { ValidateSaveableUrl, SaveableUrl, SaveableUrlErrorCode } from "@pa
 import { Base } from "../../base.component";
 import { bannerStateFromRequest } from "../../banner-state";
 import { sendComponent } from "../../send-component";
-import type { QuerystringFeatureToggle } from "../../feature-toggle";
 import { saveArticleFromUrl, type SaveArticleFromUrlDependencies } from "../../shared/save-article/save-article-from-url";
 import {
 	IMPORT_SKIPPED_COOKIE_NAME,
@@ -31,13 +30,12 @@ interface ImportRouteDependencies extends SaveArticleFromUrlDependencies {
 	validateSaveableUrl: ValidateSaveableUrl;
 	importSessionStore: ImportSessionStore;
 	logError: (message: string, error?: Error) => void;
-	featureToggle: QuerystringFeatureToggle;
 }
 
 const UPLOAD_ERROR_REDIRECT = {
-	tooLarge: "/import?feature=import&error_code=import_too_large",
-	noUrls: "/import?feature=import&error_code=import_no_urls",
-	sessionNotFound: "/import?feature=import&error_code=import_session_not_found",
+	tooLarge: "/import?error_code=import_too_large",
+	noUrls: "/import?error_code=import_no_urls",
+	sessionNotFound: "/import?error_code=import_session_not_found",
 } as const;
 
 export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
@@ -54,10 +52,6 @@ export function initImportSessionRoutes(deps: ImportRouteDependencies): Router {
 
 	router.get("/", (req: Request, res: Response) => {
 		assert(req.userId, "userId required - route must be protected by requireAuth");
-		if (!deps.featureToggle.isEnabled(req, "import")) {
-			res.redirect(303, "/queue");
-			return;
-		}
 		const errorMessage = importErrorMessageMapping(req.query);
 		const vm = toImportUploadViewModel({
 			errors: errorMessage ? [{ message: errorMessage }] : undefined,

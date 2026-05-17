@@ -10,7 +10,7 @@ export interface ImportUploadViewModel {
 export function toImportUploadViewModel(input: { errors?: readonly ComponentError[] }): ImportUploadViewModel {
 	return {
 		errors: input.errors,
-		uploadAction: "/import?feature=import",
+		uploadAction: "/import",
 	};
 }
 

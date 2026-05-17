@@ -21,10 +21,4 @@ describe("bannerStateFromRequest", () => {
 		expect(bannerStateFromRequest({ emailVerified: false }).emailVerified).toBe(false);
 		expect(bannerStateFromRequest({}).emailVerified).toBeUndefined();
 	});
-
-	it("sets featureImport=true only when query.feature === 'import'", () => {
-		expect(bannerStateFromRequest({ query: { feature: "import" } }).featureImport).toBe(true);
-		expect(bannerStateFromRequest({ query: { feature: "something-else" } }).featureImport).toBe(false);
-		expect(bannerStateFromRequest({}).featureImport).toBe(false);
-	});
 });
