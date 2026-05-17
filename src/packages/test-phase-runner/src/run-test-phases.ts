@@ -106,17 +106,18 @@ export interface TestPhaseRunnerDeps {
 	shouldSkipE2E: ShouldSkipE2EFn;
 }
 
-export const MAX_WORKERS = process.env.CI === "true" ? 4 : 2
+export const MAX_WORKERS = 2
 function resolveJestPhase(phase: JestPhase): ResolvedJestPhase {
 	const parts = [
 		"node_modules/.bin/jest",
 		`--testMatch="${phase.testMatch}"`,
 		`--testTimeout=${phase.timeout}`,
 		// --maxWorkers cap: integration tests hold open handles that cause jest
-		// worker force-exits above ~6 workers (Node 22, c8 10.x), truncating
-		// V8 coverage shards below the 99% statement threshold.
-		// CI uses 8 workers on the 8-vCPU runner to maximise parallelism.
-		// Local uses 2 workers to prevent force-exit coverage loss on dev machines.
+		// worker force-exits (Node 22, c8 10.x), truncating V8 coverage shards
+		// below the 99% statement threshold. 4 workers in CI still produced
+		// intermittent coverage loss (see run 25990750579 where
+		// runtime/domain/logger.ts and runtime/web/middleware/error-handler.ts
+		// dropped to 0%), so cap at 2 everywhere for deterministic shards.
 		`--maxWorkers=${MAX_WORKERS}`,
 	];
 	if (phase.testPathIgnorePatterns) {
