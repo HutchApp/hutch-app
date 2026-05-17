@@ -277,7 +277,7 @@ const saveAnonymousLinkCommandLambda = new HutchLambda("save-anonymous-link-comm
 	// Mirrors save-link-command: same crawl pipeline, same scanned-PDF OCR
 	// path, same headroom requirements.
 	memorySize: 2048,
-	timeout: 360,
+	timeout: 600,
 	// See save-link-command for the rationale on shipping mupdf via node_modules.
 	external: ["mupdf"],
 	environment: {
@@ -341,10 +341,10 @@ const staleCheckRequestedLambda = new HutchLambda("stale-check-requested", {
 	outputDir: ".lib/stale-check-requested",
 	assetDir: "./src",
 	// Mirrors save-link-command: stale PDFs go through the same vision-OCR path
-	// (mupdf rasterisation + DeepInfra). 2048 MB / 360s gives the same
+	// (mupdf rasterisation + DeepInfra). 2048 MB / 600s gives the same
 	// headroom for re-extraction.
 	memorySize: 2048,
-	timeout: 360,
+	timeout: 600,
 	external: ["mupdf"],
 	environment: {
 		DYNAMODB_ARTICLES_TABLE: articlesTableName,
@@ -573,7 +573,7 @@ const recrawlLinkInitiatedLambda = new HutchLambda("recrawl-link-initiated", {
 	// Mirrors save-link-command: re-fetches articles and may hit the scanned
 	// PDF OCR path on a recrawl.
 	memorySize: 2048,
-	timeout: 360,
+	timeout: 600,
 	// See save-link-command for the rationale on shipping mupdf via node_modules.
 	external: ["mupdf"],
 	environment: {
