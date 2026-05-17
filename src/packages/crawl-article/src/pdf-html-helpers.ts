@@ -20,10 +20,4 @@ export function deriveTitleFromUrl(url: string): string {
 	}
 }
 
-export function escapeHtmlText(text: string): string {
-	return text
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
-}
+export { default as escapeHtmlText } from "escape-html";

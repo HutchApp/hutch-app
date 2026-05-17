@@ -560,6 +560,9 @@ importers:
       '@packages/article-state-types':
         specifier: workspace:*
         version: link:../article-state-types
+      escape-html:
+        specifier: 1.0.3
+        version: 1.0.3
       linkedom:
         specifier: 0.18.12
         version: 0.18.12
@@ -567,6 +570,9 @@ importers:
         specifier: 4.10.38
         version: 4.10.38
     devDependencies:
+      '@types/escape-html':
+        specifier: 1.0.4
+        version: 1.0.4
       '@types/jest':
         specifier: 29.5.14
         version: 29.5.14
@@ -2712,6 +2718,9 @@ packages:
 
   '@types/cors@2.8.19':
     resolution: {integrity: sha512-mFNylyeyqN93lfe/9CSxOGREz8cpzAhH+E93xJ4xWQf62V8sQ/24reV2nyzUWM6H6Xji+GGHpkbLe7pVoUEskg==}
+
+  '@types/escape-html@1.0.4':
+    resolution: {integrity: sha512-qZ72SFTgUAZ5a7Tj6kf2SHLetiH5S6f8G5frB2SPQ3EyF02kxdyBFf4Tz4banE3xCgGnKgWLt//a6VuYHKYJTg==}
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
@@ -8787,6 +8796,8 @@ snapshots:
   '@types/cors@2.8.19':
     dependencies:
       '@types/node': 22.19.1
+
+  '@types/escape-html@1.0.4': {}
 
   '@types/estree@1.0.8': {}
 
