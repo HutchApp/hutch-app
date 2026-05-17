@@ -158,18 +158,23 @@ function stripClapsSeparators(params: {
 }
 /* c8 ignore stop */
 
-/* Removes the "Get X's stories in your inbox" footer block. Once the
- * containing section/div is removed, the sibling "Join Medium for free…"
- * and "Remember me for faster sign in" paragraphs are gone for free. The
- * defensive sweep at the end catches layout variants where Medium renders
- * those CTAs outside the same container. */
+/* Removes the "Get X's stories in your inbox" h2 and any join-medium /
+ * remember-me CTA paragraphs anywhere inside the article container.
+ *
+ * Earlier versions tried to remove the h2's enclosing <section> or <div>
+ * to wipe the whole subscribe widget in one shot, but Medium's SSR
+ * sometimes nests the subscribe h2 inside the article body's main
+ * <section> (the one wrapping the entire prose), so removing the
+ * "container" obliterated the body too. The narrow version just removes
+ * the h2 and the CTA paragraphs by their text fingerprint — the empty
+ * wrapping div remains in the bodyHtml but contributes no rendered text. */
+/* c8 ignore start -- V8 block coverage phantom on for...of iterator + function declaration, see bcoe/c8#319 */
 function stripFooterSubscribeCta(container: DomElement): void {
 	const headings = container.querySelectorAll("h2");
 	for (const h2 of headings) {
 		const text = h2.textContent ?? "";
 		if (!STORIES_IN_INBOX_REGEX.test(text)) continue;
-		/* c8 ignore next -- V8 block coverage phantom on call inside iterator, see bcoe/c8#319 */
-		removeFooterCluster({ container, h2 });
+		h2.remove();
 		break;
 	}
 	const remainingPs = container.querySelectorAll("p");
@@ -179,21 +184,11 @@ function stripFooterSubscribeCta(container: DomElement): void {
 	}
 }
 
-/* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
-function removeFooterCluster(params: { container: DomElement; h2: DomElement }): void {
-	let cluster = params.h2.closest("section");
-	if (cluster === null) cluster = params.h2.closest("div");
-	if (cluster && cluster !== params.container) {
-		cluster.remove();
-		return;
-	}
-	params.h2.remove();
-}
-
 function isFooterCtaParagraph(text: string): boolean {
 	if (JOIN_MEDIUM_REGEX.test(text)) return true;
 	return REMEMBER_ME_REGEX.test(text);
 }
+/* c8 ignore stop */
 
 function extractTitle(params: {
 	container: DomElement;
