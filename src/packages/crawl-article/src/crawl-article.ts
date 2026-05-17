@@ -30,6 +30,37 @@ export const DEFAULT_CRAWL_HEADERS = {
 
 const X_TWITTER_PATTERN = /^https?:\/\/(x\.com|twitter\.com)\//;
 
+function initConditionalFetch(deps: {
+	crawlFetch: CrawlFetch;
+	logError: (message: string, error?: Error) => void;
+}): (params: {
+	url: string;
+	etag?: string;
+	lastModified?: string;
+}) => Promise<
+	| { ok: true; response: Response }
+	| { ok: false; result: CrawlArticleResult }
+> {
+	const { crawlFetch, logError } = deps;
+	return async (params) => {
+		const headers: Record<string, string> = {};
+		if (params.etag) headers["if-none-match"] = params.etag;
+		if (params.lastModified) headers["if-modified-since"] = params.lastModified;
+		const response = await crawlFetch(params.url, {
+			signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+			headers,
+		});
+		if (response.status === 304) {
+			return { ok: false, result: { status: "not-modified" } };
+		}
+		if (!response.ok) {
+			logError(`[CrawlArticle] HTTP ${response.status} for ${params.url}`);
+			return { ok: false, result: { status: "failed" } };
+		}
+		return { ok: true, response };
+	};
+}
+
 /**
  * Simple-path crawler: HTML body + oembed for X/Twitter, plus thumbnail
  * extraction. Bails early with `{ status: "unsupported" }` on any content type
@@ -41,27 +72,16 @@ export function initSimpleCrawl(deps: {
 	logError: (message: string, error?: Error) => void;
 }): SimpleCrawl {
 	const { crawlFetch, logError } = deps;
+	const conditionalFetch = initConditionalFetch({ crawlFetch, logError });
 	return async (params) => {
 		if (X_TWITTER_PATTERN.test(params.url)) {
 			return fetchViaOembed({ crawlFetch, logError }, params);
 		}
 
-		const headers: Record<string, string> = {};
-		if (params.etag) headers["if-none-match"] = params.etag;
-		if (params.lastModified) headers["if-modified-since"] = params.lastModified;
-
 		try {
-			const response = await crawlFetch(params.url, {
-				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-				headers,
-			});
-			if (response.status === 304) {
-				return { status: "not-modified" };
-			}
-			if (!response.ok) {
-				logError(`[CrawlArticle] HTTP ${response.status} for ${params.url}`);
-				return { status: "failed" };
-			}
+			const outcome = await conditionalFetch(params);
+			if (!outcome.ok) return outcome.result;
+			const { response } = outcome;
 			const contentType = response.headers.get("content-type") ?? "";
 			if (!isHtmlContentType(contentType)) {
 				logError(`[CrawlArticle] Unexpected Content-Type "${contentType}" for ${params.url}`);
@@ -105,23 +125,12 @@ export function initComprehensiveCrawl(deps: {
 	logError: (message: string, error?: Error) => void;
 }): ComprehensiveCrawl {
 	const { crawlFetch, extractPdf, logError } = deps;
+	const conditionalFetch = initConditionalFetch({ crawlFetch, logError });
 	return async (params) => {
-		const headers: Record<string, string> = {};
-		if (params.etag) headers["if-none-match"] = params.etag;
-		if (params.lastModified) headers["if-modified-since"] = params.lastModified;
-
 		try {
-			const response = await crawlFetch(params.url, {
-				signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-				headers,
-			});
-			if (response.status === 304) {
-				return { status: "not-modified" };
-			}
-			if (!response.ok) {
-				logError(`[CrawlArticle] HTTP ${response.status} for ${params.url}`);
-				return { status: "failed" };
-			}
+			const outcome = await conditionalFetch(params);
+			if (!outcome.ok) return outcome.result;
+			const { response } = outcome;
 			const arrayBuffer = await response.arrayBuffer();
 			const buffer = Buffer.from(arrayBuffer);
 			const contentType = response.headers.get("content-type") ?? "";
