@@ -11,12 +11,9 @@ function hashEmail(email: string): string {
 }
 
 /**
- * Emits a single user_created event for every signup — both free and paid.
- * For paid signups the Stripe checkout session id is included so the event
- * can be cross-joined with Stripe payment data downstream. Attribution is
- * the first-touch click cookie at the moment of signup; the cookie is
- * device-scoped so a user who pays from a different browser than they
- * landed on will have no attribution on their paid event.
+ * Stripe checkout session id is included so events can be cross-joined with
+ * payment data downstream. Attribution is device-scoped — a user who pays from
+ * a different browser will have no attribution on their paid event.
  */
 export function emitUserCreated(
 	deps: {

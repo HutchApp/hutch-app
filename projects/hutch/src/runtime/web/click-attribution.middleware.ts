@@ -43,10 +43,9 @@ function extractReferrerHost(req: Request): string | undefined {
 }
 
 /**
- * Returns the parsed click attribution stored on the request cookie, or
- * undefined if no valid attribution exists. A cookie that fails schema
- * validation is treated as absent so the middleware can re-attribute on the
- * next eligible request rather than locking the user into a corrupted value.
+ * A cookie that fails schema validation is treated as absent so the middleware
+ * can re-attribute on the next eligible request rather than locking the user
+ * into a corrupted value.
  */
 export function readClickAttribution(req: Request): ClickAttribution | undefined {
 	const raw = req.cookies?.[CLICK_COOKIE_NAME];
@@ -61,13 +60,6 @@ export function readClickAttribution(req: Request): ClickAttribution | undefined
 	return result.success ? result.data : undefined;
 }
 
-/**
- * Captures first-touch attribution as a 30-day cookie. On a GET request that
- * carries any utm_* param OR an external referrer, and where no valid
- * attribution cookie is already set, this writes a JSON-encoded cookie with
- * the UTM params, referrer host, landing path, and first-seen timestamp.
- * Once written, subsequent UTM hits do not overwrite it — first-touch wins.
- */
 export function createClickAttributionMiddleware(deps: {
 	now: () => Date;
 }): RequestHandler {
