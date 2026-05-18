@@ -1,0 +1,164 @@
+name: Failed articles canary
+
+# Read-only DDB scan against the prod articles table that surfaces articles
+# whose state machines reached a terminal but unsuccessful outcome:
+#   - crawlStatus = failed | unsupported
+#   - summaryStatus = failed | skipped
+#
+# This canary is a debug worklist, not a pass/fail health check. The script
+# always exits 0 even when failed rows are present — the workflow opens an
+# @claude tracking issue with the URL list so the operator can re-save and
+# investigate each one. If a tracking issue is already open, the workflow
+# skips the scan entirely so a single backlog isn't re-posted day after day;
+# the next scan runs after the operator closes that issue.
+#
+# Runs daily at 07:00 AEST (30 minutes after the stuck-articles canary so the
+# three prod-scan canaries don't contend) and on demand from the Actions UI.
+
+on:
+  schedule:
+    - cron: '0 20 * * *'   # 07:00 AEST daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # `issues: write` is needed for the open-issue check (read via search API
+  # but `repo` scope is required) and for opening the tracking issue when the
+  # report is non-empty. The actual API call uses `secrets.PAT_TOKEN` so the
+  # comment author_association is OWNER and the claude-listener's gate clears.
+  issues: write
+
+jobs:
+  failed-articles-canary:
+    runs-on: ubuntu-latest
+    # Bind to the prod environment so AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+    # resolve to the prod-scoped credentials — the canary scans the prod
+    # articles table by name (DYNAMODB_ARTICLES_TABLE below).
+    environment: prod
+    timeout-minutes: 10
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-southeast-2
+      DYNAMODB_ARTICLES_TABLE: hutch-articles-cda0a08
+      READPLACE_ORIGIN: https://readplace.com
+      # 0 = no time gate (full historical scan). Raise to N to gate on
+      # `savedAt >= now - N days` once the operator has worked through the
+      # initial backlog and wants to narrow to recent regressions.
+      FAILED_ARTICLES_LOOKBACK_DAYS: '0'
+      FAILED_ARTICLES_REPORT_PATH: ${{ github.workspace }}/.failed-articles-report.json
+    steps:
+      - uses: actions/checkout@v6
+
+      # ┌──────────────────────────────────────────────────────────────────┐
+      # │ PRE-CHECK: skip the whole run if a tracking issue is already open│
+      # │ The canary surfaces a debug backlog the operator works through    │
+      # │ manually. Re-running while last cycle's issue is still open just  │
+      # │ re-posts the same list and adds noise. Close the issue when      │
+      # │ done (or stale) and the next scheduled run will open a fresh one.│
+      # └──────────────────────────────────────────────────────────────────┘
+      - name: Check for an existing open tracking issue
+        id: existing-issue
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const marker = '<!-- CLAUDE_FAILED_ARTICLES_FIX -->';
+            const search = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:body "${marker}"`,
+            });
+            if (search.data.total_count > 0) {
+              const issueNumber = search.data.items[0].number;
+              console.log(`Open tracking issue already exists: #${issueNumber} — skipping scan`);
+              core.setOutput('skip', 'true');
+              core.setOutput('issue_number', String(issueNumber));
+              return;
+            }
+            console.log('No open tracking issue — proceeding with scan');
+            core.setOutput('skip', 'false');
+
+      - uses: pnpm/action-setup@v4
+        if: steps.existing-issue.outputs.skip != 'true'
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v6
+        if: steps.existing-issue.outputs.skip != 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.existing-issue.outputs.skip != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run failed articles canary
+        if: steps.existing-issue.outputs.skip != 'true'
+        run: pnpm nx run @packages/check-failed-articles:check-failed-articles
+
+      # ┌──────────────────────────────────────────────────────────────────┐
+      # │ Open an @claude tracking issue when the report has any rows.     │
+      # │ The script always exits 0 — a non-empty report is a worklist,    │
+      # │ not a CI failure — so this step gates on the report file count   │
+      # │ instead of `failure()`.                                          │
+      # └──────────────────────────────────────────────────────────────────┘
+      - name: Open @claude issue if report has failed rows
+        if: steps.existing-issue.outputs.skip != 'true' && success()
+        uses: actions/github-script@v8
+        with:
+          # PAT_TOKEN ensures the issue author_association is OWNER, which is
+          # the gate claude-listener.yml checks before running.
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const reportPath = process.env.FAILED_ARTICLES_REPORT_PATH;
+            const runUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const today = new Date().toISOString().slice(0, 10);
+            const marker = '<!-- CLAUDE_FAILED_ARTICLES_FIX -->';
+
+            if (!fs.existsSync(reportPath)) {
+              console.log('No report file produced — nothing to open');
+              return;
+            }
+            const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+            const failed = report.failed ?? [];
+            if (failed.length === 0) {
+              console.log('Zero failed rows — nothing to open');
+              return;
+            }
+
+            const failedList = failed
+              .map((row) => {
+                const axes = row.axes.join(',');
+                const reasonEntries = Object.entries(row.reasons ?? {});
+                const reasonText = reasonEntries.length === 0
+                  ? '(no stored reason)'
+                  : reasonEntries.map(([axis, reason]) => `${axis}: ${reason}`).join(' | ');
+                return `- [${axes}] ${row.originalUrl} — ${reasonText}; saved: ${row.savedAt}; fetched: ${row.contentFetchedAt ?? '-'}; recrawl: ${row.recrawlUrl}`;
+              })
+              .join('\n');
+
+            const body = [
+              marker,
+              '',
+              '@claude The failed-articles canary surfaced rows whose state machines reached a terminal unsuccessful outcome. Use your Read tool to read `.github/workflows/failed-articles-canary.md` for instructions.',
+              '',
+              '## Context',
+              `- **Run**: ${runUrl}`,
+              `- **Date (UTC)**: ${today}`,
+              `- **Failed rows**: ${failed.length}`,
+              '',
+              '## Failed rows',
+              failedList,
+            ].join('\n');
+
+            const title = `[Failed articles canary ${today}] ${failed.length} failed row(s)`;
+            const created = await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+            });
+            console.log(`Created issue #${created.data.number}: ${title}`);
