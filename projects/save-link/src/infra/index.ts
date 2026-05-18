@@ -57,9 +57,9 @@ const pendingHtmlBucketName = config.require("pendingHtmlBucketName");
  * (`.lib/`) and recreated on every deploy. If it's missing, the build step
  * was skipped — re-run `pnpm build-image` (or check CI ordering).
  */
-const ocrImageTags = z.record(z.string(), z.string()).parse(
-	JSON.parse(readFileSync(".lib/ocr-image-tags.json", "utf-8")),
-);
+const ocrImageTags = z
+	.object({ "comprehensive-crawl-command": z.string() })
+	.parse(JSON.parse(readFileSync(".lib/ocr-image-tags.json", "utf-8")));
 
 // --- Content S3 Bucket ---
 
