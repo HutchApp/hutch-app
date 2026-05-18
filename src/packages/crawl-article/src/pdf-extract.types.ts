@@ -9,7 +9,20 @@ export type PdfExtractResult =
 	| { kind: "fetched"; html: string; title: string }
 	| { kind: "failed"; reason: string };
 
-export type ExtractPdf = (params: { buffer: Buffer; url: string }) => Promise<PdfExtractResult>;
+/**
+ * Optional callback the extractor fires after each page so the orchestrator
+ * can record progress for the reader-facing progress bar. The callback is
+ * synchronous and best-effort — the extractor does not await it and never
+ * surfaces errors from it. Page indices are 1-based to match the pdfjs
+ * `getPage(pageNum)` numbering.
+ */
+export type PdfExtractProgress = (params: { pageIndex: number; pageCount: number }) => void;
+
+export type ExtractPdf = (params: {
+	buffer: Buffer;
+	url: string;
+	onProgress?: PdfExtractProgress;
+}) => Promise<PdfExtractResult>;
 
 /**
  * Per-page handle: knows how to rasterise itself to a PNG buffer at the

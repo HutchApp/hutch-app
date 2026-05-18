@@ -1,6 +1,11 @@
 import { createHash } from "node:crypto";
 import type { HutchLogger } from "@packages/hutch-logger";
-import type { CrawlArticle, ThumbnailImage } from "@packages/crawl-article";
+import type {
+	ComprehensiveCrawl,
+	CrawlArticleResult,
+	SimpleCrawl,
+	ThumbnailImage,
+} from "@packages/crawl-article";
 import {
 	markCrawlFailed,
 	markCrawlUnsupported,
@@ -32,7 +37,8 @@ export type SaveLinkWorkResult = "tier-1-written" | "unsupported";
 
 /* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
 export function initSaveLinkWork(deps: {
-	crawlArticle: CrawlArticle;
+	simpleCrawl: SimpleCrawl;
+	comprehensiveCrawl: ComprehensiveCrawl;
 	parseHtml: ParseHtml;
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
@@ -50,7 +56,8 @@ export function initSaveLinkWork(deps: {
 	logPrefix: string;
 }): { saveLinkWork: (url: string) => Promise<SaveLinkWorkResult> } {
 	const {
-		crawlArticle,
+		simpleCrawl,
+		comprehensiveCrawl,
 		parseHtml,
 		putTierSource,
 		putImageObject,
@@ -79,26 +86,74 @@ export function initSaveLinkWork(deps: {
 		});
 	};
 
-	const saveLinkWork = async (url: string): Promise<SaveLinkWorkResult> => {
+	const recordTerminalUnsupported = async (
+		url: string,
+		reason: string,
+	): Promise<void> => {
+		logParseError({ url, reason: `crawl-unsupported: ${reason}` });
+		await transitionAndPersist(markCrawlUnsupported, {
+			url,
+			input: {
+				reason: { kind: "non-html-content", contentType: reason },
+			},
+		});
+		await emitTier1Failure(url);
+	};
+
+	/**
+	 * Compose the simple → comprehensive fall-through inline so we can
+	 * interleave stage markers between the two crawl phases. The composed
+	 * `initCrawlArticle` cannot do this because the stage write must land
+	 * in DynamoDB between the simple result and the comprehensive fetch.
+	 *
+	 * Each path writes its own stages: simple writes `crawl-fetched` when
+	 * the fetch succeeds; comprehensive writes `comprehensive-fetching` and
+	 * `comprehensive-extracting`. The caller receives a `CrawlArticleResult`
+	 * and never needs to know which path produced it.
+	 */
+	const resolveCrawl = async (url: string): Promise<CrawlArticleResult> => {
 		await markCrawlStage({ url, stage: "crawl-fetching" });
-		const crawlResult = await crawlArticle({ url, fetchThumbnail: true });
-		if (crawlResult.status === "unsupported") {
-			// Permanently non-html origin (PDF, image, archive, …). The aggregate
-			// transition flips both axes atomically — crawl=unsupported AND
-			// summary=skipped("crawl-unsupported") — so the summary canary cannot
-			// see a half-written row pending forever between two updates. No
-			// throw: this is a successful terminal outcome, not work to retry.
-			logParseError({ url, reason: `crawl-unsupported: ${crawlResult.reason}` });
-			await transitionAndPersist(markCrawlUnsupported, {
+		const simpleResult = await simpleCrawl({ url, fetchThumbnail: true });
+
+		if (simpleResult.status === "unsupported") {
+			await markCrawlStage({ url, stage: "comprehensive-fetching" });
+			return comprehensiveCrawl({
 				url,
-				input: {
-					reason: {
-						kind: "non-html-content",
-						contentType: crawlResult.reason,
-					},
+				/**
+				 * Server only commits two coarse stages — `comprehensive-fetching`
+				 * and `comprehensive-extracting` — and the client smoother
+				 * interpolates the percentage between them. Only the first page
+				 * fires: the extractor emits each pageIndex exactly once.
+				 */
+				onPdfPage: ({ pageIndex }) => {
+					if (pageIndex !== 1) return;
+					markCrawlStage({ url, stage: "comprehensive-extracting" }).catch((error: unknown) => {
+						logger.warn(`${logPrefix} comprehensive-extracting stage write failed`, {
+							url,
+							error: String(error),
+						});
+					});
 				},
 			});
-			await emitTier1Failure(url);
+		}
+
+		if (simpleResult.status === "fetched") {
+			await markCrawlStage({ url, stage: "crawl-fetched" });
+		}
+		return simpleResult;
+	};
+
+	const saveLinkWork = async (url: string): Promise<SaveLinkWorkResult> => {
+		const crawlResult = await resolveCrawl(url);
+
+		if (crawlResult.status === "unsupported") {
+			// Permanently non-html origin (PDF that failed extraction, image, archive,
+			// …). The aggregate transition flips both axes atomically —
+			// crawl=unsupported AND summary=skipped("crawl-unsupported") — so the
+			// summary canary cannot see a half-written row pending forever between
+			// two updates. No throw: this is a successful terminal outcome, not work
+			// to retry.
+			await recordTerminalUnsupported(url, crawlResult.reason);
 			return "unsupported";
 		}
 		if (crawlResult.status !== "fetched") {
@@ -107,7 +162,6 @@ export function initSaveLinkWork(deps: {
 			await emitTier1Failure(url);
 			throw new Error(`crawl failed for ${url}: ${reason}`);
 		}
-		await markCrawlStage({ url, stage: "crawl-fetched" });
 
 		const parseResult = parseHtml({ url, html: crawlResult.html });
 		if (!parseResult.ok) {

@@ -1,6 +1,6 @@
 import type { Handler, SQSBatchItemFailure, SQSBatchResponse, SQSEvent } from "aws-lambda";
 import type { HutchLogger } from "@packages/hutch-logger";
-import type { CrawlArticle } from "@packages/crawl-article";
+import type { ComprehensiveCrawl, SimpleCrawl } from "@packages/crawl-article";
 import type { PublishEvent } from "@packages/hutch-infra-components/runtime";
 import type { TransitionAndPersist } from "@packages/domain/article-aggregate";
 import {
@@ -18,7 +18,8 @@ import { initSaveLinkWork, type ProcessContent } from "./save-link-work";
 import type { PutTierSource } from "../../providers/article-store/put-tier-source";
 
 export function initSaveAnonymousLinkCommandHandler(deps: {
-	crawlArticle: CrawlArticle;
+	simpleCrawl: SimpleCrawl;
+	comprehensiveCrawl: ComprehensiveCrawl;
 	parseHtml: ParseHtml;
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
@@ -38,7 +39,8 @@ export function initSaveAnonymousLinkCommandHandler(deps: {
 	const { publishEvent, logger } = deps;
 
 	const { saveLinkWork } = initSaveLinkWork({
-		crawlArticle: deps.crawlArticle,
+		simpleCrawl: deps.simpleCrawl,
+		comprehensiveCrawl: deps.comprehensiveCrawl,
 		parseHtml: deps.parseHtml,
 		putTierSource: deps.putTierSource,
 		putImageObject: deps.putImageObject,

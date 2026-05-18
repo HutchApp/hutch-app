@@ -1,5 +1,10 @@
 import assert from "node:assert";
-import { initCrawlArticle, DEFAULT_CRAWL_HEADERS } from "./crawl-article";
+import {
+	initComprehensiveCrawl,
+	initCrawlArticle,
+	initSimpleCrawl,
+	DEFAULT_CRAWL_HEADERS,
+} from "./crawl-article";
 import type { CrawlArticleResult } from "./crawl-article.types";
 import { initCrawlFetch } from "./crawl-fetch";
 import type { fetchCurl } from "./curl-fetch";
@@ -36,7 +41,54 @@ function initCrawl(overrides?: {
 		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
 		fetchCurl: overrides?.fetchCurl ?? stubFetchCurl,
 	});
-	return initCrawlArticle({
+	const logError = overrides?.logError ?? noopLogError;
+	const simpleCrawl = initSimpleCrawl({ crawlFetch, logError });
+	const comprehensiveCrawl = initComprehensiveCrawl({
+		crawlFetch,
+		extractPdf: overrides?.extractPdf ?? stubExtractPdf,
+		logError,
+	});
+	return initCrawlArticle({ simpleCrawl, comprehensiveCrawl });
+}
+
+function initSimple(overrides?: {
+	fetch?: typeof fetch;
+	logError?: (message: string, error?: Error) => void;
+	fetchCurl?: typeof fetchCurl;
+}) {
+	const defaultFetch: typeof fetch = async () =>
+		new Response("<html></html>", {
+			status: 200,
+			headers: { "content-type": "text/html" },
+		});
+	const crawlFetch = initCrawlFetch({
+		fetch: overrides?.fetch ?? defaultFetch,
+		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
+		fetchCurl: overrides?.fetchCurl ?? stubFetchCurl,
+	});
+	return initSimpleCrawl({
+		crawlFetch,
+		logError: overrides?.logError ?? noopLogError,
+	});
+}
+
+function initComprehensive(overrides?: {
+	fetch?: typeof fetch;
+	logError?: (message: string, error?: Error) => void;
+	fetchCurl?: typeof fetchCurl;
+	extractPdf?: ExtractPdf;
+}) {
+	const defaultFetch: typeof fetch = async () =>
+		new Response(Buffer.from("%PDF-1.4\n"), {
+			status: 200,
+			headers: { "content-type": "application/pdf" },
+		});
+	const crawlFetch = initCrawlFetch({
+		fetch: overrides?.fetch ?? defaultFetch,
+		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
+		fetchCurl: overrides?.fetchCurl ?? stubFetchCurl,
+	});
+	return initComprehensiveCrawl({
 		crawlFetch,
 		extractPdf: overrides?.extractPdf ?? stubExtractPdf,
 		logError: overrides?.logError ?? noopLogError,
@@ -57,7 +109,7 @@ function plainHeaders(init: RequestInit | undefined): Record<string, string> {
 	return result;
 }
 
-describe("initCrawlArticle — regular first-save fetch", () => {
+describe("initSimpleCrawl — regular first-save fetch", () => {
 	it("returns status 'fetched' with html and captured headers on 200", async () => {
 		const fakeFetch: typeof fetch = async () =>
 			new Response("<html>Hello</html>", {
@@ -68,9 +120,9 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 					"last-modified": "Wed, 21 Oct 2025 07:28:00 GMT",
 				},
 			});
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({
 			status: "fetched",
@@ -86,9 +138,9 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 				status: 200,
 				headers: { "content-type": "text/html" },
 			});
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({
 			status: "fetched",
@@ -107,9 +159,9 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 				headers: { "content-type": "text/html" },
 			});
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		await crawlArticle({ url: "https://example.com" });
+		await simpleCrawl({ url: "https://example.com" });
 
 		expect(plainHeaders(capturedInit)).toEqual({
 			"user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -124,9 +176,9 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 				status: 200,
 				headers: { "content-type": "application/xhtml+xml; charset=utf-8" },
 			});
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({
 			status: "fetched",
@@ -145,20 +197,20 @@ describe("initCrawlArticle — regular first-save fetch", () => {
 				headers: { "content-type": "text/html" },
 			});
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		await crawlArticle({ url: "https://example.com/article" });
+		await simpleCrawl({ url: "https://example.com/article" });
 
 		expect(capturedInput).toBe("https://example.com/article");
 	});
 });
 
-describe("initCrawlArticle — TTL refresh with conditional headers", () => {
+describe("initSimpleCrawl — TTL refresh with conditional headers", () => {
 	it("returns status 'not-modified' on 304 response", async () => {
 		const fakeFetch: typeof fetch = async () => new Response(null, { status: 304 });
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({
+		const result = await simpleCrawl({
 			url: "https://example.com",
 			etag: '"abc123"',
 		});
@@ -176,9 +228,9 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 					"last-modified": "Thu, 22 Oct 2025 10:00:00 GMT",
 				},
 			});
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({
+		const result = await simpleCrawl({
 			url: "https://example.com",
 			etag: '"abc123"',
 			lastModified: "Wed, 21 Oct 2025 07:28:00 GMT",
@@ -198,9 +250,9 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 			capturedInit = init;
 			return new Response(null, { status: 304 });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		await crawlArticle({ url: "https://example.com", etag: '"abc123"' });
+		await simpleCrawl({ url: "https://example.com", etag: '"abc123"' });
 
 		const headers = plainHeaders(capturedInit);
 		expect(headers["if-none-match"]).toBe('"abc123"');
@@ -214,9 +266,9 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 			capturedInit = init;
 			return new Response(null, { status: 304 });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		await crawlArticle({
+		await simpleCrawl({
 			url: "https://example.com",
 			lastModified: "Wed, 21 Oct 2025 07:28:00 GMT",
 		});
@@ -227,7 +279,7 @@ describe("initCrawlArticle — TTL refresh with conditional headers", () => {
 	});
 });
 
-describe("initCrawlArticle — X/Twitter oembed fallback", () => {
+describe("initSimpleCrawl — X/Twitter oembed fallback", () => {
 	it("fetches tweet content via oembed API for x.com URLs", async () => {
 		const fakeFetch: typeof fetch = async (input) => {
 			const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
@@ -242,9 +294,9 @@ describe("initCrawlArticle — X/Twitter oembed fallback", () => {
 			}
 			return new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://x.com/elonmusk/status/1519480761749016577" });
+		const result = await simpleCrawl({ url: "https://x.com/elonmusk/status/1519480761749016577" });
 
 		expect(result).toEqual({
 			status: "fetched",
@@ -261,9 +313,9 @@ describe("initCrawlArticle — X/Twitter oembed fallback", () => {
 				status: 200,
 				headers: { "content-type": "application/json" },
 			});
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://twitter.com/user/status/123" });
+		const result = await simpleCrawl({ url: "https://twitter.com/user/status/123" });
 
 		expect(result.status).toBe("fetched");
 	});
@@ -271,9 +323,9 @@ describe("initCrawlArticle — X/Twitter oembed fallback", () => {
 	it("returns 'failed' when oembed API returns non-ok status", async () => {
 		const fakeFetch: typeof fetch = async () => new Response(null, { status: 404 });
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://x.com/user/status/123" });
+		const result = await simpleCrawl({ url: "https://x.com/user/status/123" });
 
 		expect(result).toEqual({ status: "failed" });
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] oembed HTTP 404 for https://x.com/user/status/123");
@@ -285,9 +337,9 @@ describe("initCrawlArticle — X/Twitter oembed fallback", () => {
 		const curlError = new Error("curl also failed");
 		const stubCurl: typeof fetchCurl = async () => { throw curlError; };
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, fetchCurl: stubCurl, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, fetchCurl: stubCurl, logError });
 
-		const result = await crawlArticle({ url: "https://x.com/user/status/123" });
+		const result = await simpleCrawl({ url: "https://x.com/user/status/123" });
 
 		expect(result).toEqual({ status: "failed" });
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] oembed error for https://x.com/user/status/123", curlError);
@@ -302,36 +354,36 @@ describe("initCrawlArticle — X/Twitter oembed fallback", () => {
 				headers: { "content-type": "application/json" },
 			});
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		await crawlArticle({ url: "https://x.com/user/status/123?ref=test" });
+		await simpleCrawl({ url: "https://x.com/user/status/123?ref=test" });
 
 		expect(capturedUrl).toBe("https://publish.twitter.com/oembed?url=https%3A%2F%2Fx.com%2Fuser%2Fstatus%2F123%3Fref%3Dtest");
 	});
 });
 
-describe("initCrawlArticle — failure modes", () => {
+describe("initSimpleCrawl — failure modes", () => {
 	it("returns status 'failed' and logs HTTP status when response is not ok and not 304", async () => {
 		const fakeFetch: typeof fetch = async () => new Response(null, { status: 403 });
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({ status: "failed" });
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] HTTP 403 for https://example.com");
 	});
 
-	it("returns status 'unsupported' with the content-type reason when the origin serves a non-html body (PDF, JSON, …)", async () => {
+	it("returns status 'unsupported' with the content-type reason when the origin serves a non-html body", async () => {
 		const fakeFetch: typeof fetch = async () =>
 			new Response("{}", {
 				status: 200,
 				headers: { "content-type": "application/json" },
 			});
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({
 			status: "unsupported",
@@ -341,13 +393,12 @@ describe("initCrawlArticle — failure modes", () => {
 	});
 
 	it("returns status 'unsupported' with an empty content-type reason when the header is missing", async () => {
-		// Buffer body bypasses Response's auto-assigned text/plain Content-Type, so headers.get returns null
 		const fakeFetch: typeof fetch = async () =>
 			new Response(Buffer.from("<html>Content</html>"), { status: 200, headers: {} });
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({ status: "unsupported", reason: "non-html content type: " });
 		expect(logError).toHaveBeenCalledWith('[CrawlArticle] Unexpected Content-Type "" for https://example.com');
@@ -357,9 +408,9 @@ describe("initCrawlArticle — failure modes", () => {
 		const networkError = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
 		const fakeFetch: typeof fetch = async () => { throw networkError; };
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({ status: "failed" });
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Network error for https://example.com", networkError);
@@ -370,9 +421,9 @@ describe("initCrawlArticle — failure modes", () => {
 		const curlError = new Error("curl also failed");
 		const fakeCurl: typeof fetchCurl = async () => { throw curlError; };
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({ status: "failed" });
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Network error for https://example.com", curlError);
@@ -382,16 +433,16 @@ describe("initCrawlArticle — failure modes", () => {
 		const fakeFetch: typeof fetch = async () => { throw "string error"; };
 		const fakeCurl: typeof fetchCurl = async () => { throw "string error from curl"; };
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(result).toEqual({ status: "failed" });
 		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Network error for https://example.com", undefined);
 	});
 });
 
-describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
+describe("initSimpleCrawl — thumbnail fetch (fetchThumbnail opt-in)", () => {
 	const articleHtml = `<html><head><meta property="og:image" content="https://cdn.example.com/thumb.jpg"></head><body></body></html>`;
 	const imageBytes = Buffer.from([0xff, 0xd8, 0xff]);
 
@@ -421,9 +472,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			fetchCalls += 1;
 			return new Response(articleHtml, { status: 200, headers: { "content-type": "text/html" } });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		expect(fetchCalls).toBe(1);
 		assertFetched(result);
@@ -436,9 +487,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			status: 200,
 			headers: { "content-type": "image/jpeg", "content-length": String(imageBytes.length) },
 		}));
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com/article", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com/article", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toEqual({
@@ -460,9 +511,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			thumbnailInit = init;
 			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/jpeg" } });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		const headers = plainHeaders(thumbnailInit);
 		expect(headers.accept).toBe("image/*,*/*;q=0.8");
@@ -474,9 +525,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 				status: 200,
 				headers: { "content-type": "text/html" },
 			});
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toBeUndefined();
@@ -485,9 +536,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 	it("logs and returns thumbnailImage undefined when the thumbnail HTTP request fails", async () => {
 		const fakeFetch = articleThenImageFetch(new Response(null, { status: 403 }));
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toBeUndefined();
@@ -500,9 +551,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			headers: { "content-type": "text/html" },
 		}));
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toBeUndefined();
@@ -516,9 +567,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			headers: { "content-type": "image/jpeg", "content-length": oversizedLength },
 		}));
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toBeUndefined();
@@ -532,9 +583,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			headers: { "content-type": "image/jpeg" },
 		}));
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toBeUndefined();
@@ -545,9 +596,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 		const networkError = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
 		const fakeFetch = articleThenImageFetch(() => { throw networkError; });
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, logError });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toBeUndefined();
@@ -558,9 +609,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 		const fakeFetch = articleThenImageFetch(() => { throw "boom"; });
 		const fakeCurl: typeof fetchCurl = async () => { throw "boom from curl"; };
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
+		const simpleCrawl = initSimple({ fetch: fakeFetch, fetchCurl: fakeCurl, logError });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage).toBeUndefined();
@@ -586,9 +637,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			}
 			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/jpeg" } });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBe("https://dead.example.com/og.jpg");
@@ -608,9 +659,9 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			if (call === 1) return new Response(htmlWithThumb, { status: 200, headers: { "content-type": "text/html" } });
 			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/tiff" } });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage?.extension).toBe(".tiff");
@@ -624,24 +675,24 @@ describe("initCrawlArticle — thumbnail fetch (fetchThumbnail opt-in)", () => {
 			if (call === 1) return new Response(htmlWithThumb, { status: 200, headers: { "content-type": "text/html" } });
 			return new Response(imageBytes, { status: 200, headers: { "content-type": "image/x-custom" } });
 		};
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com", fetchThumbnail: true });
+		const result = await simpleCrawl({ url: "https://example.com", fetchThumbnail: true });
 
 		assertFetched(result);
 		expect(result.thumbnailImage?.extension).toBe(".bin");
 	});
 });
 
-describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArticle)", () => {
+describe("initSimpleCrawl — thumbnailUrl extraction (tested through simpleCrawl)", () => {
 	it("extracts og:image as thumbnailUrl", async () => {
 		const fakeFetch: typeof fetch = async () => new Response(
 			'<html><head><meta property="og:image" content="https://example.com/og.jpg"></head></html>',
 			{ status: 200, headers: { "content-type": "text/html" } },
 		);
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBe("https://example.com/og.jpg");
@@ -652,9 +703,9 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 			'<html><head><meta name="twitter:image" content="https://example.com/tw.jpg"></head></html>',
 			{ status: 200, headers: { "content-type": "text/html" } },
 		);
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBe("https://example.com/tw.jpg");
@@ -665,9 +716,9 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 			'<html><head><meta property="og:image" content="https://example.com/og.jpg"><meta name="twitter:image" content="https://example.com/tw.jpg"></head></html>',
 			{ status: 200, headers: { "content-type": "text/html" } },
 		);
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBe("https://example.com/og.jpg");
@@ -678,9 +729,9 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 			'<html><body><img src="https://example.com/photo.jpg"><img src="https://example.com/second.jpg"></body></html>',
 			{ status: 200, headers: { "content-type": "text/html" } },
 		);
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBe("https://example.com/photo.jpg");
@@ -691,9 +742,9 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 			"<html><head></head><body><p>No images</p></body></html>",
 			{ status: 200, headers: { "content-type": "text/html" } },
 		);
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBeUndefined();
@@ -704,9 +755,9 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 			'<html><head><meta property="og:image" content="data:image/png;base64,abc"></head><body><img src="javascript:alert(1)"></body></html>',
 			{ status: 200, headers: { "content-type": "text/html" } },
 		);
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com" });
+		const result = await simpleCrawl({ url: "https://example.com" });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBeUndefined();
@@ -717,9 +768,9 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 			'<html><head><meta property="og:image" content="/images/og.jpg"></head></html>',
 			{ status: 200, headers: { "content-type": "text/html" } },
 		);
-		const crawlArticle = initCrawl({ fetch: fakeFetch });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
 
-		const result = await crawlArticle({ url: "https://example.com/post" });
+		const result = await simpleCrawl({ url: "https://example.com/post" });
 
 		assertFetched(result);
 		expect(result.thumbnailUrl).toBe("https://example.com/images/og.jpg");
@@ -730,7 +781,39 @@ describe("initCrawlArticle — thumbnailUrl extraction (tested through crawlArti
 	}
 });
 
-describe("initCrawlArticle — PDF branch", () => {
+describe("initSimpleCrawl — non-HTML content bail (no content-type-specific knowledge)", () => {
+	it("returns unsupported with the content-type when Content-Type is application/pdf", async () => {
+		const fakeFetch: typeof fetch = async () =>
+			new Response(Buffer.from("%PDF-1.4\n"), { status: 200, headers: { "content-type": "application/pdf" } });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
+
+		const result = await simpleCrawl({ url: "https://example.com/doc.pdf" });
+
+		expect(result).toEqual({ status: "unsupported", reason: "non-html content type: application/pdf" });
+	});
+
+	it("returns unsupported with the content-type for application/octet-stream without sniffing the body", async () => {
+		const pdfMagicBuffer = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(64, 0x20)]);
+		const fakeFetch: typeof fetch = async () =>
+			new Response(pdfMagicBuffer, { status: 200, headers: { "content-type": "application/octet-stream" } });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
+
+		const result = await simpleCrawl({ url: "https://example.com/noheader" });
+
+		expect(result).toEqual({ status: "unsupported", reason: "non-html content type: application/octet-stream" });
+	});
+
+	it("returns unsupported with empty content-type when the header is missing", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(Buffer.from("%PDF-1.4\n"), { status: 200, headers: {} });
+		const simpleCrawl = initSimple({ fetch: fakeFetch });
+
+		const result = await simpleCrawl({ url: "https://example.com/silent" });
+
+		expect(result).toEqual({ status: "unsupported", reason: "non-html content type: " });
+	});
+});
+
+describe("initComprehensiveCrawl — PDF extraction", () => {
 	const pdfMagicBuffer = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(64, 0x20)]);
 
 	function pdfResponse(body: Buffer, headers: Record<string, string> = { "content-type": "application/pdf" }): Response {
@@ -748,9 +831,9 @@ describe("initCrawlArticle — PDF branch", () => {
 			etag: '"pdf-123"',
 			"last-modified": "Wed, 21 Oct 2025 07:28:00 GMT",
 		});
-		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, extractPdf });
 
-		const result = await crawlArticle({ url: "https://example.com/doc.pdf" });
+		const result = await comprehensiveCrawl({ url: "https://example.com/doc.pdf" });
 
 		expect(result).toEqual({
 			status: "fetched",
@@ -769,40 +852,24 @@ describe("initCrawlArticle — PDF branch", () => {
 			title: "ok",
 		});
 		const fakeFetch: typeof fetch = async () => pdfResponse(pdfMagicBuffer, { "content-type": "application/x-pdf" });
-		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, extractPdf });
 
-		const result = await crawlArticle({ url: "https://example.com/legacy.pdf" });
+		const result = await comprehensiveCrawl({ url: "https://example.com/legacy.pdf" });
 
 		expect(result.status).toBe("fetched");
 		expect(extractPdf).toHaveBeenCalledTimes(1);
 	});
 
-	it("falls back to magic-byte sniffing when Content-Type is octet-stream but body starts with %PDF-", async () => {
+	it("invokes extractPdf via magic-byte sniffing when Content-Type is octet-stream", async () => {
 		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>().mockResolvedValue({
 			kind: "fetched",
 			html: "<html><body><p>sniffed</p></body></html>",
 			title: "sniffed",
 		});
 		const fakeFetch: typeof fetch = async () => pdfResponse(pdfMagicBuffer, { "content-type": "application/octet-stream" });
-		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, extractPdf });
 
-		const result = await crawlArticle({ url: "https://example.com/noheader" });
-
-		expect(result.status).toBe("fetched");
-		expect(extractPdf).toHaveBeenCalledTimes(1);
-	});
-
-	it("falls back to magic-byte sniffing when Content-Type header is missing", async () => {
-		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>().mockResolvedValue({
-			kind: "fetched",
-			html: "<html><body><p>sniffed</p></body></html>",
-			title: "sniffed",
-		});
-		// Buffer body bypasses Response's auto Content-Type, so headers.get returns null.
-		const fakeFetch: typeof fetch = async () => new Response(pdfMagicBuffer, { status: 200, headers: {} });
-		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
-
-		const result = await crawlArticle({ url: "https://example.com/silent" });
+		const result = await comprehensiveCrawl({ url: "https://example.com/noheader" });
 
 		expect(result.status).toBe("fetched");
 		expect(extractPdf).toHaveBeenCalledTimes(1);
@@ -812,9 +879,9 @@ describe("initCrawlArticle — PDF branch", () => {
 		const extractPdf: ExtractPdf = async () => ({ kind: "failed", reason: PDF_EXTRACT_FAILURE_REASON });
 		const fakeFetch: typeof fetch = async () => pdfResponse(pdfMagicBuffer);
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf, logError });
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, extractPdf, logError });
 
-		const result = await crawlArticle({ url: "https://example.com/scan.pdf" });
+		const result = await comprehensiveCrawl({ url: "https://example.com/scan.pdf" });
 
 		expect(result).toEqual({
 			status: "unsupported",
@@ -830,9 +897,9 @@ describe("initCrawlArticle — PDF branch", () => {
 		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>();
 		const fakeFetch: typeof fetch = async () => pdfResponse(oversize);
 		const logError = jest.fn();
-		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf, logError });
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, extractPdf, logError });
 
-		const result = await crawlArticle({ url: "https://example.com/huge.pdf" });
+		const result = await comprehensiveCrawl({ url: "https://example.com/huge.pdf" });
 
 		expect(result).toEqual({
 			status: "unsupported",
@@ -844,19 +911,98 @@ describe("initCrawlArticle — PDF branch", () => {
 		);
 	});
 
-	it("does not branch to extractPdf when Content-Type is non-PDF non-HTML and body lacks PDF magic bytes — surfaces 'unsupported'", async () => {
+	it("returns status 'unsupported' with a 'non-pdf' reason when invoked on non-pdf content (defensive — orchestrator should not invoke this for non-pdf urls)", async () => {
 		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>();
-		const fakeFetch: typeof fetch = async () => new Response("{}", {
-			status: 200,
-			headers: { "content-type": "application/json" },
+		const fakeFetch: typeof fetch = async () =>
+			new Response("<html></html>", { status: 200, headers: { "content-type": "text/html" } });
+		const logError = jest.fn();
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, extractPdf, logError });
+
+		const result = await comprehensiveCrawl({ url: "https://example.com/article" });
+
+		expect(result).toEqual({ status: "unsupported", reason: "non-pdf content type: text/html" });
+		expect(extractPdf).not.toHaveBeenCalled();
+		expect(logError).toHaveBeenCalledWith('[CrawlArticle] Comprehensive crawl invoked on non-pdf "text/html" for https://example.com/article');
+	});
+
+	it("returns 'not-modified' on 304", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(null, { status: 304 });
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch });
+
+		const result = await comprehensiveCrawl({ url: "https://example.com/doc.pdf", etag: '"abc"' });
+
+		expect(result).toEqual({ status: "not-modified" });
+	});
+
+	it("returns 'failed' on non-ok response", async () => {
+		const fakeFetch: typeof fetch = async () => new Response(null, { status: 500 });
+		const logError = jest.fn();
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, logError });
+
+		const result = await comprehensiveCrawl({ url: "https://example.com/doc.pdf" });
+
+		expect(result).toEqual({ status: "failed" });
+		expect(logError).toHaveBeenCalledWith("[CrawlArticle] HTTP 500 for https://example.com/doc.pdf");
+	});
+
+	it("returns 'failed' when fetch throws", async () => {
+		const networkError = Object.assign(new Error("boom"), { code: "ECONNREFUSED" });
+		const fakeFetch: typeof fetch = async () => { throw networkError; };
+		const logError = jest.fn();
+		const comprehensiveCrawl = initComprehensive({ fetch: fakeFetch, logError });
+
+		const result = await comprehensiveCrawl({ url: "https://example.com/doc.pdf" });
+
+		expect(result).toEqual({ status: "failed" });
+		expect(logError).toHaveBeenCalledWith("[CrawlArticle] Network error for https://example.com/doc.pdf", networkError);
+	});
+});
+
+describe("initCrawlArticle — composed (simple ▸ comprehensive)", () => {
+	const pdfMagicBuffer = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(64, 0x20)]);
+
+	it("returns the simple-path 'fetched' result without invoking the extractor on HTML responses", async () => {
+		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>();
+		const fakeFetch: typeof fetch = async () =>
+			new Response("<html>Hi</html>", { status: 200, headers: { "content-type": "text/html" } });
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+
+		const result = await crawlArticle({ url: "https://example.com/article" });
+
+		expect(result.status).toBe("fetched");
+		expect(extractPdf).not.toHaveBeenCalled();
+	});
+
+	it("falls through to comprehensive when simple returns unsupported and surfaces the extracted html on success", async () => {
+		const extractPdf: ExtractPdf = async () => ({
+			kind: "fetched",
+			html: "<html><body><p>PDF body</p></body></html>",
+			title: "doc",
 		});
+		const fakeFetch: typeof fetch = async () =>
+			new Response(pdfMagicBuffer, { status: 200, headers: { "content-type": "application/pdf" } });
+		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf });
+
+		const result = await crawlArticle({ url: "https://example.com/doc.pdf" });
+
+		expect(result).toEqual({
+			status: "fetched",
+			html: "<html><body><p>PDF body</p></body></html>",
+			etag: undefined,
+			lastModified: undefined,
+		});
+	});
+
+	it("falls through to comprehensive for any unsupported content type — comprehensive decides whether it can handle it", async () => {
+		const extractPdf = jest.fn<ReturnType<ExtractPdf>, Parameters<ExtractPdf>>();
+		const fakeFetch: typeof fetch = async () =>
+			new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
 		const logError = jest.fn();
 		const crawlArticle = initCrawl({ fetch: fakeFetch, extractPdf, logError });
 
 		const result = await crawlArticle({ url: "https://example.com/api" });
 
-		expect(result).toEqual({ status: "unsupported", reason: "non-html content type: application/json" });
+		expect(result).toEqual({ status: "unsupported", reason: "non-pdf content type: application/json" });
 		expect(extractPdf).not.toHaveBeenCalled();
-		expect(logError).toHaveBeenCalledWith('[CrawlArticle] Unexpected Content-Type "application/json" for https://example.com/api');
 	});
 });

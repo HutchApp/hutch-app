@@ -1,5 +1,6 @@
 import type { DynamoDBDocumentClient } from "@packages/hutch-storage-client";
-import { initDynamoDbMarkCrawlStage } from "./mark-crawl-stage";
+import { CRAWL_STAGE_TO_PCT, type CrawlStage as DomainCrawlStage } from "@packages/domain/article";
+import { initDynamoDbMarkCrawlStage, type CrawlStage } from "./mark-crawl-stage";
 
 type SendFn = DynamoDBDocumentClient["send"];
 
@@ -54,5 +55,46 @@ describe("initDynamoDbMarkCrawlStage (unit)", () => {
 		await expect(
 			markCrawlStage({ url: URL, stage: "crawl-fetching" }),
 		).rejects.toThrow("throttled");
+	});
+
+	it.each<CrawlStage>([
+		"crawl-fetching",
+		"crawl-fetched",
+		"comprehensive-fetching",
+		"comprehensive-extracting",
+		"crawl-parsed",
+		"crawl-metadata-written",
+		"crawl-content-uploaded",
+	])("accepts the %s stage and writes it verbatim (mirror of domain CrawlStage union)", async (stage) => {
+		let received: unknown;
+		const client = createFakeClient((input) => {
+			received = input;
+			return {};
+		});
+		const { markCrawlStage } = initDynamoDbMarkCrawlStage({
+			client: client as DynamoDBDocumentClient,
+			tableName: TABLE,
+		});
+
+		await markCrawlStage({ url: URL, stage });
+
+		const command = received as { input: { ExpressionAttributeValues?: Record<string, unknown> } };
+		expect(command.input.ExpressionAttributeValues?.[":stage"]).toBe(stage);
+	});
+
+	it("keeps the local CrawlStage literal aligned with the domain CrawlStage union (every value here must exist in CRAWL_STAGE_TO_PCT)", () => {
+		const localStages: CrawlStage[] = [
+			"crawl-fetching",
+			"crawl-fetched",
+			"comprehensive-fetching",
+			"comprehensive-extracting",
+			"crawl-parsed",
+			"crawl-metadata-written",
+			"crawl-content-uploaded",
+		];
+		for (const stage of localStages) {
+			const widened: DomainCrawlStage = stage;
+			expect(CRAWL_STAGE_TO_PCT[widened]).toBeGreaterThan(0);
+		}
 	});
 });

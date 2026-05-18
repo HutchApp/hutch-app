@@ -39,4 +39,14 @@ describe("progress-mapping", () => {
 			expect(summaryStagePct(stage)).toBeLessThan(100);
 		}
 	});
+
+	it("slots comprehensive-* stages between crawl-fetched and crawl-parsed so a PDF fallthrough never regresses the bar", () => {
+		const fetched = crawlStagePct("crawl-fetched");
+		const compFetching = crawlStagePct("comprehensive-fetching");
+		const compExtracting = crawlStagePct("comprehensive-extracting");
+		const parsed = crawlStagePct("crawl-parsed");
+		expect(compFetching).toBeGreaterThan(fetched);
+		expect(compExtracting).toBeGreaterThan(compFetching);
+		expect(parsed).toBeGreaterThan(compExtracting);
+	});
 });

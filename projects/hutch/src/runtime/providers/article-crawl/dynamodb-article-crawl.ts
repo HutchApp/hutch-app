@@ -24,6 +24,8 @@ const ArticleCrawlRow = z.object({
 		z.enum([
 			"crawl-fetching",
 			"crawl-fetched",
+			"comprehensive-fetching",
+			"comprehensive-extracting",
 			"crawl-parsed",
 			"crawl-metadata-written",
 			"crawl-content-uploaded",
