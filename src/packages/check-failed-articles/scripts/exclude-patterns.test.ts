@@ -19,6 +19,65 @@ describe("isExcluded", () => {
 	});
 });
 
+describe("EXCLUDE_PATTERNS — localhost entry", () => {
+	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
+		{ url: "http://localhost:3000/", excluded: true, label: "http with port" },
+		{ url: "http://localhost:3100/privacy?p=7", excluded: true, label: "http with port and query" },
+		{ url: "http://localhost/", excluded: true, label: "http no port" },
+		{ url: "https://localhost:8080/api", excluded: true, label: "https with port" },
+		{ url: "https://notlocalhost.com/foo", excluded: false, label: "domain containing localhost (should NOT match)" },
+		{ url: "https://my-localhost.com/foo", excluded: false, label: "hyphenated domain (should NOT match)" },
+	];
+	for (const { url, excluded, label } of cases) {
+		it(`${excluded ? "excludes" : "keeps"}: ${label} — ${url}`, () => {
+			assert.equal(isExcluded(url, EXCLUDE_PATTERNS), excluded);
+		});
+	}
+});
+
+describe("EXCLUDE_PATTERNS — about: scheme entry", () => {
+	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
+		{ url: "about:home", excluded: true, label: "about:home" },
+		{ url: "about:newtab", excluded: true, label: "about:newtab" },
+		{ url: "about:blank", excluded: true, label: "about:blank" },
+		{ url: "https://somesite.com/about:home", excluded: false, label: "about: in path (should NOT match)" },
+	];
+	for (const { url, excluded, label } of cases) {
+		it(`${excluded ? "excludes" : "keeps"}: ${label} — ${url}`, () => {
+			assert.equal(isExcluded(url, EXCLUDE_PATTERNS), excluded);
+		});
+	}
+});
+
+describe("EXCLUDE_PATTERNS — chrome:// scheme entry", () => {
+	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
+		{ url: "chrome://extensions/", excluded: true, label: "chrome://extensions/" },
+		{ url: "chrome://newtab/", excluded: true, label: "chrome://newtab/" },
+		{ url: "chrome://settings", excluded: true, label: "chrome://settings" },
+		{ url: "https://chrome.google.com/webstore", excluded: false, label: "chrome.google.com (should NOT match)" },
+	];
+	for (const { url, excluded, label } of cases) {
+		it(`${excluded ? "excludes" : "keeps"}: ${label} — ${url}`, () => {
+			assert.equal(isExcluded(url, EXCLUDE_PATTERNS), excluded);
+		});
+	}
+});
+
+describe("EXCLUDE_PATTERNS — .home.arpa entry", () => {
+	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
+		{ url: "https://cd.home.arpa/", excluded: true, label: "subdomain of .home.arpa" },
+		{ url: "https://router.home.arpa:8080/admin", excluded: true, label: ".home.arpa with port" },
+		{ url: "http://home.arpa/", excluded: true, label: "bare .home.arpa" },
+		{ url: "https://home.arpa?q=1", excluded: true, label: ".home.arpa with query" },
+		{ url: "https://nothome.arpa.com/foo", excluded: false, label: "arpa as subdomain (should NOT match)" },
+	];
+	for (const { url, excluded, label } of cases) {
+		it(`${excluded ? "excludes" : "keeps"}: ${label} — ${url}`, () => {
+			assert.equal(isExcluded(url, EXCLUDE_PATTERNS), excluded);
+		});
+	}
+});
+
 describe("EXCLUDE_PATTERNS — example.com entry", () => {
 	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
 		{ url: "example.com/9598a307-2375-4ecc-a63c-e38f4128c7f5", excluded: true, label: "fixture path without scheme" },

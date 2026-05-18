@@ -19,6 +19,25 @@ export const EXCLUDE_PATTERNS: readonly RegExp[] = [
 	// produces a large recurring backlog of crawl-failed rows that the
 	// operator never actually needs to re-save.
 	/(?:^|\/\/)(?:[a-z0-9-]+\.)*example\.com(?:[/:?#]|$)/i,
+
+	// localhost — test/development server artefacts saved before intake
+	// validated private-network hostnames. SaveableUrlSchema now rejects
+	// these via isPrivateHostname().
+	/^https?:\/\/localhost(?:[/:?#]|$)/i,
+
+	// about: scheme — browser internal pages (about:home, about:newtab)
+	// saved before intake validated URL schemes. SaveableUrlSchema now
+	// rejects non-http(s) schemes via ALLOWED_SCHEMES.
+	/^about:/i,
+
+	// chrome:// scheme — browser extension/settings pages saved before
+	// intake validated URL schemes. SaveableUrlSchema now rejects these.
+	/^chrome:\/\//i,
+
+	// .home.arpa — RFC 8375 home-network domains saved before intake
+	// validated private-network hostnames. SaveableUrlSchema now rejects
+	// LOCAL_HOSTNAME_SUFFIXES including .home.arpa.
+	/(?:^|[/.])home\.arpa(?:[/:?#]|$)/i,
 ];
 
 export function isExcluded(url: string, patterns: readonly RegExp[]): boolean {
