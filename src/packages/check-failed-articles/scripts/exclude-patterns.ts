@@ -13,7 +13,9 @@
  * Adding a real, fixable failure URL here silently hides the regression — be
  * intentional, and prefer fixing the underlying crawler/summary path first.
  */
-export const EXCLUDE_PATTERNS: readonly RegExp[] = [];
+export const EXCLUDE_PATTERNS: readonly RegExp[] = [
+	/^(https?:\/\/)?example\.com(\/|$)/,
+];
 
 export function isExcluded(url: string, patterns: readonly RegExp[]): boolean {
 	for (const pattern of patterns) {
