@@ -9,7 +9,7 @@ import { initObservabilityDepBundle } from "./dep-bundles/observability";
 import { initParserDepBundle } from "./dep-bundles/parser";
 import { initArticleStoreDepBundle } from "./dep-bundles/article-store";
 import { initMediaDepBundle } from "./dep-bundles/media";
-import { initDispatchComprehensiveCrawl, initEventsDepBundle } from "./dep-bundles/events";
+import { initEmitSimpleCrawlUnsupported, initEventsDepBundle } from "./dep-bundles/events";
 import { initArticleAggregateDepBundle } from "./dep-bundles/article-aggregate";
 import { initArticleCrawlDepBundle } from "./dep-bundles/article-crawl";
 
@@ -32,14 +32,8 @@ const media = initMediaDepBundle({ parser, articleStore, logger: consoleLogger, 
 const events = initEventsDepBundle({ eventBridgeClient, eventBusName, sqsClient, generateSummaryQueueUrl });
 const articleAggregate = initArticleAggregateDepBundle({ dynamoClient, articlesTable, events });
 const articleCrawl = initArticleCrawlDepBundle({ dynamoClient, articlesTable });
-const dispatchComprehensiveCrawl = initDispatchComprehensiveCrawl({
+const emitSimpleCrawlUnsupported = initEmitSimpleCrawlUnsupported({
 	publishEvent: events.publishEvent,
-	// Recrawl preserves the always-regenerate-summary semantics — the
-	// comprehensive Lambda emits `RecrawlContentExtractedEvent` instead of
-	// `TierContentExtractedEvent` so the recrawl-content-extracted Lambda
-	// (clone of the selector that always dispatches summary) picks up the
-	// PDF result.
-	recrawl: true,
 });
 
 export const handler = initRecrawlLinkInitiatedHandler({
@@ -50,7 +44,7 @@ export const handler = initRecrawlLinkInitiatedHandler({
 	...articleAggregate,
 	...articleCrawl,
 	...observability,
-	dispatchComprehensiveCrawl,
+	emitSimpleCrawlUnsupported,
 	imagesCdnBaseUrl,
 	now,
 });

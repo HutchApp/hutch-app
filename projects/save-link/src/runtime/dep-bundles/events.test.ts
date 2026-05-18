@@ -4,7 +4,7 @@ import {
 	type PublishEvent,
 } from "@packages/hutch-infra-components/runtime";
 import {
-	initDispatchComprehensiveCrawl,
+	initEmitSimpleCrawlUnsupported,
 	initEventsDepBundle,
 } from "./events";
 
@@ -22,29 +22,29 @@ describe("initEventsDepBundle", () => {
 	});
 });
 
-describe("initDispatchComprehensiveCrawl", () => {
-	it("forwards url + userId through publishEvent with the ComprehensiveCrawlCommand wire shape", async () => {
+describe("initEmitSimpleCrawlUnsupported", () => {
+	it("publishes SimpleCrawlUnsupportedEvent with url + userId through publishEvent", async () => {
 		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
 
-		const dispatch = initDispatchComprehensiveCrawl({ publishEvent });
-		await dispatch({ url: "https://example.com/doc.pdf", userId: "user-1" });
+		const emit = initEmitSimpleCrawlUnsupported({ publishEvent });
+		await emit({ url: "https://example.com/doc.pdf", userId: "user-1" });
 
 		expect(publishEvent).toHaveBeenCalledWith({
 			source: "hutch.save-link",
-			detailType: "ComprehensiveCrawlCommand",
+			detailType: "SimpleCrawlUnsupported",
 			detail: JSON.stringify({ url: "https://example.com/doc.pdf", userId: "user-1" }),
 		});
 	});
 
-	it("sets recrawl=true on the dispatched payload so the comprehensive Lambda emits RecrawlContentExtractedEvent for admin recrawls", async () => {
+	it("threads recrawl=true through the event so the policy → comprehensive chain preserves admin recrawl semantics", async () => {
 		const publishEvent: PublishEvent = jest.fn().mockResolvedValue(undefined);
 
-		const dispatch = initDispatchComprehensiveCrawl({ publishEvent, recrawl: true });
-		await dispatch({ url: "https://example.com/doc.pdf" });
+		const emit = initEmitSimpleCrawlUnsupported({ publishEvent });
+		await emit({ url: "https://example.com/doc.pdf", recrawl: true });
 
 		expect(publishEvent).toHaveBeenCalledWith({
 			source: "hutch.save-link",
-			detailType: "ComprehensiveCrawlCommand",
+			detailType: "SimpleCrawlUnsupported",
 			detail: JSON.stringify({ url: "https://example.com/doc.pdf", recrawl: true }),
 		});
 	});

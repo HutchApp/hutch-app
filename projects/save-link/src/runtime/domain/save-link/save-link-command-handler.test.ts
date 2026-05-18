@@ -9,7 +9,7 @@ import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
 import type { PutImageObject } from "../../providers/article-store/s3-put-image-object";
 import type { PutTierSource } from "../../providers/article-store/put-tier-source";
-import type { DispatchComprehensiveCrawl } from "../../dep-bundles/events";
+import type { EmitSimpleCrawlUnsupported } from "../../dep-bundles/events";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
 const stubAttributes: SQSRecordAttributes = {
@@ -64,8 +64,8 @@ const successfulSimpleCrawl: SimpleCrawl = async () => ({
 	html: "<html><body><p>Article content</p></body></html>",
 });
 
-const rejectingDispatchComprehensiveCrawl: DispatchComprehensiveCrawl = async () => {
-	throw new Error("dispatchComprehensiveCrawl invoked unexpectedly");
+const rejectingEmitSimpleCrawlUnsupported: EmitSimpleCrawlUnsupported = async () => {
+	throw new Error("emitSimpleCrawlUnsupported invoked unexpectedly");
 };
 
 const successfulParse: ParseHtml = () => ({
@@ -82,7 +82,7 @@ const fixedNow = () => new Date("2026-04-18T12:00:00.000Z");
 function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	return initSaveLinkCommandHandler({
 		simpleCrawl: successfulSimpleCrawl,
-		dispatchComprehensiveCrawl: rejectingDispatchComprehensiveCrawl,
+		emitSimpleCrawlUnsupported: rejectingEmitSimpleCrawlUnsupported,
 		parseHtml: successfulParse,
 		putTierSource: jest.fn().mockResolvedValue(undefined),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
@@ -360,10 +360,10 @@ describe("initSaveLinkCommandHandler", () => {
 		expect(transitionAndPersist).not.toHaveBeenCalled();
 	});
 
-	it("dispatches ComprehensiveCrawlCommand carrying the userId when simpleCrawl reports unsupported (PDF/blob path is owned by the dedicated Lambda)", async () => {
-		const dispatchComprehensiveCrawl = jest.fn<
-			ReturnType<DispatchComprehensiveCrawl>,
-			Parameters<DispatchComprehensiveCrawl>
+	it("emits SimpleCrawlUnsupportedEvent carrying the userId when simpleCrawl reports unsupported (the policy Lambda dispatches ComprehensiveCrawlCommand)", async () => {
+		const emitSimpleCrawlUnsupported = jest.fn<
+			ReturnType<EmitSimpleCrawlUnsupported>,
+			Parameters<EmitSimpleCrawlUnsupported>
 		>().mockResolvedValue(undefined);
 		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
@@ -375,7 +375,7 @@ describe("initSaveLinkCommandHandler", () => {
 
 		const handler = createHandler({
 			simpleCrawl: unsupportedSimpleCrawl,
-			dispatchComprehensiveCrawl,
+			emitSimpleCrawlUnsupported,
 			transitionAndPersist,
 			publishEvent,
 			putTierSource,
@@ -388,31 +388,33 @@ describe("initSaveLinkCommandHandler", () => {
 		);
 
 		expect(result).toEqual({ batchItemFailures: [] });
-		expect(dispatchComprehensiveCrawl).toHaveBeenCalledTimes(1);
-		expect(dispatchComprehensiveCrawl).toHaveBeenCalledWith({
+		expect(emitSimpleCrawlUnsupported).toHaveBeenCalledTimes(1);
+		expect(emitSimpleCrawlUnsupported).toHaveBeenCalledWith({
 			url: "https://example.com/doc.pdf",
 			userId: "user-1",
+			recrawl: undefined,
 		});
-		// The save-link Lambda is now release-then-defer: no sync tier-1 write,
-		// no terminal transition (the comprehensive Lambda owns those), and no
-		// TierContentExtractedEvent — the comprehensive Lambda emits that itself.
+		// The save-link Lambda emits an event, not a command: no sync tier-1
+		// write, no terminal transition (the comprehensive Lambda owns those),
+		// and no TierContentExtractedEvent — the comprehensive Lambda emits
+		// that itself after the policy dispatches the command.
 		expect(transitionAndPersist).not.toHaveBeenCalled();
 		expect(putTierSource).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
-	it("marks comprehensive-fetching between the simple bail-out and the dispatch so the reader's progress bar advances during the comprehensive Lambda's cold-start", async () => {
+	it("marks comprehensive-fetching between the simple bail-out and the event emission so the reader's progress bar advances during the policy + comprehensive Lambda's cold-start", async () => {
 		const unsupportedSimpleCrawl: SimpleCrawl = async () => ({
 			status: "unsupported",
 			reason: "non-html content type: application/pdf",
 		});
 		const markCrawlStage = jest.fn().mockResolvedValue(undefined);
-		const dispatchComprehensiveCrawl = jest.fn().mockResolvedValue(undefined);
+		const emitSimpleCrawlUnsupported = jest.fn().mockResolvedValue(undefined);
 
 		const handler = createHandler({
 			simpleCrawl: unsupportedSimpleCrawl,
 			markCrawlStage,
-			dispatchComprehensiveCrawl,
+			emitSimpleCrawlUnsupported,
 		});
 
 		await handler(createSqsEvent({ url: "https://example.com/doc.pdf", userId: "user-1" }), stubContext, () => {});
@@ -424,16 +426,16 @@ describe("initSaveLinkCommandHandler", () => {
 		expect(stages).not.toContain("crawl-fetched");
 	});
 
-	it("reports the record as a batch failure when the dispatch itself fails so SQS retries (the simple crawl is idempotent)", async () => {
+	it("reports the record as a batch failure when the event emission fails so SQS retries (the simple crawl is idempotent)", async () => {
 		const unsupportedSimpleCrawl: SimpleCrawl = async () => ({
 			status: "unsupported",
 			reason: "non-html content type: application/pdf",
 		});
-		const dispatchComprehensiveCrawl = jest.fn().mockRejectedValue(new Error("EventBridge throttled"));
+		const emitSimpleCrawlUnsupported = jest.fn().mockRejectedValue(new Error("EventBridge throttled"));
 
 		const handler = createHandler({
 			simpleCrawl: unsupportedSimpleCrawl,
-			dispatchComprehensiveCrawl,
+			emitSimpleCrawlUnsupported,
 		});
 
 		const result = await handler(

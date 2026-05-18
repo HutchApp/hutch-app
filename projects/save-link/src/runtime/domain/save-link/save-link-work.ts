@@ -19,7 +19,7 @@ import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-compo
 import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import { estimatedReadTimeFromWordCount } from "./estimated-read-time";
 import type { PutTierSource } from "../../providers/article-store/put-tier-source";
-import type { DispatchComprehensiveCrawl } from "../../dep-bundles/events";
+import type { EmitSimpleCrawlUnsupported } from "../../dep-bundles/events";
 
 export type ProcessContent = (params: { html: string; media: DownloadedMedia[] }) => Promise<string>;
 
@@ -28,7 +28,8 @@ export type ProcessContent = (params: { html: string; media: DownloadedMedia[] }
  * The caller should publish TierContentExtractedEvent so the selector runs.
  *
  * `"tier-1-deferred"` — the simple crawl reported `unsupported` so the worker
- * dispatched a `ComprehensiveCrawlCommand` to the dedicated PDF-handling
+ * emitted `SimpleCrawlUnsupportedEvent`. The policy Lambda subscribes and
+ * dispatches `ComprehensiveCrawlCommand` to the dedicated PDF-handling
  * Lambda. The row stays in its current non-terminal state (the comprehensive
  * Lambda owns the next status transition + any downstream event). The caller
  * must NOT publish a follow-up event itself; the comprehensive Lambda emits
@@ -39,18 +40,19 @@ export type ProcessContent = (params: { html: string; media: DownloadedMedia[] }
  * own handler — save-link-work never decides "permanently unsupported"
  * directly anymore, since the simple crawl cannot distinguish a PDF (which
  * the comprehensive Lambda extracts) from a video/archive (which it does
- * not). All unsupported simple results flow through dispatch.
+ * not). All unsupported simple results flow through the event.
  */
 export type SaveLinkWorkResult = "tier-1-written" | "tier-1-deferred";
 
 export type SaveLinkWorkOptions = {
 	userId?: string;
+	recrawl?: boolean;
 };
 
 /* c8 ignore next -- V8 block coverage phantom on typed-parameter destructuring, see bcoe/c8#319 */
 export function initSaveLinkWork(deps: {
 	simpleCrawl: SimpleCrawl;
-	dispatchComprehensiveCrawl: DispatchComprehensiveCrawl;
+	emitSimpleCrawlUnsupported: EmitSimpleCrawlUnsupported;
 	parseHtml: ParseHtml;
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
@@ -69,7 +71,7 @@ export function initSaveLinkWork(deps: {
 }): { saveLinkWork: (url: string, options?: SaveLinkWorkOptions) => Promise<SaveLinkWorkResult> } {
 	const {
 		simpleCrawl,
-		dispatchComprehensiveCrawl,
+		emitSimpleCrawlUnsupported,
 		parseHtml,
 		putTierSource,
 		putImageObject,
@@ -107,17 +109,17 @@ export function initSaveLinkWork(deps: {
 			 * The simple crawl bailed because the origin returned a non-html body.
 			 * We do not know yet whether it is a PDF (the comprehensive Lambda
 			 * extracts and decides) or something the comprehensive path cannot
-			 * handle either (image, archive, …). Dispatch unconditionally and
-			 * let the comprehensive Lambda's own `unsupported` branch flip the
-			 * row terminal — that keeps the "two Lambdas can each return
-			 * unsupported" matrix from being duplicated here.
+			 * handle either (image, archive, …). Emit unconditionally and
+			 * let the policy → comprehensive Lambda chain's own `unsupported`
+			 * branch flip the row terminal — that keeps the "two Lambdas can
+			 * each return unsupported" matrix from being duplicated here.
 			 *
-			 * `comprehensive-fetching` is written before the dispatch so the
+			 * `comprehensive-fetching` is written before the emit so the
 			 * reader's progress bar moves forward immediately; the comprehensive
 			 * Lambda writes `comprehensive-extracting` once it starts pdfjs.
 			 */
 			await markCrawlStage({ url, stage: "comprehensive-fetching" });
-			await dispatchComprehensiveCrawl({ url, userId: options?.userId });
+			await emitSimpleCrawlUnsupported({ url, userId: options?.userId, recrawl: options?.recrawl });
 			logger.info(`${logPrefix} tier-1 deferred to comprehensive crawl`, {
 				url,
 				reason: crawlResult.reason,

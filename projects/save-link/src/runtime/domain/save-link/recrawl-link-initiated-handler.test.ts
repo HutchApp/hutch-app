@@ -6,7 +6,7 @@ import { initRecrawlLinkInitiatedHandler } from "./recrawl-link-initiated-handle
 import { initProcessContentWithLocalMedia } from "./process-content-with-local-media";
 import type { ParseHtml } from "../article-parser/article-parser.types";
 import type { DownloadMedia } from "./download-media";
-import type { DispatchComprehensiveCrawl } from "../../dep-bundles/events";
+import type { EmitSimpleCrawlUnsupported } from "../../dep-bundles/events";
 import type { SQSEvent, SQSRecordAttributes, Context } from "aws-lambda";
 
 const stubAttributes: SQSRecordAttributes = {
@@ -61,8 +61,8 @@ const successfulSimpleCrawl: SimpleCrawl = async () => ({
 	html: "<html><body><p>Article content</p></body></html>",
 });
 
-const rejectingDispatchComprehensiveCrawl: DispatchComprehensiveCrawl = async () => {
-	throw new Error("dispatchComprehensiveCrawl invoked unexpectedly");
+const rejectingEmitSimpleCrawlUnsupported: EmitSimpleCrawlUnsupported = async () => {
+	throw new Error("emitSimpleCrawlUnsupported invoked unexpectedly");
 };
 
 const successfulParse: ParseHtml = () => ({
@@ -79,7 +79,7 @@ const fixedNow = () => new Date("2026-04-30T12:00:00.000Z");
 function createHandler(overrides: Partial<HandlerDeps> = {}) {
 	return initRecrawlLinkInitiatedHandler({
 		simpleCrawl: successfulSimpleCrawl,
-		dispatchComprehensiveCrawl: rejectingDispatchComprehensiveCrawl,
+		emitSimpleCrawlUnsupported: rejectingEmitSimpleCrawlUnsupported,
 		parseHtml: successfulParse,
 		putTierSource: jest.fn().mockResolvedValue(undefined),
 		putImageObject: jest.fn().mockResolvedValue(undefined),
@@ -133,10 +133,10 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 		expect(publishEvent).not.toHaveBeenCalled();
 	});
 
-	it("dispatches ComprehensiveCrawlCommand when simpleCrawl returns unsupported and does NOT publish RecrawlContentExtractedEvent itself (the comprehensive Lambda will, with recrawl=true)", async () => {
-		const dispatchComprehensiveCrawl = jest.fn<
-			ReturnType<DispatchComprehensiveCrawl>,
-			Parameters<DispatchComprehensiveCrawl>
+	it("emits SimpleCrawlUnsupportedEvent with recrawl=true when simpleCrawl returns unsupported and does NOT publish RecrawlContentExtractedEvent itself (the policy → comprehensive chain will)", async () => {
+		const emitSimpleCrawlUnsupported = jest.fn<
+			ReturnType<EmitSimpleCrawlUnsupported>,
+			Parameters<EmitSimpleCrawlUnsupported>
 		>().mockResolvedValue(undefined);
 		const transitionAndPersist = jest.fn().mockResolvedValue(undefined);
 		const publishEvent = jest.fn().mockResolvedValue(undefined);
@@ -147,7 +147,7 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 
 		const handler = createHandler({
 			simpleCrawl: unsupportedSimpleCrawl,
-			dispatchComprehensiveCrawl,
+			emitSimpleCrawlUnsupported,
 			transitionAndPersist,
 			publishEvent,
 		});
@@ -159,7 +159,12 @@ describe("initRecrawlLinkInitiatedHandler", () => {
 		);
 
 		expect(result).toEqual({ batchItemFailures: [] });
-		expect(dispatchComprehensiveCrawl).toHaveBeenCalledTimes(1);
+		expect(emitSimpleCrawlUnsupported).toHaveBeenCalledTimes(1);
+		expect(emitSimpleCrawlUnsupported).toHaveBeenCalledWith({
+			url: "https://example.com/doc.pdf",
+			userId: undefined,
+			recrawl: true,
+		});
 		expect(transitionAndPersist).not.toHaveBeenCalled();
 		expect(publishEvent).not.toHaveBeenCalled();
 	});

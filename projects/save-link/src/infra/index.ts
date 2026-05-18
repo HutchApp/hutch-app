@@ -14,6 +14,7 @@ import {
 	SaveLinkCommand,
 	SaveAnonymousLinkCommand,
 	SaveLinkRawHtmlCommand,
+	SimpleCrawlUnsupportedEvent,
 	ComprehensiveCrawlCommand,
 	LinkSavedEvent,
 	AnonymousLinkSavedEvent,
@@ -308,15 +309,66 @@ new HutchDLQEventHandler("save-anonymous-link-dlq", {
 	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "save-anonymous-link-dlq"),
 });
 
+// --- SimpleCrawlUnsupported policy ---
+// Event-to-command reactor: subscribes to `SimpleCrawlUnsupportedEvent`
+// (emitted by the save-link Lambdas when the simple crawl bails on non-HTML)
+// and dispatches `ComprehensiveCrawlCommand` to the dedicated PDF-handling
+// Lambda. This intermediate event decouples the Command → Command dispatch
+// that would otherwise violate the Command → System → Event(s) pattern.
+// 60s visibility = 2× the 30s Lambda timeout.
+const simpleCrawlUnsupportedPolicyQueue = new HutchSQS("simple-crawl-unsupported-policy", {
+	visibilityTimeoutSeconds: 60,
+});
+
+const simpleCrawlUnsupportedPolicyLambda = new HutchLambda("simple-crawl-unsupported-policy", {
+	entryPoint: "./src/runtime/simple-crawl-unsupported-policy.main.ts",
+	outputDir: ".lib/simple-crawl-unsupported-policy",
+	assetDir: "./src",
+	memorySize: 128,
+	timeout: 30,
+	environment: {
+		EVENT_BUS_NAME: eventBus.eventBusName,
+	},
+	policies: [],
+});
+
+eventBus.grantPublish(simpleCrawlUnsupportedPolicyLambda);
+
+const simpleCrawlUnsupportedPolicyLambdaWithSQS = new HutchSQSBackedLambda("simple-crawl-unsupported-policy", {
+	lambda: simpleCrawlUnsupportedPolicyLambda,
+	queue: simpleCrawlUnsupportedPolicyQueue,
+	alertEmailDLQEntry: alertEmail,
+	batchSize: 1,
+});
+
+eventBus.subscribe(SimpleCrawlUnsupportedEvent, simpleCrawlUnsupportedPolicyLambdaWithSQS);
+
+// --- SimpleCrawlUnsupported policy DLQ consumer ---
+// Flips crawlStatus to "exhausted" when the policy Lambda exhausts its
+// maxReceiveCount. The article is stuck at `comprehensive-fetching` because
+// the policy never managed to dispatch ComprehensiveCrawlCommand.
+new HutchDLQEventHandler("simple-crawl-unsupported-policy-dlq", {
+	sourceQueue: simpleCrawlUnsupportedPolicyQueue,
+	tableArn: articlesTableArn,
+	tableName: articlesTableName,
+	eventBus,
+	batchSize: 1,
+	additionalDynamoActions: ["dynamodb:GetItem"],
+	additionalEnvironment: {
+		GENERATE_SUMMARY_QUEUE_URL: generateSummaryQueue.queueUrl,
+	},
+	additionalPolicies: renamePolicies(generateSummaryQueue.policies, "simple-crawl-unsupported-policy-dlq"),
+});
+
 // --- ComprehensiveCrawlCommand handler ---
 // PDF / heavy crawl path runs in its own Lambda so it cannot starve the
-// HTML-only save-link workers. The simple-only Lambdas above dispatch
-// `ComprehensiveCrawlCommand` whenever the simple crawl returns
-// `unsupported`; this Lambda re-fetches the URL, runs the mupdf + DeepInfra
-// OCR pipeline, parses the resulting HTML, writes the tier-1 source, and
-// emits the appropriate downstream event itself (TierContentExtractedEvent
-// for normal saves, RecrawlContentExtractedEvent when the recrawl flag is
-// set on the command).
+// HTML-only save-link workers. The `simple-crawl-unsupported-policy` Lambda
+// dispatches `ComprehensiveCrawlCommand` in reaction to
+// `SimpleCrawlUnsupportedEvent`; this Lambda re-fetches the URL, runs the
+// mupdf + DeepInfra OCR pipeline, parses the resulting HTML, writes the
+// tier-1 source, and emits the appropriate downstream event itself
+// (TierContentExtractedEvent for normal saves,
+// RecrawlContentExtractedEvent when the recrawl flag is set on the command).
 //
 // 1200s visibility = 2× the 600s Lambda timeout per AWS guidance.
 const comprehensiveCrawlCommandQueue = new HutchSQS("comprehensive-crawl-command", {
@@ -906,6 +958,8 @@ export const saveAnonymousLinkCommandQueueUrl = saveAnonymousLinkCommandQueue.qu
 export const saveAnonymousLinkCommandDlqUrl = saveAnonymousLinkCommandQueue.dlqUrl;
 export const saveLinkRawHtmlCommandQueueUrl = saveLinkRawHtmlCommandQueue.queueUrl;
 export const saveLinkRawHtmlCommandDlqUrl = saveLinkRawHtmlCommandQueue.dlqUrl;
+export const simpleCrawlUnsupportedPolicyQueueUrl = simpleCrawlUnsupportedPolicyQueue.queueUrl;
+export const simpleCrawlUnsupportedPolicyDlqUrl = simpleCrawlUnsupportedPolicyQueue.dlqUrl;
 export const comprehensiveCrawlCommandQueueUrl = comprehensiveCrawlCommandQueue.queueUrl;
 export const comprehensiveCrawlCommandDlqUrl = comprehensiveCrawlCommandQueue.dlqUrl;
 export const linkSavedQueueUrl = linkSavedQueue.queueUrl;

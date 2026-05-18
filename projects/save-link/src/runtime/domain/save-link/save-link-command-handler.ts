@@ -16,11 +16,11 @@ import type { LogCrawlOutcome, LogParseError } from "@packages/hutch-infra-compo
 import type { ReadTierSnapshot } from "../crawl-article-state/read-tier-snapshot";
 import { initSaveLinkWork, type ProcessContent } from "./save-link-work";
 import type { PutTierSource } from "../../providers/article-store/put-tier-source";
-import type { DispatchComprehensiveCrawl } from "../../dep-bundles/events";
+import type { EmitSimpleCrawlUnsupported } from "../../dep-bundles/events";
 
 export function initSaveLinkCommandHandler(deps: {
 	simpleCrawl: SimpleCrawl;
-	dispatchComprehensiveCrawl: DispatchComprehensiveCrawl;
+	emitSimpleCrawlUnsupported: EmitSimpleCrawlUnsupported;
 	parseHtml: ParseHtml;
 	putTierSource: PutTierSource;
 	putImageObject: PutImageObject;
@@ -41,7 +41,7 @@ export function initSaveLinkCommandHandler(deps: {
 
 	const { saveLinkWork } = initSaveLinkWork({
 		simpleCrawl: deps.simpleCrawl,
-		dispatchComprehensiveCrawl: deps.dispatchComprehensiveCrawl,
+		emitSimpleCrawlUnsupported: deps.emitSimpleCrawlUnsupported,
 		parseHtml: deps.parseHtml,
 		putTierSource: deps.putTierSource,
 		putImageObject: deps.putImageObject,
