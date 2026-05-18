@@ -11,6 +11,12 @@ on:
         required: true
       CHROME_EXTENSION_ID:
         required: true
+      # Fine-grained PAT with `Contents: Read and write` + `Workflows: Read
+      # and write`. See submit-ff-extension-for-signing.yml for why the
+      # default GITHUB_TOKEN can't push tags whose tree contains workflow
+      # file changes.
+      TAG_PUSH_TOKEN:
+        required: true
 
 jobs:
   publish-chrome-extension-prod:
@@ -24,6 +30,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.TAG_PUSH_TOKEN }}
 
       - uses: pnpm/action-setup@v4
         with:

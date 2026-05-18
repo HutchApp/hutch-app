@@ -7,6 +7,13 @@ on:
         required: true
       AMO_JWT_SECRET:
         required: true
+      # Fine-grained PAT with `Contents: Read and write` + `Workflows: Read
+      # and write`. The default GITHUB_TOKEN can't acquire the `workflows`
+      # scope, so a tag push whose tree includes any .github/workflows/*
+      # change is rejected by GitHub. The PAT is consumed by actions/checkout
+      # below; later `git push` reuses the credential helper checkout sets.
+      TAG_PUSH_TOKEN:
+        required: true
 
 jobs:
   submit-firefox-extension-prod:
@@ -22,6 +29,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ secrets.TAG_PUSH_TOKEN }}
 
       - uses: pnpm/action-setup@v4
         with:
