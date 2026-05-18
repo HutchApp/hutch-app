@@ -85,6 +85,7 @@ describe("EXCLUDE_PATTERNS — browser-internal schemes", () => {
 describe("EXCLUDE_PATTERNS — nhttps typo'd-scheme entry", () => {
 	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
 		{ url: "nhttps://example.org/foo", excluded: true, label: "nhttps scheme on a normal host" },
+		{ url: "nhttps:/example.org/foo", excluded: true, label: "nhttps scheme with single slash" },
 		{ url: "nhttps://", excluded: true, label: "nhttps with no host" },
 		{ url: "NHTTPS://CASE.test/foo", excluded: true, label: "uppercase scheme" },
 		{ url: "https://example.org/foo", excluded: false, label: "valid https — should NOT match" },
@@ -105,6 +106,7 @@ describe("EXCLUDE_PATTERNS — operator-curated exact-URL entries", () => {
 		{ url: "fabiensanglard.net/quake2", excluded: false, label: "fabiensanglard quake with extra path char" },
 		{ url: "fabiensanglard.net/other", excluded: false, label: "same host different path" },
 		{ url: "https://www.theinformation", excluded: true, label: "theinformation truncated exact" },
+		{ url: "https://www.theinformation....", excluded: true, label: "theinformation truncated with trailing dots" },
 		{ url: "https://www.theinformation.com", excluded: false, label: "theinformation full host — should NOT match the truncated entry" },
 		{ url: "https://www.theinformation/foo", excluded: false, label: "theinformation truncated with path" },
 		{
