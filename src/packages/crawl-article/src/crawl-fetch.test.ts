@@ -6,7 +6,7 @@ const stubFetch: typeof fetch = async () => new Response("ok");
 function createCrawlFetch() {
 	return initCrawlFetch({
 		fetch: stubFetch,
-		defaultHeaders: { "user-agent": "test" },
+		personas: [{ name: "test", headers: { "user-agent": "test" } }],
 	});
 }
 

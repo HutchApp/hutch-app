@@ -20,6 +20,10 @@ const MAX_PDF_BYTES = 25 * 1024 * 1024;
 /**
  * Browser-like headers required by Fastly/Cloudflare edge sniffers.
  * Medium returns 403 without both User-Agent AND Accept-Language.
+ *
+ * Kept as the FIRST persona in CRAWL_PERSONAS for back-compat with sources
+ * that have always been fetched with this exact header set. New entries
+ * should be added to CRAWL_PERSONAS, not here.
  */
 export const DEFAULT_CRAWL_HEADERS = {
 	"user-agent":
@@ -27,6 +31,55 @@ export const DEFAULT_CRAWL_HEADERS = {
 	accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 	"accept-language": "en-US,en;q=0.9",
 } as const;
+
+/**
+ * Ordered list of personas the fetcher iterates through on a block-class
+ * response/error. Each persona is a coherent header set that together looks
+ * like a single client to the origin — never partial impersonation, since
+ * inconsistent fingerprints are themselves a bot signal (Adobe RSTs Chrome-UA
+ * requests that omit Sec-Fetch-* and sec-ch-ua-* headers).
+ *
+ * Order matters: keep the persona that the existing canary sources have
+ * always passed under at index 0 so the status quo is preserved. New
+ * personas land at the end; the wrapper tries them only when earlier
+ * personas hit a block-class outcome.
+ *
+ * 1. `default-browser` — same headers existing sources already pass under.
+ *    Adds Sec-Fetch-* / sec-ch-ua-* / Upgrade-Insecure-Requests so the
+ *    fingerprint is internally consistent (a "real Chrome navigating to a
+ *    document"). Coherent fingerprint lets Akamai BotManager (USDA-class)
+ *    through; the partial-Chrome shape it replaces was the actual trigger
+ *    for Adobe-class RSTs.
+ * 2. `honest-bot` — `ReadplaceBot/1.0` UA + an `Accept: *\/*` header. For
+ *    origins that explicitly allow disclosed bots and reject any browser-
+ *    shaped client they can't fingerprint (verified: Adobe accepts this;
+ *    default-curl UA also works but ReadplaceBot is the polite-bot signal).
+ */
+export const CRAWL_PERSONAS = [
+	{
+		name: "default-browser",
+		headers: {
+			...DEFAULT_CRAWL_HEADERS,
+			"sec-ch-ua":
+				'"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+			"sec-ch-ua-mobile": "?0",
+			"sec-ch-ua-platform": '"macOS"',
+			"sec-fetch-dest": "document",
+			"sec-fetch-mode": "navigate",
+			"sec-fetch-site": "none",
+			"sec-fetch-user": "?1",
+			"upgrade-insecure-requests": "1",
+		},
+	},
+	{
+		name: "honest-bot",
+		headers: {
+			"user-agent":
+				"Mozilla/5.0 (compatible; ReadplaceBot/1.0; +https://readplace.com/bot)",
+			accept: "*/*",
+		},
+	},
+] as const;
 
 const X_TWITTER_PATTERN = /^https?:\/\/(x\.com|twitter\.com)\//;
 

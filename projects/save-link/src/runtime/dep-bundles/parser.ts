@@ -9,7 +9,7 @@ import {
 	initCrawlArticle,
 	initCrawlFetch,
 	initSimpleCrawl,
-	DEFAULT_CRAWL_HEADERS,
+	CRAWL_PERSONAS,
 } from "@packages/crawl-article";
 import { initReadabilityParser } from "../domain/article-parser/readability-parser";
 import { theInformationPreParser } from "../domain/article-parser/the-information-pre-parser";
@@ -36,7 +36,7 @@ export function initParserDepBundle(deps: {
 }): ParserDepBundle {
 	const crawlFetch = initCrawlFetch({
 		fetch: globalThis.fetch,
-		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
+		personas: CRAWL_PERSONAS,
 	});
 	const simpleCrawl = initSimpleCrawl({ crawlFetch, logError: deps.logError });
 	const { parseHtml } = initReadabilityParser({
@@ -70,7 +70,7 @@ export function initComprehensiveParserDepBundle(deps: {
 }): ComprehensiveParserDepBundle {
 	const crawlFetch = initCrawlFetch({
 		fetch: globalThis.fetch,
-		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
+		personas: CRAWL_PERSONAS,
 	});
 	const simpleCrawl = initSimpleCrawl({ crawlFetch, logError: deps.logError });
 	const comprehensiveCrawl = initComprehensiveCrawl({

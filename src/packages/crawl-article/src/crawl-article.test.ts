@@ -38,7 +38,7 @@ function initCrawl(overrides?: {
 		});
 	const crawlFetch = initCrawlFetch({
 		fetch: overrides?.fetch ?? defaultFetch,
-		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
+		personas: [{ name: "test-default", headers: { ...DEFAULT_CRAWL_HEADERS } }],
 		fetchCurl: overrides?.fetchCurl ?? stubFetchCurl,
 	});
 	const logError = overrides?.logError ?? noopLogError;
@@ -63,7 +63,7 @@ function initSimple(overrides?: {
 		});
 	const crawlFetch = initCrawlFetch({
 		fetch: overrides?.fetch ?? defaultFetch,
-		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
+		personas: [{ name: "test-default", headers: { ...DEFAULT_CRAWL_HEADERS } }],
 		fetchCurl: overrides?.fetchCurl ?? stubFetchCurl,
 	});
 	return initSimpleCrawl({
@@ -85,7 +85,7 @@ function initComprehensive(overrides?: {
 		});
 	const crawlFetch = initCrawlFetch({
 		fetch: overrides?.fetch ?? defaultFetch,
-		defaultHeaders: { ...DEFAULT_CRAWL_HEADERS },
+		personas: [{ name: "test-default", headers: { ...DEFAULT_CRAWL_HEADERS } }],
 		fetchCurl: overrides?.fetchCurl ?? stubFetchCurl,
 	});
 	return initComprehensiveCrawl({

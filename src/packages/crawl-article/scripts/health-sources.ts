@@ -175,4 +175,28 @@ export const HEALTH_SOURCES: readonly HealthSource[] = [
 		expectedContent: "Attention Is All You Need",
 		expectsThumbnail: false,
 	},
+	{
+		// Akamai-fronted PDF. The origin's HTTP/2 BotManager RSTs streams
+		// whose request fingerprint isn't internally coherent (Chrome UA
+		// without Sec-Fetch-*/sec-ch-ua-* trips it). Validates that the
+		// `default-browser` persona's full Chrome fingerprint passes Akamai's
+		// JA3+header heuristic. If the canary fails here after a persona-set
+		// change, the new shape is partial impersonation — fix the persona,
+		// don't remove the entry.
+		label: "PDF (USDA via Akamai)",
+		url: "https://www.rd.usda.gov/sites/default/files/pdf-sample_0.pdf",
+		expectedContent: "Dummy PDF",
+		expectsThumbnail: false,
+	},
+	{
+		// Adobe-class fingerprint-strict origin. Sent today's partial Chrome
+		// headers and Adobe's edge RSTs the h2 stream (curl exit 92,
+		// INTERNAL_ERROR). Either a coherent full-Chrome persona or the
+		// `honest-bot` persona pass. If this entry fails, the persona-fallback
+		// chain has lost both — investigate the chain before touching this URL.
+		label: "PDF (Adobe sample)",
+		url: "https://www.adobe.com/support/products/enterprise/knowledgecenter/media/c4611_sample_explain.pdf",
+		expectedContent: "bookmarks in a PDF file",
+		expectsThumbnail: false,
+	},
 ];

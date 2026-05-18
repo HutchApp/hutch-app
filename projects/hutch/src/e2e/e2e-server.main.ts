@@ -16,7 +16,7 @@ import {
 import { requireEnv } from '../runtime/domain/require-env'
 import { initRefreshArticleIfStale } from '@packages/test-fixtures/providers/article-freshness'
 import type { ExtractPdf } from '@packages/crawl-article'
-import { DEFAULT_CRAWL_HEADERS, initComprehensiveCrawl, initCrawlArticle, initCrawlFetch, initSimpleCrawl } from '@packages/crawl-article'
+import { CRAWL_PERSONAS, initComprehensiveCrawl, initCrawlArticle, initCrawlFetch, initSimpleCrawl } from '@packages/crawl-article'
 import { mediumPreParser, theInformationPreParser } from '@packages/test-fixtures/providers/article-parser'
 import { initInMemoryRefreshArticleContent } from '@packages/test-fixtures/providers/events'
 import { initInMemoryUpdateFetchTimestamp } from '@packages/test-fixtures/providers/events'
@@ -32,7 +32,7 @@ const origin = `http://127.0.0.1:${PORT}`
 const logger = HutchLogger.from(consoleLogger)
 
 const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }))
-const crawlFetch = initCrawlFetch({ fetch: globalThis.fetch, defaultHeaders: { ...DEFAULT_CRAWL_HEADERS } })
+const crawlFetch = initCrawlFetch({ fetch: globalThis.fetch, personas: CRAWL_PERSONAS })
 // E2E exercises HTML pages only — PDFs are not part of the e2e flow today,
 // and OCR (canvas + DeepInfra) is deliberately out of scope for tests. The
 // stub returns failed so crawlArticle reports "unsupported" if a PDF ever

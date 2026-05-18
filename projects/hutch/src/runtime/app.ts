@@ -8,7 +8,7 @@ import { initDynamoDbAuth } from "./providers/auth/dynamodb-auth";
 import { initInMemoryArticleStore } from "@packages/test-fixtures/providers/article-store";
 import { initDynamoDbArticleStore } from "./providers/article-store/dynamodb-article-store";
 import type { ExtractPdf } from "@packages/crawl-article";
-import { DEFAULT_CRAWL_HEADERS, initComprehensiveCrawl, initCrawlArticle, initCrawlFetch, initSimpleCrawl } from "@packages/crawl-article";
+import { CRAWL_PERSONAS, initComprehensiveCrawl, initCrawlArticle, initCrawlFetch, initSimpleCrawl } from "@packages/crawl-article";
 import type { PublishStaleCheckRequested } from "@packages/test-fixtures/providers/events";
 import { initReadabilityParser } from "@packages/test-fixtures/providers/article-parser";
 import { mediumPreParser, theInformationPreParser } from "@packages/test-fixtures/providers/article-parser";
@@ -92,7 +92,7 @@ function initProviders() {
 	const persistence = requireEnv<"prod" | "development">("PERSISTENCE");
 	const logError = (message: string, error?: Error) => console.error(JSON.stringify({ level: "ERROR", timestamp: new Date().toISOString(), message, stack: error?.stack }));
 
-	const crawlFetch = initCrawlFetch({ fetch: globalThis.fetch, defaultHeaders: { ...DEFAULT_CRAWL_HEADERS } });
+	const crawlFetch = initCrawlFetch({ fetch: globalThis.fetch, personas: CRAWL_PERSONAS });
 	const staleTtlMs = 86400000;
 
 	if (persistence === "prod") {

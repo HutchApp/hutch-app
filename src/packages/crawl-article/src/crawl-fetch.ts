@@ -2,6 +2,7 @@ import assert from "node:assert";
 import { withAiaChasing } from "./aia-fetch";
 import type { fetchCurl } from "./curl-fetch";
 import { type fetchH2, withH2Fallback } from "./h2-fetch";
+import { type Persona, withPersonaFallback } from "./persona-fallback";
 
 export type CrawlFetchInit = {
 	headers?: Record<string, string>;
@@ -14,28 +15,33 @@ export type CrawlFetchInit = {
  * Universal browser-like fetcher used for every external resource (HTML,
  * images, oembed JSON). Composes the same fallback chain as `crawlArticle`:
  * AIA chasing → HTTP/2 fallback for Cloudflare TLS challenges → curl
- * fallback for JA3/JA4 + transient TLS errors. Default headers impersonate a
- * real browser; per-call headers (and `referer`) are merged on top.
+ * fallback for JA3/JA4 + transient TLS errors → persona fallback for
+ * block-class responses/errors (403/406/451, h2 RST_STREAM, curl exit 92).
+ * Persona headers are merged with per-call headers (caller wins); `referer`
+ * always rides as a per-call header.
  */
 export type CrawlFetch = (url: string, init?: CrawlFetchInit) => Promise<Response>;
 
 export function initCrawlFetch(deps: {
 	fetch: typeof globalThis.fetch;
-	defaultHeaders: Record<string, string>;
+	personas: ReadonlyArray<Persona>;
 	fetchH2?: typeof fetchH2;
 	fetchCurl?: typeof fetchCurl;
 }): CrawlFetch {
-	const fetchWithFallback = withH2Fallback(
-		withAiaChasing(deps.fetch),
-		deps.fetchH2,
-		deps.fetchCurl,
+	const fetchWithFallback = withPersonaFallback(
+		withH2Fallback(
+			withAiaChasing(deps.fetch),
+			deps.fetchH2,
+			deps.fetchCurl,
+		),
+		deps.personas,
 	);
 	return async (url, init) => {
 		assert(
 			!(init?.referer && init.headers?.referer),
 			"Pass referer via the `referer` field or `headers.referer`, not both",
 		);
-		const headers: Record<string, string> = { ...deps.defaultHeaders, ...init?.headers };
+		const headers: Record<string, string> = { ...init?.headers };
 		if (init?.referer) headers.referer = init.referer;
 		return fetchWithFallback(url, { headers, signal: init?.signal });
 	};
