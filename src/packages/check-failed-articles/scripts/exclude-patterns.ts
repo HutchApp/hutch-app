@@ -19,6 +19,21 @@ export const EXCLUDE_PATTERNS: readonly RegExp[] = [
 	// produces a large recurring backlog of crawl-failed rows that the
 	// operator never actually needs to re-save.
 	/(?:^|\/\/)(?:[a-z0-9-]+\.)*example\.com(?:[/:?#]|$)/i,
+	// Internal/private-network hostnames — these have no public DNS resolution
+	// so the crawler can never succeed. Mirrors the suffix set that
+	// `validateSaveableUrl` rejects today (.local, .lan, .internal, .home.arpa);
+	// included here to drain legacy rows persisted before that validation
+	// tightened, plus any future row that slips past validation via a
+	// non-/save code path. Requires at least one label before the suffix so
+	// bare suffixes (which can't be real hostnames) still surface as failures.
+	/(?:^|\/\/)(?:[a-z0-9-]+\.)+(?:local|lan|internal|home\.arpa)(?:[/:?#]|$)/i,
+	// Singleton local hostnames, same rationale as the suffix entry above.
+	/(?:^|\/\/)(?:localhost|ip6-localhost|ip6-loopback)(?:[/:?#]|$)/i,
+	// `nhttps://…` — a real but typo'd scheme that appears in legacy rows
+	// (someone fat-fingered the address bar / clipboard). The fetcher always
+	// fails on it; there's nothing to crawl. The whole URL is unusable, not
+	// just unreachable, so an operator re-save is the only resolution.
+	/^nhttps:\/\//i,
 ];
 
 export function isExcluded(url: string, patterns: readonly RegExp[]): boolean {

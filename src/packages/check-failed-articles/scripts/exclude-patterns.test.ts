@@ -38,3 +38,42 @@ describe("EXCLUDE_PATTERNS — example.com entry", () => {
 		});
 	}
 });
+
+describe("EXCLUDE_PATTERNS — internal-network hostnames", () => {
+	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
+		{ url: "https://cd.home.arpa/foo", excluded: true, label: "home.arpa single subdomain" },
+		{ url: "https://router.home.arpa", excluded: true, label: "home.arpa no path" },
+		{ url: "http://nas.local/share", excluded: true, label: ".local suffix" },
+		{ url: "https://printer.lan", excluded: true, label: ".lan suffix" },
+		{ url: "https://api.internal/v1", excluded: true, label: ".internal suffix" },
+		{ url: "https://foo.bar.internal/x", excluded: true, label: "nested subdomain on .internal" },
+		{ url: "https://localhost:3000/foo", excluded: true, label: "localhost with port" },
+		{ url: "http://localhost", excluded: true, label: "bare localhost" },
+		{ url: "http://ip6-localhost/foo", excluded: true, label: "ip6-localhost" },
+		{ url: "http://ip6-loopback", excluded: true, label: "ip6-loopback" },
+		{ url: "https://home.arpa.evil.com/foo", excluded: false, label: "suffix trick — home.arpa is a subdomain of evil.com" },
+		{ url: "https://notlocalhost.com/foo", excluded: false, label: "prefix similar to localhost" },
+		{ url: "https://mylan.com/foo", excluded: false, label: ".lan inside a real TLD path" },
+		{ url: "https://example.local-host.com/foo", excluded: false, label: "label contains local but isn't the suffix" },
+	];
+	for (const { url, excluded, label } of cases) {
+		it(`${excluded ? "excludes" : "keeps"}: ${label} — ${url}`, () => {
+			assert.equal(isExcluded(url, EXCLUDE_PATTERNS), excluded);
+		});
+	}
+});
+
+describe("EXCLUDE_PATTERNS — nhttps typo'd-scheme entry", () => {
+	const cases: ReadonlyArray<{ url: string; excluded: boolean; label: string }> = [
+		{ url: "nhttps://example.org/foo", excluded: true, label: "nhttps scheme on a normal host" },
+		{ url: "nhttps://", excluded: true, label: "nhttps with no host" },
+		{ url: "NHTTPS://CASE.test/foo", excluded: true, label: "uppercase scheme" },
+		{ url: "https://example.org/foo", excluded: false, label: "valid https — should NOT match" },
+		{ url: "http://example.org/foo?next=nhttps://other", excluded: false, label: "nhttps appearing only inside a query" },
+	];
+	for (const { url, excluded, label } of cases) {
+		it(`${excluded ? "excludes" : "keeps"}: ${label} — ${url}`, () => {
+			assert.equal(isExcluded(url, EXCLUDE_PATTERNS), excluded);
+		});
+	}
+});
