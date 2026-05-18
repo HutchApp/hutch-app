@@ -324,6 +324,7 @@ describe("initOcrPdf — parallel batched OCR", () => {
 		const ocr = initOcrPdf({
 			rasterizer: stubRasterizer({ numPages: 3 }),
 			createVisionMessage: async () => "<p>text</p>",
+			logger: noopLogger,
 		});
 
 		await ocr({
