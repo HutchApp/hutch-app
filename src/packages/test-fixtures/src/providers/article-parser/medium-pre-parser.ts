@@ -55,14 +55,16 @@ export const mediumPreParser: SitePreParser = {
 
 		if (!isMediumPage(document)) return undefined;
 
-		const container = findArticleContainer(document);
-		if (!container) return undefined;
+		const container = findArticleContainer(document) ?? document.body;
 
-		const authorPhoto = container.querySelector('[data-testid="authorPhoto"]');
+		const authorPhotos = container.querySelectorAll('[data-testid="authorPhoto"]');
+		const firstAuthorPhoto = authorPhotos[0] ?? null;
 
-		stripClapsSeparators({ container, anchorElement: authorPhoto });
-		authorPhoto?.closest("a")?.remove();
-		authorPhoto?.remove();
+		stripClapsSeparators({ container, anchorElement: firstAuthorPhoto });
+		for (const photo of authorPhotos) {
+			photo.closest("a")?.remove();
+			photo.remove();
+		}
 
 		stripWithEnclosingParagraph({
 			container,

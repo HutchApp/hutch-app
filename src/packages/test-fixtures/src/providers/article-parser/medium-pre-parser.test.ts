@@ -101,14 +101,17 @@ describe("mediumPreParser.extract — fingerprint gate", () => {
 		expect(result?.bodyHtml).toContain("This is filler body content");
 	});
 
-	it("returns undefined when fingerprint present but no article container", () => {
+	it("falls back to document.body when fingerprint present but no article container", () => {
 		const html = buildHtml({
 			ogSiteName: "Medium",
 			articleInner: "<p>Loose body</p>",
 			includeContainer: false,
 		});
 
-		expect(mediumPreParser.extract({ html })).toBeUndefined();
+		const result = mediumPreParser.extract({ html });
+
+		expect(result?.bodyHtml).toContain("Loose body");
+		expect(result?.bodyHtml).toContain("This is filler body content");
 	});
 
 	it("returns undefined when stripping reduces the body below MIN_BODY_CHARS so default Readability handles it", () => {
@@ -230,6 +233,35 @@ describe("mediumPreParser.extract — author photo / read time / publish date", 
 
 		expect(result?.bodyHtml).not.toContain("authorPhoto");
 		expect(result?.bodyHtml).not.toContain("avatar.jpg");
+	});
+
+	it("strips all authorPhoto elements when multiple are present", () => {
+		const html = buildHtml({
+			ogSiteName: "Medium",
+			articleInner:
+				'<div><a href="/author1"><img data-testid="authorPhoto" alt="Author1"></a></div><div><a href="/author2"><img data-testid="authorPhoto" alt="Author2"></a></div>',
+		});
+
+		const result = mediumPreParser.extract({ html });
+
+		expect(result?.bodyHtml).not.toContain("authorPhoto");
+		expect(result?.bodyHtml).not.toContain('href="/author1"');
+		expect(result?.bodyHtml).not.toContain('href="/author2"');
+	});
+
+	it("strips authorPhoto chrome via body fallback when no article container exists", () => {
+		const html = buildHtml({
+			ogSiteName: "Medium",
+			articleInner:
+				'<div><a href="/author"><img data-testid="authorPhoto" alt="Author"></a><span data-testid="storyReadTime">5 min read</span></div>',
+			includeContainer: false,
+		});
+
+		const result = mediumPreParser.extract({ html });
+
+		expect(result?.bodyHtml).not.toContain("authorPhoto");
+		expect(result?.bodyHtml).not.toContain("5 min read");
+		expect(result?.bodyHtml).toContain("This is filler body content");
 	});
 });
 
