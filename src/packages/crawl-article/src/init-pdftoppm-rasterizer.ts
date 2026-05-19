@@ -71,9 +71,9 @@ function parsePdfInfo(stdout: string): PdfInfo {
  * batched-render loop in `ocr-pdf.ts` working unchanged. `destroy()` is
  * async so the temp directory can be removed off the hot path.
  */
-export function initPdftoppmRasterizer(deps: { logger: HutchLogger; dpi?: number; maxPages?: number }): PdfRasterizer {
+export function initPdftoppmRasterizer(deps: { logger: HutchLogger; dpi?: number }): PdfRasterizer {
 	const dpi = deps.dpi ?? DEFAULT_DPI;
-	const { logger, maxPages } = deps;
+	const { logger } = deps;
 
 	return {
 		async open(buffer: Buffer): Promise<PdfDocument> {
@@ -87,21 +87,6 @@ export function initPdftoppmRasterizer(deps: { logger: HutchLogger; dpi?: number
 			const infoResult = await runCommand("pdfinfo", ["-enc", "UTF-8", pdfPath]);
 			const { numPages, title } = parsePdfInfo(infoResult.stdout);
 			logger.info(`[pdftoppm] pdfinfo done dt=${Date.now() - tStart}ms pages=${numPages} title=${title ? "yes" : "no"} tempDir=${tempDir}`);
-
-			if (maxPages !== undefined && numPages > maxPages) {
-				await rm(tempDir, { recursive: true, force: true });
-				logger.info(`[pdftoppm] page cap exceeded pages=${numPages} maxPages=${maxPages}`);
-				return {
-					numPages,
-					loadPage(): PdfPage {
-						throw new Error("pages not rasterised");
-					},
-					getTitle(): string | undefined {
-						return title;
-					},
-					async destroy(): Promise<void> {},
-				};
-			}
 
 			const tRender = Date.now();
 			await runCommand("pdftoppm", ["-png", "-r", String(dpi), pdfPath, pagePrefix]);
