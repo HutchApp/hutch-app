@@ -10,6 +10,7 @@ const ARTICLE_CONTAINER_SELECTORS = [
 	"main article",
 	"main",
 	'[data-testid="storyBody"]',
+	'[role="article"]',
 ] as const;
 
 const READ_TIME_REGEX = /^\s*\d{1,3}\s*min\s*read\s*$/i;
@@ -21,6 +22,9 @@ const CLAPS_SEPARATOR_REGEX = /^[-—]{2,}$/;
 const STORIES_IN_INBOX_REGEX = /get\s+.+?['’‘]s\s+stories\s+in\s+your\s+inbox/i;
 const JOIN_MEDIUM_REGEX = /^\s*join\s+medium\s+for\s+free\s+to\s+get\s+updates/i;
 const REMEMBER_ME_REGEX = /^\s*remember\s+me\s+for\s+faster\s+sign\s+in\s*$/i;
+
+const AUTHOR_PHOTO_SELECTOR =
+	'[data-testid*="authorPhoto"], [data-testid*="author-photo"], [data-testid*="AuthorPhoto"], [data-testid*="author_photo"]';
 
 const TITLE_SUFFIX_REGEX = /\s+[|\-–—]\s+.+$/;
 
@@ -61,13 +65,13 @@ export const mediumPreParser: SitePreParser = {
 		if (!container) container = document.querySelector("body");
 		assert(container, "parseHTML always produces a <body> element");
 
-		let authorPhoto = container.querySelector('[data-testid="authorPhoto"]');
+		let authorPhoto = container.querySelector(AUTHOR_PHOTO_SELECTOR);
 
 		stripClapsSeparators({ container, anchorElement: authorPhoto });
 		while (authorPhoto) {
 			authorPhoto.closest("a")?.remove();
 			authorPhoto.remove();
-			authorPhoto = container.querySelector('[data-testid="authorPhoto"]');
+			authorPhoto = container.querySelector(AUTHOR_PHOTO_SELECTOR);
 		}
 
 		stripWithEnclosingParagraph({
@@ -110,6 +114,14 @@ function isMediumPage(document: DomDocument): boolean {
 		.querySelector('meta[name="application-name"]')
 		?.getAttribute("content");
 	if (appName === "Medium") return true;
+	const canonical = document
+		.querySelector('link[rel="canonical"]')
+		?.getAttribute("href");
+	if (canonical?.includes("medium.com/")) return true;
+	const androidUrl = document
+		.querySelector('meta[property="al:android:url"]')
+		?.getAttribute("content");
+	if (androidUrl?.startsWith("medium://")) return true;
 	return document.querySelector(MEDIUM_DATA_TESTID_SELECTOR) !== null;
 }
 
@@ -128,16 +140,32 @@ function stripWithEnclosingParagraph(params: {
 	testId: string;
 	textRegex: RegExp;
 }): void {
-	const matches = params.container.querySelectorAll(`[data-testid="${params.testId}"]`);
-	for (const node of matches) {
+	const byTestId = params.container.querySelectorAll(`[data-testid="${params.testId}"]`);
+	let stripped = false;
+	for (const node of byTestId) {
 		const text = node.textContent ?? "";
 		if (!params.textRegex.test(text)) continue;
 		const enclosingParagraph = node.closest("p");
 		const target = enclosingParagraph ?? node;
 		target.remove();
+		stripped = true;
+	}
+	if (stripped) return;
+	stripLeafElementsByText({ container: params.container, textRegex: params.textRegex });
+}
+
+function stripLeafElementsByText(params: {
+	container: DomElement;
+	textRegex: RegExp;
+}): void {
+	const candidates = params.container.querySelectorAll("span, div, time, p");
+	for (const el of candidates) {
+		const text = el.textContent ?? "";
+		if (!params.textRegex.test(text)) continue;
+		if (el.querySelector("p, h1, h2, h3, h4, h5, h6")) continue;
+		el.remove();
 	}
 }
-/* c8 ignore stop */
 
 /* Medium's image-tooltip text lives in a <span> directly inside the
  * figure > [role=button] interactive wrapper (raw HTML). Readability later
@@ -149,8 +177,9 @@ function stripPictureTooltip(container: DomElement): void {
 	for (const span of candidates) {
 		const text = span.textContent ?? "";
 		if (PICTURE_TOOLTIP_REGEX.test(text)) span.remove();
-	} /* c8 ignore next -- V8 block coverage phantom on for...of iterator close, see bcoe/c8#319 */
+	}
 }
+/* c8 ignore stop */
 
 /* The "--" claps separator must follow the byline anchor in document
  * order — otherwise an em-dash-only paragraph inside body prose could be
