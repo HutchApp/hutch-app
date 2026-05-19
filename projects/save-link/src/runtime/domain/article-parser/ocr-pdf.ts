@@ -17,9 +17,9 @@ const PAGES_PER_BATCH = 1;
 
 /**
  * Page-image cap. Defends the OCR pipeline against PDFs with 1000+ pages
- * where rasterisation would exhaust Lambda memory long before the model timed
- * out. 200 pages × ~300 KB PNG = ~60 MB on disk during a worst-case run,
- * which fits comfortably in the 4096 MB Lambda memory budget.
+ * where rasterisation would exhaust Lambda /tmp ephemeral storage long
+ * before the model timed out. 200 pages × ~300 KB PNG = ~60 MB during a
+ * worst-case run, well within the default 512 MB /tmp allocation.
  */
 export const MAX_PAGES = 200;
 

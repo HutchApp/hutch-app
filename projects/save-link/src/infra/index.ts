@@ -395,13 +395,13 @@ const comprehensiveCrawlCommandDynamodb = new HutchDynamoDBAccess("comprehensive
 });
 
 const comprehensiveCrawlCommandLambda = new HutchLambda("comprehensive-crawl-command", {
-	// 4096 MB gives ~2.3 vCPU — enough to rasterise a 200-page scanned PDF
-	// via pdftoppm at ~1–2 s/page (150 DPI) plus parallel OCR dispatch.
-	// 200 pages × ~300 KB PNG ≈ 60 MB on disk, well within the memory budget.
-	memorySize: 4096,
-	// 900s (Lambda maximum) covers worst-case 200-page rasterisation
-	// (~200–400 s at 2.3 vCPU) plus parallel OCR batching against
-	// gemma-4-31B-it when DeepInfra queues.
+	// 3008 MB is the account's Lambda cap (~1.7 vCPU) and 900 s is the Lambda
+	// maximum. Together they cover worst-case 200-page scanned-PDF
+	// rasterisation via pdftoppm at 150 DPI (~1.3–2.7 s/page → 260–540 s)
+	// plus parallel OCR dispatch against gemma-4-31B-it when DeepInfra
+	// queues. PNGs land in /tmp ephemeral storage, so per-page disk size is
+	// not bounded by memorySize.
+	memorySize: 3008,
 	timeout: 900,
 	containerImage: { imageUri: ocrImageTags["comprehensive-crawl-command"] },
 	environment: {
